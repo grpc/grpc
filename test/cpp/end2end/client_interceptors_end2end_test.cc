@@ -765,9 +765,9 @@ class ParameterizedClientInterceptorsEnd2endTest
       flags = fcntl(sv_[1], F_GETFL, 0);
       GPR_ASSERT(fcntl(sv_[1], F_SETFL, flags | O_NONBLOCK) == 0);
       GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv_[0]) ==
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
       GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv_[1]) ==
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
       server_ = builder.BuildAndStart();
       AddInsecureChannelFromFd(server_.get(), sv_[1]);
     }
@@ -1262,6 +1262,6 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   // Make sure that gRPC shuts down cleanly
-  GPR_ASSERT(grpc_wait_until_shutdown(1));
+  GPR_ASSERT(grpc_wait_until_shutdown(10));
   return ret;
 }

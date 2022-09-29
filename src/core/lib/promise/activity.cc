@@ -25,8 +25,7 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
-GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
-Waker::Unwakeable Waker::unwakeable_;
+thread_local Activity* Activity::g_current_activity_{nullptr};
 
 namespace promise_detail {
 

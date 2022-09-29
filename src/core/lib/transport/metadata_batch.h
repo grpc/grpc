@@ -25,7 +25,6 @@
 
 #include <cstdint>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -41,7 +40,7 @@
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
-#include "src/core/lib/gprpp/table.h"
+#include "src/core/lib/gprpp/packed_table.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -94,7 +93,7 @@ struct ContentTypeMetadata {
   // gRPC says that content-type can be application/grpc[;something]
   // Core has only ever verified the prefix.
   // IF we want to start verifying more, we can expand this type.
-  enum ValueType {
+  enum ValueType : uint8_t {
     kApplicationGrpc,
     kEmpty,
     kInvalid,
@@ -113,7 +112,7 @@ struct ContentTypeMetadata {
 // scheme metadata trait.
 struct HttpSchemeMetadata {
   static constexpr bool kRepeatable = false;
-  enum ValueType {
+  enum ValueType : uint8_t {
     kHttp,
     kHttps,
     kInvalid,
@@ -135,7 +134,7 @@ struct HttpSchemeMetadata {
 // method metadata trait.
 struct HttpMethodMetadata {
   static constexpr bool kRepeatable = false;
-  enum ValueType {
+  enum ValueType : uint8_t {
     kPost,
     kGet,
     kPut,
@@ -388,6 +387,17 @@ struct GrpcStatusContext {
   static const std::string& DisplayValue(const std::string& x);
 };
 
+// Annotation added by client surface code to denote wait-for-ready state
+struct WaitForReady {
+  struct ValueType {
+    bool value = false;
+    bool explicitly_set = false;
+  };
+  static absl::string_view DebugKey() { return "WaitForReady"; }
+  static constexpr bool kRepeatable = false;
+  static std::string DisplayValue(ValueType x);
+};
+
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
@@ -488,7 +498,7 @@ class ParseHelper {
     return ParsedMetadata<Container>(
         trait,
         ParseValueToMemento<typename Trait::MementoType, Trait::ParseMemento>(),
-        transport_size_);
+        static_cast<uint32_t>(transport_size_));
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
@@ -678,6 +688,10 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
   void EncodeTo(Encoder* encoder) const {
     encoder->Encode(Which(), value);
   }
+  template <typename Encoder>
+  void VisitWith(Encoder* encoder) const {
+    return EncodeTo(encoder);
+  }
   void LogTo(LogFn log_fn) const {
     LogKeyValueTo(Which::key(), value, Which::Encode, log_fn);
   }
@@ -702,6 +716,10 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
   }
   template <typename Encoder>
   void EncodeTo(Encoder*) const {}
+  template <typename Encoder>
+  void VisitWith(Encoder* encoder) const {
+    encoder->Encode(Which(), value);
+  }
   void LogTo(LogFn log_fn) const {
     LogKeyValueTo(Which::DebugKey(), value, Which::DisplayValue, log_fn);
   }
@@ -733,6 +751,10 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
       encoder->Encode(Which(), v);
     }
   }
+  template <typename Encoder>
+  void VisitWith(Encoder* encoder) const {
+    return EncodeTo(encoder);
+  }
   void LogTo(LogFn log_fn) const {
     for (const auto& v : value) {
       LogKeyValueTo(Which::key(), v, Which::Encode, log_fn);
@@ -762,6 +784,12 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
   }
   template <typename Encoder>
   void EncodeTo(Encoder*) const {}
+  template <typename Encoder>
+  void VisitWith(Encoder* encoder) const {
+    for (const auto& v : value) {
+      encoder->Encode(Which(), v);
+    }
+  }
   void LogTo(LogFn log_fn) const {
     for (const auto& v : value) {
       LogKeyValueTo(Which::DebugKey(), v, Which::DisplayValue, log_fn);
@@ -803,6 +831,17 @@ struct EncodeWrapper {
   template <typename Which>
   void operator()(const Value<Which>& which) {
     which.EncodeTo(encoder);
+  }
+};
+
+// Callable for the table ForEach in ForEach() -- for each value, call the
+// appropriate visitor method.
+template <typename Encoder>
+struct ForEachWrapper {
+  Encoder* encoder;
+  template <typename Which>
+  void operator()(const Value<Which>& which) {
+    which.VisitWith(encoder);
   }
 };
 
@@ -1003,13 +1042,21 @@ class MetadataMap {
   //    void Encode(TraitsType, typename TraitsType::ValueType value);
   // For fields for which we do not have traits, this will be a method
   // with the signature:
-  //    void Encode(grpc_mdelem md);
-  // TODO(ctiller): It's expected that the latter Encode method will
-  // become Encode(Slice, Slice) by the end of the current metadata API
-  // transitions.
+  //    void Encode(string_view key, Slice value);
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
-    table_.ForEach(metadata_detail::EncodeWrapper<Encoder>{encoder});
+    table_.template ForEachIn<metadata_detail::EncodeWrapper<Encoder>,
+                              Value<Traits>...>(
+        metadata_detail::EncodeWrapper<Encoder>{encoder});
+    for (const auto& unk : unknown_) {
+      encoder->Encode(unk.first, unk.second);
+    }
+  }
+
+  // Like Encode, but also visit the non-encodable fields.
+  template <typename Encoder>
+  void ForEach(Encoder* encoder) const {
+    table_.ForEach(metadata_detail::ForEachWrapper<Encoder>{encoder});
     for (const auto& unk : unknown_) {
       encoder->Encode(unk.first, unk.second);
     }
@@ -1177,7 +1224,7 @@ class MetadataMap {
   using Value = metadata_detail::Value<Which>;
 
   // Table of known metadata types.
-  Table<Value<Traits>...> table_;
+  PackedTable<Value<Traits>...> table_;
   metadata_detail::UnknownMap unknown_;
 };
 
@@ -1227,7 +1274,7 @@ template <typename Derived, typename... Traits>
 Derived MetadataMap<Derived, Traits...>::Copy() const {
   Derived out(unknown_.arena());
   metadata_detail::CopySink<Derived> sink(&out);
-  Encode(&sink);
+  ForEach(&sink);
   return out;
 }
 
@@ -1254,7 +1301,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
-    grpc_core::GrpcStatusContext>;
+    grpc_core::GrpcStatusContext, grpc_core::WaitForReady>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;

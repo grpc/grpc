@@ -18,23 +18,38 @@
 
 #include "test/core/util/fake_udp_and_tcp_server.h"
 
-#include "absl/strings/match.h"
+#include <errno.h>
+#include <string.h>
+
+#include <set>
+#include <utility>
+#include <vector>
+
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/util/port.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #define CLOSE_SOCKET closesocket
 #define ERRNO WSAGetLastError()
 #else
 #include <fcntl.h>
+#include <unistd.h>
 
-#include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #define CLOSE_SOCKET close
 #define ERRNO errno
@@ -84,13 +99,13 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   }
   grpc_error_handle set_non_block_error;
   set_non_block_error = grpc_tcp_set_non_block(udp_socket_);
-  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+  if (!set_non_block_error.ok()) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
             grpc_error_std_string(set_non_block_error).c_str());
     GPR_ASSERT(0);
   }
   set_non_block_error = grpc_tcp_set_non_block(accept_socket_);
-  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+  if (!set_non_block_error.ok()) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
             grpc_error_std_string(set_non_block_error).c_str());
     GPR_ASSERT(0);
@@ -244,7 +259,7 @@ void FakeUdpAndTcpServer::RunServerLoop() {
 #ifdef GPR_WINDOWS
       grpc_error_handle set_non_block_error;
       set_non_block_error = grpc_tcp_set_non_block(p);
-      if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+      if (!set_non_block_error.ok()) {
         gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
                 grpc_error_std_string(set_non_block_error).c_str());
         GPR_ASSERT(0);

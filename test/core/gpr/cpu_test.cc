@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
@@ -77,7 +79,7 @@ static void worker_thread(void* arg) {
       r = (r * 17) & ((r - i) | (r * i));
     }
     cpu = gpr_cpu_current_cpu();
-    GPR_ASSERT(cpu < ct->ncores);
+    ASSERT_LT(cpu, ct->ncores);
     gpr_mu_lock(&ct->mu);
     ct->used[cpu] = 1;
     for (j = 0; j < ct->ncores; j++) {
@@ -103,7 +105,7 @@ static void cpu_test(void) {
   int cores_seen = 0;
   struct cpu_test ct;
   ct.ncores = gpr_cpu_num_cores();
-  GPR_ASSERT(ct.ncores > 0);
+  ASSERT_GT(ct.ncores, 0);
   ct.nthreads = static_cast<int>(ct.ncores) * 3;
   ct.used = static_cast<int*>(gpr_malloc(ct.ncores * sizeof(int)));
   memset(ct.used, 0, ct.ncores * sizeof(int));
@@ -144,8 +146,10 @@ static void cpu_test(void) {
   gpr_free(ct.used);
 }
 
-int main(int argc, char* argv[]) {
+TEST(CpuTest, MainTest) { cpu_test(); }
+
+int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  cpu_test();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

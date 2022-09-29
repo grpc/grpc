@@ -11,9 +11,12 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 
 ## Supported Platforms
 
-* Officially Supported: These platforms are officially supported. We test our
-  code on these platform and have automated continuous integration tests for
+* Officially Supported: These platforms are officially supported. We follow
+  [the OSS Foundational C++ Support Policy](https://opensource.google/documentation/policies/cplusplus-support)
+  to choose platforms to support.
+  We test our code on these platform and have automated continuous integration tests for
   them.
+  .
 
 * Best Effort: We do not have continous integration tests for these, but we are
   fairly confident that gRPC C++ would work on them. We will make our best
@@ -27,10 +30,10 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 
 | Operating System | Architectures | Versions | Support Level |
 |------------------|---------------|----------|---------------|
-| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 6+, GCC 6.3+     | Officially Supported |
+| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 6+, GCC 7.3+     | Officially Supported |
 | Windows 10+                    | x86, x64      | Visual Studio 2017+    | Officially Supported |
 | MacOS                          | x86, x64      | XCode 12+              | Officially Supported |
-| Linux - Others                 | x86, x64      | clang 6+, GCC 6.3+     | Best Effort          |
+| Linux - Others                 | x86, x64      | clang 6+, GCC 7.3+     | Best Effort          |
 | Linux                          | ARM           |                        | Best Effort          |
 | iOS                            |               |                        | Best Effort          |
 | Android                        |               |                        | Best Effort          |

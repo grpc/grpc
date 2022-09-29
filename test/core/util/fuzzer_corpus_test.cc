@@ -17,19 +17,26 @@
  */
 
 #include <dirent.h>
-#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
@@ -77,12 +84,13 @@ class ExampleGenerator
         examples_.push_back(absl::GetFlag(FLAGS_file));
       }
       if (!absl::GetFlag(FLAGS_directory).empty()) {
-        char* test_srcdir = gpr_getenv("TEST_SRCDIR");
-        gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);
+        auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
+        gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"",
+                test_srcdir.has_value() ? test_srcdir->c_str() : "(null)");
         std::string directory = absl::GetFlag(FLAGS_directory);
-        if (test_srcdir != nullptr) {
+        if (test_srcdir.has_value()) {
           directory =
-              test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
+              *test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
         }
         gpr_log(GPR_DEBUG, "Using corpus directory: %s", directory.c_str());
         DIR* dp;
@@ -101,7 +109,6 @@ class ExampleGenerator
           perror("Couldn't open the directory");
           abort();
         }
-        gpr_free(test_srcdir);
       }
     }
     // Make sure we don't succeed without doing anything, which caused

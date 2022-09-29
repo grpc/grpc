@@ -24,7 +24,7 @@ static const upb_MiniTable_Field xds_core_v3_ContextParams__fields[1] = {
 const upb_MiniTable xds_core_v3_ContextParams_msginit = {
   &xds_core_v3_ContextParams_submsgs[0],
   &xds_core_v3_ContextParams__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field xds_core_v3_ContextParams_ParamsEntry__fields[2] = {

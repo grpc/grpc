@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -29,7 +31,7 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/util/test_config.h"
 
-static void test_convert_grpc_to_tsi_cert_pairs() {
+TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   grpc_ssl_pem_key_cert_pair grpc_pairs[] = {{"private_key1", "cert_chain1"},
                                              {"private_key2", "cert_chain2"},
                                              {"private_key3", "cert_chain3"}};
@@ -38,19 +40,21 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
   {
     tsi_ssl_pem_key_cert_pair* tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
-    GPR_ASSERT(tsi_pairs == nullptr);
+    ASSERT_EQ(tsi_pairs, nullptr);
   }
 
   {
     tsi_ssl_pem_key_cert_pair* tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, num_pairs);
 
-    GPR_ASSERT(tsi_pairs != nullptr);
+    ASSERT_NE(tsi_pairs, nullptr);
     for (size_t i = 0; i < num_pairs; i++) {
-      GPR_ASSERT(strncmp(grpc_pairs[i].private_key, tsi_pairs[i].private_key,
-                         strlen(grpc_pairs[i].private_key)) == 0);
-      GPR_ASSERT(strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain,
-                         strlen(grpc_pairs[i].cert_chain)) == 0);
+      ASSERT_EQ(strncmp(grpc_pairs[i].private_key, tsi_pairs[i].private_key,
+                        strlen(grpc_pairs[i].private_key)),
+                0);
+      ASSERT_EQ(strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain,
+                        strlen(grpc_pairs[i].cert_chain)),
+                0);
     }
 
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_pairs, num_pairs);
@@ -59,10 +63,7 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
-  test_convert_grpc_to_tsi_cert_pairs();
-
-  grpc_shutdown();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

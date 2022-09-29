@@ -51,18 +51,19 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
 
 namespace grpc_core {
 
-Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
+Channel::Channel(bool is_client, std::string target,
+                 const ChannelArgs& channel_args,
                  grpc_compression_options compression_options,
                  RefCountedPtr<grpc_channel_stack> channel_stack)
     : is_client_(is_client),
@@ -91,7 +92,7 @@ Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
   // accommodate that, we call grpc_init() here and then call
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
-  grpc_init();
+  InitInternally();
   auto channelz_node = channelz_node_;
   *channel_stack_->on_destroy = [channelz_node]() {
     if (channelz_node != nullptr) {
@@ -99,7 +100,7 @@ Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
           channelz::ChannelTrace::Severity::Info,
           grpc_slice_from_static_string("Channel destroyed"));
     }
-    grpc_shutdown();
+    ShutdownInternally();
   };
 }
 
@@ -149,8 +150,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
 
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
-      std::string(builder->target()), std::move(channel_args),
-      compression_options, std::move(*r)));
+      std::string(builder->target()), channel_args, compression_options,
+      std::move(*r)));
 }
 
 namespace {
@@ -219,9 +220,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
       args = channel_args_mutator(target, args, channel_stack_type);
     }
   }
-  builder.SetChannelArgs(std::move(args))
-      .SetTarget(target)
-      .SetTransport(optional_transport);
+  builder.SetChannelArgs(args).SetTarget(target).SetTransport(
+      optional_transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }
@@ -319,10 +319,9 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, nullptr,
-      grpc_core::Slice(grpc_slice_ref_internal(method)),
-      host != nullptr
-          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
-          : absl::nullopt,
+      grpc_core::Slice(grpc_slice_ref(method)),
+      host != nullptr ? absl::optional<grpc_core::Slice>(grpc_slice_ref(*host))
+                      : absl::nullopt,
       grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
@@ -336,9 +335,8 @@ grpc_call* grpc_channel_create_pollset_set_call(
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
       grpc_core::Slice(method),
-      host != nullptr
-          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
-          : absl::nullopt,
+      host != nullptr ? absl::optional<grpc_core::Slice>(grpc_slice_ref(*host))
+                      : absl::nullopt,
       deadline);
 }
 

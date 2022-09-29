@@ -154,14 +154,19 @@ describe GRPC::Core::Channel do
     end
 
     it 'raises an error if called on a closed channel' do
+      STDERR.puts "#{Time.now}: begin: raises an error if called on a closed channel"
       ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
+      STDERR.puts "#{Time.now}: created channel"
       ch.close
+      STDERR.puts "#{Time.now}: closed channel"
 
       deadline = Time.now + 5
       blk = proc do
         ch.create_call(nil, nil, 'phony_method', nil, deadline)
+        STDERR.puts "#{Time.now}: created call"
       end
       expect(&blk).to raise_error(RuntimeError)
+      STDERR.puts "#{Time.now}: finished: raises an error if called on a closed channel"
     end
 
     it 'raises if grpc was initialized in another process' do

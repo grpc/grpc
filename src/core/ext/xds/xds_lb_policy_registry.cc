@@ -21,7 +21,6 @@
 #include <stddef.h>
 
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -36,15 +35,16 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/arena.h"
 #include "upb/json_encode.h"
-#include "upb/upb.h"
+#include "upb/status.h"
 #include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {
 
@@ -54,8 +54,8 @@ class RingHashLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, absl::string_view configuration,
-      int /* recursion_depth */) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, int /* recursion_depth */) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -99,7 +99,7 @@ class RoundRobinLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& /* context */,
+      const XdsResourceType::DecodeContext& /* context */,
       absl::string_view /* configuration */,
       int /* recursion_depth */) override {
     return Json::Object{{"round_robin", Json::Object()}};
@@ -116,8 +116,8 @@ class WrrLocalityLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, absl::string_view configuration,
-      int recursion_depth) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -152,8 +152,9 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
-absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
-                                       const google_protobuf_Struct* resource) {
+absl::StatusOr<Json> ParseStructToJson(
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
   size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
@@ -166,18 +167,15 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
   upb_JsonEncode(resource, msg_def, context.symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  auto json = Json::Parse(reinterpret_cast<char*>(buf), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  if (!json.ok()) {
     // This should not happen
-    auto ret_status = absl::InternalError(
+    return absl::InternalError(
         absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "
                      "produced by upb library: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
-    return ret_status;
+                     json.status().ToString()));
   }
-  return json;
+  return std::move(*json);
 }
 
 }  // namespace
@@ -187,7 +185,7 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
 //
 
 absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
     int recursion_depth) {
   constexpr int kMaxRecursionDepth = 16;
@@ -241,8 +239,9 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     } else if (type->typed_struct != nullptr) {
       // Custom lb policy config
       std::string custom_type = std::string(type->type);
-      if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-              custom_type.c_str(), nullptr)) {
+      if (!CoreConfiguration::Get()
+               .lb_policy_registry()
+               .LoadBalancingPolicyExists(custom_type.c_str(), nullptr)) {
         // Skip unsupported custom lb policy.
         continue;
       }

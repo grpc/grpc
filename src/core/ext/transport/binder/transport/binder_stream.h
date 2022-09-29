@@ -68,10 +68,9 @@ struct grpc_binder_stream {
   }
 
   ~grpc_binder_stream() {
-    GRPC_ERROR_UNREF(cancel_self_error);
     if (destroy_stream_then_closure != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_then_closure,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
     }
   }
 
@@ -80,7 +79,6 @@ struct grpc_binder_stream {
   grpc_binder_transport* t;
   grpc_stream_refcount* refcount;
   grpc_core::Arena* arena;
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;
   int tx_code;
   const bool is_client;
   bool is_closed;
@@ -89,7 +87,7 @@ struct grpc_binder_stream {
   grpc_closure destroy_stream;
 
   // The reason why this stream is cancelled and closed.
-  grpc_error_handle cancel_self_error = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_self_error;
 
   grpc_closure recv_initial_metadata_closure;
   RecvInitialMetadataArgs recv_initial_metadata_args;
@@ -106,7 +104,7 @@ struct grpc_binder_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+  absl::optional<grpc_core::SliceBuffer>* recv_message;
   grpc_closure* recv_message_ready = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;

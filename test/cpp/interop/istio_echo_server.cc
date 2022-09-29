@@ -44,7 +44,7 @@
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
@@ -64,6 +64,7 @@ ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
 ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
 ABSL_FLAG(std::string, forwarding_address, "0.0.0.0:7072",
           "Forwarding address for unhandled protocols");
+ABSL_FLAG(std::string, service_version, "", "Version string for the service");
 
 // The following flags must be defined, but are not used for now. Some may be
 // necessary for certain tests.
@@ -100,11 +101,14 @@ void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
     free(hostname_p);
   }
   EchoTestServiceImpl echo_test_service(
-      std::move(hostname), absl::GetFlag(FLAGS_forwarding_address));
+      std::move(hostname), absl::GetFlag(FLAGS_service_version),
+      absl::GetFlag(FLAGS_forwarding_address));
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   XdsServerBuilder xds_builder;
   bool has_xds_listeners = false;
   builder.RegisterService(&echo_test_service);
+  xds_builder.RegisterService(&echo_test_service);
   for (int port : grpc_ports) {
     auto server_address = grpc_core::JoinHostPort("0.0.0.0", port);
     if (xds_ports.find(port) != xds_ports.end()) {
@@ -161,11 +165,12 @@ int main(int argc, char** argv) {
     size_t equal = arg.find_first_of('=');
     if (equal != std::string::npos) {
       std::string f = arg.substr(0, equal);
-      if (f == "--version") {
-        continue;
-      }
       std::string v = arg.substr(equal + 1, std::string::npos);
-      argv_dict[f].push_back(v);
+      if (f == "--version") {
+        argv_dict["--service_version"].push_back(v);
+      } else {
+        argv_dict[f].push_back(v);
+      }
     }
   }
   std::vector<char*> new_argv_strs;

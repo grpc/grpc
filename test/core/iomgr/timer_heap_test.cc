@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -54,10 +56,10 @@ static void check_valid(grpc_timer_heap* pq) {
     size_t left_child = 1u + 2u * i;
     size_t right_child = left_child + 1u;
     if (left_child < pq->timer_count) {
-      GPR_ASSERT(pq->timers[i]->deadline <= pq->timers[left_child]->deadline);
+      ASSERT_LE(pq->timers[i]->deadline, pq->timers[left_child]->deadline);
     }
     if (right_child < pq->timer_count) {
-      GPR_ASSERT(pq->timers[i]->deadline <= pq->timers[right_child]->deadline);
+      ASSERT_LE(pq->timers[i]->deadline, pq->timers[right_child]->deadline);
     }
   }
 }
@@ -78,22 +80,22 @@ static void test1(void) {
 
   grpc_timer_heap_init(&pq);
   memset(inpq, 0, num_test_elements);
-  GPR_ASSERT(grpc_timer_heap_is_empty(&pq));
+  ASSERT_TRUE(grpc_timer_heap_is_empty(&pq));
   check_valid(&pq);
   for (i = 0; i < num_test_elements; ++i) {
-    GPR_ASSERT(!contains(&pq, &test_elements[i]));
+    ASSERT_FALSE(contains(&pq, &test_elements[i]));
     grpc_timer_heap_add(&pq, &test_elements[i]);
     check_valid(&pq);
-    GPR_ASSERT(contains(&pq, &test_elements[i]));
+    ASSERT_TRUE(contains(&pq, &test_elements[i]));
     inpq[i] = 1;
   }
   for (i = 0; i < num_test_elements; ++i) {
     /* Test that check still succeeds even for element that wasn't just
        inserted. */
-    GPR_ASSERT(contains(&pq, &test_elements[i]));
+    ASSERT_TRUE(contains(&pq, &test_elements[i]));
   }
 
-  GPR_ASSERT(pq.timer_count == num_test_elements);
+  ASSERT_EQ(pq.timer_count, num_test_elements);
 
   check_valid(&pq);
 
@@ -101,16 +103,16 @@ static void test1(void) {
     size_t elem_num = static_cast<size_t>(rand()) % num_test_elements;
     grpc_timer* el = &test_elements[elem_num];
     if (!inpq[elem_num]) { /* not in pq */
-      GPR_ASSERT(!contains(&pq, el));
+      ASSERT_FALSE(contains(&pq, el));
       el->deadline = random_deadline();
       grpc_timer_heap_add(&pq, el);
-      GPR_ASSERT(contains(&pq, el));
+      ASSERT_TRUE(contains(&pq, el));
       inpq[elem_num] = 1;
       check_valid(&pq);
     } else {
-      GPR_ASSERT(contains(&pq, el));
+      ASSERT_TRUE(contains(&pq, el));
       grpc_timer_heap_remove(&pq, el);
-      GPR_ASSERT(!contains(&pq, el));
+      ASSERT_FALSE(contains(&pq, el));
       inpq[elem_num] = 0;
       check_valid(&pq);
     }
@@ -193,7 +195,7 @@ static void test2(void) {
         grpc_timer_heap_pop(&pq);
         for (size_t i = 0; i < elems_size; i++) {
           if (top == &elems[i].elem) {
-            GPR_ASSERT(elems[i].inserted);
+            ASSERT_TRUE(elems[i].inserted);
             elems[i].inserted = false;
           }
         }
@@ -215,7 +217,7 @@ static void test2(void) {
           }
         }
       }
-      GPR_ASSERT(grpc_timer_heap_top(&pq)->deadline == *min_deadline);
+      ASSERT_EQ(grpc_timer_heap_top(&pq)->deadline, *min_deadline);
     }
   }
 
@@ -238,10 +240,10 @@ static void shrink_test(void) {
   /* Create a priority queue with many elements.  Make sure the Size() is
      correct. */
   for (i = 0; i < num_elements; ++i) {
-    GPR_ASSERT(i == pq.timer_count);
+    ASSERT_EQ(i, pq.timer_count);
     grpc_timer_heap_add(&pq, create_test_elements(1));
   }
-  GPR_ASSERT(num_elements == pq.timer_count);
+  ASSERT_EQ(num_elements, pq.timer_count);
 
   /* Remove elements until the Size is 1/4 the original size. */
   while (pq.timer_count > num_elements / 4) {
@@ -249,12 +251,12 @@ static void shrink_test(void) {
     grpc_timer_heap_remove(&pq, te);
     gpr_free(te);
   }
-  GPR_ASSERT(num_elements / 4 == pq.timer_count);
+  ASSERT_EQ(num_elements / 4, pq.timer_count);
 
   /* Expect that Capacity is in the right range:
      Size * 2 <= Capacity <= Size * 4 */
-  GPR_ASSERT(pq.timer_count * 2 <= pq.timer_capacity);
-  GPR_ASSERT(pq.timer_capacity <= pq.timer_count * 4);
+  ASSERT_LE(pq.timer_count * 2, pq.timer_capacity);
+  ASSERT_LE(pq.timer_capacity, pq.timer_count * 4);
   check_valid(&pq);
 
   /* Remove the rest of the elements.  Check that the Capacity is not more than
@@ -266,32 +268,33 @@ static void shrink_test(void) {
     grpc_timer_heap_remove(&pq, te);
     gpr_free(te);
     expected_size--;
-    GPR_ASSERT(expected_size == pq.timer_count);
-    GPR_ASSERT(pq.timer_count * 2 <= pq.timer_capacity);
+    ASSERT_EQ(expected_size, pq.timer_count);
+    ASSERT_LE(pq.timer_count * 2, pq.timer_capacity);
     if (pq.timer_count >= 8) {
-      GPR_ASSERT(pq.timer_capacity <= pq.timer_count * 4);
+      ASSERT_LE(pq.timer_capacity, pq.timer_count * 4);
     } else {
-      GPR_ASSERT(16 <= pq.timer_capacity);
+      ASSERT_LE(16, pq.timer_capacity);
     }
     check_valid(&pq);
   }
 
-  GPR_ASSERT(0 == pq.timer_count);
-  GPR_ASSERT(pq.timer_capacity >= 16 && pq.timer_capacity < 32);
+  ASSERT_EQ(pq.timer_count, 0);
+  ASSERT_GE(pq.timer_capacity, 16);
+  ASSERT_LT(pq.timer_capacity, 32);
 
   grpc_timer_heap_destroy(&pq);
 }
 
-int main(int argc, char** argv) {
-  int i;
-
-  grpc::testing::TestEnvironment env(&argc, argv);
-
-  for (i = 0; i < 5; i++) {
+TEST(TimerHeapTest, MainTest) {
+  for (int i = 0; i < 5; i++) {
     test1();
     test2();
     shrink_test();
   }
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

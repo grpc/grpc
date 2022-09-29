@@ -20,6 +20,7 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Type aliases
@@ -31,6 +32,7 @@ RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
 ExpectedResult = xds_url_map_testcase.ExpectedResult
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -116,7 +118,17 @@ def _wait_until_backlog_cleared(test_client: XdsTestClient,
     raise RuntimeError('failed to clear RPC backlog in %s seconds' % timeout)
 
 
+def _is_supported(config: skips.TestConfig) -> bool:
+    if config.client_lang == _Lang.NODE:
+        return config.version_gte('v1.4.x')
+    return True
+
+
 class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -158,6 +170,10 @@ class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
 
 class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
     """EMPTY_CALL is not fault injected, so it should succeed."""
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -215,6 +231,10 @@ class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -253,6 +273,10 @@ class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestAlwaysAbort(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -287,6 +311,10 @@ class TestAlwaysAbort(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestDelayHalf(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -325,6 +353,10 @@ class TestDelayHalf(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(

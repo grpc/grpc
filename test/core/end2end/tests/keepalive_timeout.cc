@@ -16,21 +16,25 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -92,20 +96,15 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Client sends a request, server replies with a payload, then waits for the
-   keepalive watchdog timeouts before returning status. */
+/* Client sends a request, then waits for the keepalive watchdog timeouts before
+ * returning status. */
 static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_call* c;
-  grpc_call* s;
-  grpc_slice response_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
   grpc_arg keepalive_arg_elems[3];
   keepalive_arg_elems[0].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[0].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
-  keepalive_arg_elems[0].value.integer = 3500;
+  keepalive_arg_elems[0].value.integer = 10;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
   keepalive_arg_elems[1].value.integer = 0;
@@ -117,14 +116,11 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 
   grpc_end2end_test_fixture f =
       begin_test(config, "keepalive_timeout", &keepalive_args, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* response_payload_recv = nullptr;
-  grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
@@ -140,8 +136,6 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -153,71 +147,26 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
-  char* details_str = grpc_slice_to_c_string(details);
-  char* method_str = grpc_slice_to_c_string(call_details.method);
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "keepalive watchdog timeout"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-
-  gpr_free(details_str);
-  gpr_free(method_str);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-  grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
-
-  grpc_byte_buffer_destroy(response_payload);
-  grpc_byte_buffer_destroy(response_payload_recv);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -254,7 +203,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   grpc_set_disable_ping_ack(true);
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -313,8 +262,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(100), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(100), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -362,8 +311,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(102), true);
+    cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -375,9 +324,9 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(103), true);
+    cqv.Expect(tag(2), true);
+    cqv.Verify();
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload);
@@ -414,16 +363,14 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(3), true);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(104), true);
+  cqv.Verify();
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

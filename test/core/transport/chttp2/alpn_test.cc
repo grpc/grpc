@@ -18,18 +18,18 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
-#include <grpc/support/log.h>
+#include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
 
-static void test_alpn_success(void) {
-  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2", 2));
-  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("grpc-exp", 8));
+TEST(AlpnTest, TestAlpnSuccess) {
+  ASSERT_TRUE(grpc_chttp2_is_alpn_version_supported("h2", 2));
+  ASSERT_TRUE(grpc_chttp2_is_alpn_version_supported("grpc-exp", 8));
 }
 
-static void test_alpn_failure(void) {
-  GPR_ASSERT(!grpc_chttp2_is_alpn_version_supported("h2-155", 6));
-  GPR_ASSERT(!grpc_chttp2_is_alpn_version_supported("h1-15", 5));
+TEST(AlpnTest, TestAlpnFailure) {
+  ASSERT_FALSE(grpc_chttp2_is_alpn_version_supported("h2-155", 6));
+  ASSERT_FALSE(grpc_chttp2_is_alpn_version_supported("h1-15", 5));
 }
 
 // First index in ALPN supported version list of a given protocol. Returns a
@@ -44,15 +44,13 @@ static size_t alpn_version_index(const char* version, size_t size) {
   return i;
 }
 
-static void test_alpn_grpc_before_h2(void) {
+TEST(AlpnTest, TestAlpnGrpcBeforeH2) {
   // grpc-exp is preferred over h2.
-  GPR_ASSERT(alpn_version_index("grpc-exp", 8) < alpn_version_index("h2", 2));
+  ASSERT_LT(alpn_version_index("grpc-exp", 8), alpn_version_index("h2", 2));
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  test_alpn_success();
-  test_alpn_failure();
-  test_alpn_grpc_before_h2();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

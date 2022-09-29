@@ -43,13 +43,13 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -64,31 +64,21 @@
 
 static std::atomic<int64_t> num_dropped_connections{0};
 
+using ::grpc_event_engine::experimental::EndpointConfig;
+
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const grpc_channel_args* args,
+                                           const EndpointConfig& config,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = new grpc_tcp_server;
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
-  for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
-    if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
-                          (args->args[i].value.integer != 0);
-      } else {
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
-                                                    " must be an integer");
-      }
-    } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
-      } else {
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
-      }
-    }
+  auto value = config.GetInt(GRPC_ARG_ALLOW_REUSEPORT);
+  if (value.has_value()) {
+    s->so_reuseport = (grpc_is_socket_reuse_port_supported() && *value != 0);
+  }
+  value = config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS);
+  if (value.has_value()) {
+    s->expand_wildcard_addrs = (*value != 0);
   }
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
@@ -103,13 +93,13 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->head = nullptr;
   s->tail = nullptr;
   s->nports = 0;
-  s->channel_args = grpc_channel_args_copy(args);
+  s->options = TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
-  s->memory_quota =
-      grpc_core::ResourceQuotaFromChannelArgs(args)->memory_quota();
+  GPR_ASSERT(s->options.resource_quota != nullptr);
+  s->memory_quota = s->options.resource_quota->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void finish_shutdown(grpc_tcp_server* s) {
@@ -118,7 +108,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
   gpr_mu_destroy(&s->mu);
   while (s->head) {
@@ -126,7 +116,6 @@ static void finish_shutdown(grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-  grpc_channel_args_destroy(s->channel_args);
   delete s->fd_handler;
   delete s;
 }
@@ -191,7 +180,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
 static void on_read(void* arg, grpc_error_handle err) {
   grpc_tcp_listener* sp = static_cast<grpc_tcp_listener*>(arg);
   grpc_pollset* read_notifier_pollset;
-  if (!GRPC_ERROR_IS_NONE(err)) {
+  if (!err.ok()) {
     goto error;
   }
 
@@ -252,8 +241,8 @@ static void on_read(void* arg, grpc_error_handle err) {
     (void)grpc_set_socket_no_sigpipe_if_possible(fd);
 
     err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_CONNECTION_USAGE,
-                                            sp->server->channel_args);
-    if (!GRPC_ERROR_IS_NONE(err)) {
+                                            sp->server->options);
+    if (!err.ok()) {
       goto error;
     }
 
@@ -287,7 +276,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->external_connection = false;
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->channel_args, addr_uri.value()),
+        grpc_tcp_create(fdobj, sp->server->options, addr_uri.value()),
         read_notifier_pollset, acceptor);
   }
 
@@ -314,8 +303,8 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   grpc_dualstack_mode dsmode;
   grpc_tcp_listener* sp = nullptr;
   grpc_tcp_listener* sp2 = nullptr;
-  grpc_error_handle v6_err = GRPC_ERROR_NONE;
-  grpc_error_handle v4_err = GRPC_ERROR_NONE;
+  grpc_error_handle v6_err;
+  grpc_error_handle v4_err;
   *out_port = -1;
 
   if (grpc_tcp_server_have_ifaddrs() && s->expand_wildcard_addrs) {
@@ -326,17 +315,17 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
   /* Try listening on IPv6 first. */
   if ((v6_err = grpc_tcp_server_add_addr(s, &wild6, port_index, fd_index,
-                                         &dsmode, &sp)) == GRPC_ERROR_NONE) {
+                                         &dsmode, &sp)) == absl::OkStatus()) {
     ++fd_index;
     requested_port = *out_port = sp->port;
     if (dsmode == GRPC_DSMODE_DUALSTACK || dsmode == GRPC_DSMODE_IPV4) {
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
   }
   /* If we got a v6-only socket or nothing, try adding 0.0.0.0. */
   grpc_sockaddr_set_port(&wild4, requested_port);
   if ((v4_err = grpc_tcp_server_add_addr(s, &wild4, port_index, fd_index,
-                                         &dsmode, &sp2)) == GRPC_ERROR_NONE) {
+                                         &dsmode, &sp2)) == absl::OkStatus()) {
     *out_port = sp2->port;
     if (sp != nullptr) {
       sp2->is_sibling = 1;
@@ -344,25 +333,23 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
     }
   }
   if (*out_port > 0) {
-    if (!GRPC_ERROR_IS_NONE(v6_err)) {
+    if (!v6_err.ok()) {
       gpr_log(GPR_INFO,
               "Failed to add :: listener, "
               "the environment may not support IPv6: %s",
               grpc_error_std_string(v6_err).c_str());
-      GRPC_ERROR_UNREF(v6_err);
     }
-    if (!GRPC_ERROR_IS_NONE(v4_err)) {
+    if (!v4_err.ok()) {
       gpr_log(GPR_INFO,
               "Failed to add 0.0.0.0 listener, "
               "the environment may not support IPv4: %s",
               grpc_error_std_string(v4_err).c_str());
-      GRPC_ERROR_UNREF(v4_err);
     }
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   } else {
     grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to add any wildcard listeners");
-    GPR_ASSERT(!GRPC_ERROR_IS_NONE(v6_err) && !GRPC_ERROR_IS_NONE(v4_err));
+    GPR_ASSERT(!v6_err.ok() && !v4_err.ok());
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
     return root_err;
@@ -385,10 +372,10 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     grpc_dualstack_mode dsmode;
     err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
                                        &fd);
-    if (!GRPC_ERROR_IS_NONE(err)) return err;
+    if (!err.ok()) return err;
     err = grpc_tcp_server_prepare_socket(listener->server, fd, &listener->addr,
                                          true, &port);
-    if (!GRPC_ERROR_IS_NONE(err)) return err;
+    if (!err.ok()) return err;
     listener->server->nports++;
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
     if (!addr_str.ok()) {
@@ -419,7 +406,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
@@ -468,7 +455,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     addr = &addr6_v4mapped;
   }
   if ((err = grpc_tcp_server_add_addr(s, addr, port_index, 0, &dsmode, &sp)) ==
-      GRPC_ERROR_NONE) {
+      absl::OkStatus()) {
     *out_port = sp->port;
   }
   return err;
@@ -565,7 +552,7 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                                              grpc_closure* shutdown_starting) {
   gpr_mu_lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
-                           GRPC_ERROR_NONE);
+                           absl::OkStatus());
   gpr_mu_unlock(&s->mu);
 }
 
@@ -639,7 +626,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
     s_->on_accept_cb(s_->on_accept_cb_arg,
-                     grpc_tcp_create(fdobj, s_->channel_args, addr_uri.value()),
+                     grpc_tcp_create(fdobj, s_->options, addr_uri.value()),
                      read_notifier_pollset, acceptor);
   }
 

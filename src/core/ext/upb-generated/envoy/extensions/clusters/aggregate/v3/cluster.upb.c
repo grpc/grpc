@@ -22,7 +22,7 @@ static const upb_MiniTable_Field envoy_extensions_clusters_aggregate_v3_ClusterC
 const upb_MiniTable envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit = {
   NULL,
   &envoy_extensions_clusters_aggregate_v3_ClusterConfig__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

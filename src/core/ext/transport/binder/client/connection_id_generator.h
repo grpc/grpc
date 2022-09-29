@@ -31,8 +31,7 @@ namespace grpc_binder {
 // underscore, and tilde).
 class ConnectionIdGenerator {
  public:
-  std::string Generate(absl::string_view package_name,
-                       absl::string_view class_name);
+  std::string Generate(absl::string_view uri);
 
  private:
   // Our generated Id need to fit in unix socket path length limit. We use 100

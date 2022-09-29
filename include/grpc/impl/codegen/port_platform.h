@@ -48,13 +48,6 @@
 #endif
 #endif  // GPR_ABSEIL_SYNC
 
-/*
- * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
- */
-#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
-// #define GRPC_ERROR_IS_ABSEIL_STATUS 1
-#endif
-
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -240,9 +233,6 @@
 #define GPR_PLATFORM_STRING "osx"
 #define GPR_CPU_POSIX 1
 #define GPR_POSIX_CRASH_HANDLER 1
-#endif
-#if !(defined(__has_feature) && __has_feature(cxx_thread_local))
-#define GPR_PTHREAD_TLS 1
 #endif
 #define GPR_APPLE 1
 #define GPR_GCC_ATOMIC 1

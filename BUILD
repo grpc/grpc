@@ -143,23 +143,17 @@ config_setting(
     values = {"define": "use_strict_warning=true"},
 )
 
-config_setting(
-    name = "use_abseil_status",
-    values = {"define": "use_abseil_status=true"},
-)
-
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "garum"  # @unused
+g_stands_for = "galley"  # @unused
 
-core_version = "25.0.0"  # @unused
+core_version = "28.0.0"  # @unused
 
-version = "1.48.0-dev"  # @unused
+version = "1.50.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
-    "include/grpc/support/atm.h",
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_windows.h",
@@ -176,6 +170,21 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/sync_windows.h",
     "include/grpc/support/thd_id.h",
     "include/grpc/support/time.h",
+    "include/grpc/impl/codegen/atm.h",
+    "include/grpc/impl/codegen/atm_gcc_atomic.h",
+    "include/grpc/impl/codegen/atm_gcc_sync.h",
+    "include/grpc/impl/codegen/atm_windows.h",
+    "include/grpc/impl/codegen/fork.h",
+    "include/grpc/impl/codegen/gpr_slice.h",
+    "include/grpc/impl/codegen/gpr_types.h",
+    "include/grpc/impl/codegen/log.h",
+    "include/grpc/impl/codegen/port_platform.h",
+    "include/grpc/impl/codegen/sync.h",
+    "include/grpc/impl/codegen/sync_abseil.h",
+    "include/grpc/impl/codegen/sync_custom.h",
+    "include/grpc/impl/codegen/sync_generic.h",
+    "include/grpc/impl/codegen/sync_posix.h",
+    "include/grpc/impl/codegen/sync_windows.h",
 ]
 
 GRPC_PUBLIC_HDRS = [
@@ -192,6 +201,14 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/status.h",
     "include/grpc/load_reporting.h",
     "include/grpc/support/workaround_list.h",
+    "include/grpc/impl/codegen/byte_buffer.h",
+    "include/grpc/impl/codegen/byte_buffer_reader.h",
+    "include/grpc/impl/codegen/compression_types.h",
+    "include/grpc/impl/codegen/connectivity_state.h",
+    "include/grpc/impl/codegen/grpc_types.h",
+    "include/grpc/impl/codegen/propagation_bits.h",
+    "include/grpc/impl/codegen/status.h",
+    "include/grpc/impl/codegen/slice.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
@@ -242,6 +259,7 @@ GRPCXX_SRCS = [
     "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
+    "src/cpp/codegen/codegen_init.cc",
 ]
 
 GRPCXX_HDRS = [
@@ -311,6 +329,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/generic/generic_stub.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
+    "include/grpcpp/impl/call_hook.h",
+    "include/grpcpp/impl/call_op_set_interface.h",
     "include/grpcpp/impl/call.h",
     "include/grpcpp/impl/channel_argument_option.h",
     "include/grpcpp/impl/client_unary_call.h",
@@ -359,19 +379,83 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/time.h",
     "include/grpcpp/support/validate_service_config.h",
+    "include/grpc++/impl/codegen/async_stream.h",
+    "include/grpc++/impl/codegen/async_unary_call.h",
+    "include/grpc++/impl/codegen/byte_buffer.h",
+    "include/grpc++/impl/codegen/call_hook.h",
+    "include/grpc++/impl/codegen/call.h",
+    "include/grpc++/impl/codegen/channel_interface.h",
+    "include/grpc++/impl/codegen/client_context.h",
+    "include/grpc++/impl/codegen/client_unary_call.h",
+    "include/grpc++/impl/codegen/completion_queue_tag.h",
+    "include/grpc++/impl/codegen/completion_queue.h",
+    "include/grpc++/impl/codegen/config.h",
+    "include/grpc++/impl/codegen/core_codegen_interface.h",
+    "include/grpc++/impl/codegen/create_auth_context.h",
+    "include/grpc++/impl/codegen/grpc_library.h",
+    "include/grpc++/impl/codegen/metadata_map.h",
+    "include/grpc++/impl/codegen/method_handler_impl.h",
+    "include/grpc++/impl/codegen/rpc_method.h",
+    "include/grpc++/impl/codegen/rpc_service_method.h",
+    "include/grpc++/impl/codegen/security/auth_context.h",
+    "include/grpc++/impl/codegen/serialization_traits.h",
+    "include/grpc++/impl/codegen/server_context.h",
+    "include/grpc++/impl/codegen/server_interface.h",
+    "include/grpc++/impl/codegen/service_type.h",
+    "include/grpc++/impl/codegen/slice.h",
+    "include/grpc++/impl/codegen/status_code_enum.h",
+    "include/grpc++/impl/codegen/status.h",
+    "include/grpc++/impl/codegen/string_ref.h",
+    "include/grpc++/impl/codegen/stub_options.h",
+    "include/grpc++/impl/codegen/sync_stream.h",
+    "include/grpc++/impl/codegen/time.h",
+    "include/grpcpp/impl/codegen/async_generic_service.h",
+    "include/grpcpp/impl/codegen/async_stream.h",
+    "include/grpcpp/impl/codegen/async_unary_call.h",
+    "include/grpcpp/impl/codegen/byte_buffer.h",
+    "include/grpcpp/impl/codegen/call_hook.h",
+    "include/grpcpp/impl/codegen/call_op_set_interface.h",
+    "include/grpcpp/impl/codegen/call_op_set.h",
+    "include/grpcpp/impl/codegen/call.h",
+    "include/grpcpp/impl/codegen/callback_common.h",
+    "include/grpcpp/impl/codegen/channel_interface.h",
+    "include/grpcpp/impl/codegen/client_callback.h",
+    "include/grpcpp/impl/codegen/client_context.h",
+    "include/grpcpp/impl/codegen/client_interceptor.h",
+    "include/grpcpp/impl/codegen/client_unary_call.h",
+    "include/grpcpp/impl/codegen/completion_queue_tag.h",
+    "include/grpcpp/impl/codegen/completion_queue.h",
+    "include/grpcpp/impl/codegen/config.h",
+    "include/grpcpp/impl/codegen/core_codegen_interface.h",
+    "include/grpcpp/impl/codegen/create_auth_context.h",
+    "include/grpcpp/impl/codegen/delegating_channel.h",
+    "include/grpcpp/impl/codegen/grpc_library.h",
+    "include/grpcpp/impl/codegen/intercepted_channel.h",
+    "include/grpcpp/impl/codegen/interceptor_common.h",
+    "include/grpcpp/impl/codegen/interceptor.h",
+    "include/grpcpp/impl/codegen/message_allocator.h",
+    "include/grpcpp/impl/codegen/metadata_map.h",
+    "include/grpcpp/impl/codegen/method_handler_impl.h",
+    "include/grpcpp/impl/codegen/method_handler.h",
+    "include/grpcpp/impl/codegen/rpc_method.h",
+    "include/grpcpp/impl/codegen/rpc_service_method.h",
+    "include/grpcpp/impl/codegen/security/auth_context.h",
+    "include/grpcpp/impl/codegen/serialization_traits.h",
+    "include/grpcpp/impl/codegen/server_callback_handlers.h",
+    "include/grpcpp/impl/codegen/server_callback.h",
+    "include/grpcpp/impl/codegen/server_context.h",
+    "include/grpcpp/impl/codegen/server_interceptor.h",
+    "include/grpcpp/impl/codegen/server_interface.h",
+    "include/grpcpp/impl/codegen/service_type.h",
+    "include/grpcpp/impl/codegen/slice.h",
+    "include/grpcpp/impl/codegen/status_code_enum.h",
+    "include/grpcpp/impl/codegen/status.h",
+    "include/grpcpp/impl/codegen/string_ref.h",
+    "include/grpcpp/impl/codegen/stub_options.h",
+    "include/grpcpp/impl/codegen/sync_stream.h",
+    "include/grpcpp/impl/codegen/time.h",
+    "include/grpcpp/impl/codegen/sync.h",
 ]
-
-grpc_cc_library(
-    name = "gpr",
-    language = "c++",
-    public_hdrs = GPR_PUBLIC_HDRS,
-    standalone = True,
-    tags = ["avoid_dep"],
-    visibility = ["@grpc:public"],
-    deps = [
-        "gpr_base",
-    ],
-)
 
 grpc_cc_library(
     name = "channel_fwd",
@@ -379,7 +463,6 @@ grpc_cc_library(
         "src/core/lib/channel/channel_fwd.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
@@ -388,14 +471,38 @@ grpc_cc_library(
         "src/core/lib/transport/transport_fwd.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
     name = "atomic_utils",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/atomic_utils.h"],
-    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "experiments",
+    srcs = [
+        "src/core/lib/experiments/config.cc",
+        "src/core/lib/experiments/experiments.cc",
+    ],
+    hdrs = [
+        "src/core/lib/experiments/config.h",
+        "src/core/lib/experiments/experiments.h",
+    ],
+    external_deps = ["absl/strings"],
+    language = "c++",
+    deps = [
+        "gpr",
+        "gpr_platform",
+        "no_destruct",
+    ],
+)
+
+grpc_cc_library(
+    name = "init_internally",
+    srcs = ["src/core/lib/surface/init_internally.cc"],
+    hdrs = ["src/core/lib/surface/init_internally.h"],
     deps = ["gpr_platform"],
 )
 
@@ -406,28 +513,36 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
         "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
     ],
+    defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    standalone = True,
-    tags = ["avoid_dep"],
+    tags = [
+        "avoid_dep",
+        "nofixdeps",
+    ],
     visibility = ["@grpc:public"],
     deps = [
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
-        "gpr_base",
+        "default_event_engine",
+        "experiments",
+        "forkable",
+        "gpr",
         "grpc_authorization_base",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_client_channel",
         "grpc_common",
+        "grpc_http_filters",
         "grpc_security_base",
         "grpc_trace",
         "http_connect_handshaker",
+        "init_internally",
         "iomgr_timer",
+        "posix_event_engine_timer_manager",
         "slice",
         "tcp_connect_handshaker",
     ],
@@ -468,8 +583,10 @@ grpc_cc_library(
             "//conditions:default": GRPC_XDS_TARGETS,
         },
     ],
-    standalone = True,
-    tags = ["grpc_avoid_dep"],
+    tags = [
+        "grpc_avoid_dep",
+        "nofixdeps",
+    ],
     visibility = [
         "@grpc:public",
     ],
@@ -477,32 +594,67 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
-        "gpr_base",
+        "default_event_engine",
+        "experiments",
+        "forkable",
+        "gpr",
+        "grpc_alts_credentials",
         "grpc_authorization_base",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_client_channel",
         "grpc_common",
-        "grpc_secure",
+        "grpc_credentials_util",
+        "grpc_external_account_credentials",
+        "grpc_fake_credentials",
+        "grpc_google_default_credentials",
+        "grpc_http_filters",
+        "grpc_iam_credentials",
+        "grpc_insecure_credentials",
+        "grpc_jwt_credentials",
+        "grpc_local_credentials",
+        "grpc_oauth2_credentials",
+        "grpc_public_hdrs",
         "grpc_security_base",
+        "grpc_ssl_credentials",
+        "grpc_tls_credentials",
         "grpc_trace",
+        "grpc_transport_chttp2_alpn",
         "http_connect_handshaker",
+        "httpcli",
+        "httpcli_ssl_credentials",
+        "init_internally",
         "iomgr_timer",
+        "json",
+        "posix_event_engine_timer_manager",
+        "promise",
+        "ref_counted",
+        "ref_counted_ptr",
         "slice",
+        "slice_refcount",
+        "sockaddr_utils",
         "tcp_connect_handshaker",
+        "tsi_base",
+        "uri_parser",
+        "useful",
     ],
 )
 
 grpc_cc_library(
     name = "gpr_public_hdrs",
     hdrs = GPR_PUBLIC_HDRS,
-    tags = ["avoid_dep"],
+    tags = [
+        "avoid_dep",
+        "nofixdeps",
+    ],
 )
 
 grpc_cc_library(
     name = "grpc_public_hdrs",
     hdrs = GRPC_PUBLIC_HDRS,
-    tags = ["avoid_dep"],
+    tags = [
+        "avoid_dep",
+        "nofixdeps",
+    ],
     deps = ["gpr_public_hdrs"],
 )
 
@@ -513,7 +665,10 @@ grpc_cc_library(
         "absl/synchronization",
         "protobuf_headers",
     ],
-    tags = ["avoid_dep"],
+    tags = [
+        "avoid_dep",
+        "nofixdeps",
+    ],
     visibility = ["@grpc:public"],
     deps = ["grpc_public_hdrs"],
 )
@@ -542,65 +697,36 @@ grpc_cc_library(
             ],
         },
     ],
-    standalone = True,
+    tags = ["nofixdeps"],
     visibility = [
         "@grpc:public",
     ],
     deps = [
-        "grpc++_internals",
+        "grpc++_base",
         "slice",
     ],
 )
 
 grpc_cc_library(
-    name = "grpc++_internals",
+    name = "grpc_cronet_hdrs",
+    hdrs = [
+        "include/grpc/grpc_cronet.h",
+    ],
+    deps = [
+        "gpr_public_hdrs",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "tchar",
     srcs = [
-        "src/cpp/client/insecure_credentials.cc",
-        "src/cpp/client/secure_credentials.cc",
-        "src/cpp/common/auth_property_iterator.cc",
-        "src/cpp/common/secure_auth_context.cc",
-        "src/cpp/common/secure_channel_arguments.cc",
-        "src/cpp/common/secure_create_auth_context.cc",
-        "src/cpp/common/tls_certificate_provider.cc",
-        "src/cpp/common/tls_certificate_verifier.cc",
-        "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/server/insecure_server_credentials.cc",
-        "src/cpp/server/secure_server_credentials.cc",
+        "src/core/lib/gprpp/tchar.cc",
     ],
     hdrs = [
-        "src/cpp/client/secure_credentials.h",
-        "src/cpp/common/secure_auth_context.h",
-        "src/cpp/server/secure_server_credentials.h",
+        "src/core/lib/gprpp/tchar.h",
     ],
-    external_deps = [
-        "absl/status",
-        "absl/synchronization",
-        "absl/container:inlined_vector",
-        "absl/strings",
-        "protobuf_headers",
-    ],
-    language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
-    deps = [
-        "error",
-        "gpr_base",
-        "gpr_codegen",
-        "grpc",
-        "grpc++_base",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_codegen_proto",
-        "grpc++_internal_hdrs_only",
-        "grpc_base",
-        "grpc_codegen",
-        "grpc_credentials_util",
-        "grpc_secure",
-        "grpc_security_base",
-        "json",
-        "ref_counted_ptr",
-        "slice",
-        "slice_refcount",
-    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -653,15 +779,17 @@ grpc_cc_library(
     }),
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:flat_hash_map",
         "absl/hash",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/status:statusor",
         "absl/time",
+        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = [
@@ -669,6 +797,7 @@ grpc_cc_library(
         "include/grpcpp/create_channel_binder.h",
         "include/grpcpp/security/binder_credentials.h",
     ],
+    tags = ["nofixdeps"],
     deps = [
         "arena",
         "channel_args_preconditioning",
@@ -676,19 +805,19 @@ grpc_cc_library(
         "config",
         "debug_location",
         "gpr",
-        "gpr_base",
         "gpr_platform",
         "grpc",
         "grpc++_base",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "iomgr_fwd",
         "iomgr_port",
         "orphanable",
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "transport_fwd",
     ],
 )
@@ -701,14 +830,15 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/client/secure_credentials.h",
     ],
-    external_deps = [
-        "absl/container:inlined_vector",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "gpr",
         "grpc",
-        "grpc++_internals",
+        "grpc++_base",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "grpc_security_base",
     ],
 )
 
@@ -728,7 +858,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc",
-        "grpc++_internals",
+        "grpc++_base",
     ],
 )
 
@@ -740,17 +870,17 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     language = "c++",
-    standalone = True,
-    tags = ["avoid_dep"],
+    tags = [
+        "avoid_dep",
+        "nofixdeps",
+    ],
     visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "grpc++_base_unsecure",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
-        "grpc_codegen",
         "grpc_insecure_credentials",
+        "grpc_public_hdrs",
         "grpc_unsecure",
     ],
 )
@@ -767,9 +897,7 @@ grpc_cc_library(
     language = "c++",
     standalone = True,
     visibility = ["@grpc:public"],
-    deps = [
-        "grpc++",
-    ],
+    deps = ["grpc++"],
 )
 
 grpc_cc_library(
@@ -791,8 +919,7 @@ grpc_cc_library(
     visibility = ["@grpc:tsi"],
     deps = [
         "alts_upb",
-        "alts_util",
-        "gpr_base",
+        "gpr",
         "grpc++",
         "grpc_base",
         "tsi_alts_credentials",
@@ -810,31 +937,21 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_trace",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_internal_hdrs_only",
-    hdrs = [
-        "include/grpcpp/impl/codegen/sync.h",
-    ],
-    external_deps = [
-        "absl/synchronization",
-    ],
-    deps = [
-        "gpr_codegen",
     ],
 )
 
 grpc_cc_library(
     name = "useful",
     hdrs = ["src/core/lib/gpr/useful.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -847,28 +964,103 @@ grpc_cc_library(
         "src/core/lib/gprpp/examine_stack.h",
     ],
     external_deps = ["absl/types:optional"],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
-    name = "gpr_base",
+    name = "gpr_atm",
+    srcs = [
+        "src/core/lib/gpr/atm.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/support/atm.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "gpr_public_hdrs",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_manual_constructor",
+    srcs = [],
+    hdrs = [
+        "src/core/lib/gprpp/manual_constructor.h",
+    ],
+    language = "c++",
+    deps = [
+        "construct_destruct",
+        "gpr_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_murmur_hash",
+    srcs = [
+        "src/core/lib/gpr/murmur_hash.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gpr/murmur_hash.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "gpr_spinlock",
+    srcs = [],
+    hdrs = [
+        "src/core/lib/gpr/spinlock.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_atm",
+        "gpr_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_log_internal",
+    hdrs = [
+        "src/core/lib/gpr/log_internal.h",
+    ],
+    language = "c++",
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "env",
+    srcs = [
+        "src/core/lib/gprpp/env_linux.cc",
+        "src/core/lib/gprpp/env_posix.cc",
+        "src/core/lib/gprpp/env_windows.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/env.h",
+    ],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "gpr_platform",
+        "tchar",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
-        "src/core/lib/gpr/atm.cc",
         "src/core/lib/gpr/cpu_iphone.cc",
         "src/core/lib/gpr/cpu_linux.cc",
         "src/core/lib/gpr/cpu_posix.cc",
         "src/core/lib/gpr/cpu_windows.cc",
-        "src/core/lib/gpr/env_linux.cc",
-        "src/core/lib/gpr/env_posix.cc",
-        "src/core/lib/gpr/env_windows.cc",
         "src/core/lib/gpr/log.cc",
         "src/core/lib/gpr/log_android.cc",
         "src/core/lib/gpr/log_linux.cc",
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
-        "src/core/lib/gpr/murmur_hash.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
         "src/core/lib/gpr/string_util_windows.cc",
@@ -894,16 +1086,10 @@ grpc_cc_library(
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/gprpp/time_util.cc",
-        "src/core/lib/profiling/basic_timers.cc",
-        "src/core/lib/profiling/stap_timers.cc",
     ],
     hdrs = [
         "src/core/lib/gpr/alloc.h",
-        "src/core/lib/gpr/env.h",
-        "src/core/lib/gpr/murmur_hash.h",
-        "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
-        "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gprpp/fork.h",
@@ -912,14 +1098,12 @@ grpc_cc_library(
         "src/core/lib/gprpp/global_config_env.h",
         "src/core/lib/gprpp/global_config_generic.h",
         "src/core/lib/gprpp/host_port.h",
-        "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/stat.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/gprpp/time_util.h",
-        "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
         "absl/base",
@@ -936,33 +1120,28 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
-    visibility = ["@grpc:alt_gpr_base_legacy"],
+    tags = [
+        "nofixdeps",
+    ],
+    visibility = ["@grpc:public"],
     deps = [
         "construct_destruct",
-        "debug_location",
+        "env",
         "examine_stack",
-        "gpr_codegen",
-        "gpr_tls",
-        "grpc_codegen",
+        "gpr_atm",
+        "no_destruct",
+        "tchar",
         "useful",
     ],
 )
 
 grpc_cc_library(
-    name = "gpr_tls",
-    hdrs = ["src/core/lib/gpr/tls.h"],
-    tags = ["grpc-autodeps"],
-    deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
     name = "chunked_vector",
     hdrs = ["src/core/lib/gprpp/chunked_vector.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "arena",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
+        "gpr_manual_constructor",
     ],
 )
 
@@ -970,7 +1149,6 @@ grpc_cc_library(
     name = "construct_destruct",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -978,7 +1156,6 @@ grpc_cc_library(
     name = "cpp_impl_of",
     hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
     language = "c++",
-    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
@@ -998,12 +1175,10 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
         "google_rpc_status_upb",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "percent_encoding",
         "protobuf_any_upb",
         "slice",
@@ -1013,34 +1188,47 @@ grpc_cc_library(
 grpc_cc_library(
     name = "unique_type_name",
     hdrs = ["src/core/lib/gprpp/unique_type_name.h"],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
-    deps = ["useful"],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
 )
 
 grpc_cc_library(
-    name = "gpr_codegen",
-    language = "c++",
-    public_hdrs = [
-        "include/grpc/impl/codegen/atm.h",
-        "include/grpc/impl/codegen/atm_gcc_atomic.h",
-        "include/grpc/impl/codegen/atm_gcc_sync.h",
-        "include/grpc/impl/codegen/atm_windows.h",
-        "include/grpc/impl/codegen/fork.h",
-        "include/grpc/impl/codegen/gpr_slice.h",
-        "include/grpc/impl/codegen/gpr_types.h",
-        "include/grpc/impl/codegen/log.h",
-        "include/grpc/impl/codegen/port_platform.h",
-        "include/grpc/impl/codegen/sync.h",
-        "include/grpc/impl/codegen/sync_abseil.h",
-        "include/grpc/impl/codegen/sync_custom.h",
-        "include/grpc/impl/codegen/sync_generic.h",
-        "include/grpc/impl/codegen/sync_posix.h",
-        "include/grpc/impl/codegen/sync_windows.h",
+    name = "work_serializer",
+    srcs = [
+        "src/core/lib/gprpp/work_serializer.cc",
     ],
-    visibility = ["@grpc:public"],
+    hdrs = [
+        "src/core/lib/gprpp/work_serializer.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    visibility = ["@grpc:client_channel"],
+    deps = [
+        "debug_location",
+        "gpr",
+        "grpc_trace",
+        "orphanable",
+    ],
+)
+
+grpc_cc_library(
+    name = "validation_errors",
+    srcs = [
+        "src/core/lib/gprpp/validation_errors.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/validation_errors.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = ["gpr_platform"],
 )
 
 # A library that vends only port_platform, so that libraries that don't need
@@ -1060,13 +1248,9 @@ grpc_cc_library(
     hdrs = ["src/core/lib/debug/trace.h"],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:trace"],
     deps = [
-        "gpr_base",
-        "gpr_codegen",
-        "gpr_platform",
-        "grpc_codegen",
+        "gpr",
         "grpc_public_hdrs",
     ],
 )
@@ -1082,12 +1266,15 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:client_channel"],
     deps = [
+        "certificate_provider_registry",
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
-        "gpr_base",
+        "gpr",
         "grpc_resolver",
         "handshaker_registry",
+        "lb_policy_registry",
+        "proxy_mapper_registry",
         "service_config_parser",
     ],
 )
@@ -1096,7 +1283,6 @@ grpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:debug_location"],
 )
 
@@ -1104,7 +1290,6 @@ grpc_cc_library(
     name = "overload",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/overload.h"],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -1113,7 +1298,6 @@ grpc_cc_library(
     external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/match.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "overload",
@@ -1128,7 +1312,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/table.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "bitset",
         "gpr_platform",
@@ -1136,10 +1319,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "packed_table",
+    hdrs = ["src/core/lib/gprpp/packed_table.h"],
+    language = "c++",
+    deps = [
+        "gpr_public_hdrs",
+        "sorted_pack",
+        "table",
+    ],
+)
+
+grpc_cc_library(
     name = "bitset",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/bitset.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "useful",
@@ -1147,10 +1340,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "no_destruct",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/no_destruct.h"],
+    deps = [
+        "construct_destruct",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
         "debug_location",
@@ -1167,7 +1369,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/poll.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -1176,7 +1377,6 @@ grpc_cc_library(
     hdrs = ["src/core/lib/promise/call_push_pull.h"],
     external_deps = ["absl/types:variant"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "bitset",
         "construct_destruct",
@@ -1193,11 +1393,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/context.h",
     ],
-    tags = ["grpc-autodeps"],
-    deps = [
-        "gpr_platform",
-        "gpr_tls",
-    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -1205,7 +1401,6 @@ grpc_cc_library(
     external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = ["src/core/lib/promise/map.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "poll",
@@ -1221,18 +1416,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/sleep.h",
     ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/status",
-    ],
-    tags = ["grpc-autodeps"],
+    external_deps = ["absl/status"],
     deps = [
         "activity",
-        "default_event_engine_factory_hdrs",
+        "context",
+        "default_event_engine",
         "event_engine_base_hdrs",
         "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "poll",
         "time",
     ],
@@ -1249,7 +1440,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/promise.h",
     ],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
@@ -1265,7 +1455,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/arena_promise.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "arena",
         "context",
@@ -1281,7 +1470,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/detail/promise_like.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "poll",
@@ -1295,7 +1483,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/detail/promise_factory.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "promise_like",
@@ -1310,7 +1497,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = ["src/core/lib/promise/if.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "poll",
@@ -1329,7 +1515,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/detail/status.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -1338,7 +1523,6 @@ grpc_cc_library(
     external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = ["src/core/lib/promise/race.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "poll",
@@ -1356,22 +1540,11 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/loop.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "poll",
         "promise_factory",
     ],
-)
-
-grpc_cc_library(
-    name = "switch",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/promise/detail/switch.h",
-    ],
-    tags = ["grpc-autodeps"],
-    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -1384,7 +1557,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/detail/basic_join.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "bitset",
         "construct_destruct",
@@ -1401,7 +1573,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/join.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "basic_join",
         "gpr_platform",
@@ -1419,7 +1590,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/try_join.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "basic_join",
         "gpr_platform",
@@ -1439,14 +1609,12 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/detail/basic_seq.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "construct_destruct",
         "gpr_platform",
         "poll",
         "promise_factory",
         "promise_like",
-        "switch",
     ],
 )
 
@@ -1456,11 +1624,11 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/seq.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "basic_seq",
         "gpr_platform",
         "poll",
+        "promise_like",
     ],
 )
 
@@ -1475,11 +1643,11 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/try_seq.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "basic_seq",
         "gpr_platform",
         "poll",
+        "promise_like",
         "promise_status",
     ],
 )
@@ -1500,14 +1668,12 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/activity.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "atomic_utils",
         "construct_destruct",
         "context",
-        "gpr_base",
-        "gpr_platform",
-        "gpr_tls",
+        "gpr",
+        "no_destruct",
         "orphanable",
         "poll",
         "promise_factory",
@@ -1520,8 +1686,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/exec_ctx_wakeup_scheduler.h",
     ],
+    external_deps = ["absl/status"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "closure",
         "debug_location",
@@ -1541,7 +1707,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/wait_set.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "activity",
         "gpr_platform",
@@ -1555,7 +1720,6 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/intra_activity_waiter.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "activity",
         "gpr_platform",
@@ -1569,10 +1733,8 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/latch.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "intra_activity_waiter",
         "poll",
     ],
@@ -1589,11 +1751,9 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/observable.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "activity",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "poll",
         "promise_like",
         "wait_set",
@@ -1602,17 +1762,18 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/pipe.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "arena",
         "context",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "intra_activity_waiter",
         "poll",
     ],
@@ -1626,7 +1787,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = ["src/core/lib/promise/for_each.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "poll",
@@ -1638,12 +1798,10 @@ grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "atomic_utils",
         "debug_location",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "ref_counted_ptr",
     ],
 )
@@ -1652,11 +1810,9 @@ grpc_cc_library(
     name = "dual_ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/dual_ref_counted.h"],
-    tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "orphanable",
         "ref_counted_ptr",
     ],
@@ -1666,7 +1822,6 @@ grpc_cc_library(
     name = "ref_counted_ptr",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:ref_counted_ptr"],
     deps = [
         "debug_location",
@@ -1681,31 +1836,28 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/status",
         "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/handshaker.h",
     ],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "closure",
         "debug_location",
-        "error",
         "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_trace",
         "iomgr_timer",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
         "time",
     ],
 )
@@ -1716,10 +1868,9 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/transport/handshaker_factory.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
         "gpr_platform",
-        "grpc_codegen",
         "iomgr_fwd",
     ],
 )
@@ -1733,10 +1884,9 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/transport/handshaker_registry.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
         "gpr_platform",
-        "grpc_codegen",
         "handshaker_factory",
         "iomgr_fwd",
     ],
@@ -1750,25 +1900,23 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/http_connect_handshaker.h",
     ],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "closure",
         "config",
         "debug_location",
-        "error",
         "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "handshaker",
         "handshaker_factory",
         "handshaker_registry",
@@ -1777,7 +1925,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
     ],
 )
 
@@ -1789,34 +1936,32 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/tcp_connect_handshaker.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "closure",
         "config",
         "debug_location",
-        "error",
         "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "handshaker",
         "handshaker_factory",
         "handshaker_registry",
         "iomgr_fwd",
+        "pollset_set",
         "ref_counted_ptr",
         "resolved_address",
         "slice",
-        "slice_refcount",
         "uri_parser",
-        "useful",
     ],
 )
 
@@ -1827,7 +1972,6 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "json",
@@ -1845,10 +1989,10 @@ grpc_cc_library(
         "include/grpc/event_engine/memory_allocator.h",
         "include/grpc/event_engine/memory_request.h",
     ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "gpr_platform",
-        "ref_counted",
         "slice",
         "slice_refcount",
     ],
@@ -1867,24 +2011,24 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
         "absl/types:optional",
-        "absl/utility",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "activity",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
-        "gpr_base",
-        "gpr_platform",
+        "experiments",
+        "gpr",
         "grpc_trace",
         "loop",
         "map",
         "orphanable",
+        "periodic_update",
         "poll",
         "race",
         "ref_counted_ptr",
         "resource_quota_trace",
         "seq",
+        "time",
         "useful",
     ],
 )
@@ -1897,9 +2041,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/periodic_update.h",
     ],
-    tags = ["grpc-autodeps"],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
-        "exec_ctx",
         "gpr_platform",
         "time",
         "useful",
@@ -1914,12 +2057,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
+        "construct_destruct",
         "context",
         "event_engine_memory_allocator",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "memory_quota",
     ],
 )
@@ -1933,10 +2075,8 @@ grpc_cc_library(
         "src/core/lib/resource_quota/thread_quota.h",
     ],
     external_deps = ["absl/base:core_headers"],
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "ref_counted",
         "ref_counted_ptr",
     ],
@@ -1965,11 +2105,10 @@ grpc_cc_library(
         "src/core/lib/resource_quota/resource_quota.h",
     ],
     external_deps = ["absl/strings"],
-    tags = ["grpc-autodeps"],
     deps = [
         "cpp_impl_of",
         "gpr_platform",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "memory_quota",
         "ref_counted",
         "ref_counted_ptr",
@@ -1990,11 +2129,9 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/slice.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
-        "grpc_codegen",
+        "gpr",
+        "grpc_public_hdrs",
     ],
 )
 
@@ -2011,11 +2148,10 @@ grpc_cc_library(
         "src/core/lib/slice/slice_string_helpers.h",
     ],
     external_deps = ["absl/strings"],
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
-        "grpc_codegen",
+        "gpr",
+        "gpr_murmur_hash",
+        "grpc_public_hdrs",
         "slice_refcount",
     ],
 )
@@ -2029,10 +2165,8 @@ grpc_cc_library(
         "include/grpc/slice_buffer.h",
         "src/core/lib/slice/slice_buffer.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "slice",
         "slice_refcount",
     ],
@@ -2045,11 +2179,12 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
     ],
+    external_deps = ["absl/status"],
     deps = [
         "gpr",
-        "grpc_codegen",
+        "gpr_spinlock",
+        "grpc_public_hdrs",
         "grpc_trace",
         "slice",
         "slice_refcount",
@@ -2063,12 +2198,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/closure.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
         "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
+        "gpr_manual_constructor",
     ],
 )
 
@@ -2080,13 +2214,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time.h",
     ],
-    external_deps = ["absl/strings:str_format"],
-    tags = ["grpc-autodeps"],
+    external_deps = [
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
     deps = [
         "event_engine_base_hdrs",
-        "gpr_base",
-        "gpr_codegen",
-        "gpr_platform",
+        "gpr",
+        "no_destruct",
         "useful",
     ],
 )
@@ -2105,16 +2240,14 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/iomgr_internal.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "closure",
         "debug_location",
         "error",
-        "gpr_base",
-        "gpr_codegen",
-        "gpr_platform",
-        "gpr_tls",
-        "grpc_codegen",
+        "gpr",
+        "gpr_atm",
+        "gpr_spinlock",
+        "grpc_public_hdrs",
         "grpc_trace",
         "time",
         "useful",
@@ -2135,11 +2268,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_sockaddr",
         "iomgr_port",
         "resolved_address",
@@ -2152,14 +2283,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/port.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
     name = "iomgr_timer",
     srcs = [
-        "src/core/lib/iomgr/time_averaged_stats.cc",
         "src/core/lib/iomgr/timer.cc",
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
@@ -2170,7 +2299,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.h",
         "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/iomgr/timer_manager.h",
-        "src/core/lib/iomgr/time_averaged_stats.h",
     ] + [
         # TODO(hork): deduplicate
         "src/core/lib/iomgr/iomgr.h",
@@ -2178,16 +2306,20 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
     ],
+    tags = ["nofixdeps"],
     visibility = ["@grpc:iomgr_timer"],
     deps = [
+        "closure",
         "event_engine_base_hdrs",
         "exec_ctx",
-        "gpr_base",
+        "gpr",
+        "gpr_manual_constructor",
         "gpr_platform",
-        "gpr_tls",
+        "gpr_spinlock",
         "grpc_trace",
         "iomgr_port",
         "time",
+        "time_averaged_stats",
         "useful",
     ],
 )
@@ -2197,7 +2329,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/iomgr_fwd.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -2213,10 +2344,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/sockaddr_windows.h",
         "src/core/lib/iomgr/socket_utils.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "iomgr_port",
     ],
 )
@@ -2226,9 +2355,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
-    tags = ["grpc-autodeps"],
-    deps = ["gpr_platform"],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
 )
 
 grpc_cc_library(
@@ -2238,61 +2368,550 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:optional",
+        "absl/functional:any_invocable",
     ],
+    tags = ["nofixdeps"],
     deps = [
-        "gpr_base",
+        "gpr",
     ],
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory_hdrs",
+    name = "time_averaged_stats",
+    srcs = ["src/core/lib/gprpp/time_averaged_stats.cc"],
     hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
+        "src/core/lib/gprpp/time_averaged_stats.h",
     ],
+    deps = ["gpr"],
+)
+
+grpc_cc_library(
+    name = "forkable",
+    srcs = [
+        "src/core/lib/event_engine/forkable.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/forkable.h",
+    ],
+    external_deps = ["absl/container:flat_hash_set"],
     deps = [
-        "event_engine_base_hdrs",
-        "gpr_base",
+        "gpr",
+        "gpr_platform",
+        "no_destruct",
     ],
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory",
-    srcs = [
-        "src/core/lib/event_engine/default_event_engine_factory.cc",
+    name = "event_engine_poller",
+    hdrs = [
+        "src/core/lib/event_engine/poller.h",
     ],
-    external_deps = ["absl/memory"],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
-        "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
-        "gpr_base",
-        "iomgr_event_engine",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_executor",
+    hdrs = [
+        "src/core/lib/event_engine/executor/executor.h",
+    ],
+    external_deps = ["absl/functional:any_invocable"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_time_util",
+    srcs = ["src/core/lib/event_engine/time_util.cc"],
+    hdrs = ["src/core/lib/event_engine/time_util.h"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_work_queue",
+    srcs = [
+        "src/core/lib/event_engine/work_queue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/work_queue.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/types:optional",
+    ],
+    deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "gpr",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_threaded_executor",
+    srcs = [
+        "src/core/lib/event_engine/executor/threaded_executor.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/executor/threaded_executor.h",
+    ],
+    external_deps = ["absl/functional:any_invocable"],
+    deps = [
+        "event_engine_base_hdrs",
+        "event_engine_executor",
+        "event_engine_thread_pool",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "common_event_engine_closures",
+    hdrs = ["src/core/lib/event_engine/common_closures.h"],
+    external_deps = ["absl/functional:any_invocable"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_timer",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/timer.cc",
+        "src/core/lib/event_engine/posix_engine/timer_heap.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/timer.h",
+        "src/core/lib/event_engine/posix_engine/timer_heap.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/types:optional",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr",
+        "time",
+        "time_averaged_stats",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_thread_pool",
+    srcs = ["src/core/lib/event_engine/thread_pool.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/thread_pool.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/time",
+    ],
+    deps = [
+        "forkable",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_timer_manager",
+    srcs = ["src/core/lib/event_engine/posix_engine/timer_manager.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/timer_manager.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
+        "absl/time",
+        "absl/types:optional",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "forkable",
+        "gpr",
+        "grpc_trace",
+        "posix_event_engine_timer",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_event_poller",
+    srcs = [],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/event_poller.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "event_engine_poller",
+        "gpr_platform",
+        "posix_event_engine_closure",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_closure",
+    srcs = [],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/posix_engine_closure.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_lockfree_event",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/lockfree_event.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/lockfree_event.h",
+    ],
+    external_deps = ["absl/status"],
+    deps = [
+        "gpr",
+        "gpr_atm",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "status_helper",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_wakeup_fd_posix",
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h",
+    ],
+    external_deps = ["absl/status"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_wakeup_fd_posix_pipe",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h",
+    ],
+    external_deps = [
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "gpr",
+        "iomgr_port",
+        "posix_event_engine_wakeup_fd_posix",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_wakeup_fd_posix_eventfd",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h",
+    ],
+    external_deps = [
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "gpr",
+        "iomgr_port",
+        "posix_event_engine_wakeup_fd_posix",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_wakeup_fd_posix_default",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "gpr_platform",
+        "iomgr_port",
+        "posix_event_engine_wakeup_fd_posix",
+        "posix_event_engine_wakeup_fd_posix_eventfd",
+        "posix_event_engine_wakeup_fd_posix_pipe",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_poller_posix_epoll1",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
+        "absl/functional:function_ref",
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "event_engine_poller",
+        "event_engine_time_util",
+        "gpr",
+        "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_lockfree_event",
+        "posix_event_engine_wakeup_fd_posix",
+        "posix_event_engine_wakeup_fd_posix_default",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_poller_posix_poll",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/ev_poll_posix.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/ev_poll_posix.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+    ],
+    deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "event_engine_poller",
+        "event_engine_time_util",
+        "gpr",
+        "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_wakeup_fd_posix",
+        "posix_event_engine_wakeup_fd_posix_default",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_poller_posix_default",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "gpr",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_poller_posix_epoll1",
+        "posix_event_engine_poller_posix_poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_internal_errqueue",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.h",
+    ],
+    deps = [
+        "gpr",
         "iomgr_port",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_event_engine",
-    srcs = ["src/core/lib/event_engine/iomgr_engine.cc"],
-    hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
+    name = "posix_event_engine_traced_buffer_list",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/traced_buffer_list.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/traced_buffer_list.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr",
+        "iomgr_port",
+        "posix_event_engine_internal_errqueue",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_utils",
+    srcs = ["src/core/lib/event_engine/utils.cc"],
+    hdrs = ["src/core/lib/event_engine/utils.h"],
+    external_deps = ["absl/strings"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_socket_notifier",
+    hdrs = ["src/core/lib/event_engine/socket_notifier.h"],
+    external_deps = ["absl/status"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_tcp_socket_utils",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h",
+    ],
     external_deps = [
         "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/utility",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr",
+        "grpc_public_hdrs",
+        "iomgr_port",
+        "ref_counted_ptr",
+        "resource_quota",
+        "socket_mutator",
+        "status_helper",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine",
+    srcs = ["src/core/lib/event_engine/posix_engine/posix_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/posix_engine/posix_engine.h"],
+    external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_set",
-        "absl/time",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
-        "closure",
-        "error",
         "event_engine_base_hdrs",
         "event_engine_common",
+        "event_engine_threaded_executor",
         "event_engine_trace",
-        "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "event_engine_utils",
+        "gpr",
         "grpc_trace",
-        "iomgr_timer",
-        "match",
+        "posix_event_engine_timer",
+        "posix_event_engine_timer_manager",
+    ],
+)
+
+grpc_cc_library(
+    name = "windows_event_engine",
+    srcs = ["src/core/lib/event_engine/windows/windows_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/windows/windows_engine.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "event_engine_common",
+        "event_engine_threaded_executor",
+        "event_engine_trace",
+        "event_engine_utils",
+        "gpr",
+        "posix_event_engine_timer_manager",
         "time",
+        "windows_iocp",
+    ],
+)
+
+grpc_cc_library(
+    name = "windows_iocp",
+    srcs = [
+        "src/core/lib/event_engine/windows/iocp.cc",
+        "src/core/lib/event_engine/windows/win_socket.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/windows/iocp.h",
+        "src/core/lib/event_engine/windows/win_socket.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "error",
+        "event_engine_base_hdrs",
+        "event_engine_executor",
+        "event_engine_poller",
+        "event_engine_socket_notifier",
+        "event_engine_time_util",
+        "event_engine_trace",
+        "gpr",
+        "gpr_platform",
     ],
 )
 
@@ -2308,13 +2927,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/hash",
     ],
     deps = [
         "event_engine_base_hdrs",
-        "event_engine_trace",
-        "gpr_base",
+        "gpr",
         "gpr_platform",
-        "ref_counted",
         "slice",
         "slice_refcount",
     ],
@@ -2329,23 +2947,49 @@ grpc_cc_library(
         "src/core/lib/event_engine/trace.h",
     ],
     deps = [
+        "gpr",
         "gpr_platform",
         "grpc_trace",
     ],
 )
 
+# NOTE: this target gets replaced inside Google's build system to be one that
+# integrates with other internal systems better. Please do not rename or fold
+# this into other targets.
 grpc_cc_library(
-    name = "event_engine_base",
-    srcs = [
-        "src/core/lib/event_engine/event_engine.cc",
-    ],
+    name = "default_event_engine_factory",
+    srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
+    hdrs = ["src/core/lib/event_engine/default_event_engine_factory.h"],
+    external_deps = ["absl/memory"],
+    select_deps = [{
+        "//:windows": ["windows_event_engine"],
+        "//:windows_msvc": ["windows_event_engine"],
+        "//:windows_other": ["windows_event_engine"],
+        "//conditions:default": ["posix_event_engine"],
+    }],
     deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "default_event_engine",
+    srcs = [
+        "src/core/lib/event_engine/default_event_engine.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/default_event_engine.h",
+    ],
+    external_deps = ["absl/functional:any_invocable"],
+    deps = [
+        "context",
         "default_event_engine_factory",
-        "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
         "event_engine_trace",
-        "gpr_base",
+        "gpr",
         "grpc_trace",
+        "no_destruct",
     ],
 )
 
@@ -2363,12 +3007,8 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
-    deps = [
-        "gpr_base",
-        "gpr_platform",
-    ],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -2379,11 +3019,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/channel/channel_args_preconditioning.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "gpr_platform",
-        "grpc_codegen",
+        "grpc_public_hdrs",
     ],
 )
 
@@ -2395,10 +3034,22 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/transport/pid_controller.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "bdp_estimator",
+    srcs = [
+        "src/core/lib/transport/bdp_estimator.cc",
+    ],
+    hdrs = ["src/core/lib/transport/bdp_estimator.h"],
+    deps = [
+        "gpr",
+        "grpc_trace",
+        "time",
     ],
 )
 
@@ -2410,12 +3061,88 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/slice/percent_encoding.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "bitset",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_mutator",
+    srcs = [
+        "src/core/lib/iomgr/socket_mutator.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/socket_mutator.h",
+    ],
+    deps = [
+        "channel_args",
+        "gpr",
+        "grpc_public_hdrs",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "backoff",
+    srcs = [
+        "src/core/lib/backoff/backoff.cc",
+    ],
+    hdrs = [
+        "src/core/lib/backoff/backoff.h",
+    ],
+    external_deps = ["absl/random"],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "gpr_platform",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "pollset_set",
+    srcs = [
+        "src/core/lib/iomgr/pollset_set.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/pollset_set.h",
+    ],
+    deps = [
+        "gpr",
+        "iomgr_fwd",
+    ],
+)
+
+grpc_cc_library(
+    name = "per_cpu",
+    hdrs = [
+        "src/core/lib/gprpp/per_cpu.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_log",
+    srcs = [
+        "src/core/lib/debug/event_log.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/event_log.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "gpr_public_hdrs",
+        "per_cpu",
     ],
 )
 
@@ -2423,7 +3150,6 @@ grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
-        "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder_impl.cc",
         "src/core/lib/channel/channel_trace.cc",
@@ -2452,8 +3178,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
-        "src/core/lib/iomgr/executor/mpmcqueue.cc",
-        "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
         "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -2471,7 +3195,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/lockfree_event.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
-        "src/core/lib/iomgr/pollset_set.cc",
         "src/core/lib/iomgr/pollset_set_windows.cc",
         "src/core/lib/iomgr/pollset_windows.cc",
         "src/core/lib/iomgr/resolve_address.cc",
@@ -2501,12 +3224,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
-        "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
-        "src/core/lib/slice/slice_api.cc",
-        "src/core/lib/slice/slice_buffer_api.cc",
-        "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
         "src/core/lib/surface/byte_buffer.cc",
@@ -2524,8 +3243,6 @@ grpc_cc_library(
         "src/core/lib/surface/server.cc",
         "src/core/lib/surface/validate_metadata.cc",
         "src/core/lib/surface/version.cc",
-        "src/core/lib/transport/bdp_estimator.cc",
-        "src/core/lib/transport/byte_stream.cc",
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/metadata_batch.cc",
@@ -2537,9 +3254,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/transport/error_utils.h",
-        "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
-        "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_finalization.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
@@ -2570,8 +3285,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
-        "src/core/lib/iomgr/executor/mpmcqueue.h",
-        "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
@@ -2582,7 +3295,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
-        "src/core/lib/iomgr/pollset_set.h",
         "src/core/lib/iomgr/pollset_set_windows.h",
         "src/core/lib/iomgr/pollset_windows.h",
         "src/core/lib/iomgr/python_util.h",
@@ -2606,9 +3318,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
-        "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/slice/b64.h",
-        "src/core/lib/slice/slice_split.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/builtins.h",
         "src/core/lib/surface/call.h",
@@ -2621,8 +3331,6 @@ grpc_cc_library(
         "src/core/lib/surface/lame_client.h",
         "src/core/lib/surface/server.h",
         "src/core/lib/surface/validate_metadata.h",
-        "src/core/lib/transport/bdp_estimator.h",
-        "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
@@ -2639,7 +3347,6 @@ grpc_cc_library(
     [
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
         "src/core/lib/iomgr/exec_ctx.h",
@@ -2653,13 +3360,15 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/container:inlined_vector",
-        "absl/functional:bind_front",
+        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/memory",
         "absl/meta:type_traits",
-        "absl/status:statusor",
         "absl/status",
-        "absl/strings:str_format",
+        "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
+        "absl/time",
         "absl/types:optional",
         "absl/types:variant",
         "absl/utility",
@@ -2669,6 +3378,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "activity",
         "arena",
         "arena_promise",
         "atomic_utils",
@@ -2683,29 +3393,37 @@ grpc_cc_library(
         "chunked_vector",
         "closure",
         "config",
+        "context",
         "cpp_impl_of",
         "debug_location",
-        "default_event_engine_factory",
+        "default_event_engine",
         "dual_ref_counted",
         "error",
-        "event_engine_base",
-        "event_engine_common",
+        "event_log",
         "exec_ctx",
-        "gpr_base",
-        "gpr_codegen",
-        "gpr_tls",
-        "grpc_codegen",
+        "experiments",
+        "gpr",
+        "gpr_atm",
+        "gpr_manual_constructor",
+        "gpr_murmur_hash",
+        "gpr_spinlock",
+        "grpc_public_hdrs",
         "grpc_sockaddr",
         "grpc_trace",
-        "handshaker_registry",
+        "http2_errors",
+        "init_internally",
+        "iomgr_fwd",
         "iomgr_port",
         "iomgr_timer",
         "json",
         "latch",
         "memory_quota",
+        "no_destruct",
+        "notification",
         "orphanable",
-        "percent_encoding",
+        "packed_table",
         "poll",
+        "pollset_set",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
@@ -2716,12 +3434,20 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
-        "table",
+        "status_helper",
         "thread_quota",
         "time",
         "transport_fwd",
         "uri_parser",
         "useful",
+        "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_errors",
+    hdrs = [
+        "src/core/lib/transport/http2_errors.h",
     ],
 )
 
@@ -2734,7 +3460,6 @@ grpc_cc_library(
         "src/core/lib/surface/channel_stack_type.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -2747,7 +3472,6 @@ grpc_cc_library(
         "src/core/lib/surface/channel_init.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_stack_builder",
         "channel_stack_type",
@@ -2761,11 +3485,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/single_set_ptr.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
-    deps = [
-        "gpr_base",
-        "gpr_platform",
-    ],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -2781,14 +3501,12 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "channel_fwd",
         "channel_stack_type",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "ref_counted_ptr",
         "transport_fwd",
     ],
@@ -2807,6 +3525,7 @@ grpc_cc_library(
             "//conditions:default": ["grpc_lb_policy_rls"],
         },
     ],
+    tags = ["nofixdeps"],
     deps = [
         "grpc_base",
         # standard plugins
@@ -2842,7 +3561,6 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "ref_counted",
@@ -2850,6 +3568,7 @@ grpc_cc_library(
         "service_config_parser",
         "slice_refcount",
         "unique_type_name",
+        "useful",
     ],
 )
 
@@ -2862,19 +3581,17 @@ grpc_cc_library(
         "src/core/lib/service_config/service_config_impl.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
+        "channel_args",
         "config",
-        "error",
-        "gpr_base",
-        "gpr_platform",
-        "grpc_codegen",
+        "gpr",
         "grpc_service_config",
         "json",
         "ref_counted_ptr",
@@ -2892,14 +3609,15 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/service_config/service_config_parser.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
-        "error",
-        "gpr_base",
-        "gpr_platform",
-        "grpc_codegen",
+        "channel_args",
+        "gpr",
         "json",
     ],
 )
@@ -2913,7 +3631,6 @@ grpc_cc_library(
         "src/core/lib/resolver/server_address.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -2921,12 +3638,10 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args",
         "gpr_platform",
-        "grpc_codegen",
         "resolved_address",
         "sockaddr_utils",
         "useful",
@@ -2951,13 +3666,10 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args",
-        "gpr_base",
-        "gpr_platform",
-        "grpc_codegen",
+        "gpr",
         "grpc_service_config",
         "grpc_trace",
         "iomgr_fwd",
@@ -2966,6 +3678,15 @@ grpc_cc_library(
         "server_address",
         "uri_parser",
     ],
+)
+
+grpc_cc_library(
+    name = "notification",
+    hdrs = [
+        "src/core/lib/gprpp/notification.h",
+    ],
+    external_deps = ["absl/time"],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -2984,14 +3705,13 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "avl",
         "channel_stack_type",
+        "debug_location",
         "dual_ref_counted",
-        "gpr_base",
-        "gpr_platform",
-        "grpc_codegen",
+        "gpr",
+        "grpc_public_hdrs",
         "match",
         "ref_counted",
         "ref_counted_ptr",
@@ -3004,10 +3724,121 @@ grpc_cc_library(
     name = "resolved_address",
     hdrs = ["src/core/lib/iomgr/resolved_address.h"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_policy",
+    srcs = ["src/core/lib/load_balancing/lb_policy.cc"],
+    hdrs = ["src/core/lib/load_balancing/lb_policy.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    deps = [
+        "channel_args",
+        "closure",
+        "debug_location",
+        "error",
+        "exec_ctx",
+        "gpr_platform",
+        "grpc_backend_metric_data",
+        "grpc_public_hdrs",
+        "grpc_trace",
+        "iomgr_fwd",
+        "orphanable",
+        "pollset_set",
+        "ref_counted",
+        "ref_counted_ptr",
+        "server_address",
+        "subchannel_interface",
+        "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_policy_factory",
+    hdrs = ["src/core/lib/load_balancing/lb_policy_factory.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "gpr_platform",
+        "json",
+        "lb_policy",
+        "orphanable",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_policy_registry",
+    srcs = ["src/core/lib/load_balancing/lb_policy_registry.cc"],
+    hdrs = ["src/core/lib/load_balancing/lb_policy_registry.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "gpr",
+        "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "orphanable",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "subchannel_interface",
+    hdrs = ["src/core/lib/load_balancing/subchannel_interface.h"],
+    external_deps = ["absl/status"],
+    deps = [
+        "channel_args",
+        "gpr_platform",
+        "grpc_public_hdrs",
+        "iomgr_fwd",
+        "ref_counted",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "proxy_mapper",
+    hdrs = ["src/core/lib/handshaker/proxy_mapper.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr_platform",
+        "resolved_address",
+    ],
+)
+
+grpc_cc_library(
+    name = "proxy_mapper_registry",
+    srcs = ["src/core/lib/handshaker/proxy_mapper_registry.cc"],
+    hdrs = ["src/core/lib/handshaker/proxy_mapper_registry.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr_platform",
+        "proxy_mapper",
+        "resolved_address",
     ],
 )
 
@@ -3026,12 +3857,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
-        "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
         "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
-        "src/core/ext/filters/client_channel/lb_policy_registry.cc",
         "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
-        "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
         "src/core/ext/filters/client_channel/retry_filter.cc",
         "src/core/ext/filters/client_channel/retry_service_config.cc",
@@ -3053,20 +3881,14 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
-        "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h",
-        "src/core/ext/filters/client_channel/lb_policy_factory.h",
-        "src/core/ext/filters/client_channel/lb_policy_registry.h",
         "src/core/ext/filters/client_channel/local_subchannel_pool.h",
-        "src/core/ext/filters/client_channel/proxy_mapper.h",
-        "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
         "src/core/ext/filters/client_channel/resolver_result_parsing.h",
         "src/core/ext/filters/client_channel/retry_filter.h",
         "src/core/ext/filters/client_channel/retry_service_config.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
-        "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_interface_internal.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
         "src/core/ext/filters/client_channel/subchannel_stream_client.h",
@@ -3075,63 +3897,70 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/memory",
-        "absl/strings",
-        "absl/strings:cord",
-        "absl/strings:str_format",
-        "absl/time",
-        "absl/types:optional",
-        "absl/types:variant",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:cord",
+        "absl/types:optional",
+        "absl/types:variant",
         "upb_lib",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
         "arena",
+        "backoff",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
-        "chunked_vector",
         "config",
+        "construct_destruct",
         "debug_location",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "dual_ref_counted",
-        "error",
-        "gpr_base",
-        "gpr_codegen",
+        "env",
+        "gpr",
+        "gpr_atm",
         "grpc_backend_metric_data",
         "grpc_base",
-        "grpc_client_authority_filter",
-        "grpc_codegen",
         "grpc_deadline_filter",
         "grpc_health_upb",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_service_config",
         "grpc_service_config_impl",
         "grpc_trace",
-        "handshaker_factory",
-        "handshaker_registry",
         "http_connect_handshaker",
-        "httpcli",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_timer",
         "json",
         "json_util",
+        "lb_policy",
+        "lb_policy_registry",
+        "memory_quota",
         "orphanable",
+        "pollset_set",
         "protobuf_duration_upb",
+        "proxy_mapper",
+        "proxy_mapper_registry",
         "ref_counted",
         "ref_counted_ptr",
+        "resolved_address",
         "resource_quota",
         "server_address",
         "service_config_parser",
         "slice",
+        "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "subchannel_interface",
         "time",
+        "transport_fwd",
         "unique_type_name",
         "uri_parser",
         "useful",
+        "work_serializer",
         "xds_orca_service_upb",
         "xds_orca_upb",
     ],
@@ -3150,14 +3979,12 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "dual_ref_counted",
-        "error",
         "gpr_platform",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_service_config",
         "ref_counted",
         "ref_counted_ptr",
@@ -3182,23 +4009,28 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena",
         "arena_promise",
         "channel_args",
         "channel_fwd",
         "context",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_service_config",
-        "poll",
         "promise",
         "ref_counted_ptr",
     ],
+)
+
+grpc_cc_library(
+    name = "sorted_pack",
+    hdrs = [
+        "src/core/lib/gprpp/sorted_pack.h",
+    ],
+    language = "c++",
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -3210,7 +4042,6 @@ grpc_cc_library(
         "src/core/ext/filters/channel_idle/idle_filter_state.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -3227,7 +4058,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/types:optional",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "activity",
         "arena_promise",
@@ -3239,14 +4069,14 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
-        "error",
+        "default_event_engine",
         "exec_ctx",
         "exec_ctx_wakeup_scheduler",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_trace",
+        "http2_errors",
         "idle_filter_state",
         "loop",
         "orphanable",
@@ -3268,9 +4098,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/deadline/deadline_filter.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/status",
+        "absl/types:optional",
+    ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena",
         "channel_args",
@@ -3281,12 +4113,9 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
-        "error",
         "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_public_hdrs",
         "iomgr_timer",
         "time",
@@ -3308,7 +4137,6 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "channel_args",
@@ -3319,8 +4147,7 @@ grpc_cc_library(
         "config",
         "gpr_platform",
         "grpc_base",
-        "grpc_codegen",
-        "poll",
+        "grpc_public_hdrs",
         "slice",
     ],
 )
@@ -3335,12 +4162,13 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "channel_fwd",
@@ -3350,16 +4178,13 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_public_hdrs",
         "grpc_service_config",
         "json",
-        "orphanable",
         "service_config_parser",
+        "slice_buffer",
     ],
 )
 
@@ -3374,22 +4199,28 @@ grpc_cc_library(
         "src/core/ext/filters/fault_injection/service_config_parser.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/memory",
+        "absl/random",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/utility",
     ],
     language = "c++",
     deps = [
+        "arena_promise",
+        "channel_fwd",
         "config",
         "context",
-        "gpr_base",
+        "gpr",
         "grpc_base",
+        "grpc_public_hdrs",
         "grpc_service_config",
         "grpc_trace",
+        "json",
         "json_util",
-        "poll",
+        "service_config_parser",
         "sleep",
         "time",
         "try_seq",
@@ -3412,21 +4243,18 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "channel_fwd",
         "closure",
         "config",
         "debug_location",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_authorization_base",
         "grpc_base",
-        "grpc_codegen",
         "grpc_matchers",
         "grpc_public_hdrs",
         "grpc_rbac_engine",
@@ -3458,15 +4286,16 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/meta:type_traits",
         "absl/status",
-        "absl/strings:str_format",
+        "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
-        "absl/utility",
     ],
     language = "c++",
     visibility = ["@grpc:http"],
     deps = [
         "arena",
+        "arena_promise",
         "basic_seq",
         "call_push_pull",
         "channel_fwd",
@@ -3475,40 +4304,18 @@ grpc_cc_library(
         "config",
         "context",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_message_size_filter",
+        "grpc_public_hdrs",
         "grpc_trace",
         "latch",
-        "orphanable",
         "percent_encoding",
-        "poll",
         "promise",
         "seq",
         "slice",
+        "slice_buffer",
         "transport_fwd",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_codegen",
-    language = "c++",
-    public_hdrs = [
-        "include/grpc/impl/codegen/byte_buffer.h",
-        "include/grpc/impl/codegen/byte_buffer_reader.h",
-        "include/grpc/impl/codegen/compression_types.h",
-        "include/grpc/impl/codegen/connectivity_state.h",
-        "include/grpc/impl/codegen/grpc_types.h",
-        "include/grpc/impl/codegen/propagation_bits.h",
-        "include/grpc/impl/codegen/status.h",
-        "include/grpc/impl/codegen/slice.h",
-    ],
-    tags = ["grpc-autodeps"],
-    visibility = ["@grpc:public"],
-    deps = [
-        "gpr_codegen",
-        "gpr_platform",
     ],
 )
 
@@ -3520,14 +4327,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:grpclb"],
     deps = [
         "channel_args",
         "gpr_platform",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "server_address",
         "useful",
     ],
@@ -3548,41 +4353,47 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/time",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
     ],
     language = "c++",
     deps = [
+        "backoff",
+        "channel_fwd",
         "channel_init",
         "channel_stack_type",
         "config",
         "debug_location",
-        "default_event_engine_factory_hdrs",
-        "error",
-        "gpr_base",
-        "gpr_codegen",
+        "default_event_engine",
+        "gpr",
+        "gpr_atm",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_grpclb_balancer_addresses",
         "grpc_lb_upb",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_resolver_fake",
         "grpc_security_base",
         "grpc_sockaddr",
         "grpc_trace",
-        "grpc_transport_chttp2_client_connector",
         "iomgr_timer",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "protobuf_duration_upb",
         "protobuf_timestamp_upb",
         "ref_counted",
@@ -3592,9 +4403,12 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "sockaddr_utils",
+        "subchannel_interface",
         "time",
         "uri_parser",
         "useful",
+        "validation_errors",
+        "work_serializer",
     ],
 )
 
@@ -3605,7 +4419,6 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -3616,7 +4429,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/hash",
         "absl/memory",
         "absl/status",
@@ -3628,44 +4440,162 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "backoff",
         "config",
         "debug_location",
         "dual_ref_counted",
-        "gpr_base",
-        "gpr_codegen",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_fake_credentials",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
         "iomgr_timer",
         "json",
-        "json_util",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
-        "ref_counted",
+        "pollset_set",
         "ref_counted_ptr",
         "rls_upb",
         "server_address",
         "slice_refcount",
+        "subchannel_interface",
         "time",
         "uri_parser",
+        "validation_errors",
+        "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "upb_utils",
+    hdrs = [
+        "src/core/ext/xds/upb_utils.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "xds_client",
+    srcs = [
+        "src/core/ext/xds/xds_api.cc",
+        "src/core/ext/xds/xds_bootstrap.cc",
+        "src/core/ext/xds/xds_client.cc",
+        "src/core/ext/xds/xds_client_stats.cc",
+        "src/core/ext/xds/xds_resource_type.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/xds_api.h",
+        "src/core/ext/xds/xds_bootstrap.h",
+        "src/core/ext/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_client.h",
+        "src/core/ext/xds/xds_client_stats.h",
+        "src/core/ext/xds/xds_resource_type.h",
+        "src/core/ext/xds/xds_resource_type_impl.h",
+        "src/core/ext/xds/xds_transport.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "upb_lib",
+        "upb_textformat_lib",
+        "upb_json_lib",
+        "upb_reflection",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:xds_client_core"],
+    deps = [
+        "backoff",
+        "debug_location",
+        "default_event_engine",
+        "dual_ref_counted",
+        "env",
+        "envoy_admin_upb",
+        "envoy_config_core_upb",
+        "envoy_config_endpoint_upb",
+        "envoy_service_discovery_upb",
+        "envoy_service_discovery_upbdefs",
+        "envoy_service_load_stats_upb",
+        "envoy_service_load_stats_upbdefs",
+        "envoy_service_status_upb",
+        "envoy_service_status_upbdefs",
+        "event_engine_base_hdrs",
+        "exec_ctx",
+        "google_rpc_status_upb",
+        "gpr",
+        "grpc_trace",
+        "json",
+        "orphanable",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_struct_upb",
+        "protobuf_timestamp_upb",
+        "ref_counted",
+        "ref_counted_ptr",
+        "time",
+        "upb_utils",
+        "uri_parser",
+        "useful",
+        "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "certificate_provider_factory",
+    hdrs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_factory.h",
+    ],
+    deps = [
+        "error",
+        "gpr",
+        "grpc_public_hdrs",
+        "json",
+        "ref_counted",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "certificate_provider_registry",
+    srcs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_registry.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_registry.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "certificate_provider_factory",
+        "gpr_public_hdrs",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/ext/xds/certificate_provider_store.cc",
         "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
-        "src/core/ext/xds/xds_api.cc",
-        "src/core/ext/xds/xds_bootstrap.cc",
+        "src/core/ext/xds/xds_bootstrap_grpc.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
-        "src/core/ext/xds/xds_client.cc",
-        "src/core/ext/xds/xds_client_stats.cc",
+        "src/core/ext/xds/xds_client_grpc.cc",
         "src/core/ext/xds/xds_cluster.cc",
         "src/core/ext/xds/xds_cluster_specifier_plugin.cc",
         "src/core/ext/xds/xds_common_types.cc",
@@ -3675,23 +4605,17 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_rbac_filter.cc",
         "src/core/ext/xds/xds_lb_policy_registry.cc",
         "src/core/ext/xds/xds_listener.cc",
-        "src/core/ext/xds/xds_resource_type.cc",
         "src/core/ext/xds/xds_route_config.cc",
         "src/core/ext/xds/xds_routing.cc",
+        "src/core/ext/xds/xds_transport_grpc.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
-        "src/core/ext/xds/certificate_provider_factory.h",
-        "src/core/ext/xds/certificate_provider_registry.h",
         "src/core/ext/xds/certificate_provider_store.h",
         "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
-        "src/core/ext/xds/upb_utils.h",
-        "src/core/ext/xds/xds_api.h",
-        "src/core/ext/xds/xds_bootstrap.h",
+        "src/core/ext/xds/xds_bootstrap_grpc.h",
         "src/core/ext/xds/xds_certificate_provider.h",
-        "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_client.h",
-        "src/core/ext/xds/xds_client_stats.h",
+        "src/core/ext/xds/xds_client_grpc.h",
         "src/core/ext/xds/xds_cluster.h",
         "src/core/ext/xds/xds_cluster_specifier_plugin.h",
         "src/core/ext/xds/xds_common_types.h",
@@ -3701,20 +4625,20 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_rbac_filter.h",
         "src/core/ext/xds/xds_lb_policy_registry.h",
         "src/core/ext/xds/xds_listener.h",
-        "src/core/ext/xds/xds_resource_type.h",
-        "src/core/ext/xds/xds_resource_type_impl.h",
         "src/core/ext/xds/xds_route_config.h",
         "src/core/ext/xds/xds_routing.h",
+        "src/core/ext/xds/xds_transport_grpc.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
+        "absl/base:core_headers",
         "absl/functional:bind_front",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
@@ -3724,11 +4648,16 @@ grpc_cc_library(
         "upb_reflection",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     deps = [
+        "certificate_provider_factory",
+        "certificate_provider_registry",
         "channel_creds_registry",
         "channel_fwd",
         "config",
         "debug_location",
+        "default_event_engine",
+        "env",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
@@ -3765,46 +4694,57 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "google_rpc_status_upb",
-        "gpr_base",
-        "gpr_codegen",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_credentials_util",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_outlier_detection_header",
+        "grpc_public_hdrs",
         "grpc_rbac_filter",
-        "grpc_secure",
         "grpc_security_base",
         "grpc_sockaddr",
         "grpc_tls_credentials",
         "grpc_trace",
         "grpc_transport_chttp2_client_connector",
+        "init_internally",
+        "iomgr_fwd",
         "iomgr_timer",
         "json",
+        "json_object_loader",
         "json_util",
+        "lb_policy_registry",
+        "match",
         "orphanable",
+        "pollset_set",
         "protobuf_any_upb",
         "protobuf_duration_upb",
         "protobuf_struct_upb",
         "protobuf_struct_upbdefs",
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
+        "ref_counted",
         "ref_counted_ptr",
         "resolved_address",
         "rls_config_upb",
         "rls_config_upbdefs",
+        "server_address",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
         "status_helper",
         "time",
         "tsi_ssl_credentials",
+        "unique_type_name",
+        "upb_utils",
         "uri_parser",
         "useful",
+        "validation_errors",
+        "work_serializer",
+        "xds_client",
         "xds_type_upb",
         "xds_type_upbdefs",
     ],
@@ -3818,8 +4758,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/xds/xds_channel_stack_modifier.h",
     ],
+    external_deps = ["absl/strings"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "channel_fwd",
@@ -3829,7 +4769,7 @@ grpc_cc_library(
         "config",
         "gpr_platform",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "ref_counted",
         "ref_counted_ptr",
         "useful",
@@ -3843,7 +4783,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3851,20 +4790,16 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "channel_args_preconditioning",
         "channel_fwd",
         "config",
-        "error",
+        "debug_location",
         "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_public_hdrs",
-        "grpc_secure",
         "grpc_security_base",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
@@ -3882,6 +4817,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "unique_type_name",
         "uri_parser",
+        "xds_client",
     ],
 )
 
@@ -3916,13 +4852,12 @@ grpc_cc_library(
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
+        "certificate_provider_factory",
         "error",
         "gpr_platform",
-        "grpc_secure",
         "grpc_tls_credentials",
-        "grpc_xds_client",
+        "grpc_trace",
         "json",
         "json_util",
         "ref_counted_ptr",
@@ -3944,23 +4879,32 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
         "grpc_matchers",
         "grpc_outlier_detection_header",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_tls_credentials",
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
         "unique_type_name",
+        "work_serializer",
+        "xds_client",
     ],
 )
 
@@ -3970,7 +4914,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
@@ -3980,12 +4923,11 @@ grpc_cc_library(
     ],
     external_deps = ["absl/memory"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
-        "grpc_xds_client",
         "ref_counted_ptr",
         "server_address",
+        "xds_client",
     ],
 )
 
@@ -3995,7 +4937,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4003,31 +4944,37 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "config",
         "debug_location",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_address_filtering",
         "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_outlier_detection_header",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_resolver_fake",
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "ref_counted_ptr",
         "server_address",
-        "time",
+        "subchannel_interface",
+        "validation_errors",
+        "work_serializer",
+        "xds_client",
     ],
 )
 
@@ -4046,25 +4993,32 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
+        "config",
         "debug_location",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
+        "grpc_public_hdrs",
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
+        "validation_errors",
+        "xds_client",
     ],
 )
 
@@ -4078,29 +5032,37 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
-        "closure",
+        "config",
         "debug_location",
+        "default_event_engine",
         "error",
-        "exec_ctx",
-        "gpr_base",
+        "gpr",
         "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_resolver_xds_header",
         "grpc_trace",
-        "iomgr_timer",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
+        "validation_errors",
+        "work_serializer",
     ],
 )
 
@@ -4113,13 +5075,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/address_filtering.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status:statusor",
         "absl/strings",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "server_address",
@@ -4132,23 +5092,22 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
-        "gpr_base",
-        "gpr_platform",
+        "dual_ref_counted",
+        "gpr",
+        "gpr_manual_constructor",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "iomgr_fwd",
-        "orphanable",
+        "lb_policy",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
     ],
 )
 
@@ -4158,7 +5117,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4166,22 +5124,23 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
+        "config",
         "debug_location",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_subchannel_list",
+        "grpc_public_hdrs",
         "grpc_trace",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
     ],
 )
 
@@ -4204,26 +5163,31 @@ grpc_cc_library(
         "xxhash",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "closure",
+        "config",
         "debug_location",
-        "error",
         "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_subchannel_list",
+        "grpc_public_hdrs",
         "grpc_trace",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
-        "ref_counted",
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+        "subchannel_interface",
         "unique_type_name",
+        "validation_errors",
+        "work_serializer",
     ],
 )
 
@@ -4233,7 +5197,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4241,21 +5204,22 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
+        "config",
         "debug_location",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_subchannel_list",
+        "grpc_public_hdrs",
         "grpc_trace",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
     ],
 )
 
@@ -4266,10 +5230,13 @@ grpc_cc_library(
     ],
     external_deps = ["absl/types:optional"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
+        "json",
+        "json_args",
+        "json_object_loader",
         "time",
+        "validation_errors",
     ],
 )
 
@@ -4279,7 +5246,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/random",
         "absl/status",
@@ -4288,28 +5254,33 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
         "closure",
+        "config",
         "debug_location",
-        "error",
-        "exec_ctx",
-        "gpr_base",
-        "gpr_platform",
+        "env",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_outlier_detection_header",
+        "grpc_public_hdrs",
         "grpc_trace",
         "iomgr_fwd",
         "iomgr_timer",
         "json",
-        "json_util",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "sockaddr_utils",
+        "subchannel_interface",
+        "validation_errors",
+        "work_serializer",
     ],
 )
 
@@ -4326,25 +5297,32 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
+        "config",
         "debug_location",
-        "default_event_engine_factory_hdrs",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "default_event_engine",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_address_filtering",
+        "grpc_public_hdrs",
         "grpc_trace",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
+        "validation_errors",
+        "work_serializer",
     ],
 )
 
@@ -4354,7 +5332,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4362,25 +5339,32 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
+        "config",
         "debug_location",
-        "default_event_engine_factory_hdrs",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "default_event_engine",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_address_filtering",
+        "grpc_public_hdrs",
         "grpc_trace",
         "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
+        "pollset_set",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
+        "validation_errors",
+        "work_serializer",
     ],
 )
 
@@ -4398,6 +5382,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/meta:type_traits",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -4406,20 +5391,18 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena_promise",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
         "config",
         "context",
-        "error",
         "gpr",
-        "grpc++_base",
+        "gpr_platform",
         "grpc_base",
-        "grpc_codegen",
-        "grpc_lb_policy_grpclb",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_sockaddr",
-        "poll",
         "promise",
         "resolved_address",
         "seq",
@@ -4439,9 +5422,8 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_data_store.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr",
         "gpr_platform",
         "grpc++",
         "grpc_sockaddr",
@@ -4457,7 +5439,6 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "grpc++",
@@ -4475,13 +5456,14 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
     ],
+    tags = ["nofixdeps"],
     deps = [
-        "gpr_base",
+        "gpr",
         "gpr_platform",
         "grpc",
         "grpc++",
-        "grpc++_codegen_base",
-        "grpc_codegen",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
         "lb_server_load_reporting_filter",
         "lb_server_load_reporting_service_server_builder_plugin",
     ],
@@ -4500,9 +5482,9 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     deps = [
         "gpr",
-        "gpr_codegen",
         "grpc++",
         "lb_load_reporter",
     ],
@@ -4521,8 +5503,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
-        "grpc++",
+        "gpr",
+        "gpr_platform",
     ],
 )
 
@@ -4541,9 +5523,9 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     deps = [
         "gpr",
-        "gpr_codegen",
         "lb_get_cpu_stats",
         "lb_load_data_store",
         "//src/proto/grpc/lb/v1:load_reporter_proto",
@@ -4562,17 +5544,24 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
+        "backoff",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_resolver",
+        "grpc_service_config",
+        "grpc_trace",
+        "iomgr_fwd",
         "iomgr_timer",
         "orphanable",
         "ref_counted_ptr",
+        "time",
         "uri_parser",
+        "work_serializer",
     ],
 )
 
@@ -4585,10 +5574,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
     ],
     language = "c++",
-    deps = [
-        "gpr_base",
-        "grpc_base",
-    ],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -4597,25 +5583,24 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
+        "absl/functional:bind_front",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/functional:bind_front",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
+        "backoff",
         "config",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_trace",
-        "iomgr_timer",
         "orphanable",
         "polling_resolver",
         "ref_counted_ptr",
@@ -4643,26 +5628,25 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
         "address_sorting",
         "cares",
     ],
     language = "c++",
     deps = [
+        "backoff",
         "config",
         "debug_location",
-        "error",
         "event_engine_common",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
         "grpc_grpclb_balancer_addresses",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_service_config",
@@ -4675,6 +5659,7 @@ grpc_cc_library(
         "json",
         "orphanable",
         "polling_resolver",
+        "pollset_set",
         "ref_counted_ptr",
         "resolved_address",
         "server_address",
@@ -4697,16 +5682,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "config",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
         "grpc_resolver",
         "iomgr_port",
         "orphanable",
         "resolved_address",
         "server_address",
-        "slice",
         "uri_parser",
     ],
 )
@@ -4718,22 +5700,20 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
     language = "c++",
     deps = [
         "config",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
         "grpc_resolver",
         "iomgr_port",
         "orphanable",
         "resolved_address",
         "server_address",
-        "slice",
         "uri_parser",
     ],
 )
@@ -4743,6 +5723,7 @@ grpc_cc_library(
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     external_deps = [
+        "absl/base:core_headers",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4754,18 +5735,20 @@ grpc_cc_library(
         "@grpc:grpc_resolver_fake",
     ],
     deps = [
+        "channel_args",
         "config",
         "debug_location",
-        "gpr_base",
-        "grpc_base",
-        "grpc_client_channel",
+        "gpr",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_service_config",
         "orphanable",
+        "ref_counted",
+        "ref_counted_ptr",
         "server_address",
-        "slice",
         "uri_parser",
         "useful",
+        "work_serializer",
     ],
 )
 
@@ -4774,10 +5757,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
     language = "c++",
+    deps = [
+        "gpr_platform",
+        "unique_type_name",
+    ],
 )
 
 grpc_cc_library(
@@ -4786,9 +5770,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
-        "xxhash",
-        "re2",
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/random",
@@ -4798,6 +5779,8 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
+        "re2",
+        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -4806,25 +5789,27 @@ grpc_cc_library(
         "config",
         "debug_location",
         "dual_ref_counted",
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_lb_policy_ring_hash",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_service_config",
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_xds_client",
-        "handshaker_factory",
         "iomgr_fwd",
+        "match",
         "orphanable",
+        "pollset_set",
         "ref_counted_ptr",
         "server_address",
         "time",
         "unique_type_name",
         "uri_parser",
-        "useful",
+        "work_serializer",
+        "xds_client",
     ],
 )
 
@@ -4846,10 +5831,10 @@ grpc_cc_library(
         "alts_util",
         "config",
         "debug_location",
-        "gpr_base",
+        "env",
+        "gpr",
         "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_security_base",
         "grpc_xds_client",
@@ -4860,6 +5845,7 @@ grpc_cc_library(
         "resource_quota",
         "time",
         "uri_parser",
+        "work_serializer",
     ],
 )
 
@@ -4877,7 +5863,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/functional:bind_front",
         "absl/status",
         "absl/status:statusor",
@@ -4886,21 +5871,21 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:httpcli"],
     deps = [
         "channel_args_preconditioning",
         "config",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
         "handshaker",
         "handshaker_registry",
         "iomgr_fwd",
         "orphanable",
+        "pollset_set",
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
@@ -4932,21 +5917,17 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "channel_args",
         "channel_fwd",
         "dual_ref_counted",
-        "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_credentials_util",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
-        "poll",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
@@ -4965,17 +5946,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
     ],
-    external_deps = [
-        "absl/strings",
-        "absl/strings:str_format",
-    ],
     language = "c++",
     visibility = [
         "@grpc:public",
     ],
     deps = [
-        "gpr_base",
-        "grpc_base",
+        "gpr",
+        "slice",
         "tsi_base",
         "useful",
     ],
@@ -4996,19 +5973,18 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice",
@@ -5034,17 +6010,14 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
@@ -5063,8 +6036,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "exec_ctx",
         "gpr",
-        "grpc_base",
+        "grpc_trace",
         "tsi_base",
     ],
 )
@@ -5083,21 +6057,19 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_security_base",
         "grpc_sockaddr",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "resolved_address",
@@ -5123,21 +6095,20 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
         "arena_promise",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice_refcount",
@@ -5162,24 +6133,24 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
         "tsi_ssl_credentials",
+        "tsi_ssl_session_cache",
         "unique_type_name",
         "useful",
     ],
@@ -5198,22 +6169,26 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     deps = [
         "alts_util",
-        "gpr_base",
+        "env",
+        "gpr",
         "grpc_alts_credentials",
         "grpc_base",
-        "grpc_codegen",
         "grpc_external_account_credentials",
         "grpc_jwt_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_oauth2_credentials",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_ssl_credentials",
         "grpc_trace",
         "httpcli",
+        "iomgr_fwd",
         "json",
         "ref_counted_ptr",
         "slice_refcount",
@@ -5255,27 +6230,24 @@ grpc_cc_library(
         "libssl",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "debug_location",
-        "gpr_base",
-        "gpr_codegen",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_credentials_util",
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
         "slice_refcount",
         "tsi_base",
         "tsi_ssl_credentials",
+        "tsi_ssl_session_cache",
         "unique_type_name",
         "useful",
     ],
@@ -5296,14 +6268,12 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_security_base",
         "grpc_trace",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice",
@@ -5335,21 +6305,20 @@ grpc_cc_library(
         "libssl",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
     deps = [
         "arena_promise",
-        "gpr_base",
-        "gpr_codegen",
+        "gpr",
+        "gpr_manual_constructor",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_trace",
         "httpcli",
         "httpcli_ssl_credentials",
+        "iomgr_fwd",
         "json",
         "orphanable",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice",
@@ -5371,7 +6340,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5379,13 +6347,11 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "activity",
         "arena_promise",
         "context",
-        "gpr_base",
-        "gpr_codegen",
+        "gpr",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
@@ -5395,6 +6361,7 @@ grpc_cc_library(
         "json",
         "orphanable",
         "poll",
+        "pollset_set",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
@@ -5430,12 +6397,13 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:optional",
         "libcrypto",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "env",
+        "gpr",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_oauth2_credentials",
@@ -5462,66 +6430,23 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "arena_promise",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
         "tsi_ssl_credentials",
         "unique_type_name",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_secure",
-    language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
-    visibility = ["@grpc:public"],
-    deps = [
-        "config",
-        "gpr_base",
-        "grpc_alts_credentials",
-        "grpc_authorization_base",
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_codegen",
-        "grpc_credentials_util",
-        "grpc_external_account_credentials",
-        "grpc_fake_credentials",
-        "grpc_google_default_credentials",
-        "grpc_iam_credentials",
-        "grpc_insecure_credentials",
-        "grpc_jwt_credentials",
-        "grpc_local_credentials",
-        "grpc_oauth2_credentials",
-        "grpc_security_base",
-        "grpc_ssl_credentials",
-        "grpc_tls_credentials",
-        "grpc_trace",
-        "grpc_transport_chttp2_alpn",
-        "httpcli",
-        "httpcli_ssl_credentials",
-        "json",
-        "promise",
-        "ref_counted",
-        "ref_counted_ptr",
-        "slice",
-        "slice_refcount",
-        "sockaddr_utils",
-        "tsi_base",
-        "uri_parser",
-        "useful",
     ],
 )
 
@@ -5532,7 +6457,6 @@ grpc_cc_library(
     ],
     external_deps = ["libssl"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -5574,7 +6498,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
     deps = [
         "activity",
@@ -5587,14 +6510,11 @@ grpc_cc_library(
         "config",
         "context",
         "debug_location",
-        "error",
         "event_engine_memory_allocator",
         "exec_ctx",
-        "gpr_base",
-        "gpr_codegen",
-        "gpr_platform",
+        "gpr",
+        "gpr_atm",
         "grpc_base",
-        "grpc_codegen",
         "grpc_public_hdrs",
         "grpc_trace",
         "handshaker",
@@ -5608,6 +6528,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota",
         "resource_quota_trace",
+        "seq",
         "slice",
         "slice_refcount",
         "try_seq",
@@ -5631,15 +6552,11 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_supported.h",
         "src/core/lib/security/util/json_util.h",
     ],
-    external_deps = [
-        "absl/container:inlined_vector",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_security_base",
         "json",
@@ -5694,14 +6611,17 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
+        "alts_upb",
         "alts_util",
         "arena",
         "config",
         "error",
-        "gpr_base",
+        "gpr",
         "grpc_base",
+        "pollset_set",
         "tsi_base",
         "useful",
     ],
@@ -5719,16 +6639,17 @@ grpc_cc_library(
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
     ],
     external_deps = [
-        "absl/strings",
         "absl/memory",
         "libssl",
-        "libcrypto",
     ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
-        "grpc_base",
+        "cpp_impl_of",
+        "gpr",
+        "grpc_public_hdrs",
+        "ref_counted",
+        "slice",
     ],
 )
 
@@ -5748,20 +6669,18 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/strings",
         "libcrypto",
         "libssl",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
         "grpc_credentials_util",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_transport_chttp2_alpn",
         "ref_counted",
@@ -5791,7 +6710,6 @@ grpc_cc_library(
         "absl/types:span",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "google_type_expr_upb",
         "gpr_platform",
@@ -5817,8 +6735,7 @@ grpc_cc_library(
         "re2",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
-    deps = ["gpr_base"],
+    deps = ["gpr"],
 )
 
 # This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
@@ -5836,14 +6753,15 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr",
         "grpc_authorization_base",
         "grpc_base",
         "grpc_matchers",
@@ -5873,13 +6791,10 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_codegen",
+        "gpr",
         "grpc_authorization_base",
         "grpc_base",
-        "grpc_codegen",
         "grpc_matchers",
         "grpc_public_hdrs",
         "grpc_rbac_engine",
@@ -5900,16 +6815,13 @@ grpc_cc_library(
     hdrs = [
         "include/grpcpp/security/authorization_policy_provider.h",
     ],
-    external_deps = [
-        "absl/synchronization",
-        "protobuf_headers",
-    ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "gpr",
         "grpc++",
-        "grpc++_codegen_base",
+        "grpc++_public_hdrs",
         "grpc_authorization_provider",
+        "grpc_public_hdrs",
     ],
 )
 
@@ -5931,11 +6843,10 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "envoy_config_rbac_upb",
         "google_type_expr_upb",
-        "gpr_base",
+        "gpr",
         "grpc_authorization_base",
         "grpc_mock_cel",
     ],
@@ -5947,7 +6858,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_constants.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -5961,10 +6871,74 @@ grpc_cc_library(
     ],
     external_deps = ["absl/container:inlined_vector"],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr",
         "hpack_constants",
+    ],
+)
+
+grpc_cc_library(
+    name = "chttp2_flow_control",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/flow_control.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/flow_control.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    deps = [
+        "bdp_estimator",
+        "experiments",
+        "gpr",
+        "grpc_trace",
+        "http2_settings",
+        "memory_quota",
+        "pid_controller",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "huffsyms",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/huffsyms.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/huffsyms.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "decode_huff",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/decode_huff.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/decode_huff.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "http2_settings",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/http2_settings.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/http2_settings.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "http2_errors",
+        "useful",
     ],
 )
 
@@ -5975,7 +6949,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/context_list.cc",
-        "src/core/ext/transport/chttp2/transport/flow_control.cc",
         "src/core/ext/transport/chttp2/transport/frame_data.cc",
         "src/core/ext/transport/chttp2/transport/frame_goaway.cc",
         "src/core/ext/transport/chttp2/transport/frame_ping.cc",
@@ -5985,8 +6958,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.cc",
-        "src/core/ext/transport/chttp2/transport/http2_settings.cc",
-        "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
         "src/core/ext/transport/chttp2/transport/stream_map.cc",
@@ -5998,7 +6969,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/context_list.h",
-        "src/core/ext/transport/chttp2/transport/flow_control.h",
         "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
         "src/core/ext/transport/chttp2/transport/frame_goaway.h",
@@ -6009,15 +6979,12 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.h",
-        "src/core/ext/transport/chttp2/transport/http2_settings.h",
-        "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.h",
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",
@@ -6025,38 +6992,43 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:span",
         "absl/types:variant",
-        "absl/utility",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
         "arena",
+        "bdp_estimator",
         "bitset",
-        "chunked_vector",
+        "chttp2_flow_control",
         "debug_location",
-        "gpr_base",
+        "decode_huff",
+        "experiments",
+        "gpr",
+        "gpr_atm",
         "grpc_base",
-        "grpc_codegen",
-        "grpc_http_filters",
-        "grpc_resolver",
+        "grpc_public_hdrs",
         "grpc_trace",
-        "grpc_transport_chttp2_alpn",
         "hpack_constants",
         "hpack_encoder_table",
+        "http2_errors",
+        "http2_settings",
         "httpcli",
+        "huffsyms",
         "iomgr_fwd",
         "iomgr_timer",
         "memory_quota",
-        "orphanable",
-        "pid_controller",
+        "no_destruct",
+        "poll",
         "ref_counted",
         "ref_counted_ptr",
         "resource_quota",
         "resource_quota_trace",
         "slice",
+        "slice_buffer",
         "slice_refcount",
+        "status_helper",
         "time",
-        "uri_parser",
+        "transport_fwd",
         "useful",
     ],
 )
@@ -6071,7 +7043,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "gpr",
         "useful",
     ],
 )
@@ -6085,9 +7057,10 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
@@ -6095,25 +7068,25 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_codegen",
         "grpc_insecure_credentials",
+        "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_security_base",
         "grpc_trace",
         "grpc_transport_chttp2",
         "handshaker",
         "handshaker_registry",
+        "iomgr_timer",
         "orphanable",
+        "ref_counted_ptr",
         "resolved_address",
-        "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
         "transport_fwd",
         "unique_type_name",
-        "uri_parser",
     ],
 )
 
@@ -6132,17 +7105,16 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
         "config",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
-        "grpc_http_filters",
         "grpc_insecure_credentials",
-        "grpc_resolver",
+        "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
         "grpc_transport_chttp2",
@@ -6152,17 +7124,15 @@ grpc_cc_library(
         "iomgr_timer",
         "memory_quota",
         "orphanable",
-        "ref_counted",
+        "pollset_set",
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
-        "slice",
         "sockaddr_utils",
         "time",
         "transport_fwd",
         "unique_type_name",
         "uri_parser",
-        "useful",
     ],
 )
 
@@ -6188,17 +7158,16 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "debug_location",
-        "gpr_base",
+        "gpr",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_trace",
         "iomgr_fwd",
-        "orphanable",
         "ref_counted_ptr",
         "slice",
+        "slice_buffer",
         "time",
         "transport_fwd",
-        "useful",
     ],
 )
 
@@ -6238,15 +7207,13 @@ grpc_cc_library(
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h",
         "src/core/tsi/alts/handshaker/transport_security_common_api.h",
     ],
-    external_deps = [
-        "upb_lib",
-    ],
+    external_deps = ["upb_lib"],
     language = "c++",
     visibility = ["@grpc:tsi"],
     deps = [
         "alts_upb",
         "gpr",
-        "grpc_base",
+        "grpc_trace",
     ],
 )
 
@@ -6259,6 +7226,7 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     visibility = ["@grpc:tsi"],
     deps = [
         "gpr",
@@ -6274,82 +7242,109 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_base",
-    srcs = GRPCXX_SRCS,
-    hdrs = GRPCXX_HDRS,
+    srcs = GRPCXX_SRCS + [
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/client/secure_credentials.cc",
+        "src/cpp/common/auth_property_iterator.cc",
+        "src/cpp/common/secure_auth_context.cc",
+        "src/cpp/common/secure_channel_arguments.cc",
+        "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/common/tls_certificate_provider.cc",
+        "src/cpp/common/tls_certificate_verifier.cc",
+        "src/cpp/common/tls_credentials_options.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+        "src/cpp/server/secure_server_credentials.cc",
+    ],
+    hdrs = GRPCXX_HDRS + [
+        "src/cpp/client/secure_credentials.h",
+        "src/cpp/common/secure_auth_context.h",
+        "src/cpp/server/secure_server_credentials.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
+        "absl/memory",
         "absl/types:optional",
         "upb_lib",
         "protobuf_headers",
+        "absl/container:inlined_vector",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
         "arena",
+        "channel_fwd",
         "channel_init",
+        "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
-        "gpr_base",
-        "gpr_codegen",
+        "env",
+        "error",
+        "gpr",
+        "gpr_manual_constructor",
         "grpc",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_internal_hdrs_only",
+        "grpc++_codegen_proto",
         "grpc_base",
-        "grpc_codegen",
+        "grpc_credentials_util",
         "grpc_health_upb",
+        "grpc_public_hdrs",
+        "grpc_security_base",
         "grpc_service_config",
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "grpcpp_call_metric_recorder",
         "iomgr_timer",
+        "json",
         "ref_counted",
         "ref_counted_ptr",
         "resource_quota",
         "slice",
+        "slice_buffer",
+        "slice_refcount",
+        "thread_quota",
         "time",
         "useful",
     ],
 )
 
+# TODO(chengyuc): Give it another try to merge this to `grpc++_base` after
+# codegen files are removed.
 grpc_cc_library(
     name = "grpc++_base_unsecure",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/types:optional",
+        "absl/memory",
         "upb_lib",
         "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    tags = ["avoid_dep"],
+    tags = [
+        "avoid_dep",
+        "nofixdeps",
+    ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "arena",
         "channel_init",
         "config",
-        "default_event_engine_factory_hdrs",
-        "gpr_base",
-        "gpr_codegen",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_internal_hdrs_only",
+        "gpr",
+        "gpr_manual_constructor",
         "grpc_base",
-        "grpc_codegen",
         "grpc_health_upb",
         "grpc_insecure_credentials",
+        "grpc_public_hdrs",
         "grpc_service_config",
         "grpc_service_config_impl",
         "grpc_trace",
@@ -6367,105 +7362,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_codegen_base",
-    language = "c++",
-    public_hdrs = [
-        "include/grpc++/impl/codegen/async_stream.h",
-        "include/grpc++/impl/codegen/async_unary_call.h",
-        "include/grpc++/impl/codegen/byte_buffer.h",
-        "include/grpc++/impl/codegen/call_hook.h",
-        "include/grpc++/impl/codegen/call.h",
-        "include/grpc++/impl/codegen/channel_interface.h",
-        "include/grpc++/impl/codegen/client_context.h",
-        "include/grpc++/impl/codegen/client_unary_call.h",
-        "include/grpc++/impl/codegen/completion_queue_tag.h",
-        "include/grpc++/impl/codegen/completion_queue.h",
-        "include/grpc++/impl/codegen/config.h",
-        "include/grpc++/impl/codegen/core_codegen_interface.h",
-        "include/grpc++/impl/codegen/create_auth_context.h",
-        "include/grpc++/impl/codegen/grpc_library.h",
-        "include/grpc++/impl/codegen/metadata_map.h",
-        "include/grpc++/impl/codegen/method_handler_impl.h",
-        "include/grpc++/impl/codegen/rpc_method.h",
-        "include/grpc++/impl/codegen/rpc_service_method.h",
-        "include/grpc++/impl/codegen/security/auth_context.h",
-        "include/grpc++/impl/codegen/serialization_traits.h",
-        "include/grpc++/impl/codegen/server_context.h",
-        "include/grpc++/impl/codegen/server_interface.h",
-        "include/grpc++/impl/codegen/service_type.h",
-        "include/grpc++/impl/codegen/slice.h",
-        "include/grpc++/impl/codegen/status_code_enum.h",
-        "include/grpc++/impl/codegen/status.h",
-        "include/grpc++/impl/codegen/string_ref.h",
-        "include/grpc++/impl/codegen/stub_options.h",
-        "include/grpc++/impl/codegen/sync_stream.h",
-        "include/grpc++/impl/codegen/time.h",
-        "include/grpcpp/impl/codegen/async_generic_service.h",
-        "include/grpcpp/impl/codegen/async_stream.h",
-        "include/grpcpp/impl/codegen/async_unary_call.h",
-        "include/grpcpp/impl/codegen/byte_buffer.h",
-        "include/grpcpp/impl/codegen/call_hook.h",
-        "include/grpcpp/impl/codegen/call_op_set_interface.h",
-        "include/grpcpp/impl/codegen/call_op_set.h",
-        "include/grpcpp/impl/codegen/call.h",
-        "include/grpcpp/impl/codegen/callback_common.h",
-        "include/grpcpp/impl/codegen/channel_interface.h",
-        "include/grpcpp/impl/codegen/client_callback.h",
-        "include/grpcpp/impl/codegen/client_context.h",
-        "include/grpcpp/impl/codegen/client_interceptor.h",
-        "include/grpcpp/impl/codegen/client_unary_call.h",
-        "include/grpcpp/impl/codegen/completion_queue_tag.h",
-        "include/grpcpp/impl/codegen/completion_queue.h",
-        "include/grpcpp/impl/codegen/config.h",
-        "include/grpcpp/impl/codegen/core_codegen_interface.h",
-        "include/grpcpp/impl/codegen/create_auth_context.h",
-        "include/grpcpp/impl/codegen/delegating_channel.h",
-        "include/grpcpp/impl/codegen/grpc_library.h",
-        "include/grpcpp/impl/codegen/intercepted_channel.h",
-        "include/grpcpp/impl/codegen/interceptor_common.h",
-        "include/grpcpp/impl/codegen/interceptor.h",
-        "include/grpcpp/impl/codegen/message_allocator.h",
-        "include/grpcpp/impl/codegen/metadata_map.h",
-        "include/grpcpp/impl/codegen/method_handler_impl.h",
-        "include/grpcpp/impl/codegen/method_handler.h",
-        "include/grpcpp/impl/codegen/rpc_method.h",
-        "include/grpcpp/impl/codegen/rpc_service_method.h",
-        "include/grpcpp/impl/codegen/security/auth_context.h",
-        "include/grpcpp/impl/codegen/serialization_traits.h",
-        "include/grpcpp/impl/codegen/server_callback_handlers.h",
-        "include/grpcpp/impl/codegen/server_callback.h",
-        "include/grpcpp/impl/codegen/server_context.h",
-        "include/grpcpp/impl/codegen/server_interceptor.h",
-        "include/grpcpp/impl/codegen/server_interface.h",
-        "include/grpcpp/impl/codegen/service_type.h",
-        "include/grpcpp/impl/codegen/slice.h",
-        "include/grpcpp/impl/codegen/status_code_enum.h",
-        "include/grpcpp/impl/codegen/status.h",
-        "include/grpcpp/impl/codegen/string_ref.h",
-        "include/grpcpp/impl/codegen/stub_options.h",
-        "include/grpcpp/impl/codegen/sync_stream.h",
-        "include/grpcpp/impl/codegen/time.h",
-    ],
-    visibility = ["@grpc:public"],
-    deps = [
-        "grpc++_internal_hdrs_only",
-        "grpc_codegen",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_codegen_base_src",
-    srcs = [
-        "src/cpp/codegen/codegen_init.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc++_codegen_base",
-        "grpc++_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc++_codegen_proto",
     external_deps = [
         "protobuf_headers",
@@ -6477,10 +7373,11 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
     ],
+    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
-        "grpc++_codegen_base",
         "grpc++_config_proto",
+        "grpc++_public_hdrs",
     ],
 )
 
@@ -6494,6 +7391,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/config_protobuf.h",
         "include/grpcpp/impl/codegen/config_protobuf.h",
     ],
+    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
 )
 
@@ -6514,9 +7412,11 @@ grpc_cc_library(
         "include/grpc++/ext/proto_server_reflection_plugin.h",
         "include/grpcpp/ext/proto_server_reflection_plugin.h",
     ],
+    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
         "grpc++",
+        "grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,
@@ -6528,10 +7428,9 @@ grpc_cc_library(
         "src/cpp/server/orca/call_metric_recorder.cc",
     ],
     external_deps = [
-        "upb_lib",
-        "absl/memory",
         "absl/strings",
         "absl/types:optional",
+        "upb_lib",
     ],
     language = "c++",
     public_hdrs = [
@@ -6540,8 +7439,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "arena",
-        "grpc++_codegen_base",
-        "grpc++_internal_hdrs_only",
         "grpc++_public_hdrs",
         "grpc_backend_metric_data",
         "xds_orca_upb",
@@ -6557,7 +7454,6 @@ grpc_cc_library(
         "src/cpp/server/orca/orca_interceptor.h",
     ],
     external_deps = [
-        "upb_lib",
         "absl/memory",
         "absl/strings",
         "absl/types:optional",
@@ -6566,14 +7462,8 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "grpc++",
-        "grpc++_codegen_base",
         "grpc_base",
         "grpcpp_call_metric_recorder",
-        "protobuf_duration_upb",
-        "ref_counted",
-        "time",
-        "xds_orca_service_upb",
-        "xds_orca_upb",
     ],
 )
 
@@ -6587,7 +7477,6 @@ grpc_cc_library(
         "absl/time",
         "absl/types:optional",
         "upb_lib",
-        "absl/memory",
     ],
     language = "c++",
     public_hdrs = [
@@ -6596,13 +7485,10 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "debug_location",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "gpr",
         "grpc++",
-        "grpc++_codegen_base",
-        "grpc++_internal_hdrs_only",
         "grpc_base",
-        "iomgr_timer",
         "protobuf_duration_upb",
         "ref_counted",
         "ref_counted_ptr",
@@ -6629,6 +7515,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
     ],
+    tags = ["nofixdeps"],
     visibility = ["@grpc:channelz"],
     deps = [
         "gpr",
@@ -6653,11 +7540,11 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     deps = [
         "gpr",
         "grpc",
-        "grpc++_codegen_base",
-        "grpc++_internals",
+        "grpc++_base",
         "//src/proto/grpc/testing/xds/v3:csds_proto",
     ],
     alwayslink = 1,
@@ -6698,9 +7585,7 @@ grpc_cc_library(
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
     ],
-    external_deps = [
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",
         "include/grpc++/test/server_context_test_spouse.h",
@@ -6712,7 +7597,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:grpc++_test"],
     deps = [
-        "gpr_base",
         "grpc++",
         "grpc_base",
     ],
@@ -6727,9 +7611,9 @@ grpc_cc_library(
         "src/cpp/util/core_stats.h",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr",
+        "gpr_atm",
         "grpc_base",
         "//src/proto/grpc/core:stats_proto",
     ],
@@ -6759,12 +7643,12 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_filter.h",
     ],
     external_deps = [
-        "absl-base",
-        "absl-time",
+        "absl/base",
         "absl/base:core_headers",
         "absl/status",
-        "absl/types:optional",
         "absl/strings",
+        "absl/time",
+        "absl/types:optional",
         "opencensus-trace",
         "opencensus-trace-context_util",
         "opencensus-trace-propagation",
@@ -6775,6 +7659,7 @@ grpc_cc_library(
         "opencensus-context",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
         "arena",
@@ -6782,12 +7667,11 @@ grpc_cc_library(
         "channel_stack_type",
         "debug_location",
         "gpr",
-        "gpr_base",
-        "gpr_codegen",
         "grpc++",
         "grpc++_base",
         "grpc_base",
         "slice",
+        "slice_buffer",
         "slice_refcount",
     ],
 )
@@ -6803,15 +7687,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
-    tags = ["grpc-autodeps"],
-    deps = [
-        "error",
-        "gpr_base",
-        "gpr_platform",
-    ],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -6819,13 +7700,57 @@ grpc_cc_library(
     srcs = ["src/core/lib/json/json_util.cc"],
     hdrs = ["src/core/lib/json/json_util.h"],
     external_deps = ["absl/strings"],
-    tags = ["grpc-autodeps"],
     deps = [
         "error",
-        "gpr_base",
-        "gpr_platform",
+        "gpr",
         "json",
+        "json_args",
+        "json_object_loader",
+        "no_destruct",
         "time",
+        "validation_errors",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_args",
+    hdrs = ["src/core/lib/json/json_args.h"],
+    external_deps = ["absl/strings"],
+    deps = ["gpr"],
+)
+
+grpc_cc_library(
+    name = "json_object_loader",
+    srcs = ["src/core/lib/json/json_object_loader.cc"],
+    hdrs = ["src/core/lib/json/json_object_loader.h"],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr",
+        "json",
+        "json_args",
+        "no_destruct",
+        "ref_counted_ptr",
+        "time",
+        "validation_errors",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_channel_args",
+    hdrs = ["src/core/lib/json/json_channel_args.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr",
+        "json_args",
     ],
 )
 

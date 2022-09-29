@@ -14,6 +14,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+
+#include "absl/status/status.h"
+
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -24,7 +28,6 @@
 
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -33,7 +36,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -56,15 +58,13 @@ class BinderResolver : public Resolver {
   BinderResolver(ServerAddressList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
         addresses_(std::move(addresses)),
-        channel_args_(grpc_channel_args_copy(args.args)) {}
-
-  ~BinderResolver() override { grpc_channel_args_destroy(channel_args_); };
+        channel_args_(std::move(args.args)) {}
 
   void StartLocked() override {
     Result result;
     result.addresses = std::move(addresses_);
     result.args = channel_args_;
-    channel_args_ = nullptr;
+    channel_args_ = ChannelArgs();
     result_handler_->ReportResult(std::move(result));
   }
 
@@ -73,7 +73,7 @@ class BinderResolver : public Resolver {
  private:
   std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
 };
 
 class BinderResolverFactory : public ResolverFactory {
@@ -115,7 +115,7 @@ class BinderResolverFactory : public ResolverFactory {
     memcpy(un->sun_path, path.data(), path.size());
     resolved_addr->len =
         static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1);
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static bool ParseUri(const URI& uri, ServerAddressList* addresses) {
@@ -126,14 +126,13 @@ class BinderResolverFactory : public ResolverFactory {
         return false;
       }
       grpc_error_handle error = BinderAddrPopulate(uri.path(), &addr);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
-        GRPC_ERROR_UNREF(error);
         return false;
       }
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
     return true;
   }

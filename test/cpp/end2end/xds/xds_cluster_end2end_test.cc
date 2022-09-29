@@ -24,6 +24,8 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -82,12 +84,13 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION, StatusCode::OK);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kDefaultClusterName,
-                  ": validation error.*DiscoveryType is not valid")));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: [resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors parsing CDS resource: ["
+            "DiscoveryType is not valid.]]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -112,7 +115,9 @@ TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
   balancer_->ads_service()->SetCdsResource(cluster);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
+                     /*check_status=*/nullptr, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -196,7 +201,8 @@ TEST_P(CdsTest, EdsServiceNameDefaultsToClusterName) {
   Cluster cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->clear_service_name();
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_timeout_ms(5000));
 }
 
 // Tests switching over from one cluster to another.
@@ -256,13 +262,12 @@ TEST_P(CdsTest, CircuitBreaking) {
   }
   // Sending a RPC now should fail, the error message should tell us
   // we hit the max concurrent requests limit and got dropped.
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "circuit breaker drop");
-  // Cancel one RPC to allow another one through
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "circuit breaker drop");
+  // Cancel one RPC to allow another one through.
   rpcs[0].CancelRpc();
-  status = SendRpc();
-  EXPECT_TRUE(status.ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
@@ -297,13 +302,12 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   }
   // Sending a RPC now should fail, the error message should tell us
   // we hit the max concurrent requests limit and got dropped.
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "circuit breaker drop");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
-  status = SendRpc();
-  EXPECT_TRUE(status.ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
@@ -475,7 +479,9 @@ TEST_P(EdsTest, SameBackendListedMultipleTimes) {
   EdsResourceArgs args({{"locality0", endpoints}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for the backend to come online.
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
+                     /*check_status=*/nullptr, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(2000));
   // Send kNumRpcsPerAddress RPCs per server.
   const size_t kNumRpcsPerAddress = 10;
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * endpoints.size());
@@ -484,27 +490,50 @@ TEST_P(EdsTest, SameBackendListedMultipleTimes) {
             backends_[0]->backend_service()->request_count());
 }
 
-// Tests that RPCs will be blocked until a non-empty serverlist is received.
-TEST_P(EdsTest, InitiallyEmptyServerlist) {
+TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   CreateAndStartBackends(1);
-  // First response is an empty serverlist.
+  // Initial EDS resource has one locality with no endpoints.
   EdsResourceArgs::Locality empty_locality("locality0", {});
   EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE";
+      "empty address list: EDS resource eds_service_name contains empty "
+      "localities: \\[\\{region=\"xds_default_locality_region\", "
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
-  // Send non-empty serverlist.
+  // Send EDS resource that has an endpoint.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should eventually succeed.
   WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
+    }
+  });
+}
+
+TEST_P(EdsTest, NoLocalities) {
+  CreateAndStartBackends(1);
+  // Initial EDS resource has no localities.
+  EdsResourceArgs args;
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should fail.
+  constexpr char kErrorMessage[] =
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "contains no localities";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
+  // Send EDS resource that has an endpoint.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should eventually succeed.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
     }
   });
 }
@@ -522,11 +551,16 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   }
   EdsResourceArgs args({{"locality0", std::move(endpoints)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const Status status = SendRpc(RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
   // seconds, and we should disocver in that time that the target backend is
   // down.
-  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)",
+                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
 }
 
 // Tests that RPCs fail when the backends are down, and will succeed again
@@ -538,16 +572,21 @@ TEST_P(EdsTest, BackendsRestart) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  // Wait for channel to report TRANSIENT_FAILURE.
+  // Wait for channel to transition out of READY, so that we know it has
+  // noticed that all of the subchannels have failed.  Note that it may
+  // be reporting either CONNECTING or TRANSIENT_FAILURE at this point.
   EXPECT_TRUE(channel_->WaitForStateChange(
       GRPC_CHANNEL_READY, grpc_timeout_seconds_to_deadline(5)));
-  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  EXPECT_THAT(channel_->GetState(false),
+              ::testing::AnyOf(::testing::Eq(GRPC_CHANNEL_TRANSIENT_FAILURE),
+                               ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -579,34 +618,21 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
   }
 }
 
-// Tests that EDS client should send a NACK if the EDS update contains
-// sparse priorities.
-TEST_P(EdsTest, NacksSparsePriorityList) {
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsEndpointResourceType have exhaustive tests for all
+// of the invalid cases.
+TEST_P(EdsTest, NacksInvalidResource) {
   EdsResourceArgs args({
       {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("sparse priority list"));
-}
-
-// Tests that EDS client should send a NACK if the EDS update contains
-// multiple instances of the same locality in the same priority.
-TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
-  EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "duplicate locality {region=\"xds_default_locality_region\", "
-                  "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"} "
-                  "found in priority 0"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: eds_service_name: "
+            "INVALID_ARGUMENT: errors parsing EDS resource: ["
+            "field:endpoints error:priority 0 empty]]");
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
@@ -690,14 +716,6 @@ TEST_P(EdsTest, LocalityContainingNoEndpoints) {
             kNumRpcs / backends_.size());
   EXPECT_EQ(backends_[1]->backend_service()->request_count(),
             kNumRpcs / backends_.size());
-}
-
-// EDS update with no localities.
-TEST_P(EdsTest, NoLocalities) {
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource({}));
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
 }
 
 // Tests that the locality map can work properly even when it contains a large
@@ -1106,6 +1124,36 @@ TEST_P(FailoverTest, Failover) {
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
+// Reports CONNECTING when failing over to a lower priority.
+TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
+  CreateAndStartBackends(1);
+  // Priority 0 will be unreachable, so we'll use priority 1.
+  EdsResourceArgs args({
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(backends_[0]->port());
+  // Start an RPC in the background, which should cause the channel to
+  // try to connect.
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(), RpcOptions());
+  // Wait for connection attempt to start to the backend.
+  hold->Wait();
+  // Channel state should be CONNECTING here, and any RPC should be
+  // queued.
+  EXPECT_EQ(channel_->GetState(false), GRPC_CHANNEL_CONNECTING);
+  // Allow the connection attempt to complete.
+  hold->Resume();
+  // Now the RPC should complete successfully.
+  gpr_log(GPR_INFO, "=== WAITING FOR RPC TO FINISH ===");
+  Status status = rpc.GetStatus();
+  gpr_log(GPR_INFO, "=== RPC FINISHED ===");
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+}
+
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
@@ -1142,11 +1190,14 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  constexpr char kErrorMessage[] =
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE";
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
+  constexpr char kErrorMessageRegex[] =
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: FD shutdown)";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      kErrorMessageRegex);
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1157,7 +1208,8 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessageRegex));
     }
   });
 }
@@ -1653,9 +1705,10 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

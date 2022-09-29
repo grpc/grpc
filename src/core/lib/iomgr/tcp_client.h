@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/time.h>
 
@@ -30,11 +31,11 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 typedef struct grpc_tcp_client_vtable {
-  int64_t (*connect)(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                     grpc_pollset_set* interested_parties,
-                     const grpc_channel_args* channel_args,
-                     const grpc_resolved_address* addr,
-                     grpc_core::Timestamp deadline);
+  int64_t (*connect)(
+      grpc_closure* on_connect, grpc_endpoint** endpoint,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr, grpc_core::Timestamp deadline);
   bool (*cancel_connect)(int64_t connection_handle);
 } grpc_tcp_client_vtable;
 
@@ -45,18 +46,20 @@ typedef struct grpc_tcp_client_vtable {
    in this connection being established (in order to continue their work). It
    returns a handle to the connect operation which can be used to cancel the
    connection attempt. */
-int64_t grpc_tcp_client_connect(grpc_closure* on_connect,
-                                grpc_endpoint** endpoint,
-                                grpc_pollset_set* interested_parties,
-                                const grpc_channel_args* channel_args,
-                                const grpc_resolved_address* addr,
-                                grpc_core::Timestamp deadline);
+int64_t grpc_tcp_client_connect(
+    grpc_closure* on_connect, grpc_endpoint** endpoint,
+    grpc_pollset_set* interested_parties,
+    const grpc_event_engine::experimental::EndpointConfig& config,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline);
 
 // Returns true if a connect attempt corresponding to the provided handle
-// is successfully cancelled. Otherwise it returns false.
+// is successfully cancelled. Otherwise it returns false. If the connect
+// attempt is successfully cancelled, then the on_connect closure passed to
+// grpc_tcp_client_connect will not be executed. Its upto the caller to free
+// up any resources that may have been allocated to create the closure.
 bool grpc_tcp_client_cancel_connect(int64_t connection_handle);
 
-void grpc_tcp_client_global_init();
+extern void grpc_tcp_client_global_init();
 
 void grpc_set_tcp_client_impl(grpc_tcp_client_vtable* impl);
 
