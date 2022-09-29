@@ -30,9 +30,6 @@
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
-#include <google/protobuf/stubs/status.h>
-#include <google/protobuf/unknown_field_set.h>
-#include <google/protobuf/util/json_util.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
@@ -60,6 +57,9 @@
 #include "test/core/xds/xds_transport_fake.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
+// IWYU pragma: no_include <google/protobuf/stubs/status.h>
+// IWYU pragma: no_include <google/protobuf/unknown_field_set.h>
+// IWYU pragma: no_include <google/protobuf/util/json_util.h>
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
