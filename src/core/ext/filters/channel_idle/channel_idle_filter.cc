@@ -35,7 +35,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -124,19 +123,17 @@ struct MaxAgeFilter::Config {
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  // TODO(hork): pull EventEngine from args
-  ClientIdleFilter filter(
-      filter_args.channel_stack(), GetClientIdleTimeout(args),
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  ClientIdleFilter filter(filter_args.channel_stack(),
+                          GetClientIdleTimeout(args),
+                          args.GetObjectRef<EventEngine>());
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  // TODO(hork): pull EventEngine from args
   MaxAgeFilter filter(filter_args.channel_stack(),
                       Config::FromChannelArgs(args),
-                      grpc_event_engine::experimental::GetDefaultEventEngine());
+                      args.GetObjectRef<EventEngine>());
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));
 }
 
