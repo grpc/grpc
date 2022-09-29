@@ -11,19 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/load_file.h"
 
-#include <grpc/support/port_platform.h>
 #include <errno.h>
-#include <string.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
