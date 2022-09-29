@@ -458,7 +458,8 @@ typedef struct {
 #define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
   "grpc.experimental.server_config_change_drain_grace_time_ms"
 /** EventEngine shared_pointer */
-#define GRPC_ARG_EVENT_ENGINE "grpc.event_engine"/** \} */
+#define GRPC_ARG_EVENT_ENGINE "grpc.event_engine"
+/** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
     particular operation, the grpc_call_error returned will be GRPC_CALL_OK.

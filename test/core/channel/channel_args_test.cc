@@ -172,13 +172,13 @@ TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
   auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
   ChannelArgs a;
   a = a.SetObject(p);
-  grpc_core::Notification signal;
+  Notification signal;
   bool triggered = false;
   a.GetObjectRef<EventEngine>()->Run([&triggered, &signal] {
     triggered = true;
     signal.Notify();
   });
-  signal.WaitForNotificationWithTimeout(absl::Seconds(10));
+  signal.WaitForNotification();
   ASSERT_TRUE(triggered);
 }
 
