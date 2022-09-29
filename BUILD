@@ -3368,6 +3368,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/memory",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
