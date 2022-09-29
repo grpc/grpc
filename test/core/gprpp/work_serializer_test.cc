@@ -25,7 +25,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/synchronization/barrier.h"
 #include "gtest/gtest.h"
 

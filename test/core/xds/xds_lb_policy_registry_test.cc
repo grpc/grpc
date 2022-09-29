@@ -26,7 +26,6 @@
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
