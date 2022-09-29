@@ -105,7 +105,7 @@ TEST_F(DefaultEngineTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   ee2 = GetDefaultEventEngine();
   ASSERT_EQ(2, create_count);
   ASSERT_TRUE(ee2.unique());
-  grpc_event_engine::experimental::RevertToDefaultEventEngineFactory();
+  grpc_event_engine::experimental::EventEngineFactoryReset();
 }
 
 TEST_F(DefaultEngineTest, StressTestSharedPtr) {

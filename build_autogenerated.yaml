@@ -5848,6 +5848,17 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/util/aborting_event_engine.h
+  src:
+  - test/core/event_engine/factory_test.cc
+  deps:
+  - grpc
+  - grpc_test_util_unsecure
 - name: fake_binder_test
   gtest: true
   build: test
