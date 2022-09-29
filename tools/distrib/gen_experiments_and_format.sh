@@ -19,3 +19,12 @@ tools/codegen/core/gen_experiments.py
 CHANGED_FILES="$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')" \
     tools/distrib/clang_format_code.sh
 cd -
+
+if [[ $# == 1 && $1 == '--check' ]]; then
+    CHANGES="$(git diff)"
+    if [[ $CHANGES ]]; then
+        echo >&2 "ERROR: Experiments were not generated. Please run tools/distrib/gen_experiments_and_format.sh"
+        echo >&2 -e "Changes:\n$CHANGES"
+        exit 1
+    fi
+fi
