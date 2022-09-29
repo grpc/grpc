@@ -14,7 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <gtest/gtest.h>
+#include <memory>
+
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
