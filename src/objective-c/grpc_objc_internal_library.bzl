@@ -31,6 +31,7 @@ load(
     "generate_objc_non_arc_srcs",
     "generate_objc_srcs",
 )
+load("//bazel:grpc_build_system.bzl", "grpc_objc_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load(
     "@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl",
@@ -111,7 +112,7 @@ def grpc_objc_examples_library(
         includes: added to search path, always [the path to objc directory]
         deps: dependencies
     """
-    native.objc_library(
+    grpc_objc_library(
         name = name,
         srcs = srcs,
         hdrs = hdrs,
@@ -153,7 +154,7 @@ def grpc_objc_testing_library(
     if not name == "TestConfigs":
         additional_deps.append(":TestConfigs")
 
-    native.objc_library(
+    grpc_objc_library(
         name = name,
         hdrs = hdrs,
         srcs = srcs,
@@ -162,6 +163,7 @@ def grpc_objc_testing_library(
         defines = defines,
         includes = includes,
         deps = deps + additional_deps,
+        testonly = 1,
     )
 
 def local_objc_grpc_library(name, deps, testing = True, srcs = [], use_well_known_protos = False, **kwargs):
@@ -211,7 +213,7 @@ def local_objc_grpc_library(name, deps, testing = True, srcs = [], use_well_know
     else:
         library_deps.append("//src/objective-c:proto_objc_rpc")
 
-    native.objc_library(
+    grpc_objc_library(
         name = name,
         hdrs = [":" + objc_grpc_library_name + "_hdrs"],
         non_arc_srcs = [":" + objc_grpc_library_name + "_non_arc_srcs"],

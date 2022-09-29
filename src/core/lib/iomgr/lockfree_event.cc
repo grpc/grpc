@@ -127,7 +127,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
            closure when transitioning out of CLOSURE_NO_READY state (i.e there
            is no other code that needs to 'happen-after' this) */
         if (gpr_atm_no_barrier_cas(&state_, kClosureReady, kClosureNotReady)) {
-          ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
           return; /* Successful. Return */
         }
 
@@ -246,7 +246,7 @@ void LockfreeEvent::SetReady() {
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
           ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
-                       GRPC_ERROR_NONE);
+                       absl::OkStatus());
           return;
         }
         /* else the state changed again (only possible by either a racing

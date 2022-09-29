@@ -43,7 +43,7 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
   // Configuration to apply to an incoming call
   struct CallConfig {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
     RefCountedPtr<ServiceConfig> service_config;
   };

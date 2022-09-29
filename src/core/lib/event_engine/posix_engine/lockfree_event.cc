@@ -90,7 +90,7 @@ void LockfreeEvent::DestroyEvent() {
                                            std::memory_order_relaxed));
 }
 
-void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
+void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
   // This load needs to be an acquire load because this can be a shutdown
   // error that we might need to reference. Adding acquire semantics makes
   // sure that the shutdown error has been initialized properly before us
@@ -199,7 +199,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         if (state_.compare_exchange_strong(curr, new_state,
                                            std::memory_order_acq_rel,
                                            std::memory_order_relaxed)) {
-          auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
+          auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(shutdown_error);
           scheduler_->Run(closure);
           return true;
@@ -248,7 +248,7 @@ void LockfreeEvent::SetReady() {
           // Full cas: acquire pairs with this cas' release in the event of a
           // spurious set_ready; release pairs with this or the acquire in
           // notify_on (or set_shutdown)
-          auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
+          auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(absl::OkStatus());
           scheduler_->Run(closure);
           return;

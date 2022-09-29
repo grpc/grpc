@@ -282,11 +282,7 @@ typedef struct {
 #define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
 /** If non-zero, it will determine the maximum frame size used by TSI's frame
  *  protector.
- *
- *  NOTE: Be aware that using a large "max_frame_size" is memory inefficient
- *        for non-zerocopy protectors. Also, increasing this value above 1MiB
- *        can break old binaries that don't support larger than 1MiB frame
- *        size. */
+ */
 #define GRPC_ARG_TSI_MAX_FRAME_SIZE "grpc.tsi.max_frame_size"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
@@ -368,6 +364,12 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
+/* Experimental Arg. Channel args to be used for the control-plane channel
+ * created to the grpclb load balancers. This is a pointer arg whose value is a
+ * grpc_channel_args object. If unset, most channel args from the parent channel
+ * will be propagated to the grpclb channel. */
+#define GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS \
+  "grpc.experimental.grpclb_channel_args"
 /* Timeout in milliseconds to wait for the child of a specific priority to
    complete its initial connection attempt before the priority LB policy fails
    over to the next priority. Default value is 10 seconds. */

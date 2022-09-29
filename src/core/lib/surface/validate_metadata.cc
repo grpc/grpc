@@ -20,6 +20,7 @@
 
 #include "src/core/lib/surface/validate_metadata.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -48,12 +49,11 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
       return error;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static int error2int(grpc_error_handle error) {
-  int r = (GRPC_ERROR_IS_NONE(error));
-  GRPC_ERROR_UNREF(error);
+  int r = (error.ok());
   return r;
 }
 

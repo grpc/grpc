@@ -24,11 +24,9 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/utility/utility.h"
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -36,18 +34,6 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_smooth_memory_presure, false,
-                              "smooth the value of memory pressure over time");
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_periodic_resource_quota_reclamation, false,
-    "Enable experimental feature to reclaim resource quota periodically");
-GPR_GLOBAL_CONFIG_DEFINE_INT32(
-    grpc_experimental_max_quota_buffer_size, 1024 * 1024,
-    "Maximum size for one memory allocators buffer size against a quota");
-GPR_GLOBAL_CONFIG_DEFINE_INT32(
-    grpc_experimental_resource_quota_set_point, 95,
-    "Ask the resource quota to target this percentage of total quota usage.");
 
 namespace grpc_core {
 
@@ -191,7 +177,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
-      reclamation_handles[i] = absl::exchange(reclamation_handles_[i], nullptr);
+      reclamation_handles[i] = std::exchange(reclamation_handles_[i], nullptr);
     }
   }
 }
@@ -262,10 +248,11 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
   while (free > 0) {
     size_t ret = 0;
-    if (max_quota_buffer_size() > 0 && free > max_quota_buffer_size() / 2) {
-      ret = std::max(ret, free - max_quota_buffer_size() / 2);
+    if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
+        free > kMaxQuotaBufferSize / 2) {
+      ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
     }
-    if (periodic_donate_back()) {
+    if (IsPeriodicResourceQuotaReclamationEnabled()) {
       ret = std::max(ret, free > 8192 ? free / 2 : free);
     }
     const size_t new_free = free - ret;
@@ -463,8 +450,6 @@ void BasicMemoryQuota::Return(size_t amount) {
 }
 
 BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
-  static const bool kSmoothMemoryPressure =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   size_t quota_size = quota_size_.load();
@@ -472,7 +457,7 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (kSmoothMemoryPressure) {
+  if (IsMemoryPressureControllerEnabled()) {
     pressure_info.pressure_control_value =
         pressure_tracker_.AddSampleAndGetControlValue(
             pressure_info.instantaneous_pressure);
@@ -492,7 +477,7 @@ namespace memory_quota_detail {
 
 double PressureController::Update(double error) {
   bool is_low = error < 0;
-  bool was_low = absl::exchange(last_was_low_, is_low);
+  bool was_low = std::exchange(last_was_low_, is_low);
   double new_control;  // leave unset to compiler can note bad branches
   if (is_low && was_low) {
     // Memory pressure is too low this round, and was last round too.
@@ -563,8 +548,7 @@ std::string PressureController::DebugString() const {
 }
 
 double PressureTracker::AddSampleAndGetControlValue(double sample) {
-  static const double kSetPoint =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_resource_quota_set_point) / 100.0;
+  static const double kSetPoint = 95.0;
 
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {

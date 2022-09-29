@@ -94,7 +94,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
-  if (GRPC_ERROR_IS_NONE(src)) {
+  if (src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -135,7 +135,7 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
                                      absl::string_view str) {
-  if (GRPC_ERROR_IS_NONE(src)) {
+  if (src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -210,7 +210,7 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
-  GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_DEBUG_ASSERT(!error.ok());
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,
           grpc_core::StatusToString(error).c_str());
   return false;

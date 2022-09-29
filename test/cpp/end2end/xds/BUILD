@@ -166,7 +166,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:connection_delay_injector",
+        "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
 
@@ -191,7 +191,7 @@ grpc_cc_test(
         "//:grpc_resolver_fake",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:connection_delay_injector",
+        "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
 
@@ -202,6 +202,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 15,
     tags = [
@@ -250,6 +251,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 5,
     tags = [
@@ -276,6 +278,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
         "no_test_ios",
@@ -319,7 +322,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:route_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:connection_delay_injector",
+        "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
 

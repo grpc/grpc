@@ -27,7 +27,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 using EventEngineFactory = std::function<
@@ -89,26 +89,30 @@ class ConnectionManager {
 
     void SetClientEndpoint(
         std::unique_ptr<EventEngine::Endpoint>&& client_endpoint) {
-      client_endpoint_promise_.Set(std::move(client_endpoint));
+      client_endpoint_ = std::move(client_endpoint);
+      client_signal_.Notify();
     }
     void SetServerEndpoint(
         std::unique_ptr<EventEngine::Endpoint>&& server_endpoint) {
-      server_endpoint_promise_.Set(std::move(server_endpoint));
+      server_endpoint_ = std::move(server_endpoint);
+      server_signal_.Notify();
     }
     std::unique_ptr<EventEngine::Endpoint> GetClientEndpoint() {
-      auto client_endpoint = std::move(client_endpoint_promise_.Get());
-      client_endpoint_promise_.Reset();
+      auto client_endpoint = std::move(client_endpoint_);
+      client_endpoint_.reset();
       return client_endpoint;
     }
     std::unique_ptr<EventEngine::Endpoint> GetServerEndpoint() {
-      auto server_endpoint = std::move(server_endpoint_promise_.Get());
-      server_endpoint_promise_.Reset();
+      auto server_endpoint = std::move(server_endpoint_);
+      server_endpoint_.reset();
       return server_endpoint;
     }
 
    private:
-    Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise_;
-    Promise<std::unique_ptr<EventEngine::Endpoint>> server_endpoint_promise_;
+    std::unique_ptr<EventEngine::Endpoint> client_endpoint_;
+    std::unique_ptr<EventEngine::Endpoint> server_endpoint_;
+    grpc_core::Notification client_signal_;
+    grpc_core::Notification server_signal_;
   };
 
   grpc_core::Mutex mu_;

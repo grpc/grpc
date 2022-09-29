@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -36,6 +35,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -61,7 +61,7 @@ struct XdsClusterResource {
 
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
-  absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
+  absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
 
   // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
   std::string lb_policy;
@@ -101,9 +101,9 @@ class XdsClusterResourceType
     return "envoy.api.v2.Cluster";
   }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_resource, bool is_v2) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource,
+                      bool is_v2) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 

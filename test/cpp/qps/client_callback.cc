@@ -186,7 +186,6 @@ class CallbackUnaryClient final : public CallbackClient {
   }
 
   void IssueUnaryCallbackRpc(Thread* t, size_t vector_idx) {
-    GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
     ctx_[vector_idx]->stub_->async()->UnaryCall(
         (&ctx_[vector_idx]->context_), &request_, &ctx_[vector_idx]->response_,

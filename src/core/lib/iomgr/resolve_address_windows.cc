@@ -39,6 +39,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -57,7 +58,7 @@ class NativeDNSRequest {
           on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
-    Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
+    Executor::Run(&request_closure_, absl::OkStatus(), ExecutorType::RESOLVER);
   }
 
  private:
@@ -84,11 +85,6 @@ class NativeDNSRequest {
 NativeDNSResolver::NativeDNSResolver()
     : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
-NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
-  static NativeDNSResolver* instance = new NativeDNSResolver();
-  return instance;
-}
-
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolved,
@@ -107,7 +103,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   struct addrinfo *result = NULL, *resp;
   int s;
   size_t i;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   std::vector<grpc_resolved_address> addresses;
 
   // parse name, splitting it into host and port parts
@@ -120,7 +116,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     goto done;
   }
   if (port.empty()) {
-    if (default_port == NULL) {
+    if (default_port.empty()) {
       error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrFormat("no port in name '%s'", name));
       goto done;
@@ -154,11 +150,10 @@ done:
   if (result) {
     freeaddrinfo(result);
   }
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     return addresses;
   }
   auto error_result = grpc_error_to_absl_status(error);
-  GRPC_ERROR_UNREF(error);
   return error_result;
 }
 
@@ -169,6 +164,8 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   engine_->Run([on_resolved] {
+    ApplicationCallbackExecCtx app_exec_ctx;
+    ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
   });
@@ -182,6 +179,8 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     absl::string_view /* name_server */) {
   // Not supported
   engine_->Run([on_resolved] {
+    ApplicationCallbackExecCtx app_exec_ctx;
+    ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));
   });

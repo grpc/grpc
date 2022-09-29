@@ -473,18 +473,10 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
-        [](CoreConfiguration::Builder* builder) {
-          builder->service_config_parser()->RegisterParser(
-              absl::make_unique<internal::ClientChannelServiceConfigParser>());
-        });
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
                   "client_channel"),
               0);
   }
-
- private:
-  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
@@ -571,8 +563,8 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
           "field:loadBalancingConfig error:"
-          "errors parsing grpclb LB policy config: \\["
-          "error parsing childPolicy field: type should be array\\].*"));
+          "errors validating grpclb LB policy config: \\["
+          "field:childPolicy error:type should be array\\].*"));
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {

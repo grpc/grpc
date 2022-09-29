@@ -59,8 +59,8 @@ grpc_channel_args *GRPCBuildChannelArgs(NSDictionary *dictionary) {
   NSArray *keys = [dictionary allKeys];
   NSUInteger argCount = [keys count];
 
-  grpc_channel_args *channelArgs = gpr_malloc(sizeof(grpc_channel_args));
-  channelArgs->args = gpr_malloc(argCount * sizeof(grpc_arg));
+  grpc_channel_args *channelArgs = (grpc_channel_args *)gpr_malloc(sizeof(grpc_channel_args));
+  channelArgs->args = (grpc_arg *)gpr_malloc(argCount * sizeof(grpc_arg));
 
   // TODO(kriswuollett) Check that keys adhere to GRPC core library requirements
 

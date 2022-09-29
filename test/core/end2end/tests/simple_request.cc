@@ -30,7 +30,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -121,9 +120,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_stats_data* after =
       static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
 
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   grpc_stats_collect(before);
-#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -242,7 +239,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
 
   grpc_stats_collect(after);
 
@@ -254,7 +250,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] -
                  before->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] ==
              expected_calls);
-#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
+
   gpr_free(before);
   gpr_free(after);
 }
