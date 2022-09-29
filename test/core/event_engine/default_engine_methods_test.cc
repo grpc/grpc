@@ -13,16 +13,24 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <memory>
 #include <thread>
+#include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "gtest/gtest.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -79,7 +87,7 @@ TEST_F(DefaultEngineTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   int create_count = 0;
   grpc_event_engine::experimental::SetEventEngineFactory([&create_count] {
     ++create_count;
-    return absl::make_unique<FakeEventEngine>();
+    return std::make_unique<FakeEventEngine>();
   });
   std::shared_ptr<EventEngine> ee2;
   {

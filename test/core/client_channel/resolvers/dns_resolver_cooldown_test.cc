@@ -16,28 +16,48 @@
  *
  */
 
-#include <cstring>
+#include <inttypes.h>
+
 #include <functional>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
 constexpr int kMinResolutionPeriodMs = 1000;
@@ -391,7 +411,7 @@ TEST(DnsResolverCooldownTest, MainTest) {
   g_default_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   grpc_dns_lookup_hostname_ares = test_dns_lookup_ares;
   grpc_core::ResetDNSResolver(
-      absl::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
+      std::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
 
   test_cooldown();
 

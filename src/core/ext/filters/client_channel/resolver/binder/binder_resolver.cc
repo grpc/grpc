@@ -30,7 +30,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -142,7 +141,7 @@ class BinderResolverFactory : public ResolverFactory {
 
 void RegisterBinderResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<BinderResolverFactory>());
+      std::make_unique<BinderResolverFactory>());
 }
 
 }  // namespace grpc_core

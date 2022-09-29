@@ -28,6 +28,7 @@
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -101,7 +102,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* /*ctx*/, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   struct SliceWrapper {
-    ~SliceWrapper() { grpc_slice_unref(slice); }
+    ~SliceWrapper() { CSliceUnref(slice); }
     grpc_slice slice = grpc_empty_slice();
   };
   SliceWrapper content_slice;

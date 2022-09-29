@@ -140,7 +140,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
-    builder_ = absl::make_unique<ServerBuilder>();
+    builder_ = std::make_unique<ServerBuilder>();
   }
 
   void InsertPlugin() {

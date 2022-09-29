@@ -32,7 +32,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -231,14 +230,14 @@ class StreamsNotSeenTest : public ::testing::Test {
     test_tcp_server_init(&server_, OnConnect, this);
     test_tcp_server_start(&server_, port_);
     // Start polling on the test tcp server
-    server_poll_thread_ = absl::make_unique<std::thread>([this]() {
+    server_poll_thread_ = std::make_unique<std::thread>([this]() {
       while (!shutdown_) {
         test_tcp_server_poll(&server_, 10);
       }
     });
     // Create the channel
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<CqVerifier>(cq_);
+    cqv_ = std::make_unique<CqVerifier>(cq_);
     grpc_arg client_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),

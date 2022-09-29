@@ -30,7 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -458,7 +457,7 @@ class ChannelBroadcaster {
 
   static void ShutdownCleanup(void* arg, grpc_error_handle /*error*/) {
     ShutdownCleanupArgs* a = static_cast<ShutdownCleanupArgs*>(arg);
-    grpc_slice_unref(a->slice);
+    CSliceUnref(a->slice);
     delete a;
   }
 
@@ -562,11 +561,11 @@ void Server::Start() {
     }
   }
   if (unregistered_request_matcher_ == nullptr) {
-    unregistered_request_matcher_ = absl::make_unique<RealRequestMatcher>(this);
+    unregistered_request_matcher_ = std::make_unique<RealRequestMatcher>(this);
   }
   for (std::unique_ptr<RegisteredMethod>& rm : registered_methods_) {
     if (rm->matcher == nullptr) {
-      rm->matcher = absl::make_unique<RealRequestMatcher>(this);
+      rm->matcher = std::make_unique<RealRequestMatcher>(this);
     }
   }
   {
@@ -633,7 +632,7 @@ void Server::SetRegisteredMethodAllocator(
     grpc_completion_queue* cq, void* method_tag,
     std::function<RegisteredCallAllocation()> allocator) {
   RegisteredMethod* rm = static_cast<RegisteredMethod*>(method_tag);
-  rm->matcher = absl::make_unique<AllocatingRequestMatcherRegistered>(
+  rm->matcher = std::make_unique<AllocatingRequestMatcherRegistered>(
       this, cq, rm, std::move(allocator));
 }
 
@@ -641,8 +640,8 @@ void Server::SetBatchMethodAllocator(
     grpc_completion_queue* cq, std::function<BatchCallAllocation()> allocator) {
   GPR_DEBUG_ASSERT(unregistered_request_matcher_ == nullptr);
   unregistered_request_matcher_ =
-      absl::make_unique<AllocatingRequestMatcherBatch>(this, cq,
-                                                       std::move(allocator));
+      std::make_unique<AllocatingRequestMatcherBatch>(this, cq,
+                                                      std::move(allocator));
 }
 
 void Server::RegisterCompletionQueue(grpc_completion_queue* cq) {
@@ -683,7 +682,7 @@ Server::RegisteredMethod* Server::RegisterMethod(
             flags);
     return nullptr;
   }
-  registered_methods_.emplace_back(absl::make_unique<RegisteredMethod>(
+  registered_methods_.emplace_back(std::make_unique<RegisteredMethod>(
       method, host, payload_handling, flags));
   return registered_methods_.back().get();
 }
@@ -1015,7 +1014,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     uint32_t max_probes = 0;
     size_t slots = 2 * num_registered_methods;
     registered_methods_ =
-        absl::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
+        std::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
     for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
       Slice host;
       Slice method = Slice::FromExternalString(rm->method);
@@ -1230,8 +1229,8 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
     case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());
       GPR_ASSERT(path_.has_value());
-      rc->data.batch.details->host = grpc_slice_ref(host_->c_slice());
-      rc->data.batch.details->method = grpc_slice_ref(path_->c_slice());
+      rc->data.batch.details->host = CSliceRef(host_->c_slice());
+      rc->data.batch.details->method = CSliceRef(path_->c_slice());
       rc->data.batch.details->deadline =
           deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
       break;

@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -144,7 +143,7 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
       regex_substitution(other.regex_substitution) {
   if (other.regex != nullptr) {
     regex =
-        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+        std::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
 }
 
@@ -155,7 +154,7 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
   header_name = other.header_name;
   if (other.regex != nullptr) {
     regex =
-        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+        std::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
   regex_substitution = other.regex_substitution;
   return *this;
@@ -901,7 +900,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
           continue;
         }
         RE2::Options options;
-        policy.regex = absl::make_unique<RE2>(
+        policy.regex = std::make_unique<RE2>(
             UpbStringToStdString(
                 envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
             options);
@@ -1155,7 +1154,7 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
               context.client, result.name->c_str(),
               rds_update->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
+    auto resource = std::make_unique<ResourceDataSubclass>();
     resource->resource = std::move(*rds_update);
     result.resource = std::move(resource);
   }

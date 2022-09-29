@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -121,13 +120,13 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
                      grpc_error_std_string(error)));
     return status;
   }
-  return absl::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
-                                                    max_response_message_bytes);
+  return std::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
+                                                   max_response_message_bytes);
 }
 
 void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<MessageSizeParser>());
+      std::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() {

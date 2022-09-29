@@ -22,7 +22,6 @@
 #include <map>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -465,7 +464,7 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
   if (signer_ == nullptr) {
     cred_verification_url_ = absl::StrReplaceAll(
         regional_cred_verification_url_, {{"{region}", region_}});
-    signer_ = absl::make_unique<AwsRequestSigner>(
+    signer_ = std::make_unique<AwsRequestSigner>(
         access_key_id_, secret_access_key_, token_, "POST",
         cred_verification_url_, region_, "",
         std::map<std::string, std::string>(), &error);

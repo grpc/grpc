@@ -40,7 +40,7 @@ TEST_F(EventEngineFactoryTest, CustomFactoryIsUsed) {
   int counter{0};
   SetEventEngineFactory([&counter] {
     ++counter;
-    return absl::make_unique<AbortingEventEngine>();
+    return std::make_unique<AbortingEventEngine>();
   });
   auto ee1 = GetDefaultEventEngine();
   ASSERT_EQ(counter, 1);
@@ -56,7 +56,7 @@ TEST_F(EventEngineFactoryTest, FactoryResetWorks) {
   SetEventEngineFactory([&counter]() -> std::unique_ptr<EventEngine> {
     // called at most twice;
     EXPECT_LE(++counter, 2);
-    return absl::make_unique<AbortingEventEngine>();
+    return std::make_unique<AbortingEventEngine>();
   });
   auto custom_ee = GetDefaultEventEngine();
   ASSERT_EQ(counter, 1);

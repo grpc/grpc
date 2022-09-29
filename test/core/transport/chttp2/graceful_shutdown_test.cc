@@ -29,7 +29,6 @@
 #include <thread>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -79,7 +78,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void SetupAndStart() {
     ExecCtx exec_ctx;
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<CqVerifier>(cq_);
+    cqv_ = std::make_unique<CqVerifier>(cq_);
     grpc_arg server_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
@@ -102,7 +101,7 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     // Start polling on the client
     Notification client_poller_thread_started_notification;
-    client_poll_thread_ = absl::make_unique<std::thread>(
+    client_poll_thread_ = std::make_unique<std::thread>(
         [this, &client_poller_thread_started_notification]() {
           grpc_completion_queue* client_cq =
               grpc_completion_queue_create_for_next(nullptr);
