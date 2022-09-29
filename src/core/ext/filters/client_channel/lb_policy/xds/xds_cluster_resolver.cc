@@ -1091,8 +1091,7 @@ const JsonLoaderInterface* XdsClusterResolverLbConfig::JsonLoader(
   return loader;
 }
 
-void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json,
-                                              const JsonArgs& args,
+void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                               ValidationErrors* errors) {
   // Validate discoveryMechanisms.
   {
