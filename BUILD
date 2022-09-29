@@ -4906,10 +4906,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h",
     ],
-    external_deps = [
-        "absl/memory",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "gpr_platform",
