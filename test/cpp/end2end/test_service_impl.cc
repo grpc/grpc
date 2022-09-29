@@ -23,13 +23,12 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/synchronization/notification.h"
-
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
@@ -637,7 +636,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
     bool setup_done_{false};
     std::thread finish_thread_;
     bool client_try_cancel_ = false;
-    absl::Notification cancel_notification_;
+    grpc_core::Notification cancel_notification_;
   };
 
   return new Reactor(context);

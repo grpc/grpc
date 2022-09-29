@@ -18,15 +18,21 @@
 
 EXPERIMENTS = {
     "dbg": {
-    },
-    "off": {
         "core_end2end_tests": [
             "new_hpack_huffman_decoder",
         ],
+        "hpack_test": [
+            "new_hpack_huffman_decoder",
+        ],
+    },
+    "off": {
         "endpoint_test": [
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
             "tcp_read_chunks",
+        ],
+        "event_engine_client_test": [
+            "event_engine_client",
         ],
         "flow_control_test": [
             "flow_control_fixes",
@@ -36,7 +42,10 @@ EXPERIMENTS = {
             "tcp_read_chunks",
         ],
         "hpack_test": [
-            "new_hpack_huffman_decoder",
+            "periodic_resource_quota_reclamation",
+        ],
+        "promise_test": [
+            "periodic_resource_quota_reclamation",
         ],
         "resource_quota_test": [
             "memory_pressure_controller",

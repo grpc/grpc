@@ -128,7 +128,7 @@ END2END_FIXTURES = {
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
-        tags = ["requires-net:ipv4", "requires-net:loopback"],
+        tags = ["requires-net:ipv4", "requires-net:loopback", "event_engine_client"],
     ),
     "h2_local_ipv6": _fixture_options(
         secure = True,
@@ -439,6 +439,10 @@ def grpc_end2end_tests():
             "//:grpc_authorization_provider",
             "//test/core/compression:args_utils",
             "//:grpc_http_filters",
+            "//:event_log",
+        ],
+        visibility = [
+            "//src/objective-c/tests:__subpackages__",
         ],
     )
     for f, fopt in END2END_FIXTURES.items():

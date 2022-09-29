@@ -142,7 +142,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     if (!next_issue_) {  // ready to issue
       RunNextState(true, nullptr);
     } else {  // wait for the issue time
-      alarm_ = absl::make_unique<Alarm>();
+      alarm_ = std::make_unique<Alarm>();
       alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
     }
   }
@@ -371,7 +371,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_ = absl::make_unique<Alarm>();
+          alarm_ = std::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
@@ -556,7 +556,7 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
           }
           break;  // loop around, don't return
         case State::WAIT:
-          alarm_ = absl::make_unique<Alarm>();
+          alarm_ = std::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           next_state_ = State::READY_TO_WRITE;
           return true;
@@ -804,7 +804,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_ = absl::make_unique<Alarm>();
+          alarm_ = std::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
@@ -899,7 +899,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
 
 static std::unique_ptr<grpc::GenericStub> GenericStubCreator(
     const std::shared_ptr<Channel>& ch) {
-  return absl::make_unique<grpc::GenericStub>(ch);
+  return std::make_unique<grpc::GenericStub>(ch);
 }
 
 class GenericAsyncStreamingClient final

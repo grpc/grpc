@@ -306,6 +306,9 @@ grpc_cc_test(
     srcs = ["chunked_vector_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -389,7 +392,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     language = "C++",
     shard_count = 5,
     tags = [
@@ -400,4 +402,29 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+)
+
+grpc_cc_test(
+    name = "validation_errors_test",
+    srcs = ["validation_errors_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:validation_errors",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "notification_test",
+    srcs = ["notification_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//:notification"],
 )

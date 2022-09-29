@@ -44,6 +44,15 @@ const char* const description_unconstrained_max_quota_buffer_size =
 const char* const description_new_hpack_huffman_decoder =
     "New HPACK huffman decoder - should be much faster than the existing "
     "implementation.";
+const char* const description_event_engine_client =
+    "Use EventEngine clients instead of iomgr's grpc_tcp_client";
+const char* const description_monitoring_experiment =
+    "Placeholder experiment to prove/disprove our monitoring is working";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -60,7 +69,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_periodic_resource_quota_reclamation, false},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
-    {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder, false},
+    {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
+     kDefaultForDebugOnly},
+    {"event_engine_client", description_event_engine_client, false},
+    {"monitoring_experiment", description_monitoring_experiment, true},
 };
 
 }  // namespace grpc_core

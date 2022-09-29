@@ -13,15 +13,11 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/grpc.h>
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "test/core/util/test_config.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 

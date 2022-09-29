@@ -33,14 +33,35 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-void ThreadPool::StartThread(StatePtr state) {
+namespace {
+// TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
+// current thread (with nullptr indicating not a threadpool thread).
+thread_local bool g_threadpool_thread;
+}  // namespace
+
+void ThreadPool::StartThread(StatePtr state, bool throttled) {
   state->thread_count.Add();
+  if (throttled && state->currently_starting_one_thread.exchange(
+                       true, std::memory_order_relaxed)) {
+    state->thread_count.Remove();
+    return;
+  }
+  struct ThreadArg {
+    StatePtr state;
+    bool throttled;
+  };
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
-        ThreadFunc(*std::unique_ptr<StatePtr>(static_cast<StatePtr*>(arg)));
+        std::unique_ptr<ThreadArg> a(static_cast<ThreadArg*>(arg));
+        g_threadpool_thread = true;
+        if (a->throttled) {
+          GPR_ASSERT(a->state->currently_starting_one_thread.exchange(
+              false, std::memory_order_relaxed));
+        }
+        ThreadFunc(a->state);
       },
-      new StatePtr(state), nullptr,
+      new ThreadArg{state, throttled}, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
@@ -81,15 +102,23 @@ bool ThreadPool::Queue::Step() {
 ThreadPool::ThreadPool(int reserve_threads)
     : reserve_threads_(reserve_threads) {
   for (int i = 0; i < reserve_threads; i++) {
-    StartThread(state_);
+    StartThread(state_, /*throttled=*/false);
   }
 }
 
-ThreadPool::~ThreadPool() { state_->queue.SetShutdown(); }
+ThreadPool::~ThreadPool() {
+  state_->queue.SetShutdown();
+  // Wait until all threads are exited.
+  // Note that if this is a threadpool thread then we won't exit this thread
+  // until the callstack unwinds a little, so we need to wait for just one
+  // thread running instead of zero.
+  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0,
+                                             "shutting down");
+}
 
 void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   if (state_->queue.Add(std::move(callback))) {
-    StartThread(state_);
+    StartThread(state_, /*throttled=*/true);
   }
 }
 
@@ -105,6 +134,7 @@ bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
     case State::kForking:
       return false;
   }
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 void ThreadPool::Queue::SetState(State state) {
@@ -126,22 +156,21 @@ void ThreadPool::ThreadCount::Add() {
 void ThreadPool::ThreadCount::Remove() {
   grpc_core::MutexLock lock(&mu_);
   --threads_;
-  if (threads_ == 0) {
-    cv_.Signal();
-  }
+  cv_.Signal();
 }
 
-void ThreadPool::ThreadCount::Quiesce() {
+void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads,
+                                                    const char* why) {
   grpc_core::MutexLock lock(&mu_);
   auto last_log = absl::Now();
-  while (threads_ > 0) {
+  while (threads_ > threads) {
     // Wait for all threads to exit.
     // At least once every three seconds (but no faster than once per second in
     // the event of spurious wakeups) log a message indicating we're waiting to
     // fork.
     cv_.WaitWithTimeout(&mu_, absl::Seconds(3));
-    if (threads_ > 0 && absl::Now() - last_log > absl::Seconds(1)) {
-      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before forking");
+    if (threads_ > threads && absl::Now() - last_log > absl::Seconds(1)) {
+      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before %s", why);
       last_log = absl::Now();
     }
   }
@@ -149,7 +178,7 @@ void ThreadPool::ThreadCount::Quiesce() {
 
 void ThreadPool::PrepareFork() {
   state_->queue.SetForking();
-  state_->thread_count.Quiesce();
+  state_->thread_count.BlockUntilThreadCount(0, "forking");
 }
 
 void ThreadPool::PostforkParent() { Postfork(); }
@@ -159,7 +188,7 @@ void ThreadPool::PostforkChild() { Postfork(); }
 void ThreadPool::Postfork() {
   state_->queue.Reset();
   for (int i = 0; i < reserve_threads_; i++) {
-    StartThread(state_);
+    StartThread(state_, /*throttled=*/false);
   }
 }
 

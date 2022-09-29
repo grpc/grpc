@@ -29,8 +29,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/transport.h"
 
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
@@ -83,7 +83,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_stream* s, uint32_t* min_progress_size,
     grpc_core::SliceBuffer* stream_out, uint32_t* message_flags) {
   grpc_slice_buffer* slices = &s->frame_storage;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   if (slices->length < 5) {
     if (min_progress_size != nullptr) *min_progress_size = 5 - slices->length;
@@ -131,7 +131,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_slice_buffer_move_first(slices, length, stream_out->c_slice_buffer());
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
@@ -139,7 +139,7 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 grpc_chttp2_stream* s,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-  grpc_slice_ref_internal(slice);
+  grpc_core::CSliceRef(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
@@ -148,8 +148,8 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
         t, s, true, false,
         t->is_client ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "Data frame with END_STREAM flag received")
-                     : GRPC_ERROR_NONE);
+                     : absl::OkStatus());
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

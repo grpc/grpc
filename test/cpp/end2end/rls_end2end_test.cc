@@ -43,7 +43,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -158,7 +158,7 @@ class FakeResolverResponseGeneratorWrapper {
 class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
+    grpc_core::SetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
     grpc_core::CoreConfiguration::RegisterBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
@@ -167,7 +167,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
-    gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
+    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
     grpc_core::CoreConfiguration::Reset();
   }
 
@@ -177,7 +177,7 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
                                  &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-    rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>(
+    rls_server_ = std::make_unique<ServerThread<RlsServiceImpl>>(
         "rls", [](grpc::ServerContext* ctx) {
           EXPECT_THAT(ctx->client_metadata(),
                       ::testing::Contains(
@@ -187,7 +187,7 @@ class RlsEnd2endTest : public ::testing::Test {
     rls_server_->Start();
     // Set up client.
     resolver_response_generator_ =
-        absl::make_unique<FakeResolverResponseGeneratorWrapper>();
+        std::make_unique<FakeResolverResponseGeneratorWrapper>();
     ChannelArguments args;
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     resolver_response_generator_->Get());
@@ -221,7 +221,7 @@ class RlsEnd2endTest : public ::testing::Test {
     backends_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       backends_.push_back(
-          absl::make_unique<ServerThread<MyTestServiceImpl>>("backend"));
+          std::make_unique<ServerThread<MyTestServiceImpl>>("backend"));
       backends_.back()->Start();
     }
   }
@@ -425,7 +425,7 @@ class RlsEnd2endTest : public ::testing::Test {
       // by ServerThread::Serve from firing before the wait below is hit.
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());

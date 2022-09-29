@@ -37,7 +37,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/cpp/util/core_stats.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
@@ -370,8 +370,8 @@ class Client {
         // Closed-loop doesn't use random dist at all
         break;
       case LoadParams::kPoisson:
-        random_dist = absl::make_unique<ExpDist>(load.poisson().offered_load() /
-                                                 num_threads);
+        random_dist = std::make_unique<ExpDist>(load.poisson().offered_load() /
+                                                num_threads);
         break;
       default:
         GPR_ASSERT(false);
@@ -457,16 +457,15 @@ class ClientImpl : public Client {
     /* Allow optionally overriding connect_deadline in order
      * to deal with benchmark environments in which the server
      * can take a long time to become ready. */
-    char* channel_connect_timeout_str =
-        gpr_getenv("QPS_WORKER_CHANNEL_CONNECT_TIMEOUT");
-    if (channel_connect_timeout_str != nullptr &&
-        strcmp(channel_connect_timeout_str, "") != 0) {
-      connect_deadline_seconds = atoi(channel_connect_timeout_str);
+    auto channel_connect_timeout_str =
+        grpc_core::GetEnv("QPS_WORKER_CHANNEL_CONNECT_TIMEOUT");
+    if (channel_connect_timeout_str.has_value() &&
+        !channel_connect_timeout_str->empty()) {
+      connect_deadline_seconds = atoi(channel_connect_timeout_str->c_str());
     }
     gpr_log(GPR_INFO,
             "Waiting for up to %d seconds for all channels to connect",
             connect_deadline_seconds);
-    gpr_free(channel_connect_timeout_str);
     gpr_timespec connect_deadline = gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
         gpr_time_from_seconds(connect_deadline_seconds, GPR_TIMESPAN));

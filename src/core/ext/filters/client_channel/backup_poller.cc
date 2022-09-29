@@ -33,7 +33,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -118,9 +117,9 @@ static void g_poller_unref() {
 
 static void run_poller(void* arg, grpc_error_handle error) {
   backup_poller* p = static_cast<backup_poller*>(arg);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    if (error != GRPC_ERROR_CANCELLED) {
-      GRPC_LOG_IF_ERROR("run_poller", GRPC_ERROR_REF(error));
+  if (!error.ok()) {
+    if (error != absl::CancelledError()) {
+      GRPC_LOG_IF_ERROR("run_poller", error);
     }
     backup_poller_shutdown_unref(p);
     return;
@@ -132,11 +131,11 @@ static void run_poller(void* arg, grpc_error_handle error) {
     return;
   }
   grpc_error_handle err =
-      grpc_pollset_work(p->pollset, nullptr, grpc_core::ExecCtx::Get()->Now());
+      grpc_pollset_work(p->pollset, nullptr, grpc_core::Timestamp::Now());
   gpr_mu_unlock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
   grpc_timer_init(&p->polling_timer,
-                  grpc_core::ExecCtx::Get()->Now() + g_poll_interval,
+                  grpc_core::Timestamp::Now() + g_poll_interval,
                   &p->run_poller_closure);
 }
 
@@ -153,7 +152,7 @@ static void g_poller_init_locked() {
     GRPC_CLOSURE_INIT(&g_poller->run_poller_closure, run_poller, g_poller,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&g_poller->polling_timer,
-                    grpc_core::ExecCtx::Get()->Now() + g_poll_interval,
+                    grpc_core::Timestamp::Now() + g_poll_interval,
                     &g_poller->run_poller_closure);
   }
 }

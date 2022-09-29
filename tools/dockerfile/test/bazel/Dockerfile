@@ -60,5 +60,7 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 
 RUN mkdir -p /var/local/jenkins
 
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+
 # Define the default command.
 CMD ["bash"]

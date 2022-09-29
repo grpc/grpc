@@ -22,6 +22,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/impl/codegen/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -65,13 +67,32 @@ std::string grpc_error_std_string(absl::Status error) {
   return grpc_core::StatusToString(error);
 }
 
+namespace {
+#ifdef GPR_WINDOWS
+std::string StrError(int err) { return strerror(err); }
+#else
+std::string StrError(int err) {
+  struct Finish {
+    static std::string Run(char* buf, int err, int r) {
+      if (r == 0) return buf;
+      return absl::StrFormat("strerror_r(%d) failed: %d", err, r);
+    }
+    static std::string Run(char*, int, const char* r) { return r; }
+  };
+  char buf[256];
+  return Finish::Run(buf, err, strerror_r(err, buf, sizeof(buf)));
+}
+#endif  // !GPR_WINDOWS
+}  // namespace
+
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
+  auto err_string = StrError(err);
   absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, strerror(err), location, {});
+      StatusCreate(absl::StatusCode::kUnknown, err_string, location, {});
   grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
-                          strerror(err));
+                          err_string);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
                           call_name);
   return s;
@@ -94,7 +115,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
-  if (GRPC_ERROR_IS_NONE(src)) {
+  if (src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -135,7 +156,7 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
                                      absl::string_view str) {
-  if (GRPC_ERROR_IS_NONE(src)) {
+  if (src.ok()) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -210,7 +231,7 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
-  GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_DEBUG_ASSERT(!error.ok());
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,
           grpc_core::StatusToString(error).c_str());
   return false;

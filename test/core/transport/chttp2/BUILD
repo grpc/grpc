@@ -261,7 +261,6 @@ grpc_cc_test(
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = ["gtest"],
-    flaky = True,
     shard_count = 7,
     deps = [
         "//:gpr",
@@ -307,6 +306,20 @@ grpc_cc_test(
         "flow_control_test",
         "no_windows",
     ],  # LARGE_MACHINE is not configured for windows RBE
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "stream_leak_with_queued_flow_control_update_test",
+    srcs = ["stream_leak_with_queued_flow_control_update_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

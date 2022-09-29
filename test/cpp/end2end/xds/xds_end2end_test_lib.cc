@@ -39,8 +39,8 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -145,7 +145,7 @@ void XdsEnd2endTest::ServerThread::Start() {
   // by ServerThread::Serve from firing before the wait below is hit.
   grpc_core::MutexLock lock(&mu);
   grpc_core::CondVar cond;
-  thread_ = absl::make_unique<std::thread>(
+  thread_ = std::make_unique<std::thread>(
       std::bind(&ServerThread::Serve, this, &mu, &cond));
   cond.Wait(&mu);
   gpr_log(GPR_INFO, "%s server startup complete", Type());
@@ -183,7 +183,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     if (GetParam().bootstrap_source() ==
         XdsTestType::kBootstrapFromChannelArg) {
       builder.SetOption(
-          absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
+          std::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
     }
     builder.set_status_notifier(&notifier_);
     builder.experimental().set_drain_grace_time(
@@ -522,8 +522,8 @@ void XdsEnd2endTest::TearDown() {
   // Clear global xDS channel args, since they will go out of scope
   // when this test object is destroyed.
   grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
-  gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
-  gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
+  grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP");
+  grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
   if (bootstrap_file_ != nullptr) {
     remove(bootstrap_file_);
     gpr_free(bootstrap_file_);
@@ -533,7 +533,7 @@ void XdsEnd2endTest::TearDown() {
 std::unique_ptr<XdsEnd2endTest::BalancerServerThread>
 XdsEnd2endTest::CreateAndStartBalancer() {
   std::unique_ptr<BalancerServerThread> balancer =
-      absl::make_unique<BalancerServerThread>(this);
+      std::make_unique<BalancerServerThread>(this);
   balancer->Start();
   return balancer;
 }
@@ -751,12 +751,12 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   if (GetParam().use_v2()) builder.SetV2();
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
-    gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
+    grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
   } else if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromFile) {
     FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file_);
     fputs(bootstrap_.c_str(), out);
     fclose(out);
-    gpr_setenv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
+    grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
   }
   if (GetParam().bootstrap_source() != XdsTestType::kBootstrapFromChannelArg) {
     // If getting bootstrap from channel arg, we'll pass these args in

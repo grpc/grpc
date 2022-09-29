@@ -21,7 +21,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
@@ -39,15 +38,15 @@ TEST(PeriodicUpdateTest, SimpleTest) {
   // Create a periodic update that updates every second.
   {
     ExecCtx exec_ctx;
-    upd = absl::make_unique<PeriodicUpdate>(Duration::Seconds(1));
-    start = exec_ctx.Now();
+    upd = std::make_unique<PeriodicUpdate>(Duration::Seconds(1));
+    start = Timestamp::Now();
   }
   // Wait until the first period has elapsed.
   bool done = false;
   while (!done) {
     ExecCtx exec_ctx;
     upd->Tick([&](Duration elapsed) {
-      reset_start = ExecCtx::Get()->Now();
+      reset_start = Timestamp::Now();
       EXPECT_GE(elapsed, Duration::Seconds(1));
       done = true;
     });
@@ -55,7 +54,7 @@ TEST(PeriodicUpdateTest, SimpleTest) {
   // Ensure that took at least 1 second.
   {
     ExecCtx exec_ctx;
-    EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
+    EXPECT_GE(Timestamp::Now() - start, Duration::Seconds(1));
     start = reset_start;
   }
   // Do ten more update cycles
@@ -64,8 +63,8 @@ TEST(PeriodicUpdateTest, SimpleTest) {
     while (!done) {
       ExecCtx exec_ctx;
       upd->Tick([&](Duration) {
-        reset_start = ExecCtx::Get()->Now();
-        EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
+        reset_start = Timestamp::Now();
+        EXPECT_GE(Timestamp::Now() - start, Duration::Seconds(1));
         done = true;
       });
     }
@@ -73,8 +72,8 @@ TEST(PeriodicUpdateTest, SimpleTest) {
     // allowance for the presumed inaccuracy of this type.
     {
       ExecCtx exec_ctx;
-      EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
-      EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(3));
+      EXPECT_GE(Timestamp::Now() - start, Duration::Seconds(1));
+      EXPECT_LE(Timestamp::Now() - start, Duration::Seconds(3));
       start = reset_start;
     }
   }
@@ -87,8 +86,8 @@ TEST(PeriodicUpdate, ThreadTest) {
   // Create a periodic update that updates every second.
   {
     ExecCtx exec_ctx;
-    upd = absl::make_unique<PeriodicUpdate>(Duration::Seconds(1));
-    start = exec_ctx.Now();
+    upd = std::make_unique<PeriodicUpdate>(Duration::Seconds(1));
+    start = Timestamp::Now();
   }
   // Run ten threads all updating the counter continuously, for a total of ten
   // update cycles.
@@ -113,8 +112,8 @@ TEST(PeriodicUpdate, ThreadTest) {
   // Ensure our ten cycles took at least 10 seconds, and no more than 30.
   {
     ExecCtx exec_ctx;
-    EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(10));
-    EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(30));
+    EXPECT_GE(Timestamp::Now() - start, Duration::Seconds(10));
+    EXPECT_LE(Timestamp::Now() - start, Duration::Seconds(30));
   }
 }
 
