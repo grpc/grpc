@@ -65,13 +65,30 @@ std::string grpc_error_std_string(absl::Status error) {
   return grpc_core::StatusToString(error);
 }
 
+namespace {
+#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
+std::string StrError(int err) {
+  char buf[256];
+  int r = strerror_r(err, buf, sizeof(buf));
+  if (r == 0) return buf;
+  return absl::StrFormat("strerror_r(%d) failed: %d", err, r);
+}
+#else
+std::string StrError(int err) {
+  char buf[256];
+  return strerror_r(err, buf, sizeof(buf));
+}
+#endif
+}  // namespace
+
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
+  auto err_string = StrError(err);
   absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, strerror(err), location, {});
+      StatusCreate(absl::StatusCode::kUnknown, err_string, location, {});
   grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
-                          strerror(err));
+                          err_string);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
                           call_name);
   return s;
