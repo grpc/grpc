@@ -21,8 +21,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
@@ -107,7 +107,7 @@ const grpc_channel_filter* PromiseTracingFilterFor(
   MutexLock lock(&globals->mu);
   auto it = globals->map.find(filter);
   if (it != globals->map.end()) return it->second.get();
-  return globals->map.emplace(filter, absl::make_unique<DerivedFilter>(filter))
+  return globals->map.emplace(filter, std::make_unique<DerivedFilter>(filter))
       .first->second.get();
 }
 

@@ -2233,7 +2233,7 @@ void PromiseBasedCall::CToMetadata(grpc_metadata* metadata, size_t count,
     auto key = StringViewFromSlice(md->key);
     // Filter "content-length metadata"
     if (key == "content-length") continue;
-    b->Append(key, Slice(grpc_slice_ref(md->value)),
+    b->Append(key, Slice(CSliceRef(md->value)),
               [md](absl::string_view error, const Slice& value) {
                 gpr_log(GPR_DEBUG, "Append error: %s",
                         absl::StrCat("key=", StringViewFromSlice(md->key),
