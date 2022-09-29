@@ -31,6 +31,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -187,7 +188,7 @@ class BaseCallData : public Activity, private Wakeable {
     }
 
     void Complete(grpc_transport_stream_op_batch* batch) {
-      call_closures_.Add(batch->on_complete, GRPC_ERROR_NONE,
+      call_closures_.Add(batch->on_complete, absl::OkStatus(),
                          "Flusher::Complete");
     }
 
@@ -367,7 +368,7 @@ class ClientCallData : public BaseCallData {
   // Our closure pointing to RecvTrailingMetadataReadyCallback.
   grpc_closure recv_trailing_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancelled_error_;
   // State of the send_initial_metadata op.
   SendInitialState send_initial_state_ = SendInitialState::kInitial;
   // State of the recv_trailing_metadata op.
@@ -446,7 +447,7 @@ class ServerCallData : public BaseCallData {
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancelled_error_;
   // Trailing metadata batch
   CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.
@@ -517,7 +518,7 @@ MakePromiseBasedFilter(const char* name) {
       // init_call_elem
       [](grpc_call_element* elem, const grpc_call_element_args* args) {
         new (elem->call_data) CallData(elem, args, kFlags);
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       },
       // set_pollset_or_pollset_set
       [](grpc_call_element* elem, grpc_polling_entity* pollent) {
@@ -530,7 +531,7 @@ MakePromiseBasedFilter(const char* name) {
         cd->Finalize(final_info);
         cd->~CallData();
         if ((kFlags & kFilterIsLast) != 0) {
-          ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
         } else {
           GPR_ASSERT(then_schedule_closure == nullptr);
         }
@@ -551,7 +552,7 @@ MakePromiseBasedFilter(const char* name) {
           return absl_status_to_grpc_error(status.status());
         }
         new (elem->channel_data) F(std::move(*status));
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       },
       // post_init_channel_elem
       [](grpc_channel_stack*, grpc_channel_element* elem) {

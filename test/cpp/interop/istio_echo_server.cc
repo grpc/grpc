@@ -44,7 +44,7 @@
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"

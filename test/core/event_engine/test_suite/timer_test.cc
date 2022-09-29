@@ -141,7 +141,7 @@ void EventEngineTimerTest::ScheduleCheckCB(
 
 TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   auto engine = this->NewEventEngine();
-  constexpr int thread_count = 100;
+  constexpr int thread_count = 10;
   constexpr int call_count_per_thread = 100;
   constexpr float timeout_min_seconds = 1;
   constexpr float timeout_max_seconds = 10;
@@ -175,7 +175,9 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   while (!signaled_) {
     cv_.Wait(&mu_);
   }
-  gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
-          thread_count * call_count);
+  if (failed_call_count.load() != 0) {
+    gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
+            thread_count * call_count);
+  }
   ASSERT_EQ(0, failed_call_count.load());
 }

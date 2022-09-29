@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include <string>
 
 #include <grpc/event_engine/event_engine.h>
@@ -31,8 +29,6 @@ std::string HandleToString(EventEngine::TaskHandle handle);
 
 grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
                                  EventEngine::Duration delta);
-
-size_t Milliseconds(EventEngine::Duration d);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

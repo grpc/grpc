@@ -39,8 +39,8 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -522,8 +522,8 @@ void XdsEnd2endTest::TearDown() {
   // Clear global xDS channel args, since they will go out of scope
   // when this test object is destroyed.
   grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
-  gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
-  gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
+  grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP");
+  grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
   if (bootstrap_file_ != nullptr) {
     remove(bootstrap_file_);
     gpr_free(bootstrap_file_);
@@ -751,12 +751,12 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   if (GetParam().use_v2()) builder.SetV2();
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
-    gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
+    grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
   } else if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromFile) {
     FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file_);
     fputs(bootstrap_.c_str(), out);
     fclose(out);
-    gpr_setenv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
+    grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
   }
   if (GetParam().bootstrap_source() != XdsTestType::kBootstrapFromChannelArg) {
     // If getting bootstrap from channel arg, we'll pass these args in
@@ -791,7 +791,8 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   // TODO(roth): Remove this once we enable retries by default internally.
   args->SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
   if (failover_timeout_ms > 0) {
-    args->SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout_ms);
+    args->SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS,
+                 failover_timeout_ms * grpc_test_slowdown_factor());
   }
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromChannelArg) {
     // We're getting the bootstrap from a channel arg, so we do the
@@ -1004,7 +1005,8 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
     std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
     const RpcOptions& rpc_options, StatusCode expected_status) {
   absl::optional<AdsServiceImpl::ResponseState> response_state;
-  auto deadline = absl::Now() + absl::Seconds(30);
+  auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   auto continue_predicate = [&]() {
     if (absl::Now() >= deadline) {
       return false;
@@ -1021,6 +1023,14 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
         << debug_location.file() << ":" << debug_location.line();
   } while (continue_predicate());
   return response_state;
+}
+
+void XdsEnd2endTest::SetProtoDuration(
+    grpc_core::Duration duration, google::protobuf::Duration* duration_proto) {
+  duration *= grpc_test_slowdown_factor();
+  gpr_timespec ts = duration.as_timespec();
+  duration_proto->set_seconds(ts.tv_sec);
+  duration_proto->set_nanos(ts.tv_nsec);
 }
 
 std::string XdsEnd2endTest::ReadFile(const char* file_path) {

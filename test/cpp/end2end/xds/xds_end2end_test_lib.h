@@ -33,7 +33,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -466,10 +466,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   class ScopedExperimentalEnvVar {
    public:
     explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      gpr_setenv(env_var_, "true");
+      grpc_core::SetEnv(env_var_, "true");
     }
 
-    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
+    ~ScopedExperimentalEnvVar() { grpc_core::UnsetEnv(env_var_); }
 
    private:
     const char* env_var_;
@@ -717,7 +717,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct RpcOptions {
     RpcService service = SERVICE_ECHO;
     RpcMethod method = METHOD_ECHO;
-    int timeout_ms = 1000;
+    // Will be multiplied by grpc_test_slowdown_factor().
+    int timeout_ms = 5000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
     // These options are used by the backend service impl.
@@ -741,6 +742,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     RpcOptions& set_timeout_ms(int rpc_timeout_ms) {
       timeout_ms = rpc_timeout_ms;
+      return *this;
+    }
+
+    RpcOptions& set_timeout(grpc_core::Duration timeout) {
+      timeout_ms = timeout.millis();
       return *this;
     }
 
@@ -814,7 +820,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
   void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
                      std::function<bool(const RpcResult&)> continue_predicate,
-                     int timeout_ms = 5000,
+                     int timeout_ms = 15000,
                      const RpcOptions& rpc_options = RpcOptions());
 
   // Sends the specified number of RPCs and fails if the RPC fails.
@@ -881,7 +887,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // If true, resets the backend counters before returning.
     bool reset_counters = true;
     // How long to wait for the backend(s) to see requests.
-    int timeout_ms = 5000;
+    // Will be multiplied by grpc_test_slowdown_factor().
+    int timeout_ms = 15000;
 
     WaitForBackendOptions() {}
 
@@ -1008,6 +1015,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     return grpc_core::Timestamp::FromTimespecRoundDown(
         gpr_now(GPR_CLOCK_MONOTONIC));
   }
+
+  // Sets duration_proto to duration times grpc_test_slowdown_factor().
+  static void SetProtoDuration(grpc_core::Duration duration,
+                               google::protobuf::Duration* duration_proto);
 
   // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
   // chance. Rolling dices in drop/fault-injection generates a binomial

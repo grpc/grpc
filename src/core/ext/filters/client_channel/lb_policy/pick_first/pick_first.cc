@@ -38,6 +38,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -68,7 +69,7 @@ class PickFirst : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kPickFirst; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -162,9 +163,9 @@ class PickFirst : public LoadBalancingPolicy {
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // All our subchannels.
-  OrphanablePtr<PickFirstSubchannelList> subchannel_list_;
+  RefCountedPtr<PickFirstSubchannelList> subchannel_list_;
   // Latest pending subchannel list.
-  OrphanablePtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
+  RefCountedPtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
   // Selected subchannel in \a subchannel_list_.
   PickFirstSubchannelData* selected_ = nullptr;
   // Are we in IDLE state?
@@ -227,11 +228,11 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             "[PF %p] Shutting down previous pending subchannel list %p", this,
             latest_pending_subchannel_list_.get());
   }
-  latest_pending_subchannel_list_ = MakeOrphanable<PickFirstSubchannelList>(
+  latest_pending_subchannel_list_ = MakeRefCounted<PickFirstSubchannelList>(
       this, std::move(addresses), latest_update_args_.args);
   latest_pending_subchannel_list_->StartWatchingLocked();
   // Empty update or no valid subchannels.  Put the channel in
-  // TRANSIENT_FAILURE.
+  // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     absl::Status status =
         latest_update_args_.addresses.ok()
@@ -241,6 +242,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
+    channel_control_helper()->RequestReresolution();
   }
   // Otherwise, if this is the initial update, report CONNECTING.
   else if (subchannel_list_.get() == nullptr) {
@@ -262,7 +264,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
 }
 
-void PickFirst::UpdateLocked(UpdateArgs args) {
+absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     if (args.addresses.ok()) {
       gpr_log(GPR_INFO,
@@ -275,6 +277,13 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   }
   // Add GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
   args.args = args.args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
+  // Set return status based on the address list.
+  absl::Status status;
+  if (!args.addresses.ok()) {
+    status = args.addresses.status();
+  } else if (args.addresses->empty()) {
+    status = absl::UnavailableError("address list must not be empty");
+  }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
   if (!args.addresses.ok() && latest_update_args_.config != nullptr) {
@@ -287,6 +296,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   if (!idle_) {
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
+  return status;
 }
 
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
@@ -527,12 +537,9 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_lb_policy_pick_first_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::PickFirstFactory>());
+void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<PickFirstFactory>());
 }
 
-void grpc_lb_policy_pick_first_shutdown() {}
+}  // namespace grpc_core

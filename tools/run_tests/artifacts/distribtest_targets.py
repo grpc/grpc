@@ -277,7 +277,7 @@ class PHP7DistribTest(object):
             return create_jobspec(
                 self.name, ['test/distrib/php/run_distrib_test_macos.sh'],
                 environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                timeout_seconds=15 * 60,
+                timeout_seconds=20 * 60,
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")
@@ -442,19 +442,16 @@ def targets():
         PythonDistribTest('linux', 'x64', 'arch', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu2004', source=True),
         # Ruby
-        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_5'),
-        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_6'),
+        RubyDistribTest('linux',
+                        'x64',
+                        'stretch',
+                        ruby_version='ruby_2_6',
+                        source=True,
+                        presubmit=True),
         RubyDistribTest('linux',
                         'x64',
                         'stretch',
                         ruby_version='ruby_2_7',
-                        presubmit=True),
-        # TODO(apolcyn): add a ruby 3.0 test once protobuf adds support
-        RubyDistribTest('linux',
-                        'x64',
-                        'stretch',
-                        ruby_version='ruby_2_5',
-                        source=True,
                         presubmit=True),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),

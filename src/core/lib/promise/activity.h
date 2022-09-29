@@ -32,7 +32,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -100,7 +99,7 @@ class Waker {
   friend class AtomicWaker;
 
   Wakeable* Take() {
-    return absl::exchange(wakeable_, activity_detail::unwakeable());
+    return std::exchange(wakeable_, activity_detail::unwakeable());
   }
 
   Wakeable* wakeable_;
@@ -204,7 +203,7 @@ class Activity : public Orphanable {
  private:
   // Set during RunLoop to the Activity that's executing.
   // Being set implies that mu_ is held.
-  static GPR_THREAD_LOCAL(Activity*) g_current_activity_;
+  static thread_local Activity* g_current_activity_;
 };
 
 // Owned pointer to one Activity.
@@ -263,7 +262,10 @@ class ActivityContexts : public ContextHolder<Contexts>... {
     explicit ScopedContext(ActivityContexts* contexts)
         : Context<ContextTypeFromHeld<Contexts>>(
               static_cast<ContextHolder<Contexts>*>(contexts)
-                  ->GetContext())... {}
+                  ->GetContext())... {
+      // Silence `unused-but-set-parameter` in case of Contexts = {}
+      (void)contexts;
+    }
   };
 };
 
@@ -315,7 +317,7 @@ class FreestandingActivity : public Activity, private Wakeable {
   // Check if we got an internal wakeup since the last time this function was
   // called.
   ActionDuringRun GotActionDuringRun() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return absl::exchange(action_during_run_, ActionDuringRun::kNone);
+    return std::exchange(action_during_run_, ActionDuringRun::kNone);
   }
 
   // Implementors of Wakeable::Wakeup should call this after the wakeup has
@@ -436,7 +438,11 @@ class PromiseActivity final : public FreestandingActivity,
       MutexLock lock(mu());
       // Check if we were done, and flag done.
       was_done = done_;
-      if (!done_) MarkDone();
+      if (!done_) {
+        ScopedActivity scoped_activity(this);
+        ScopedContext contexts(this);
+        MarkDone();
+      }
     }
     // If we were not done, then call the on_done callback.
     if (!was_done) {

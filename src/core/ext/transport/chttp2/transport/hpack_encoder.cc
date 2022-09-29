@@ -24,8 +24,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "absl/utility/utility.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -35,8 +33,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -158,7 +154,6 @@ uint8_t* HPackCompressor::Framer::AddTiny(size_t len) {
 }
 
 void HPackCompressor::Framer::EmitIndexed(uint32_t elem_index) {
-  GRPC_STATS_INC_HPACK_SEND_INDEXED();
   VarintWriter<1> w(elem_index);
   w.Write(0x80, AddTiny(w.length()));
 }
@@ -180,17 +175,14 @@ static WireValue GetWireValue(Slice value, bool true_binary_enabled,
                               bool is_bin_hdr) {
   if (is_bin_hdr) {
     if (true_binary_enabled) {
-      GRPC_STATS_INC_HPACK_SEND_BINARY();
       return WireValue(0x00, true, std::move(value));
     } else {
-      GRPC_STATS_INC_HPACK_SEND_BINARY_BASE64();
       return WireValue(0x80, false,
                        Slice(grpc_chttp2_base64_encode_and_huffman_compress(
                            value.c_slice())));
     }
   } else {
     /* TODO(ctiller): opportunistically compress non-binary headers */
-    GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
     return WireValue(0x00, false, std::move(value));
   }
 }
@@ -269,8 +261,6 @@ class StringKey {
 
 void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyIncIdx(
     Slice key_slice, Slice value_slice) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, AddTiny(key.prefix_length()));
   Add(key.key());
@@ -281,8 +271,6 @@ void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyIncIdx(
 
 void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
     Slice key_slice, Slice value_slice) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x00, AddTiny(key.prefix_length()));
   Add(key.key());
@@ -293,8 +281,6 @@ void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
 
 void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyIncIdx(
     Slice key_slice, Slice value_slice) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, AddTiny(key.prefix_length()));
   Add(key.key());
@@ -305,8 +291,6 @@ void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyIncIdx(
 
 void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
     uint32_t key_index, Slice value_slice) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
   VarintWriter<4> key(key_index);
   uint8_t* data = AddTiny(key.length() + emit.prefix_length());
@@ -317,8 +301,6 @@ void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
 
 void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyNotIdx(
     Slice key_slice, Slice value_slice) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   StringKey key(std::move(key_slice));
   key.WritePrefix(0x00, AddTiny(key.prefix_length()));
   Add(key.key());
@@ -536,7 +518,7 @@ void HPackCompressor::Framer::EncodeRepeatingSliceValue(
 }
 
 void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
-  Timeout timeout = Timeout::FromDuration(deadline - ExecCtx::Get()->Now());
+  Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
   for (auto it = compressor_->previous_timeouts_.begin();
        it != compressor_->previous_timeouts_.end(); ++it) {
     double ratio = timeout.RatioVersus(it->timeout);
@@ -678,7 +660,7 @@ HPackCompressor::Framer::Framer(const EncodeHeaderOptions& options,
       stats_(options.stats),
       compressor_(compressor),
       prefix_(BeginFrame()) {
-  if (absl::exchange(compressor_->advertise_table_size_change_, false)) {
+  if (std::exchange(compressor_->advertise_table_size_change_, false)) {
     AdvertiseTableSizeChange();
   }
 }

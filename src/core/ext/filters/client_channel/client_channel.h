@@ -250,7 +250,7 @@ class ClientChannel {
   void OnResolverErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  void CreateOrUpdateLbPolicyLocked(
+  absl::Status CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
       const absl::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
@@ -362,8 +362,7 @@ class ClientChannel {
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(*work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
-  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_) =
-      GRPC_ERROR_NONE;
+  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -508,10 +507,10 @@ class ClientChannel::LoadBalancedCall
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error_;
 
   // Set when we fail inside the LB call.
-  grpc_error_handle failure_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle failure_error_;
 
   grpc_closure pick_closure_;
 

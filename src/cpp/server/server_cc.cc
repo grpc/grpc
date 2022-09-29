@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -43,8 +44,8 @@
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
-#include <grpcpp/impl/codegen/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
@@ -70,10 +71,8 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
@@ -219,7 +218,7 @@ void ServerInterface::BaseAsyncRequest::
   grpc_core::ExecCtx exec_ctx;
   grpc_cq_begin_op(notification_cq_->cq(), this);
   grpc_cq_end_op(
-      notification_cq_->cq(), this, GRPC_ERROR_NONE,
+      notification_cq_->cq(), this, absl::OkStatus(),
       [](void* /*arg*/, grpc_cq_completion* completion) { delete completion; },
       nullptr, new grpc_cq_completion());
 }
@@ -813,7 +812,6 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     GPR_DEBUG_ASSERT(sync_req != nullptr);
     GPR_DEBUG_ASSERT(ok);
 
-    GPR_TIMER_SCOPE("sync_req->Run()", 0);
     sync_req->Run(global_callbacks_, resources);
   }
 

@@ -48,16 +48,6 @@ GRPCAPI void grpc_metadata_array_destroy(grpc_metadata_array* array);
 GRPCAPI void grpc_call_details_init(grpc_call_details* details);
 GRPCAPI void grpc_call_details_destroy(grpc_call_details* details);
 
-/** Registers a plugin to be initialized and destroyed with the library.
-
-    The \a init and \a destroy functions will be invoked as part of
-    \a grpc_init() and \a grpc_shutdown(), respectively.
-    Note that these functions can be invoked an arbitrary number of times
-    (and hence so will \a init and \a destroy).
-    It is safe to pass NULL to either argument. Plugins are destroyed in
-    the reverse order they were initialized. */
-GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
-
 /** Initialize the grpc library.
 
     After it's called, a matching invocation to grpc_shutdown() is expected.

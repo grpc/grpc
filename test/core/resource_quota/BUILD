@@ -28,6 +28,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = [
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -36,6 +39,7 @@ grpc_cc_test(
         "//:grpc",
         "//:ref_counted_ptr",
         "//:resource_quota",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -52,6 +56,10 @@ grpc_cc_test(
     srcs = ["memory_quota_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "cpu:10",
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -59,6 +67,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:memory_quota",
         "//:slice_refcount",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -95,9 +104,15 @@ grpc_cc_test(
     srcs = ["resource_quota_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//:resource_quota"],
+    deps = [
+        "//:resource_quota",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
 )
 
 grpc_cc_test(
@@ -115,6 +130,7 @@ grpc_cc_test(
     tags = [
         "no_mac",
         "no_windows",
+        "resource_quota_test",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -123,6 +139,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:memory_quota",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -131,6 +148,7 @@ grpc_proto_fuzzer(
     srcs = ["memory_quota_fuzzer.cc"],
     corpus = "memory_quota_fuzzer_corpus",
     external_deps = [
+        "absl/status",
         "absl/strings",
         "absl/types:optional",
     ],

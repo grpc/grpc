@@ -165,7 +165,6 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing fault injection method parameters: ",
                      grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   if (fault_injection_policies.empty()) return nullptr;

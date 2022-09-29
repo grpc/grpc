@@ -305,10 +305,10 @@ def grpc_cc_library(name,
     for src in hdrs + public_hdrs + srcs:
         filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), src)
         for line in open(filename):
-            m = re.search(r'#include <(.*)>', line)
+            m = re.search(r'^#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
-            m = re.search(r'#include "(.*)"', line)
+            m = re.search(r'^#include "(.*)"', line)
             if m:
                 inc.add(m.group(1))
             if 'grpc::g_glip' in line or 'grpc::g_core_codegen_interface' in line:
@@ -395,6 +395,7 @@ args = parser.parse_args()
 
 for dirname in [
         "",
+        "src/cpp/ext/gcp",
         "test/core/uri",
         "test/core/util",
         "test/core/end2end",
@@ -595,9 +596,6 @@ def make_library(library):
         print("# ERROR: can't categorize header: %s used by %s" %
               (hdr, library))
         error = True
-
-    if library in needs_codegen_base_src:
-        deps.add('grpc++_codegen_base_src', '#needs_codegen_base_src')
 
     deps.remove(library)
 
