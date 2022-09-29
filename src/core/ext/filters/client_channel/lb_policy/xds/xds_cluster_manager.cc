@@ -50,6 +50,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
