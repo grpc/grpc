@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
-#include <memory>
 #include <new>
 #include <string>
 #include <utility>
@@ -65,7 +64,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/time_precise.h"
