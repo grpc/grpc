@@ -1353,7 +1353,10 @@ grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
-    visibility = ["@grpc:client_channel"],
+    visibility = [
+        "@grpc:client_channel",
+        "@grpc:xds_client_core",
+    ],
     deps = [
         "debug_location",
         "gpr_platform",
