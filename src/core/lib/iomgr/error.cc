@@ -66,6 +66,9 @@ std::string grpc_error_std_string(absl::Status error) {
 }
 
 namespace {
+// strerror() is not threadsafe so we can't use it here.
+// Instead, we use strerror_r() which is threadsafe but not entirely portable:
+// two versions exist in the wild - the GNU version and the XSI version.
 #if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
 std::string StrError(int err) {
   char buf[256];
