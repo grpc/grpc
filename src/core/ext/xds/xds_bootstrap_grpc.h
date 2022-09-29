@@ -21,89 +21,147 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
-#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
-class XdsCertificateProviderPluginMapInterface {
- public:
-  virtual ~XdsCertificateProviderPluginMapInterface() = default;
-
-  virtual absl::Status AddPlugin(const std::string& instance_name,
-                                 const std::string& plugin_name,
-                                 const Json& config) = 0;
-
-  virtual bool HasPlugin(const std::string& instance_name) const = 0;
-
-  virtual std::string ToString() const = 0;
-};
-
 class GrpcXdsBootstrap : public XdsBootstrap {
  public:
-  // Creates bootstrap object from json_string.
-  // If *error is not GRPC_ERROR_NONE after returning, then there was an
-  // error parsing the contents.
-  static std::unique_ptr<GrpcXdsBootstrap> Create(
-      absl::string_view json_string,
-      std::unique_ptr<XdsCertificateProviderPluginMapInterface>
-          certificate_provider_plugin_map,
-      grpc_error_handle* error);
+  class GrpcNode : public Node {
+   public:
+    const std::string& id() const override { return id_; }
+    const std::string& cluster() const override { return cluster_; }
+    const std::string& locality_region() const override {
+      return locality_.region;
+    }
+    const std::string& locality_zone() const override { return locality_.zone; }
+    const std::string& locality_sub_zone() const override {
+      return locality_.sub_zone;
+    }
+    const Json::Object& metadata() const override { return metadata_; }
 
-  // Do not instantiate directly -- use Create() above instead.
-  GrpcXdsBootstrap(Json json,
-                   std::unique_ptr<XdsCertificateProviderPluginMapInterface>
-                       certificate_provider_plugin_map,
-                   grpc_error_handle* error);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+
+   private:
+    struct Locality {
+      std::string region;
+      std::string zone;
+      std::string sub_zone;
+
+      static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    };
+
+    std::string id_;
+    std::string cluster_;
+    Locality locality_;
+    Json::Object metadata_;
+  };
+
+  class GrpcXdsServer : public XdsServer {
+   public:
+    const std::string& server_uri() const override { return server_uri_; }
+
+    bool ShouldUseV3() const override;
+    bool IgnoreResourceDeletion() const override;
+
+    bool Equals(const XdsServer& other) const override;
+
+    const std::string& channel_creds_type() const {
+      return channel_creds_.type;
+    }
+    const Json::Object& channel_creds_config() const {
+      return channel_creds_.config;
+    }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
+
+    Json ToJson() const;
+
+   private:
+    struct ChannelCreds {
+      std::string type;
+      Json::Object config;
+
+      static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    };
+
+    std::string server_uri_;
+    ChannelCreds channel_creds_;
+    std::set<std::string> server_features_;
+  };
+
+  class GrpcAuthority : public Authority {
+   public:
+    const XdsServer* server() const override {
+      return servers_.empty() ? nullptr : &servers_[0];
+    }
+
+    const std::string& client_listener_resource_name_template() const {
+      return client_listener_resource_name_template_;
+    }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+
+   private:
+    std::vector<GrpcXdsServer> servers_;
+    std::string client_listener_resource_name_template_;
+  };
+
+  // Creates bootstrap object from json_string.
+  static absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> Create(
+      absl::string_view json_string);
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 
   std::string ToString() const override;
 
   const XdsServer& server() const override { return servers_[0]; }
-  const Node* node() const override { return node_.get(); }
-  const std::string& client_default_listener_resource_name_template()
-      const override {
+  const Node* node() const override {
+    return node_.has_value() ? &*node_ : nullptr;
+  }
+  const Authority* LookupAuthority(const std::string& name) const override;
+  const XdsServer* FindXdsServer(const XdsServer& server) const override;
+
+  const std::string& client_default_listener_resource_name_template() const {
     return client_default_listener_resource_name_template_;
   }
-  const std::string& server_listener_resource_name_template() const override {
+  const std::string& server_listener_resource_name_template() const {
     return server_listener_resource_name_template_;
   }
-  const std::map<std::string, Authority>& authorities() const override {
+  const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
+      const {
+    return certificate_providers_;
+  }
+
+  // Exposed for testing purposes only.
+  const std::map<std::string, GrpcAuthority>& authorities() const {
     return authorities_;
   }
 
-  const XdsCertificateProviderPluginMapInterface*
-  certificate_provider_plugin_map() const {
-    return certificate_provider_plugin_map_.get();
-  }
-
-  static XdsServer XdsServerParse(const Json& json, grpc_error_handle* error);
-  static Json::Object XdsServerToJson(const XdsServer& server);
-
  private:
-  grpc_error_handle ParseXdsServerList(Json* json,
-                                       std::vector<XdsServer>* servers);
-  grpc_error_handle ParseAuthorities(Json* json);
-  grpc_error_handle ParseAuthority(Json* json, const std::string& name);
-  grpc_error_handle ParseNode(Json* json);
-  grpc_error_handle ParseLocality(Json* json);
-  grpc_error_handle ParseCertificateProviders(Json* json);
-  grpc_error_handle ParseCertificateProvider(const std::string& instance_name,
-                                             Json* certificate_provider_json);
-
-  std::vector<XdsServer> servers_;
-  std::unique_ptr<Node> node_;
+  std::vector<GrpcXdsServer> servers_;
+  absl::optional<GrpcNode> node_;
   std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
-  std::map<std::string, Authority> authorities_;
-  std::unique_ptr<XdsCertificateProviderPluginMapInterface>
-      certificate_provider_plugin_map_;
+  std::map<std::string, GrpcAuthority> authorities_;
+  CertificateProviderStore::PluginDefinitionMap certificate_providers_;
 };
 
 }  // namespace grpc_core

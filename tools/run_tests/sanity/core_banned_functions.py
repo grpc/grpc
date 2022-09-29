@@ -29,12 +29,6 @@ BANNED_EXCEPT = {
     'grpc_resource_quota_unref(': [
         'src/core/lib/resource_quota/api.cc', 'src/core/lib/surface/server.cc'
     ],
-    'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer_api.cc'],
-    'grpc_slice_buffer_reset_and_unref(': [
-        'src/core/lib/slice/slice_buffer_api.cc'
-    ],
-    'grpc_slice_ref(': ['src/core/lib/slice/slice_api.cc'],
-    'grpc_slice_unref(': ['src/core/lib/slice/slice_api.cc'],
     'grpc_error_create(': [
         'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'
     ],
@@ -57,7 +51,10 @@ BANNED_EXCEPT = {
     'std::random_device': [
         'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
         'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
-    ]
+    ],
+
+    # Use `std::exchange()` instead.
+    'absl::exchange': []
 }
 
 errors = 0

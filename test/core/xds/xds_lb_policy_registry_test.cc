@@ -28,6 +28,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -57,7 +59,8 @@ absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::SymbolTable symtab;
-  XdsResourceType::DecodeContext context = {nullptr, XdsBootstrap::XdsServer(),
+  XdsResourceType::DecodeContext context = {nullptr,
+                                            GrpcXdsBootstrap::GrpcXdsServer(),
                                             nullptr, symtab.ptr(), arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
@@ -508,9 +511,12 @@ TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::testing::CustomLbPolicyFactory>());
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+            absl::make_unique<grpc_core::testing::CustomLbPolicyFactory>());
+      });
+
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

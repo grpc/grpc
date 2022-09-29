@@ -109,7 +109,7 @@ class grpc_httpcli_ssl_channel_security_connector final
                   const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
 
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&
@@ -122,9 +122,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =

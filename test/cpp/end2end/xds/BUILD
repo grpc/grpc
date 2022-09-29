@@ -333,7 +333,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
         "no_test_ios",

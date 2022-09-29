@@ -26,20 +26,25 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/sync.h"
 
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::posix_engine::Scheduler;
 
 namespace {
 class TestScheduler : public Scheduler {
  public:
-  explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
-      : engine_(engine) {}
+  explicit TestScheduler(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)) {}
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
     engine_->Run(closure);
   }
 
+  void Run(absl::AnyInvocable<void()> cb) override {
+    engine_->Run(std::move(cb));
+  }
+
  private:
-  grpc_event_engine::experimental::EventEngine* engine_;
+  std::shared_ptr<EventEngine> engine_;
 };
 
 TestScheduler* g_scheduler;
@@ -57,7 +62,7 @@ TEST(LockFreeEventTest, BasicTest) {
   grpc_core::MutexLock lock(&mu);
   // Set NotifyOn first and then SetReady
   event.NotifyOn(
-      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
@@ -68,7 +73,7 @@ TEST(LockFreeEventTest, BasicTest) {
   // SetReady first first and then call NotifyOn
   event.SetReady();
   event.NotifyOn(
-      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
@@ -77,7 +82,7 @@ TEST(LockFreeEventTest, BasicTest) {
 
   // Set NotifyOn and then call SetShutdown
   event.NotifyOn(
-      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_FALSE(status.ok());
         EXPECT_EQ(status, absl::CancelledError("Shutdown"));
@@ -110,7 +115,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
         }
         active++;
         if (thread_id == 0) {
-          event.NotifyOn(IomgrEngineClosure::TestOnlyToClosure(
+          event.NotifyOn(PosixEngineClosure::TestOnlyToClosure(
               [&mu, &cv, &signalled](absl::Status status) {
                 grpc_core::MutexLock lock(&mu);
                 EXPECT_TRUE(status.ok());
@@ -145,9 +150,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_event_engine::experimental::EventEngine* engine =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
-  EXPECT_NE(engine, nullptr);
-  g_scheduler = new TestScheduler(engine);
+  g_scheduler = new TestScheduler(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   return RUN_ALL_TESTS();
 }

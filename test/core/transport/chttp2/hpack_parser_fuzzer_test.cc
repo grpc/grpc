@@ -16,19 +16,27 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
+#include <algorithm>
+#include <memory>
+#include <string>
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
+
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 bool squelch = true;
 bool leak_check = true;

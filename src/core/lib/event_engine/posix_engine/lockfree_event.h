@@ -51,7 +51,7 @@ class LockfreeEvent {
   // received, in which case the closure would be scheduled immediately.
   // If the shutdown state has already been set, then \a closure is scheduled
   // with the shutdown error.
-  void NotifyOn(IomgrEngineClosure* closure);
+  void NotifyOn(PosixEngineClosure* closure);
 
   // Sets the shutdown state. If a closure had been provided by NotifyOn and has
   // not yet been scheduled, it will be scheduled with \a shutdown_error.

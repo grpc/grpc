@@ -21,8 +21,8 @@
 - counter: server_calls_created
   doc: Number of server side calls created by this process
 - histogram: call_initial_size
-  max: 262144
-  buckets: 64
+  max: 32768
+  buckets: 24
   doc: Initial size of the grpc_call arena created at call start
 - counter: client_channels_created
   doc: Number of client channels created
@@ -30,10 +30,6 @@
   doc: Number of client subchannels created
 - counter: server_channels_created
   doc: Number of server channels created
-# stats system
-- counter: histogram_slow_lookups
-  doc: Number of times histogram increments went through the slow
-       (binary search) path
 # tcp
 - counter: syscall_write
   doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
@@ -41,32 +37,32 @@
   doc: Number of read syscalls (or equivalent - eg recvmsg) made by this process
 - histogram: tcp_write_size
   max: 16777216 # 16 meg max write tracked
-  buckets: 64
+  buckets: 20
   doc: Number of bytes offered to each syscall_write
 - histogram: tcp_write_iov_size
-  max: 1024
-  buckets: 64
+  max: 80
+  buckets: 10
   doc: Number of byte segments offered to each syscall_write
-- histogram: tcp_read_allocation
-  max: 16777216
-  buckets: 64
-  doc: Number of bytes allocated in each slice by tcp reads
+- counter: tcp_read_alloc_8k
+  doc: Number of 8k allocations by the TCP subsystem for reading
+- counter: tcp_read_alloc_64k
+  doc: Number of 64k allocations by the TCP subsystem for reading
 - histogram: tcp_read_size
   max: 16777216
-  buckets: 64
+  buckets: 20
   doc: Number of bytes received by each syscall_read
 - histogram: tcp_read_offer
   max: 16777216
-  buckets: 64
+  buckets: 20
   doc: Number of bytes offered to each syscall_read
 - histogram: tcp_read_offer_iov_size
-  max: 1024
-  buckets: 64
+  max: 80
+  buckets: 10
   doc: Number of byte segments offered to each syscall_read
 # chttp2
 - histogram: http2_send_message_size
   max: 16777216
-  buckets: 64
+  buckets: 20
   doc: Size of messages received by HTTP2 transport
 - counter: http2_settings_writes
   doc: Number of settings frames sent
@@ -78,3 +74,10 @@
   doc: Number of times sending was completely stalled by the transport flow control window
 - counter: http2_stream_stalls
   doc: Number of times sending was completely stalled by the stream flow control window
+# completion queues
+- counter: cq_pluck_creates
+  doc: Number of completion queues created for cq_pluck (indicates sync api usage)
+- counter: cq_next_creates
+  doc: Number of completion queues created for cq_next (indicates cq async api usage)
+- counter: cq_callback_creates
+  doc: Number of completion queues created for cq_callback (indicates callback api usage)

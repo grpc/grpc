@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -64,14 +63,13 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
   grpc_error_handle error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     absl::Status status =
         absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
+  grpc_slice_unref(policy_slice);
   return policy_contents;
 }
 

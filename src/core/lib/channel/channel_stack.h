@@ -56,6 +56,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
@@ -272,7 +273,8 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
-    const grpc_channel_args* args, const char* name, grpc_channel_stack* stack);
+    const grpc_core::ChannelArgs& args, const char* name,
+    grpc_channel_stack* stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 

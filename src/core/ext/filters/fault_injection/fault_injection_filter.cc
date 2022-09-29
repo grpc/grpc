@@ -31,7 +31,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -43,7 +42,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -97,7 +95,7 @@ class FaultHandle {
   FaultHandle(const FaultHandle&) = delete;
   FaultHandle& operator=(const FaultHandle&) = delete;
   FaultHandle(FaultHandle&& other) noexcept
-      : active_(absl::exchange(other.active_, false)) {}
+      : active_(std::exchange(other.active_, false)) {}
   FaultHandle& operator=(FaultHandle&& other) noexcept {
     std::swap(active_, other.active_);
     return *this;
@@ -252,7 +250,7 @@ bool FaultInjectionFilter::InjectionDecision::HaveActiveFaultsQuota() const {
 Timestamp FaultInjectionFilter::InjectionDecision::DelayUntil() {
   if (delay_time_ != Duration::Zero() && HaveActiveFaultsQuota()) {
     active_fault_ = FaultHandle{true};
-    return ExecCtx::Get()->Now() + delay_time_;
+    return Timestamp::Now() + delay_time_;
   }
   return Timestamp::InfPast();
 }

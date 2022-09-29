@@ -119,7 +119,7 @@ TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
 }
 
 TEST(StatusUtilTest, OkToString) {
-  absl::Status s = absl::OkStatus();
+  absl::Status s;
   std::string t = StatusToString(s);
   EXPECT_EQ("OK", t);
 }

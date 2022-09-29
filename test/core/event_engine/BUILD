@@ -28,8 +28,7 @@ grpc_cc_test(
     deps = [
         "//:common_event_engine_closures",
         "//:gpr_platform",
-        "//:grpc",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//:notification",
     ],
 )
 
@@ -49,6 +48,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "thread_pool_test",
+    srcs = ["thread_pool_test.cc"],
+    external_deps = [
+        "absl/synchronization",
+        "gtest",
+    ],
+    deps = [
+        "//:event_engine_thread_pool",
+        "//:gpr",
+        "//:notification",
+    ],
+)
+
+grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
@@ -58,6 +71,19 @@ grpc_cc_test(
         "//:gpr_platform",
         "//:grpc",
         "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "default_engine_methods_test",
+    srcs = ["default_engine_methods_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:default_event_engine",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

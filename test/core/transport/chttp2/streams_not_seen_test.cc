@@ -19,25 +19,62 @@
 #include <grpc/support/port_platform.h>
 
 #include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
+#include <atomic>
+#include <memory>
+#include <new>
+#include <string>
 #include <thread>
+#include <vector>
 
-#include <gmock/gmock.h>
-
-#include "absl/synchronization/notification.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -81,7 +118,7 @@ class TrailingMetadataRecordingFilter {
     static grpc_error_handle Init(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
 
     static void Destroy(grpc_call_element* elem,
@@ -126,7 +163,7 @@ class TrailingMetadataRecordingFilter {
       TrailingMetadataRecordingFilter::trailing_metadata_available_ =
           *calld->trailing_metadata_available_;
       Closure::Run(DEBUG_LOCATION, calld->original_recv_initial_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   error);
     }
 
     static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
@@ -134,8 +171,7 @@ class TrailingMetadataRecordingFilter {
       stream_network_state_ =
           calld->recv_trailing_metadata_->get(GrpcStreamNetworkState());
       Closure::Run(DEBUG_LOCATION,
-                   calld->original_recv_trailing_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   calld->original_recv_trailing_metadata_ready_, error);
     }
 
     bool* trailing_metadata_available_ = nullptr;
@@ -149,7 +185,7 @@ class TrailingMetadataRecordingFilter {
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
     new (elem->channel_data) TrailingMetadataRecordingFilter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* elem) {
@@ -314,7 +350,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   void WriteBuffer(grpc_slice_buffer* buffer) {
-    absl::Notification on_write_done_notification_;
+    Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
     grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
@@ -325,15 +361,14 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
-    absl::Notification* on_write_done_notification_ =
-        static_cast<absl::Notification*>(arg);
+    GPR_ASSERT(error.ok());
+    Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
   static void OnReadDone(void* arg, grpc_error_handle error) {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
@@ -378,11 +413,11 @@ class StreamsNotSeenTest : public ::testing::Test {
   test_tcp_server server_;
   std::unique_ptr<std::thread> server_poll_thread_;
   grpc_endpoint* tcp_ = nullptr;
-  absl::Notification connect_notification_;
+  Notification connect_notification_;
   grpc_slice_buffer read_buffer_;
   grpc_closure on_write_done_;
   grpc_closure on_read_done_;
-  absl::Notification read_end_notification_;
+  Notification read_end_notification_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;

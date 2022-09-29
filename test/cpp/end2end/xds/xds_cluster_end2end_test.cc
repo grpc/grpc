@@ -87,10 +87,10 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   const auto response_state =
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kDefaultClusterName,
-                  ": validation error.*DiscoveryType is not valid")));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: [resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors parsing CDS resource: ["
+            "DiscoveryType is not valid.]]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -554,12 +554,13 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
   // seconds, and we should disocver in that time that the target backend is
   // down.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)",
-      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)",
+                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
 }
 
 // Tests that RPCs fail when the backends are down, and will succeed again
@@ -580,11 +581,12 @@ TEST_P(EdsTest, BackendsRestart) {
               ::testing::AnyOf(::testing::Eq(GRPC_CHANNEL_TRANSIENT_FAILURE),
                                ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -616,48 +618,21 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
   }
 }
 
-// Tests that EDS client should send a NACK if the EDS update contains
-// sparse priorities.
-TEST_P(EdsTest, NacksSparsePriorityList) {
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsEndpointResourceType have exhaustive tests for all
+// of the invalid cases.
+TEST_P(EdsTest, NacksInvalidResource) {
   EdsResourceArgs args({
       {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("sparse priority list"));
-}
-
-// Tests that EDS client should send a NACK if the EDS update contains
-// multiple instances of the same locality in the same priority.
-TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
-  EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "duplicate locality {region=\"xds_default_locality_region\", "
-                  "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"} "
-                  "found in priority 0"));
-}
-
-TEST_P(EdsTest, NacksEndpointWeightZero) {
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
-  auto eds_resource = BuildEdsResource(args);
-  eds_resource.mutable_endpoints(0)
-      ->mutable_lb_endpoints(0)
-      ->mutable_load_balancing_weight()
-      ->set_value(0);
-  balancer_->ads_service()->SetEdsResource(eds_resource);
-  const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Invalid endpoint weight of 0."));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: eds_service_name: "
+            "INVALID_ARGUMENT: errors parsing EDS resource: ["
+            "field:endpoints error:priority 0 empty]]");
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
@@ -1217,8 +1192,10 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   constexpr char kErrorMessageRegex[] =
       "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)";
+      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       kErrorMessageRegex);
   args = EdsResourceArgs({
@@ -1728,7 +1705,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();

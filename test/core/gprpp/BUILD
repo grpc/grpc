@@ -306,6 +306,9 @@ grpc_cc_test(
     srcs = ["chunked_vector_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -356,6 +359,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "sorted_pack_test",
+    srcs = ["sorted_pack_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:sorted_pack",
+    ],
+)
+
+grpc_cc_test(
     name = "unique_type_name_test",
     srcs = ["unique_type_name_test.cc"],
     external_deps = [
@@ -388,4 +403,29 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+)
+
+grpc_cc_test(
+    name = "validation_errors_test",
+    srcs = ["validation_errors_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:validation_errors",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "notification_test",
+    srcs = ["notification_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//:notification"],
 )

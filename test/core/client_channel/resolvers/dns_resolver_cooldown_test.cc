@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <functional>
+#include <memory>
 
 #include <gtest/gtest.h>
 
@@ -33,6 +34,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -62,12 +64,12 @@ static struct iomgr_args {
 
 namespace {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
-grpc_core::DNSResolver* g_default_dns_resolver;
-
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
+  explicit TestDNSResolver(
+      std::shared_ptr<grpc_core::DNSResolver> default_resolver)
+      : default_resolver_(std::move(default_resolver)),
+        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   TaskHandle LookupHostname(
@@ -76,7 +78,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view name, absl::string_view default_port,
       grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
       absl::string_view name_server) override {
-    auto result = g_default_dns_resolver->LookupHostname(
+    auto result = default_resolver_->LookupHostname(
         std::move(on_resolved), name, default_port, timeout, interested_parties,
         name_server);
     ++g_resolution_count;
@@ -93,18 +95,18 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       last_resolution_time = now;
     }
     // For correct time diff comparisons, make sure that any subsequent calls
-    // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
+    // to grpc_core::Timestamp::Now() on this thread don't return a time
     // which is earlier than that returned by the call(s) to
     // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
     // because the resolver's last_resolution_timestamp_ will be taken from
-    // grpc_core::ExecCtx::Get()->Now() right after this returns.
+    // grpc_core::Timestamp::Now() right after this returns.
     grpc_core::ExecCtx::Get()->InvalidateNow();
     return result;
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view name, absl::string_view default_port) override {
-    return g_default_dns_resolver->LookupHostnameBlocking(name, default_port);
+    return default_resolver_->LookupHostnameBlocking(name, default_port);
   }
 
   TaskHandle LookupSRV(
@@ -113,7 +115,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
     });
@@ -126,7 +130,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up TXT records"));
     });
@@ -135,6 +141,10 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 
   // Not cancellable
   bool Cancel(TaskHandle /*handle*/) override { return false; }
+
+ private:
+  std::shared_ptr<grpc_core::DNSResolver> default_resolver_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace
@@ -163,11 +173,11 @@ static grpc_ares_request* test_dns_lookup_ares(
   }
   last_resolution_time = now;
   // For correct time diff comparisons, make sure that any subsequent calls
-  // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
+  // to grpc_core::Timestamp::Now() on this thread don't return a time
   // which is earlier than that returned by the call(s) to
   // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
   // because the resolver's last_resolution_timestamp_ will be taken from
-  // grpc_core::ExecCtx::Get()->Now() right after this returns.
+  // grpc_core::Timestamp::Now() right after this returns.
   grpc_core::ExecCtx::Get()->InvalidateNow();
   return result;
 }
@@ -216,7 +226,7 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
     if (done) {
       break;
     }
-    grpc_core::Duration time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+    grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left.millis());
     ASSERT_GE(time_left, grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;
@@ -242,7 +252,10 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     state_ = state;
   }
 
-  void ReportResult(grpc_core::Resolver::Result /*result*/) override {
+  void ReportResult(grpc_core::Resolver::Result result) override {
+    if (result.result_health_callback != nullptr) {
+      result.result_health_callback(absl::OkStatus());
+    }
     ASSERT_NE(result_cb_, nullptr);
     ASSERT_NE(state_, nullptr);
     ResultCallback cb = result_cb_;
@@ -377,8 +390,8 @@ TEST(DnsResolverCooldownTest, MainTest) {
 
   g_default_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   grpc_dns_lookup_hostname_ares = test_dns_lookup_ares;
-  g_default_dns_resolver = grpc_core::GetDNSResolver();
-  grpc_core::SetDNSResolver(new TestDNSResolver());
+  grpc_core::ResetDNSResolver(
+      absl::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
 
   test_cooldown();
 
