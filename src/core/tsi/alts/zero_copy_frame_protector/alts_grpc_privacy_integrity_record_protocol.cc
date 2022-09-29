@@ -23,6 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
@@ -61,11 +62,11 @@ static tsi_result alts_grpc_privacy_integrity_protect(
   if (status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "Failed to protect, %s", error_details);
     gpr_free(error_details);
-    grpc_slice_unref_internal(protected_slice);
+    grpc_core::CSliceUnref(protected_slice);
     return TSI_INTERNAL_ERROR;
   }
   grpc_slice_buffer_add(protected_slices, protected_slice);
-  grpc_slice_buffer_reset_and_unref_internal(unprotected_slices);
+  grpc_slice_buffer_reset_and_unref(unprotected_slices);
   return TSI_OK;
 }
 
@@ -92,7 +93,7 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
   iovec_t unprotected_iovec = {GRPC_SLICE_START_PTR(unprotected_slice),
                                GRPC_SLICE_LENGTH(unprotected_slice)};
   /* Strips frame header from protected slices.  */
-  grpc_slice_buffer_reset_and_unref_internal(&rp->header_sb);
+  grpc_slice_buffer_reset_and_unref(&rp->header_sb);
   grpc_slice_buffer_move_first(protected_slices, rp->header_length,
                                &rp->header_sb);
   iovec_t header_iovec = alts_grpc_record_protocol_get_header_iovec(rp);
@@ -106,11 +107,11 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
   if (status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "Failed to unprotect, %s", error_details);
     gpr_free(error_details);
-    grpc_slice_unref_internal(unprotected_slice);
+    grpc_core::CSliceUnref(unprotected_slice);
     return TSI_INTERNAL_ERROR;
   }
-  grpc_slice_buffer_reset_and_unref_internal(&rp->header_sb);
-  grpc_slice_buffer_reset_and_unref_internal(protected_slices);
+  grpc_slice_buffer_reset_and_unref(&rp->header_sb);
+  grpc_slice_buffer_reset_and_unref(protected_slices);
   grpc_slice_buffer_add(unprotected_slices, unprotected_slice);
   return TSI_OK;
 }

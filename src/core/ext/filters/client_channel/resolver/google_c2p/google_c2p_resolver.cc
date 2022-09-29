@@ -25,7 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -42,9 +41,8 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -53,7 +51,6 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/resolver.h"
@@ -90,7 +87,7 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     static void OnHttpRequestDone(void* arg, grpc_error_handle error);
 
-    // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
+    // If error is not absl::OkStatus(), then it's not safe to look at response.
     virtual void OnDone(GoogleCloud2ProdResolver* resolver,
                         const grpc_http_response* response,
                         grpc_error_handle error) = 0;
@@ -168,12 +165,12 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
       const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
       resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &resource_quota_arg};
-  http_request_ = HttpRequest::Get(
-      std::move(*uri), &args, pollent, &request,
-      ExecCtx::Get()->Now() + Duration::Seconds(10),  // 10s timeout
-      &on_done_, &response_,
-      RefCountedPtr<grpc_channel_credentials>(
-          grpc_insecure_credentials_create()));
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), &args, pollent, &request,
+                       Timestamp::Now() + Duration::Seconds(10),  // 10s timeout
+                       &on_done_, &response_,
+                       RefCountedPtr<grpc_channel_credentials>(
+                           grpc_insecure_credentials_create()));
   http_request_->Start();
 }
 
@@ -191,7 +188,6 @@ void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
   auto* self = static_cast<MetadataQuery*>(arg);
   // Hop back into WorkSerializer to call OnDone().
   // Note: We implicitly pass our ref to the callback here.
-  (void)GRPC_ERROR_REF(error);
   self->resolver_->work_serializer_->Run(
       [self, error]() {
         self->OnDone(self->resolver_.get(), &self->response_, error);
@@ -214,7 +210,7 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
     grpc_error_handle error) {
   absl::StatusOr<std::string> zone;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     zone = absl::UnknownError(
         absl::StrCat("error fetching zone from metadata server: ",
                      grpc_error_std_string(error)));
@@ -238,7 +234,6 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
   } else {
     resolver->ZoneQueryDone(std::move(*zone));
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -255,12 +250,11 @@ GoogleCloud2ProdResolver::IPv6Query::IPv6Query(
 void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
     grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
             grpc_error_std_string(error).c_str());
   }
-  resolver->IPv6QueryDone(GRPC_ERROR_IS_NONE(error) && response->status == 200);
-  GRPC_ERROR_UNREF(error);
+  resolver->IPv6QueryDone(error.ok() && response->status == 200);
 }
 
 //
@@ -285,8 +279,8 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       // they may be talking to a completely different xDS server than we
       // want to.
       // TODO(roth): When we implement xDS federation, remove this constraint.
-      UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP")) != nullptr ||
-      UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG")) != nullptr) {
+      GetEnv("GRPC_XDS_BOOTSTRAP").has_value() ||
+      GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG").has_value()) {
     using_dns_ = true;
     child_resolver_ =
         CoreConfiguration::Get().resolver_registry().CreateResolver(
@@ -373,11 +367,11 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
     };
   }
   // Allow the TD server uri to be overridden for testing purposes.
-  UniquePtr<char> override_server(
-      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI"));
+  auto override_server =
+      GetEnv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI");
   const char* server_uri =
-      override_server != nullptr && strlen(override_server.get()) > 0
-          ? override_server.get()
+      override_server.has_value() && !override_server->empty()
+          ? override_server->c_str()
           : "directpath-pa.googleapis.com";
   Json xds_server = Json::Array{
       Json::Object{
@@ -458,9 +452,9 @@ class ExperimentalGoogleCloud2ProdResolverFactory : public ResolverFactory {
 
 void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<GoogleCloud2ProdResolverFactory>());
+      std::make_unique<GoogleCloud2ProdResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<ExperimentalGoogleCloud2ProdResolverFactory>());
+      std::make_unique<ExperimentalGoogleCloud2ProdResolverFactory>());
 }
 
 }  // namespace grpc_core

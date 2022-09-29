@@ -20,14 +20,28 @@
 
 #include <stdint.h>
 
+#include <memory>
+#include <string>
 #include <utility>
 
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
+#include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
+#include "google/monitoring/v3/metric_service.grpc.pb.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
 #include <grpcpp/opencensus.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
+
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "src/cpp/ext/gcp/observability_config.h"
 
 namespace grpc {
 namespace experimental {
@@ -40,25 +54,54 @@ constexpr uint32_t kMaxAttributes = 128;
 constexpr uint32_t kMaxAnnotations = 128;
 constexpr uint32_t kMaxMessageEvents = 128;
 constexpr uint32_t kMaxLinks = 128;
+
+constexpr char kGoogleStackdriverTraceAddress[] = "cloudtrace.googleapis.com";
+constexpr char kGoogleStackdriverStatsAddress[] = "monitoring.googleapis.com";
+
+void RegisterOpenCensusViewsForGcpObservability() {
+  // Register client default views for GCP observability
+  ClientStartedRpcsCumulative().RegisterForExport();
+  ClientCompletedRpcsCumulative().RegisterForExport();
+  // Register server default views for GCP observability
+  ServerStartedRpcsCumulative().RegisterForExport();
+  ServerCompletedRpcsCumulative().RegisterForExport();
+}
+
 }  // namespace
 
-void GcpObservabilityInit() {
-  // TODO(yashykt): Add code for gRPC config parsing
+absl::Status GcpObservabilityInit() {
+  auto config = grpc::internal::GcpObservabilityConfig::ReadFromEnv();
+  if (!config.ok()) {
+    return config.status();
+  }
   grpc::RegisterOpenCensusPlugin();
-  grpc::RegisterOpenCensusViewsForExport();
-  // TODO(yashykt): Setup tracing and stats exporting only if enabled in config.
-  // TODO(yashykt): Get probability from config
-  opencensus::trace::TraceConfig::SetCurrentTraceParams(
-      {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
-       opencensus::trace::ProbabilitySampler(1.0)});
-  opencensus::exporters::trace::StackdriverOptions trace_opts;
-  // TODO(yashykt): Set up project ID based on config
-  opencensus::exporters::trace::StackdriverExporter::Register(
-      std::move(trace_opts));
-  opencensus::exporters::stats::StackdriverOptions stats_opts;
-  // TODO(yashykt): Set up project ID based on config
-  opencensus::exporters::stats::StackdriverExporter::Register(
-      std::move(stats_opts));
+  RegisterOpenCensusViewsForGcpObservability();
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+  if (config->cloud_trace.has_value()) {
+    opencensus::trace::TraceConfig::SetCurrentTraceParams(
+        {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
+         opencensus::trace::ProbabilitySampler(
+             config->cloud_trace->sampling_rate)});
+    opencensus::exporters::trace::StackdriverOptions trace_opts;
+    trace_opts.project_id = config->project_id;
+    trace_opts.trace_service_stub =
+        ::google::devtools::cloudtrace::v2::TraceService::NewStub(
+            CreateCustomChannel(kGoogleStackdriverTraceAddress,
+                                GoogleDefaultCredentials(), args));
+    opencensus::exporters::trace::StackdriverExporter::Register(
+        std::move(trace_opts));
+  }
+  if (config->cloud_monitoring.has_value()) {
+    opencensus::exporters::stats::StackdriverOptions stats_opts;
+    stats_opts.project_id = config->project_id;
+    stats_opts.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(CreateCustomChannel(
+            kGoogleStackdriverStatsAddress, GoogleDefaultCredentials(), args));
+    opencensus::exporters::stats::StackdriverExporter::Register(
+        std::move(stats_opts));
+  }
+  return absl::Status();
 }
 
 }  // namespace experimental

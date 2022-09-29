@@ -63,8 +63,8 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/b64.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/ssl_types.h"
 
@@ -114,7 +114,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
   auto json = Json::Parse(string);
-  grpc_slice_unref_internal(slice);
+  grpc_core::CSliceUnref(slice);
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             json.status().ToString().c_str());
@@ -396,8 +396,8 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
 void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
   if (ctx->audience != nullptr) gpr_free(ctx->audience);
   if (ctx->claims != nullptr) grpc_jwt_claims_destroy(ctx->claims);
-  grpc_slice_unref_internal(ctx->signature);
-  grpc_slice_unref_internal(ctx->signed_data);
+  grpc_core::CSliceUnref(ctx->signature);
+  grpc_core::CSliceUnref(ctx->signed_data);
   jose_header_destroy(ctx->header);
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
@@ -487,7 +487,7 @@ static BIGNUM* bignum_from_base64(const char* b64) {
   }
   result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
                      TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
-  grpc_slice_unref_internal(bin);
+  grpc_core::CSliceUnref(bin);
   return result;
 }
 
@@ -733,7 +733,7 @@ static void on_openid_config_retrieved(void* user_data,
   }
   ctx->http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
-      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
+      grpc_core::Timestamp::Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS],
       grpc_core::CreateHttpRequestSSLCredentials());
@@ -864,7 +864,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   }
   ctx->http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
-      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
+      grpc_core::Timestamp::Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx], grpc_core::CreateHttpRequestSSLCredentials());
   ctx->http_request->Start();
   gpr_free(host);

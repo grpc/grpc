@@ -27,6 +27,7 @@
 #include <cstring>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
@@ -100,7 +101,7 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
 
 grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
   if (current_table_bytes_ == bytes) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   if (bytes > max_bytes_) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
@@ -117,7 +118,7 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
   uint32_t new_cap = std::max(hpack_constants::EntriesForBytes(bytes),
                               hpack_constants::kInitialTableEntries);
   entries_.Rebuild(new_cap);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle HPackTable::Add(Memento md) {
@@ -140,7 +141,7 @@ grpc_error_handle HPackTable::Add(Memento md) {
     while (entries_.num_entries()) {
       EvictOne();
     }
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   // evict entries to ensure no overflow
@@ -152,7 +153,7 @@ grpc_error_handle HPackTable::Add(Memento md) {
   // copy the finalized entry in
   mem_used_ += md.transport_size();
   entries_.Put(std::move(md));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 namespace {

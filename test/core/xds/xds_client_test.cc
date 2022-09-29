@@ -20,23 +20,46 @@
 
 #include "src/core/ext/xds/xds_client.h"
 
+#include <stdint.h>
+
+#include <algorithm>
 #include <deque>
 #include <map>
 #include <memory>
 #include <string>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/struct.pb.h>
+
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "upb/def.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/base.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
+
+// IWYU pragma: no_include <google/protobuf/message.h>
+// IWYU pragma: no_include <google/protobuf/stubs/status.h>
+// IWYU pragma: no_include <google/protobuf/unknown_field_set.h>
+// IWYU pragma: no_include <google/protobuf/util/json_util.h>
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
@@ -149,7 +172,7 @@ class XdsClientTest : public ::testing::Test {
         return *this;
       }
       std::unique_ptr<XdsBootstrap> Build() {
-        auto bootstrap = absl::make_unique<FakeXdsBootstrap>();
+        auto bootstrap = std::make_unique<FakeXdsBootstrap>();
         bootstrap->server_ = std::move(server_);
         bootstrap->node_ = std::move(node_);
         bootstrap->authorities_ = std::move(authorities_);
@@ -318,30 +341,32 @@ class XdsClientTest : public ::testing::Test {
     absl::string_view v2_type_url() const override {
       return ResourceStruct::TypeUrlV2();
     }
-    absl::StatusOr<XdsResourceType::DecodeResult> Decode(
+    XdsResourceType::DecodeResult Decode(
         const XdsResourceType::DecodeContext& /*context*/,
         absl::string_view serialized_resource, bool /*is_v2*/) const override {
       auto json = Json::Parse(serialized_resource);
-      if (!json.ok()) return json.status();
-      absl::StatusOr<ResourceStruct> foo = LoadFromJson<ResourceStruct>(*json);
       XdsResourceType::DecodeResult result;
-      if (!foo.ok()) {
-        auto it = json->object_value().find("name");
-        if (it == json->object_value().end()) {
-          return absl::InvalidArgumentError(
-              "cannot determine name for invalid resource");
-        }
-        result.name = it->second.string_value();
-        result.resource = foo.status();
+      if (!json.ok()) {
+        result.resource = json.status();
       } else {
-        result.name = foo->name;
-        auto resource = absl::make_unique<typename XdsResourceTypeImpl<
-            XdsTestResourceType<ResourceStruct>,
-            ResourceStruct>::ResourceDataSubclass>();
-        resource->resource = std::move(*foo);
-        result.resource = std::move(resource);
+        absl::StatusOr<ResourceStruct> foo =
+            LoadFromJson<ResourceStruct>(*json);
+        if (!foo.ok()) {
+          auto it = json->object_value().find("name");
+          if (it != json->object_value().end()) {
+            result.name = it->second.string_value();
+          }
+          result.resource = foo.status();
+        } else {
+          result.name = foo->name;
+          auto resource = std::make_unique<typename XdsResourceTypeImpl<
+              XdsTestResourceType<ResourceStruct>,
+              ResourceStruct>::ResourceDataSubclass>();
+          resource->resource = std::move(*foo);
+          result.resource = std::move(resource);
+        }
       }
-      return std::move(result);
+      return result;
     }
     void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
 
@@ -476,10 +501,10 @@ class XdsClientTest : public ::testing::Test {
   class ScopedExperimentalEnvVar {
    public:
     explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      gpr_setenv(env_var_, "true");
+      SetEnv(env_var_, "true");
     }
 
-    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
+    ~ScopedExperimentalEnvVar() { UnsetEnv(env_var_); }
 
    private:
     const char* env_var_;
@@ -1975,12 +2000,14 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message
@@ -2271,12 +2298,14 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_FALSE(watcher->HasEvent());
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message

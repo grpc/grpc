@@ -16,20 +16,24 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPCPP_IMPL_CALL_HOOK_H
+#define GRPCPP_IMPL_CALL_HOOK_H
 
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
+namespace grpc {
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
+namespace internal {
+class CallOpSetInterface;
+class Call;
 
-void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice_buffer_destroy_internal(sb);
-}
+/// This is an interface that Channel and Server implement to allow them to hook
+/// performing ops.
+class CallHook {
+ public:
+  virtual ~CallHook() {}
+  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
+};
+}  // namespace internal
 
-void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice_buffer_reset_and_unref_internal(sb);
-}
+}  // namespace grpc
+
+#endif  // GRPCPP_IMPL_CALL_HOOK_H
