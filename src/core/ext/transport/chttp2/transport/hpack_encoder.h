@@ -150,7 +150,7 @@ class HPackCompressor {
                                                 Slice value_slice);
 
     void EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
-                             Slice value, uint32_t transport_length);
+                             Slice value, size_t transport_length);
     void EncodeIndexedKeyWithBinaryValue(uint32_t* index, absl::string_view key,
                                          Slice value);
 
