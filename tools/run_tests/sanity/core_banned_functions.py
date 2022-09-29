@@ -56,7 +56,7 @@ BANNED_EXCEPT = {
     # Use `std::exchange()` instead.
     'absl::exchange': [],
     # Use `std::make_unique()` instead.
-    'std::make_unique': [],
+    'absl::make_unique': [],
 }
 
 errors = 0
