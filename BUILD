@@ -2189,6 +2189,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "status_helper",
+        "strerror",
         "useful",
     ],
 )
@@ -6171,6 +6172,18 @@ grpc_cc_library(
         "uri_parser",
         "useful",
     ],
+)
+
+grpc_cc_library(
+    name = "strerror",
+    srcs = [
+        "src/core/lib/gprpp/strerror.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/strerror.h",
+    ],
+    external_deps = ["absl/strings:str_format"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
