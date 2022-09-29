@@ -101,7 +101,7 @@ const grpc_channel_filter* PromiseTracingFilterFor(
     Mutex mu;
     absl::flat_hash_map<const grpc_channel_filter*,
                         std::unique_ptr<DerivedFilter>>
-        map;
+        map ABSL_GUARDED_BY(mu);
   };
   auto* globals = NoDestructSingleton<Globals>::Get();
   MutexLock lock(&globals->mu);

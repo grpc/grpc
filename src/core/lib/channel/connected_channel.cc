@@ -626,8 +626,13 @@ class ClientStream : public Orphanable {
   struct SendMessageToTransport {};
 
   enum class ServerInitialMetadataState : uint8_t {
+    // Initial metadata has not been received from the server.
     kNotReceived,
+    // Initial metadata has been received from the server via the transport, but
+    // has not yet been set on the latch to publish it up the call stack.
     kReceivedButNotSet,
+    // Initial metadata has been received from the server via the transport and
+    // has been set on the latch to publish it up the call stack.
     kSet,
   };
 

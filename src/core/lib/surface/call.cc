@@ -2110,7 +2110,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       // Note that activity refcount can drop to zero, but we could win the lock
       // against DropActivity, so we need to only increase activities refcount
       // if it is non-zero.
-      if (call_ && call_->RefIfNonZero()) {
+      if (call_ != nullptr && call_->RefIfNonZero()) {
         PromiseBasedCall* call = call_;
         lock.Release();
         // Activity still exists and we have a reference: wake it up, which will
