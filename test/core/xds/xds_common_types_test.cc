@@ -14,13 +14,42 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
+#include "src/core/ext/xds/xds_common_types.h"
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <google/protobuf/wrappers.pb.h>
 #include <gtest/gtest.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "gmock/gmock.h"
+#include "google/protobuf/duration.upb.h"
+#include "gtest/gtest.h"
+#include "re2/re2.h"
+#include "upb/def.hpp"
+#include "upb/upb.hpp"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/matchers/matchers.h"
+#include "src/proto/grpc/testing/xds/v3/regex.pb.h"
+#include "src/proto/grpc/testing/xds/v3/string.pb.h"
+#include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "test/core/util/test_config.h"
 
 using CommonTlsContextProto =
