@@ -14,15 +14,46 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/duration.pb.h>
+#include <google/protobuf/wrappers.pb.h>
 #include <gtest/gtest.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "upb/def.hpp"
+#include "upb/upb.hpp"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/proto/grpc/testing/xds/v3/address.pb.h"
+#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
+#include "src/proto/grpc/testing/xds/v3/base.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
+#include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
+#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
+#include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
+#include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
