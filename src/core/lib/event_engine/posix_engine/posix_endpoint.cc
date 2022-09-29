@@ -123,7 +123,7 @@ void rtrim(std::string& s) {
 
 uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
   static std::string kHardMemlockPrefix = "* hard memlock";
-  auto result = grpc_core::GrpcLoadFile(file_name, false);
+  auto result = grpc_core::LoadFile(file_name, false);
   if (!result.ok()) {
     return 0;
   }
@@ -1223,7 +1223,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     }
   }
 #endif  // GRPC_LINUX_ERRQUEUE
-  tcp_zerocopy_send_ctx_ = absl::make_unique<TcpZerocopySendCtx>(
+  tcp_zerocopy_send_ctx_ = std::make_unique<TcpZerocopySendCtx>(
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
   frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
@@ -1257,8 +1257,8 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
   GPR_DEBUG_ASSERT(handle != nullptr);
-  return absl::make_unique<PosixEndpoint>(handle, on_shutdown,
-                                          std::move(engine), config);
+  return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
+                                         config);
 }
 
 }  // namespace posix_engine

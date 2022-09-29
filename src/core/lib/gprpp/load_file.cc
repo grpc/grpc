@@ -11,26 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "src/core/lib/gprpp/load_file.h"
 
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/gprpp/load_file.h"
+
 #include <errno.h>
-#include <string.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/slice.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 
 // Loads the content of a file into a slice. add_null_terminator will add a NULL
 // terminator if true.
-absl::StatusOr<Slice> GrpcLoadFile(std::string filename,
-                                   bool add_null_terminator) {
+absl::StatusOr<Slice> LoadFile(std::string filename, bool add_null_terminator) {
   unsigned char* contents = nullptr;
   size_t contents_size = 0;
   FILE* file;
