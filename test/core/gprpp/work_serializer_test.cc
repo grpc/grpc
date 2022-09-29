@@ -18,22 +18,23 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
+#include <stddef.h>
+
+#include <algorithm>
 #include <memory>
 #include <thread>
-
-#include <gtest/gtest.h>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "absl/synchronization/barrier.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "test/core/util/test_config.h"
 
 namespace {

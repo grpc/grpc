@@ -15,17 +15,18 @@
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 
 #include <poll.h>
-#include <sys/poll.h>
+#include <stdlib.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 

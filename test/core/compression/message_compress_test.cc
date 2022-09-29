@@ -18,13 +18,14 @@
 
 #include "src/core/lib/compression/message_compress.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"

@@ -14,10 +14,9 @@
 
 #include "src/core/lib/gprpp/sorted_pack.h"
 
-#include <type_traits>
 #include <vector>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using grpc_core::WithSortedPack;
 
@@ -28,6 +27,7 @@ struct Int {
 
 template <typename A, typename B>
 struct Cmp;
+
 template <int A, int B>
 struct Cmp<Int<A>, Int<B>> {
   static constexpr bool kValue = A < B;

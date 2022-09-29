@@ -20,21 +20,44 @@
 
 #include "src/core/ext/xds/xds_client.h"
 
+#include <stdint.h>
+
+#include <algorithm>
 #include <deque>
 #include <map>
 #include <memory>
 #include <string>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/message.h>
+#include <google/protobuf/struct.pb.h>
+#include <google/protobuf/stubs/status.h>
+#include <google/protobuf/unknown_field_set.h>
+#include <google/protobuf/util/json_util.h>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "upb/def.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/base.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
 

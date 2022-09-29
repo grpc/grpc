@@ -2917,17 +2917,22 @@ grpc_cc_library(
         "src/core/lib/event_engine/slice_buffer.cc",
     ],
     hdrs = [
+        "include/grpc/event_engine/slice.h",
+        "include/grpc/event_engine/slice_buffer.h",
         "src/core/lib/event_engine/handle_containers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
         "absl/hash",
+        "absl/strings",
+        "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",
         "gpr",
         "gpr_platform",
         "slice",
+        "slice_buffer",
         "slice_refcount",
     ],
 )
