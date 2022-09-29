@@ -66,6 +66,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "test/core/util/port.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
@@ -114,7 +115,8 @@ absl::Status SetSocketSendBuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()
-             : absl::Status(absl::StatusCode::kInternal, strerror(errno));
+             : absl::Status(absl::StatusCode::kInternal,
+                            grpc_core::StrError(errno).c_str());
 }
 
 // Create a test socket with the right properties for testing.
@@ -254,7 +256,7 @@ void ListenCb(server* sv, absl::Status status) {
     return;
   } else if (fd < 0) {
     gpr_log(GPR_ERROR, "Failed to acceot a connection, returned error: %s",
-            std::strerror(errno));
+            grpc_core::StrError(errno).c_str());
   }
   EXPECT_GE(fd, 0);
   EXPECT_LT(fd, FD_SETSIZE);
@@ -641,8 +643,9 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
         case EINTR:
           continue;
         default:
-          return absl::Status(absl::StatusCode::kInternal,
-                              absl::StrCat("read: ", strerror(errno)));
+          return absl::Status(
+              absl::StatusCode::kInternal,
+              absl::StrCat("read: ", grpc_core::StrError(errno).c_str()));
       }
     }
   }

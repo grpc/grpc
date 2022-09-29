@@ -60,6 +60,7 @@
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
@@ -719,7 +720,7 @@ Poller::WorkResult PollPoller::Work(
         // Abort fail here.
         gpr_log(GPR_ERROR,
                 "(event_engine) PollPoller:%p encountered poll error: %s", this,
-                strerror(errno));
+                grpc_core::StrError(errno).c_str());
         GPR_ASSERT(false);
       }
 

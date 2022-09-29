@@ -33,7 +33,7 @@ absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
   GPR_ASSERT(timestamp != nullptr);
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
-    const char* error_msg = strerror(errno);
+    const char* error_msg = grpc_core::StrError(errno).c_str();
     gpr_log(GPR_ERROR, "_stat failed for filename %s with error %s.", filename,
             error_msg);
     return absl::Status(absl::StatusCode::kInternal, error_msg);

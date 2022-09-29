@@ -1126,6 +1126,7 @@ grpc_cc_library(
         "examine_stack",
         "gpr_atm",
         "no_destruct",
+        "strerror",
         "tchar",
         "useful",
     ],
@@ -2625,6 +2626,7 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_wakeup_fd_posix",
+        "strerror",
     ],
 )
 
@@ -2645,6 +2647,7 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_wakeup_fd_posix",
+        "strerror",
     ],
 )
 
@@ -2697,6 +2700,7 @@ grpc_cc_library(
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "strerror",
     ],
 )
 
@@ -2729,6 +2733,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "strerror",
         "time",
     ],
 )
@@ -2761,6 +2766,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "iomgr_port",
+        "strerror",
     ],
 )
 
@@ -2832,6 +2838,7 @@ grpc_cc_library(
         "resource_quota",
         "socket_mutator",
         "status_helper",
+        "strerror",
         "useful",
     ],
 )
@@ -3436,6 +3443,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "status_helper",
+        "strerror",
         "thread_quota",
         "time",
         "transport_fwd",
