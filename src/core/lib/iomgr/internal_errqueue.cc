@@ -38,7 +38,7 @@ bool KernelSupportsErrqueue() {
     // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
-      gpr_log(GPR_ERROR, "uname: %s", grpc_core::StrError(errno).c_str());
+      gpr_log(GPR_ERROR, "uname: %s", StrError(errno).c_str());
       return false;
     }
     char* release = buffer.release;
