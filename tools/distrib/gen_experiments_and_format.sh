@@ -23,7 +23,7 @@ cd -
 if [[ $# == 1 && $1 == '--check' ]]; then
     CHANGES="$(git diff)"
     if [[ $CHANGES ]]; then
-        echo >&2 "ERROR: Experiments were not generated. Please run tools/distrib/gen_experiments_and_format.sh"
+        echo >&2 "ERROR: Experiment code needs to be generated. Please run tools/distrib/gen_experiments_and_format.sh"
         echo >&2 -e "Changes:\n$CHANGES"
         exit 1
     fi
