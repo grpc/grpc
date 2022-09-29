@@ -5024,7 +5024,6 @@ grpc_cc_library(
         "channel_args",
         "config",
         "debug_location",
-        "default_event_engine",
         "gpr",
         "gpr_platform",
         "grpc_base",
