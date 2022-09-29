@@ -5043,7 +5043,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "default_event_engine",
-        "error",
         "gpr",
         "gpr_platform",
         "grpc_base",
