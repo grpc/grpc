@@ -14,6 +14,9 @@
 
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 
+#include <stdlib.h>
+
+#include <algorithm>
 #include <memory>
 #include <random>
 #include <string>
@@ -22,6 +25,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>

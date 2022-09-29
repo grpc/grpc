@@ -21,10 +21,8 @@
 #include <cstring>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -49,8 +47,6 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include <gtest/gtest.h>
 
 #include "absl/status/status.h"
 
