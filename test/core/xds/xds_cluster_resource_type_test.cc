@@ -21,7 +21,6 @@
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
-#include <gtest/gtest.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
