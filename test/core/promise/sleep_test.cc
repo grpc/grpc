@@ -69,9 +69,12 @@ TEST(Sleep, OverlyEagerEventEngine) {
 
   ExecCtx exec_ctx;
   bool done = false;
-  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1e6);
+  // Schedule a sleep for a very long time.
+  Timestamp done_time = Timestamp::Now() + Duration::Seconds(1e6);
   EventEngine::Closure* wakeup = nullptr;
-  // Sleep for one second then set done to true.
+  // Sleep for one second then trigger the wakeup.
+  // It won't have passed the scheduled time yet, but sleep should believe the
+  // event engine.
   EXPECT_CALL(mock_event_engine, RunAfter(_, Matcher<EventEngine::Closure*>(_)))
       .WillOnce(
           DoAll(SaveArg<1>(&wakeup), Return(EventEngine::TaskHandle{42, 123})));
