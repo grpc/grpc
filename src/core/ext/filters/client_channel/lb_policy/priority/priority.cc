@@ -70,7 +70,6 @@ TraceFlag grpc_lb_priority_trace(false, "priority_lb");
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr absl::string_view kPriority = "priority_experimental";
 
@@ -255,6 +254,8 @@ class PriorityLb : public LoadBalancingPolicy {
 
     OrphanablePtr<DeactivationTimer> deactivation_timer_;
     OrphanablePtr<FailoverTimer> failover_timer_;
+
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   };
 
   ~PriorityLb() override;
@@ -540,7 +541,7 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
             child_priority_->name_.c_str(), child_priority_.get(),
             kChildRetentionInterval.millis());
   }
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(
+  timer_handle_ = child_priority_->event_engine_->RunAfter(
       kChildRetentionInterval, [self = Ref(DEBUG_LOCATION, "Timer")]() mutable {
         self->child_priority_->priority_policy_->work_serializer()->Run(
             [self = std::move(self)]() { self->OnTimerLocked(); },
@@ -555,7 +556,7 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    if (!GetDefaultEventEngine()->Cancel(*timer_handle_)) {
+    if (!child_priority_->event_engine_->Cancel(*timer_handle_)) {
       timer_handle_.reset();
     }
   }
@@ -592,7 +593,7 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
         child_priority_.get(),
         child_priority_->priority_policy_->child_failover_timeout_.millis());
   }
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(
+  timer_handle_ = child_priority_->event_engine_->RunAfter(
       child_priority_->priority_policy_->child_failover_timeout_,
       [self = Ref(DEBUG_LOCATION, "Timer")]() mutable {
         self->child_priority_->priority_policy_->work_serializer()->Run(
@@ -609,7 +610,7 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    if (!GetDefaultEventEngine()->Cancel(*timer_handle_)) {
+    if (!child_priority_->event_engine_->Cancel(*timer_handle_)) {
       timer_handle_.reset();
     }
   }
@@ -639,7 +640,9 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked() {
 
 PriorityLb::ChildPriority::ChildPriority(
     RefCountedPtr<PriorityLb> priority_policy, std::string name)
-    : priority_policy_(std::move(priority_policy)), name_(std::move(name)) {
+    : priority_policy_(std::move(priority_policy)),
+      name_(std::move(name)),
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] creating child %s (%p)",
             priority_policy_.get(), name_.c_str(), this);
