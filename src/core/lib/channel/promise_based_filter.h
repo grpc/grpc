@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <atomic>
+#include <memory>
 #include <new>
 #include <utility>
 
@@ -32,6 +33,7 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
@@ -40,6 +42,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -152,7 +155,9 @@ class BaseCallData : public Activity, private Wakeable {
       : public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<grpc_polling_entity>,
-        public promise_detail::Context<CallFinalization> {
+        public promise_detail::Context<CallFinalization>,
+        public promise_detail::Context<
+            grpc_event_engine::experimental::EventEngine> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
@@ -160,8 +165,9 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->context_),
           promise_detail::Context<grpc_polling_entity>(
               call_data->pollent_.load(std::memory_order_acquire)),
-          promise_detail::Context<CallFinalization>(&call_data->finalization_) {
-    }
+          promise_detail::Context<CallFinalization>(&call_data->finalization_),
+          promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
+              call_data->event_engine_.get()) {}
   };
 
   class Flusher {
@@ -268,6 +274,7 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 
 class ClientCallData : public BaseCallData {

@@ -101,7 +101,7 @@ ConnectionAttemptInjector::~ConnectionAttemptInjector() {
 std::unique_ptr<ConnectionAttemptInjector::Hold>
 ConnectionAttemptInjector::AddHold(int port, bool intercept_completion) {
   grpc_core::MutexLock lock(&mu_);
-  auto hold = absl::make_unique<Hold>(this, port, intercept_completion);
+  auto hold = std::make_unique<Hold>(this, port, intercept_completion);
   holds_.push_back(hold.get());
   return hold;
 }
@@ -129,7 +129,7 @@ void ConnectionAttemptInjector::HandleConnection(
           closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
                                       hold, nullptr);
         }
-        hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
+        hold->queued_attempt_ = std::make_unique<QueuedAttempt>(
             closure, ep, interested_parties, config, addr, deadline);
         hold->start_cv_.Signal();
         holds_.erase(it);

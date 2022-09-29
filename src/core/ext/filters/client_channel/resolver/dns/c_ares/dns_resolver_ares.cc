@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -728,12 +727,6 @@ class AresDNSResolver : public DNSResolver {
     const std::function<void(absl::StatusOr<std::string>)> on_resolved_;
   };
 
-  // gets the singleton instance, possibly creating it first
-  static AresDNSResolver* GetOrCreate() {
-    static AresDNSResolver* instance = new AresDNSResolver();
-    return instance;
-  }
-
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -811,7 +804,7 @@ class AresDNSResolver : public DNSResolver {
   }
 
   // the previous default DNS resolver, used to delegate blocking DNS calls to
-  DNSResolver* default_resolver_ = GetDNSResolver();
+  std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
   Mutex mu_;
   grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
       ABSL_GUARDED_BY(mu_);
@@ -838,7 +831,7 @@ bool UseAresDnsResolver() {
 void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
   if (UseAresDnsResolver()) {
     builder->resolver_registry()->RegisterResolverFactory(
-        absl::make_unique<AresClientChannelDNSResolverFactory>());
+        std::make_unique<AresClientChannelDNSResolverFactory>());
   }
 }
 
@@ -852,7 +845,7 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
-    grpc_core::SetDNSResolver(grpc_core::AresDNSResolver::GetOrCreate());
+    grpc_core::ResetDNSResolver(std::make_unique<grpc_core::AresDNSResolver>());
   }
 }
 

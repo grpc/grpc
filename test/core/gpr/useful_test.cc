@@ -20,7 +20,11 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-#include <gtest/gtest.h>
+#include <stdint.h>
+
+#include <limits>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

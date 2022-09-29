@@ -25,10 +25,13 @@
  */
 
 #include <errno.h>
-#include <netinet/ip.h>
+#include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
+#include <grpc/grpc.h>
 #ifdef __linux__
 #include <sys/epoll.h>
 #endif

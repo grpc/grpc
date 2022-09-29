@@ -23,7 +23,6 @@ grpc_cc_test(
     name = "arena_test",
     srcs = ["arena_test.cc"],
     external_deps = [
-        "absl/memory",
         "absl/strings",
         "gtest",
     ],

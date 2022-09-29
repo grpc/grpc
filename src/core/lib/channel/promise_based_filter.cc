@@ -20,12 +20,12 @@
 #include <string>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/types/variant.h"
 
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
@@ -43,7 +43,8 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       arena_(args->arena),
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
-      context_(args->context) {
+      context_(args->context),
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   if (flags & kFilterExaminesServerInitialMetadata) {
     server_initial_metadata_latch_ = arena_->New<Latch<ServerMetadata*>>();
   }
@@ -443,7 +444,7 @@ class ClientCallData::PollContext {
       };
       // Unique ptr --> release to suppress clang-tidy warnings about allocating
       // in a destructor.
-      auto* p = absl::make_unique<NextPoll>().release();
+      auto* p = std::make_unique<NextPoll>().release();
       p->call_stack = self_->call_stack();
       p->call_data = self_;
       GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");
@@ -910,7 +911,7 @@ class ServerCallData::PollContext {
         GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
         delete next_poll;
       };
-      auto* p = absl::make_unique<NextPoll>().release();
+      auto* p = std::make_unique<NextPoll>().release();
       p->call_stack = self_->call_stack();
       p->call_data = self_;
       GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");

@@ -161,7 +161,7 @@ class FilterEnd2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
-    generic_stub_ = absl::make_unique<GenericStub>(channel);
+    generic_stub_ = std::make_unique<GenericStub>(channel);
     ResetConnectionCounter();
     ResetCallCounter();
   }

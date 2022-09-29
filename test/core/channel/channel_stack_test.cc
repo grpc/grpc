@@ -18,16 +18,15 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <string.h>
+#include <string>
 
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,

@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -72,7 +71,6 @@ TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr absl::string_view kWeightedTarget = "weighted_target_experimental";
 
@@ -212,6 +210,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
       RefCountedPtr<WeightedChild> weighted_child_;
       absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
     };
 
     // Methods for dealing with the child policy.
@@ -363,7 +362,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
         "no children in weighted_target policy: ", args.resolution_note));
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     return absl::OkStatus();
   }
   UpdateStateLocked();
@@ -459,15 +458,15 @@ void WeightedTargetLb::UpdateStateLocked() {
   absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = absl::make_unique<WeightedPicker>(std::move(ready_picker_list));
+      picker = std::make_unique<WeightedPicker>(std::move(ready_picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
       picker =
-          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
+          std::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      picker = absl::make_unique<WeightedPicker>(std::move(tf_picker_list));
+      picker = std::make_unique<WeightedPicker>(std::move(tf_picker_list));
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));
@@ -479,9 +478,10 @@ void WeightedTargetLb::UpdateStateLocked() {
 
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
-    : weighted_child_(std::move(weighted_child)) {
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(
-      kChildRetentionInterval, [self = Ref()]() mutable {
+    : weighted_child_(std::move(weighted_child)),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+  timer_handle_ =
+      engine_->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
@@ -499,7 +499,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    GetDefaultEventEngine()->Cancel(*timer_handle_);
+    engine_->Cancel(*timer_handle_);
   }
   Unref();
 }
@@ -560,7 +560,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = weighted_target_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_weighted_target_trace);
@@ -746,7 +746,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<WeightedTargetLb>(std::move(args));
-  }
+  }  // namespace
 
   absl::string_view name() const override { return kWeightedTarget; }
 
@@ -763,13 +763,13 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     return LoadRefCountedFromJson<WeightedTargetLbConfig>(
         json, JsonArgs(), "errors validating weighted_target LB policy config");
   }
-};
+};  // namespace grpc_core
 
 }  // namespace
 
 void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<WeightedTargetLbFactory>());
+      std::make_unique<WeightedTargetLbFactory>());
 }
 
 }  // namespace grpc_core
