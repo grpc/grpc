@@ -58,6 +58,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_factory.h"
@@ -320,7 +321,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, &slice,
           args_->args.ToC().get(), 1);
-      grpc_slice_unref(slice);
+      CSliceUnref(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, nullptr,
