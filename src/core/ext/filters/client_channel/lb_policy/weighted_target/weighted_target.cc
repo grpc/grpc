@@ -42,7 +42,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -210,7 +209,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
       RefCountedPtr<WeightedChild> weighted_child_;
       absl::optional<EventEngine::TaskHandle> timer_handle_;
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
     };
 
     // Methods for dealing with the child policy.
@@ -436,7 +434,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       default:
-        GPR_UNREACHABLE_CODE(return );
+        GPR_UNREACHABLE_CODE(return);
     }
   }
   // Determine aggregated connectivity state.
@@ -478,16 +476,17 @@ void WeightedTargetLb::UpdateStateLocked() {
 
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
-    : weighted_child_(std::move(weighted_child)),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+    : weighted_child_(std::move(weighted_child)) {
   timer_handle_ =
-      engine_->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx app_exec_ctx;
-        ExecCtx exec_ctx;
-        self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
-            [self = std::move(self)] { self->OnTimerLocked(); },
-            DEBUG_LOCATION);
-      });
+      weighted_child_->weighted_target_policy_->channel_args()
+          .GetObject<EventEngine>()
+          ->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
+            ApplicationCallbackExecCtx app_exec_ctx;
+            ExecCtx exec_ctx;
+            self->weighted_child_->weighted_target_policy_->work_serializer()
+                ->Run([self = std::move(self)] { self->OnTimerLocked(); },
+                      DEBUG_LOCATION);
+          });
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
@@ -499,7 +498,9 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    engine_->Cancel(*timer_handle_);
+    weighted_child_->weighted_target_policy_->channel_args()
+        .GetObject<EventEngine>()
+        ->Cancel(*timer_handle_);
   }
   Unref();
 }
