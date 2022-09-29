@@ -708,7 +708,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       // by ServerThread::Serve from firing before the wait below is hit.
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, server_host, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());

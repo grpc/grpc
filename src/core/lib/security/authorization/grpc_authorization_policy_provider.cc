@@ -20,8 +20,6 @@
 
 #include <utility>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
@@ -123,7 +121,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
     }
   };
-  refresh_thread_ = absl::make_unique<Thread>(
+  refresh_thread_ = std::make_unique<Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();

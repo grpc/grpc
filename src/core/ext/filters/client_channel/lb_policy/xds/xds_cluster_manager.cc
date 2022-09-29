@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -408,11 +407,11 @@ void XdsClusterManagerLb::UpdateStateLocked() {
       }
       child_picker = MakeRefCounted<ChildPickerWrapper>(
           cluster_name,
-          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+          std::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
     }
   }
   std::unique_ptr<SubchannelPicker> picker =
-      absl::make_unique<ClusterPicker>(std::move(cluster_map));
+      std::make_unique<ClusterPicker>(std::move(cluster_map));
   absl::Status status;
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     status = absl::Status(absl::StatusCode::kUnavailable,
@@ -480,7 +479,7 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
       xds_cluster_manager_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_manager_lb_trace);
@@ -712,7 +711,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsClusterManagerLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsClusterManagerLbFactory>());
+      std::make_unique<XdsClusterManagerLbFactory>());
 }
 
 }  // namespace grpc_core

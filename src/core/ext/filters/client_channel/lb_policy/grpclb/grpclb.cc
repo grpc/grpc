@@ -69,7 +69,6 @@
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -340,8 +339,8 @@ class GrpcLb : public LoadBalancingPolicy {
           client_stats_(std::move(client_stats)) {}
 
     std::unique_ptr<AttributeInterface> Copy() const override {
-      return absl::make_unique<TokenAndClientStatsAttribute>(lb_token_,
-                                                             client_stats_);
+      return std::make_unique<TokenAndClientStatsAttribute>(lb_token_,
+                                                            client_stats_);
     }
 
     int Cmp(const AttributeInterface* other_base) const override {
@@ -707,8 +706,8 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
     std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
         attributes;
     attributes[kGrpcLbAddressAttributeKey] =
-        absl::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
-                                                        stats);
+        std::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
+                                                       stats);
     // Add address.
     addresses.emplace_back(addr, ChannelArgs(), std::move(attributes));
   }
@@ -762,7 +761,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     GrpcLbClientStats* client_stats = subchannel_wrapper->client_stats();
     if (client_stats != nullptr) {
       complete_pick->subchannel_call_tracker =
-          absl::make_unique<SubchannelCallTracker>(
+          std::make_unique<SubchannelCallTracker>(
               client_stats->Ref(),
               std::move(complete_pick->subchannel_call_tracker));
       // The metadata value is a hack: we pretend the pointer points to
@@ -852,8 +851,8 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   parent_->channel_control_helper()->UpdateState(
       state, status,
-      absl::make_unique<Picker>(std::move(serverlist), std::move(picker),
-                                std::move(client_stats)));
+      std::make_unique<Picker>(std::move(serverlist), std::move(picker),
+                               std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -1566,7 +1565,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
     for (ServerAddress& address : *fallback_backend_addresses_) {
       address = address.WithAttribute(
           kGrpcLbAddressAttributeKey,
-          absl::make_unique<TokenAndClientStatsAttribute>("", nullptr));
+          std::make_unique<TokenAndClientStatsAttribute>("", nullptr));
     }
   }
   resolution_note_ = std::move(args.resolution_note);
@@ -1777,7 +1776,7 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper = absl::make_unique<Helper>(Ref());
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(Ref());
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_glb_trace);
@@ -1912,7 +1911,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 namespace grpc_core {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<GrpcLbFactory>());
+      std::make_unique<GrpcLbFactory>());
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {

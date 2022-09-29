@@ -27,7 +27,6 @@
 #include <set>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -1328,7 +1327,7 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
     // Update connectivity state.
     UpdateStateAndPickerLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
-        absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(status));
+        std::make_unique<LoadBalancingPolicy::TransientFailurePicker>(status));
   }
 }
 
@@ -1368,7 +1367,7 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<ClientChannelControlHelper>(this);
+      std::make_unique<ClientChannelControlHelper>(this);
   lb_policy_args.args = args;
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
@@ -1502,13 +1501,13 @@ void ClientChannel::CreateResolverLocked() {
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       uri_to_resolve_.c_str(), channel_args_, interested_parties_,
-      work_serializer_, absl::make_unique<ResolverResultHandler>(this));
+      work_serializer_, std::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      absl::make_unique<LoadBalancingPolicy::QueuePicker>(nullptr));
+      std::make_unique<LoadBalancingPolicy::QueuePicker>(nullptr));
   resolver_->StartLocked();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p: created resolver=%p", this, resolver_.get());
@@ -1714,7 +1713,7 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
       disconnect_error_ = op->disconnect_with_error;
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
-          absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
+          std::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
               grpc_error_to_absl_status(op->disconnect_with_error)));
     }
   }

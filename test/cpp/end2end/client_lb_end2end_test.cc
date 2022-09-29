@@ -411,7 +411,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       grpc_core::MutexLock lock(&mu_);
       started_ = true;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host));
       while (!server_ready_) {
         cond_.Wait(&mu_);
@@ -2570,7 +2570,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
     explicit Attribute(const std::string& str) : str_(str) {}
 
     std::unique_ptr<AttributeInterface> Copy() const override {
-      return absl::make_unique<Attribute>(str_);
+      return std::make_unique<Attribute>(str_);
     }
 
     int Cmp(const AttributeInterface* other) const override {
@@ -2633,7 +2633,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Addresses returned by the resolver will have attached attributes.
   response_generator.SetNextResolution(GetServersPorts(), nullptr,
                                        kAttributeKey,
-                                       absl::make_unique<Attribute>("foo"));
+                                       std::make_unique<Attribute>("foo"));
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   // Check LB policy name for the channel.
   EXPECT_EQ("address_test_lb", channel->GetLoadBalancingPolicyName());

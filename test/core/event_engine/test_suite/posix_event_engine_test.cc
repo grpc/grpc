@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   SetEventEngineFactories(
       []() {
-        return absl::make_unique<
+        return std::make_unique<
             grpc_event_engine::experimental::PosixEventEngine>();
       },
       nullptr);

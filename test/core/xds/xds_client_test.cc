@@ -149,7 +149,7 @@ class XdsClientTest : public ::testing::Test {
         return *this;
       }
       std::unique_ptr<XdsBootstrap> Build() {
-        auto bootstrap = absl::make_unique<FakeXdsBootstrap>();
+        auto bootstrap = std::make_unique<FakeXdsBootstrap>();
         bootstrap->server_ = std::move(server_);
         bootstrap->node_ = std::move(node_);
         bootstrap->authorities_ = std::move(authorities_);
@@ -336,7 +336,7 @@ class XdsClientTest : public ::testing::Test {
           result.resource = foo.status();
         } else {
           result.name = foo->name;
-          auto resource = absl::make_unique<typename XdsResourceTypeImpl<
+          auto resource = std::make_unique<typename XdsResourceTypeImpl<
               XdsTestResourceType<ResourceStruct>,
               ResourceStruct>::ResourceDataSubclass>();
           resource->resource = std::move(*foo);

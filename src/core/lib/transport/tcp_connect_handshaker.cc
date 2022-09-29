@@ -23,7 +23,6 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -241,7 +240,7 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
       true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<TCPConnectHandshakerFactory>());
+      std::make_unique<TCPConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

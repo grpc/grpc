@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -1124,7 +1123,7 @@ class XdsResolverFactory : public ResolverFactory {
 
 void RegisterXdsResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<XdsResolverFactory>());
+      std::make_unique<XdsResolverFactory>());
 }
 
 }  // namespace grpc_core

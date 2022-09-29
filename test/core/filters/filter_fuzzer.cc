@@ -295,7 +295,7 @@ class MainLoop {
       case filter_fuzzer::Action::kCreateCall:
         calls_.emplace(
             action.call(),
-            absl::make_unique<Call>(this, action.call(), action.create_call()));
+            std::make_unique<Call>(this, action.call(), action.create_call()));
         break;
       case filter_fuzzer::Action::kReceiveInitialMetadata:
         if (auto* call = GetCall(action.call())) {
@@ -422,7 +422,7 @@ class MainLoop {
         if (promise_.has_value()) final_info_.reset();
         std::unique_ptr<grpc_call_final_info> final_info;
         if (final_info_) {
-          final_info = absl::make_unique<grpc_call_final_info>();
+          final_info = std::make_unique<grpc_call_final_info>();
           final_info->final_status =
               static_cast<grpc_status_code>(final_info_->status());
           final_info->error_string = final_info_->error_string().c_str();
@@ -482,7 +482,7 @@ class MainLoop {
     }
 
     void SetFinalInfo(filter_fuzzer::FinalInfo final_info) {
-      final_info_ = absl::make_unique<filter_fuzzer::FinalInfo>(final_info);
+      final_info_ = std::make_unique<filter_fuzzer::FinalInfo>(final_info);
     }
 
    private:
@@ -521,7 +521,7 @@ class MainLoop {
     absl::optional<MetadataHandle<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
       if (*out != nullptr) return absl::nullopt;
-      *out = absl::make_unique<R>(arena_.get());
+      *out = std::make_unique<R>(arena_.get());
       for (const auto& md : metadata.metadata()) {
         (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
                        [](absl::string_view, const Slice&) {});

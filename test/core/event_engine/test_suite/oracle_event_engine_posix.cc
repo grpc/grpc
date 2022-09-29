@@ -253,7 +253,7 @@ void PosixOracleEndpoint::ProcessReadOperations() {
   gpr_log(GPR_INFO, "Starting thread to process read ops ...");
   while (true) {
     read_op_signal_->WaitForNotification();
-    read_op_signal_ = absl::make_unique<grpc_core::Notification>();
+    read_op_signal_ = std::make_unique<grpc_core::Notification>();
     auto read_op = std::exchange(read_ops_channel_, ReadOperation());
     if (!read_op.IsValid()) {
       read_op(std::string(), absl::CancelledError("Closed"));
@@ -274,7 +274,7 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
   gpr_log(GPR_INFO, "Starting thread to process write ops ...");
   while (true) {
     write_op_signal_->WaitForNotification();
-    write_op_signal_ = absl::make_unique<grpc_core::Notification>();
+    write_op_signal_ = std::make_unique<grpc_core::Notification>();
     auto write_op = std::exchange(write_ops_channel_, WriteOperation());
     if (!write_op.IsValid()) {
       write_op(absl::CancelledError("Closed"));
