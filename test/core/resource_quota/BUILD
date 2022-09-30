@@ -74,6 +74,7 @@ grpc_cc_test(
     name = "periodic_update_test",
     srcs = ["periodic_update_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
