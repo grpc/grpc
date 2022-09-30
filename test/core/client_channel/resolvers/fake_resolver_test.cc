@@ -18,25 +18,36 @@
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 
+#include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include <gtest/gtest.h>
-
+#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "gtest/gtest.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {

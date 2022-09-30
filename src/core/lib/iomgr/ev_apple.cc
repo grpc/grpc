@@ -256,11 +256,11 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     // callback will be called.
     if (apple_pollset->is_shutdown && apple_pollset->workers.empty()) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, apple_pollset->shutdown_closure,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /// Kick a specific worker. The caller must acquire the lock GrpcApplePollset.mu
@@ -297,7 +297,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
     kick_worker(actual_worker);
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
@@ -318,7 +318,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 
   // If there is any worker blocked, shutdown will be done asynchronously.
   if (apple_pollset->workers.empty()) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
   } else {
     apple_pollset->shutdown_closure = closure;
   }

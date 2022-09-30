@@ -20,7 +20,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -70,11 +69,10 @@ class Epoll1EventHandle : public EventHandle {
       : fd_(fd),
         list_(this),
         poller_(poller),
-        read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
-        write_closure_(
-            absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        read_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        write_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
         error_closure_(
-            absl::make_unique<LockfreeEvent>(poller->GetScheduler())) {
+            std::make_unique<LockfreeEvent>(poller->GetScheduler())) {
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();
@@ -91,7 +89,7 @@ class Epoll1EventHandle : public EventHandle {
     pending_write_.store(false, std::memory_order_relaxed);
     pending_error_.store(false, std::memory_order_relaxed);
   }
-  Epoll1Poller* Poller() { return poller_; }
+  Epoll1Poller* Poller() override { return poller_; }
   bool SetPendingActions(bool pending_read, bool pending_write,
                          bool pending_error) {
     // Another thread may be executing ExecutePendingActions() at this point

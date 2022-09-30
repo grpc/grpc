@@ -89,6 +89,7 @@ grpc_cc_test(
     srcs = ["lame_client_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["lame_client_test"],
     deps = [
         "//:gpr",
         "//:grpc",

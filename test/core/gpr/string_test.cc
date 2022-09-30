@@ -20,13 +20,11 @@
 
 #include <limits.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "test/core/util/test_config.h"

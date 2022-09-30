@@ -404,7 +404,7 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   bool is_release_fd = (release_fd != nullptr);
 
   if (!fd->read_closure->IsShutdown()) {
@@ -529,7 +529,7 @@ static grpc_error_handle pollset_global_init(void) {
   for (size_t i = 0; i < g_num_neighborhoods; i++) {
     gpr_mu_init(&g_neighborhoods[i].mu);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void pollset_global_shutdown(void) {
@@ -583,7 +583,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
 }
 
 static grpc_error_handle pollset_kick_all(grpc_pollset* pollset) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (pollset->root_worker != nullptr) {
     grpc_pollset_worker* worker = pollset->root_worker;
     do {
@@ -615,7 +615,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
   if (pollset->shutdown_closure != nullptr && pollset->root_worker == nullptr &&
       pollset->begin_refs == 0) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_closure,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
     pollset->shutdown_closure = nullptr;
   }
 }
@@ -651,7 +651,7 @@ static int poll_deadline_to_millis_timeout(grpc_core::Timestamp millis) {
    when accessing fields in g_epoll_set */
 static grpc_error_handle process_epoll_events(grpc_pollset* /*pollset*/) {
   static const char* err_desc = "process_events";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   long num_events = gpr_atm_acq_load(&g_epoll_set.num_events);
   long cursor = gpr_atm_acq_load(&g_epoll_set.cursor);
   for (int idx = 0;
@@ -723,7 +723,7 @@ static grpc_error_handle do_epoll_wait(grpc_pollset* ps,
   gpr_atm_rel_store(&g_epoll_set.num_events, r);
   gpr_atm_rel_store(&g_epoll_set.cursor, 0);
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
@@ -992,11 +992,11 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** worker_hdl,
                                       grpc_core::Timestamp deadline) {
   grpc_pollset_worker worker;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   static const char* err_desc = "pollset_work";
   if (ps->kicked_without_poller) {
     ps->kicked_without_poller = false;
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   if (begin_worker(ps, &worker, worker_hdl, deadline)) {
@@ -1040,7 +1040,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
 
 static grpc_error_handle pollset_kick(grpc_pollset* pollset,
                                       grpc_pollset_worker* specific_worker) {
-  grpc_error_handle ret_err = GRPC_ERROR_NONE;
+  grpc_error_handle ret_err;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     std::vector<std::string> log;
     log.push_back(absl::StrFormat(
