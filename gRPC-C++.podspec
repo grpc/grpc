@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.50.0-dev'
+  version = '1.51.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -841,6 +841,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
+                      'src/core/lib/promise/pipe.h',
                       'src/core/lib/promise/poll.h',
                       'src/core/lib/promise/promise.h',
                       'src/core/lib/promise/race.h',
@@ -930,6 +931,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/builtins.h',
                       'src/core/lib/surface/call.h',
                       'src/core/lib/surface/call_test_only.h',
+                      'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.h',
                       'src/core/lib/surface/channel_init.h',
                       'src/core/lib/surface/channel_stack_type.h',
@@ -942,6 +944,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/server.h',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_fragments.h',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.h',
                       'src/core/lib/transport/handshaker.h',
@@ -1705,6 +1708,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
+                              'src/core/lib/promise/pipe.h',
                               'src/core/lib/promise/poll.h',
                               'src/core/lib/promise/promise.h',
                               'src/core/lib/promise/race.h',
@@ -1794,6 +1798,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
+                              'src/core/lib/surface/call_trace.h',
                               'src/core/lib/surface/channel.h',
                               'src/core/lib/surface/channel_init.h',
                               'src/core/lib/surface/channel_stack_type.h',
@@ -1806,6 +1811,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_fragments.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
                               'src/core/lib/transport/handshaker.h',

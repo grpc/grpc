@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "galley"  # @unused
+g_stands_for = "galaxy"  # @unused
 
 core_version = "28.0.0"  # @unused
 
-version = "1.50.0-dev"  # @unused
+version = "1.51.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1660,6 +1660,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
         "absl/utility",
@@ -2827,7 +2828,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",
@@ -3242,6 +3242,7 @@ grpc_cc_library(
         "src/core/lib/surface/call.cc",
         "src/core/lib/surface/call_details.cc",
         "src/core/lib/surface/call_log_batch.cc",
+        "src/core/lib/surface/call_trace.cc",
         "src/core/lib/surface/channel.cc",
         "src/core/lib/surface/channel_ping.cc",
         "src/core/lib/surface/completion_queue.cc",
@@ -3252,6 +3253,7 @@ grpc_cc_library(
         "src/core/lib/surface/server.cc",
         "src/core/lib/surface/validate_metadata.cc",
         "src/core/lib/surface/version.cc",
+        "src/core/lib/transport/call_fragments.cc",
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/metadata_batch.cc",
@@ -3332,6 +3334,7 @@ grpc_cc_library(
         "src/core/lib/surface/builtins.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
+        "src/core/lib/surface/call_trace.h",
         "src/core/lib/surface/channel.h",
         "src/core/lib/surface/completion_queue.h",
         "src/core/lib/surface/completion_queue_factory.h",
@@ -3342,6 +3345,7 @@ grpc_cc_library(
         "src/core/lib/surface/validate_metadata.h",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata_batch.h",
+        "src/core/lib/transport/call_fragments.h",
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/status_conversion.h",
         "src/core/lib/transport/timeout_encoding.h",
@@ -3367,6 +3371,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:flat_hash_map",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
@@ -3425,11 +3430,13 @@ grpc_cc_library(
         "iomgr_timer",
         "json",
         "latch",
+        "match",
         "memory_quota",
         "no_destruct",
         "notification",
         "orphanable",
         "packed_table",
+        "pipe",
         "poll",
         "pollset_set",
         "promise",
@@ -3450,6 +3457,27 @@ grpc_cc_library(
         "uri_parser",
         "useful",
         "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "load_file",
+    srcs = [
+        "src/core/lib/gprpp/load_file.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/load_file.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
+        "slice",
     ],
 )
 
