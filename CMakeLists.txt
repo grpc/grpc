@@ -17908,10 +17908,8 @@ add_executable(test_core_event_engine_slice_buffer_test
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/gpr/murmur_hash.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/slice_buffer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
