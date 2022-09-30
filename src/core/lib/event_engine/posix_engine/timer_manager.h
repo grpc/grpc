@@ -82,7 +82,7 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
 
   void StartThread() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void RunThread(void* arg);
-  void Run(grpc_core::Thread thread);
+  void Run();
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);
@@ -114,8 +114,6 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   size_t thread_count_ ABSL_GUARDED_BY(mu_) = 0;
   // number of threads sitting around waiting
   size_t waiter_count_ ABSL_GUARDED_BY(mu_) = 0;
-  // Threads waiting to be joined
-  std::vector<grpc_core::Thread> completed_threads_ ABSL_GUARDED_BY(mu_);
   // is there a thread waiting until the next timer should fire?
   bool has_timed_waiter_ ABSL_GUARDED_BY(mu_) = false;
   // are we shutting down?

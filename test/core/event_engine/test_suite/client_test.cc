@@ -12,28 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
-#include <random>
 #include <string>
 #include <thread>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 #include "test/core/util/port.h"
@@ -62,7 +67,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   grpc_core::ExecCtx ctx;
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   grpc_core::Notification signal;
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   // Create a test EventEngine client endpoint and connect to a non existent
@@ -89,7 +94,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
   auto oracle_ee = this->NewOracleEventEngine();
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
@@ -112,7 +117,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      absl::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
   EXPECT_TRUE(status.ok());
 
   std::unique_ptr<Listener> listener = std::move(*status);
@@ -136,8 +141,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
-  EXPECT_TRUE(client_endpoint != nullptr);
-  EXPECT_TRUE(server_endpoint != nullptr);
+  EXPECT_NE(client_endpoint.get(), nullptr);
+  EXPECT_NE(server_endpoint.get(), nullptr);
 
   // Alternate message exchanges between client -- server and server --
   // client.
@@ -152,8 +157,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
                                     client_endpoint.get())
                     .ok());
   }
-  client_endpoint.reset(nullptr);
-  server_endpoint.reset(nullptr);
+  client_endpoint.reset();
+  server_endpoint.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
@@ -165,7 +170,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   static constexpr int kNumConnections = 10;        // M
   auto oracle_ee = this->NewOracleEventEngine();
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   // Notifications can only be fired once, so they are newed every loop
   grpc_core::Notification* server_signal = new grpc_core::Notification();
@@ -187,7 +192,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      absl::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
   EXPECT_TRUE(status.ok());
   std::unique_ptr<Listener> listener = std::move(*status);
 
@@ -206,10 +211,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // Create a test EventEngine client endpoint and connect to a one of the
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
-    grpc_core::ChannelArgs args;
-    auto quota = grpc_core::ResourceQuota::Default();
-    args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
-    ChannelArgsEndpointConfig config(args);
+    grpc_core::ChannelArgs client_args;
+    auto client_quota = grpc_core::ResourceQuota::Default();
+    client_args = client_args.Set(GRPC_ARG_RESOURCE_QUOTA, client_quota);
+    ChannelArgsEndpointConfig client_config(client_args);
     test_ee->Connect(
         [&client_endpoint,
          &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
@@ -222,15 +227,16 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
           }
           client_signal.Notify();
         },
-        URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]), config,
+        URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
+        client_config,
         memory_quota->CreateMemoryAllocator(
             absl::StrCat("conn-", std::to_string(i))),
         24h);
 
     client_signal.WaitForNotification();
     server_signal->WaitForNotification();
-    EXPECT_TRUE(client_endpoint != nullptr);
-    EXPECT_TRUE(server_endpoint != nullptr);
+    EXPECT_NE(client_endpoint.get(), nullptr);
+    EXPECT_NE(server_endpoint.get(), nullptr);
     connections.push_back(std::make_tuple(std::move(client_endpoint),
                                           std::move(server_endpoint)));
     delete server_signal;
@@ -284,7 +290,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   for (auto& t : threads) {
     t.join();
   }
-  server_endpoint.reset(nullptr);
+  server_endpoint.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 

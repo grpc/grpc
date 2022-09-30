@@ -23,7 +23,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -1092,7 +1091,7 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
               context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
+    auto resource = std::make_unique<ResourceDataSubclass>();
     resource->resource = std::move(*listener);
     result.resource = std::move(resource);
   }

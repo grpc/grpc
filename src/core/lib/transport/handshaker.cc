@@ -25,6 +25,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -205,7 +206,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     grpc_timer_init(&deadline_timer_, deadline, &on_timeout_);
     // Start first handshaker, which also owns a ref.
     Ref().release();
-    done = CallNextHandshakerLocked(GRPC_ERROR_NONE);
+    done = CallNextHandshakerLocked(absl::OkStatus());
   }
   if (done) {
     Unref();

@@ -23,7 +23,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
@@ -42,10 +41,12 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -67,13 +68,16 @@ absl::StatusOr<LameClientFilter> LameClientFilter::Create(
 }
 
 LameClientFilter::LameClientFilter(absl::Status error)
-    : error_(std::move(error)), state_(absl::make_unique<State>()) {}
+    : error_(std::move(error)), state_(std::make_unique<State>()) {}
 
 LameClientFilter::State::State()
     : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
 
 ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
-    CallArgs, NextPromiseFactory) {
+    CallArgs args, NextPromiseFactory) {
+  // TODO(ctiller): remove if check once promise_based_filter is removed (Close
+  // is still needed)
+  if (args.incoming_messages != nullptr) args.incoming_messages->Close();
   return Immediate(ServerMetadataHandle(error_));
 }
 
@@ -99,7 +103,7 @@ bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   if (op->on_consumed != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
   return true;
 }

@@ -164,7 +164,7 @@ class BinderServerListener : public Server::ListenerInterface {
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
     if (on_destroy_done_) {
-      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
       ExecCtx::Get()->Flush();
     }
     grpc_remove_endpoint_binder(addr_);

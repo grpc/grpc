@@ -14,11 +14,13 @@
 
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
+#include <functional>
+#include <memory>
+
 #include <gtest/gtest.h>
 
 #include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/gprpp/sync.h"
+#include <grpc/support/log.h>
 
 extern std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*

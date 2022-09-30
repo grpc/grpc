@@ -85,7 +85,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                            DEBUG_LOCATION);
                      },
                      parent, nullptr),
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
   }
   return PickResult::Queue();
 }

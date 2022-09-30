@@ -14,8 +14,13 @@
 
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+
+#include <grpc/support/log.h>
 
 namespace grpc_event_engine {
 namespace posix_engine {

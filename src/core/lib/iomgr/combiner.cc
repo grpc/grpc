@@ -171,7 +171,7 @@ static void offload(void* arg, grpc_error_handle /*error*/) {
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  grpc_core::Executor::Run(&lock->offload, GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
 }
 
 bool grpc_combiner_continue_exec_ctx() {

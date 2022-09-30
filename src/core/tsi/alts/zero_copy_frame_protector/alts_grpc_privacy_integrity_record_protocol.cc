@@ -23,6 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
@@ -61,7 +62,7 @@ static tsi_result alts_grpc_privacy_integrity_protect(
   if (status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "Failed to protect, %s", error_details);
     gpr_free(error_details);
-    grpc_slice_unref(protected_slice);
+    grpc_core::CSliceUnref(protected_slice);
     return TSI_INTERNAL_ERROR;
   }
   grpc_slice_buffer_add(protected_slices, protected_slice);
@@ -106,7 +107,7 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
   if (status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "Failed to unprotect, %s", error_details);
     gpr_free(error_details);
-    grpc_slice_unref(unprotected_slice);
+    grpc_core::CSliceUnref(unprotected_slice);
     return TSI_INTERNAL_ERROR;
   }
   grpc_slice_buffer_reset_and_unref(&rp->header_sb);

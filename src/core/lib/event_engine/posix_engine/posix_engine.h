@@ -215,11 +215,11 @@ class PosixEventEngine final
   std::atomic<int64_t> last_connection_id_{1};
 #endif  // GRPC_POSIX_SOCKET_TCP
 
-  posix_engine::TimerManager timer_manager_;
-  ThreadedExecutor executor_{2};
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
+  posix_engine::TimerManager timer_manager_;
+  ThreadedExecutor executor_{2};
 };
 
 }  // namespace experimental

@@ -22,6 +22,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/impl/codegen/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,6 +35,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
@@ -67,11 +70,12 @@ std::string grpc_error_std_string(absl::Status error) {
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
+  auto err_string = grpc_core::StrError(err);
   absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, strerror(err), location, {});
+      StatusCreate(absl::StatusCode::kUnknown, err_string, location, {});
   grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
-                          strerror(err));
+                          err_string);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
                           call_name);
   return s;

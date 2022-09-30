@@ -19,15 +19,18 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 using EventEngineFactory = std::function<

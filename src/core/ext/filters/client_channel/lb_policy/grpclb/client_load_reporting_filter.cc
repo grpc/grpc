@@ -22,6 +22,7 @@
 
 #include <new>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -36,7 +37,7 @@
 
 static grpc_error_handle clr_init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void clr_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
@@ -80,7 +81,7 @@ static grpc_error_handle clr_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   GPR_ASSERT(args->context != nullptr);
   new (elem->call_data) call_data();
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void clr_destroy_call_elem(grpc_call_element* elem,

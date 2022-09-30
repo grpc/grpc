@@ -30,7 +30,7 @@
 
 TEST(ErrorTest, SetGetInt) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
-  EXPECT_NE(error, GRPC_ERROR_NONE);
+  EXPECT_NE(error, absl::OkStatus());
   intptr_t i = 0;
 #ifndef NDEBUG
   // GRPC_ERROR_INT_FILE_LINE is for debug only
@@ -102,7 +102,7 @@ TEST(ErrorTest, CreateReferencing) {
                          GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", &child, 1);
-  EXPECT_NE(parent, GRPC_ERROR_NONE);
+  EXPECT_NE(parent, absl::OkStatus());
 }
 
 TEST(ErrorTest, CreateReferencingMany) {
@@ -119,7 +119,7 @@ TEST(ErrorTest, CreateReferencingMany) {
 
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 3);
-  EXPECT_NE(parent, GRPC_ERROR_NONE);
+  EXPECT_NE(parent, absl::OkStatus());
 
   for (size_t i = 0; i < 3; ++i) {
   }

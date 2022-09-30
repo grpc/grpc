@@ -411,8 +411,8 @@ Q = @
 endif
 
 CORE_VERSION = 28.0.0
-CPP_VERSION = 1.50.0-dev
-CSHARP_VERSION = 2.50.0-dev
+CPP_VERSION = 1.51.0-dev
+CSHARP_VERSION = 2.51.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -877,6 +877,7 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/mpscq.cc \
     src/core/lib/gprpp/stat_posix.cc \
     src/core/lib/gprpp/stat_windows.cc \
+    src/core/lib/gprpp/strerror.cc \
     src/core/lib/gprpp/tchar.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
@@ -1420,6 +1421,7 @@ LIBGRPC_SRC = \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gprpp/load_file.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -1597,6 +1599,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_ping.cc \
@@ -1612,6 +1615,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_fragments.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -1903,6 +1907,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gprpp/load_file.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -2040,6 +2045,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_ping.cc \
@@ -2055,6 +2061,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_fragments.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \

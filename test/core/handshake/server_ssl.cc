@@ -16,25 +16,9 @@
  *
  */
 
-#include <arpa/inet.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include "gtest/gtest.h"
 
-#include <gtest/gtest.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/handshake/server_ssl_common.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 TEST(ServerSslTest, MainTest) {

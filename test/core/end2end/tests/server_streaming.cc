@@ -21,8 +21,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -99,7 +97,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
       begin_test(config, "test_server_streaming", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;
-  auto cqv = absl::make_unique<grpc_core::CqVerifier>(f.cq);
+  auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;

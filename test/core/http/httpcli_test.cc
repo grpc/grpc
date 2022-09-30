@@ -19,23 +19,34 @@
 #include "src/core/lib/http/httpcli.h"
 
 #include <string.h>
+#include <sys/socket.h>
 
-#include <gmock/gmock.h>
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <thread>
+#include <utility>
+
+#include <ares.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
