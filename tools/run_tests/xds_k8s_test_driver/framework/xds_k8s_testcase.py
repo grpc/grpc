@@ -239,8 +239,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                     diff.stats_per_method[method].result[status] = count
         return diff
 
-    def assertRpcStatusCodes(self, test_client: XdsTestClient, *,
-                             status_code: grpc.StatusCode, duration: _timedelta,
+    def assertRpcStatusCodes(self,
+                             test_client: XdsTestClient,
+                             *,
+                             status_code: grpc.StatusCode,
+                             duration: _timedelta,
                              method: str,
                              stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
