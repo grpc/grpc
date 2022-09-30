@@ -175,10 +175,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       return picker_wrapper_;
     }
 
-    WeightedTargetLb* weighted_target_policy() {
-      return weighted_target_policy_.get();
-    }
-
    private:
     class Helper : public ChannelControlHelper {
      public:
@@ -441,7 +437,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       default:
-        GPR_UNREACHABLE_CODE(return );
+        GPR_UNREACHABLE_CODE(return);
     }
   }
   // Determine aggregated connectivity state.
@@ -485,7 +481,7 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
     : weighted_child_(std::move(weighted_child)) {
   timer_handle_ =
-      weighted_child_->weighted_target_policy()->event_engine_->RunAfter(
+      weighted_child_->weighted_target_policy_->event_engine_->RunAfter(
           kChildRetentionInterval, [self = Ref()]() mutable {
             ApplicationCallbackExecCtx app_exec_ctx;
             ExecCtx exec_ctx;
@@ -504,7 +500,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    weighted_child_->weighted_target_policy()->event_engine_->Cancel(
+    weighted_child_->weighted_target_policy_->event_engine_->Cancel(
         *timer_handle_);
   }
   Unref();

@@ -237,6 +237,8 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
   bool update_in_progress_ = false;
 
+  std::shared_ptr<EventEngine> event_engine_;
+
   // Children.
   std::map<std::string, OrphanablePtr<ClusterChild>> children_;
 };
@@ -264,7 +266,8 @@ XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
 //
 
 XdsClusterManagerLb::XdsClusterManagerLb(Args args)
-    : LoadBalancingPolicy(std::move(args)) {}
+    : LoadBalancingPolicy(std::move(args)),
+      event_engine_(channel_args().GetObjectRef<EventEngine>()) {}
 
 XdsClusterManagerLb::~XdsClusterManagerLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
@@ -373,7 +376,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
         break;
       }
       default:
-        GPR_UNREACHABLE_CODE(return );
+        GPR_UNREACHABLE_CODE(return);
     }
   }
   // Determine aggregated connectivity state.
@@ -462,9 +465,8 @@ void XdsClusterManagerLb::ClusterChild::Orphan() {
   // the child.
   picker_wrapper_.reset();
   if (delayed_removal_timer_handle_.has_value()) {
-    xds_cluster_manager_policy_->channel_args()
-        .GetObject<EventEngine>()
-        ->Cancel(*delayed_removal_timer_handle_);
+    xds_cluster_manager_policy_->event_engine_->Cancel(
+        *delayed_removal_timer_handle_);
   }
   shutdown_ = true;
   Unref();
@@ -507,9 +509,8 @@ absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
   // Update child weight.
   // Reactivate if needed.
   if (delayed_removal_timer_handle_.has_value() &&
-      xds_cluster_manager_policy_->channel_args()
-          .GetObject<EventEngine>()
-          ->Cancel(*delayed_removal_timer_handle_)) {
+      xds_cluster_manager_policy_->event_engine_->Cancel(
+          *delayed_removal_timer_handle_)) {
     delayed_removal_timer_handle_.reset();
   }
   // Create child policy if needed.
@@ -547,19 +548,17 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   // Set the child weight to 0 so that future picker won't contain this child.
   // Start a timer to delete the child.
   delayed_removal_timer_handle_ =
-      xds_cluster_manager_policy_->channel_args()
-          .GetObject<EventEngine>()
-          ->RunAfter(
-              kChildRetentionInterval,
-              [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
-                ApplicationCallbackExecCtx application_exec_ctx;
-                ExecCtx exec_ctx;
-                self->xds_cluster_manager_policy_->work_serializer()->Run(
-                    [self = std::move(self)]() {
-                      self->OnDelayedRemovalTimerLocked();
-                    },
-                    DEBUG_LOCATION);
-              });
+      xds_cluster_manager_policy_->event_engine_->RunAfter(
+          kChildRetentionInterval,
+          [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
+            ApplicationCallbackExecCtx application_exec_ctx;
+            ExecCtx exec_ctx;
+            self->xds_cluster_manager_policy_->work_serializer()->Run(
+                [self = std::move(self)]() {
+                  self->OnDelayedRemovalTimerLocked();
+                },
+                DEBUG_LOCATION);
+          });
 }
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked() {
