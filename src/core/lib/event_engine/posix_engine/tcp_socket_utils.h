@@ -34,6 +34,10 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#include <sys/socket.h>
+#endif
+
 #ifdef GRPC_LINUX_ERRQUEUE
 #ifndef SO_ZEROCOPY
 #define SO_ZEROCOPY 60
