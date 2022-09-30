@@ -15,9 +15,17 @@
 #ifndef MOCK_EVENT_ENGINE_H
 #define MOCK_EVENT_ENGINE_H
 
-#include <gmock/gmock.h>
+#include <chrono>
+#include <memory>
 
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "gmock/gmock.h"
+
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 
 namespace grpc_event_engine {
 namespace experimental {
