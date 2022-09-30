@@ -29,7 +29,7 @@
 namespace {
 
 TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
@@ -69,11 +69,11 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
 // ---- Ok Status ----
 TEST(ErrorUtilsTest, AbslOkToGrpcError) {
   grpc_error_handle error = absl_status_to_grpc_error(absl::OkStatus());
-  ASSERT_EQ(GRPC_ERROR_NONE, error);
+  ASSERT_EQ(absl::OkStatus(), error);
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
-  absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_NONE);
+  absl::Status status = grpc_error_to_absl_status(absl::OkStatus());
   ASSERT_TRUE(status.ok());
   ASSERT_EQ(status.message(), "");
 }
@@ -82,17 +82,18 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
 TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
   grpc_error_handle error =
       absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
-  ASSERT_NE(error, GRPC_ERROR_CANCELLED);
+  ASSERT_NE(error, absl::CancelledError());
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
-  absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_CANCELLED);
+  absl::Status status = grpc_error_to_absl_status(absl::CancelledError());
   ASSERT_TRUE(absl::IsCancelled(status));
   ASSERT_EQ(status.message(), "CANCELLED");
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
-  absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_OOM);
+  absl::Status status =
+      grpc_error_to_absl_status(absl::ResourceExhaustedError(""));
   ASSERT_TRUE(absl::IsResourceExhausted(status));
   ASSERT_EQ(status.message(), "RESOURCE_EXHAUSTED");
 }

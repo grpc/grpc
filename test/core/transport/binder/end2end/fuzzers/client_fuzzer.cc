@@ -45,7 +45,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_transport* client_transport = grpc_create_binder_transport_client(
-        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+        std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
             input.incoming_parcels()),
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());

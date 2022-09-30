@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <algorithm>
+#include <memory>
 #include <thread>
+#include <utility>
+#include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/time/time.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -26,13 +31,14 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/sync.h"
 
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::posix_engine::Scheduler;
 
 namespace {
 class TestScheduler : public Scheduler {
  public:
-  explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
-      : engine_(engine) {}
+  explicit TestScheduler(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)) {}
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
     engine_->Run(closure);
@@ -43,7 +49,7 @@ class TestScheduler : public Scheduler {
   }
 
  private:
-  grpc_event_engine::experimental::EventEngine* engine_;
+  std::shared_ptr<EventEngine> engine_;
 };
 
 TestScheduler* g_scheduler;
@@ -149,9 +155,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_event_engine::experimental::EventEngine* engine =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
-  EXPECT_NE(engine, nullptr);
-  g_scheduler = new TestScheduler(engine);
+  g_scheduler = new TestScheduler(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   return RUN_ALL_TESTS();
 }

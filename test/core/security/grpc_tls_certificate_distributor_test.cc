@@ -189,7 +189,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     // The TlsCertificatesTestWatcher dtor will set WatcherState::watcher back
     // to nullptr to indicate that it's been destroyed.
     auto watcher =
-        absl::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
+        std::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
     distributor_.WatchTlsCertificates(std::move(watcher),
                                       std::move(root_cert_name),
                                       std::move(identity_cert_name));

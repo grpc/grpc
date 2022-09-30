@@ -164,7 +164,8 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
 // parameter will become invalid and crash some callbacks, and 2) in my RBE
 // tests, copies are slightly faster than a shared_ptr<FanoutParams>
 // alternative.
-void FanOutCallback(EventEngine* engine, const FanoutParameters params,
+void FanOutCallback(std::shared_ptr<EventEngine> engine,
+                    const FanoutParameters params,
                     grpc_core::Notification& signal, std::atomic_int& count,
                     int processing_layer) {
   int local_cnt = count.fetch_add(1, std::memory_order_acq_rel) + 1;
@@ -197,7 +198,7 @@ void BM_EventEngine_Lambda_FanOut(benchmark::State& state) {
 BENCHMARK(BM_EventEngine_Lambda_FanOut)->Apply(FanoutTestArguments);
 
 void ClosureFanOutCallback(EventEngine::Closure* child_closure,
-                           EventEngine* engine,
+                           std::shared_ptr<EventEngine> engine,
                            grpc_core::Notification** signal_holder,
                            std::atomic_int& count,
                            const FanoutParameters params) {

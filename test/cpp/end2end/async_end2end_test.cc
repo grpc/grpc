@@ -289,8 +289,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
-    service_ =
-        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    service_ = std::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     if (GetParam().health_check_service) {
       builder.RegisterService(&health_check_);

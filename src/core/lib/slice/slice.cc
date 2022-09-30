@@ -496,14 +496,7 @@ grpc_slice grpc_slice_dup(grpc_slice a) {
 }
 
 grpc_slice grpc_slice_ref(grpc_slice slice) {
-  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Ref();
-  }
-  return slice;
+  return grpc_core::CSliceRef(slice);
 }
 
-void grpc_slice_unref(grpc_slice slice) {
-  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Unref();
-  }
-}
+void grpc_slice_unref(grpc_slice slice) { grpc_core::CSliceUnref(slice); }

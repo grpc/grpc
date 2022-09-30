@@ -41,7 +41,7 @@ class End2EndBinderTransportTest
   End2EndBinderTransportTest() {
     end2end_testing::g_transaction_processor =
         new end2end_testing::TransactionProcessor(GetParam());
-    service_ = absl::make_unique<grpc::testing::TestServiceImpl>();
+    service_ = std::make_unique<grpc::testing::TestServiceImpl>();
     grpc::ServerBuilder builder;
     builder.RegisterService(service_.get());
     server_ = builder.BuildAndStart();

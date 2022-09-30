@@ -24,7 +24,6 @@
 #include <map>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -50,7 +49,7 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 void ClientChannelServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<ClientChannelServiceConfigParser>());
+      std::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -128,7 +127,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   absl::optional<std::string> health_check_service_name;
   it = json.object_value().find("healthCheckConfig");
   if (it != json.object_value().end()) {
-    grpc_error_handle parsing_error = GRPC_ERROR_NONE;
+    grpc_error_handle parsing_error;
     health_check_service_name =
         ParseHealthCheckConfig(it->second, &parsing_error);
     if (!parsing_error.ok()) {
@@ -143,7 +142,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                      grpc_error_std_string(error)));
     return status;
   }
-  return absl::make_unique<ClientChannelGlobalParsedConfig>(
+  return std::make_unique<ClientChannelGlobalParsedConfig>(
       std::move(parsed_lb_config), std::move(lb_policy_name),
       std::move(health_check_service_name));
 }
@@ -178,8 +177,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
                      grpc_error_std_string(error)));
     return status;
   }
-  return absl::make_unique<ClientChannelMethodParsedConfig>(timeout,
-                                                            wait_for_ready);
+  return std::make_unique<ClientChannelMethodParsedConfig>(timeout,
+                                                           wait_for_ready);
 }
 
 }  // namespace internal

@@ -360,7 +360,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
   grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   if (deadline <= now) {
     timer->pending = false;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, absl::OkStatus());
     gpr_mu_unlock(&shard->mu);
     /* early out */
     return;
@@ -450,7 +450,7 @@ static void timer_cancel(grpc_timer* timer) {
     REMOVE_FROM_HASH_TABLE(timer);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_CANCELLED);
+                            absl::CancelledError());
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -683,7 +683,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
 
   grpc_error_handle shutdown_error =
       now != grpc_core::Timestamp::InfFuture()
-          ? GRPC_ERROR_NONE
+          ? absl::OkStatus()
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");
 
   // tracing

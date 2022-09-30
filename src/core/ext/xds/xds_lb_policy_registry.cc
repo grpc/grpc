@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -272,13 +271,13 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
 XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RingHashLbPolicyConfigFactory::Type(),
-      absl::make_unique<RingHashLbPolicyConfigFactory>());
+      std::make_unique<RingHashLbPolicyConfigFactory>());
   policy_config_factories_.emplace(
       RoundRobinLbPolicyConfigFactory::Type(),
-      absl::make_unique<RoundRobinLbPolicyConfigFactory>());
+      std::make_unique<RoundRobinLbPolicyConfigFactory>());
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
-      absl::make_unique<WrrLocalityLbPolicyConfigFactory>());
+      std::make_unique<WrrLocalityLbPolicyConfigFactory>());
 }
 
 XdsLbPolicyRegistry* XdsLbPolicyRegistry::Get() {
