@@ -305,7 +305,7 @@ static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
                                   GRPC_SLICE_LENGTH(sig)),
             1);
 
-  grpc_slice_unref_internal(sig);
+  grpc_slice_unref(sig);
   if (key != nullptr) EVP_PKEY_free(key);
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
 }

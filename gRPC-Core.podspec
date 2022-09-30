@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.50.0-dev'
+  version = '1.51.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -175,6 +175,7 @@ Pod::Spec.new do |s|
     ss.dependency 'BoringSSL-GRPC', '0.0.24'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -1359,6 +1360,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
+                      'src/core/lib/promise/pipe.h',
                       'src/core/lib/promise/poll.h',
                       'src/core/lib/promise/promise.h',
                       'src/core/lib/promise/race.h',
@@ -1516,10 +1518,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice.cc',
                       'src/core/lib/slice/slice.h',
-                      'src/core/lib/slice/slice_api.cc',
                       'src/core/lib/slice/slice_buffer.cc',
                       'src/core/lib/slice/slice_buffer.h',
-                      'src/core/lib/slice/slice_buffer_api.cc',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
@@ -1537,6 +1537,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/call_details.cc',
                       'src/core/lib/surface/call_log_batch.cc',
                       'src/core/lib/surface/call_test_only.h',
+                      'src/core/lib/surface/call_trace.cc',
+                      'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.cc',
                       'src/core/lib/surface/channel.h',
                       'src/core/lib/surface/channel_init.cc',
@@ -1564,6 +1566,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/version.cc',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_fragments.cc',
+                      'src/core/lib/transport/call_fragments.h',
                       'src/core/lib/transport/connectivity_state.cc',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.cc',
@@ -2329,6 +2333,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
+                              'src/core/lib/promise/pipe.h',
                               'src/core/lib/promise/poll.h',
                               'src/core/lib/promise/promise.h',
                               'src/core/lib/promise/race.h',
@@ -2418,6 +2423,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
+                              'src/core/lib/surface/call_trace.h',
                               'src/core/lib/surface/channel.h',
                               'src/core/lib/surface/channel_init.h',
                               'src/core/lib/surface/channel_stack_type.h',
@@ -2430,6 +2436,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_fragments.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
                               'src/core/lib/transport/handshaker.h',

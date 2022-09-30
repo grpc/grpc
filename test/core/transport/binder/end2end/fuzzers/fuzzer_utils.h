@@ -62,10 +62,10 @@ class NoOpWritableParcel : public WritableParcel {
 // returns a TransactionReceiverForFuzzing.
 class BinderForFuzzing : public Binder {
  public:
-  BinderForFuzzing() : input_(absl::make_unique<NoOpWritableParcel>()) {}
+  BinderForFuzzing() : input_(std::make_unique<NoOpWritableParcel>()) {}
 
   explicit BinderForFuzzing(const binder_transport_fuzzer::IncomingParcels& p)
-      : incoming_parcels_(p), input_(absl::make_unique<NoOpWritableParcel>()) {}
+      : incoming_parcels_(p), input_(std::make_unique<NoOpWritableParcel>()) {}
 
   void Initialize() override {}
   absl::Status PrepareTransaction() override { return absl::OkStatus(); }

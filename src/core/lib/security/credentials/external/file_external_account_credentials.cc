@@ -20,6 +20,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -27,8 +28,8 @@
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -38,7 +39,7 @@ FileExternalAccountCredentials::Create(Options options,
                                        grpc_error_handle* error) {
   auto creds = MakeRefCounted<FileExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
-  if (GRPC_ERROR_IS_NONE(*error)) {
+  if (error->ok()) {
     return creds;
   } else {
     return nullptr;
@@ -101,7 +102,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* /*ctx*/, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   struct SliceWrapper {
-    ~SliceWrapper() { grpc_slice_unref_internal(slice); }
+    ~SliceWrapper() { CSliceUnref(slice); }
     grpc_slice slice = grpc_empty_slice();
   };
   SliceWrapper content_slice;
@@ -109,7 +110,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
   // request because it may have changed since the last request.
   grpc_error_handle error =
       grpc_load_file(file_.c_str(), 0, &content_slice.slice);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     cb("", error);
     return;
   }
@@ -133,10 +134,10 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
                  "Subject token field must be a string."));
       return;
     }
-    cb(content_it->second.string_value(), GRPC_ERROR_NONE);
+    cb(content_it->second.string_value(), absl::OkStatus());
     return;
   }
-  cb(std::string(content), GRPC_ERROR_NONE);
+  cb(std::string(content), absl::OkStatus());
 }
 
 }  // namespace grpc_core

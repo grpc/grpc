@@ -29,7 +29,6 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
@@ -293,7 +292,7 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   const int kNumCalls = 64;
   std::vector<std::thread> threads;
   threads.reserve(kNumCalls);
-  std::unique_ptr<TestServer> test_server = absl::make_unique<TestServer>();
+  std::unique_ptr<TestServer> test_server = std::make_unique<TestServer>();
   const std::string server_address = test_server->address();
   for (int i = 0; i < kNumCalls; i++) {
     threads.push_back(std::thread([server_address]() {

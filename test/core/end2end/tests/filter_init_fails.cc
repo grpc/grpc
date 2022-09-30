@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -439,7 +441,7 @@ static grpc_error_handle init_channel_elem(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test channel filter init error"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}

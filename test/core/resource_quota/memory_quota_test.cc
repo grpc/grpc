@@ -26,7 +26,6 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/util/test_config.h"
 
@@ -135,7 +134,7 @@ TEST(MemoryQuotaTest, MakeSlice) {
   }
   ExecCtx exec_ctx;
   for (grpc_slice slice : slices) {
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
   }
 }
 

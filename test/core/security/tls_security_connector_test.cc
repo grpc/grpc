@@ -96,7 +96,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {
     const char* expected_error_msg = static_cast<const char*>(arg);
     if (expected_error_msg == nullptr) {
-      EXPECT_EQ(error, GRPC_ERROR_NONE);
+      EXPECT_EQ(error, absl::OkStatus());
     } else {
       EXPECT_EQ(GetErrorMsg(error), expected_error_msg);
     }

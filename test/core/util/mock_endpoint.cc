@@ -18,6 +18,7 @@
 
 #include "test/core/util/mock_endpoint.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice_buffer.h>
@@ -47,7 +48,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -61,7 +62,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
 }
 
 static void me_add_to_pollset(grpc_endpoint* /*ep*/,
@@ -83,7 +84,6 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->mu);
-  GRPC_ERROR_UNREF(why);
 }
 
 static void me_destroy(grpc_endpoint* ep) {
@@ -132,7 +132,7 @@ void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
   gpr_mu_lock(&m->mu);
   if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, absl::OkStatus());
     m->on_read = nullptr;
   } else {
     grpc_slice_buffer_add(&m->read_buffer, slice);

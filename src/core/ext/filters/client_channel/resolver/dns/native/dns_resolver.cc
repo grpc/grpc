@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -186,12 +185,12 @@ void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
   if (absl::EqualsIgnoreCase(ConfigVars::Get().DnsResolver(), "native")) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(
-        absl::make_unique<NativeClientChannelDNSResolverFactory>());
+        std::make_unique<NativeClientChannelDNSResolverFactory>());
   } else {
     if (!builder->resolver_registry()->HasResolverFactory("dns")) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
       builder->resolver_registry()->RegisterResolverFactory(
-          absl::make_unique<NativeClientChannelDNSResolverFactory>());
+          std::make_unique<NativeClientChannelDNSResolverFactory>());
     }
   }
 }
