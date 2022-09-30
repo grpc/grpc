@@ -293,7 +293,6 @@ class TransportFlowControl final {
   int64_t target_frame_size_ = kDefaultFrameSize;
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
-  uint32_t sent_init_window_ = kDefaultWindow;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
