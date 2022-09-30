@@ -2898,6 +2898,7 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
+        "event_engine_poller",
         "event_engine_threaded_executor",
         "event_engine_trace",
         "event_engine_utils",

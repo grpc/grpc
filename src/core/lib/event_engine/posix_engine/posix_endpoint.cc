@@ -32,7 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -1257,8 +1256,8 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
     const PosixTcpOptions& options) {
   GPR_DEBUG_ASSERT(handle != nullptr);
-  return absl::make_unique<PosixEndpoint>(
-      handle, on_shutdown, std::move(engine), std::move(allocator), options);
+  return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
+                                         std::move(allocator), options);
 }
 
 }  // namespace posix_engine

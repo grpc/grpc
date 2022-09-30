@@ -18,7 +18,6 @@
 #include <atomic>
 #include <chrono>
 #include <string>
-#include <thread>
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
@@ -32,6 +31,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
+#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
