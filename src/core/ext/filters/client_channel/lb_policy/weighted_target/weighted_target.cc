@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -44,15 +43,18 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -69,7 +71,6 @@ TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr absl::string_view kWeightedTarget = "weighted_target_experimental";
 
@@ -83,16 +84,27 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
   struct ChildConfig {
     uint32_t weight;
     RefCountedPtr<LoadBalancingPolicy::Config> config;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&,
+                      ValidationErrors* errors);
   };
 
   using TargetMap = std::map<std::string, ChildConfig>;
 
-  explicit WeightedTargetLbConfig(TargetMap target_map)
-      : target_map_(std::move(target_map)) {}
+  WeightedTargetLbConfig() = default;
+
+  WeightedTargetLbConfig(const WeightedTargetLbConfig&) = delete;
+  WeightedTargetLbConfig& operator=(const WeightedTargetLbConfig&) = delete;
+
+  WeightedTargetLbConfig(WeightedTargetLbConfig&& other) = delete;
+  WeightedTargetLbConfig& operator=(WeightedTargetLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kWeightedTarget; }
 
   const TargetMap& target_map() const { return target_map_; }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
   TargetMap target_map_;
@@ -198,6 +210,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
       RefCountedPtr<WeightedChild> weighted_child_;
       absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
     };
 
     // Methods for dealing with the child policy.
@@ -349,7 +362,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
         "no children in weighted_target policy: ", args.resolution_note));
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     return absl::OkStatus();
   }
   UpdateStateLocked();
@@ -445,15 +458,15 @@ void WeightedTargetLb::UpdateStateLocked() {
   absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = absl::make_unique<WeightedPicker>(std::move(ready_picker_list));
+      picker = std::make_unique<WeightedPicker>(std::move(ready_picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
       picker =
-          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
+          std::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      picker = absl::make_unique<WeightedPicker>(std::move(tf_picker_list));
+      picker = std::make_unique<WeightedPicker>(std::move(tf_picker_list));
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));
@@ -465,9 +478,12 @@ void WeightedTargetLb::UpdateStateLocked() {
 
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
-    : weighted_child_(std::move(weighted_child)) {
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(
-      kChildRetentionInterval, [self = Ref()]() mutable {
+    : weighted_child_(std::move(weighted_child)),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+  timer_handle_ =
+      engine_->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
         self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
             [self = std::move(self)] { self->OnTimerLocked(); },
             DEBUG_LOCATION);
@@ -483,7 +499,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    GetDefaultEventEngine()->Cancel(*timer_handle_);
+    engine_->Cancel(*timer_handle_);
   }
   Unref();
 }
@@ -544,7 +560,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = weighted_target_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_weighted_target_trace);
@@ -688,12 +704,49 @@ void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
 // factory
 //
 
+const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<ChildConfig>()
+          // Note: The config field requires custom parsing, so it's
+          // handled in JsonPostLoad() instead.
+          .Field("weight", &ChildConfig::weight)
+          .Finish();
+  return loader;
+}
+
+void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(
+    const Json& json, const JsonArgs&, ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".childPolicy");
+  auto it = json.object_value().find("childPolicy");
+  if (it == json.object_value().end()) {
+    errors->AddError("field not present");
+    return;
+  }
+  auto lb_config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          it->second);
+  if (!lb_config.ok()) {
+    errors->AddError(lb_config.status().message());
+    return;
+  }
+  config = std::move(*lb_config);
+}
+
+const JsonLoaderInterface* WeightedTargetLbConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<WeightedTargetLbConfig>()
+          .Field("targets", &WeightedTargetLbConfig::target_map_)
+          .Finish();
+  return loader;
+}
+
 class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<WeightedTargetLb>(std::move(args));
-  }
+  }  // namespace
 
   absl::string_view name() const override { return kWeightedTarget; }
 
@@ -707,84 +760,16 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           "configuration.  Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    std::vector<std::string> errors;
-    // Weight map.
-    WeightedTargetLbConfig::TargetMap target_map;
-    auto it = json.object_value().find("targets");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:targets error:required field not present");
-    } else if (it->second.type() != Json::Type::OBJECT) {
-      errors.emplace_back("field:targets error:type should be object");
-    } else {
-      for (const auto& p : it->second.object_value()) {
-        auto config = ParseChildConfig(p.second);
-        if (!config.ok()) {
-          errors.emplace_back(config.status().message());
-        } else {
-          target_map[p.first] = std::move(*config);
-        }
-      }
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("weighted_target_experimental LB policy config: [",
-                       absl::StrJoin(errors, "; "), "]"));
-    }
-    return MakeRefCounted<WeightedTargetLbConfig>(std::move(target_map));
+    return LoadRefCountedFromJson<WeightedTargetLbConfig>(
+        json, JsonArgs(), "errors validating weighted_target LB policy config");
   }
-
- private:
-  static absl::StatusOr<WeightedTargetLbConfig::ChildConfig> ParseChildConfig(
-      const Json& json) {
-    if (json.type() != Json::Type::OBJECT) {
-      return absl::InvalidArgumentError("value should be of type object");
-    }
-    WeightedTargetLbConfig::ChildConfig child_config;
-    std::vector<std::string> errors;
-    // Weight.
-    auto it = json.object_value().find("weight");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("required field \"weight\" not specified");
-    } else if (it->second.type() != Json::Type::NUMBER) {
-      errors.emplace_back("field:weight error:must be of type number");
-    } else {
-      int weight = gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      if (weight == -1) {
-        errors.emplace_back("field:weight error:unparseable value");
-      } else if (weight == 0) {
-        errors.emplace_back(
-            "field:weight error:value must be greater than zero");
-      } else {
-        child_config.weight = weight;
-      }
-    }
-    // Child policy.
-    it = json.object_value().find("childPolicy");
-    if (it != json.object_value().end()) {
-      auto config = CoreConfiguration::Get()
-                        .lb_policy_registry()
-                        .ParseLoadBalancingConfig(it->second);
-      if (!config.ok()) {
-        errors.emplace_back(
-            absl::StrCat("field:childPolicy: ", config.status().message()));
-      } else {
-        child_config.config = std::move(*config);
-      }
-    }
-    // Return result.
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "errors parsing target config: [", absl::StrJoin(errors, "; "), "]"));
-    }
-    return child_config;
-  }
-};
+};  // namespace grpc_core
 
 }  // namespace
 
 void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<WeightedTargetLbFactory>());
+      std::make_unique<WeightedTargetLbFactory>());
 }
 
 }  // namespace grpc_core

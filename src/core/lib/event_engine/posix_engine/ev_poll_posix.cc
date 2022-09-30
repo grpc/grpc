@@ -24,6 +24,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -75,6 +76,7 @@ using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::posix_engine::WakeupFd;
+using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
 class PollEventHandle : public EventHandle {
  public:
@@ -101,9 +103,8 @@ class PollEventHandle : public EventHandle {
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
   }
-  PollPoller* Poller() { return poller_; }
-  EventEngine::Closure* SetPendingActions(bool pending_read,
-                                          bool pending_write) {
+  PollPoller* Poller() override { return poller_; }
+  bool SetPendingActions(bool pending_read, bool pending_write) {
     pending_actions_ |= pending_read;
     if (pending_write) {
       pending_actions_ |= (1 << 2);
@@ -112,9 +113,9 @@ class PollEventHandle : public EventHandle {
       // The closure is going to be executed. We'll Unref this handle in
       // ExecutePendingActions.
       Ref();
-      return &exec_actions_closure_;
+      return true;
     }
-    return nullptr;
+    return false;
   }
   void ForceRemoveHandleFromPoller() {
     absl::MutexLock lock(&poller_->mu_);
@@ -202,7 +203,7 @@ class PollEventHandle : public EventHandle {
   }
   uint32_t BeginPollLocked(uint32_t read_mask, uint32_t write_mask)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  EventEngine::Closure* EndPollLocked(int got_read, int got_write)
+  bool EndPollLocked(bool got_read, bool got_write)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
@@ -559,15 +560,13 @@ uint32_t PollEventHandle::BeginPollLocked(uint32_t read_mask,
   return mask;
 }
 
-EventEngine::Closure* PollEventHandle::EndPollLocked(int got_read,
-                                                     int got_write) {
-  EventEngine::Closure* closure = nullptr;
+bool PollEventHandle::EndPollLocked(bool got_read, bool got_write) {
   if (is_orphaned_ && !IsWatched()) {
     CloseFd();
   } else if (!is_orphaned_) {
-    closure = SetPendingActions(got_read, got_write);
+    return SetPendingActions(got_read, got_write);
   }
-  return closure;
+  return false;
 }
 
 void PollPoller::KickExternal(bool ext) {
@@ -641,13 +640,15 @@ PollPoller::~PollPoller() {
   GPR_ASSERT(poll_handles_list_head_ == nullptr);
 }
 
-Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
+Poller::WorkResult PollPoller::Work(
+    EventEngine::Duration timeout,
+    absl::FunctionRef<void()> schedule_poll_again) {
   // Avoid malloc for small number of elements.
   enum { inline_elements = 96 };
   struct pollfd pollfd_space[inline_elements];
   bool was_kicked_ext = false;
   PollEventHandle* watcher_space[inline_elements];
-  Poller::Events pending_events;
+  Events pending_events;
   int timeout_ms =
       static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
   mu_.Lock();
@@ -733,25 +734,25 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
             // This case implies the fd was polled (since watch_mask > 0 and
             // the poll returned an error. Mark the fds as both readable and
             // writable.
-            if (EventEngine::Closure* closure = head->EndPollLocked(1, 1)) {
+            if (head->EndPollLocked(true, true)) {
               // Its safe to add to list of pending events because
-              // EndPollLocked returns a +ve number only when the handle is
+              // EndPollLocked returns true only when the handle is
               // not orphaned. But an orphan might be initiated on the handle
               // after this Work() method returns and before the next Work()
               // method is invoked.
-              pending_events.push_back(closure);
+              pending_events.push_back(head);
             }
           } else {
             // In this case, (1) watch_mask > 0 && r == 0 or (2) watch_mask ==
             // 0 and r < 0 or (3) watch_mask == 0 and r == 0. For case-1, no
             // events are pending on the fd even though the fd was polled. For
             // case-2 and 3, the fd was not polled
-            head->EndPollLocked(0, 0);
+            head->EndPollLocked(false, false);
           }
         } else {
           // It can enter this case if an orphan was invoked on the handle
           // while it was being polled.
-          head->EndPollLocked(0, 0);
+          head->EndPollLocked(false, false);
         }
         lock.Release();
         // Unref the ref taken at BeginPollLocked.
@@ -770,22 +771,21 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
           // handle while it was being polled. If watch_mask is 0, then the fd
           // was not polled.
           head->SetWatched(-1);
-          head->EndPollLocked(0, 0);
+          head->EndPollLocked(false, false);
         } else {
           // Watched is true and watch_mask > 0
           if (pfds[i].revents & POLLHUP) {
             head->SetPollhup(true);
           }
           head->SetWatched(-1);
-          if (EventEngine::Closure* closure =
-                  head->EndPollLocked(pfds[i].revents & kPollinCheck,
-                                      pfds[i].revents & kPolloutCheck)) {
+          if (head->EndPollLocked(pfds[i].revents & kPollinCheck,
+                                  pfds[i].revents & kPolloutCheck)) {
             // Its safe to add to list of pending events because EndPollLocked
-            // returns a +ve number only when the handle is not orphaned.
+            // returns true only when the handle is not orphaned.
             // But an orphan might be initiated on the handle after this
             // Work() method returns and before the next Work() method is
             // invoked.
-            pending_events.push_back(closure);
+            pending_events.push_back(head);
           }
         }
         lock.Release();
@@ -811,11 +811,17 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
   mu_.Unlock();
   if (pending_events.empty()) {
     if (was_kicked_ext) {
-      return Poller::Kicked{};
+      return Poller::WorkResult::kKicked;
     }
-    return Poller::DeadlineExceeded{};
+    return Poller::WorkResult::kDeadlineExceeded;
   }
-  return pending_events;
+  // Run the provided callback synchronously.
+  schedule_poll_again();
+  // Process all pending events inline.
+  for (auto& it : pending_events) {
+    it->ExecutePendingActions();
+  }
+  return Poller::WorkResult::kOk;
 }
 
 void PollPoller::Shutdown() {
@@ -855,7 +861,9 @@ EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
   GPR_ASSERT(false && "unimplemented");
 }
 
-Poller::WorkResult PollPoller::Work(EventEngine::Duration /*timeout*/) {
+Poller::WorkResult PollPoller::Work(
+    EventEngine::Duration /*timeout*/,
+    absl::FunctionRef<void()> /*schedule_poll_again*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 

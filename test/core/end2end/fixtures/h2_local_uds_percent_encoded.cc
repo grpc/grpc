@@ -19,6 +19,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -31,7 +32,7 @@
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/test_config.h"
 
-static int unique = 1;
+static std::atomic<int> unique{1};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
     const grpc_channel_args* /*client_args*/,

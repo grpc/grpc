@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -258,7 +260,7 @@ static void test_request(grpc_end2end_test_config config) {
 
 static grpc_error_handle init_call_elem(
     grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void client_destroy_call_elem(grpc_call_element* /*elem*/,
@@ -279,7 +281,7 @@ static void server_destroy_call_elem(grpc_call_element* /*elem*/,
 
 static grpc_error_handle init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}

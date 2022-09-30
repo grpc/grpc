@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.50.0-dev'
+  version = '1.51.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -84,6 +84,7 @@ Pod::Spec.new do |s|
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
@@ -174,6 +175,7 @@ Pod::Spec.new do |s|
     ss.dependency 'BoringSSL-GRPC', '0.0.24'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -1037,6 +1039,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/compression/message_compress.h',
                       'src/core/lib/config/core_configuration.cc',
                       'src/core/lib/config/core_configuration.h',
+                      'src/core/lib/debug/event_log.cc',
+                      'src/core/lib/debug/event_log.h',
                       'src/core/lib/debug/stats.cc',
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.cc',
@@ -1065,7 +1069,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/timer_heap.h',
                       'src/core/lib/event_engine/posix_engine/timer_manager.cc',
                       'src/core/lib/event_engine/posix_engine/timer_manager.h',
-                      'src/core/lib/event_engine/promise.h',
                       'src/core/lib/event_engine/resolved_address.cc',
                       'src/core/lib/event_engine/slice.cc',
                       'src/core/lib/event_engine/slice_buffer.cc',
@@ -1117,7 +1120,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/time_precise.cc',
                       'src/core/lib/gpr/time_precise.h',
                       'src/core/lib/gpr/time_windows.cc',
-                      'src/core/lib/gpr/tls.h',
                       'src/core/lib/gpr/tmpfile.h',
                       'src/core/lib/gpr/tmpfile_msys.cc',
                       'src/core/lib/gpr/tmpfile_posix.cc',
@@ -1152,9 +1154,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/mpscq.cc',
                       'src/core/lib/gprpp/mpscq.h',
                       'src/core/lib/gprpp/no_destruct.h',
+                      'src/core/lib/gprpp/notification.h',
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/packed_table.h',
+                      'src/core/lib/gprpp/per_cpu.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
                       'src/core/lib/gprpp/single_set_ptr.h',
@@ -1178,6 +1182,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time_util.cc',
                       'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/gprpp/unique_type_name.h',
+                      'src/core/lib/gprpp/validation_errors.cc',
+                      'src/core/lib/gprpp/validation_errors.h',
                       'src/core/lib/gprpp/work_serializer.cc',
                       'src/core/lib/gprpp/work_serializer.h',
                       'src/core/lib/handshaker/proxy_mapper.h',
@@ -1354,6 +1360,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
+                      'src/core/lib/promise/pipe.h',
                       'src/core/lib/promise/poll.h',
                       'src/core/lib/promise/promise.h',
                       'src/core/lib/promise/race.h',
@@ -1511,10 +1518,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice.cc',
                       'src/core/lib/slice/slice.h',
-                      'src/core/lib/slice/slice_api.cc',
                       'src/core/lib/slice/slice_buffer.cc',
                       'src/core/lib/slice/slice_buffer.h',
-                      'src/core/lib/slice/slice_buffer_api.cc',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
@@ -1532,6 +1537,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/call_details.cc',
                       'src/core/lib/surface/call_log_batch.cc',
                       'src/core/lib/surface/call_test_only.h',
+                      'src/core/lib/surface/call_trace.cc',
+                      'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.cc',
                       'src/core/lib/surface/channel.h',
                       'src/core/lib/surface/channel_init.cc',
@@ -1559,6 +1566,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/version.cc',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_fragments.cc',
+                      'src/core/lib/transport/call_fragments.h',
                       'src/core/lib/transport/connectivity_state.cc',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.cc',
@@ -2164,6 +2173,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/compression/compression_internal.h',
                               'src/core/lib/compression/message_compress.h',
                               'src/core/lib/config/core_configuration.h',
+                              'src/core/lib/debug/event_log.h',
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
@@ -2179,7 +2189,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',
                               'src/core/lib/event_engine/posix_engine/timer_manager.h',
-                              'src/core/lib/event_engine/promise.h',
                               'src/core/lib/event_engine/socket_notifier.h',
                               'src/core/lib/event_engine/thread_pool.h',
                               'src/core/lib/event_engine/time_util.h',
@@ -2195,7 +2204,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/time_precise.h',
-                              'src/core/lib/gpr/tls.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/atomic_utils.h',
@@ -2218,9 +2226,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/no_destruct.h',
+                              'src/core/lib/gprpp/notification.h',
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/packed_table.h',
+                              'src/core/lib/gprpp/per_cpu.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/single_set_ptr.h',
@@ -2235,6 +2245,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time_averaged_stats.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/gprpp/unique_type_name.h',
+                              'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/handshaker/proxy_mapper.h',
                               'src/core/lib/handshaker/proxy_mapper_registry.h',
@@ -2325,6 +2336,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
+                              'src/core/lib/promise/pipe.h',
                               'src/core/lib/promise/poll.h',
                               'src/core/lib/promise/promise.h',
                               'src/core/lib/promise/race.h',
@@ -2414,6 +2426,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
+                              'src/core/lib/surface/call_trace.h',
                               'src/core/lib/surface/channel.h',
                               'src/core/lib/surface/channel_init.h',
                               'src/core/lib/surface/channel_stack_type.h',
@@ -2426,6 +2439,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_fragments.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
                               'src/core/lib/transport/handshaker.h',

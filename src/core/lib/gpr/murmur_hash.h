@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* compute the hash of key (length len) */
 uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed);

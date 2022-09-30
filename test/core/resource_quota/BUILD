@@ -23,7 +23,6 @@ grpc_cc_test(
     name = "arena_test",
     srcs = ["arena_test.cc"],
     external_deps = [
-        "absl/memory",
         "absl/strings",
         "gtest",
     ],
@@ -74,10 +73,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "periodic_update_test",
     srcs = ["periodic_update_test.cc"],
-    external_deps = [
-        "absl/memory",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     flaky = True,
     language = "c++",
     uses_event_engine = False,
@@ -148,6 +144,7 @@ grpc_proto_fuzzer(
     srcs = ["memory_quota_fuzzer.cc"],
     corpus = "memory_quota_fuzzer_corpus",
     external_deps = [
+        "absl/status",
         "absl/strings",
         "absl/types:optional",
     ],

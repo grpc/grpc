@@ -72,8 +72,7 @@ class Sleep final {
     Waker waker_;
     // One ref dropped by Run(), the other by Cancel().
     std::atomic<int> refs_{2};
-    const grpc_event_engine::experimental::EventEngine::TaskHandle
-        timer_handle_;
+    grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle_;
   };
 
   Timestamp deadline_;

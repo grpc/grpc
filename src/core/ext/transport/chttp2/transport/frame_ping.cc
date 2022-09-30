@@ -24,6 +24,7 @@
 
 #include <algorithm>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
@@ -32,7 +33,6 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 static bool g_disable_ping_ack = false;
 
@@ -70,7 +70,7 @@ grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
   parser->byte = 0;
   parser->is_ack = flags;
   parser->opaque_8bytes = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
@@ -95,7 +95,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
-        grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+        grpc_core::Timestamp now = grpc_core::Timestamp::Now();
         grpc_core::Timestamp next_allowed_ping =
             t->ping_recv_state.last_ping_recv_time +
             t->ping_policy.min_recv_ping_interval_without_data;
@@ -129,7 +129,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_set_disable_ping_ack(bool disable_ping_ack) {

@@ -38,7 +38,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
@@ -114,7 +113,7 @@ TransportFlowControl::TransportFlowControl(const char* name,
                           .set_min_control_value(-1)
                           .set_max_control_value(25)
                           .set_integral_range(10)),
-      last_pid_update_(ExecCtx::Get()->Now()) {}
+      last_pid_update_(Timestamp::Now()) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   const uint32_t target_announced_window =
@@ -207,7 +206,7 @@ double TransportFlowControl::TargetLogBdp() {
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (now - last_pid_update_).seconds();
   last_pid_update_ = now;
@@ -288,7 +287,8 @@ void TransportFlowControl::UpdateSetting(
     if (delta != 0 &&
         (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
       *desired_value = new_desired_value;
-      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE,
+                     static_cast<uint32_t>(*desired_value));
     }
   }
 }
@@ -363,15 +363,15 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
-  const uint32_t announce = DesiredAnnounceSize();
+  const int64_t announce = DesiredAnnounceSize();
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
   tfc_upd.MakeAction();
-  return announce;
+  return static_cast<uint32_t>(announce);
 }
 
-uint32_t StreamFlowControl::DesiredAnnounceSize() const {
+int64_t StreamFlowControl::DesiredAnnounceSize() const {
   int64_t desired_window_delta = [this]() {
     if (min_progress_size_ == 0) {
       if (pending_size_.has_value() &&

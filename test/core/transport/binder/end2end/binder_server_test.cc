@@ -44,7 +44,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
     return grpc_core::AddBinderPort(
         addr, server,
         [](grpc_binder::TransactionReceiver::OnTransactCb transact_cb) {
-          return absl::make_unique<
+          return std::make_unique<
               grpc_binder::end2end_testing::FakeTransactionReceiver>(
               nullptr, std::move(transact_cb));
         },
@@ -150,7 +150,7 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinder) {
   void* raw_endpoint_binder =
       grpc::experimental::binder::GetEndpointBinder("example.service");
   std::unique_ptr<grpc_binder::Binder> endpoint_binder =
-      absl::make_unique<grpc_binder::end2end_testing::FakeBinder>(
+      std::make_unique<grpc_binder::end2end_testing::FakeBinder>(
           static_cast<grpc_binder::end2end_testing::FakeEndpoint*>(
               raw_endpoint_binder));
   std::shared_ptr<grpc::Channel> channel =
@@ -180,7 +180,7 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
 
   auto thread_fn = [&](size_t id) {
     std::unique_ptr<grpc_binder::Binder> endpoint_binder =
-        absl::make_unique<grpc_binder::end2end_testing::FakeBinder>(
+        std::make_unique<grpc_binder::end2end_testing::FakeBinder>(
             static_cast<grpc_binder::end2end_testing::FakeEndpoint*>(
                 raw_endpoint_binder));
     std::shared_ptr<grpc::Channel> channel =
@@ -217,7 +217,7 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderParallelRequests) {
   void* raw_endpoint_binder =
       grpc::experimental::binder::GetEndpointBinder("example.service");
   std::unique_ptr<grpc_binder::Binder> endpoint_binder =
-      absl::make_unique<grpc_binder::end2end_testing::FakeBinder>(
+      std::make_unique<grpc_binder::end2end_testing::FakeBinder>(
           static_cast<grpc_binder::end2end_testing::FakeEndpoint*>(
               raw_endpoint_binder));
   std::shared_ptr<grpc::Channel> channel =
