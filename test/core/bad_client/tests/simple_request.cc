@@ -16,13 +16,16 @@
  *
  */
 
-#include <string.h>
+#include <stdint.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 #define PFX_STR                                                            \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \

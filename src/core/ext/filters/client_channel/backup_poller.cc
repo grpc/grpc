@@ -117,9 +117,9 @@ static void g_poller_unref() {
 
 static void run_poller(void* arg, grpc_error_handle error) {
   backup_poller* p = static_cast<backup_poller*>(arg);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    if (error != GRPC_ERROR_CANCELLED) {
-      GRPC_LOG_IF_ERROR("run_poller", GRPC_ERROR_REF(error));
+  if (!error.ok()) {
+    if (error != absl::CancelledError()) {
+      GRPC_LOG_IF_ERROR("run_poller", error);
     }
     backup_poller_shutdown_unref(p);
     return;

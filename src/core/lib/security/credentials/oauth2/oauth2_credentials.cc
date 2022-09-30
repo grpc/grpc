@@ -57,9 +57,9 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 using grpc_core::Json;
@@ -79,7 +79,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
   grpc_auth_refresh_token result;
   const char* prop_value;
   int success = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   memset(&result, 0, sizeof(grpc_auth_refresh_token));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -234,7 +234,7 @@ end:
 
 static void on_oauth2_token_fetcher_http_response(void* user_data,
                                                   grpc_error_handle error) {
-  GRPC_LOG_IF_ERROR("oauth_fetch", GRPC_ERROR_REF(error));
+  GRPC_LOG_IF_ERROR("oauth_fetch", error);
   grpc_credentials_metadata_request* r =
       static_cast<grpc_credentials_metadata_request*>(user_data);
   grpc_oauth2_token_fetcher_credentials* c =
@@ -247,10 +247,9 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   absl::optional<grpc_core::Slice> access_token_value;
   grpc_core::Duration token_lifetime;
   grpc_credentials_status status =
-      GRPC_ERROR_IS_NONE(error)
-          ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                &r->response, &access_token_value, &token_lifetime)
-          : GRPC_CREDENTIALS_ERROR;
+      error.ok() ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                       &r->response, &access_token_value, &token_lifetime)
+                 : GRPC_CREDENTIALS_ERROR;
   // Update cache and grab list of pending requests.
   gpr_mu_lock(&mu_);
   token_fetch_pending_ = false;
@@ -277,7 +276,6 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
       auto err = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
       pending_request->result = grpc_error_to_absl_status(err);
-      GRPC_ERROR_UNREF(err);
     }
     pending_request->done.store(true, std::memory_order_release);
     pending_request->waker.Wakeup();
@@ -533,7 +531,7 @@ void MaybeAddToBody(const char* field_name, const char* field,
 
 grpc_error_handle LoadTokenFile(const char* path, gpr_slice* token) {
   grpc_error_handle err = grpc_load_file(path, 1, token);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  if (!err.ok()) return err;
   if (GRPC_SLICE_LENGTH(*token) == 0) {
     gpr_log(GPR_ERROR, "Token file %s is empty", path);
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Token file is empty.");
@@ -571,9 +569,8 @@ class StsTokenFetcherCredentials
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
     grpc_error_handle err = FillBody(&request.body, &request.body_length);
-    if (!GRPC_ERROR_IS_NONE(err)) {
+    if (!err.ok()) {
       response_cb(metadata_req, err);
-      GRPC_ERROR_UNREF(err);
       return;
     }
     grpc_http_header header = {
@@ -605,22 +602,22 @@ class StsTokenFetcherCredentials
     std::vector<std::string> body_parts;
     grpc_slice subject_token = grpc_empty_slice();
     grpc_slice actor_token = grpc_empty_slice();
-    grpc_error_handle err = GRPC_ERROR_NONE;
+    grpc_error_handle err;
 
     auto cleanup = [&body, &body_length, &body_parts, &subject_token,
                     &actor_token, &err]() {
-      if (GRPC_ERROR_IS_NONE(err)) {
+      if (err.ok()) {
         std::string body_str = absl::StrJoin(body_parts, "");
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
       }
-      grpc_slice_unref(subject_token);
-      grpc_slice_unref(actor_token);
+      CSliceUnref(subject_token);
+      CSliceUnref(actor_token);
       return err;
     };
 
     err = LoadTokenFile(subject_token_path_.get(), &subject_token);
-    if (!GRPC_ERROR_IS_NONE(err)) return cleanup();
+    if (!err.ok()) return cleanup();
     body_parts.push_back(absl::StrFormat(
         GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
         reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
@@ -632,7 +629,7 @@ class StsTokenFetcherCredentials
                    &body_parts);
     if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
       err = LoadTokenFile(actor_token_path_.get(), &actor_token);
-      if (!GRPC_ERROR_IS_NONE(err)) return cleanup();
+      if (!err.ok()) return cleanup();
       MaybeAddToBody(
           "actor_token",
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)),
@@ -689,7 +686,6 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
       "Invalid STS Credentials Options", &error_list);
   auto retval =
       absl::InvalidArgumentError(grpc_error_std_string(grpc_error_vec));
-  GRPC_ERROR_UNREF(grpc_error_vec);
   return retval;
 }
 

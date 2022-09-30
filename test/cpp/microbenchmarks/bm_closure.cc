@@ -75,7 +75,7 @@ static void BM_ClosureRun(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    grpc_core::Closure::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION, &c, absl::OkStatus());
   }
 }
 BENCHMARK(BM_ClosureRun);
@@ -86,7 +86,7 @@ static void BM_ClosureCreateAndRun(benchmark::State& state) {
     grpc_core::Closure::Run(
         DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
+        absl::OkStatus());
   }
 }
 BENCHMARK(BM_ClosureCreateAndRun);
@@ -98,7 +98,7 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
     grpc_core::Closure::Run(
         DEBUG_LOCATION,
         GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
+        absl::OkStatus());
   }
 }
 BENCHMARK(BM_ClosureInitAndRun);
@@ -108,7 +108,7 @@ static void BM_ClosureSchedOnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
 }
@@ -121,8 +121,8 @@ static void BM_ClosureSched2OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, absl::OkStatus());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
 }
@@ -137,9 +137,9 @@ static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c3, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, absl::OkStatus());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, absl::OkStatus());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c3, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
 }
@@ -152,7 +152,7 @@ static void BM_AcquireMutex(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     gpr_mu_lock(&mu);
-    DoNothing(nullptr, GRPC_ERROR_NONE);
+    DoNothing(nullptr, absl::OkStatus());
     gpr_mu_unlock(&mu);
   }
   gpr_mu_destroy(&mu);
@@ -166,7 +166,7 @@ static void BM_TryAcquireMutex(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     if (gpr_mu_trylock(&mu)) {
-      DoNothing(nullptr, GRPC_ERROR_NONE);
+      DoNothing(nullptr, absl::OkStatus());
       gpr_mu_unlock(&mu);
     } else {
       abort();
@@ -182,7 +182,7 @@ static void BM_AcquireSpinlock(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     gpr_spinlock_lock(&mu);
-    DoNothing(nullptr, GRPC_ERROR_NONE);
+    DoNothing(nullptr, absl::OkStatus());
     gpr_spinlock_unlock(&mu);
   }
 }
@@ -194,7 +194,7 @@ static void BM_TryAcquireSpinlock(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     if (gpr_spinlock_trylock(&mu)) {
-      DoNothing(nullptr, GRPC_ERROR_NONE);
+      DoNothing(nullptr, absl::OkStatus());
       gpr_spinlock_unlock(&mu);
     } else {
       abort();
@@ -209,7 +209,7 @@ static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    combiner->Run(&c, GRPC_ERROR_NONE);
+    combiner->Run(&c, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
@@ -224,8 +224,8 @@ static void BM_ClosureSched2OnCombiner(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    combiner->Run(&c1, GRPC_ERROR_NONE);
-    combiner->Run(&c2, GRPC_ERROR_NONE);
+    combiner->Run(&c1, absl::OkStatus());
+    combiner->Run(&c2, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
@@ -242,9 +242,9 @@ static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    combiner->Run(&c1, GRPC_ERROR_NONE);
-    combiner->Run(&c2, GRPC_ERROR_NONE);
-    combiner->Run(&c3, GRPC_ERROR_NONE);
+    combiner->Run(&c1, absl::OkStatus());
+    combiner->Run(&c2, absl::OkStatus());
+    combiner->Run(&c3, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
@@ -260,8 +260,8 @@ static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    combiner1->Run(&c1, GRPC_ERROR_NONE);
-    combiner2->Run(&c2, GRPC_ERROR_NONE);
+    combiner1->Run(&c1, absl::OkStatus());
+    combiner2->Run(&c2, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner1, "finished");
@@ -282,10 +282,10 @@ static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c4, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    combiner1->Run(&c1, GRPC_ERROR_NONE);
-    combiner2->Run(&c2, GRPC_ERROR_NONE);
-    combiner1->Run(&c3, GRPC_ERROR_NONE);
-    combiner2->Run(&c4, GRPC_ERROR_NONE);
+    combiner1->Run(&c1, absl::OkStatus());
+    combiner2->Run(&c2, absl::OkStatus());
+    combiner1->Run(&c3, absl::OkStatus());
+    combiner2->Run(&c4, absl::OkStatus());
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_COMBINER_UNREF(combiner1, "finished");
@@ -302,13 +302,13 @@ class Rescheduler {
   }
 
   void ScheduleFirst() {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
   }
 
   void ScheduleFirstAgainstDifferentScheduler() {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                             GRPC_CLOSURE_CREATE(Step, this, nullptr),
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 
  private:
@@ -318,7 +318,8 @@ class Rescheduler {
   static void Step(void* arg, grpc_error_handle /*error*/) {
     Rescheduler* self = static_cast<Rescheduler*>(arg);
     if (self->state_.KeepRunning()) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_,
+                              absl::OkStatus());
     }
   }
 };

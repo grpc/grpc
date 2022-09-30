@@ -14,7 +14,9 @@
 
 #include "src/core/lib/gprpp/overload.h"
 
-#include <gtest/gtest.h>
+#include <string>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

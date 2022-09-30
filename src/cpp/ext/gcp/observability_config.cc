@@ -50,7 +50,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
     grpc_slice contents;
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok()) {
       return grpc_error_to_absl_status(grpc_error_set_int(
           error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_FAILED_PRECONDITION));
     }
