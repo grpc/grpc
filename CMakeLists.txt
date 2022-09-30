@@ -18064,7 +18064,6 @@ target_include_directories(test_core_gprpp_load_file_test
 target_link_libraries(test_core_gprpp_load_file_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
