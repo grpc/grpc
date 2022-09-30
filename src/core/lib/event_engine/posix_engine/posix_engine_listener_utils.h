@@ -50,7 +50,7 @@ class ListenerSocketsContainer {
 // dsmode for the socket, and return the error handle and listening port
 // assigned for the socket.
 absl::StatusOr<int> ListenerAddAddress(
-    ListenerSocketsContainer& listener_sockets,
+    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
     PosixSocketWrapper::DSMode& dsmode);
 
@@ -59,7 +59,8 @@ absl::StatusOr<int> ListenerAddAddress(
 // server. Returns the port at which the created socket listens for incoming
 // connections.
 absl::StatusOr<int> AddWildCardAddrsToListener(
-    ListenerSocketsContainer& listener_sockets, int requested_port);
+    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
+    int requested_port);
 
 // Get all addresses assigned to network interfaces on the machine and create a
 // socket for each. requested_port is the port to use for every socket, or 0 to
@@ -67,7 +68,8 @@ absl::StatusOr<int> AddWildCardAddrsToListener(
 // to the port selected. Return ok status only if all listeners were
 // added.
 absl::StatusOr<int> ListenerAddAllLocalAddresses(
-    ListenerSocketsContainer& listener_sockets, int requested_port);
+    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
+    int requested_port);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

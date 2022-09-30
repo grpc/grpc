@@ -20,6 +20,7 @@
 #include <cstring>
 #include <string>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -40,13 +41,15 @@ using ResolvedAddress =
 
 struct ListenerSocket {
   // Listener socket fd
-  int fd;
+  PosixSocketWrapper sock;
   // Assigned/chosen listening port
   int port;
   // Socket configuration
   bool zero_copy_enabled;
   // Address at which the socket is listening for connections
   ResolvedAddress addr;
+  // Dual stack mode.
+  PosixSocketWrapper::DSMode dsmode;
 };
 
 #ifdef GRPC_HAVE_IFADDRS
@@ -126,189 +129,108 @@ int GetMaxAcceptQueueSize() {
 }
 
 // Prepare a recently-created socket for listening.
-absl::Status PrepareSocket(bool reuse_port, ListenerSocket& socket) {
+absl::Status PrepareSocket(const PosixTcpOptions& options,
+                           ListenerSocket& socket) {
   ResolvedAddress sockname_temp;
   absl::Status error;
-
-  int fd = socket.fd;
-  grpc_resolved_address* addr = &socket.addr;
+  int fd = socket.sock.Fd();
   GPR_ASSERT(fd >= 0);
-  if (listener->IsReusePort() && !grpc_is_unix_socket(addr)) {
-    err = grpc_set_socket_reuse_port(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
+  bool close_fd = true;
+  socket.zero_copy_enabled = false;
+  socket.port = 0;
+  auto sock_cleanup = absl::MakeCleanup([&close_fd, &socket]() -> void {
+    if (close_fd and socket.sock.Fd() >= 0) {
+      close(socket.sock.Fd());
+    }
+  });
+  if (PosixSocketWrapper::IsSocketReusePortSupported() &&
+      options.allow_reuse_port && socket.addr.address()->sa_family != AF_UNIX) {
+    RETURN_IF_NOT_OK(socket.sock.SetSocketReusePort(1));
   }
 
 #ifdef GRPC_LINUX_ERRQUEUE
-  err = grpc_set_socket_zerocopy(fd);
-  if (err != GRPC_ERROR_NONE) {
-    /* it's not fatal, so just log it. */
+  if (!socket.sock.SetSocketZeroCopy().ok()) {
+    // it's not fatal, so just log it.
     gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
-    GRPC_ERROR_UNREF(err);
   } else {
-    socket.cfg.zero_copy_enabled = true;
+    socket.zero_copy_enabled = true;
   }
-#else
-  socket.cfg.zero_copy_enabled = false;
 #endif
-  err = grpc_set_socket_nonblocking(fd, 1);
-  if (err != GRPC_ERROR_NONE) goto error;
-  err = grpc_set_socket_cloexec(fd, 1);
-  if (err != GRPC_ERROR_NONE) goto error;
-  if (!grpc_is_unix_socket(addr)) {
-    err = grpc_set_socket_low_latency(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
-    err = grpc_set_socket_reuse_addr(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
-    err = grpc_set_socket_tcp_user_timeout(
-        fd, listener->GetEndpointConfig().GetChannelArgs(),
-        false /* is_client */);
-    if (err != GRPC_ERROR_NONE) goto error;
+
+  RETURN_IF_NOT_OK(socket.sock.SetSocketNonBlocking(1));
+  RETURN_IF_NOT_OK(socket.sock.SetSocketCloexec(1));
+
+  if (socket.addr.address()->sa_family != AF_UNIX) {
+    RETURN_IF_NOT_OK(socket.sock.SetSocketLowLatency(1));
+    RETURN_IF_NOT_OK(socket.sock.SetSocketReuseAddr(1));
+    socket.sock.TrySetSocketTcpUserTimeout(options, false);
   }
-  err = grpc_set_socket_no_sigpipe_if_possible(fd);
-  if (err != GRPC_ERROR_NONE) goto error;
+  RETURN_IF_NOT_OK(socket.sock.SetSocketNoSigpipeIfPossible());
+  RETURN_IF_NOT_OK(socket.sock.ApplySocketMutatorInOptions(
+      GRPC_FD_SERVER_LISTENER_USAGE, options));
 
-  err = grpc_apply_socket_mutator_in_args(
-      fd, GRPC_FD_SERVER_LISTENER_USAGE,
-      listener->GetEndpointConfig().GetChannelArgs());
-
-  if (err != GRPC_ERROR_NONE) goto error;
-
-  if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
-           addr->len) < 0) {
-    err = GRPC_OS_ERROR(errno, "bind");
-    goto error;
+  if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
+    return absl::InternalError(
+        absl::StrCat("Error in bind: ", std::strerror(errno)));
   }
 
   if (listen(fd, GetMaxAcceptQueueSize()) < 0) {
-    err = GRPC_OS_ERROR(errno, "listen");
-    goto error;
+    return absl::InternalError(
+        absl::StrCat("Error in listen: ", std::strerror(errno)));
+  }
+  socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+
+  if (getsockname(fd, const_cast<sockaddr*>(sockname_temp.address()), &len) <
+      0) {
+    return absl::InternalError(
+        absl::StrCat("Error in getsockname: ", std::strerror(errno)));
   }
 
-  sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
-                  &sockname_temp.len) < 0) {
-    err = GRPC_OS_ERROR(errno, "getsockname");
-    goto error;
-  }
-
-  socket.port = grpc_sockaddr_get_port(&sockname_temp);
-  return GRPC_ERROR_NONE;
-
-error:
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  if (fd >= 0) {
-    close(fd);
-  }
-  grpc_error_handle ret =
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Unable to configure socket", &err, 1),
-                         GRPC_ERROR_INT_FD, fd);
-  GRPC_ERROR_UNREF(err);
-  return ret;
+  socket.port = SockaddrGetPort(ResolvedAddress(sockname_temp.address(), len));
+  // No errors. Set close_fd to false to ensure the socket is not closed.
+  close_fd = false;
+  return absl::OkStatus();
 }
 
-static grpc_error_handle AddSocketToListener(
-    grpc_event_engine::experimental::EventMgrEventEngineListener* listener,
-    grpc_event_engine::experimental::ListenerSocket& socket) {
-  grpc_error_handle err = PrepareSocket(listener, socket);
-  if (err == GRPC_ERROR_NONE) {
-    GPR_ASSERT(socket.port > 0);
-    listener->AddSocketLocked(&socket);
-  }
-  return err;
+absl::Status AddSocketToListener(ListenerSocketsContainer& listener_sockets,
+                                 const PosixTcpOptions& options,
+                                 ListenerSocket& socket) {
+  RETURN_IF_NOT_OK(PrepareSocket(options, socket));
+  GPR_ASSERT(socket.port > 0);
+  listener_sockets.AddSocket(socket.sock.Fd(), socket.port,
+                             socket.zero_copy_enabled, socket.addr,
+                             socket.dsmode);
+  return absl::OkStatus();
 }
 }  // namespace
 
-grpc_error_handle AddWildCardAddrsToListener(
-    EventMgrEventEngineListener* listener, int requested_port,
-    int* assigned_port) {
-  grpc_resolved_address wild4;
-  grpc_resolved_address wild6;
-  grpc_dualstack_mode dsmode;
-  grpc_error_handle v6_err = GRPC_ERROR_NONE;
-  grpc_error_handle v4_err = GRPC_ERROR_NONE;
-
-  if (SystemHasIfAddrs() && listener->IsExpandWildcardAddrs()) {
-    return ListenerAddAllLocalAddresses(listener, requested_port,
-                                        assigned_port);
-  }
-
-  grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
-  /* Try listening on IPv6 first. */
-  if ((v6_err = ListenerAddAddress(listener, &wild6, &dsmode, assigned_port)) ==
-      GRPC_ERROR_NONE) {
-    if (dsmode == GRPC_DSMODE_DUALSTACK || dsmode == GRPC_DSMODE_IPV4) {
-      return GRPC_ERROR_NONE;
-    }
-    requested_port = *assigned_port;
-  }
-  /* If we got a v6-only socket or nothing, try adding 0.0.0.0. */
-  grpc_sockaddr_set_port(&wild4, requested_port);
-  v4_err = ListenerAddAddress(listener, &wild4, &dsmode, assigned_port);
-  if (*assigned_port > 0) {
-    if (v6_err != GRPC_ERROR_NONE) {
-      gpr_log(GPR_INFO,
-              "Failed to add :: listener, "
-              "the environment may not support IPv6: %s",
-              grpc_error_std_string(v6_err).c_str());
-      GRPC_ERROR_UNREF(v6_err);
-    }
-    if (v4_err != GRPC_ERROR_NONE) {
-      gpr_log(GPR_INFO,
-              "Failed to add 0.0.0.0 listener, "
-              "the environment may not support IPv4: %s",
-              grpc_error_std_string(v4_err).c_str());
-      GRPC_ERROR_UNREF(v4_err);
-    }
-    return GRPC_ERROR_NONE;
-  } else {
-    grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Failed to add any wildcard listeners");
-    GPR_ASSERT(v6_err != GRPC_ERROR_NONE && v4_err != GRPC_ERROR_NONE);
-    root_err = grpc_error_add_child(root_err, v6_err);
-    root_err = grpc_error_add_child(root_err, v4_err);
-    return root_err;
-  }
-}
-
-grpc_error_handle ListenerAddAddress(EventMgrEventEngineListener* listener,
-                                     grpc_resolved_address* addr,
-                                     grpc_dualstack_mode* dsmode,
-                                     int* assigned_port) {
-  grpc_resolved_address addr4_copy;
+absl::StatusOr<int> ListenerAddAddress(
+    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
+    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    PosixSocketWrapper::DSMode& dsmode) {
+  ResolvedAddress addr4_copy;
   int fd;
-  grpc_error_handle err =
-      grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, dsmode, &fd);
-  if (err != GRPC_ERROR_NONE) {
-    return err;
+  ListenerSocket socket;
+  auto result = PosixSocketWrapper::CreateDualStackSocket(
+      nullptr, addr, SOCK_STREAM, 0, socket.dsmode);
+  if (!result.ok()) {
+    return result.status();
   }
-  ListenerSocket* socket = new ListenerSocket;
-  if (*dsmode == GRPC_DSMODE_IPV4 &&
-      grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
-    addr = &addr4_copy;
-  }
-  socket->fd = fd;
-  socket->cfg.dsmode = *dsmode;
-  socket->addr = *addr;
-  socket->listener = listener;
-  err = AddSocketToListener(listener, *socket);
-  if (assigned_port) {
-    *assigned_port = socket->port;
-  }
-  if (err == GRPC_ERROR_NONE) {
-    socket->desc_if =
-        listener->GetEventEngine()->event_manager_->RegisterFileDescriptor(
-            socket->fd);
+  socket.sock = *result;
+  if (socket.dsmode == PosixSocketWrapper::DSMODE_IPV4 &&
+      SockaddrIsV4Mapped(&addr, &addr4_copy)) {
+    socket.addr = addr4_copy;
   } else {
-    socket->Unref();
+    socket.addr = addr;
   }
-  return err;
+
+  RETURN_IF_NOT_OK(AddSocketToListener(listener_sockets, options, socket));
+  return socket.port;
 }
 
-grpc_error_handle ListenerAddAllLocalAddresses(
-    EventMgrEventEngineListener* listener, int requested_port,
-    int* assigned_port) {
+absl::StatusOr<int> ListenerAddAllLocalAddresses(
+    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
+    int requested_port) {
 #ifdef GRPC_HAVE_IFADDRS
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
@@ -377,6 +299,58 @@ grpc_error_handle ListenerAddAllLocalAddresses(
   gpr_log(GPR_ERROR, "System does not have support ifaddrs\n");
   GPR_ASSERT(0);
 #endif
+}
+
+absl::StatusOr<int> AddWildCardAddrsToListener(
+    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
+    int requested_port) {
+  grpc_resolved_address wild4;
+  grpc_resolved_address wild6;
+  grpc_dualstack_mode dsmode;
+  grpc_error_handle v6_err = GRPC_ERROR_NONE;
+  grpc_error_handle v4_err = GRPC_ERROR_NONE;
+
+  if (SystemHasIfAddrs() && options.expand_wildcard_addrs) {
+    return ListenerAddAllLocalAddresses(listener, requested_port,
+                                        assigned_port);
+  }
+
+  grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
+  /* Try listening on IPv6 first. */
+  if ((v6_err = ListenerAddAddress(listener, &wild6, &dsmode, assigned_port)) ==
+      GRPC_ERROR_NONE) {
+    if (dsmode == GRPC_DSMODE_DUALSTACK || dsmode == GRPC_DSMODE_IPV4) {
+      return GRPC_ERROR_NONE;
+    }
+    requested_port = *assigned_port;
+  }
+  /* If we got a v6-only socket or nothing, try adding 0.0.0.0. */
+  grpc_sockaddr_set_port(&wild4, requested_port);
+  v4_err = ListenerAddAddress(listener, &wild4, &dsmode, assigned_port);
+  if (*assigned_port > 0) {
+    if (v6_err != GRPC_ERROR_NONE) {
+      gpr_log(GPR_INFO,
+              "Failed to add :: listener, "
+              "the environment may not support IPv6: %s",
+              grpc_error_std_string(v6_err).c_str());
+      GRPC_ERROR_UNREF(v6_err);
+    }
+    if (v4_err != GRPC_ERROR_NONE) {
+      gpr_log(GPR_INFO,
+              "Failed to add 0.0.0.0 listener, "
+              "the environment may not support IPv4: %s",
+              grpc_error_std_string(v4_err).c_str());
+      GRPC_ERROR_UNREF(v4_err);
+    }
+    return GRPC_ERROR_NONE;
+  } else {
+    grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to add any wildcard listeners");
+    GPR_ASSERT(v6_err != GRPC_ERROR_NONE && v4_err != GRPC_ERROR_NONE);
+    root_err = grpc_error_add_child(root_err, v6_err);
+    root_err = grpc_error_add_child(root_err, v4_err);
+    return root_err;
+  }
 }
 
 }  // namespace posix_engine
