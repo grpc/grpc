@@ -73,6 +73,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -309,8 +310,8 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
   // guarantee that can be short-lived.
   CancelWithError(grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
-                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
-      GRPC_ERROR_INT_GRPC_STATUS, status));
+                         StatusStrProperty::kGrpcMessage, description),
+      StatusIntProperty::kRpcStatus, status));
 }
 
 void Call::PropagateCancellationToChildren() {
@@ -1019,15 +1020,15 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
         error = grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_CPP_STRING(
                 absl::StrCat("Error received from peer ", peer)),
-            GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+            StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
         gpr_free(peer);
       }
       auto grpc_message = b->Take(GrpcMessageMetadata());
       if (grpc_message.has_value()) {
-        error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                    grpc_message->as_string_view());
       } else if (!error.ok()) {
-        error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
+        error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage, "");
       }
       SetFinalStatus(error);
     } else if (!is_client()) {
@@ -1037,7 +1038,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
               "Received trailing metadata with no error and no status");
       SetFinalStatus(grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("No status received"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNKNOWN));
+          StatusIntProperty::kRpcStatus, GRPC_STATUS_UNKNOWN));
     }
   }
   PublishAppMetadata(b, true);
@@ -1553,7 +1554,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                 : grpc_error_set_int(
                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                           "Server returned error"),
-                      GRPC_ERROR_INT_GRPC_STATUS,
+                      StatusIntProperty::kRpcStatus,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
         if (op->data.send_status_from_server.status_details != nullptr) {
@@ -1563,7 +1564,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                   *op->data.send_status_from_server.status_details)));
           if (!status_error.ok()) {
             status_error = grpc_error_set_str(
-                status_error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                status_error, StatusStrProperty::kGrpcMessage,
                 StringViewFromSlice(
                     *op->data.send_status_from_server.status_details));
           }

@@ -57,6 +57,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -1282,7 +1283,8 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     call_attempt->MaybeAddBatchForCancelOp(
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "retry perAttemptRecvTimeout exceeded"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
+                           StatusIntProperty::kRpcStatus,
+                           GRPC_STATUS_CANCELLED),
         &closures);
     // Check whether we should retry.
     if (call_attempt->ShouldRetry(/*status=*/absl::nullopt,
@@ -1597,7 +1599,7 @@ void GetCallStatus(
   if (!error.ok()) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
     intptr_t value = 0;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_LB_POLICY_DROP, &value) &&
+    if (grpc_error_get_int(error, StatusIntProperty::kLbPolicyDrop, &value) &&
         value != 0) {
       *is_lb_drop = true;
     }
@@ -1782,7 +1784,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
           error.ok()
               ? grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("call attempt failed"),
-                    GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED)
+                    StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED)
               : error,
           &closures);
       // For transparent retries, add a closure to immediately start a new
