@@ -26,7 +26,6 @@
 #ifdef GRPC_LINUX_EVENTFD
 
 #include <errno.h>
-#include <string.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
@@ -34,6 +33,7 @@
 #endif
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
+#include "src/core/lib/gprpp/strerror.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -45,7 +45,7 @@ absl::Status EventFdWakeupFd::Init() {
   int write_fd = -1;
   if (read_fd < 0) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("eventfd: ", strerror(errno)));
+                        absl::StrCat("eventfd: ", grpc_core::StrError(errno)));
   }
   SetWakeupFds(read_fd, write_fd);
   return absl::OkStatus();
@@ -58,8 +58,9 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
     err = eventfd_read(ReadFd(), &value);
   } while (err < 0 && errno == EINTR);
   if (err < 0 && errno != EAGAIN) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("eventfd_read: ", strerror(errno)));
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("eventfd_read: ", grpc_core::StrError(errno)));
   }
   return absl::OkStatus();
 }
@@ -70,8 +71,9 @@ absl::Status EventFdWakeupFd::Wakeup() {
     err = eventfd_write(ReadFd(), 1);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("eventfd_write: ", strerror(errno)));
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("eventfd_write: ", grpc_core::StrError(errno)));
   }
   return absl::OkStatus();
 }
