@@ -258,12 +258,8 @@ inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
 /// This could be considered as atomic<grpc_error_handle>.
 class AtomicError {
  public:
-  AtomicError() {
-    error_ = absl::OkStatus();
-    lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
-  }
+  AtomicError() = default;
   explicit AtomicError(grpc_error_handle error) { error_ = error; }
-  ~AtomicError() { GRPC_ERROR_UNREF(error_); }
 
   AtomicError(const AtomicError&) = delete;
   AtomicError& operator=(const AtomicError&) = delete;
@@ -291,7 +287,7 @@ class AtomicError {
 
  private:
   grpc_error_handle error_;
-  gpr_spinlock lock_;
+  gpr_spinlock lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
 };
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */
