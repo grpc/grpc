@@ -78,12 +78,12 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
   static constexpr bool kMinimalStackHasDecompression = false;
   optional(GRPC_CLIENT_SUBCHANNEL, false,
            GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
-           &grpc_message_compress_filter);
+           &MessageCompressFilter::kClientFilter);
   optional(GRPC_CLIENT_DIRECT_CHANNEL, false,
            GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
-           &grpc_message_compress_filter);
+           &MessageCompressFilter::kClientFilter);
   optional(GRPC_SERVER_CHANNEL, false, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
-           &grpc_message_compress_filter);
+           &MessageCompressFilter::kServerFilter);
   optional(GRPC_CLIENT_SUBCHANNEL, kMinimalStackHasDecompression,
            GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
   optional(GRPC_CLIENT_DIRECT_CHANNEL, kMinimalStackHasDecompression,

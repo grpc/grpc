@@ -23,6 +23,7 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 
 /** Compression filter for outgoing data.
  *
@@ -46,7 +47,30 @@
  * aforementioned 'grpc-encoding' metadata value, data will pass through
  * uncompressed. */
 
-extern const grpc_channel_filter grpc_message_compress_filter;
+namespace grpc_core {
+
+class MessageCompressFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kClientFilter;
+  static const grpc_channel_filter kServerFilter;
+
+  static absl::StatusOr<MessageCompressFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  explicit MessageCompressFilter(const ChannelArgs& args);
+
+  // The default, channel-level, compression algorithm.
+  grpc_compression_algorithm default_compression_algorithm_;
+  // Enabled compression algorithms.
+  grpc_core::CompressionAlgorithmSet enabled_compression_algorithms_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H \
         */
