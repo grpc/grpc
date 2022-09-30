@@ -16,9 +16,10 @@
 set -e
 cd $(dirname $0)/../..
 tools/codegen/core/gen_experiments.py
-CHANGED_FILES="$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')" \
+# clang format
+TEST='' \
+    CHANGED_FILES="$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')" \
     tools/distrib/clang_format_code.sh
-cd -
 
 if [[ $# == 1 && $1 == '--check' ]]; then
     CHANGES="$(git diff)"
