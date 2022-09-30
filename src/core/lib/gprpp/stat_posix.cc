@@ -40,9 +40,9 @@ absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
   GPR_ASSERT(timestamp != nullptr);
   struct stat buf;
   if (stat(filename, &buf) != 0) {
-    const char* error_msg = grpc_core::StrError(errno).c_str();
+    std::string error_msg = grpc_core::StrError(errno);
     gpr_log(GPR_ERROR, "stat failed for filename %s with error %s.", filename,
-            error_msg);
+            error_msg.c_str());
     return absl::Status(absl::StatusCode::kInternal, error_msg);
   }
   // Last file/directory modification time.
