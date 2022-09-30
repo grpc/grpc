@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <sys/socket.h>
+
 #include <functional>
 #include <string>
 #include <utility>
