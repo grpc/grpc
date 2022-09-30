@@ -29,9 +29,6 @@
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
-static gpr_once g_init_max_accept_queue_size = GPR_ONCE_INIT;
-static int g_max_accept_queue_size;
-
 namespace grpc_event_engine {
 namespace posix_engine {
 
@@ -133,7 +130,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   });
   if (PosixSocketWrapper::IsSocketReusePortSupported() &&
       options.allow_reuse_port && socket.addr.address()->sa_family != AF_UNIX) {
-    RETURN_IF_NOT_OK(socket.sock.SetSocketReusePort(1));
+    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReusePort(1));
   }
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -145,16 +142,16 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   }
 #endif
 
-  RETURN_IF_NOT_OK(socket.sock.SetSocketNonBlocking(1));
-  RETURN_IF_NOT_OK(socket.sock.SetSocketCloexec(1));
+  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNonBlocking(1));
+  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketCloexec(1));
 
   if (socket.addr.address()->sa_family != AF_UNIX) {
-    RETURN_IF_NOT_OK(socket.sock.SetSocketLowLatency(1));
-    RETURN_IF_NOT_OK(socket.sock.SetSocketReuseAddr(1));
+    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketLowLatency(1));
+    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReuseAddr(1));
     socket.sock.TrySetSocketTcpUserTimeout(options, false);
   }
-  RETURN_IF_NOT_OK(socket.sock.SetSocketNoSigpipeIfPossible());
-  RETURN_IF_NOT_OK(socket.sock.ApplySocketMutatorInOptions(
+  GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNoSigpipeIfPossible());
+  GRPC_RETURN_IF_ERROR(socket.sock.ApplySocketMutatorInOptions(
       GRPC_FD_SERVER_LISTENER_USAGE, options));
 
   if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
@@ -183,7 +180,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
 absl::Status AddSocketToListener(ListenerSocketsContainer& listener_sockets,
                                  const PosixTcpOptions& options,
                                  ListenerSocket& socket) {
-  RETURN_IF_NOT_OK(PrepareSocket(options, socket));
+  GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket));
   GPR_ASSERT(socket.port > 0);
   listener_sockets.AddSocket(socket);
   return absl::OkStatus();
@@ -195,7 +192,6 @@ absl::StatusOr<int> ListenerAddAddress(
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
     PosixSocketWrapper::DSMode& dsmode) {
   ResolvedAddress addr4_copy;
-  int fd;
   ListenerSocket socket;
   auto result = PosixSocketWrapper::CreateDualStackSocket(
       nullptr, addr, SOCK_STREAM, 0, socket.dsmode);
@@ -210,7 +206,7 @@ absl::StatusOr<int> ListenerAddAddress(
     socket.addr = addr;
   }
 
-  RETURN_IF_NOT_OK(AddSocketToListener(listener_sockets, options, socket));
+  GRPC_RETURN_IF_ERROR(AddSocketToListener(listener_sockets, options, socket));
   dsmode = socket.dsmode;
   return socket.port;
 }

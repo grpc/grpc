@@ -2832,6 +2832,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_listener_utils",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/utility",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr",
+        "posix_event_engine_tcp_socket_utils",
+        "status_helper",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["src/core/lib/event_engine/utils.cc"],
     hdrs = ["src/core/lib/event_engine/utils.h"],
