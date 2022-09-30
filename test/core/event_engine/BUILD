@@ -150,6 +150,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["util/aborting_event_engine.h"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
     ],
