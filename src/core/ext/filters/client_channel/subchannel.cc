@@ -625,7 +625,7 @@ Subchannel::Subchannel(SubchannelKey key,
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
-      engine_(args_.GetObjectRef<EventEngine>()) {
+      event_engine_(args_.GetObjectRef<EventEngine>()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a
@@ -762,7 +762,7 @@ void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      engine_->Cancel(retry_timer_handle_)) {
+      event_engine_->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
     next_attempt_time_ = Timestamp::Now();
@@ -911,7 +911,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    retry_timer_handle_ = engine_->RunAfter(
+    retry_timer_handle_ = event_engine_->RunAfter(
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
