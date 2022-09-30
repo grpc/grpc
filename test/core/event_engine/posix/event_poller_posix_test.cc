@@ -21,16 +21,12 @@
 #include <cstring>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
@@ -50,8 +46,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
@@ -67,6 +61,7 @@
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/strerror.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/util/port.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
@@ -95,21 +90,6 @@ using ::grpc_event_engine::posix_engine::PosixEventPoller;
 using namespace std::chrono_literals;
 
 namespace {
-
-class TestScheduler : public Scheduler {
- public:
-  explicit TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
-  void Run(experimental::EventEngine::Closure* closure) override {
-    engine_->Run(closure);
-  }
-
-  void Run(absl::AnyInvocable<void()> cb) override {
-    engine_->Run(std::move(cb));
-  }
-
- private:
-  experimental::EventEngine* engine_;
-};
 
 absl::Status SetSocketSendBuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
