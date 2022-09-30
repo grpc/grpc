@@ -9790,21 +9790,17 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:

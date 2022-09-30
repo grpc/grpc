@@ -3353,6 +3353,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/hash",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -5755,7 +5756,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
