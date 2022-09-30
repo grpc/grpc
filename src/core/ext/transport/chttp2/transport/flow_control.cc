@@ -279,10 +279,16 @@ void TransportFlowControl::UpdateSetting(
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
       *desired_value = new_desired_value;
-      (action->*set)(new_desired_value == 0
-                         ? FlowControlAction::Urgency::UPDATE_IMMEDIATELY
-                         : FlowControlAction::Urgency::QUEUE_UPDATE,
-                     *desired_value);
+      // Reaching zero can only happen for initial window size, and if it occurs
+      // we really want to wake up writes and ensure all the queued stream
+      // window updates are flushed, since stream flow control operates
+      // differently at zero window size.
+      FlowControlAction::Urgency urgency =
+          FlowControlAction::Urgency::QUEUE_UPDATE;
+      if (new_desired_value == 0) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      }
+      (action->*set)(urgency, *desired_value);
     }
   } else {
     int64_t delta = new_desired_value - *desired_value;
