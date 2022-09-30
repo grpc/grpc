@@ -52,7 +52,8 @@ namespace posix_engine {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
-struct PosixTcpOptions {
+struct PosixTcpOptions
+    : public grpc_event_engine::experimental::EndpointConfig {
   static constexpr int kDefaultReadChunkSize = 8192;
   static constexpr int kDefaultMinReadChunksize = 256;
   static constexpr int kDefaultMaxReadChunksize = 4 * 1024 * 1024;
@@ -114,10 +115,31 @@ struct PosixTcpOptions {
     return *this;
   }
   // Destructor.
-  ~PosixTcpOptions() {
+  ~PosixTcpOptions() override {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
     }
+  }
+
+  // ----- EndpointConfig overrides -----
+
+  // TODO(hork): implement
+  absl::optional<int> GetInt(absl::string_view /* key */) const override {
+    gpr_log(GPR_DEBUG, "GetInt aborting");
+    abort();
+  }
+
+  // TODO(hork): implement
+  absl::optional<absl::string_view> GetString(
+      absl::string_view /* key */) const override {
+    gpr_log(GPR_DEBUG, "GetString aborting");
+    abort();
+  }
+
+  // TODO(hork): implement
+  void* GetVoidPointer(absl::string_view /* key */) const override {
+    gpr_log(GPR_DEBUG, "GetVoidPointer aborting");
+    abort();
   }
 
  private:

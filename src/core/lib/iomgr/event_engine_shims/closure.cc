@@ -59,16 +59,12 @@ absl::AnyInvocable<void(absl::Status)> GrpcClosureToStatusCallback(
 }
 
 absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure) {
-  return [closure]() {
-    RunClosure(closure, GRPC_ERROR_NONE);
-  };
+  return [closure]() { RunClosure(closure, GRPC_ERROR_NONE); };
 }
 
 absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure,
                                                  grpc_error_handle error) {
-  return [closure, error]() {
-    RunClosure(closure, error);
-  };
+  return [closure, error]() { RunClosure(closure, error); };
 }
 
 }  // namespace experimental

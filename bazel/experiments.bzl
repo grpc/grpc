@@ -37,6 +37,9 @@ EXPERIMENTS = {
         "event_engine_client_test": [
             "event_engine_client",
         ],
+        "event_engine_endpoint_test": [
+            "event_engine_endpoint",
+        ],
         "flow_control_test": [
             "flow_control_fixes",
             "peer_state_based_framing",

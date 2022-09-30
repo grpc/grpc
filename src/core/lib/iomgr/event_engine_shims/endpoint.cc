@@ -15,6 +15,8 @@
 
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 
+#include <memory>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -22,10 +24,19 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/resolved_address.h"
 #include "src/core/lib/transport/error_utils.h"
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#endif
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -109,7 +120,7 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
   }
   if (eeep->peer_address.empty()) {
     const EventEngine::ResolvedAddress& addr = eeep->endpoint->GetPeerAddress();
-    // DO NOT SUBMIT - handle invalid addresses?
+    // DO NOT SUBMIT - handle invalid addresses
     eeep->peer_address = ResolvedAddressToURI(addr).value();
   }
   return eeep->peer_address;
@@ -123,7 +134,7 @@ absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   if (eeep->local_address.empty()) {
     const EventEngine::ResolvedAddress& addr =
         eeep->endpoint->GetLocalAddress();
-    // DO NOT SUBMIT - handle invalid addresses?
+    // DO NOT SUBMIT - handle invalid addresses
     eeep->local_address = ResolvedAddressToURI(addr).value();
   }
   return eeep->local_address;
@@ -148,13 +159,56 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
 
 }  // namespace
 
-grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
+grpc_event_engine_endpoint* grpc_event_engine_tcp_server_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   endpoint->endpoint = std::move(ee_endpoint);
   return endpoint;
 }
+
+// TESTING ONLY: Uses the EventEngine as a scheduler.
+class EventEngineScheduler : public posix_engine::Scheduler {
+ public:
+  explicit EventEngineScheduler(std::shared_ptr<PosixEventEngine> engine)
+      : engine_(std::move(engine)) {}
+
+  void Run(experimental::EventEngine::Closure* closure) override {
+    engine_->Run(closure);
+  }
+  void Run(absl::AnyInvocable<void()> cb) override {
+    engine_->Run(std::move(cb));
+  }
+
+ private:
+  std::shared_ptr<EventEngine> engine_;
+};
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+grpc_endpoint* CreatePosixIomgrEndpiont(
+    grpc_fd* wrapped_fd,
+    const grpc_event_engine::experimental::EndpointConfig& endpoint_config,
+    absl::string_view peer_string) {
+  auto engine =
+      std::dynamic_pointer_cast<PosixEventEngine>(GetDefaultEventEngine());
+  auto* scheduler = new EventEngineScheduler(engine);
+  auto handle = posix_engine::GetDefaultPoller(scheduler)->CreateHandle(
+      grpc_fd_wrapped_fd(wrapped_fd), peer_string, /* track_err= */ false);
+  auto endpoint = grpc_event_engine_tcp_server_endpoint_create(
+      absl::make_unique<posix_engine::PosixEndpoint>(
+          handle,
+          new posix_engine::PosixEngineClosure(
+              [scheduler, peer_string = std::string(peer_string)](
+                  absl::Status /*dont_care*/) {
+                gpr_log(GPR_DEBUG, "DO NOT SUBMIT: deleting endpoint for %s",
+                        peer_string.c_str());
+                delete scheduler;
+              },
+              /*is_permanent=*/false),
+          engine, endpoint_config));
+  return &endpoint->base;
+}
+#endif
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

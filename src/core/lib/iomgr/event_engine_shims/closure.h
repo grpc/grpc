@@ -36,7 +36,7 @@ absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure);
 /// Creates a callback that *does not* take an error status argument.
 /// This version has a pre-bound error.
 absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure,
-                                            grpc_error_handle error);
+                                                 grpc_error_handle error);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

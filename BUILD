@@ -2812,6 +2812,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "event_engine_common",
         "experiments",
         "gpr",
         "iomgr_port",
@@ -2956,30 +2957,6 @@ grpc_cc_library(
         "event_engine_trace",
         "gpr",
         "gpr_platform",
-    ],
-)
-
-# DO NOT SUBMIT: probably need to merge this with the rest of iomgr. Keeping separate for now.
-grpc_cc_library(
-    name = "event_engine_iomgr_shims",
-    srcs = [
-        "src/core/lib/iomgr/event_engine_shims/closure.cc",
-        "src/core/lib/iomgr/event_engine_shims/endpoint.cc",
-    ],
-    hdrs = [
-        "src/core/lib/iomgr/event_engine_shims/closure.h",
-        "src/core/lib/iomgr/event_engine_shims/endpoint.h",
-        "src/core/lib/iomgr/event_engine_shims/resolved_address.h",
-    ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/strings",
-    ],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr",
-        "gpr_platform",
-        "grpc_base",
     ],
 )
 
@@ -3326,6 +3303,12 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
+    ] +
+    # EventEngine shims
+    # TODO(hork): remove when the event_engine experiments are complete
+    [
+        "src/core/lib/iomgr/event_engine_shims/closure.cc",
+        "src/core/lib/iomgr/event_engine_shims/endpoint.cc",
     ],
     hdrs = [
         "src/core/lib/transport/error_utils.h",
@@ -3432,6 +3415,13 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack_builder.h",
+    ] +
+    # EventEngine shims
+    # TODO(hork): remove when the event_engine experiments are complete
+    [
+        "src/core/lib/iomgr/event_engine_shims/closure.h",
+        "src/core/lib/iomgr/event_engine_shims/endpoint.h",
+        "src/core/lib/iomgr/event_engine_shims/resolved_address.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3503,6 +3493,11 @@ grpc_cc_library(
         "pipe",
         "poll",
         "pollset_set",
+        "posix_event_engine",
+        "posix_event_engine_closure",
+        "posix_event_engine_endpoint",
+        "posix_event_engine_poller_posix_default",
+        "posix_event_engine_tcp_socket_utils",
         "promise",
         "ref_counted",
         "ref_counted_ptr",

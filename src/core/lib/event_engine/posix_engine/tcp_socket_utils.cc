@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "tcp_socket_utils.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -136,6 +137,16 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
 }  // namespace
 
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
+  // Attempt RTTI for a short-circuit
+  {
+    const PosixTcpOptions* options =
+        dynamic_cast<const PosixTcpOptions*>(&config);
+    if (options != nullptr) {
+      gpr_log(GPR_DEBUG,
+              "Found a PosixTcpOptions struct already. Returning a copy.");
+      return *options;
+    }
+  }
   void* value;
   PosixTcpOptions options;
   options.tcp_read_chunk_size = AdjustValue(

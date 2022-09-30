@@ -58,6 +58,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -467,7 +468,8 @@ using grpc_core::TcpZerocopySendRecord;
 namespace {
 
 struct grpc_tcp {
-  explicit grpc_tcp(const grpc_core::PosixTcpOptions& tcp_options)
+  explicit grpc_tcp(
+      const grpc_event_engine::posix_engine::PosixTcpOptions& tcp_options)
       : min_read_chunk_size(tcp_options.tcp_min_read_chunk_size),
         max_read_chunk_size(tcp_options.tcp_max_read_chunk_size),
         tcp_zerocopy_send_ctx(
@@ -1950,9 +1952,18 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_get_fd,
                                             tcp_can_track_err};
 
-grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
-                               const grpc_core::PosixTcpOptions& options,
-                               absl::string_view peer_string) {
+grpc_endpoint* grpc_tcp_create(
+    grpc_fd* em_fd,
+    const grpc_event_engine::experimental::EndpointConfig& ee_options,
+    absl::string_view peer_string) {
+  if (grpc_core::IsEventEngineEndpointEnabled()) {
+    // DO NOT SUBMIT(hork): unregister the fd with its pollset
+    gpr_log(GPR_DEBUG, "TEST ENABLED! creating PosixEventEngine endpoint");
+    return grpc_event_engine::experimental::CreatePosixIomgrEndpiont(
+        em_fd, ee_options, peer_string);
+  }
+  auto options =
+      grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig(ee_options);
   grpc_tcp* tcp = new grpc_tcp(options);
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);

@@ -50,6 +50,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/strerror.h"
@@ -65,11 +66,10 @@
 
 static std::atomic<int64_t> num_dropped_connections{0};
 
-using ::grpc_event_engine::experimental::EndpointConfig;
-
-static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const EndpointConfig& config,
-                                           grpc_tcp_server** server) {
+static grpc_error_handle tcp_server_create(
+    grpc_closure* shutdown_complete,
+    const grpc_event_engine::experimental::EndpointConfig& config,
+    grpc_tcp_server** server) {
   grpc_tcp_server* s = new grpc_tcp_server;
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
@@ -94,7 +94,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->head = nullptr;
   s->tail = nullptr;
   s->nports = 0;
-  s->options = TcpOptionsFromEndpointConfig(config);
+  s->options =
+      grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
   GPR_ASSERT(s->options.resource_quota != nullptr);
   s->memory_quota = s->options.resource_quota->memory_quota();

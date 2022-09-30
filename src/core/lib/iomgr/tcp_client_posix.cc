@@ -65,7 +65,7 @@ struct async_connect {
   grpc_closure* closure;
   int64_t connection_handle;
   bool connect_cancelled;
-  grpc_core::PosixTcpOptions options;
+  grpc_event_engine::posix_engine::PosixTcpOptions options;
 };
 
 struct ConnectionShard {
@@ -93,7 +93,7 @@ void grpc_tcp_client_global_init() {
 
 static grpc_error_handle prepare_socket(
     const grpc_resolved_address* addr, int fd,
-    const grpc_core::PosixTcpOptions& options) {
+    const grpc_event_engine::posix_engine::PosixTcpOptions& options) {
   grpc_error_handle err;
 
   GPR_ASSERT(fd >= 0);
@@ -147,16 +147,10 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   }
 }
 
-static grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_core::PosixTcpOptions& options,
-    absl::string_view addr_str) {
-  return grpc_tcp_create(fd, options, addr_str);
-}
-
 grpc_endpoint* grpc_tcp_create_from_fd(
     grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
     absl::string_view addr_str) {
-  return grpc_tcp_create(fd, TcpOptionsFromEndpointConfig(config), addr_str);
+  return grpc_tcp_create(fd, config, addr_str);
 }
 
 static void on_writable(void* acp, grpc_error_handle error) {
@@ -210,7 +204,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->options, ac->addr_str);
+      *ep = grpc_tcp_create_from_fd(fd, ac->options, ac->addr_str);
       fd = nullptr;
       break;
     case ENOBUFS:
@@ -283,7 +277,7 @@ finish:
 }
 
 grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_core::PosixTcpOptions& options,
+    const grpc_event_engine::posix_engine::PosixTcpOptions& options,
     const grpc_resolved_address* addr, grpc_resolved_address* mapped_addr,
     int* fd) {
   grpc_dualstack_mode dsmode;
@@ -314,7 +308,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
 
 int64_t grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_core::PosixTcpOptions& options,
+    const grpc_event_engine::posix_engine::PosixTcpOptions& options,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline,
     grpc_endpoint** ep) {
   int err;
@@ -342,7 +336,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (err >= 0) {
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
-    *ep = grpc_tcp_client_create_from_fd(fdobj, options, addr_uri.value());
+    *ep = grpc_tcp_create_from_fd(fdobj, options, addr_uri.value());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
@@ -399,7 +393,8 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
   grpc_resolved_address mapped_addr;
-  grpc_core::PosixTcpOptions options(TcpOptionsFromEndpointConfig(config));
+  grpc_event_engine::posix_engine::PosixTcpOptions options(
+      grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig(config));
   int fd = -1;
   grpc_error_handle error;
   *ep = nullptr;

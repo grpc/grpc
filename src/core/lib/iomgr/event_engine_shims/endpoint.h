@@ -13,12 +13,16 @@
 // limitations under the License.
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_ENDPOINT_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_SHIMS_ENDPOINT_H
-
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+typedef struct grpc_fd grpc_fd;
+#endif
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -34,8 +38,15 @@ struct grpc_event_engine_endpoint {
       write_buffer;
 };
 
-grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
+grpc_event_engine_endpoint* grpc_event_engine_tcp_server_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee);
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+grpc_endpoint* CreatePosixIomgrEndpiont(
+    grpc_fd* wrapped_fd,
+    const grpc_event_engine::experimental::EndpointConfig& endpoint_config,
+    absl::string_view peer_string);
+#endif
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
