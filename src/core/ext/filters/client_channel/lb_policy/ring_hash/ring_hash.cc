@@ -32,7 +32,6 @@
 #include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
@@ -280,7 +279,7 @@ class RingHash : public LoadBalancingPolicy {
       void Orphan() override {
         // Hop into ExecCtx, so that we're not holding the data plane mutex
         // while we run control-plane code.
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
       }
 
       // Will be invoked inside of the WorkSerializer.
@@ -661,7 +660,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
       state, status,
-      absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
+      std::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
@@ -848,7 +847,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
               : args.addresses.status();
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-          absl::make_unique<TransientFailurePicker>(status));
+          std::make_unique<TransientFailurePicker>(status));
       return status;
     }
     // Otherwise, report IDLE.
@@ -885,7 +884,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
 void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<RingHashFactory>());
+      std::make_unique<RingHashFactory>());
 }
 
 }  // namespace grpc_core

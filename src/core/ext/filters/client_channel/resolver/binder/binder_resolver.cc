@@ -16,6 +16,8 @@
 
 #include <algorithm>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -28,7 +30,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -113,7 +114,7 @@ class BinderResolverFactory : public ResolverFactory {
     memcpy(un->sun_path, path.data(), path.size());
     resolved_addr->len =
         static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1);
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static bool ParseUri(const URI& uri, ServerAddressList* addresses) {
@@ -140,7 +141,7 @@ class BinderResolverFactory : public ResolverFactory {
 
 void RegisterBinderResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<BinderResolverFactory>());
+      std::make_unique<BinderResolverFactory>());
 }
 
 }  // namespace grpc_core

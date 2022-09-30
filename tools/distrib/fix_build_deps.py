@@ -597,9 +597,6 @@ def make_library(library):
               (hdr, library))
         error = True
 
-    if library in needs_codegen_base_src:
-        deps.add('grpc++_codegen_base_src', '#needs_codegen_base_src')
-
     deps.remove(library)
 
     deps = sorted(

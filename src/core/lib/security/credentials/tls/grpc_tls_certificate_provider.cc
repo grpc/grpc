@@ -43,6 +43,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
@@ -79,8 +80,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
                                     std::move(pem_key_cert_pairs));
     }
-    grpc_error_handle root_cert_error = GRPC_ERROR_NONE;
-    grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle root_cert_error;
+    grpc_error_handle identity_cert_error;
     if (root_being_watched && !root_has_update) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest root certificates.");
@@ -173,8 +174,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, root_certificate,
                                     pem_key_cert_pairs);
     }
-    grpc_error_handle root_cert_error = GRPC_ERROR_NONE;
-    grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle root_cert_error;
+    grpc_error_handle identity_cert_error;
     if (root_being_watched && !root_certificate.has_value()) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest root certificates.");
@@ -267,8 +268,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
           info.identity_being_watched && pem_key_cert_pairs_.empty();
       if (report_root_error || report_identity_error) {
         distributor_->SetErrorForCert(
-            cert_name, report_root_error ? root_cert_error : GRPC_ERROR_NONE,
-            report_identity_error ? identity_cert_error : GRPC_ERROR_NONE);
+            cert_name, report_root_error ? root_cert_error : absl::OkStatus(),
+            report_identity_error ? identity_cert_error : absl::OkStatus());
       }
     }
   }
@@ -288,7 +289,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     return absl::nullopt;
   }
   std::string root_cert(StringViewFromSlice(root_slice));
-  grpc_slice_unref(root_slice);
+  CSliceUnref(root_slice);
   return root_cert;
 }
 
@@ -310,7 +311,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     const std::string& identity_certificate_path) {
   struct SliceWrapper {
     grpc_slice slice = grpc_empty_slice();
-    ~SliceWrapper() { grpc_slice_unref(slice); }
+    ~SliceWrapper() { CSliceUnref(slice); }
   };
   const int kNumRetryAttempts = 3;
   for (int i = 0; i < kNumRetryAttempts; ++i) {

@@ -18,12 +18,19 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 
+#include <algorithm>
+#include <memory>
 #include <thread>
+#include <vector>
 
-#include <gmock/gmock.h>
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "test/core/util/test_config.h"
 
@@ -116,7 +123,7 @@ TEST_F(CertificateProviderStoreTest, Basic) {
       },
       [=] {
         auto fake_factory_2 =
-            absl::make_unique<FakeCertificateProviderFactory2>();
+            std::make_unique<FakeCertificateProviderFactory2>();
         // Set up store
         CertificateProviderStore::PluginDefinitionMap map = {
             {"fake_plugin_1",

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice.h>
@@ -410,7 +411,7 @@ class DataSendContext {
             t_, s_,
             static_cast<int64_t>(s_->sending_bytes - sending_bytes_before_),
             &s_->on_flow_controlled_cbs, &s_->flow_controlled_bytes_flowed,
-            GRPC_ERROR_NONE)) {
+            absl::OkStatus())) {
       write_context_->NoteScheduledResults();
     }
   }
@@ -472,7 +473,7 @@ class StreamWriteContext {
     s_->sent_initial_metadata = true;
     write_context_->NoteScheduledResults();
     grpc_chttp2_complete_closure_step(
-        t_, s_, &s_->send_initial_metadata_finished, GRPC_ERROR_NONE,
+        t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
   }
 
@@ -566,7 +567,7 @@ class StreamWriteContext {
 
     write_context_->NoteScheduledResults();
     grpc_chttp2_complete_closure_step(
-        t_, s_, &s_->send_trailing_metadata_finished, GRPC_ERROR_NONE,
+        t_, s_, &s_->send_trailing_metadata_finished, absl::OkStatus(),
         "send_trailing_metadata_finished");
   }
 
@@ -599,7 +600,7 @@ class StreamWriteContext {
                            s_->id, GRPC_HTTP2_NO_ERROR, &s_->stats.outgoing));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
-                                   GRPC_ERROR_NONE);
+                                   absl::OkStatus());
   }
 
   WriteContext* const write_context_;

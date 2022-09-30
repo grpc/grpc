@@ -209,7 +209,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
     } else {
       // OnTimeout() was already invoked. Call Notify() again so that notify_
       // can be invoked.
-      self->MaybeNotify(GRPC_ERROR_NONE);
+      self->MaybeNotify(absl::OkStatus());
     }
   }
   self->Unref();
@@ -233,7 +233,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
     } else {
       // OnReceiveSettings() was already invoked. Call Notify() again so that
       // notify_ can be invoked.
-      self->MaybeNotify(GRPC_ERROR_NONE);
+      self->MaybeNotify(absl::OkStatus());
     }
   }
   self->Unref();
@@ -344,7 +344,7 @@ grpc_channel* grpc_channel_create(const char* target,
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
                  (target, (void*)creds, (void*)c_args));
   grpc_channel* channel = nullptr;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.

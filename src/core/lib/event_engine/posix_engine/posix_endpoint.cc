@@ -19,12 +19,14 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <string>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -41,13 +43,20 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
-#include <linux/errqueue.h>  // IWYU pragma: keep
-#include <linux/netlink.h>   // IWYU pragma: keep
+#include <dirent.h>            // IWYU pragma: keep
+#include <linux/capability.h>  // IWYU pragma: keep
+#include <linux/errqueue.h>    // IWYU pragma: keep
+#include <linux/netlink.h>     // IWYU pragma: keep
+#include <sys/prctl.h>         // IWYU pragma: keep
+#include <sys/resource.h>      // IWYU pragma: keep
 #endif
 #include <netinet/in.h>  // IWYU pragma: keep
 
@@ -99,6 +108,92 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
+
+#define CAP_IS_SUPPORTED(cap) (prctl(PR_CAPBSET_READ, (cap), 0) > 0)
+
+// Remove spaces and newline characters from the end of a string.
+void rtrim(std::string& s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       [](unsigned char ch) { return !std::isspace(ch); })
+              .base(),
+          s.end());
+}
+
+uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
+  static std::string kHardMemlockPrefix = "* hard memlock";
+  auto result = grpc_core::LoadFile(file_name, false);
+  if (!result.ok()) {
+    return 0;
+  }
+  std::string file_contents(reinterpret_cast<const char*>((*result).begin()),
+                            (*result).length());
+  // Find start position containing prefix.
+  size_t start = file_contents.find(kHardMemlockPrefix);
+  if (start == std::string::npos) {
+    return 0;
+  }
+  // Find position of next newline after prefix.
+  size_t end = file_contents.find(start, '\n');
+  // Extract substring between prefix and next newline.
+  auto memlock_value_string = file_contents.substr(
+      start + kHardMemlockPrefix.length() + 1, end - start);
+  rtrim(memlock_value_string);
+  if (memlock_value_string == "unlimited" ||
+      memlock_value_string == "infinity") {
+    return UINT64_MAX;
+  } else {
+    return std::atoi(memlock_value_string.c_str());
+  }
+}
+
+// Ulimit hard memlock controls per socket limit for maximum locked memory in
+// RAM. Parses all files under  /etc/security/limits.d/ and
+// /etc/security/limits.conf file for a line of the following format:
+// * hard memlock <value>
+// It extracts the first valid <value> and returns it. A value of UINT64_MAX
+// represents unlimited or infinity. Hard memlock value should be set to
+// allow zerocopy sendmsgs to succeed. It controls the maximum amount of
+// memory that can be locked by a socket in RAM.
+uint64_t GetUlimitHardMemLock() {
+  static const uint64_t kUlimitHardMemLock = []() -> uint64_t {
+    if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
+      // hard memlock ulimit is ignored for privileged user.
+      return UINT64_MAX;
+    }
+    if (auto dir = opendir("/etc/security/limits.d")) {
+      while (auto f = readdir(dir)) {
+        if (f->d_name[0] == '.') {
+          continue;  // Skip everything that starts with a dot
+        }
+        uint64_t hard_memlock = ParseUlimitMemLockFromFile(
+            absl::StrCat("/etc/security/limits.d/", std::string(f->d_name)));
+        if (hard_memlock != 0) {
+          return hard_memlock;
+        }
+      }
+      closedir(dir);
+    }
+    return ParseUlimitMemLockFromFile("/etc/security/limits.conf");
+  }();
+  return kUlimitHardMemLock;
+}
+
+// RLIMIT_MEMLOCK controls per process limit for maximum locked memory in RAM.
+uint64_t GetRLimitMemLockMax() {
+  static const uint64_t kRlimitMemLock = []() -> uint64_t {
+    if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
+      // RLIMIT_MEMLOCK is ignored for privileged user.
+      return UINT64_MAX;
+    }
+    struct rlimit limit;
+    if (getrlimit(RLIMIT_MEMLOCK, &limit) != 0) {
+      return 0;
+    }
+    return static_cast<uint64_t>(limit.rlim_max);
+  }();
+  return kRlimitMemLock;
+}
+
 // Whether the cmsg received from error queue is of the IPv4 or IPv6 levels.
 bool CmsgIsIpLevel(const cmsghdr& cmsg) {
   return (cmsg.cmsg_level == SOL_IPV6 && cmsg.cmsg_type == IPV6_RECVERR) ||
@@ -791,6 +886,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
   bool tried_sending_message;
   int saved_errno;
   msghdr msg;
+  bool constrained;
   status = absl::OkStatus();
   // iov consumes a large space. Keep it as the last item on the stack to
   // improve locality. After all, we expect only the first elements of it
@@ -806,6 +902,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
     tried_sending_message = false;
+    constrained = false;
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
     tcp_zerocopy_send_ctx_->NoteSend(record);
@@ -828,8 +925,31 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
       sent_length = TcpSend(fd_, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterSend(
-            saved_errno == ENOBUFS)) {
-      handle_->SetWritable();
+            saved_errno == ENOBUFS, constrained) ||
+        constrained) {
+      // If constrained, is true it implies that we received an ENOBUFS error
+      // but there are no un-acked z-copy records. This situation may arise
+      // because the per-process RLIMIT_MEMLOCK limit or the per-socket hard
+      // memlock ulimit on the machine may be very small. These limits control
+      // the max number of bytes a process/socket can respectively pin to RAM.
+      // Tx0cp respects these limits and if a sendmsg tries to send more than
+      // this limit, the kernel may return ENOBUFS error. Print a warning
+      // message here to allow help with debugging. Grpc should not attempt to
+      // raise the limit values.
+      if (!constrained) {
+        handle_->SetWritable();
+      } else {
+#ifdef GRPC_LINUX_ERRQUEUE
+        GRPC_LOG_EVERY_N_SEC(
+            1,
+            "Tx0cp encountered an ENOBUFS error possibly because one or "
+            "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
+            "small for the intended user. Current system value of "
+            "RLIMIT_MEMLOCK is %lu and hard memlock ulimit is %lu. Consider "
+            "increasing these values appropriately for the intended user.",
+            GetRLimitMemLockMax(), GetUlimitHardMemLock());
+#endif
+      }
     }
     if (sent_length < 0) {
       // If this particular send failed, drop ref taken earlier in this method.
@@ -1074,16 +1194,35 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       options.tcp_tx_zero_copy_enabled && poller_->CanTrackErrors();
 #ifdef GRPC_LINUX_ERRQUEUE
   if (zerocopy_enabled) {
-    const int enable = 1;
-    auto err =
-        setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
-    if (err != 0) {
+    if (GetRLimitMemLockMax() == 0) {
       zerocopy_enabled = false;
-      gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
+      gpr_log(
+          GPR_ERROR,
+          "Tx zero-copy will not be used by gRPC since RLIMIT_MEMLOCK value is "
+          "not set. Consider raising its value with setrlimit().");
+    } else if (GetUlimitHardMemLock() == 0) {
+      zerocopy_enabled = false;
+      gpr_log(GPR_ERROR,
+              "Tx zero-copy will not be used by gRPC since hard memlock ulimit "
+              "value is not set. Use ulimit -l <value> to set its value.");
+    } else {
+      const int enable = 1;
+      if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
+          0) {
+        zerocopy_enabled = false;
+        gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
+      }
+    }
+
+    if (zerocopy_enabled) {
+      gpr_log(GPR_INFO,
+              "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value = "
+              "%lu, ulimit hard memlock value = %lu",
+              GetRLimitMemLockMax(), GetUlimitHardMemLock());
     }
   }
 #endif  // GRPC_LINUX_ERRQUEUE
-  tcp_zerocopy_send_ctx_ = absl::make_unique<TcpZerocopySendCtx>(
+  tcp_zerocopy_send_ctx_ = std::make_unique<TcpZerocopySendCtx>(
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
   frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();

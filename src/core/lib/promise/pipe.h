@@ -240,6 +240,8 @@ class Center {
 template <typename T>
 class PipeSender {
  public:
+  using PushType = pipe_detail::Push<T>;
+
   PipeSender(const PipeSender&) = delete;
   PipeSender& operator=(const PipeSender&) = delete;
 
@@ -257,11 +259,15 @@ class PipeSender {
     if (center_ != nullptr) center_->UnrefSend();
   }
 
+  void Close() {
+    if (auto* center = std::exchange(center_, nullptr)) center->UnrefSend();
+  }
+
   // Send a single message along the pipe.
   // Returns a promise that will resolve to a bool - true if the message was
   // sent, false if it could never be sent. Blocks the promise until the
   // receiver is either closed or able to receive another message.
-  pipe_detail::Push<T> Push(T value);
+  PushType Push(T value);
 
  private:
   friend struct Pipe<T>;
@@ -273,6 +279,8 @@ class PipeSender {
 template <typename T>
 class PipeReceiver {
  public:
+  using NextType = pipe_detail::Next<T>;
+
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
 
@@ -294,7 +302,7 @@ class PipeReceiver {
   // message was received, or no value if the other end of the pipe was closed.
   // Blocks the promise until the receiver is either closed or a message is
   // available.
-  pipe_detail::Next<T> Next();
+  NextType Next();
 
  private:
   friend struct Pipe<T>;
@@ -434,7 +442,8 @@ void NextResult<T>::reset() {
 // polling code) would likely be more appropriate.
 template <typename T>
 struct Pipe {
-  Pipe() : Pipe(GetContext<Arena>()->New<pipe_detail::Center<T>>()) {}
+  Pipe() : Pipe(GetContext<Arena>()) {}
+  explicit Pipe(Arena* arena) : Pipe(arena->New<pipe_detail::Center<T>>()) {}
   Pipe(const Pipe&) = delete;
   Pipe& operator=(const Pipe&) = delete;
   Pipe(Pipe&&) noexcept = default;

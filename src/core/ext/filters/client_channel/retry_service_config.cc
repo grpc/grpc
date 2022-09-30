@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -56,7 +55,7 @@ size_t RetryServiceConfigParser::ParserIndex() {
 
 void RetryServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<RetryServiceConfigParser>());
+      std::make_unique<RetryServiceConfigParser>());
 }
 
 namespace {
@@ -156,8 +155,8 @@ RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                      grpc_error_std_string(error)));
     return status;
   }
-  return absl::make_unique<RetryGlobalConfig>(max_milli_tokens,
-                                              milli_token_ratio);
+  return std::make_unique<RetryGlobalConfig>(max_milli_tokens,
+                                             milli_token_ratio);
 }
 
 namespace {
@@ -313,7 +312,7 @@ RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
                      grpc_error_std_string(error)));
     return status;
   }
-  return absl::make_unique<RetryMethodConfig>(
+  return std::make_unique<RetryMethodConfig>(
       max_attempts, initial_backoff, max_backoff, backoff_multiplier,
       retryable_status_codes, per_attempt_recv_timeout);
 }
