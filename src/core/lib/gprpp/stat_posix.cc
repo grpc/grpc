@@ -16,9 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
-// IWYU pragma: no_include <bits/struct_stat.h>
+#include <string>
 
-#include <string.h>
+// IWYU pragma: no_include <bits/struct_stat.h>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"

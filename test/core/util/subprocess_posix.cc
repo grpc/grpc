@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #ifdef GPR_POSIX_SUBPROCESS
 
 #include <errno.h>

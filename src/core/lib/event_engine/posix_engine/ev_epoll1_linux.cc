@@ -36,7 +36,6 @@
 #ifdef GRPC_LINUX_EPOLL
 #include <errno.h>
 #include <limits.h>
-#include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>

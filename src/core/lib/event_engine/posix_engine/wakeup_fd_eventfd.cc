@@ -26,7 +26,6 @@
 #ifdef GRPC_LINUX_EVENTFD
 
 #include <errno.h>
-#include <string.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 

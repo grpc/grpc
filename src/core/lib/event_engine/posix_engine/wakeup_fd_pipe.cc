@@ -27,7 +27,6 @@
 #ifdef GRPC_POSIX_WAKEUP_FD
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
