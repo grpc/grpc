@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/gprpp/strerror.h"
 
 namespace grpc_core {
 
