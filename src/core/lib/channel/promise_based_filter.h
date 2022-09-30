@@ -19,6 +19,9 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
+// TODO(ctiller): When removing this file, also reduce the number of *'s on the
+// server initial metadata latch.
+
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
@@ -27,6 +30,7 @@
 #include <atomic>
 #include <memory>
 #include <new>
+#include <string>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -56,6 +60,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -146,6 +151,8 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
+  std::string ActivityDebugTag() const override { return DebugTag(); }
+
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
   }
@@ -234,13 +241,13 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* batch_;
   };
 
-  static MetadataHandle<grpc_metadata_batch> WrapMetadata(
+  static FragmentHandle<grpc_metadata_batch> WrapMetadata(
       grpc_metadata_batch* p) {
-    return MetadataHandle<grpc_metadata_batch>(p);
+    return FragmentHandle<grpc_metadata_batch>(p, false);
   }
 
   static grpc_metadata_batch* UnwrapMetadata(
-      MetadataHandle<grpc_metadata_batch> p) {
+      FragmentHandle<grpc_metadata_batch> p) {
     return p.Unwrap();
   }
 
@@ -311,8 +318,8 @@ class ClientCallData : public BaseCallData {
     kQueued,
     // We've forwarded the op to the next filter.
     kForwarded,
-    // The op has completed from below, but we haven't yet forwarded it up (the
-    // promise gets to interject and mutate it).
+    // The op has completed from below, but we haven't yet forwarded it up
+    // (the promise gets to interject and mutate it).
     kComplete,
     // We've called the recv_metadata_ready callback from the original
     // recv_trailing_metadata op that was presented to us.

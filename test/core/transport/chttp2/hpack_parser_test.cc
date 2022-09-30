@@ -23,7 +23,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -63,7 +62,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
  public:
   ParseTest() {
     grpc_init();
-    parser_ = absl::make_unique<grpc_core::HPackParser>();
+    parser_ = std::make_unique<grpc_core::HPackParser>();
   }
 
   ~ParseTest() override {

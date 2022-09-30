@@ -20,7 +20,6 @@
 #include <string>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/types/variant.h"
 
 #include <grpc/status.h>
@@ -445,7 +444,7 @@ class ClientCallData::PollContext {
       };
       // Unique ptr --> release to suppress clang-tidy warnings about allocating
       // in a destructor.
-      auto* p = absl::make_unique<NextPoll>().release();
+      auto* p = std::make_unique<NextPoll>().release();
       p->call_stack = self_->call_stack();
       p->call_data = self_;
       GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");
@@ -666,7 +665,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               server_initial_metadata_latch()},
+               server_initial_metadata_latch(), nullptr, nullptr},
       [this](CallArgs call_args) {
         return MakeNextPromise(std::move(call_args));
       });
@@ -912,7 +911,7 @@ class ServerCallData::PollContext {
         GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
         delete next_poll;
       };
-      auto* p = absl::make_unique<NextPoll>().release();
+      auto* p = std::make_unique<NextPoll>().release();
       p->call_stack = self_->call_stack();
       p->call_data = self_;
       GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");
@@ -1155,12 +1154,12 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
-  promise_ =
-      filter->MakeCallPromise(CallArgs{WrapMetadata(recv_initial_metadata_),
-                                       server_initial_metadata_latch()},
-                              [this](CallArgs call_args) {
-                                return MakeNextPromise(std::move(call_args));
-                              });
+  promise_ = filter->MakeCallPromise(
+      CallArgs{WrapMetadata(recv_initial_metadata_),
+               server_initial_metadata_latch(), nullptr, nullptr},
+      [this](CallArgs call_args) {
+        return MakeNextPromise(std::move(call_args));
+      });
   // Poll once.
   WakeInsideCombiner(&flusher);
   if (auto* closure =

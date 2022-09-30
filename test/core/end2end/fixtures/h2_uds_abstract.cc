@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <string>
 #include <utility>
 
@@ -37,7 +38,7 @@ struct fullstack_fixture_data {
   std::string localaddr;
 };
 
-static int unique = 1;
+static std::atomic<int> unique{1};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_base(
     std::string addr) {

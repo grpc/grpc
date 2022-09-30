@@ -1022,7 +1022,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             t->peer_string.c_str(), t->keepalive_time.ToString().c_str());
     constexpr int max_keepalive_time_millis =
         INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    int throttled_keepalive_time =
+    int64_t throttled_keepalive_time =
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
@@ -1175,6 +1175,7 @@ static bool contains_non_ok_status(grpc_metadata_batch* batch) {
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
+  gpr_log(GPR_INFO, "--metadata--");
   const std::string prefix = absl::StrCat(
       "HTTP:", id, is_initial ? ":HDR" : ":TRL", is_client ? ":CLI:" : ":SVR:");
   md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
@@ -1323,7 +1324,7 @@ static void perform_stream_op_locked(void* stream_op,
           slices + op_payload->send_message.send_message->Count();
       for (grpc_slice* slice = slices; slice != end; slice++) {
         grpc_slice_buffer_add(&s->flow_controlled_buffer,
-                              grpc_slice_ref(*slice));
+                              grpc_core::CSliceRef(*slice));
       }
 
       int64_t notify_offset = s->next_message_end_offset;
@@ -1812,7 +1813,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       if (s->frame_storage.length != 0) {
         while (true) {
           GPR_ASSERT(s->frame_storage.length > 0);
-          uint32_t min_progress_size;
+          int64_t min_progress_size;
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
           if (absl::holds_alternative<grpc_core::Pending>(r)) {
@@ -2179,7 +2180,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
   size_t msg_len = message.length();
   GPR_ASSERT(msg_len <= UINT32_MAX);
-  grpc_core::VarintWriter<1> msg_len_writer(msg_len);
+  grpc_core::VarintWriter<1> msg_len_writer(static_cast<uint32_t>(msg_len));
   message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
   p = GRPC_SLICE_START_PTR(message_pfx);
   *p++ = 0x00; /* literal header, not indexed */

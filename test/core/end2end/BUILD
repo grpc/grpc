@@ -160,7 +160,6 @@ grpc_cc_test(
     name = "goaway_server_test",
     srcs = ["goaway_server_test.cc"],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -202,7 +201,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "invalid_call_argument_test",
     srcs = ["invalid_call_argument_test.cc"],
-    external_deps = ["absl/memory"],
     language = "C++",
     deps = [
         "cq_verifier",

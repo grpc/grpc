@@ -65,6 +65,7 @@
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -366,7 +367,7 @@ static grpc_error_handle create_default_creds_from_path(
 
 end:
   GPR_ASSERT((result == nullptr) + (error.ok()) == 1);
-  grpc_slice_unref(creds_data);
+  grpc_core::CSliceUnref(creds_data);
   *creds = result;
   return error;
 }

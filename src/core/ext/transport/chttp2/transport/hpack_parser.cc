@@ -1258,6 +1258,9 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
                              uint32_t metadata_size_limit, Boundary boundary,
                              Priority priority, LogInfo log_info) {
   metadata_buffer_ = metadata_buffer;
+  if (metadata_buffer != nullptr) {
+    metadata_buffer->Set(GrpcStatusFromWire(), true);
+  }
   boundary_ = boundary;
   priority_ = priority;
   dynamic_table_updates_allowed_ = 2;

@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -285,7 +284,7 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   SplitHostPort(target_name, &host, &port);
   target_name_ = std::string(host);
   // Create a watcher.
-  auto watcher_ptr = absl::make_unique<TlsChannelCertificateWatcher>(this);
+  auto watcher_ptr = std::make_unique<TlsChannelCertificateWatcher>(this);
   certificate_watcher_ = watcher_ptr.get();
   // Register the watcher with the distributor.
   grpc_tls_certificate_distributor* distributor =
@@ -587,7 +586,7 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
         tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
   }
   // Create a watcher.
-  auto watcher_ptr = absl::make_unique<TlsServerCertificateWatcher>(this);
+  auto watcher_ptr = std::make_unique<TlsServerCertificateWatcher>(this);
   certificate_watcher_ = watcher_ptr.get();
   // Register the watcher with the distributor.
   grpc_tls_certificate_distributor* distributor =

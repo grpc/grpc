@@ -21,15 +21,21 @@
 
 #include <deque>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 

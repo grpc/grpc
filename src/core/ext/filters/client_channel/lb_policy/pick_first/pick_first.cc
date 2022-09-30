@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -241,14 +240,14 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             : latest_update_args_.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     channel_control_helper()->RequestReresolution();
   }
   // Otherwise, if this is the initial update, report CONNECTING.
   else if (subchannel_list_.get() == nullptr) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
-        absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+        std::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
@@ -340,11 +339,11 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                 .ToString()));
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-            absl::make_unique<TransientFailurePicker>(status));
+            std::make_unique<TransientFailurePicker>(status));
       } else {
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING, absl::Status(),
-            absl::make_unique<QueuePicker>(
+            std::make_unique<QueuePicker>(
                 p->Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       return;
@@ -362,7 +361,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     p->subchannel_list_.reset();
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
-        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+        std::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return;
   }
   // If we get here, there are two possible cases:
@@ -436,7 +435,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                            connectivity_status().ToString()));
           p->channel_control_helper()->UpdateState(
               GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-              absl::make_unique<TransientFailurePicker>(status));
+              std::make_unique<TransientFailurePicker>(status));
         }
       }
       // If the next subchannel is in IDLE, trigger a connection attempt.
@@ -462,7 +461,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
           !subchannel_list()->in_transient_failure()) {
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING, absl::Status(),
-            absl::make_unique<QueuePicker>(
+            std::make_unique<QueuePicker>(
                 p->Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       break;
@@ -503,7 +502,7 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
   p->selected_ = this;
   p->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_READY, absl::Status(),
-      absl::make_unique<Picker>(subchannel()->Ref()));
+      std::make_unique<Picker>(subchannel()->Ref()));
   for (size_t i = 0; i < subchannel_list()->num_subchannels(); ++i) {
     if (i != Index()) {
       subchannel_list()->subchannel(i)->ShutdownLocked();
@@ -539,7 +538,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
 
 void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<PickFirstFactory>());
+      std::make_unique<PickFirstFactory>());
 }
 
 }  // namespace grpc_core

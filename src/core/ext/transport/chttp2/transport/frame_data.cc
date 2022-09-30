@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -79,7 +80,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 }
 
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
-    grpc_chttp2_stream* s, uint32_t* min_progress_size,
+    grpc_chttp2_stream* s, int64_t* min_progress_size,
     grpc_core::SliceBuffer* stream_out, uint32_t* message_flags) {
   grpc_slice_buffer* slices = &s->frame_storage;
   grpc_error_handle error;
@@ -109,10 +110,10 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
       return error;
   }
 
-  uint64_t length = (static_cast<uint32_t>(header[1]) << 24) |
-                    (static_cast<uint32_t>(header[2]) << 16) |
-                    (static_cast<uint32_t>(header[3]) << 8) |
-                    static_cast<uint32_t>(header[4]);
+  size_t length = (static_cast<uint32_t>(header[1]) << 24) |
+                  (static_cast<uint32_t>(header[2]) << 16) |
+                  (static_cast<uint32_t>(header[3]) << 8) |
+                  static_cast<uint32_t>(header[4]);
 
   if (slices->length < length + 5) {
     if (min_progress_size != nullptr) {
@@ -138,7 +139,7 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 grpc_chttp2_stream* s,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-  grpc_slice_ref(slice);
+  grpc_core::CSliceRef(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);
 

@@ -36,6 +36,7 @@
 #import "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -229,10 +230,10 @@ static void WriteAction(void* arg, grpc_error_handle error) {
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(),
               dump);
       gpr_free(dump);
-      grpc_slice_unref(trace_slice);
+      grpc_core::CSliceUnref(trace_slice);
     }
   }
-  grpc_slice_unref(slice);
+  grpc_core::CSliceUnref(slice);
 }
 
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,

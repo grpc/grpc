@@ -43,7 +43,6 @@
 #include <address_sorting/address_sorting.h>
 #include <ares.h>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -658,7 +657,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     std::unique_ptr<ServerAddressList>* address_list_ptr =
         hr->is_balancer ? r->balancer_addresses_out : r->addresses_out;
     if (*address_list_ptr == nullptr) {
-      *address_list_ptr = absl::make_unique<ServerAddressList>();
+      *address_list_ptr = std::make_unique<ServerAddressList>();
     }
     ServerAddressList& addresses = **address_list_ptr;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
@@ -920,7 +919,7 @@ static bool inner_resolve_as_ip_literal_locked(
       grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = absl::make_unique<ServerAddressList>();
+    *addrs = std::make_unique<ServerAddressList>();
     (*addrs)->emplace_back(addr.addr, addr.len, grpc_core::ChannelArgs());
     return true;
   }
@@ -978,7 +977,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
   }
   if (gpr_stricmp(host->c_str(), "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = absl::make_unique<grpc_core::ServerAddressList>();
+    *addrs = std::make_unique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(port->c_str());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
