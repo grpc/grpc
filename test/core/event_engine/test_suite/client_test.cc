@@ -212,8 +212,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
     grpc_core::ChannelArgs client_args;
-    auto child_quota = grpc_core::ResourceQuota::Default();
-    client_args = client_args.Set(GRPC_ARG_RESOURCE_QUOTA, child_quota);
+    auto client_quota = grpc_core::ResourceQuota::Default();
+    client_args = client_args.Set(GRPC_ARG_RESOURCE_QUOTA, client_quota);
     ChannelArgsEndpointConfig client_config(client_args);
     test_ee->Connect(
         [&client_endpoint,
