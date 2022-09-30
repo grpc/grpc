@@ -16,13 +16,14 @@
  *
  */
 
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

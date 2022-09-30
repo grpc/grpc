@@ -138,21 +138,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "tls_test",
-    srcs = ["tls_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "useful_test",
     srcs = ["useful_test.cc"],
     external_deps = ["gtest"],

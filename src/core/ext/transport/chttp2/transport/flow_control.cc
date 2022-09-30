@@ -287,7 +287,8 @@ void TransportFlowControl::UpdateSetting(
     if (delta != 0 &&
         (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
       *desired_value = new_desired_value;
-      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE,
+                     static_cast<uint32_t>(*desired_value));
     }
   }
 }
@@ -362,15 +363,15 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
-  const uint32_t announce = DesiredAnnounceSize();
+  const int64_t announce = DesiredAnnounceSize();
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
   tfc_upd.MakeAction();
-  return announce;
+  return static_cast<uint32_t>(announce);
 }
 
-uint32_t StreamFlowControl::DesiredAnnounceSize() const {
+int64_t StreamFlowControl::DesiredAnnounceSize() const {
   int64_t desired_window_delta = [this]() {
     if (min_progress_size_ == 0) {
       if (pending_size_.has_value() &&

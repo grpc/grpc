@@ -50,7 +50,7 @@ UrlExternalAccountCredentials::Create(Options options,
                                       grpc_error_handle* error) {
   auto creds = MakeRefCounted<UrlExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
-  if (GRPC_ERROR_IS_NONE(*error)) {
+  if (error->ok()) {
     return creds;
   } else {
     return nullptr;
@@ -189,13 +189,13 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectToken(
     void* arg, grpc_error_handle error) {
   UrlExternalAccountCredentials* self =
       static_cast<UrlExternalAccountCredentials*>(arg);
-  self->OnRetrieveSubjectTokenInternal(GRPC_ERROR_REF(error));
+  self->OnRetrieveSubjectTokenInternal(error);
 }
 
 void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
     grpc_error_handle error) {
   http_request_.reset();
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     FinishRetrieveSubjectToken("", error);
     return;
   }
@@ -225,7 +225,7 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
     FinishRetrieveSubjectToken(response_it->second.string_value(), error);
     return;
   }
-  FinishRetrieveSubjectToken(std::string(response_body), GRPC_ERROR_NONE);
+  FinishRetrieveSubjectToken(std::string(response_body), absl::OkStatus());
 }
 
 void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
@@ -236,10 +236,10 @@ void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
   auto cb = cb_;
   cb_ = nullptr;
   // Invoke the callback.
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     cb("", error);
   } else {
-    cb(subject_token, GRPC_ERROR_NONE);
+    cb(subject_token, absl::OkStatus());
   }
 }
 

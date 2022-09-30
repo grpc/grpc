@@ -18,14 +18,14 @@
 
 #include "src/core/lib/slice/b64.h"
 
+#include <stdint.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -39,7 +39,7 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   grpc_slice hello_slice = grpc_base64_decode(hello_b64, url_safe);
   ASSERT_EQ(grpc_core::StringViewFromSlice(hello_slice),
             absl::string_view(hello));
-  grpc_slice_unref_internal(hello_slice);
+  grpc_slice_unref(hello_slice);
 
   gpr_free(hello_b64);
 }
@@ -59,7 +59,7 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
     ASSERT_EQ(
         grpc_core::StringViewFromSlice(orig_decoded),
         absl::string_view(reinterpret_cast<char*>(orig), sizeof(orig) - i));
-    grpc_slice_unref_internal(orig_decoded);
+    grpc_slice_unref(orig_decoded);
     gpr_free(b64);
   }
 }
@@ -109,13 +109,13 @@ TEST(B64Test, UrlSafeUnsafeMismatchFailure) {
   orig_decoded = grpc_base64_decode(b64, !url_safe);
   ASSERT_TRUE(GRPC_SLICE_IS_EMPTY(orig_decoded));
   gpr_free(b64);
-  grpc_slice_unref_internal(orig_decoded);
+  grpc_slice_unref(orig_decoded);
 
   b64 = grpc_base64_encode(orig, sizeof(orig), !url_safe, 0);
   orig_decoded = grpc_base64_decode(b64, url_safe);
   ASSERT_TRUE(GRPC_SLICE_IS_EMPTY(orig_decoded));
   gpr_free(b64);
-  grpc_slice_unref_internal(orig_decoded);
+  grpc_slice_unref(orig_decoded);
 }
 
 TEST(B64Test, Rfc4648TestVectors) {

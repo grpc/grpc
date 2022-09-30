@@ -32,7 +32,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -307,8 +306,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
    private:
-    std::unique_ptr<Bucket> current_bucket_ = absl::make_unique<Bucket>();
-    std::unique_ptr<Bucket> backup_bucket_ = absl::make_unique<Bucket>();
+    std::unique_ptr<Bucket> current_bucket_ = std::make_unique<Bucket>();
+    std::unique_ptr<Bucket> backup_bucket_ = std::make_unique<Bucket>();
     // The bucket used to update call counts.
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_{current_bucket_.get()};
@@ -434,7 +433,7 @@ void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
   ConnectivityStateWatcherInterface* watcher_ptr = watcher.get();
   auto watcher_wrapper =
-      absl::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
+      std::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
   watchers_.emplace(watcher_ptr, watcher_wrapper.get());
   wrapped_subchannel()->WatchConnectivityState(std::move(watcher_wrapper));
 }
@@ -530,7 +529,7 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
     // not both success_rate_ejection and failure_percentage_ejection are unset.
     if (counting_enabled_) {
       complete_pick->subchannel_call_tracker =
-          absl::make_unique<SubchannelCallTracker>(
+          std::make_unique<SubchannelCallTracker>(
               std::move(complete_pick->subchannel_call_tracker),
               subchannel_wrapper->subchannel_state());
     }
@@ -693,7 +692,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
     auto outlier_detection_picker =
-        absl::make_unique<Picker>(this, picker_, config_->CountingEnabled());
+        std::make_unique<Picker>(this, picker_, config_->CountingEnabled());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
               "[outlier_detection_lb %p] updating connectivity: state=%s "
@@ -712,7 +711,7 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_outlier_detection_lb_trace);
@@ -816,13 +815,12 @@ void OutlierDetectionLb::EjectionTimer::Orphan() {
 void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
                                                 grpc_error_handle error) {
   auto* self = static_cast<EjectionTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->parent_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
               parent_.get());
@@ -1005,7 +1003,6 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
         MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -1133,7 +1130,7 @@ void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
 void RegisterOutlierDetectionLbPolicy(CoreConfiguration::Builder* builder) {
   if (XdsOutlierDetectionEnabled()) {
     builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-        absl::make_unique<OutlierDetectionLbFactory>());
+        std::make_unique<OutlierDetectionLbFactory>());
   }
 }
 

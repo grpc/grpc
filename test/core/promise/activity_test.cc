@@ -344,6 +344,7 @@ class TestWakeable final : public Wakeable {
     drops_->fetch_add(1, std::memory_order_relaxed);
     delete this;
   }
+  std::string ActivityDebugTag() const override { return "TestWakeable"; }
 
  private:
   std::atomic<int>* const wakeups_;
