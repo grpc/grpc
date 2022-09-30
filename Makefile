@@ -1586,6 +1586,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_ping.cc \
@@ -1601,6 +1602,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_fragments.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -2018,6 +2020,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_ping.cc \
@@ -2033,6 +2036,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_fragments.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \

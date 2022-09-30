@@ -865,6 +865,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx byte_buffer_test)
   add_dependencies(buildtests_cxx c_slice_buffer_test)
   add_dependencies(buildtests_cxx call_finalization_test)
+  add_dependencies(buildtests_cxx call_fragments_test)
   add_dependencies(buildtests_cxx call_push_pull_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
   add_dependencies(buildtests_cxx cel_authorization_engine_test)
@@ -2309,6 +2310,7 @@ add_library(grpc
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_trace.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_ping.cc
@@ -2324,6 +2326,7 @@ add_library(grpc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_fragments.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -2407,6 +2410,7 @@ target_link_libraries(grpc
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -2877,6 +2881,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_trace.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_ping.cc
@@ -2892,6 +2897,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_fragments.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -2951,6 +2957,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
@@ -3207,7 +3214,6 @@ target_link_libraries(grpc++
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc
 )
 
@@ -6528,7 +6534,6 @@ target_include_directories(binder_transport_test
 target_link_libraries(binder_transport_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
@@ -6715,6 +6720,41 @@ target_include_directories(call_finalization_test
 )
 
 target_link_libraries(call_finalization_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(call_fragments_test
+  test/core/transport/call_fragments_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(call_fragments_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(call_fragments_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -9139,7 +9179,6 @@ target_include_directories(endpoint_binder_pool_test
 target_link_libraries(endpoint_binder_pool_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
@@ -9774,7 +9813,6 @@ target_include_directories(fake_binder_test
 target_link_libraries(fake_binder_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
@@ -17775,7 +17813,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_posix_socket_utils_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::cleanup
     grpc_test_util
   )
 
@@ -18027,7 +18064,6 @@ target_include_directories(test_core_gprpp_load_file_test
 target_link_libraries(test_core_gprpp_load_file_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
@@ -19198,7 +19234,6 @@ target_include_directories(transport_stream_receiver_test
 target_link_libraries(transport_stream_receiver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
@@ -19745,7 +19780,6 @@ target_include_directories(wire_reader_test
 target_link_libraries(wire_reader_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
@@ -19848,7 +19882,6 @@ target_include_directories(wire_writer_test
 target_link_libraries(wire_writer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::cleanup
   grpc_test_util
 )
 
@@ -22378,7 +22411,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_any_invocable absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "gpr openssl absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -22388,7 +22421,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_any_invocable absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc_unsecure"
   ""
   "grpc_unsecure.pc")
@@ -22408,7 +22441,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "grpc_unsecure absl_any_invocable absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "grpc_unsecure absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")

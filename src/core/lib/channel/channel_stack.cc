@@ -299,12 +299,12 @@ grpc_core::NextPromiseFactory ServerNext(grpc_channel_element* elem) {
 }  // namespace
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-grpc_channel_stack::MakeCallPromise(grpc_core::CallArgs call_args) {
-  if (is_client) {
-    return ClientNext(grpc_channel_stack_element(this, 0))(
-        std::move(call_args));
-  } else {
-    return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
-        std::move(call_args));
-  }
+grpc_channel_stack::MakeClientCallPromise(grpc_core::CallArgs call_args) {
+  return ClientNext(grpc_channel_stack_element(this, 0))(std::move(call_args));
+}
+
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+grpc_channel_stack::MakeServerCallPromise(grpc_core::CallArgs call_args) {
+  return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
+      std::move(call_args));
 }
