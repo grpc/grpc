@@ -103,7 +103,7 @@ class PollEventHandle : public EventHandle {
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
   }
-  PollPoller* Poller() { return poller_; }
+  PollPoller* Poller() override { return poller_; }
   bool SetPendingActions(bool pending_read, bool pending_write) {
     pending_actions_ |= pending_read;
     if (pending_write) {

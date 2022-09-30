@@ -26,6 +26,7 @@
 #include "absl/utility/utility.h"
 
 #include <grpc/event_engine/slice.h>
+#include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -67,6 +68,11 @@ class SliceBuffer {
     return *this;
   }
 
+  /// Swap the contents of this SliceBuffer with the contents of another.
+  void Swap(SliceBuffer& other) {
+    grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
+  }
+
   /// Appends a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
   void Append(Slice slice);
@@ -86,6 +92,17 @@ class SliceBuffer {
   /// Move the first n bytes of the SliceBuffer into a memory pointed to by dst.
   void MoveFirstNBytesIntoBuffer(size_t n, void* dst) {
     grpc_slice_buffer_move_first_into_buffer(&slice_buffer_, n, dst);
+  }
+
+  /// Removes/deletes the last n bytes in the SliceBuffer and add it to the
+  /// other SliceBuffer
+  void MoveLastNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
+    grpc_slice_buffer_trim_end(&slice_buffer_, n, &other.slice_buffer_);
+  }
+
+  /// Move the first n bytes of the SliceBuffer into the other SliceBuffer
+  void MoveFirstNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
+    grpc_slice_buffer_move_first(&slice_buffer_, n, &other.slice_buffer_);
   }
 
   /// Removes and unrefs all slices in the SliceBuffer.

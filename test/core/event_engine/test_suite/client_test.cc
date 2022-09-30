@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdlib.h>
-
+#include <algorithm>
 #include <chrono>
 #include <memory>
-#include <random>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -36,7 +34,6 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
@@ -54,34 +51,9 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
+using ::grpc_event_engine::experimental::GetNextSendMessage;
 
-constexpr int kMinMessageSize = 1024;
-constexpr int kMaxMessageSize = 4096;
 constexpr int kNumExchangedMessages = 100;
-
-// Returns a random message with bounded length.
-std::string GetNextSendMessage() {
-  static const char alphanum[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-  static std::random_device rd;
-  static std::seed_seq seed{rd()};
-  static std::mt19937 gen(seed);
-  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
-  static grpc_core::Mutex g_mu;
-  std::string tmp_s;
-  int len;
-  {
-    grpc_core::MutexLock lock(&g_mu);
-    len = dis(gen);
-  }
-  tmp_s.reserve(len);
-  for (int i = 0; i < len; ++i) {
-    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-  }
-  return tmp_s;
-}
 
 }  // namespace
 
