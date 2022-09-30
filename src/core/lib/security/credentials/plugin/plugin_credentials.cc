@@ -37,6 +37,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
@@ -95,7 +96,7 @@ grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
       for (size_t i = 0; i < num_md; ++i) {
         md_->Append(
             grpc_core::StringViewFromSlice(md[i].key),
-            grpc_core::Slice(grpc_slice_ref(md[i].value)),
+            grpc_core::Slice(grpc_core::CSliceRef(md[i].value)),
             [&error](absl::string_view message, const grpc_core::Slice&) {
               error = absl::UnavailableError(message);
             });
@@ -132,8 +133,8 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
   }
   for (size_t i = 0; i < num_md; ++i) {
     grpc_metadata p;
-    p.key = grpc_slice_ref(md[i].key);
-    p.value = grpc_slice_ref(md[i].value);
+    p.key = grpc_core::CSliceRef(md[i].key);
+    p.value = grpc_core::CSliceRef(md[i].value);
     r->metadata_.push_back(p);
   }
   r->error_details_ = error_details == nullptr ? "" : error_details;
@@ -191,8 +192,8 @@ grpc_plugin_credentials::GetRequestMetadata(
                                              error_details);
   // Clean up.
   for (size_t i = 0; i < num_creds_md; ++i) {
-    grpc_slice_unref(creds_md[i].key);
-    grpc_slice_unref(creds_md[i].value);
+    grpc_core::CSliceUnref(creds_md[i].key);
+    grpc_core::CSliceUnref(creds_md[i].value);
   }
   gpr_free(const_cast<char*>(error_details));
 

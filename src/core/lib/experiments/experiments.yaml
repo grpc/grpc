@@ -119,3 +119,11 @@
   expiry: 2022/10/01
   owner: ctiller@google.com
   test_tags: []
+- name: promise_based_client_call
+  description:
+    If set, use the new gRPC promise based call code when it's appropriate
+    (ie when all filters in a stack are promise based)
+  default: false
+  expiry: 2023/01/01
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test", "lame_client_test"]

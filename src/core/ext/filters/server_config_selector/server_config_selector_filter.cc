@@ -21,7 +21,6 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -113,7 +113,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
       state_(std::make_shared<State>()) {
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
-      absl::make_unique<ServerConfigSelectorWatcher>(state_);
+      std::make_unique<ServerConfigSelectorWatcher>(state_);
   auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
   MutexLock lock(&state_->mu);

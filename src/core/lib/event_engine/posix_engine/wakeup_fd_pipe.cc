@@ -17,7 +17,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -120,7 +119,7 @@ bool PipeWakeupFd::IsSupported() {
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
   static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
   if (kIsPipeWakeupFdSupported) {
-    auto pipe_wakeup_fd = absl::make_unique<PipeWakeupFd>();
+    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>();
     auto status = pipe_wakeup_fd->Init();
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(pipe_wakeup_fd));

@@ -20,6 +20,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -27,6 +28,7 @@
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -100,7 +102,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* /*ctx*/, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   struct SliceWrapper {
-    ~SliceWrapper() { grpc_slice_unref(slice); }
+    ~SliceWrapper() { CSliceUnref(slice); }
     grpc_slice slice = grpc_empty_slice();
   };
   SliceWrapper content_slice;
@@ -132,10 +134,10 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
                  "Subject token field must be a string."));
       return;
     }
-    cb(content_it->second.string_value(), GRPC_ERROR_NONE);
+    cb(content_it->second.string_value(), absl::OkStatus());
     return;
   }
-  cb(std::string(content), GRPC_ERROR_NONE);
+  cb(std::string(content), absl::OkStatus());
 }
 
 }  // namespace grpc_core

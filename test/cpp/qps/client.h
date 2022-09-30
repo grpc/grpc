@@ -370,8 +370,8 @@ class Client {
         // Closed-loop doesn't use random dist at all
         break;
       case LoadParams::kPoisson:
-        random_dist = absl::make_unique<ExpDist>(load.poisson().offered_load() /
-                                                 num_threads);
+        random_dist = std::make_unique<ExpDist>(load.poisson().offered_load() /
+                                                num_threads);
         break;
       default:
         GPR_ASSERT(false);

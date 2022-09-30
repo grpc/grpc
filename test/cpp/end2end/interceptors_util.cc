@@ -208,7 +208,7 @@ CreatePhonyClientInterceptors() {
   // Add 20 phony interceptors before hijacking interceptor
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   return creators;
 }
