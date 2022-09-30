@@ -45,6 +45,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -499,7 +500,7 @@ TEST(TcpServerPosixTest, MainTest) {
     test_no_op_with_port_and_start();
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-      FAIL() << "getifaddrs: " << strerror(errno);
+      FAIL() << "getifaddrs: " << grpc_core::StrError(errno);
     }
     dst_addrs->naddrs = 0;
     for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;
