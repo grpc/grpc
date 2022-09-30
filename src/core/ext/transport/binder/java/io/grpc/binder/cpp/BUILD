@@ -24,5 +24,7 @@ android_library(
         "NativeConnectionHelper.java",
     ],
     visibility = ["//visibility:public"],
-    deps = [],
+    deps = [
+        # copybara: Add proguard dependency here
+    ],
 )
