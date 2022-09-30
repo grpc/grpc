@@ -500,7 +500,7 @@ TEST(TcpServerPosixTest, MainTest) {
     test_no_op_with_port_and_start();
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-      FAIL() << "getifaddrs: " << grpc_core::StrError(errno).c_str();
+      FAIL() << "getifaddrs: " << grpc_core::StrError(errno);
     }
     dst_addrs->naddrs = 0;
     for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;

@@ -46,17 +46,15 @@ namespace {
 absl::Status SetSocketNonBlocking(int fd) {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("fcntl: ", grpc_core::StrError(errno).c_str()));
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   oldflags |= O_NONBLOCK;
 
   if (fcntl(fd, F_SETFL, oldflags) != 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("fcntl: ", grpc_core::StrError(errno).c_str()));
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   return absl::OkStatus();
@@ -67,9 +65,8 @@ absl::Status PipeWakeupFd::Init() {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("pipe: ", grpc_core::StrError(errno).c_str()));
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("pipe: ", grpc_core::StrError(errno)));
   }
   auto status = SetSocketNonBlocking(pipefd[0]);
   if (!status.ok()) return status;
@@ -93,9 +90,8 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
       case EINTR:
         continue;
       default:
-        return absl::Status(
-            absl::StatusCode::kInternal,
-            absl::StrCat("read: ", grpc_core::StrError(errno).c_str()));
+        return absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("read: ", grpc_core::StrError(errno)));
     }
   }
 }

@@ -645,7 +645,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
         default:
           return absl::Status(
               absl::StatusCode::kInternal,
-              absl::StrCat("read: ", grpc_core::StrError(errno).c_str()));
+              absl::StrCat("read: ", grpc_core::StrError(errno)));
       }
     }
   }

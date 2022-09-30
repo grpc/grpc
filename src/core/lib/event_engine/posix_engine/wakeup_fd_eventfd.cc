@@ -45,9 +45,8 @@ absl::Status EventFdWakeupFd::Init() {
   int read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   int write_fd = -1;
   if (read_fd < 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("eventfd: ", grpc_core::StrError(errno).c_str()));
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("eventfd: ", grpc_core::StrError(errno)));
   }
   SetWakeupFds(read_fd, write_fd);
   return absl::OkStatus();
@@ -62,7 +61,7 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
   if (err < 0 && errno != EAGAIN) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("eventfd_read: ", grpc_core::StrError(errno).c_str()));
+        absl::StrCat("eventfd_read: ", grpc_core::StrError(errno)));
   }
   return absl::OkStatus();
 }
@@ -75,7 +74,7 @@ absl::Status EventFdWakeupFd::Wakeup() {
   if (err < 0) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("eventfd_write: ", grpc_core::StrError(errno).c_str()));
+        absl::StrCat("eventfd_write: ", grpc_core::StrError(errno)));
   }
   return absl::OkStatus();
 }

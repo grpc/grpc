@@ -73,7 +73,7 @@ absl::Status PollFds(struct pollfd* pfds, int nfds, absl::Duration timeout) {
     }
   }
   if (rv < 0) {
-    return absl::UnknownError(grpc_core::StrError(errno).c_str());
+    return absl::UnknownError(grpc_core::StrError(errno));
   }
   if (rv == 0) {
     return absl::CancelledError("Deadline exceeded");
@@ -264,9 +264,9 @@ void PosixOracleEndpoint::ProcessReadOperations() {
     std::string read_data =
         ReadBytes(socket_fd_, saved_errno, read_op.GetNumBytesToRead());
     read_op(read_data, read_data.empty()
-                           ? absl::CancelledError(absl::StrCat(
-                                 "Read failed with error = ",
-                                 grpc_core::StrError(saved_errno).c_str()))
+                           ? absl::CancelledError(
+                                 absl::StrCat("Read failed with error = ",
+                                              grpc_core::StrError(saved_errno)))
                            : absl::OkStatus());
   }
   gpr_log(GPR_INFO, "Shutting down read ops thread ...");
@@ -284,9 +284,9 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
     }
     int saved_errno;
     int ret = WriteBytes(socket_fd_, saved_errno, write_op.GetBytesToWrite());
-    write_op(ret < 0 ? absl::CancelledError(absl::StrCat(
-                           "Write failed with error = ",
-                           grpc_core::StrError(saved_errno).c_str()))
+    write_op(ret < 0 ? absl::CancelledError(
+                           absl::StrCat("Write failed with error = ",
+                                        grpc_core::StrError(saved_errno)))
                      : absl::OkStatus());
   }
   gpr_log(GPR_INFO, "Shutting down write ops thread ...");
@@ -397,30 +397,30 @@ absl::StatusOr<int> PosixOracleListener::Bind(
 
   // Creating a new socket file descriptor.
   if ((new_socket = socket(AF_INET6, SOCK_STREAM, 0)) <= 0) {
-    return absl::UnknownError(absl::StrCat("Error creating socket: ",
-                                           grpc_core::StrError(errno).c_str()));
+    return absl::UnknownError(
+        absl::StrCat("Error creating socket: ", grpc_core::StrError(errno)));
   }
   // MacOS biulds fail if SO_REUSEADDR and SO_REUSEPORT are set in the same
   // setsockopt syscall. So they are set separately one after the other.
   if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
     return absl::UnknownError(absl::StrCat("Error setsockopt(SO_REUSEADDR): ",
-                                           grpc_core::StrError(errno).c_str()));
+                                           grpc_core::StrError(errno)));
   }
   if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
     return absl::UnknownError(absl::StrCat("Error setsockopt(SO_REUSEPORT): ",
-                                           grpc_core::StrError(errno).c_str()));
+                                           grpc_core::StrError(errno)));
   }
 
   // Forcefully bind the new socket.
   if (bind(new_socket, reinterpret_cast<const struct sockaddr*>(addr.address()),
            address.len) < 0) {
     return absl::UnknownError(
-        absl::StrCat("Error bind: ", grpc_core::StrError(errno).c_str()));
+        absl::StrCat("Error bind: ", grpc_core::StrError(errno)));
   }
   // Set the new socket to listen for one active connection at a time.
   if (listen(new_socket, 1) < 0) {
     return absl::UnknownError(
-        absl::StrCat("Error listen: ", grpc_core::StrError(errno).c_str()));
+        absl::StrCat("Error listen: ", grpc_core::StrError(errno)));
   }
   listener_fds_.push_back(new_socket);
   return 0;
