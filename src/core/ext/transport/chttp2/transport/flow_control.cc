@@ -279,7 +279,10 @@ void TransportFlowControl::UpdateSetting(
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
       *desired_value = new_desired_value;
-      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+      (action->*set)(new_desired_value == 0
+                         ? FlowControlAction::Urgency::UPDATE_IMMEDIATELY
+                         : FlowControlAction::Urgency::QUEUE_UPDATE,
+                     *desired_value);
     }
   } else {
     int64_t delta = new_desired_value - *desired_value;
@@ -391,8 +394,9 @@ int64_t StreamFlowControl::DesiredAnnounceSize() const {
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   const int64_t desired_announce_size = DesiredAnnounceSize();
   if (desired_announce_size > 0) {
-    if ((min_progress_size_ > 0 && announced_window_delta_ <= 0) ||
-        desired_announce_size >= 8192) {
+    if (min_progress_size_ > 0 &&
+        (announced_window_delta_ < 0 ||
+         (announced_window_delta_ == 0 && tfc_->sent_init_window() == 0))) {
       action.set_send_stream_update(
           FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
     } else {
