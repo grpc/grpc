@@ -141,8 +141,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
-  EXPECT_TRUE(client_endpoint != nullptr);
-  EXPECT_TRUE(server_endpoint != nullptr);
+  EXPECT_NE(client_endpoint.get(), nullptr);
+  EXPECT_NE(server_endpoint.get(), nullptr);
 
   // Alternate message exchanges between client -- server and server --
   // client.
@@ -212,8 +212,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
     grpc_core::ChannelArgs client_args;
-    auto quota = grpc_core::ResourceQuota::Default();
-    client_args = client_args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+    auto child_quota = grpc_core::ResourceQuota::Default();
+    client_args = client_args.Set(GRPC_ARG_RESOURCE_QUOTA, child_quota);
     ChannelArgsEndpointConfig client_config(client_args);
     test_ee->Connect(
         [&client_endpoint,
@@ -235,8 +235,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
 
     client_signal.WaitForNotification();
     server_signal->WaitForNotification();
-    EXPECT_TRUE(client_endpoint != nullptr);
-    EXPECT_TRUE(server_endpoint != nullptr);
+    EXPECT_NE(client_endpoint.get(), nullptr);
+    EXPECT_NE(server_endpoint.get(), nullptr);
     connections.push_back(std::make_tuple(std::move(client_endpoint),
                                           std::move(server_endpoint)));
     delete server_signal;
