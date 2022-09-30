@@ -1022,7 +1022,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             t->peer_string.c_str(), t->keepalive_time.ToString().c_str());
     constexpr int max_keepalive_time_millis =
         INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    int throttled_keepalive_time =
+    int64_t throttled_keepalive_time =
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
@@ -1813,7 +1813,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       if (s->frame_storage.length != 0) {
         while (true) {
           GPR_ASSERT(s->frame_storage.length > 0);
-          uint32_t min_progress_size;
+          int64_t min_progress_size;
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
           if (absl::holds_alternative<grpc_core::Pending>(r)) {
@@ -2180,7 +2180,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
   size_t msg_len = message.length();
   GPR_ASSERT(msg_len <= UINT32_MAX);
-  grpc_core::VarintWriter<1> msg_len_writer(msg_len);
+  grpc_core::VarintWriter<1> msg_len_writer(static_cast<uint32_t>(msg_len));
   message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
   p = GRPC_SLICE_START_PTR(message_pfx);
   *p++ = 0x00; /* literal header, not indexed */
