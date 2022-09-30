@@ -75,9 +75,12 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
         absl::StrFormat("http://%s@%s", proxy_auth_str,
                         grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   }
-  grpc_core::SetEnv("http_proxy", proxy_uri.c_str());
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_channel_create(ffd->server_addr.c_str(), creds, client_args);
+  f->client = grpc_channel_create(ffd->server_addr.c_str(), creds,
+                                  grpc_core::ChannelArgs::FromC(client_args)
+                                      .Set(GRPC_ARG_HTTP_PROXY, proxy_uri)
+                                      .ToC()
+                                      .get());
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }
