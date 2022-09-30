@@ -354,6 +354,19 @@ absl::StatusOr<std::string> SockaddrToString(
   return out;
 }
 
+EventEngine::ResolvedAddress SockaddrMakeWild6(int port) {
+  EventEngine::ResolvedAddress resolved_wild_out;
+  sockaddr_in6* wild_out = reinterpret_cast<sockaddr_in6*>(
+      const_cast<sockaddr*>(resolved_wild_out.address()));
+  GPR_ASSERT(port >= 0 && port < 65536);
+  memset(wild_out, 0, sizeof(sockaddr_in6));
+  wild_out->sin6_family = AF_INET6;
+  wild_out->sin6_port = htons(static_cast<uint16_t>(port));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<sockaddr*>(wild_out),
+      static_cast<socklen_t>(sizeof(sockaddr_in6)));
+}
+
 // Instruct the kernel to wait for specified number of bytes to be received on
 // the socket before generating an interrupt for packet receive. If the call
 // succeeds, it returns the number of bytes (wait threshold) that was actually

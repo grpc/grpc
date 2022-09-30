@@ -156,6 +156,8 @@ bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
 bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
                         EventEngine::ResolvedAddress* resolved_addr6_out);
 
+EventEngine::ResolvedAddress SockaddrMakeWild6(int port); 
+
 // Converts a EventEngine::ResolvedAddress into a newly-allocated human-readable
 // string.
 //
