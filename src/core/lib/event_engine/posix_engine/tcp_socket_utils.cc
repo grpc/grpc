@@ -398,6 +398,26 @@ int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
   }
 }
 
+bool SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port) {
+  sockaddr* addr = const_cast<sockaddr*>(resolved_addr.address());
+  switch (addr->sa_family) {
+    case AF_INET:
+      GPR_ASSERT(port >= 0 && port < 65536);
+      (reinterpret_cast<sockaddr_in*>(addr))->sin_port =
+          htons(static_cast<uint16_t>(port));
+      return true;
+    case AF_INET6:
+      GPR_ASSERT(port >= 0 && port < 65536);
+      (reinterpret_cast<sockaddr_in6*>(addr))->sin6_port =
+          htons(static_cast<uint16_t>(port));
+      return true;
+    default:
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
+              addr->sa_family);
+      return false;
+  }
+}
+
 // Instruct the kernel to wait for specified number of bytes to be received on
 // the socket before generating an interrupt for packet receive. If the call
 // succeeds, it returns the number of bytes (wait threshold) that was actually

@@ -16,6 +16,7 @@
 
 #include <ifaddrs.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include <cstring>
 #include <string>
@@ -38,19 +39,6 @@ namespace {
 
 using ResolvedAddress =
     ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
-
-struct ListenerSocket {
-  // Listener socket fd
-  PosixSocketWrapper sock;
-  // Assigned/chosen listening port
-  int port;
-  // Socket configuration
-  bool zero_copy_enabled;
-  // Address at which the socket is listening for connections
-  ResolvedAddress addr;
-  // Dual stack mode.
-  PosixSocketWrapper::DSMode dsmode;
-};
 
 #ifdef GRPC_HAVE_IFADDRS
 
@@ -197,9 +185,7 @@ absl::Status AddSocketToListener(ListenerSocketsContainer& listener_sockets,
                                  ListenerSocket& socket) {
   RETURN_IF_NOT_OK(PrepareSocket(options, socket));
   GPR_ASSERT(socket.port > 0);
-  listener_sockets.AddSocket(socket.sock.Fd(), socket.port,
-                             socket.zero_copy_enabled, socket.addr,
-                             socket.dsmode);
+  listener_sockets.AddSocket(std::move(socket));
   return absl::OkStatus();
 }
 }  // namespace
@@ -232,47 +218,51 @@ absl::StatusOr<int> ListenerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
 #ifdef GRPC_HAVE_IFADDRS
+  absl::Status status;
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
-  grpc_error_handle err = GRPC_ERROR_NONE;
   bool no_local_addresses = true;
   if (requested_port == 0) {
-    if ((err = GetUnusedPort(&requested_port)) != GRPC_ERROR_NONE) {
-      return err;
-    } else if (requested_port <= 0) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad get_unused_port()");
+    auto result = GetUnusedPort();
+    if (!result.ok()) {
+      return result.status();
+    } else if (*result <= 0) {
+      return absl::InternalError("Bad get_unused_port()");
     }
+    requested_port = *result;
     gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
   }
   if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-    return GRPC_OS_ERROR(errno, "getifaddrs");
+    return absl::InternalError(
+        absl::StrCat("getifaddrs: ", std::strerror(errno)));
   }
   for (ifa_it = ifa; ifa_it != nullptr; ifa_it = ifa_it->ifa_next) {
-    grpc_resolved_address addr;
-    grpc_dualstack_mode dsmode;
+    ResolvedAddress addr;
+    PosixSocketWrapper::DSMode dsmode;
+    socklen_t len;
     const char* ifa_name = (ifa_it->ifa_name ? ifa_it->ifa_name : "<unknown>");
     if (ifa_it->ifa_addr == nullptr) {
       continue;
     } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
-      addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
+      len = static_cast<socklen_t>(sizeof(sockaddr_in));
     } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
-      addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
+      len = static_cast<socklen_t>(sizeof(sockaddr_in6));
     } else {
       continue;
     }
-    memcpy(addr.addr, ifa_it->ifa_addr, addr.len);
-    if (!grpc_sockaddr_set_port(&addr, requested_port)) {
-      /* Should never happen, because we check sa_family above. */
-      err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set port");
+    memcpy(const_cast<sockaddr*>(addr.address()), ifa_it->ifa_addr, len);
+    if (!SockaddrSetPort(addr, requested_port)) {
+      // Should never happen, because we check sa_family above.
+      status = absl::InternalError("Failed to set port");
       break;
     }
-    std::string addr_str = grpc_sockaddr_to_string(&addr, false);
+    std::string addr_str = *SockaddrToString(&addr, false);
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",
             ifa_name, ifa_it->ifa_flags, addr_str.c_str());
     /* We could have multiple interfaces with the same address (e.g., bonding),
        so look for duplicates. */
-    if (listener->FindSocketLocked(&addr) != nullptr) {
+    if (listener_sockets.FindSocket(addr).ok()) {
       gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
               addr_str.c_str(), ifa_name);
       continue;

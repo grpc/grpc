@@ -162,12 +162,14 @@ EventEngine::ResolvedAddress SockaddrMakeWild4(int port);
 
 int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr);
 
-// Converts a EventEngine::ResolvedAddress into a newly-allocated human-readable
-// string.
+bool SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port);
+
+// Converts a EventEngine::ResolvedAddress into a newly-allocated
+// human-readable string.
 //
-// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
-// If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
-// displayed as plain IPv4.
+// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are
+// recognized. If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6
+// addresses are displayed as plain IPv4.
 absl::StatusOr<std::string> SockaddrToString(
     const EventEngine::ResolvedAddress* resolved_addr, bool normalize);
 

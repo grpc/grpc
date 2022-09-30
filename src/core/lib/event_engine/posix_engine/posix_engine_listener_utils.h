@@ -34,15 +34,29 @@
 namespace grpc_event_engine {
 namespace posix_engine {
 
+struct ListenerSocket {
+  // Listener socket fd
+  PosixSocketWrapper sock;
+  // Assigned/chosen listening port
+  int port;
+  // Socket configuration
+  bool zero_copy_enabled;
+  // Address at which the socket is listening for connections
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress addr;
+  // Dual stack mode.
+  PosixSocketWrapper::DSMode dsmode;
+};
+
 class ListenerSocketsContainer {
  public:
   // Adds a socket to the internal db of sockets associated with a listener.
-  virtual void AddSocket(
-      int fd, int listening_port, bool zero_copy_enabled,
-      grpc_event_engine::experimental::EventEngine::ResolvedAddress addr,
-      PosixSocketWrapper::DSMode dsmode) = 0;
-  // Remove and close socket from the internal db of sockets associated with a
-  // listener.
+  virtual void AddSocket(ListenerSocket socket) = 0;
+
+  virtual absl::StatusOr<ListenerSocket> FindSocket(
+      const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+          addr) = 0;
+  // Remove and close socket from the internal db of sockets associated with
+  // a listener.
   virtual void RemoveSocket(int fd) = 0;
 };
 
