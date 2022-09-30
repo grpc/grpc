@@ -8314,7 +8314,6 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   deps:
-  - absl/cleanup:cleanup
   - grpc_test_util
   platforms:
   - linux
