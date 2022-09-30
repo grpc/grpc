@@ -237,7 +237,7 @@ MATCHER_P2(EqNoRdsHCM, route_configuration_name, cluster_name,
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
   ClientStatusDiscoveryServiceTest() {
-    admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
+    admin_server_thread_ = std::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());

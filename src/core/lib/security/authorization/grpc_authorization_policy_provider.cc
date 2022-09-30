@@ -20,8 +20,6 @@
 
 #include <utility>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
@@ -34,6 +32,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -69,7 +68,7 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref(policy_slice);
+  CSliceUnref(policy_slice);
   return policy_contents;
 }
 
@@ -122,7 +121,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
     }
   };
-  refresh_thread_ = absl::make_unique<Thread>(
+  refresh_thread_ = std::make_unique<Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();

@@ -47,8 +47,6 @@
 namespace grpc_core {
 namespace {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 class NativeDNSRequest {
  public:
   NativeDNSRequest(
@@ -57,7 +55,7 @@ class NativeDNSRequest {
           on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
-    Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
+    Executor::Run(&request_closure_, absl::OkStatus(), ExecutorType::RESOLVER);
   }
 
  private:
@@ -80,11 +78,6 @@ class NativeDNSRequest {
 };
 
 }  // namespace
-
-NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
-  static NativeDNSResolver* instance = new NativeDNSResolver();
-  return instance;
-}
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -165,7 +158,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     addr.len = resp->ai_addrlen;
     addresses.push_back(addr);
   }
-  err = GRPC_ERROR_NONE;
+  err = absl::OkStatus();
 done:
   if (result) {
     freeaddrinfo(result);
@@ -183,7 +176,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  GetDefaultEventEngine()->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
@@ -198,7 +191,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  GetDefaultEventEngine()->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(

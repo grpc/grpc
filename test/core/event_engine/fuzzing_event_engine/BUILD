@@ -27,6 +27,7 @@ grpc_cc_library(
     hdrs = ["fuzzing_event_engine.h"],
     deps = [
         ":fuzzing_event_engine_proto",
+        "//:default_event_engine",
         "//:event_engine_base_hdrs",
         "//:time",
     ],

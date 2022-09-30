@@ -46,6 +46,10 @@ BANNED_EXCEPT = {
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_error*': ['src/core/lib/iomgr/error.cc'],
     'grpc_error_string': ['src/core/lib/iomgr/error.cc'],
+    # use grpc_core::CSlice{Ref,Unref} instead inside core
+    # (or prefer grpc_core::Slice!)
+    'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
+    'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
     # std::random_device needs /dev/random which is not available on all linuxes that we support.
     # Any usage must be optional and opt-in, so that those platforms can use gRPC without problem.
     'std::random_device': [
@@ -54,7 +58,9 @@ BANNED_EXCEPT = {
     ],
 
     # Use `std::exchange()` instead.
-    'absl::exchange': []
+    'absl::exchange': [],
+    # Use `std::make_unique()` instead.
+    'absl::make_unique': [],
 }
 
 errors = 0

@@ -23,7 +23,6 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -34,6 +33,10 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#include <sys/socket.h>
+#endif
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #ifndef SO_ZEROCOPY
@@ -72,7 +75,7 @@ struct PosixTcpOptions {
   PosixTcpOptions() = default;
   // Move ctor
   PosixTcpOptions(PosixTcpOptions&& other) noexcept {
-    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
     CopyIntegerOptions(other);
   }
@@ -81,7 +84,7 @@ struct PosixTcpOptions {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
     }
-    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
     CopyIntegerOptions(other);
     return *this;

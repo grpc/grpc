@@ -17,19 +17,12 @@
 #include "src/core/lib/gprpp/stat.h"
 
 #include <stdio.h>
-#include <string.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

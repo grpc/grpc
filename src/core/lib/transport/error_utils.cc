@@ -43,7 +43,7 @@ static grpc_error_handle recursively_find_error_with_field(
     grpc_error_handle result = recursively_find_error_with_field(child, which);
     if (!result.ok()) return result;
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_error_get_status(grpc_error_handle error,
@@ -143,7 +143,7 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
 grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
   // Special error checks
   if (status.ok()) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   return grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STRING_VIEW(status.message()),

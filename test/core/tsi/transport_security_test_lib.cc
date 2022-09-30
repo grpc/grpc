@@ -65,7 +65,7 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
   args->handshake_buffer =
       static_cast<unsigned char*>(gpr_zalloc(args->handshake_buffer_size));
   args->is_client = is_client;
-  args->error = GRPC_ERROR_NONE;
+  args->error = absl::OkStatus();
   return args;
 }
 
@@ -296,7 +296,7 @@ grpc_error_handle on_handshake_next_done(
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);

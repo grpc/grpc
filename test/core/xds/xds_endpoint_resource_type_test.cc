@@ -14,14 +14,41 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include <google/protobuf/wrappers.pb.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+#include "upb/def.hpp"
+#include "upb/upb.hpp"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/proto/grpc/testing/xds/v3/address.pb.h"
+#include "src/proto/grpc/testing/xds/v3/base.pb.h"
+#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
+#include "src/proto/grpc/testing/xds/v3/percent.pb.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::endpoint::v3::ClusterLoadAssignment;
@@ -42,7 +69,7 @@ class XdsEndpointTest : public ::testing::Test {
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     auto bootstrap = GrpcXdsBootstrap::Create(
         "{\n"
         "  \"xds_servers\": [\n"

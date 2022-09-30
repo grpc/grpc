@@ -14,9 +14,22 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
-#include <gtest/gtest.h>
+#include <memory>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/promise/test_context.h"
 
 namespace grpc_core {
@@ -58,10 +71,8 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+               nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
                       ->get_pointer(HttpAuthorityMetadata())
@@ -92,10 +103,8 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+               nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
                       ->get_pointer(HttpAuthorityMetadata())

@@ -20,9 +20,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
+#include <grpc/support/log.h>
 
 bool squelch = true;
 bool leak_check = true;

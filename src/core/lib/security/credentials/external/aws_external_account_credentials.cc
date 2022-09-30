@@ -22,7 +22,6 @@
 #include <map>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -461,11 +460,11 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
 }
 
 void AwsExternalAccountCredentials::BuildSubjectToken() {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (signer_ == nullptr) {
     cred_verification_url_ = absl::StrReplaceAll(
         regional_cred_verification_url_, {{"{region}", region_}});
-    signer_ = absl::make_unique<AwsRequestSigner>(
+    signer_ = std::make_unique<AwsRequestSigner>(
         access_key_id_, secret_access_key_, token_, "POST",
         cred_verification_url_, region_, "",
         std::map<std::string, std::string>(), &error);
@@ -501,7 +500,7 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
                       {"headers", Json(headers)}};
   Json subject_token_json(object);
   std::string subject_token = UrlEncode(subject_token_json.Dump());
-  FinishRetrieveSubjectToken(subject_token, GRPC_ERROR_NONE);
+  FinishRetrieveSubjectToken(subject_token, absl::OkStatus());
 }
 
 void AwsExternalAccountCredentials::FinishRetrieveSubjectToken(
@@ -515,7 +514,7 @@ void AwsExternalAccountCredentials::FinishRetrieveSubjectToken(
   if (!error.ok()) {
     cb("", error);
   } else {
-    cb(subject_token, GRPC_ERROR_NONE);
+    cb(subject_token, absl::OkStatus());
   }
 }
 
