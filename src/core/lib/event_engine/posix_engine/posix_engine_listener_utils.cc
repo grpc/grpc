@@ -185,7 +185,7 @@ absl::Status AddSocketToListener(ListenerSocketsContainer& listener_sockets,
                                  ListenerSocket& socket) {
   RETURN_IF_NOT_OK(PrepareSocket(options, socket));
   GPR_ASSERT(socket.port > 0);
-  listener_sockets.AddSocket(std::move(socket));
+  listener_sockets.AddSocket(socket);
   return absl::OkStatus();
 }
 }  // namespace
@@ -211,6 +211,7 @@ absl::StatusOr<int> ListenerAddAddress(
   }
 
   RETURN_IF_NOT_OK(AddSocketToListener(listener_sockets, options, socket));
+  dsmode = socket.dsmode;
   return socket.port;
 }
 
@@ -222,6 +223,7 @@ absl::StatusOr<int> ListenerAddAllLocalAddresses(
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
   bool no_local_addresses = true;
+  int assigned_port = 0;
   if (requested_port == 0) {
     auto result = GetUnusedPort();
     if (!result.ok()) {
@@ -260,86 +262,85 @@ absl::StatusOr<int> ListenerAddAllLocalAddresses(
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",
             ifa_name, ifa_it->ifa_flags, addr_str.c_str());
-    /* We could have multiple interfaces with the same address (e.g., bonding),
-       so look for duplicates. */
+    // We could have multiple interfaces with the same address (e.g., bonding),
+    // so look for duplicates.
     if (listener_sockets.FindSocket(addr).ok()) {
       gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
               addr_str.c_str(), ifa_name);
       continue;
     }
-    if ((err = ListenerAddAddress(listener, &addr, &dsmode, assigned_port)) !=
-        GRPC_ERROR_NONE) {
-      grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Failed to add listener: ", addr_str).c_str());
-      err = grpc_error_add_child(root_err, err);
+    auto result = ListenerAddAddress(listener_sockets, options, addr, dsmode);
+    if (!result.ok()) {
+      status = absl::InternalError(
+          absl::StrCat("Failed to add listener: ", addr_str,
+                       " due to error: ", result.status().message()));
       break;
     } else {
+      assigned_port = *result;
       no_local_addresses = false;
     }
   }
   freeifaddrs(ifa);
-  if (err != GRPC_ERROR_NONE) {
-    return err;
+  if (!status.ok()) {
+    return status;
   } else if (no_local_addresses) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No local addresses");
+    return absl::InternalError("No local addresses");
   } else {
-    return GRPC_ERROR_NONE;
+    return assigned_port;
   }
 #else
-  gpr_log(GPR_ERROR, "System does not have support ifaddrs\n");
-  GPR_ASSERT(0);
+  GPR_ASSERT(false && "System does not support ifaddrs");
 #endif
 }
 
 absl::StatusOr<int> AddWildCardAddrsToListener(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
-  grpc_resolved_address wild4;
-  grpc_resolved_address wild6;
-  grpc_dualstack_mode dsmode;
-  grpc_error_handle v6_err = GRPC_ERROR_NONE;
-  grpc_error_handle v4_err = GRPC_ERROR_NONE;
+  ResolvedAddress wild4 = SockaddrMakeWild4(requested_port);
+  ResolvedAddress wild6 = SockaddrMakeWild6(requested_port);
+  PosixSocketWrapper::DSMode dsmode;
+  absl::StatusOr<int> v6_err = absl::OkStatus();
+  absl::StatusOr<int> v4_err = absl::OkStatus();
+  int assigned_port = 0;
 
   if (SystemHasIfAddrs() && options.expand_wildcard_addrs) {
-    return ListenerAddAllLocalAddresses(listener, requested_port,
-                                        assigned_port);
+    return ListenerAddAllLocalAddresses(listener_sockets, options,
+                                        requested_port);
   }
 
-  grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
-  /* Try listening on IPv6 first. */
-  if ((v6_err = ListenerAddAddress(listener, &wild6, &dsmode, assigned_port)) ==
-      GRPC_ERROR_NONE) {
-    if (dsmode == GRPC_DSMODE_DUALSTACK || dsmode == GRPC_DSMODE_IPV4) {
-      return GRPC_ERROR_NONE;
+  // Try listening on IPv6 first.
+  v6_err = ListenerAddAddress(listener_sockets, options, wild6, dsmode);
+  if (v6_err.ok()) {
+    if (dsmode == PosixSocketWrapper::DSMODE_DUALSTACK ||
+        dsmode == PosixSocketWrapper::DSMODE_IPV4) {
+      return *v6_err;
     }
-    requested_port = *assigned_port;
+    requested_port = *v6_err;
+    assigned_port = *v6_err;
   }
-  /* If we got a v6-only socket or nothing, try adding 0.0.0.0. */
-  grpc_sockaddr_set_port(&wild4, requested_port);
-  v4_err = ListenerAddAddress(listener, &wild4, &dsmode, assigned_port);
-  if (*assigned_port > 0) {
-    if (v6_err != GRPC_ERROR_NONE) {
-      gpr_log(GPR_INFO,
-              "Failed to add :: listener, "
-              "the environment may not support IPv6: %s",
-              grpc_error_std_string(v6_err).c_str());
-      GRPC_ERROR_UNREF(v6_err);
+  // If we got a v6-only socket or nothing, try adding 0.0.0.0.
+  SockaddrSetPort(wild4, requested_port);
+  v4_err = ListenerAddAddress(listener_sockets, options, wild4, dsmode);
+  if (assigned_port > 0) {
+    if (!v6_err.ok()) {
+      gpr_log(
+          GPR_INFO,
+          "Failed to add :: listener, the environment may not support IPv6: %s",
+          v6_err.status().ToString().c_str());
     }
-    if (v4_err != GRPC_ERROR_NONE) {
+    if (!v4_err.ok()) {
       gpr_log(GPR_INFO,
               "Failed to add 0.0.0.0 listener, "
               "the environment may not support IPv4: %s",
-              grpc_error_std_string(v4_err).c_str());
-      GRPC_ERROR_UNREF(v4_err);
+              v4_err.status().ToString().c_str());
     }
-    return GRPC_ERROR_NONE;
+    return assigned_port;
   } else {
-    grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Failed to add any wildcard listeners");
-    GPR_ASSERT(v6_err != GRPC_ERROR_NONE && v4_err != GRPC_ERROR_NONE);
-    root_err = grpc_error_add_child(root_err, v6_err);
-    root_err = grpc_error_add_child(root_err, v4_err);
-    return root_err;
+    GPR_ASSERT(!v6_err.ok());
+    GPR_ASSERT(!v4_err.ok());
+    return absl::InternalError(absl::StrCat(
+        "Failed to add any wildcard listeners: ", v6_err.status().message(),
+        v4_err.status().message()));
   }
 }
 

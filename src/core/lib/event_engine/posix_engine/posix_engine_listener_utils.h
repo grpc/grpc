@@ -78,9 +78,8 @@ absl::StatusOr<int> AddWildCardAddrsToListener(
 
 // Get all addresses assigned to network interfaces on the machine and create a
 // socket for each. requested_port is the port to use for every socket, or 0 to
-// select one random port that will be used for every socket. Set assigned_port
-// to the port selected. Return ok status only if all listeners were
-// added.
+// select one random port that will be used for every socket. Return
+// assigned_port.
 absl::StatusOr<int> ListenerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
