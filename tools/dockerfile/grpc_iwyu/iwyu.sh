@@ -46,19 +46,17 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
-  test/core/end2end
-  test/core/memory_usage
-  test/core/promise
-  test/core/resource_quota
-  test/core/transport
-  test/core/uri
-  test/core/util
+  test/core
 '
 
 export DISABLED_MODULES='
   src/core/lib/gpr
   src/core/lib/iomgr
   src/core/ext/transport/binder
+  test/core/alts
+  test/core/iomgr
+  test/core/security
+  test/core/tsi
   test/core/transport/binder
 '
 
@@ -72,6 +70,7 @@ cat compile_commands.json | jq -r '.[].file'                                    
   | grep -v -E $EXCLUSION_REGEX                                                  \
   | grep -v src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
   | grep -v test/core/end2end/end2end_tests.cc                                   \
+  | grep -v test/core/surface/public_headers_must_be_c89.c                       \
   | sort                                                                         \
   > iwyu_files0.txt
 

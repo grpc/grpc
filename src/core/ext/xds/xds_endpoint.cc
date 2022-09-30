@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -212,7 +211,7 @@ absl::optional<ServerAddress> ServerAddressParse(
   std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
       attributes;
   attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
-      absl::make_unique<ServerAddressWeightAttribute>(weight);
+      std::make_unique<ServerAddressWeightAttribute>(weight);
   return ServerAddress(grpc_address, ChannelArgs(), std::move(attributes));
 }
 
@@ -424,7 +423,7 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
               context.client, result.name->c_str(),
               eds_resource->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
+    auto resource = std::make_unique<ResourceDataSubclass>();
     resource->resource = std::move(*eds_resource);
     result.resource = std::move(resource);
   }

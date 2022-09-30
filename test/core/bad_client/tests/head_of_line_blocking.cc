@@ -16,14 +16,19 @@
  *
  */
 
+#include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 static const char prefix[] =
     "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"

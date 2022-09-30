@@ -159,7 +159,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
    */
   *auth_context = local_auth_context_create(&peer);
   tsi_peer_destruct(&peer);
-  error = *auth_context != nullptr ? GRPC_ERROR_NONE
+  error = *auth_context != nullptr ? absl::OkStatus()
                                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                          "Could not create local auth context");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);

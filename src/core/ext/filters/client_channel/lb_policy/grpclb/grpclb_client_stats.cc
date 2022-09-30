@@ -22,8 +22,6 @@
 
 #include <string.h>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
 
@@ -54,7 +52,7 @@ void GrpcLbClientStats::AddCallDropped(const char* token) {
   // Record the drop.
   MutexLock lock(&drop_count_mu_);
   if (drop_token_counts_ == nullptr) {
-    drop_token_counts_ = absl::make_unique<DroppedCallCounts>();
+    drop_token_counts_ = std::make_unique<DroppedCallCounts>();
   }
   for (size_t i = 0; i < drop_token_counts_->size(); ++i) {
     if (strcmp((*drop_token_counts_)[i].token.get(), token) == 0) {

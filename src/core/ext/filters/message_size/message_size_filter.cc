@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -121,13 +120,13 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
                      grpc_error_std_string(error)));
     return status;
   }
-  return absl::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
-                                                    max_response_message_bytes);
+  return std::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
+                                                   max_response_message_bytes);
 }
 
 void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<MessageSizeParser>());
+      std::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() {
@@ -195,8 +194,8 @@ struct call_data {
   // call our next_recv_message_ready member after handling it.
   grpc_closure recv_message_ready;
   grpc_closure recv_trailing_metadata_ready;
-  // The error caused by a message that is too large, or GRPC_ERROR_NONE
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  // The error caused by a message that is too large, or absl::OkStatus()
+  grpc_error_handle error;
   // Used by recv_message_ready.
   absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.
@@ -305,7 +304,7 @@ static grpc_error_handle message_size_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (elem->call_data) call_data(elem, *chand, *args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for call_data.
@@ -332,7 +331,7 @@ static grpc_error_handle message_size_init_channel_elem(
   new (chand) channel_data();
   chand->limits = get_message_size_limits(
       grpc_core::ChannelArgs::FromC(args->channel_args));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for channel_data.

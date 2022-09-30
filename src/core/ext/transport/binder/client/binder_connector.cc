@@ -92,9 +92,9 @@ class BinderConnector : public grpc_core::SubchannelConnector {
     // might be invoked from non-gRPC code
     if (grpc_core::ExecCtx::Get() == nullptr) {
       grpc_core::ExecCtx exec_ctx;
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, absl::OkStatus());
     } else {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, absl::OkStatus());
     }
 
     Unref();  // Was referenced in BinderConnector::Connect

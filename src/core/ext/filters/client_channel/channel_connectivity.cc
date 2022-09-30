@@ -18,6 +18,8 @@
 
 #include <inttypes.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -195,7 +197,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     grpc_error_handle error =
         timer_fired_ ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "Timed out waiting for connection state change")
-                     : GRPC_ERROR_NONE;
+                     : absl::OkStatus();
     grpc_cq_end_op(cq_, tag_, error, FinishedCompletion, this,
                    &completion_storage_);
   }

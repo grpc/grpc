@@ -18,16 +18,15 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <string.h>
+#include <string>
 
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
@@ -39,14 +38,14 @@ static grpc_error_handle channel_init_func(grpc_channel_element* elem,
   EXPECT_TRUE(args->is_first);
   EXPECT_TRUE(args->is_last);
   *static_cast<int*>(elem->channel_data) = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle call_init_func(
     grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   ++*static_cast<int*>(elem->channel_data);
   *static_cast<int*>(elem->call_data) = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void channel_destroy_func(grpc_channel_element* /*elem*/) {}
