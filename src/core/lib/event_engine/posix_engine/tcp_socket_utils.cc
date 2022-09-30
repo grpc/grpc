@@ -367,6 +367,37 @@ EventEngine::ResolvedAddress SockaddrMakeWild6(int port) {
       static_cast<socklen_t>(sizeof(sockaddr_in6)));
 }
 
+EventEngine::ResolvedAddress SockaddrMakeWild4(int port) {
+  EventEngine::ResolvedAddress resolved_wild_out;
+  sockaddr_in* wild_out = reinterpret_cast<sockaddr_in*>(
+      const_cast<sockaddr*>(resolved_wild_out.address()));
+  GPR_ASSERT(port >= 0 && port < 65536);
+  memset(wild_out, 0, sizeof(sockaddr_in));
+  wild_out->sin_family = AF_INET;
+  wild_out->sin_port = htons(static_cast<uint16_t>(port));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<sockaddr*>(wild_out),
+      static_cast<socklen_t>(sizeof(sockaddr_in)));
+}
+
+int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
+  const sockaddr* addr = resolved_addr.address();
+  switch (addr->sa_family) {
+    case AF_INET:
+      return ntohs((reinterpret_cast<const sockaddr_in*>(addr))->sin_port);
+    case AF_INET6:
+      return ntohs((reinterpret_cast<const sockaddr_in6*>(addr))->sin6_port);
+#ifdef GRPC_HAVE_UNIX_SOCKET
+    case AF_UNIX:
+      return 1;
+#endif
+    default:
+      gpr_log(GPR_ERROR, "Unknown socket family %d in SockaddrGetPort",
+              addr->sa_family);
+      return 0;
+  }
+}
+
 // Instruct the kernel to wait for specified number of bytes to be received on
 // the socket before generating an interrupt for packet receive. If the call
 // succeeds, it returns the number of bytes (wait threshold) that was actually

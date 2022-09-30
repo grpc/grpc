@@ -15,17 +15,20 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 
 #include <ifaddrs.h>
+#include <sys/socket.h>
 
+#include <cstring>
 #include <string>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/status_helper.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 static gpr_once g_init_max_accept_queue_size = GPR_ONCE_INIT;
 static int g_max_accept_queue_size;
-
-#ifdef GRPC_HAVE_IFADDRS
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -35,84 +38,97 @@ namespace {
 using ResolvedAddress =
     ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 
+struct ListenerSocket {
+  // Listener socket fd
+  int fd;
+  // Assigned/chosen listening port
+  int port;
+  // Socket configuration
+  bool zero_copy_enabled;
+  // Address at which the socket is listening for connections
+  ResolvedAddress addr;
+};
+
+#ifdef GRPC_HAVE_IFADDRS
+
 // Bind to "::" to get a port number not used by any address.
 absl::StatusOr<int> GetUnusedPort() {
   ResolvedAddress wild = SockaddrMakeWild6(0);
-  grpc_dualstack_mode dsmode;
-  int fd;
-  grpc_error_handle err =
-      grpc_create_dualstack_socket(&wild, SOCK_STREAM, 0, &dsmode, &fd);
-  if (err != GRPC_ERROR_NONE) {
-    return err;
+  PosixSocketWrapper::DSMode dsmode;
+  auto sock = PosixSocketWrapper::CreateDualStackSocket(nullptr, wild,
+                                                        SOCK_STREAM, 0, dsmode);
+  if (!sock.ok()) {
+    return sock.status();
   }
-  if (dsmode == GRPC_DSMODE_IPV4) {
-    grpc_sockaddr_make_wildcard4(0, &wild);
+  if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
+    wild = SockaddrMakeWild4(0);
   }
-  if (bind(fd, reinterpret_cast<const grpc_sockaddr*>(wild.addr), wild.len) !=
+  if (bind(sock->Fd(), wild.address(), wild.size()) != 0) {
+    close(sock->Fd());
+    return absl::InternalError(
+        absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
+  }
+  socklen_t len = wild.size();
+  if (getsockname(sock->Fd(), const_cast<sockaddr*>(wild.address()), &len) !=
       0) {
-    err = GRPC_OS_ERROR(errno, "bind");
-    close(fd);
-    return err;
+    close(sock->Fd());
+    return absl::InternalError(
+        absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
   }
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(wild.addr), &wild.len) !=
-      0) {
-    err = GRPC_OS_ERROR(errno, "getsockname");
-    close(fd);
-    return err;
+  close(sock->Fd());
+  int port = SockaddrGetPort(wild);
+  if (port <= 0) {
+    return absl::InternalError("Bad port");
   }
-  close(fd);
-  *port = grpc_sockaddr_get_port(&wild);
-  return *port <= 0 ? GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad port")
-                    : GRPC_ERROR_NONE;
+  return port;
 }
 
 bool SystemHasIfAddrs() { return true; }
 
-#else /* GRPC_HAVE_IFADDRS */
+#else  // GRPC_HAVE_IFADDRS
 
 bool SystemHasIfAddrs() { return false; }
 
-#endif /* GRPC_HAVE_IFADDRS */
+#endif  // GRPC_HAVE_IFADDRS
 
-/* get max listen queue size on linux */
-static void InitMaxAcceptQueueSize() {
+// get max listen queue size on linux
+int InitMaxAcceptQueueSize() {
   int n = SOMAXCONN;
   char buf[64];
   FILE* fp = fopen("/proc/sys/net/core/somaxconn", "r");
+  int max_accept_queue_size;
   if (fp == nullptr) {
-    /* 2.4 kernel. */
-    g_max_accept_queue_size = SOMAXCONN;
-    return;
+    // 2.4 kernel.
+    return SOMAXCONN;
   }
   if (fgets(buf, sizeof buf, fp)) {
-    int64_t i;
-    ::strings::safe_strto64(buf, &i);
-    if (i > 0 && i <= INT_MAX) {
+    char* end;
+    long i = strtol(buf, &end, 10);
+    if (i > 0 && i <= INT_MAX && end && *end == '\n') {
       n = static_cast<int>(i);
     }
   }
   fclose(fp);
-  g_max_accept_queue_size = n;
+  max_accept_queue_size = n;
 
-  if (g_max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
+  if (max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
     gpr_log(GPR_INFO,
             "Suspiciously small accept queue (%d) will probably lead to "
             "connection drops",
-            g_max_accept_queue_size);
+            max_accept_queue_size);
   }
+  return max_accept_queue_size;
 }
 
-static int GetMaxAcceptQueueSize() {
-  gpr_once_init(&g_init_max_accept_queue_size, InitMaxAcceptQueueSize);
-  return g_max_accept_queue_size;
+int GetMaxAcceptQueueSize() {
+  static const int kMaxAcceptQueueSize = InitMaxAcceptQueueSize();
+  return kMaxAcceptQueueSize;
 }
 
-/* Prepare a recently-created socket for listening. */
-static grpc_error_handle PrepareSocket(
-    grpc_event_engine::experimental::EventMgrEventEngineListener* listener,
-    grpc_event_engine::experimental::ListenerSocket& socket) {
-  grpc_resolved_address sockname_temp;
-  grpc_error_handle err = GRPC_ERROR_NONE;
+// Prepare a recently-created socket for listening.
+absl::Status PrepareSocket(bool reuse_port, ListenerSocket& socket) {
+  ResolvedAddress sockname_temp;
+  absl::Status error;
 
   int fd = socket.fd;
   grpc_resolved_address* addr = &socket.addr;
@@ -202,7 +218,7 @@ static grpc_error_handle AddSocketToListener(
   }
   return err;
 }
-}
+}  // namespace
 
 grpc_error_handle AddWildCardAddrsToListener(
     EventMgrEventEngineListener* listener, int requested_port,
@@ -363,5 +379,5 @@ grpc_error_handle ListenerAddAllLocalAddresses(
 #endif
 }
 
-}  // namespace experimental
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
