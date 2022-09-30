@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
