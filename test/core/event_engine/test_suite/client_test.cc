@@ -155,8 +155,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
                                     client_endpoint.get())
                     .ok());
   }
-  client_endpoint.reset(nullptr);
-  server_endpoint.reset(nullptr);
+  client_endpoint.reset();
+  server_endpoint.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
@@ -209,10 +209,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // Create a test EventEngine client endpoint and connect to a one of the
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
-    grpc_core::ChannelArgs args;
+    grpc_core::ChannelArgs client_args;
     auto quota = grpc_core::ResourceQuota::Default();
-    args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
-    ChannelArgsEndpointConfig config(args);
+    client_args = client_args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+    ChannelArgsEndpointConfig client_config(client_args);
     test_ee->Connect(
         [&client_endpoint,
          &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
@@ -225,7 +225,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
           }
           client_signal.Notify();
         },
-        URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]), config,
+        URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
+        client_config,
         memory_quota->CreateMemoryAllocator(
             absl::StrCat("conn-", std::to_string(i))),
         24h);
@@ -287,7 +288,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   for (auto& t : threads) {
     t.join();
   }
-  server_endpoint.reset(nullptr);
+  server_endpoint.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
