@@ -67,7 +67,7 @@ class MessageCompressFilter : public ChannelFilter {
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
   // Enabled compression algorithms.
-  grpc_core::CompressionAlgorithmSet enabled_compression_algorithms_;
+  CompressionAlgorithmSet enabled_compression_algorithms_;
 };
 
 }  // namespace grpc_core

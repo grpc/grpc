@@ -59,10 +59,10 @@ const grpc_channel_filter MessageCompressFilter::kServerFilter =
 
 MessageCompressFilter::MessageCompressFilter(const ChannelArgs& args)
     : default_compression_algorithm_(
-          grpc_core::DefaultCompressionAlgorithmFromChannelArgs(args).value_or(
+          DefaultCompressionAlgorithmFromChannelArgs(args).value_or(
               GRPC_COMPRESS_NONE)),
       enabled_compression_algorithms_(
-          grpc_core::CompressionAlgorithmSet::FromChannelArgs(args)) {
+          CompressionAlgorithmSet::FromChannelArgs(args)) {
   // Make sure the default is enabled.
   if (!enabled_compression_algorithms_.IsSet(default_compression_algorithm_)) {
     const char* name;
@@ -85,8 +85,8 @@ MessageHandle CompressMessage(MessageHandle message,
   if (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS)) {
     return message;
   }
-  grpc_core::SliceBuffer tmp;
-  grpc_core::SliceBuffer* payload = message->payload();
+  SliceBuffer tmp;
+  SliceBuffer* payload = message->payload();
   bool did_compress = grpc_msg_compress(algorithm, payload->c_slice_buffer(),
                                         tmp.c_slice_buffer());
   if (did_compress) {
@@ -121,12 +121,12 @@ MessageHandle CompressMessage(MessageHandle message,
 ArenaPromise<ServerMetadataHandle> MessageCompressFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   // Find the compression algorithm.
-  const auto algorithm = call_args.client_initial_metadata
-                             ->Take(grpc_core::GrpcInternalEncodingRequest())
-                             .value_or(default_compression_algorithm_);
+  const auto algorithm =
+      call_args.client_initial_metadata->Take(GrpcInternalEncodingRequest())
+          .value_or(default_compression_algorithm_);
   // Convey supported compression algorithms.
-  call_args.client_initial_metadata->Set(
-      grpc_core::GrpcAcceptEncodingMetadata(), enabled_compression_algorithms_);
+  call_args.client_initial_metadata->Set(GrpcAcceptEncodingMetadata(),
+                                         enabled_compression_algorithms_);
   switch (algorithm) {
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       abort();
@@ -134,8 +134,7 @@ ArenaPromise<ServerMetadataHandle> MessageCompressFilter::MakeCallPromise(
       // No compression, we just pass through.
       return next_promise_factory(std::move(call_args));
     default: {
-      call_args.client_initial_metadata->Set(grpc_core::GrpcEncodingMetadata(),
-                                             algorithm);
+      call_args.client_initial_metadata->Set(GrpcEncodingMetadata(), algorithm);
       auto* pipe = GetContext<Arena>()->New<Pipe<MessageHandle>>();
       auto* sender = &pipe->sender;
       auto* receiver =
