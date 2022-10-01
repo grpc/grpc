@@ -21,11 +21,47 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/compression.h>
+
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 
 namespace grpc_core {
-extern const grpc_channel_filter MessageDecompressFilter;
+
+class MessageDecompressFilter : public ChannelFilter {
+ protected:
+  explicit MessageDecompressFilter(const ChannelArgs& args);
+
+  auto DecompressLoop(grpc_compression_algorithm algorithm,
+                      PipeSender<MessageHandle>* decompressed,
+                      PipeReceiver<MessageHandle>* compressed) const;
+
+ private:
+  int max_recv_size_;
+  size_t message_size_service_config_parser_index_;
+};
+
+class ClientMessageDecompressFilter final : public MessageDecompressFilter {
+ public:
+  static absl::StatusOr<MessageDecompressFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+};
+
+class ServerMessageDecompressFilter final : public MessageDecompressFilter {
+ public:
+  static absl::StatusOr<MessageDecompressFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+};
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_DECOMPRESS_FILTER_H \
