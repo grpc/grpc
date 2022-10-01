@@ -4374,6 +4374,7 @@ grpc_cc_library(
         "config",
         "context",
         "debug_location",
+        "for_each",
         "gpr",
         "grpc_base",
         "grpc_message_size_filter",
@@ -4386,6 +4387,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "transport_fwd",
+        "try_seq",
     ],
 )
 
