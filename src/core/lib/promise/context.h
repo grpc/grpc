@@ -19,6 +19,8 @@
 
 #include <utility>
 
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 
 // To avoid accidentally creating context types, we require an explicit
@@ -68,7 +70,9 @@ class WithContext {
 // Retrieve the current value of a context.
 template <typename T>
 T* GetContext() {
-  return promise_detail::Context<T>::get();
+  auto* p = promise_detail::Context<T>::get();
+  GPR_ASSERT(p != nullptr);
+  return p;
 }
 
 // Given a promise and a context, return a promise that has that context set.
