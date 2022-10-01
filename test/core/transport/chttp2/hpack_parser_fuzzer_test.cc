@@ -26,7 +26,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -85,7 +84,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
       for (const auto& parse : frame.parse()) {
         grpc_slice buffer =
             grpc_slice_from_copied_buffer(parse.data(), parse.size());
-        GRPC_ERROR_UNREF(parser->Parse(buffer, i == msg.frames_size() - 1));
+        (void)parser->Parse(buffer, i == msg.frames_size() - 1);
         grpc_slice_unref(buffer);
         stop_buffering_ctr--;
         if (0 == stop_buffering_ctr) parser->StopBufferingFrame();
