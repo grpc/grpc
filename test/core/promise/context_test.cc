@@ -26,11 +26,17 @@ template <>
 struct ContextType<TestContext> {};
 
 TEST(Context, WithContext) {
-  EXPECT_EQ(GetContext<TestContext>(), nullptr);
+  EXPECT_FALSE(HasContext<TestContext>());
   TestContext test;
-  EXPECT_EQ(GetContext<TestContext>(), nullptr);
+  EXPECT_FALSE(HasContext<TestContext>());
   EXPECT_EQ(test.done, false);
-  WithContext([]() { GetContext<TestContext>()->done = true; }, &test)();
+  WithContext(
+      []() {
+        EXPECT_TRUE(HasContext<TestContext>());
+        GetContext<TestContext>()->done = true;
+      },
+      &test)();
+  EXPECT_FALSE(HasContext<TestContext>());
   EXPECT_EQ(test.done, true);
 }
 
