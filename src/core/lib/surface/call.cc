@@ -324,7 +324,7 @@ void Call::PropagateCancellationToChildren() {
         Call* next_child_call = child->child_->sibling_next;
         if (child->cancellation_is_inherited_) {
           child->InternalRef("propagate_cancel");
-          child->CancelWithError(GRPC_ERROR_CANCELLED);
+          child->CancelWithError(absl::CancelledError());
           child->InternalUnref("propagate_cancel");
         }
         child = next_child_call;
@@ -1331,14 +1331,14 @@ void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
   if (!is_notify_tag_closure) {
     GPR_ASSERT(grpc_cq_begin_op(cq, notify_tag));
     grpc_cq_end_op(
-        cq, notify_tag, GRPC_ERROR_NONE,
+        cq, notify_tag, absl::OkStatus(),
         [](void*, grpc_cq_completion* completion) { gpr_free(completion); },
         nullptr,
         static_cast<grpc_cq_completion*>(
             gpr_malloc(sizeof(grpc_cq_completion))));
   } else {
     Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
   }
 }
 }  // namespace
@@ -2195,7 +2195,7 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
   PromiseBasedCall* call = new (alloc.second) T(alloc.first, args);
   *out_call = call->c_ptr();
   GPR_DEBUG_ASSERT(Call::FromC(*out_call) == call);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 PromiseBasedCall::PromiseBasedCall(Arena* arena,
@@ -2319,7 +2319,7 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
   CompletionInfo::Pending& pending = completion_info_[i].pending;
   GPR_ASSERT(pending.pending_op_bits & PendingOpBit(reason));
   pending.pending_op_bits &= ~PendingOpBit(reason);
-  auto error = pending.success ? GRPC_ERROR_NONE : GRPC_ERROR_CANCELLED;
+  auto error = pending.success ? absl::OkStatus() : absl::CancelledError();
   if (pending.pending_op_bits == 0) {
     if (pending.is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
@@ -2486,7 +2486,6 @@ void ClientPromiseBasedCall::CancelWithError(grpc_error_handle error) {
   MutexLock lock(mu());
   ScopedContext context(this);
   Finish(ServerMetadataHandle(grpc_error_to_absl_status(error)));
-  GRPC_ERROR_UNREF(error);
 }
 
 grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,

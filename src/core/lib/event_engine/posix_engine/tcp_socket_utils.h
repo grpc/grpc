@@ -17,8 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <sys/socket.h>
-
 #include <functional>
 #include <string>
 #include <utility>
@@ -35,6 +33,10 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#include <sys/socket.h>
+#endif
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #ifndef SO_ZEROCOPY
