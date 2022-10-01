@@ -44,6 +44,8 @@ class MessageDecompressFilter : public ChannelFilter {
 
 class ClientMessageDecompressFilter final : public MessageDecompressFilter {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<MessageDecompressFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
@@ -54,6 +56,8 @@ class ClientMessageDecompressFilter final : public MessageDecompressFilter {
 
 class ServerMessageDecompressFilter final : public MessageDecompressFilter {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<MessageDecompressFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
