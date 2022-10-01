@@ -227,24 +227,24 @@ bool grpc_error_get_str(grpc_error_handle error,
 /// TODO(veblush): Remove these functions once migration is done
 /// PLEASE DON'T USE: begin
 inline grpc_error_handle grpc_error_set_int(grpc_error_handle src,
-                                     grpc_error_ints which,
-                                     intptr_t value) {
+                                            grpc_error_ints which,
+                                            intptr_t value) {
   return grpc_error_set_int(
       src, static_cast<grpc_core::StatusIntProperty>(which), value);
 }
 inline bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
-                        intptr_t* p) {
+                               intptr_t* p) {
   return grpc_error_get_int(
       error, static_cast<grpc_core::StatusIntProperty>(which), p);
 }
-inline grpc_error_handle grpc_error_set_str(
-    grpc_error_handle src, grpc_error_strs which,
-    absl::string_view str) {
+inline grpc_error_handle grpc_error_set_str(grpc_error_handle src,
+                                            grpc_error_strs which,
+                                            absl::string_view str) {
   return grpc_error_set_str(
       src, static_cast<grpc_core::StatusStrProperty>(which), str);
 }
 inline bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
-                        std::string* str) {
+                               std::string* str) {
   return grpc_error_get_str(
       error, static_cast<grpc_core::StatusStrProperty>(which), str);
 }
