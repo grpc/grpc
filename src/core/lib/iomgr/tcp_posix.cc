@@ -53,6 +53,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -861,7 +862,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
                  sizeof(remaining)) != 0) {
     gpr_log(GPR_ERROR, "%s",
             absl::StrCat("Cannot set SO_RCVLOWAT on fd=", tcp->fd,
-                         " err=", strerror(errno))
+                         " err=", grpc_core::StrError(errno).c_str())
                 .c_str());
     return;
   }

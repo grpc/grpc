@@ -96,7 +96,7 @@ struct call_data {
         grpc_server_security_context_destroy;
   }
 
-  ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_error); }
+  ~call_data() {}
 
   grpc_core::CallCombiner* call_combiner;
   grpc_call_stack* owning_call;

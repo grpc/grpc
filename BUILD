@@ -1123,6 +1123,7 @@ grpc_cc_library(
         "examine_stack",
         "gpr_atm",
         "no_destruct",
+        "strerror",
         "tchar",
         "useful",
     ],
@@ -2229,6 +2230,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "status_helper",
+        "strerror",
         "useful",
     ],
 )
@@ -2664,6 +2666,7 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_wakeup_fd_posix",
+        "strerror",
     ],
 )
 
@@ -2684,6 +2687,7 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_wakeup_fd_posix",
+        "strerror",
     ],
 )
 
@@ -2736,6 +2740,7 @@ grpc_cc_library(
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "strerror",
     ],
 )
 
@@ -2768,6 +2773,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "strerror",
         "time",
     ],
 )
@@ -2801,6 +2807,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "iomgr_port",
+        "strerror",
     ],
 )
 
@@ -2837,7 +2844,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",
-        "absl/memory",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -2912,6 +2918,7 @@ grpc_cc_library(
         "resource_quota",
         "socket_mutator",
         "status_helper",
+        "strerror",
         "useful",
     ],
 )
@@ -3524,6 +3531,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "status_helper",
+        "strerror",
         "thread_quota",
         "time",
         "transport_fwd",
@@ -6270,6 +6278,18 @@ grpc_cc_library(
         "uri_parser",
         "useful",
     ],
+)
+
+grpc_cc_library(
+    name = "strerror",
+    srcs = [
+        "src/core/lib/gprpp/strerror.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/strerror.h",
+    ],
+    external_deps = ["absl/strings:str_format"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(

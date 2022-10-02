@@ -214,6 +214,7 @@ libs:
   - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/strerror.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/tchar.h
   - src/core/lib/gprpp/thd.h
@@ -258,6 +259,7 @@ libs:
   - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/strerror.cc
   - src/core/lib/gprpp/tchar.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
@@ -8286,7 +8288,6 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   deps:
-  - absl/cleanup:cleanup
   - grpc_test_util
   platforms:
   - linux

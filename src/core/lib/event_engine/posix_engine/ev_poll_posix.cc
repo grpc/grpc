@@ -45,7 +45,6 @@
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -58,6 +57,7 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 
 static const intptr_t kClosureNotReady = 0;
@@ -715,7 +715,7 @@ Poller::WorkResult PollPoller::Work(
         // Abort fail here.
         gpr_log(GPR_ERROR,
                 "(event_engine) PollPoller:%p encountered poll error: %s", this,
-                strerror(errno));
+                grpc_core::StrError(errno).c_str());
         GPR_ASSERT(false);
       }
 

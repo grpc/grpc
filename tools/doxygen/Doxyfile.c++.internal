@@ -2062,6 +2062,8 @@ src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
 src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
+src/core/lib/gprpp/strerror.cc \
+src/core/lib/gprpp/strerror.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/table.h \
 src/core/lib/gprpp/tchar.cc \
