@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -70,7 +69,7 @@ class HistogramTest : public ::testing::TestWithParam<int> {};
 TEST_P(HistogramTest, CheckBucket) {
   const GlobalStats::Histogram kHistogram =
       static_cast<GlobalStats::Histogram>(GetParam());
-  auto some_stats = absl::make_unique<GlobalStats>();
+  auto some_stats = std::make_unique<GlobalStats>();
   auto view = some_stats->histogram(kHistogram);
   const int max_bucket_boundary = view.bucket_boundaries[view.num_buckets];
   for (int i = -1000; i < max_bucket_boundary + 1000; i++) {
