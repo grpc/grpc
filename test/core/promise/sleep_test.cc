@@ -73,9 +73,6 @@ TEST(Sleep, OverlyEagerEventEngine) {
   // Schedule a sleep for a very long time.
   Timestamp done_time = Timestamp::Now() + Duration::Seconds(1e6);
   EventEngine::Closure* wakeup = nullptr;
-  // Sleep for one second then trigger the wakeup.
-  // It won't have passed the scheduled time yet, but sleep should believe the
-  // event engine.
   EXPECT_CALL(mock_event_engine, RunAfter(_, Matcher<EventEngine::Closure*>(_)))
       .WillOnce(
           DoAll(SaveArg<1>(&wakeup), Return(EventEngine::TaskHandle{42, 123})));
@@ -89,6 +86,7 @@ TEST(Sleep, OverlyEagerEventEngine) {
   Mock::VerifyAndClearExpectations(&mock_event_engine);
   EXPECT_NE(wakeup, nullptr);
   EXPECT_FALSE(done);
+  // Schedule the wakeup instantaneously - It won't have passed the scheduled time yet, but sleep should believe the event engine.
   wakeup->Run();
   EXPECT_TRUE(done);
 }
