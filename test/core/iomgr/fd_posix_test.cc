@@ -42,6 +42,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -161,7 +162,8 @@ static void session_read_cb(void* arg, /*session */
          before notify_on_read is called.  */
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
-      gpr_log(GPR_ERROR, "Unhandled read error %s", strerror(errno));
+      gpr_log(GPR_ERROR, "Unhandled read error %s",
+              grpc_core::StrError(errno).c_str());
       abort();
     }
   }
@@ -327,7 +329,7 @@ static void client_session_write(void* arg, /*client */
     }
     gpr_mu_unlock(g_mu);
   } else {
-    gpr_log(GPR_ERROR, "unknown errno %s", strerror(errno));
+    gpr_log(GPR_ERROR, "unknown errno %s", grpc_core::StrError(errno).c_str());
     abort();
   }
 }

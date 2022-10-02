@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/bin/bash
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@build_bazel_rules_android//android:rules.bzl", "android_library")
+set -e
+cd $(dirname $0)/../..
+tools/codegen/core/gen_experiments.py
+# clang format
+TEST='' \
+    CHANGED_FILES="$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')" \
+    tools/distrib/clang_format_code.sh
 
-licenses(["notice"])
-
-android_library(
-    name = "connection_helper",
-    srcs = [
-        "GrpcBinderConnection.java",
-        "GrpcCppServerBuilder.java",
-        "NativeConnectionHelper.java",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        # copybara: Add proguard dependency here
-    ],
-)
+if [[ $# == 1 && $1 == '--check' ]]; then
+    CHANGES="$(git diff)"
+    if [[ $CHANGES ]]; then
+        echo >&2 "ERROR: Experiment code needs to be generated. Please run tools/distrib/gen_experiments_and_format.sh"
+        echo >&2 -e "Changes:\n$CHANGES"
+        exit 1
+    fi
+fi

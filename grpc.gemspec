@@ -1081,6 +1081,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/stat_windows.cc )
   s.files += %w( src/core/lib/gprpp/status_helper.cc )
   s.files += %w( src/core/lib/gprpp/status_helper.h )
+  s.files += %w( src/core/lib/gprpp/strerror.cc )
+  s.files += %w( src/core/lib/gprpp/strerror.h )
   s.files += %w( src/core/lib/gprpp/sync.h )
   s.files += %w( src/core/lib/gprpp/table.h )
   s.files += %w( src/core/lib/gprpp/tchar.cc )

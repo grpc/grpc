@@ -1063,6 +1063,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/strerror.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/strerror.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/tchar.cc" role="src" />

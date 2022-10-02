@@ -1126,6 +1126,7 @@ grpc_cc_library(
         "examine_stack",
         "gpr_atm",
         "no_destruct",
+        "strerror",
         "tchar",
         "useful",
     ],
@@ -2190,6 +2191,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "status_helper",
+        "strerror",
         "useful",
     ],
 )
@@ -2625,6 +2627,7 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_wakeup_fd_posix",
+        "strerror",
     ],
 )
 
@@ -2645,6 +2648,7 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_wakeup_fd_posix",
+        "strerror",
     ],
 )
 
@@ -2697,6 +2701,7 @@ grpc_cc_library(
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "strerror",
     ],
 )
 
@@ -2729,6 +2734,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
+        "strerror",
         "time",
     ],
 )
@@ -2761,6 +2767,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "iomgr_port",
+        "strerror",
     ],
 )
 
@@ -2781,6 +2788,46 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_endpoint",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "experiments",
+        "gpr",
+        "iomgr_port",
+        "load_file",
+        "memory_quota",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_internal_errqueue",
+        "posix_event_engine_tcp_socket_utils",
+        "posix_event_engine_traced_buffer_list",
+        "ref_counted",
+        "ref_counted_ptr",
+        "resource_quota",
+        "slice",
+        "time",
+        "useful",
     ],
 )
 
@@ -2831,6 +2878,7 @@ grpc_cc_library(
         "resource_quota",
         "socket_mutator",
         "status_helper",
+        "strerror",
         "useful",
     ],
 )
@@ -3490,6 +3538,7 @@ grpc_cc_library(
         "stats",
         "stats_data",
         "status_helper",
+        "strerror",
         "thread_quota",
         "time",
         "transport_fwd",
@@ -6249,6 +6298,18 @@ grpc_cc_library(
         "uri_parser",
         "useful",
     ],
+)
+
+grpc_cc_library(
+    name = "strerror",
+    srcs = [
+        "src/core/lib/gprpp/strerror.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/strerror.h",
+    ],
+    external_deps = ["absl/strings:str_format"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
