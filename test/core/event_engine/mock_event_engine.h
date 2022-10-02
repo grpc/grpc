@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MOCK_EVENT_ENGINE_H
-#define MOCK_EVENT_ENGINE_H
+#ifndef GRPC_TEST_EVENT_ENGINE_MOCK_EVENT_ENGINE_H
+#define GRPC_TEST_EVENT_ENGINE_MOCK_EVENT_ENGINE_H
 
 #include <chrono>
 #include <memory>
