@@ -186,7 +186,8 @@ void grpc_shutdown(void) {
             IsTimerManagerThread() &&
         (acec == nullptr ||
          (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
-             0)) {
+             0) &&
+        grpc_core::ExecCtx::Get() == nullptr) {
       // just run clean-up when this is called on non-executor thread.
       gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
       g_shutting_down = true;
