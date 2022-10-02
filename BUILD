@@ -3183,10 +3183,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/debug/stats_data.h",
     ],
-    external_deps = [
-        "absl/memory",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     deps = [
         "gpr_platform",
         "histogram_view",

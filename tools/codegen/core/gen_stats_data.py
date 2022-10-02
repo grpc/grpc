@@ -489,7 +489,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print(
         "std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {",
         file=C)
-    print("  auto result = absl::make_unique<GlobalStats>();", file=C)
+    print("  auto result = std::make_unique<GlobalStats>();", file=C)
     print("  for (const auto& data : data_) {", file=C)
     for ctr in inst_map['Counter']:
         print("    result->%s += data.%s.load(std::memory_order_relaxed);" %
@@ -504,7 +504,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print(
         "std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {",
         file=C)
-    print("  auto result = absl::make_unique<GlobalStats>();", file=C)
+    print("  auto result = std::make_unique<GlobalStats>();", file=C)
     for ctr in inst_map['Counter']:
         print("  result->%s = %s - other.%s;" % (ctr.name, ctr.name, ctr.name),
               file=C)

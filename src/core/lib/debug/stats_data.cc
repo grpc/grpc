@@ -24,8 +24,6 @@
 
 #include <stdint.h>
 
-#include "absl/memory/memory.h"
-
 namespace grpc_core {
 namespace {
 union DblUint {
@@ -259,7 +257,7 @@ HistogramView GlobalStats::histogram(Histogram which) const {
   }
 }
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
-  auto result = absl::make_unique<GlobalStats>();
+  auto result = std::make_unique<GlobalStats>();
   for (const auto& data : data_) {
     result->client_calls_created +=
         data.client_calls_created.load(std::memory_order_relaxed);
@@ -304,7 +302,7 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
   return result;
 }
 std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
-  auto result = absl::make_unique<GlobalStats>();
+  auto result = std::make_unique<GlobalStats>();
   result->client_calls_created =
       client_calls_created - other.client_calls_created;
   result->server_calls_created =
