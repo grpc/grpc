@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,28 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/gprpp/strerror.h"
 
-#include <chrono>
+#include <string.h>
+
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 
-uint32_t g_hash_seed = []() {
-  auto now = std::chrono::system_clock::now();
-  auto now_since_epoch = now.time_since_epoch();
-  auto now_ns =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(now_since_epoch);
-  return static_cast<uint32_t>(now_ns.count());
-}();
+#ifdef GPR_WINDOWS
+std::string StrError(int err) { return strerror(err); }
+#else
+std::string StrError(int err) {
+  struct Finish {
+    static std::string Run(char* buf, int err, int r) {
+      if (r == 0) return buf;
+      return absl::StrFormat("strerror_r(%d) failed: %d", err, r);
+    }
+    static std::string Run(char*, int, const char* r) { return r; }
+  };
+  char buf[256];
+  return Finish::Run(buf, err, strerror_r(err, buf, sizeof(buf)));
+}
+#endif  // !GPR_WINDOWS
 
 }  // namespace grpc_core
-
-void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
-  grpc_core::g_hash_seed = seed;
-}

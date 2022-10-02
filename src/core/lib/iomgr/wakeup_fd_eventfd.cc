@@ -28,6 +28,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 static grpc_error_handle eventfd_create(grpc_wakeup_fd* fd_info) {

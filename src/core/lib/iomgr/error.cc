@@ -35,6 +35,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
@@ -67,27 +68,9 @@ std::string grpc_error_std_string(absl::Status error) {
   return grpc_core::StatusToString(error);
 }
 
-namespace {
-#ifdef GPR_WINDOWS
-std::string StrError(int err) { return strerror(err); }
-#else
-std::string StrError(int err) {
-  struct Finish {
-    static std::string Run(char* buf, int err, int r) {
-      if (r == 0) return buf;
-      return absl::StrFormat("strerror_r(%d) failed: %d", err, r);
-    }
-    static std::string Run(char*, int, const char* r) { return r; }
-  };
-  char buf[256];
-  return Finish::Run(buf, err, strerror_r(err, buf, sizeof(buf)));
-}
-#endif  // !GPR_WINDOWS
-}  // namespace
-
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
-  auto err_string = StrError(err);
+  auto err_string = grpc_core::StrError(err);
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnknown, err_string, location, {});
   grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
@@ -109,6 +92,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
                GRPC_STATUS_UNAVAILABLE);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
+  gpr_free(utf8_message);
   return s;
 }
 #endif
