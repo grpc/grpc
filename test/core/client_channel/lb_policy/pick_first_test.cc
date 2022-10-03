@@ -65,19 +65,7 @@ TEST_F(PickFirstTest, Basic) {
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Picker should return the same subchannel repeatedly.
   for (size_t i = 0; i < 3; ++i) {
-    ExecCtx exec_ctx;
-    FakeMetadata metadata({});
-    FakeCallState call_state;
-    auto pick_result =
-        picker->Pick({"/service/method", &metadata, &call_state});
-    auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
-        &pick_result.result);
-    ASSERT_NE(complete, nullptr);
-    auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
-        complete->subchannel.get());
-    auto address_uri = grpc_sockaddr_to_uri(&subchannel->address());
-    ASSERT_TRUE(address_uri.ok()) << address_uri.status();
-    EXPECT_EQ(*address_uri, kAddressUri);
+    ExpectPickComplete(picker.get(), kAddressUri);
   }
 }
 

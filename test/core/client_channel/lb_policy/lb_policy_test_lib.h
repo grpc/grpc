@@ -349,6 +349,27 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         << location.file() << ":" << location.line();
   }
 
+  // Requests a pick on picker and expects a Complete result whose
+  // subchannel has the specified address.
+  void ExpectPickComplete(LoadBalancingPolicy::SubchannelPicker* picker,
+                          absl::string_view address_uri,
+                          SourceLocation location = SourceLocation()) {
+    ExecCtx exec_ctx;
+    FakeMetadata metadata({});
+    FakeCallState call_state;
+    auto pick_result =
+        picker->Pick({"/service/method", &metadata, &call_state});
+    auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
+        &pick_result.result);
+    ASSERT_NE(complete, nullptr) << location.file() << ":" << location.line();
+    auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
+        complete->subchannel.get());
+    auto uri = grpc_sockaddr_to_uri(&subchannel->address());
+    ASSERT_TRUE(uri.ok()) << uri.status() << " at " << location.file() << ":"
+                          << location.line();
+    EXPECT_EQ(*uri, address_uri) << location.file() << ":" << location.line();
+  }
+
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
