@@ -232,6 +232,9 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
     handshake_mgr->Add(
         MakeRefCounted<TCPConnectHandshaker>(interested_parties));
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kTCPConnectHandshakers;
+  }
   ~TCPConnectHandshakerFactory() override = default;
 };
 
@@ -239,8 +242,7 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
 
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
-      std::make_unique<TCPConnectHandshakerFactory>());
+      HANDSHAKER_CLIENT, std::make_unique<TCPConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

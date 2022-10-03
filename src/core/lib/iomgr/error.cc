@@ -92,6 +92,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
                GRPC_STATUS_UNAVAILABLE);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
+  gpr_free(utf8_message);
   return s;
 }
 #endif

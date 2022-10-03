@@ -41,10 +41,9 @@ class HandshakerRegistry {
   class Builder {
    public:
     /// Registers a new handshaker factory.  Takes ownership.
-    /// If \a at_start is true, the new handshaker will be at the beginning of
-    /// the list.  Otherwise, it will be added to the end.
-    void RegisterHandshakerFactory(bool at_start,
-                                   HandshakerType handshaker_type,
+    /// The priority of the handshaker will be used to order the handshakers
+    /// in the list.
+    void RegisterHandshakerFactory(HandshakerType handshaker_type,
                                    std::unique_ptr<HandshakerFactory> factory);
 
     HandshakerRegistry Build();
