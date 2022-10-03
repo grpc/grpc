@@ -36,15 +36,11 @@ TEST_F(PickFirstTest, Basic) {
   constexpr absl::string_view kAddressUri = "ipv4:127.0.0.1:443";
   const grpc_resolved_address address = MakeAddress(kAddressUri);
   // Send an update containing one address.
-  work_serializer_->Run(
-      [&]() {
-        LoadBalancingPolicy::UpdateArgs update_args;
-        update_args.addresses.emplace();
-        update_args.addresses->emplace_back(address, ChannelArgs());
-        auto update_status = lb_policy_->UpdateLocked(std::move(update_args));
-        EXPECT_TRUE(update_status.ok()) << update_status;
-      },
-      DEBUG_LOCATION);
+  LoadBalancingPolicy::UpdateArgs update_args;
+  update_args.addresses.emplace();
+  update_args.addresses->emplace_back(address, ChannelArgs());
+  absl::Status status = ApplyUpdate(std::move(update_args), lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
   // LB policy should have reported CONNECTING state.
   auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
   ExpectPickQueued(picker.get());
@@ -57,23 +53,15 @@ TEST_F(PickFirstTest, Basic) {
   auto& subchannel_state = it->second;
   // LB policy should have requested a connection on this subchannel.
   EXPECT_TRUE(subchannel_state.ConnectionRequested());
+  ExpectPickQueued(picker.get());
   // Tell subchannel to report CONNECTING.
-  work_serializer_->Run(
-      [&]() {
-        subchannel_state.SetConnectivityState(GRPC_CHANNEL_CONNECTING,
-                                              absl::OkStatus());
-      },
-      DEBUG_LOCATION);
+  subchannel_state.SetConnectivityState(GRPC_CHANNEL_CONNECTING,
+                                        absl::OkStatus());
   // LB policy should again report CONNECTING.
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
   ExpectPickQueued(picker.get());
   // Tell subchannel to report READY.
-  work_serializer_->Run(
-      [&]() {
-        subchannel_state.SetConnectivityState(GRPC_CHANNEL_READY,
-                                              absl::OkStatus());
-      },
-      DEBUG_LOCATION);
+  subchannel_state.SetConnectivityState(GRPC_CHANNEL_READY, absl::OkStatus());
   // LB policy should report READY.
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Picker should return the same subchannel repeatedly.

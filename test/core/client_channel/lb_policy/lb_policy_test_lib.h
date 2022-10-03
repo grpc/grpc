@@ -29,6 +29,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
@@ -296,6 +297,22 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
     return address;
+  }
+
+  // Applies the update on the LB policy.
+  absl::Status ApplyUpdate(LoadBalancingPolicy::UpdateArgs update_args,
+                           LoadBalancingPolicy* lb_policy,
+                           SourceLocation location = SourceLocation()) {
+    absl::Status status;
+    absl::Notification notification;
+    work_serializer_->Run(
+        [&]() {
+          status = lb_policy->UpdateLocked(std::move(update_args));
+          notification.Notify();
+        },
+        DEBUG_LOCATION);
+    notification.WaitForNotification();
+    return status;
   }
 
   // Expects that the LB policy has reported the specified connectivity
