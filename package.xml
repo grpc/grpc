@@ -998,8 +998,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/log_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
@@ -1418,9 +1416,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount_base.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
