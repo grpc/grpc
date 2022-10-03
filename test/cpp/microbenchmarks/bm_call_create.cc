@@ -593,7 +593,9 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_core::ClientChannel::kFilterVtable, 0>
     ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
-typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+typedef Fixture<&grpc_core::MessageCompressFilter::kClientFilter,
+                CHECKS_NOT_LAST>
+    CompressFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
@@ -613,7 +615,9 @@ typedef Fixture<&grpc_core::HttpServerFilter::kFilter, CHECKS_NOT_LAST>
     HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
+typedef Fixture<&grpc_core::MessageCompressFilter::kServerFilter,
+                CHECKS_NOT_LAST>
+    MessageSizeFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
 // This cmake target is disabled for now because it depends on OpenCensus, which

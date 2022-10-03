@@ -58,6 +58,11 @@ const grpc_channel_filter MessageCompressFilter::kServerFilter =
     MakePromiseBasedFilter<MessageCompressFilter, FilterEndpoint::kServer>(
         "message_compress");
 
+absl::StatusOr<MessageCompressFilter> MessageCompressFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
+  return MessageCompressFilter(args);
+}
+
 MessageCompressFilter::MessageCompressFilter(const ChannelArgs& args)
     : default_compression_algorithm_(
           DefaultCompressionAlgorithmFromChannelArgs(args).value_or(

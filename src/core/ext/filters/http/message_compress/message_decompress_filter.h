@@ -46,24 +46,30 @@ class ClientMessageDecompressFilter final : public MessageDecompressFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<MessageDecompressFilter> Create(
+  static absl::StatusOr<ClientMessageDecompressFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  using MessageDecompressFilter::MessageDecompressFilter;
 };
 
 class ServerMessageDecompressFilter final : public MessageDecompressFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<MessageDecompressFilter> Create(
+  static absl::StatusOr<ServerMessageDecompressFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  using MessageDecompressFilter::MessageDecompressFilter;
 };
 
 }  // namespace grpc_core

@@ -52,6 +52,25 @@
 
 namespace grpc_core {
 
+const grpc_channel_filter ClientMessageDecompressFilter::kFilter =
+    MakePromiseBasedFilter<ClientMessageDecompressFilter,
+                           FilterEndpoint::kClient>("message_decompress");
+const grpc_channel_filter ServerMessageDecompressFilter::kFilter =
+    MakePromiseBasedFilter<ServerMessageDecompressFilter,
+                           FilterEndpoint::kServer>("message_decompress");
+
+absl::StatusOr<ClientMessageDecompressFilter>
+ClientMessageDecompressFilter::Create(const ChannelArgs& args,
+                                      ChannelFilter::Args) {
+  return ClientMessageDecompressFilter(args);
+}
+
+absl::StatusOr<ServerMessageDecompressFilter>
+ServerMessageDecompressFilter::Create(const ChannelArgs& args,
+                                      ChannelFilter::Args) {
+  return ServerMessageDecompressFilter(args);
+}
+
 MessageDecompressFilter::MessageDecompressFilter(const ChannelArgs& args)
     : max_recv_size_(GetMaxRecvSizeFromChannelArgs(args)),
       message_size_service_config_parser_index_(
