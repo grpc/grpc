@@ -236,6 +236,7 @@ class TransportFlowControl final {
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
   uint32_t acked_init_window() const { return acked_init_window_; }
+  uint32_t sent_init_window() const { return target_initial_window_size_; }
 
   void SetAckedInitialWindow(uint32_t value) { acked_init_window_ = value; }
 
