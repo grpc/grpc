@@ -52,7 +52,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/transport.h"

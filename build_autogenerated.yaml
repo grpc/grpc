@@ -753,7 +753,6 @@ libs:
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -952,7 +951,6 @@ libs:
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
@@ -1470,7 +1468,6 @@ libs:
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -1639,7 +1636,6 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -1959,7 +1955,6 @@ libs:
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -2125,7 +2120,6 @@ libs:
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
@@ -2317,7 +2311,6 @@ libs:
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -2446,7 +2439,6 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -4814,7 +4806,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -4855,7 +4846,6 @@ targets:
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -4864,7 +4854,6 @@ targets:
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -4881,12 +4870,12 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/functional:any_invocable
   - absl/functional:function_ref
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -5815,7 +5804,6 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -5843,13 +5831,11 @@ targets:
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -5860,11 +5846,11 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -6099,7 +6085,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -6138,7 +6123,6 @@ targets:
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
@@ -6152,7 +6136,6 @@ targets:
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -6168,7 +6151,6 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/pid_controller.cc
@@ -6176,6 +6158,7 @@ targets:
   deps:
   - absl/functional:any_invocable
   - absl/functional:function_ref
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -6192,7 +6175,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -6239,7 +6221,6 @@ targets:
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -6249,7 +6230,6 @@ targets:
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -6266,7 +6246,6 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   deps:
@@ -7829,16 +7808,6 @@ targets:
   - posix
   - mac
   uses_polling: false
-- name: murmur_hash_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gpr/murmur_hash_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: no_destruct_test
   gtest: true
   build: test
@@ -8071,7 +8040,6 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
@@ -8089,13 +8057,11 @@ targets:
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -8106,12 +8072,12 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - absl/functional:any_invocable
   - absl/functional:function_ref
+  - absl/hash:hash
   - absl/status:statusor
   - gpr
   - upb
@@ -8160,7 +8126,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -8205,7 +8170,6 @@ targets:
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -8215,7 +8179,6 @@ targets:
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -8232,12 +8195,12 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
   - absl/functional:any_invocable
   - absl/functional:function_ref
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -9286,19 +9249,16 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: smoke_test
@@ -9885,21 +9845,17 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:

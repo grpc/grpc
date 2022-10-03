@@ -185,7 +185,7 @@ struct call_data {
     }
   }
 
-  ~call_data() { GRPC_ERROR_UNREF(error); }
+  ~call_data() {}
 
   grpc_core::CallCombiner* call_combiner;
   grpc_core::MessageSizeParsedConfig::message_size_limits limits;
