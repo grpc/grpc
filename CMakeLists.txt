@@ -1573,6 +1573,7 @@ add_library(gpr
   src/core/lib/gprpp/mpscq.cc
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
+  src/core/lib/gprpp/strerror.cc
   src/core/lib/gprpp/tchar.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
@@ -14618,7 +14619,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_endpoint_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::cleanup
     grpc_test_util
   )
 

@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_event_engine {
@@ -72,7 +73,7 @@ absl::Status PollFds(struct pollfd* pfds, int nfds, absl::Duration timeout) {
     }
   }
   if (rv < 0) {
-    return absl::UnknownError(std::strerror(errno));
+    return absl::UnknownError(grpc_core::StrError(errno));
   }
   if (rv == 0) {
     return absl::CancelledError("Deadline exceeded");
@@ -262,10 +263,11 @@ void PosixOracleEndpoint::ProcessReadOperations() {
     int saved_errno;
     std::string read_data =
         ReadBytes(socket_fd_, saved_errno, read_op.GetNumBytesToRead());
-    read_op(read_data, read_data.empty() ? absl::CancelledError(absl::StrCat(
-                                               "Read failed with error = ",
-                                               std::strerror(saved_errno)))
-                                         : absl::OkStatus());
+    read_op(read_data, read_data.empty()
+                           ? absl::CancelledError(
+                                 absl::StrCat("Read failed with error = ",
+                                              grpc_core::StrError(saved_errno)))
+                           : absl::OkStatus());
   }
   gpr_log(GPR_INFO, "Shutting down read ops thread ...");
 }
@@ -282,10 +284,10 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
     }
     int saved_errno;
     int ret = WriteBytes(socket_fd_, saved_errno, write_op.GetBytesToWrite());
-    write_op(
-        ret < 0 ? absl::CancelledError(absl::StrCat(
-                      "Write failed with error = ", std::strerror(saved_errno)))
-                : absl::OkStatus());
+    write_op(ret < 0 ? absl::CancelledError(
+                           absl::StrCat("Write failed with error = ",
+                                        grpc_core::StrError(saved_errno)))
+                     : absl::OkStatus());
   }
   gpr_log(GPR_INFO, "Shutting down write ops thread ...");
 }
@@ -298,7 +300,8 @@ PosixOracleListener::PosixOracleListener(
       on_shutdown_(std::move(on_shutdown)),
       memory_allocator_factory_(std::move(memory_allocator_factory)) {
   if (pipe(pipefd_) == -1) {
-    gpr_log(GPR_ERROR, "Error creating pipe: %s", std::strerror(errno));
+    gpr_log(GPR_ERROR, "Error creating pipe: %s",
+            grpc_core::StrError(errno).c_str());
     abort();
   }
 }
@@ -368,7 +371,7 @@ void PosixOracleListener::HandleIncomingConnections() {
         gpr_log(GPR_ERROR,
                 "Error accepting new connection: %s. Ignoring connection "
                 "attempt ...",
-                std::strerror(errno));
+                grpc_core::StrError(errno).c_str());
         continue;
       }
       on_accept_(PosixOracleEndpoint::Create(client_sock_fd),
@@ -395,29 +398,29 @@ absl::StatusOr<int> PosixOracleListener::Bind(
   // Creating a new socket file descriptor.
   if ((new_socket = socket(AF_INET6, SOCK_STREAM, 0)) <= 0) {
     return absl::UnknownError(
-        absl::StrCat("Error creating socket: ", std::strerror(errno)));
+        absl::StrCat("Error creating socket: ", grpc_core::StrError(errno)));
   }
   // MacOS biulds fail if SO_REUSEADDR and SO_REUSEPORT are set in the same
   // setsockopt syscall. So they are set separately one after the other.
   if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-    return absl::UnknownError(
-        absl::StrCat("Error setsockopt(SO_REUSEADDR): ", std::strerror(errno)));
+    return absl::UnknownError(absl::StrCat("Error setsockopt(SO_REUSEADDR): ",
+                                           grpc_core::StrError(errno)));
   }
   if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
-    return absl::UnknownError(
-        absl::StrCat("Error setsockopt(SO_REUSEPORT): ", std::strerror(errno)));
+    return absl::UnknownError(absl::StrCat("Error setsockopt(SO_REUSEPORT): ",
+                                           grpc_core::StrError(errno)));
   }
 
   // Forcefully bind the new socket.
   if (bind(new_socket, reinterpret_cast<const struct sockaddr*>(addr.address()),
            address.len) < 0) {
     return absl::UnknownError(
-        absl::StrCat("Error bind: ", std::strerror(errno)));
+        absl::StrCat("Error bind: ", grpc_core::StrError(errno)));
   }
   // Set the new socket to listen for one active connection at a time.
   if (listen(new_socket, 1) < 0) {
     return absl::UnknownError(
-        absl::StrCat("Error listen: ", std::strerror(errno)));
+        absl::StrCat("Error listen: ", grpc_core::StrError(errno)));
   }
   listener_fds_.push_back(new_socket);
   return 0;
@@ -440,8 +443,9 @@ EventEngine::ConnectionHandle PosixOracleEventEngine::Connect(
     return {};
   }
   if ((client_sock_fd = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
-    on_connect(absl::CancelledError(absl::StrCat(
-        "Connect failed: socket creation error: ", std::strerror(errno))));
+    on_connect(absl::CancelledError(
+        absl::StrCat("Connect failed: socket creation error: ",
+                     grpc_core::StrError(errno).c_str())));
     return {};
   }
   int err;
