@@ -43,6 +43,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/call_push_pull.h"
 #include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -142,8 +143,15 @@ ArenaPromise<ServerMetadataHandle> MessageCompressFilter::MakeCallPromise(
       return CallPushPull(next_promise_factory(std::move(call_args)),
                           ForEach(std::move(*receiver),
                                   [sender, algorithm](MessageHandle message) {
-                                    return sender->Push(CompressMessage(
-                                        std::move(message), algorithm));
+                                    return Seq(
+                                        sender->Push(CompressMessage(
+                                            std::move(message), algorithm)),
+                                        [](bool successful_push) {
+                                          if (successful_push) {
+                                            return absl::OkStatus();
+                                          }
+                                          return absl::CancelledError();
+                                        });
                                   }),
                           []() { return absl::OkStatus(); });
     }

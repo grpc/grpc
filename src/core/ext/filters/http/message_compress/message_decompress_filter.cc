@@ -43,6 +43,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/call_push_pull.h"
 #include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -71,7 +72,6 @@ absl::StatusOr<MessageHandle> DecompressMessage(
   SliceBuffer decompressed_slices;
   if (grpc_msg_decompress(algorithm, message->payload()->c_slice_buffer(),
                           decompressed_slices.c_slice_buffer()) == 0) {
-    GPR_DEBUG_ASSERT(calld->error_.ok());
     return absl::InternalError(
         absl::StrCat("Unexpected error decompressing data for algorithm ",
                      CompressionAlgorithmAsString(algorithm)));
@@ -106,6 +106,12 @@ auto MessageDecompressFilter::DecompressLoop(
                        },
                        [decompressed](MessageHandle message) {
                          return decompressed->Push(std::move(message));
+                       },
+                       [](bool successful_push) {
+                         if (successful_push) {
+                           return absl::OkStatus();
+                         }
+                         return absl::CancelledError();
                        });
                  });
 }
@@ -121,10 +127,9 @@ ClientMessageDecompressFilter::MakeCallPromise(
       next_promise_factory(std::move(call_args)),
       [] { return absl::OkStatus(); },
       Seq(server_initial_metadata->Wait(),
-          [this, receiver,
-           sender](ServerMetadataHandle* server_initial_metadata)
+          [this, receiver, sender](ServerMetadata** server_initial_metadata)
               -> ArenaPromise<absl::Status> {
-            if (server_initial_metadata == nullptr) return absl::OkStatus();
+            if (server_initial_metadata == nullptr) return ImmediateOkStatus();
             const auto algorithm = (*server_initial_metadata)
                                        ->get(GrpcEncodingMetadata())
                                        .value_or(GRPC_COMPRESS_NONE);

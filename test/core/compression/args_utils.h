@@ -18,17 +18,14 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
-// TODO(ctiller): when we do the channel args migration, just delete this.
-const grpc_channel_args*
-grpc_channel_args_set_channel_default_compression_algorithm(
-    const grpc_channel_args* a, grpc_compression_algorithm algorithm);
+#include "src/core/lib/channel/channel_args.h"
 
-const grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
-    const grpc_channel_args** a, grpc_compression_algorithm algorithm,
-    int state);
+namespace grpc_core {
 
-const grpc_channel_args*
-grpc_channel_args_set_channel_default_compression_algorithm(
-    const grpc_channel_args* a, grpc_compression_algorithm algorithm);
+ChannelArgs SetCompressionAlgorithmState(const ChannelArgs& args,
+                                         grpc_compression_algorithm algorithm,
+                                         bool enabled);
+
+}  // namespace grpc_core
 
 #endif
