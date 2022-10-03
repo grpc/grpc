@@ -9240,6 +9240,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/mock_event_engine.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - test/core/promise/sleep_test.cc
