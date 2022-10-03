@@ -26,7 +26,8 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_core {
 
@@ -34,6 +35,13 @@ namespace {
 
 std::atomic<int64_t> g_process_epoch_seconds;
 std::atomic<gpr_cycle_counter> g_process_epoch_cycles;
+
+class GprNowTimeSource final : public Timestamp::Source {
+ public:
+  Timestamp Now() override {
+    return Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
+  }
+};
 
 GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
   gpr_cycle_counter cycles_start = 0;
@@ -132,6 +140,17 @@ int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
 }
 
 }  // namespace
+
+thread_local Timestamp::Source* Timestamp::thread_local_time_source_{
+    NoDestructSingleton<GprNowTimeSource>::Get()};
+
+Timestamp ScopedTimeCache::Now() {
+  if (!cached_time_.has_value()) {
+    previous()->InvalidateCache();
+    cached_time_ = previous()->Now();
+  }
+  return cached_time_.value();
+}
 
 Timestamp Timestamp::FromTimespecRoundUp(gpr_timespec ts) {
   return FromMillisecondsAfterProcessEpoch(TimespanToMillisRoundUp(gpr_time_sub(

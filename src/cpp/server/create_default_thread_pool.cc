@@ -16,8 +16,6 @@
  *
  */
 
-#include <grpc/support/cpu.h>
-
 #include "src/cpp/server/dynamic_thread_pool.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -27,9 +25,7 @@ namespace grpc {
 namespace {
 
 ThreadPoolInterface* CreateDefaultThreadPoolImpl() {
-  int cores = gpr_cpu_num_cores();
-  if (!cores) cores = 4;
-  return new DynamicThreadPool(cores);
+  return new DynamicThreadPool();
 }
 
 CreateThreadPoolFunc g_ctp_impl = CreateDefaultThreadPoolImpl;

@@ -24,7 +24,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -147,7 +146,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
 void RegisterFileWatcherCertificateProvider(
     CoreConfiguration::Builder* builder) {
   builder->certificate_provider_registry()->RegisterCertificateProviderFactory(
-      absl::make_unique<FileWatcherCertificateProviderFactory>());
+      std::make_unique<FileWatcherCertificateProviderFactory>());
 }
 
 }  // namespace grpc_core

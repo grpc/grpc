@@ -28,11 +28,11 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc {
@@ -51,12 +51,13 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
     grpc_slice contents;
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      return grpc_error_to_absl_status(grpc_error_set_int(
-          error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_FAILED_PRECONDITION));
+    if (!error.ok()) {
+      return grpc_error_to_absl_status(
+          grpc_error_set_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                             GRPC_STATUS_FAILED_PRECONDITION));
     }
     std::string contents_str(grpc_core::StringViewFromSlice(contents));
-    grpc_slice_unref_internal(contents);
+    grpc_slice_unref(contents);
     return std::move(contents_str);
   }
   // Next, try GRPC_OBSERVABILITY_CONFIG env var.
@@ -71,6 +72,27 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
       "not defined");
 }
 
+// Tries to get the GCP Project ID from environment variables, or returns an
+// empty string if not found.
+std::string GetProjectIdFromGcpEnvVar() {
+  // First check GCP_PROEJCT
+  absl::optional<std::string> project_id = grpc_core::GetEnv("GCP_PROJECT");
+  if (project_id.has_value() && !project_id->empty()) {
+    return project_id.value();
+  }
+  // Next, try GCLOUD_PROJECT
+  project_id = grpc_core::GetEnv("GCLOUD_PROJECT");
+  if (project_id.has_value() && !project_id->empty()) {
+    return project_id.value();
+  }
+  // Lastly, try GOOGLE_CLOUD_PROJECT
+  project_id = grpc_core::GetEnv("GOOGLE_CLOUD_PROJECT");
+  if (project_id.has_value() && !project_id->empty()) {
+    return project_id.value();
+  }
+  return "";
+}
+
 }  // namespace
 
 absl::StatusOr<GcpObservabilityConfig> GcpObservabilityConfig::ReadFromEnv() {
@@ -82,7 +104,20 @@ absl::StatusOr<GcpObservabilityConfig> GcpObservabilityConfig::ReadFromEnv() {
   if (!config_json.ok()) {
     return config_json.status();
   }
-  return grpc_core::LoadFromJson<GcpObservabilityConfig>(*config_json);
+  auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(*config_json);
+  if (!config.ok()) {
+    return config.status();
+  }
+  if (config->project_id.empty()) {
+    // Get project ID from GCP environment variables since project ID was not
+    // set it in the GCP observability config.
+    config->project_id = GetProjectIdFromGcpEnvVar();
+    if (config->project_id.empty()) {
+      // Could not find project ID from GCP environment variables either.
+      return absl::FailedPreconditionError("GCP Project ID not found.");
+    }
+  }
+  return config;
 }
 
 }  // namespace internal

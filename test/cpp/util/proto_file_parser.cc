@@ -74,7 +74,7 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
   std::vector<std::string> service_list;
   if (channel) {
     reflection_db_ =
-        absl::make_unique<grpc::ProtoReflectionDescriptorDatabase>(channel);
+        std::make_unique<grpc::ProtoReflectionDescriptorDatabase>(channel);
     reflection_db_->GetServices(&service_list);
   }
 
@@ -84,8 +84,8 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
              proto_path, GRPC_CLI_PATH_SEPARATOR, absl::AllowEmpty())) {
       source_tree_.MapPath("", std::string(single_path));
     }
-    error_printer_ = absl::make_unique<ErrorPrinter>(this);
-    importer_ = absl::make_unique<protobuf::compiler::Importer>(
+    error_printer_ = std::make_unique<ErrorPrinter>(this);
+    importer_ = std::make_unique<protobuf::compiler::Importer>(
         &source_tree_, error_printer_.get());
 
     std::string file_name;
@@ -103,7 +103,7 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
     }
 
     file_db_ =
-        absl::make_unique<protobuf::DescriptorPoolDatabase>(*importer_->pool());
+        std::make_unique<protobuf::DescriptorPoolDatabase>(*importer_->pool());
   }
 
   if (!reflection_db_ && !file_db_) {
@@ -116,11 +116,11 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
   } else if (!file_db_) {
     desc_db_ = std::move(reflection_db_);
   } else {
-    desc_db_ = absl::make_unique<protobuf::MergedDescriptorDatabase>(
+    desc_db_ = std::make_unique<protobuf::MergedDescriptorDatabase>(
         reflection_db_.get(), file_db_.get());
   }
 
-  desc_pool_ = absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
+  desc_pool_ = std::make_unique<protobuf::DescriptorPool>(desc_db_.get());
 
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     if (known_services.find(*it) == known_services.end()) {

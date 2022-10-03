@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -43,7 +44,6 @@
 #include <address_sorting/address_sorting.h>
 #include <ares.h>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -284,7 +284,7 @@ static grpc_core::Timestamp calculate_next_ares_backup_poll_alarm(
       "request:%p ev_driver=%p. next ares process poll time in "
       "%" PRId64 " ms",
       driver->request, driver, until_next_ares_backup_poll_alarm.millis());
-  return grpc_core::ExecCtx::Get()->Now() + until_next_ares_backup_poll_alarm;
+  return grpc_core::Timestamp::Now() + until_next_ares_backup_poll_alarm;
 }
 
 static void on_timeout(void* arg, grpc_error_handle error) {
@@ -295,7 +295,7 @@ static void on_timeout(void* arg, grpc_error_handle error) {
       "err=%s",
       driver->request, driver, driver->shutting_down,
       grpc_error_std_string(error).c_str());
-  if (!driver->shutting_down && GRPC_ERROR_IS_NONE(error)) {
+  if (!driver->shutting_down && error.ok()) {
     grpc_ares_ev_driver_shutdown_locked(driver);
   }
   grpc_ares_ev_driver_unref(driver);
@@ -321,7 +321,7 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
       "err=%s",
       driver->request, driver, driver->shutting_down,
       grpc_error_std_string(error).c_str());
-  if (!driver->shutting_down && GRPC_ERROR_IS_NONE(error)) {
+  if (!driver->shutting_down && error.ok()) {
     fd_node* fdn = driver->fds;
     while (fdn != nullptr) {
       if (!fdn->already_shutdown) {
@@ -363,12 +363,12 @@ static void on_readable(void* arg, grpc_error_handle error) {
   fdn->readable_registered = false;
   GRPC_CARES_TRACE_LOG("request:%p readable on %s", fdn->ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     do {
       ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
     } while (fdn->grpc_polled_fd->IsFdStillReadableLocked());
   } else {
-    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
+    // If error is not absl::OkStatus(), it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
     // by the following ares_cancel() and the on_done callbacks will be invoked
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
@@ -389,10 +389,10 @@ static void on_writable(void* arg, grpc_error_handle error) {
   fdn->writable_registered = false;
   GRPC_CARES_TRACE_LOG("request:%p writable on %s", ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD, as);
   } else {
-    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
+    // If error is not absl::OkStatus(), it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
     // by the following ares_cancel() and the on_done callbacks will be invoked
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
@@ -496,7 +496,7 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver)
   GRPC_CLOSURE_INIT(&ev_driver->on_timeout_locked, on_timeout, ev_driver,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&ev_driver->query_timeout,
-                  grpc_core::ExecCtx::Get()->Now() + timeout,
+                  grpc_core::Timestamp::Now() + timeout,
                   &ev_driver->on_timeout_locked);
   // Initialize the backup poll alarm
   grpc_core::Timestamp next_ares_backup_poll_alarm =
@@ -541,7 +541,7 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   (*ev_driver)
       ->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
   (*ev_driver)->query_timeout_ms = query_timeout_ms;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void log_address_sorting_list(const grpc_ares_request* r,
@@ -603,8 +603,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r)
   r->ev_driver = nullptr;
   if (r->addresses_out != nullptr && *r->addresses_out != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(r, r->addresses_out->get());
-    GRPC_ERROR_UNREF(r->error);
-    r->error = GRPC_ERROR_NONE;
+    r->error = absl::OkStatus();
     // TODO(apolcyn): allow c-ares to return a service config
     // with no addresses along side it
   }
@@ -659,7 +658,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     std::unique_ptr<ServerAddressList>* address_list_ptr =
         hr->is_balancer ? r->balancer_addresses_out : r->addresses_out;
     if (*address_list_ptr == nullptr) {
-      *address_list_ptr = absl::make_unique<ServerAddressList>();
+      *address_list_ptr = std::make_unique<ServerAddressList>();
     }
     ServerAddressList& addresses = **address_list_ptr;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
@@ -776,7 +775,7 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (status != ARES_SUCCESS) goto fail;
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
                        q->name().c_str());
@@ -858,7 +857,7 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
           "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Common logic for all lookup methods.
@@ -868,26 +867,26 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
     const char* default_port, grpc_pollset_set* interested_parties,
     int query_timeout_ms, std::string* host, std::string* port, bool check_port)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+        grpc_core::StatusStrProperty::kTargetAddress, name);
     return error;
   } else if (check_port && port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, name);
+          grpc_core::StatusStrProperty::kTargetAddress, name);
       return error;
     }
     *port = default_port;
   }
   error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
                                             query_timeout_ms, r);
-  if (!GRPC_ERROR_IS_NONE(error)) return error;
+  if (!error.ok()) return error;
   // If dns_server is specified, use it.
   error = set_request_dns_server(r, dns_server);
   return error;
@@ -921,7 +920,7 @@ static bool inner_resolve_as_ip_literal_locked(
       grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = absl::make_unique<ServerAddressList>();
+    *addrs = std::make_unique<ServerAddressList>();
     (*addrs)->emplace_back(addr.addr, addr.len, grpc_core::ChannelArgs());
     return true;
   }
@@ -979,7 +978,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
   }
   if (gpr_stricmp(host->c_str(), "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
-    *addrs = absl::make_unique<grpc_core::ServerAddressList>();
+    *addrs = std::make_unique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(port->c_str());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
@@ -1053,7 +1052,7 @@ static grpc_ares_request* grpc_dns_lookup_hostname_ares_impl(
   grpc_error_handle error = grpc_dns_lookup_ares_continued(
       r, dns_server, name, default_port, interested_parties, query_timeout_ms,
       &host, &port, true);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
@@ -1088,7 +1087,7 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
   r->balancer_addresses_out = balancer_addresses;
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_srv_ares_impl name=%s", r, name);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   // Don't query for SRV records if the target is "localhost"
   if (target_matches_localhost(name)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
@@ -1100,7 +1099,7 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
   error = grpc_dns_lookup_ares_continued(r, dns_server, name, nullptr,
                                          interested_parties, query_timeout_ms,
                                          &host, &port, false);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
@@ -1126,7 +1125,7 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
   r->service_config_json_out = service_config_json;
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_txt_ares_impl name=%s", r, name);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   // Don't query for TXT records if the target is "localhost"
   if (target_matches_localhost(name)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
@@ -1138,7 +1137,7 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
   error = grpc_dns_lookup_ares_continued(r, dns_server, name, nullptr,
                                          interested_parties, query_timeout_ms,
                                          &host, &port, false);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
@@ -1194,12 +1193,12 @@ grpc_error_handle grpc_ares_init(void) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_ares_cleanup(void) { ares_library_cleanup(); }
 #else
-grpc_error_handle grpc_ares_init(void) { return GRPC_ERROR_NONE; }
+grpc_error_handle grpc_ares_init(void) { return absl::OkStatus(); }
 void grpc_ares_cleanup(void) {}
 #endif  // GPR_WINDOWS
 

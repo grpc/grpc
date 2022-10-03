@@ -1013,14 +1013,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
-        # (how does one add the cronet dependency in bazel?)
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-cronettests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'CronetTests'}))
         # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
@@ -1079,6 +1071,9 @@ class ObjCLanguage(object):
 
 class Sanity(object):
 
+    def __init__(self, config_file):
+        self.config_file = config_file
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1086,7 +1081,7 @@ class Sanity(object):
 
     def test_specs(self):
         import yaml
-        with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
+        with open('tools/run_tests/sanity/%s' % self.config_file, 'r') as f:
             environ = {'TEST': 'true'}
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
@@ -1139,7 +1134,9 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
-    'sanity': Sanity()
+    'sanity': Sanity('sanity_tests.yaml'),
+    'clang-tidy': Sanity('clang_tidy_tests.yaml'),
+    'iwyu': Sanity('iwyu_tests.yaml'),
 }
 
 _MSBUILD_CONFIG = {

@@ -24,6 +24,8 @@
 
 #include <new>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -44,10 +46,10 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        cope with.
        Throw this over to the executor (on a core-owned thread) and process it
        there. */
-    grpc_core::Executor::Run(&refcount->destroy, GRPC_ERROR_NONE);
+    grpc_core::Executor::Run(&refcount->destroy, absl::OkStatus());
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
@@ -162,28 +164,51 @@ void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures) {
   if (batch->cancel_stream) {
-    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
   // Construct a list of closures to execute.
   if (batch->recv_initial_metadata) {
     closures->Add(
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
+        error, "failing recv_initial_metadata_ready");
   }
   if (batch->recv_message) {
-    closures->Add(batch->payload->recv_message.recv_message_ready,
-                  GRPC_ERROR_REF(error), "failing recv_message_ready");
+    closures->Add(batch->payload->recv_message.recv_message_ready, error,
+                  "failing recv_message_ready");
   }
   if (batch->recv_trailing_metadata) {
     closures->Add(
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        GRPC_ERROR_REF(error), "failing recv_trailing_metadata_ready");
+        error, "failing recv_trailing_metadata_ready");
   }
   if (batch->on_complete != nullptr) {
-    closures->Add(batch->on_complete, GRPC_ERROR_REF(error),
-                  "failing on_complete");
+    closures->Add(batch->on_complete, error, "failing on_complete");
   }
-  GRPC_ERROR_UNREF(error);
+}
+
+void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error) {
+  if (batch->cancel_stream) {
+  }
+  // Construct a list of closures to execute.
+  if (batch->recv_initial_metadata) {
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        error);
+  }
+  if (batch->recv_message) {
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, batch->payload->recv_message.recv_message_ready, error);
+  }
+  if (batch->recv_trailing_metadata) {
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+        error);
+  }
+  if (batch->on_complete != nullptr) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, batch->on_complete, error);
+  }
 }
 
 struct made_transport_op {
@@ -197,8 +222,7 @@ struct made_transport_op {
 
 static void destroy_made_transport_op(void* arg, grpc_error_handle error) {
   made_transport_op* op = static_cast<made_transport_op*>(arg);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->inner_on_complete,
-                          GRPC_ERROR_REF(error));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->inner_on_complete, error);
   delete op;
 }
 
@@ -223,7 +247,7 @@ static void destroy_made_transport_stream_op(void* arg,
   grpc_closure* c = op->inner_on_complete;
   delete op;
   if (c != nullptr) {
-    grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_REF(error));
+    grpc_core::Closure::Run(DEBUG_LOCATION, c, error);
   }
 }
 

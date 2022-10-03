@@ -100,7 +100,7 @@ class CrashTest : public ::testing::Test {
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
-    client_ = absl::make_unique<SubProcess>(
+    client_ = std::make_unique<SubProcess>(
         std::vector<std::string>({g_root + "/server_crash_test_client",
                                   "--address=" + addr, "--mode=" + mode}));
     GPR_ASSERT(client_);

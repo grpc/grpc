@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
@@ -103,7 +104,7 @@ class CallData {
                       ForwardSendMessageBatch, elem, grpc_schedule_on_exec_ctx);
   }
 
-  ~CallData() { GRPC_ERROR_UNREF(cancel_error_); }
+  ~CallData() {}
 
   void CompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
@@ -122,7 +123,7 @@ class CallData {
 
   grpc_core::CallCombiner* call_combiner_;
   grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error_;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
   grpc_closure forward_send_message_batch_in_call_combiner_;
@@ -211,8 +212,7 @@ void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
   CallData* calld = static_cast<CallData*>(calld_arg);
   if (calld->send_message_batch_ != nullptr) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch_, GRPC_ERROR_REF(error),
-        calld->call_combiner_);
+        calld->send_message_batch_, error, calld->call_combiner_);
     calld->send_message_batch_ = nullptr;
   }
 }
@@ -228,20 +228,19 @@ void CallData::CompressStartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   // Handle cancel_stream.
   if (batch->cancel_stream) {
-    GRPC_ERROR_UNREF(cancel_error_);
-    cancel_error_ = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
+    cancel_error_ = batch->payload->cancel_stream.cancel_error;
     if (send_message_batch_ != nullptr) {
       if (!seen_initial_metadata_) {
         GRPC_CALL_COMBINER_START(
             call_combiner_,
             GRPC_CLOSURE_CREATE(FailSendMessageBatchInCallCombiner, this,
                                 grpc_schedule_on_exec_ctx),
-            GRPC_ERROR_REF(cancel_error_), "failing send_message op");
+            cancel_error_, "failing send_message op");
       }
     }
-  } else if (!GRPC_ERROR_IS_NONE(cancel_error_)) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
+  } else if (!cancel_error_.ok()) {
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
+                                                       call_combiner_);
     return;
   }
   // Handle send_initial_metadata.
@@ -258,7 +257,8 @@ void CallData::CompressStartTransportStreamOpBatch(
     if (send_message_batch_ != nullptr) {
       GRPC_CALL_COMBINER_START(
           call_combiner_, &forward_send_message_batch_in_call_combiner_,
-          GRPC_ERROR_NONE, "starting send_message after send_initial_metadata");
+          absl::OkStatus(),
+          "starting send_message after send_initial_metadata");
     }
   }
   // Handle send_message.
@@ -290,7 +290,7 @@ void CompressStartTransportStreamOpBatch(
 grpc_error_handle CompressInitCallElem(grpc_call_element* elem,
                                        const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for call_data */
@@ -305,7 +305,7 @@ void CompressDestroyCallElem(grpc_call_element* elem,
 grpc_error_handle CompressInitChannelElem(grpc_channel_element* elem,
                                           grpc_channel_element_args* args) {
   new (elem->channel_data) ChannelData(args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for channel data */

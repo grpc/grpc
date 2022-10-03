@@ -33,10 +33,16 @@ import sys
 
 import yaml
 
+# TODO(ctiller): if we ever add another argument switch this to argparse
+check_dates = True
+if sys.argv[1:] == ["--check"]:
+    check_dates = False  # for formatting checks we don't verify expiry dates
+
 with open('src/core/lib/experiments/experiments.yaml') as f:
     attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
 
 DEFAULTS = {
+    'broken': 'false',
     False: 'false',
     True: 'true',
     'debug': 'kDefaultForDebugOnly',
@@ -44,6 +50,7 @@ DEFAULTS = {
 }
 
 BZL_LIST_FOR_DEFAULTS = {
+    'broken': None,
     False: 'off',
     True: 'on',
     'debug': 'dbg',
@@ -68,21 +75,23 @@ for attr in attrs:
         print("invalid default for experiment %s: %r" %
               (attr['name'], attr['default']))
         error = True
-    if 'expiry' not in attr:
-        print("no expiry for experiment %s" % attr['name'])
-        error = True
     if 'owner' not in attr:
         print("no owner for experiment %s" % attr['name'])
         error = True
+    if 'expiry' not in attr:
+        print("no expiry for experiment %s" % attr['name'])
+        error = True
     expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
-    if expiry < today:
-        print("experiment %s expired on %s" % (attr['name'], attr['expiry']))
-        error = True
-    if expiry > two_quarters_from_now:
-        print("experiment %s expires far in the future on %s" %
-              (attr['name'], attr['expiry']))
-        print("expiry should be no more than two quarters from now")
-        error = True
+    if check_dates:
+        if expiry < today:
+            print("experiment %s expired on %s" %
+                  (attr['name'], attr['expiry']))
+            error = True
+        if expiry > two_quarters_from_now:
+            print("experiment %s expires far in the future on %s" %
+                  (attr['name'], attr['expiry']))
+            print("expiry should be no more than two quarters from now")
+            error = True
 
 if error:
     sys.exit(1)
@@ -217,7 +226,8 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("}  // namespace grpc_core", file=C)
 
 bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
-                                  for key in BZL_LIST_FOR_DEFAULTS.keys())
+                                  for key in BZL_LIST_FOR_DEFAULTS.keys()
+                                  if key is not None)
 
 for attr in attrs:
     for tag in attr['test_tags']:
@@ -237,7 +247,8 @@ with open('bazel/experiments.bzl', 'w') as B:
 
     bzl_to_tags_to_experiments = sorted(
         (BZL_LIST_FOR_DEFAULTS[default], tags_to_experiments)
-        for default, tags_to_experiments in bzl_to_tags_to_experiments.items())
+        for default, tags_to_experiments in bzl_to_tags_to_experiments.items()
+        if BZL_LIST_FOR_DEFAULTS[default] is not None)
 
     print(file=B)
     print("EXPERIMENTS = {", file=B)

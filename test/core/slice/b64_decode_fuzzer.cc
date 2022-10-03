@@ -16,10 +16,11 @@
  *
  */
 
-#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/slice/b64.h"
 

@@ -16,11 +16,13 @@
  *
  */
 
-#include <gtest/gtest.h>
+#include <stddef.h>
 
-#include <grpc/grpc.h>
+#include "gtest/gtest.h"
+
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
+#include <grpc/support/alloc.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"

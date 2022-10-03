@@ -126,7 +126,6 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:env",
         "//:gpr",
         "//:gpr_atm",
         "//:grpc",
@@ -166,7 +165,6 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:env",
         "//:gpr",
         "//:gpr_atm",
         "//:grpc_security_base",
@@ -285,7 +283,6 @@ grpc_cc_library(
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -318,7 +315,6 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
-        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
     ],

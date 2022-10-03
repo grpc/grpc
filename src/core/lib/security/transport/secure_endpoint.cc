@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -54,8 +55,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/security/transport/tsi_error.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -82,7 +82,7 @@ struct secure_endpoint {
     grpc_slice_buffer_init(&leftover_bytes);
     for (size_t i = 0; i < leftover_nslices; i++) {
       grpc_slice_buffer_add(&leftover_bytes,
-                            grpc_slice_ref_internal(leftover_slices[i]));
+                            grpc_core::CSliceRef(leftover_slices[i]));
     }
     grpc_slice_buffer_init(&output_buffer);
     memory_owner =
@@ -110,12 +110,12 @@ struct secure_endpoint {
     grpc_endpoint_destroy(wrapped_ep);
     tsi_frame_protector_destroy(protector);
     tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
-    grpc_slice_buffer_destroy_internal(&source_buffer);
-    grpc_slice_buffer_destroy_internal(&leftover_bytes);
-    grpc_slice_unref_internal(read_staging_buffer);
-    grpc_slice_unref_internal(write_staging_buffer);
-    grpc_slice_buffer_destroy_internal(&output_buffer);
-    grpc_slice_buffer_destroy_internal(&protector_staging_buffer);
+    grpc_slice_buffer_destroy(&source_buffer);
+    grpc_slice_buffer_destroy(&leftover_bytes);
+    grpc_core::CSliceUnref(read_staging_buffer);
+    grpc_core::CSliceUnref(write_staging_buffer);
+    grpc_slice_buffer_destroy(&output_buffer);
+    grpc_slice_buffer_destroy(&protector_staging_buffer);
     gpr_mu_destroy(&protector_mu);
   }
 
@@ -216,8 +216,8 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
             ep->write_staging_buffer = grpc_empty_slice();
             ep->write_mu.Unlock();
 
-            grpc_slice_unref_internal(temp_read_slice);
-            grpc_slice_unref_internal(temp_write_slice);
+            grpc_core::CSliceUnref(temp_read_slice);
+            grpc_core::CSliceUnref(temp_write_slice);
             ep->has_posted_reclaimer.exchange(false, std::memory_order_relaxed);
           }
           SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
@@ -261,8 +261,8 @@ static void on_read(void* user_data, grpc_error_handle error) {
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      grpc_slice_buffer_reset_and_unref_internal(ep->read_buffer);
+    if (!error.ok()) {
+      grpc_slice_buffer_reset_and_unref(ep->read_buffer);
       call_read_cb(ep, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Secure read failed", &error, 1));
       return;
@@ -338,17 +338,17 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
   /* TODO(yangg) experiment with moving this block after read_cb to see if it
      helps latency */
-  grpc_slice_buffer_reset_and_unref_internal(&ep->source_buffer);
+  grpc_slice_buffer_reset_and_unref(&ep->source_buffer);
 
   if (result != TSI_OK) {
-    grpc_slice_buffer_reset_and_unref_internal(ep->read_buffer);
+    grpc_slice_buffer_reset_and_unref(ep->read_buffer);
     call_read_cb(
         ep, grpc_set_tsi_error_result(
                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unwrap failed"), result));
     return;
   }
 
-  call_read_cb(ep, GRPC_ERROR_NONE);
+  call_read_cb(ep, absl::OkStatus());
 }
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
@@ -357,13 +357,13 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
-  grpc_slice_buffer_reset_and_unref_internal(ep->read_buffer);
+  grpc_slice_buffer_reset_and_unref(ep->read_buffer);
 
   SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
     grpc_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
     GPR_ASSERT(ep->leftover_bytes.count == 0);
-    on_read(ep, GRPC_ERROR_NONE);
+    on_read(ep, absl::OkStatus());
     return;
   }
 
@@ -393,7 +393,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 
-    grpc_slice_buffer_reset_and_unref_internal(&ep->output_buffer);
+    grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
 
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
       for (i = 0; i < slices->count; i++) {
@@ -424,7 +424,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         result = tsi_zero_copy_grpc_protector_protect(
             ep->zero_copy_protector, slices, &ep->output_buffer);
       }
-      grpc_slice_buffer_reset_and_unref_internal(&ep->protector_staging_buffer);
+      grpc_slice_buffer_reset_and_unref(&ep->protector_staging_buffer);
     } else {
       // Use frame protector to protect.
       for (i = 0; i < slices->count; i++) {
@@ -483,7 +483,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
-    grpc_slice_buffer_reset_and_unref_internal(&ep->output_buffer);
+    grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
         grpc_set_tsi_error_result(

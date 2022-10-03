@@ -42,7 +42,7 @@ INSTALL_REQUIRES = (
     'grpcio-status>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7', 'protobuf>=4.21.3', 'six>=1.10',
+    'oauth2client>=1.4.7', 'protobuf>=4.21.6', 'six>=1.10',
     'google-auth>=1.17.2', 'requests>=2.14.2')
 
 if not PY3:
@@ -67,7 +67,9 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin.protos.invocation_testing': ['same.proto',],
+    'tests.protoc_plugin.protos.invocation_testing': [
+        'same.proto', 'compiler.proto'
+    ],
     'tests.protoc_plugin.protos.invocation_testing.split_messages': [
         'messages.proto',
     ],

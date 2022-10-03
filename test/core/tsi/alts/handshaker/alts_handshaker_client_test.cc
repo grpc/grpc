@@ -444,9 +444,9 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
     alts_handshaker_client_on_status_received_for_testing(
-        config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
   destroy_config(config);
 }
@@ -501,9 +501,9 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
     alts_handshaker_client_on_status_received_for_testing(
-        config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
   destroy_config(config);
 }

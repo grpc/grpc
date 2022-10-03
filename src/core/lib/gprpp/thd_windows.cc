@@ -30,7 +30,6 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 
@@ -44,7 +43,7 @@ struct thd_info {
   bool joinable;           /* whether it is joinable */
 };
 
-GPR_THREAD_LOCAL(struct thd_info*) g_thd_info;
+thread_local struct thd_info* g_thd_info;
 
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {
