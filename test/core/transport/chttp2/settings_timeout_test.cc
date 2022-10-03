@@ -196,7 +196,7 @@ class Client {
                         grpc_schedule_on_exec_ctx);
     }
 
-    ~EventState() { GRPC_ERROR_UNREF(error_); }
+    ~EventState() {}
 
     grpc_closure* closure() { return &closure_; }
 

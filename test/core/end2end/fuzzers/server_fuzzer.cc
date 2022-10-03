@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/util/mock_endpoint.h"
@@ -50,7 +49,6 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {

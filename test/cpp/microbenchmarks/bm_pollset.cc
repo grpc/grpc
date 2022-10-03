@@ -118,8 +118,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(mu);
   for (auto _ : state) {
-    GRPC_ERROR_UNREF(
-        grpc_pollset_work(ps, nullptr, grpc_core::Timestamp::ProcessEpoch()));
+    (void)grpc_pollset_work(ps, nullptr, grpc_core::Timestamp::ProcessEpoch());
   }
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
@@ -220,25 +219,24 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
-  GRPC_ERROR_UNREF(grpc_wakeup_fd_init(&wakeup_fd));
+  (void)grpc_wakeup_fd_init(&wakeup_fd);
   grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
   grpc_pollset_add_fd(ps, wakeup);
   bool done = false;
   TestClosure* continue_closure = MakeTestClosure([&]() {
-    GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
+    (void)grpc_wakeup_fd_consume_wakeup(&wakeup_fd);
     if (!state.KeepRunning()) {
       done = true;
       return;
     }
-    GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
+    (void)grpc_wakeup_fd_wakeup(&wakeup_fd);
     grpc_fd_notify_on_read(wakeup, continue_closure);
   });
-  GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
+  (void)grpc_wakeup_fd_wakeup(&wakeup_fd);
   grpc_fd_notify_on_read(wakeup, continue_closure);
   gpr_mu_lock(mu);
   while (!done) {
-    GRPC_ERROR_UNREF(
-        grpc_pollset_work(ps, nullptr, grpc_core::Timestamp::InfFuture()));
+    (void)grpc_pollset_work(ps, nullptr, grpc_core::Timestamp::InfFuture());
   }
   grpc_fd_orphan(wakeup, nullptr, nullptr, "done");
   wakeup_fd.read_fd = 0;
