@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -321,7 +322,8 @@ static grpc_error_handle make_error_with_desc(int error_code,
   return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
                                 "Cronet error code:%d, Cronet error detail:%s",
                                 cronet_internal_error_code, desc)),
-                            GRPC_ERROR_INT_GRPC_STATUS, error_code);
+                            grpc_core::StatusIntProperty::kRpcStatus,
+                            error_code);
 }
 
 inline op_and_state::op_and_state(stream_obj* s,

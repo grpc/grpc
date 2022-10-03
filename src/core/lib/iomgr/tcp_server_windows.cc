@@ -229,9 +229,9 @@ failure:
       grpc_error_set_str(
           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
               "Failed to prepare server socket", &error, 1),
-          GRPC_ERROR_STR_TARGET_ADDRESS,
+          grpc_core::StatusStrProperty::kTargetAddress,
           addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
-      GRPC_ERROR_INT_FD, (intptr_t)sock);
+      grpc_core::StatusIntProperty::kFd, (intptr_t)sock);
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }

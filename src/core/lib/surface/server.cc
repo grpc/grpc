@@ -47,6 +47,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -472,7 +473,7 @@ class ChannelBroadcaster {
         send_goaway
             ? grpc_error_set_int(
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"),
-                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
+                  StatusIntProperty::kRpcStatus, GRPC_STATUS_OK)
             : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;

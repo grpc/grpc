@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/slice/slice.h"
@@ -1194,9 +1195,9 @@ class HPackParser::Parser {
           return grpc_error_set_int(
               grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                      "Invalid HPACK index received"),
-                                 GRPC_ERROR_INT_INDEX,
+                                 StatusIntProperty::kIndex,
                                  static_cast<intptr_t>(index)),
-              GRPC_ERROR_INT_SIZE,
+              StatusIntProperty::kSize,
               static_cast<intptr_t>(this->table_->num_entries()));
         },
         std::move(result));
@@ -1215,7 +1216,7 @@ class HPackParser::Parser {
           return grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "received initial metadata size exceeds limit"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+              StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
         },
         false);
   }

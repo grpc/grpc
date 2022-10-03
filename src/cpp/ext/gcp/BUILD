@@ -85,5 +85,6 @@ grpc_cc_library(
         "//:json_args",
         "//:json_object_loader",
         "//:slice_refcount",
+        "//:status_helper",
     ],
 )
