@@ -51,6 +51,7 @@ void SetEventEngineFactory(
 
 void EventEngineFactoryReset() {
   delete g_event_engine_factory.exchange(nullptr);
+  g_event_engine->reset();
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {
