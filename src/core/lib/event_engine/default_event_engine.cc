@@ -51,7 +51,6 @@ void SetEventEngineFactory(
 
 void EventEngineFactoryReset() {
   delete g_event_engine_factory.exchange(nullptr);
-  ResetDefaultEventEngine();
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {
@@ -72,11 +71,6 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   GRPC_EVENT_ENGINE_TRACE("Created DefaultEventEngine::%p", engine.get());
   *g_event_engine = engine;
   return engine;
-}
-
-void ResetDefaultEventEngine() {
-  grpc_core::MutexLock lock(&*g_mu);
-  g_event_engine->reset();
 }
 
 }  // namespace experimental

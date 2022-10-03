@@ -33,7 +33,6 @@ namespace {
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::ResetDefaultEventEngine;
 
 struct FanoutParameters {
   int depth;
@@ -58,7 +57,6 @@ void BM_EventEngine_RunSmallLambda(benchmark::State& state) {
     signal.WaitForNotification();
     count.store(0);
   }
-  ResetDefaultEventEngine();
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunSmallLambda)
@@ -86,7 +84,6 @@ void BM_EventEngine_RunLargeLambda(benchmark::State& state) {
     signal.WaitForNotification();
     count.store(0);
   }
-  ResetDefaultEventEngine();
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunLargeLambda)
@@ -116,7 +113,6 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
     state.ResumeTiming();
   }
   delete signal;
-  ResetDefaultEventEngine();
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunClosure)
