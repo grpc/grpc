@@ -540,9 +540,8 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
       gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
               result.name->c_str(), cds_resource->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*cds_resource);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsClusterResource>(std::move(*cds_resource));
   }
   return result;
 }

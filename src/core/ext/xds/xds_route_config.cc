@@ -1140,9 +1140,8 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
               context.client, result.name->c_str(),
               rds_update->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*rds_update);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsRouteConfigResource>(std::move(*rds_update));
   }
   return result;
 }

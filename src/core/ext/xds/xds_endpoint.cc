@@ -423,9 +423,8 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
               context.client, result.name->c_str(),
               eds_resource->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*eds_resource);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsEndpointResource>(std::move(*eds_resource));
   }
   return result;
 }
