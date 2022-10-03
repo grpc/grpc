@@ -53,7 +53,6 @@ TEST_F(PickFirstTest, Basic) {
   auto& subchannel_state = it->second;
   // LB policy should have requested a connection on this subchannel.
   EXPECT_TRUE(subchannel_state.ConnectionRequested());
-  ExpectPickQueued(picker.get());
   // Tell subchannel to report CONNECTING.
   subchannel_state.SetConnectivityState(GRPC_CHANNEL_CONNECTING,
                                         absl::OkStatus());
