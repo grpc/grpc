@@ -1057,8 +1057,7 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
       if (low_memory_pressure && target_length > allocate_length) {
         allocate_length = target_length;
       }
-      int extra_wanted =
-          allocate_length - static_cast<int>(tcp->incoming_buffer->length);
+      size_t extra_wanted = allocate_length - tcp->incoming_buffer->length;
       if (extra_wanted >=
           (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
         while (extra_wanted > 0) {

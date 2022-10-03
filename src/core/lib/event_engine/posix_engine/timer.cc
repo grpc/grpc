@@ -54,7 +54,7 @@ TimerList::TimerList(TimerListHost* host)
       min_timer_(host_->Now().milliseconds_after_process_epoch()),
       shards_(new Shard[num_shards_]),
       shard_queue_(new Shard*[num_shards_]) {
-  for (size_t i = 0; i < num_shards_; i++) {
+  for (int i = 0; i < num_shards_; i++) {
     Shard& shard = shards_[i];
     shard.queue_deadline_cap =
         grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
