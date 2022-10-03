@@ -58,7 +58,13 @@ class Epoll1Poller : public PosixEventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
-  bool CanTrackErrors() const override { return KernelSupportsErrqueue(); }
+  bool CanTrackErrors() const override {
+#ifdef GRPC_POSIX_SOCKET_TCP
+    return KernelSupportsErrqueue();
+#else
+    return false;
+#endif
+  }
   ~Epoll1Poller() override;
 
  private:

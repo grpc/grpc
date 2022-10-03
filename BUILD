@@ -2736,6 +2736,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "gpr",
+        "iomgr_port",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
