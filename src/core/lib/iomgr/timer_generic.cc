@@ -273,9 +273,8 @@ static void timer_list_init() {
 
 static void timer_list_shutdown() {
   size_t i;
-  run_some_expired_timers(
-      grpc_core::Timestamp::InfFuture(), nullptr,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timer list shutdown"));
+  run_some_expired_timers(grpc_core::Timestamp::InfFuture(), nullptr,
+                          GRPC_ERROR_CREATE("Timer list shutdown"));
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
@@ -350,8 +349,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
     timer->pending = false;
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, timer->closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Attempt to create timer before initialization"));
+        GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
     return;
   }
 
@@ -684,7 +682,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
   grpc_error_handle shutdown_error =
       now != grpc_core::Timestamp::InfFuture()
           ? absl::OkStatus()
-          : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");
+          : GRPC_ERROR_CREATE("Shutting down timer system");
 
   // tracing
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {

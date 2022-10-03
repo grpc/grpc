@@ -69,8 +69,8 @@ static void finish_connection() {
 static void must_succeed(void* /*arg*/, grpc_error_handle error) {
   ASSERT_NE(g_connecting, nullptr);
   ASSERT_TRUE(error.ok());
-  grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                           "must_succeed called"));
+  grpc_endpoint_shutdown(g_connecting,
+                         GRPC_ERROR_CREATE("must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
   g_connecting = nullptr;
   finish_connection();

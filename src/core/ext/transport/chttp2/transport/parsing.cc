@@ -160,7 +160,7 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     case GRPC_DTS_CLIENT_PREFIX_23:
       while (cur != end && t->deframe_state != GRPC_DTS_FH_0) {
         if (*cur != GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state]) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+          return GRPC_ERROR_CREATE(absl::StrFormat(
               "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
               "at byte %d",
               get_utf8_safe_char(
@@ -266,7 +266,7 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       } else if (t->incoming_frame_size >
                  t->settings[GRPC_ACKED_SETTINGS]
                             [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        return GRPC_ERROR_CREATE(
             absl::StrFormat("Frame size %d is larger than max frame size %d",
                             t->incoming_frame_size,
                             t->settings[GRPC_ACKED_SETTINGS]
@@ -324,19 +324,19 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t) {
   if (t->is_first_frame &&
       t->incoming_frame_type != GRPC_CHTTP2_FRAME_SETTINGS) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+    return GRPC_ERROR_CREATE(absl::StrCat(
         "Expected SETTINGS frame as the first frame, got frame type ",
         t->incoming_frame_type));
   }
   t->is_first_frame = false;
   if (t->expect_continuation_stream_id != 0) {
     if (t->incoming_frame_type != GRPC_CHTTP2_FRAME_CONTINUATION) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return GRPC_ERROR_CREATE(
           absl::StrFormat("Expected CONTINUATION frame, got frame type %02x",
                           t->incoming_frame_type));
     }
     if (t->expect_continuation_stream_id != t->incoming_stream_id) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+      return GRPC_ERROR_CREATE(absl::StrFormat(
           "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
           "grpc_chttp2_stream %08x",
           t->expect_continuation_stream_id, t->incoming_stream_id));
@@ -349,8 +349,7 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t) {
     case GRPC_CHTTP2_FRAME_HEADER:
       return init_header_frame_parser(t, 0);
     case GRPC_CHTTP2_FRAME_CONTINUATION:
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unexpected CONTINUATION frame");
+      return GRPC_ERROR_CREATE("Unexpected CONTINUATION frame");
     case GRPC_CHTTP2_FRAME_RST_STREAM:
       return init_rst_stream_parser(t);
     case GRPC_CHTTP2_FRAME_SETTINGS:
@@ -550,7 +549,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                    grpc_chttp2_stream_map_size(&t->stream_map) >=
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");
+      return GRPC_ERROR_CREATE("Max stream count exceeded");
     } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_INFO,
@@ -614,7 +613,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       return init_header_skip_frame_parser(t, priority_type);
   }
   if (frame_type == HPackParser::LogInfo::kTrailers && !t->header_eof) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    return GRPC_ERROR_CREATE(
         "Trailing metadata frame received without an end-o-stream");
   }
   t->hpack_parser.BeginFrame(
@@ -680,8 +679,7 @@ static grpc_error_handle init_goaway_parser(grpc_chttp2_transport* t) {
 
 static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
   if (t->incoming_stream_id != 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Settings frame received for grpc_chttp2_stream");
+    return GRPC_ERROR_CREATE("Settings frame received for grpc_chttp2_stream");
   }
 
   grpc_error_handle err = grpc_chttp2_settings_parser_begin_frame(

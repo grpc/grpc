@@ -491,10 +491,9 @@ static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
     return absl::OkStatus();
   } else {
-    return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                  "FD shutdown", &fd->shutdown_error, 1),
-                              grpc_core::StatusIntProperty::kRpcStatus,
-                              GRPC_STATUS_UNAVAILABLE);
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1),
+        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   }
 }
 
@@ -503,7 +502,7 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
+        grpc_error_set_int(GRPC_ERROR_CREATE("FD shutdown"),
                            grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
@@ -756,7 +755,7 @@ static void kick_append_error(grpc_error_handle* composite,
                               grpc_error_handle error) {
   if (error.ok()) return;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Kick Failure");
+    *composite = GRPC_ERROR_CREATE("Kick Failure");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -892,7 +891,7 @@ static void work_combine_error(grpc_error_handle* composite,
                                grpc_error_handle error) {
   if (error.ok()) return;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("pollset_work");
+    *composite = GRPC_ERROR_CREATE("pollset_work");
   }
   *composite = grpc_error_add_child(*composite, error);
 }

@@ -208,9 +208,9 @@ static void on_md_processing_done(
       if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";
       }
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
-          grpc_core::StatusIntProperty::kRpcStatus, status);
+      error =
+          grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
+                             grpc_core::StatusIntProperty::kRpcStatus, status);
     }
     on_md_processing_done_inner(elem, consumed_md, num_consumed_md, response_md,
                                 num_response_md, error);

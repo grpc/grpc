@@ -213,36 +213,33 @@ void fake_check_peer(grpc_security_connector* /*sc*/, tsi_peer peer,
   grpc_error_handle error;
   *auth_context = nullptr;
   if (peer.property_count != 2) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Fake peers should only have 2 properties.");
+    error = GRPC_ERROR_CREATE("Fake peers should only have 2 properties.");
     goto end;
   }
   prop_name = peer.properties[0].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error = GRPC_ERROR_CREATE(
         absl::StrCat("Unexpected property in fake peer: ",
                      prop_name == nullptr ? "<EMPTY>" : prop_name));
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
               peer.properties[0].value.length) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid value for cert type property.");
+    error = GRPC_ERROR_CREATE("Invalid value for cert type property.");
     goto end;
   }
   prop_name = peer.properties[1].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error = GRPC_ERROR_CREATE(
         absl::StrCat("Unexpected property in fake peer: ",
                      prop_name == nullptr ? "<EMPTY>" : prop_name));
     goto end;
   }
   if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
               peer.properties[1].value.length) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid value for security level property.");
+    error = GRPC_ERROR_CREATE("Invalid value for security level property.");
     goto end;
   }
 

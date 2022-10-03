@@ -449,7 +449,7 @@ HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
               http_connection_manager_proto);
       if (rds == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        return GRPC_ERROR_CREATE(
             "HttpConnectionManager neither has inlined route_config nor RDS.");
       }
       // Check that the ConfigSource specifies ADS.

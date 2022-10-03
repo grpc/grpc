@@ -112,7 +112,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGoogleGrpc(
   if (ParseJsonObjectField(google_grpc, "call_credentials",
                            &call_credentials_array, &error_list_google_grpc)) {
     if (call_credentials_array->size() != 1) {
-      error_list_google_grpc.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list_google_grpc.push_back(GRPC_ERROR_CREATE(
           "field:call_credentials error:Need exactly one entry."));
     } else {
       const Json::Object* call_credentials = nullptr;
@@ -160,15 +160,15 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
   if (ParseJsonObjectField(server, "api_type", &api_type, &error_list_server,
                            false)) {
     if (api_type != "GRPC") {
-      error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:api_type error:Only GRPC is supported"));
+      error_list_server.push_back(
+          GRPC_ERROR_CREATE("field:api_type error:Only GRPC is supported"));
     }
   }
   const Json::Array* grpc_services = nullptr;
   if (ParseJsonObjectField(server, "grpc_services", &grpc_services,
                            &error_list_server)) {
     if (grpc_services->size() != 1) {
-      error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list_server.push_back(GRPC_ERROR_CREATE(
           "field:grpc_services error:Need exactly one entry"));
     } else {
       const Json::Object* grpc_service = nullptr;
@@ -192,8 +192,7 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
   auto config =
       MakeRefCounted<GoogleMeshCaCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "error:config type should be OBJECT.");
+    *error = GRPC_ERROR_CREATE("error:config type should be OBJECT.");
     return nullptr;
   }
   std::vector<grpc_error_handle> error_list;
@@ -221,8 +220,8 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
   if (ParseJsonObjectField(config_json.object_value(), "key_type", &key_type,
                            &error_list, false)) {
     if (key_type != "RSA") {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:key_type error:Only RSA is supported."));
+      error_list.push_back(
+          GRPC_ERROR_CREATE("field:key_type error:Only RSA is supported."));
     }
   }
   if (!ParseJsonObjectField(config_json.object_value(), "key_size",

@@ -55,12 +55,12 @@ bool ExtractJsonNumber(const Json& json, absl::string_view field_name,
                        std::vector<grpc_error_handle>* error_list) {
   static_assert(std::is_integral<NumericType>::value, "Integral required");
   if (json.type() != Json::Type::NUMBER && json.type() != Json::Type::STRING) {
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+    error_list->push_back(GRPC_ERROR_CREATE(absl::StrCat(
         "field:", field_name, " error:type should be NUMBER or STRING")));
     return false;
   }
   if (!absl::SimpleAtoi(json.string_value(), output)) {
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name, " error:failed to parse.")));
     return false;
   }
@@ -77,7 +77,7 @@ bool ExtractJsonString(const Json& json, absl::string_view field_name,
                        std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::STRING) {
     *output = "";
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name, " error:type should be STRING")));
     return false;
   }
@@ -142,7 +142,7 @@ bool ParseJsonObjectField(const Json::Object& object,
   auto it = object.find(std::string(field_name));
   if (it == object.end()) {
     if (required) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE(
           absl::StrCat("field:", field_name, " error:does not exist.")));
     }
     return false;

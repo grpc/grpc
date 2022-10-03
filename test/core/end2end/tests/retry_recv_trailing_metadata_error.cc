@@ -314,10 +314,9 @@ class InjectStatusFilter {
       auto* calld = static_cast<CallData*>(arg);
       grpc_core::Closure::Run(
           DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("injected error"),
-              grpc_core::StatusIntProperty::kRpcStatus,
-              GRPC_STATUS_INVALID_ARGUMENT));
+          grpc_error_set_int(GRPC_ERROR_CREATE("injected error"),
+                             grpc_core::StatusIntProperty::kRpcStatus,
+                             GRPC_STATUS_INVALID_ARGUMENT));
     }
 
     grpc_closure recv_trailing_metadata_ready_;

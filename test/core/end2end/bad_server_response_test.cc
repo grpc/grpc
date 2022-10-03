@@ -343,8 +343,7 @@ static void run_test(bool http2_response, bool send_settings,
   /* Proof that the server accepted the TCP connection. */
   GPR_ASSERT(state.connection_attempt_made == true);
   /* clean up */
-  grpc_endpoint_shutdown(state.tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+  grpc_endpoint_shutdown(state.tcp, GRPC_ERROR_CREATE("Test Shutdown"));
   grpc_endpoint_destroy(state.tcp);
   cleanup_rpc();
   grpc_core::ExecCtx::Get()->Flush();

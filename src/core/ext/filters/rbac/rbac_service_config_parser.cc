@@ -195,7 +195,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
         permissions.emplace_back(std::make_unique<Rbac::Permission>(
             ParsePermission(*permission_json, &permission_error_list)));
         if (!permission_error_list.empty()) {
-          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
               absl::StrFormat("rules[%d]", i), &permission_error_list));
         }
       }
@@ -306,8 +306,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
           "requestedServerName", &req_server_name_error_list));
     }
   } else {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid rule found"));
+    error_list->push_back(GRPC_ERROR_CREATE("No valid rule found"));
   }
   return permission;
 }
@@ -331,7 +330,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
         principals.emplace_back(std::make_unique<Rbac::Principal>(
             ParsePrincipal(*principal_json, &principal_error_list)));
         if (!principal_error_list.empty()) {
-          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
               absl::StrFormat("ids[%d]", i), &principal_error_list));
         }
       }
@@ -467,8 +466,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
           GRPC_ERROR_CREATE_FROM_VECTOR("notId", &not_rule_error_list));
     }
   } else {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid id found"));
+    error_list->push_back(GRPC_ERROR_CREATE("No valid id found"));
   }
   return principal;
 }
@@ -491,7 +489,7 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
       permissions.emplace_back(std::make_unique<Rbac::Permission>(
           ParsePermission(*permission_json, &permission_error_list)));
       if (!permission_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
             absl::StrFormat("permissions[%d]", i), &permission_error_list));
       }
     }
@@ -511,7 +509,7 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
       principals.emplace_back(std::make_unique<Rbac::Principal>(
           ParsePrincipal(*principal_json, &principal_error_list)));
       if (!principal_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
             absl::StrFormat("principals[%d]", i), &principal_error_list));
       }
     }
@@ -535,8 +533,7 @@ Rbac ParseRbac(const Json::Object& rbac_json,
   int action;
   if (ParseJsonObjectField(*rules_json, "action", &action, error_list)) {
     if (action > 1) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown action"));
+      error_list->push_back(GRPC_ERROR_CREATE("Unknown action"));
     }
   }
   rbac.action = static_cast<Rbac::Action>(action);
@@ -549,7 +546,7 @@ Rbac ParseRbac(const Json::Object& rbac_json,
           entry.first,
           ParsePolicy(entry.second.object_value(), &policy_error_list));
       if (!policy_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
             absl::StrFormat("policies key:'%s'", entry.first.c_str()),
             &policy_error_list));
       }
@@ -571,7 +568,7 @@ std::vector<Rbac> ParseRbacArray(const Json::Array& policies_json_array,
     std::vector<grpc_error_handle> rbac_policy_error_list;
     policies.emplace_back(ParseRbac(*rbac_json, &rbac_policy_error_list));
     if (!rbac_policy_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
           absl::StrFormat("rbacPolicy[%d]", i), &rbac_policy_error_list));
     }
   }

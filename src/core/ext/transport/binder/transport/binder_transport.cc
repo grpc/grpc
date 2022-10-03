@@ -212,7 +212,7 @@ static void recv_initial_metadata_locked(void* arg,
       if (!gbs->is_client) {
         // For server, we expect :authority and :path in initial metadata.
         if (!ContainsAuthorityAndPath(*args->initial_metadata)) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          return GRPC_ERROR_CREATE(
               "Missing :authority or :path in initial metadata");
         }
       }
@@ -575,9 +575,9 @@ static void close_transport_locked(grpc_binder_transport* gbt) {
   while (!gbt->registered_stream.empty()) {
     cancel_stream_locked(
         gbt, gbt->registered_stream.begin()->second,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("transport closed"),
-            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
+        grpc_error_set_int(GRPC_ERROR_CREATE("transport closed"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
+                           GRPC_STATUS_UNAVAILABLE));
   }
 }
 
@@ -630,7 +630,7 @@ static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
   grpc_binder_transport* gbt = gbs->t;
   cancel_stream_locked(
       gbt, gbs,
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("destroy stream"),
+      grpc_error_set_int(GRPC_ERROR_CREATE("destroy stream"),
                          grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_UNAVAILABLE));
   gbs->~grpc_binder_stream();

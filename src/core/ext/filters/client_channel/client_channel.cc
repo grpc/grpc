@@ -996,7 +996,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   grpc_client_channel_start_backup_polling(interested_parties_);
   // Check client channel factory.
   if (client_channel_factory_ == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    *error = GRPC_ERROR_CREATE(
         "Missing client channel factory in args for client channel filter");
     return;
   }
@@ -1017,7 +1017,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   absl::optional<std::string> server_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
   if (!server_uri.has_value()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    *error = GRPC_ERROR_CREATE(
         "target URI channel arg missing or wrong type in client channel "
         "filter");
     return;
@@ -1030,7 +1030,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   // resolver creation will succeed later.
   if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
           uri_to_resolve_)) {
-    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    *error = GRPC_ERROR_CREATE(
         absl::StrCat("the target uri is not valid: ", uri_to_resolve_));
     return;
   }
@@ -1628,7 +1628,7 @@ T HandlePickResult(
 
 grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
   if (state_tracker_.state() != GRPC_CHANNEL_READY) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel not connected");
+    return GRPC_ERROR_CREATE("channel not connected");
   }
   LoadBalancingPolicy::PickResult result;
   {
@@ -1645,8 +1645,7 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
             RefCountedPtr<ConnectedSubchannel> connected_subchannel =
                 subchannel->connected_subchannel();
             if (connected_subchannel == nullptr) {
-              return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "LB pick for ping not connected");
+              return GRPC_ERROR_CREATE("LB pick for ping not connected");
             }
             connected_subchannel->Ping(op->send_ping.on_initiate,
                                        op->send_ping.on_ack);
@@ -1654,7 +1653,7 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
           },
       // Queue pick.
       [](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB picker queued call");
+        return GRPC_ERROR_CREATE("LB picker queued call");
       },
       // Fail pick.
       [](LoadBalancingPolicy::PickResult::Fail* fail_pick) {

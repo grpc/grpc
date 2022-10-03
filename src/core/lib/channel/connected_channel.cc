@@ -195,8 +195,7 @@ static grpc_error_handle connected_channel_init_call_elem(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data, args->arena);
   return r == 0 ? absl::OkStatus()
-                : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "transport stream initialization failed");
+                : GRPC_ERROR_CREATE("transport stream initialization failed");
 }
 
 static void set_pollset_or_pollset_set(grpc_call_element* elem,

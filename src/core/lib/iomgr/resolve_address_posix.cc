@@ -105,16 +105,14 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   // parse name, splitting it into host and port parts
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    err = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        StatusStrProperty::kTargetAddress, name);
+    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                             StatusStrProperty::kTargetAddress, name);
     goto done;
   }
   if (port.empty()) {
     if (default_port.empty()) {
-      err = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          StatusStrProperty::kTargetAddress, name);
+      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
+                               StatusStrProperty::kTargetAddress, name);
       goto done;
     }
     port = std::string(default_port);
@@ -143,9 +141,8 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     err = grpc_error_set_str(
         grpc_error_set_str(
             grpc_error_set_str(
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
-                    StatusIntProperty::kErrorNo, s),
+                grpc_error_set_int(GRPC_ERROR_CREATE(gai_strerror(s)),
+                                   StatusIntProperty::kErrorNo, s),
                 StatusStrProperty::kOsError, gai_strerror(s)),
             StatusStrProperty::kSyscall, "getaddrinfo"),
         StatusStrProperty::kTargetAddress, name);

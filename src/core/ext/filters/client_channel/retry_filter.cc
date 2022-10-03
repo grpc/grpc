@@ -192,15 +192,15 @@ class RetryFilter {
     const char* server_uri =
         grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
     if (server_uri == nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      *error = GRPC_ERROR_CREATE(
           "server URI channel arg missing or wrong type in client channel "
           "filter");
       return;
     }
     absl::StatusOr<URI> uri = URI::Parse(server_uri);
     if (!uri.ok() || uri->path().empty()) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "could not extract server name from target URI");
+      *error =
+          GRPC_ERROR_CREATE("could not extract server name from target URI");
       return;
     }
     std::string server_name(absl::StripPrefix(uri->path(), "/"));
@@ -1281,10 +1281,9 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     // TODO(roth): When implementing hedging, we should not cancel the
     // current attempt.
     call_attempt->MaybeAddBatchForCancelOp(
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "retry perAttemptRecvTimeout exceeded"),
-                           StatusIntProperty::kRpcStatus,
-                           GRPC_STATUS_CANCELLED),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("retry perAttemptRecvTimeout exceeded"),
+            StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
         &closures);
     // Check whether we should retry.
     if (call_attempt->ShouldRetry(/*status=*/absl::nullopt,
@@ -1781,11 +1780,10 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
       CallCombinerClosureList closures;
       // Cancel call attempt.
       call_attempt->MaybeAddBatchForCancelOp(
-          error.ok()
-              ? grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("call attempt failed"),
-                    StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED)
-              : error,
+          error.ok() ? grpc_error_set_int(
+                           GRPC_ERROR_CREATE("call attempt failed"),
+                           StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED)
+                     : error,
           &closures);
       // For transparent retries, add a closure to immediately start a new
       // call attempt.

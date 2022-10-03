@@ -263,8 +263,8 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
     if (!error.ok()) {
       grpc_slice_buffer_reset_and_unref(ep->read_buffer);
-      call_read_cb(ep, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "Secure read failed", &error, 1));
+      call_read_cb(
+          ep, GRPC_ERROR_CREATE_REFERENCING("Secure read failed", &error, 1));
       return;
     }
 
@@ -342,9 +342,8 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
   if (result != TSI_OK) {
     grpc_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(
-        ep, grpc_set_tsi_error_result(
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unwrap failed"), result));
+    call_read_cb(ep, grpc_set_tsi_error_result(
+                         GRPC_ERROR_CREATE("Unwrap failed"), result));
     return;
   }
 
@@ -486,8 +485,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
-        grpc_set_tsi_error_result(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Wrap failed"), result));
+        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result));
     return;
   }
 

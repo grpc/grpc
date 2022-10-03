@@ -66,7 +66,7 @@ grpc_error_handle ssl_check_peer(
   }
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return GRPC_ERROR_CREATE(
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   *auth_context =
@@ -163,8 +163,8 @@ class grpc_ssl_channel_security_connector final
       const tsi_peer_property* p =
           tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
       if (p == nullptr) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Cannot check peer: missing pem cert property.");
+        error =
+            GRPC_ERROR_CREATE("Cannot check peer: missing pem cert property.");
       } else {
         char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
         memcpy(peer_pem, p->value.data, p->value.length);
@@ -174,7 +174,7 @@ class grpc_ssl_channel_security_connector final
             verify_options_->verify_peer_callback_userdata);
         gpr_free(peer_pem);
         if (callback_status) {
-          error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+          error = GRPC_ERROR_CREATE(absl::StrFormat(
               "Verify peer callback returned a failure (%d)", callback_status));
         }
       }

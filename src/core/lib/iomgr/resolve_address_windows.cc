@@ -111,14 +111,13 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   std::string port;
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrFormat("unparseable host:port: '%s'", name));
+    error =
+        GRPC_ERROR_CREATE(absl::StrFormat("unparseable host:port: '%s'", name));
     goto done;
   }
   if (port.empty()) {
     if (default_port.empty()) {
-      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrFormat("no port in name '%s'", name));
+      error = GRPC_ERROR_CREATE(absl::StrFormat("no port in name '%s'", name));
       goto done;
     }
     port = std::string(default_port);

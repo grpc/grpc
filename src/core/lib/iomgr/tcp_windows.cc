@@ -186,7 +186,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
   if (error.ok()) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
       char* utf8_message = gpr_format_message(info->wsa_error);
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(utf8_message);
+      error = GRPC_ERROR_CREATE(utf8_message);
       gpr_free(utf8_message);
       grpc_slice_buffer_reset_and_unref(tcp->read_slices);
     } else {
@@ -219,9 +219,9 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         grpc_slice_buffer_reset_and_unref(tcp->read_slices);
         error = grpc_error_set_int(
             tcp->shutting_down
-                ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                      "TCP stream shutting down", &tcp->shutdown_error, 1)
-                : GRPC_ERROR_CREATE_FROM_STATIC_STRING("End of TCP stream"),
+                ? GRPC_ERROR_CREATE_REFERENCING("TCP stream shutting down",
+                                                &tcp->shutdown_error, 1)
+                : GRPC_ERROR_CREATE("End of TCP stream"),
             grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       }
     }
@@ -253,8 +253,8 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
         grpc_error_set_int(
-            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                "TCP socket is shutting down", &tcp->shutdown_error, 1),
+            GRPC_ERROR_CREATE_REFERENCING("TCP socket is shutting down",
+                                          &tcp->shutdown_error, 1),
             grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
     return;
   }
@@ -367,8 +367,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
         grpc_error_set_int(
-            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                "TCP socket is shutting down", &tcp->shutdown_error, 1),
+            GRPC_ERROR_CREATE_REFERENCING("TCP socket is shutting down",
+                                          &tcp->shutdown_error, 1),
             grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
     return;
   }

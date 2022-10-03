@@ -96,11 +96,11 @@ bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
   }
   if (op->send_ping.on_initiate != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_initiate,
-                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+                 GRPC_ERROR_CREATE("lame client channel"));
   }
   if (op->send_ping.on_ack != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_ack,
-                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+                 GRPC_ERROR_CREATE("lame client channel"));
   }
   if (op->on_consumed != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());

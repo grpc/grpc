@@ -471,9 +471,8 @@ class ChannelBroadcaster {
     grpc_channel_element* elem;
     op->goaway_error =
         send_goaway
-            ? grpc_error_set_int(
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"),
-                  StatusIntProperty::kRpcStatus, GRPC_STATUS_OK)
+            ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
+                                 StatusIntProperty::kRpcStatus, GRPC_STATUS_OK)
             : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
@@ -709,8 +708,7 @@ void Server::MaybeFinishShutdown() {
   }
   {
     MutexLock lock(&mu_call_);
-    KillPendingWorkLocked(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
+    KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
   if (!channels_.empty() || listeners_destroyed_ < listeners_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
@@ -807,8 +805,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
     // Collect all unregistered then registered calls.
     {
       MutexLock lock(&mu_call_);
-      KillPendingWorkLocked(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
+      KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
     }
     await_requests = ShutdownUnrefOnShutdownCall();
   }
@@ -844,8 +841,7 @@ void Server::CancelAllCalls() {
     broadcaster.FillChannelsLocked(GetChannelsLocked());
   }
   broadcaster.BroadcastShutdown(
-      /*send_goaway=*/false,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"));
+      /*send_goaway=*/false, GRPC_ERROR_CREATE("Cancelling all calls"));
 }
 
 void Server::SendGoaways() {
@@ -903,8 +899,7 @@ grpc_call_error Server::ValidateServerRequestAndCq(
 
 grpc_call_error Server::QueueRequestedCall(size_t cq_idx, RequestedCall* rc) {
   if (ShutdownCalled()) {
-    FailCall(cq_idx, rc,
-             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
+    FailCall(cq_idx, rc, GRPC_ERROR_CREATE("Server Shutdown"));
     return GRPC_CALL_OK;
   }
   RequestMatcherInterface* rm;
@@ -1056,8 +1051,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   op->set_accept_stream_user_data = this;
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
   if (server_->ShutdownCalled()) {
-    op->disconnect_with_error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");
+    op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
   }
   grpc_transport_perform_op(transport, op);
 }
@@ -1367,8 +1361,8 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   } else {
     /* Pass the error reference to calld->recv_initial_metadata_error */
     grpc_error_handle src_error = error;
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Missing :authority or :path", &src_error, 1);
+    error = GRPC_ERROR_CREATE_REFERENCING("Missing :authority or :path",
+                                          &src_error, 1);
     calld->recv_initial_metadata_error_ = error;
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;

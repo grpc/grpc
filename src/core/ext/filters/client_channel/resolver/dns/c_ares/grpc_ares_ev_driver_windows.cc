@@ -794,7 +794,7 @@ class SockToPolledFdMap {
     // If a gRPC polled fd has not made it in to the driver's list yet, then
     // the driver has not and will never see this socket.
     if (!polled_fd->gotten_into_driver_list()) {
-      polled_fd->ShutdownLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      polled_fd->ShutdownLocked(GRPC_ERROR_CREATE(
           "Shut down c-ares fd before without it ever having made it into the "
           "driver's list"));
     }

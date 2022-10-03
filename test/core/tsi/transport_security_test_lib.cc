@@ -305,8 +305,8 @@ grpc_error_handle on_handshake_next_done(
   }
   if (result != TSI_OK) {
     notification_signal(fixture);
-    return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
+    return grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Handshake failed"),
+                                     result);
   }
   /* Update handshaker result. */
   if (handshaker_result != nullptr) {

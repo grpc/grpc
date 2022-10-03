@@ -150,10 +150,9 @@ grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
   if (status.ok()) {
     return absl::OkStatus();
   }
-  return grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STRING_VIEW(status.message()),
-      grpc_core::StatusIntProperty::kRpcStatus,
-      static_cast<grpc_status_code>(status.code()));
+  return grpc_error_set_int(GRPC_ERROR_CREATE(status.message()),
+                            grpc_core::StatusIntProperty::kRpcStatus,
+                            static_cast<grpc_status_code>(status.code()));
 }
 
 bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {

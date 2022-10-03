@@ -1821,7 +1821,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   hold2->Wait();
   // Inject a custom failure message.
   hold1->Wait();
-  hold1->Fail(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Survey says... Bzzzzt!"));
+  hold1->Fail(GRPC_ERROR_CREATE("Survey says... Bzzzzt!"));
   // Wait until RPC fails with the right message.
   absl::Time deadline =
       absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());

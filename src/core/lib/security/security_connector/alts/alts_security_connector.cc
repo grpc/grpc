@@ -78,8 +78,7 @@ void alts_check_peer(tsi_peer peer,
   grpc_error_handle error =
       *auth_context != nullptr
           ? absl::OkStatus()
-          : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Could not get ALTS auth context from TSI peer");
+          : GRPC_ERROR_CREATE("Could not get ALTS auth context from TSI peer");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 

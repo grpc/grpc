@@ -90,8 +90,7 @@ static void set_read_done(void* arg, grpc_error_handle /*error*/) {
 /* shutdown client */
 static void shutdown_client(grpc_endpoint** client_fd) {
   if (*client_fd != nullptr) {
-    grpc_endpoint_shutdown(
-        *client_fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
+    grpc_endpoint_shutdown(*client_fd, GRPC_ERROR_CREATE("Forced Disconnect"));
     grpc_endpoint_destroy(*client_fd);
     grpc_core::ExecCtx::Get()->Flush();
     *client_fd = nullptr;

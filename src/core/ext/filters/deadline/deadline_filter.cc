@@ -84,9 +84,9 @@ class TimerState {
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
     if (error != absl::CancelledError()) {
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
-          StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED);
+      error = grpc_error_set_int(GRPC_ERROR_CREATE("Deadline Exceeded"),
+                                 StatusIntProperty::kRpcStatus,
+                                 GRPC_STATUS_DEADLINE_EXCEEDED);
       deadline_state->call_combiner->Cancel(error);
       GRPC_CLOSURE_INIT(&self->closure_, SendCancelOpInCallCombiner, self,
                         nullptr);

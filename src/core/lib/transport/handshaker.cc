@@ -101,7 +101,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
   if (!error.ok() || is_shutdown_ || args_.exit_early ||
       index_ == handshakers_.size()) {
     if (error.ok() && is_shutdown_) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("handshaker shutdown");
+      error = GRPC_ERROR_CREATE("handshaker shutdown");
       // It is possible that the endpoint has already been destroyed by
       // a shutdown call while this callback was sitting on the ExecCtx
       // with no error.
@@ -163,7 +163,7 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
 void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
   if (error.ok()) {  // Timer fired, rather than being cancelled
-    mgr->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));
+    mgr->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
   }
   mgr->Unref();
 }

@@ -110,8 +110,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
   if (!address.ok()) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(address.status().ToString());
+    grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
     return;
   }
@@ -145,7 +144,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     MutexLock lock(&self->mu_);
     if (!error.ok() || self->shutdown_) {
       if (error.ok()) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
+        error = GRPC_ERROR_CREATE("connector shutdown");
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
         if (args->endpoint != nullptr) {
@@ -229,7 +228,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
       // SubchannelConnector::Result::Reset()
       grpc_transport_destroy(self->result_->transport);
       self->result_->Reset();
-      self->MaybeNotify(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      self->MaybeNotify(GRPC_ERROR_CREATE(
           "connection attempt timed out before receiving SETTINGS frame"));
     } else {
       // OnReceiveSettings() was already invoked. Call Notify() again so that
