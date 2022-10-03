@@ -23,11 +23,14 @@
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
 
+#ifdef GRPC_POSIX_SOCKET_TCP
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
+#endif
 
 namespace grpc_event_engine {
 namespace posix_engine {
 
+#ifdef GRPC_POSIX_SOCKET_TCP
 namespace {
 
 bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
@@ -57,6 +60,12 @@ PosixEventPoller* GetDefaultPoller(Scheduler* scheduler) {
   }
   return poller;
 }
+
+#else  // GRPC_POSIX_SOCKET_TCP
+
+PosixEventPoller* GetDefaultPoller(Scheduler* /*scheduler*/) { return nullptr; }
+
+#endif  // GRPC_POSIX_SOCKET_TCP
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
