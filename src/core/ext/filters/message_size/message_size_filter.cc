@@ -40,6 +40,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -220,7 +221,8 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
         GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
             (*calld->recv_message)->Length(), calld->limits.max_recv_size)),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+        grpc_core::StatusIntProperty::kRpcStatus,
+        GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(error, new_error);
     calld->error = error;
   }
@@ -276,7 +278,7 @@ static void message_size_start_transport_stream_op_batch(
                                "Sent message larger than max (%u vs. %d)",
                                op->payload->send_message.send_message->Length(),
                                calld->limits.max_send_size)),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     return;

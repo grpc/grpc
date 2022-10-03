@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/bdp_estimator.h"
@@ -713,7 +714,8 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
   intptr_t unused;
   if (GPR_LIKELY(err.ok())) {
     return err;
-  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
+  } else if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
+                                &unused)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
       gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
     }

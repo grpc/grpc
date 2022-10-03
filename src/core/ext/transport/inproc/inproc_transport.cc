@@ -47,6 +47,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -1101,7 +1102,8 @@ void close_transport_locked(inproc_transport* t) {
           t->stream_list,
           grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport closed"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+              grpc_core::StatusIntProperty::kRpcStatus,
+              GRPC_STATUS_UNAVAILABLE));
     }
   }
 }
@@ -1243,7 +1245,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
               grpc_error_std_string(error).c_str());
       intptr_t integer;
       grpc_status_code status = GRPC_STATUS_INTERNAL;
-      if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                             &integer)) {
         status = static_cast<grpc_status_code>(integer);
       }
       // client_transport was destroyed when grpc_channel_create_internal saw an
@@ -1260,7 +1263,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
             grpc_error_std_string(error).c_str());
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                           &integer)) {
       status = static_cast<grpc_status_code>(integer);
     }
     grpc_transport_destroy(client_transport);

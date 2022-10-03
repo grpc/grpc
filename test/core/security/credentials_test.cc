@@ -522,11 +522,11 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
       GPR_ASSERT(error.ok());
     } else {
       std::string expected_error;
-      GPR_ASSERT(grpc_error_get_str(expected_error_, GRPC_ERROR_STR_DESCRIPTION,
-                                    &expected_error));
+      GPR_ASSERT(grpc_error_get_str(
+          expected_error_, StatusStrProperty::kDescription, &expected_error));
       std::string actual_error;
-      GPR_ASSERT(
-          grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
+      GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                    &actual_error));
       GPR_ASSERT(expected_error == actual_error);
     }
     md_.Remove(HttpAuthorityMetadata());
@@ -2735,8 +2735,8 @@ TEST(CredentialsTest,
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
   std::string actual_error;
-  GPR_ASSERT(
-      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
   GPR_ASSERT(absl::StartsWith(actual_error, "Invalid credential source url."));
 }
 
@@ -3282,8 +3282,8 @@ TEST(CredentialsTest,
   GPR_ASSERT(creds == nullptr);
   std::string expected_error = "environment_id does not match.";
   std::string actual_error;
-  GPR_ASSERT(
-      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
   GPR_ASSERT(expected_error == actual_error);
 }
 

@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -210,7 +211,7 @@ static void recv_im_ready(void* arg, grpc_error_handle error) {
       DEBUG_LOCATION, calld->recv_im_ready,
       grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failure that's not preventable.", &error, 1),
-                         GRPC_ERROR_INT_GRPC_STATUS,
+                         grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_PERMISSION_DENIED));
 }
 
