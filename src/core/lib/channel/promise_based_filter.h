@@ -157,6 +157,8 @@ class BaseCallData : public Activity, private Wakeable {
     finalization_.Run(final_info);
   }
 
+  virtual void StartBatch(grpc_transport_stream_op_batch* batch) = 0;
+
  protected:
   class ScopedContext
       : public promise_detail::Context<Arena>,
@@ -293,7 +295,7 @@ class ClientCallData : public BaseCallData {
   // Activity implementation.
   void ForceImmediateRepoll() final;
   // Handle one grpc_transport_stream_op_batch
-  void StartBatch(grpc_transport_stream_op_batch* batch);
+  void StartBatch(grpc_transport_stream_op_batch* batch) override;
 
  private:
   // At what stage is our handling of send initial metadata?
@@ -393,7 +395,7 @@ class ServerCallData : public BaseCallData {
   // Activity implementation.
   void ForceImmediateRepoll() final;
   // Handle one grpc_transport_stream_op_batch
-  void StartBatch(grpc_transport_stream_op_batch* batch);
+  void StartBatch(grpc_transport_stream_op_batch* batch) override;
 
  private:
   // At what stage is our handling of recv initial metadata?
@@ -488,16 +490,22 @@ class CallData<FilterEndpoint::kServer> : public ServerCallData {
   using ServerCallData::ServerCallData;
 };
 
-template <typename CallData>
-struct CallDataFilterMethods {
-  static void StartTransportStreamOpBatch(
-      grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-    static_cast<CallData*>(elem->call_data)->StartBatch(batch);
-  }
-
+struct BaseCallDataMethods {
   static void SetPollsetOrPollsetSet(grpc_call_element* elem,
                                      grpc_polling_entity* pollent) {
-    static_cast<CallData*>(elem->call_data)->set_pollent(pollent);
+    static_cast<BaseCallData*>(elem->call_data)->set_pollent(pollent);
+  }
+
+  static void DestructCallData(grpc_call_element* elem,
+                               const grpc_call_final_info* final_info) {
+    auto* cd = static_cast<BaseCallData*>(elem->call_data);
+    cd->Finalize(final_info);
+    cd->~BaseCallData();
+  }
+
+  static void StartTransportStreamOpBatch(
+      grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+    static_cast<BaseCallData*>(elem->call_data)->StartBatch(batch);
   }
 };
 
@@ -512,9 +520,7 @@ struct CallDataFilterWithFlagsMethods {
   static void DestroyCallElem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* then_schedule_closure) {
-    auto* cd = static_cast<CallData*>(elem->call_data);
-    cd->Finalize(final_info);
-    cd->~CallData();
+    BaseCallDataMethods::DestructCallData(elem, final_info);
     if ((kFlags & kFilterIsLast) != 0) {
       ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
     } else {
@@ -592,8 +598,7 @@ MakePromiseBasedFilter(const char* name) {
 
   return grpc_channel_filter{
       // start_transport_stream_op_batch
-      promise_filter_detail::CallDataFilterMethods<
-          CallData>::StartTransportStreamOpBatch,
+      promise_filter_detail::BaseCallDataMethods::StartTransportStreamOpBatch,
       // make_call_promise
       promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
       // start_transport_op
@@ -604,8 +609,7 @@ MakePromiseBasedFilter(const char* name) {
       promise_filter_detail::CallDataFilterWithFlagsMethods<
           CallData, kFlags>::InitCallElem,
       // set_pollset_or_pollset_set
-      promise_filter_detail::CallDataFilterMethods<
-          CallData>::SetPollsetOrPollsetSet,
+      promise_filter_detail::BaseCallDataMethods::SetPollsetOrPollsetSet,
       // destroy_call_elem
       promise_filter_detail::CallDataFilterWithFlagsMethods<
           CallData, kFlags>::DestroyCallElem,
