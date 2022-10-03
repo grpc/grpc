@@ -26,7 +26,7 @@ gcloud auth configure-docker
 
 # Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-prod2 \
+gcloud container clusters get-credentials psm-benchmarks-performance \
     --zone us-central1-b --project grpc-testing
 
 # Set up environment variables.
