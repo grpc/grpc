@@ -62,11 +62,12 @@
 
 namespace grpc_core {
 
-Channel::Channel(bool is_client, std::string target,
+Channel::Channel(bool is_client, bool is_promising, std::string target,
                  const ChannelArgs& channel_args,
                  grpc_compression_options compression_options,
                  RefCountedPtr<grpc_channel_stack> channel_stack)
     : is_client_(is_client),
+      is_promising_(is_promising),
       compression_options_(compression_options),
       call_size_estimate_(channel_stack->call_stack_size +
                           grpc_call_get_initial_size_estimate()),
@@ -150,8 +151,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
 
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
-      std::string(builder->target()), channel_args, compression_options,
-      std::move(*r)));
+      builder->IsPromising(), std::string(builder->target()), channel_args,
+      compression_options, std::move(*r)));
 }
 
 namespace {

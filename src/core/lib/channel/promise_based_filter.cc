@@ -27,6 +27,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -228,6 +229,8 @@ struct ClientCallData::RecvInitialMetadata final {
     kCompleteAndSetLatch,
     // Called the original callback
     kResponded,
+    // Called the original callback with an error: still need to set the latch
+    kRespondedButNeedToSetLatch,
   };
 
   State state = kInitial;
@@ -263,6 +266,12 @@ class ClientCallData::PollContext {
         case RecvInitialMetadata::kCompleteWaitingForLatch:
         case RecvInitialMetadata::kResponded:
         case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+          break;
+        case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+          self_->recv_initial_metadata_->server_initial_metadata_publisher->Set(
+              nullptr);
+          self_->recv_initial_metadata_->state =
+              RecvInitialMetadata::kResponded;
           break;
         case RecvInitialMetadata::kCompleteAndGotLatch:
           self_->recv_initial_metadata_->state =
@@ -321,6 +330,7 @@ class ClientCallData::PollContext {
                   break;
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
+                case RecvInitialMetadata::kRespondedButNeedToSetLatch:
                   abort();  // not reachable
                   break;
                 case RecvInitialMetadata::kHookedWaitingForLatch:
@@ -346,10 +356,10 @@ class ClientCallData::PollContext {
             grpc_error_handle error = grpc_error_set_int(
                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "early return from promise based filter"),
-                GRPC_ERROR_INT_GRPC_STATUS,
+                StatusIntProperty::kRpcStatus,
                 *md->get_pointer(GrpcStatusMetadata()));
             if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
-              error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+              error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                          message->as_string_view());
             }
             self_->cancelled_error_ = error;
@@ -366,6 +376,7 @@ class ClientCallData::PollContext {
                   break;
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
+                case RecvInitialMetadata::kRespondedButNeedToSetLatch:
                   abort();  // not reachable
                   break;
                 case RecvInitialMetadata::kCompleteWaitingForLatch:
@@ -534,6 +545,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       case RecvInitialMetadata::kCompleteAndGotLatch:
       case RecvInitialMetadata::kCompleteAndSetLatch:
       case RecvInitialMetadata::kResponded:
+      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
         abort();  // unreachable
     }
     if (hook) {
@@ -650,6 +662,9 @@ void ClientCallData::Cancel(grpc_error_handle error) {
       case RecvInitialMetadata::kHookedAndGotLatch:
       case RecvInitialMetadata::kResponded:
         break;
+      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        abort();
+        break;
     }
   }
 }
@@ -665,7 +680,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               server_initial_metadata_latch()},
+               server_initial_metadata_latch(), nullptr, nullptr},
       [this](CallArgs call_args) {
         return MakeNextPromise(std::move(call_args));
       });
@@ -674,26 +689,26 @@ void ClientCallData::StartPromise(Flusher* flusher) {
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
-  switch (recv_initial_metadata_->state) {
-    case RecvInitialMetadata::kHookedWaitingForLatch:
-      recv_initial_metadata_->state =
-          RecvInitialMetadata::kCompleteWaitingForLatch;
-      break;
-    case RecvInitialMetadata::kHookedAndGotLatch:
-      recv_initial_metadata_->state = RecvInitialMetadata::kCompleteAndGotLatch;
-      break;
-    case RecvInitialMetadata::kInitial:
-    case RecvInitialMetadata::kGotLatch:
-    case RecvInitialMetadata::kCompleteWaitingForLatch:
-    case RecvInitialMetadata::kCompleteAndGotLatch:
-    case RecvInitialMetadata::kCompleteAndSetLatch:
-    case RecvInitialMetadata::kResponded:
-    case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-      abort();  // unreachable
-  }
   Flusher flusher(this);
   if (!error.ok()) {
-    recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
+    switch (recv_initial_metadata_->state) {
+      case RecvInitialMetadata::kHookedWaitingForLatch:
+        recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
+        break;
+      case RecvInitialMetadata::kHookedAndGotLatch:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kRespondedButNeedToSetLatch;
+        break;
+      case RecvInitialMetadata::kInitial:
+      case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kCompleteWaitingForLatch:
+      case RecvInitialMetadata::kCompleteAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kResponded:
+      case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        abort();  // unreachable
+    }
     flusher.AddClosure(
         std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
         error, "propagate cancellation");
@@ -703,6 +718,26 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
     flusher.AddClosure(
         std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
         cancelled_error_, "propagate cancellation");
+  } else {
+    switch (recv_initial_metadata_->state) {
+      case RecvInitialMetadata::kHookedWaitingForLatch:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kCompleteWaitingForLatch;
+        break;
+      case RecvInitialMetadata::kHookedAndGotLatch:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kCompleteAndGotLatch;
+        break;
+      case RecvInitialMetadata::kInitial:
+      case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kCompleteWaitingForLatch:
+      case RecvInitialMetadata::kCompleteAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kResponded:
+      case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        abort();  // unreachable
+    }
   }
   WakeInsideCombiner(&flusher);
 }
@@ -757,6 +792,7 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
       case RecvInitialMetadata::kCompleteAndSetLatch:
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
         abort();  // unreachable
     }
   } else {
@@ -1154,12 +1190,12 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
-  promise_ =
-      filter->MakeCallPromise(CallArgs{WrapMetadata(recv_initial_metadata_),
-                                       server_initial_metadata_latch()},
-                              [this](CallArgs call_args) {
-                                return MakeNextPromise(std::move(call_args));
-                              });
+  promise_ = filter->MakeCallPromise(
+      CallArgs{WrapMetadata(recv_initial_metadata_),
+               server_initial_metadata_latch(), nullptr, nullptr},
+      [this](CallArgs call_args) {
+        return MakeNextPromise(std::move(call_args));
+      });
   // Poll once.
   WakeInsideCombiner(&flusher);
   if (auto* closure =
@@ -1223,10 +1259,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           grpc_error_handle error =
               grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                      "early return from promise based filter"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 StatusIntProperty::kRpcStatus,
                                  *md->get_pointer(GrpcStatusMetadata()));
           if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
-            error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+            error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                        message->as_string_view());
           }
           Cancel(error, flusher);

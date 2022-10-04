@@ -279,7 +279,16 @@ void TransportFlowControl::UpdateSetting(
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
       *desired_value = new_desired_value;
-      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+      // Reaching zero can only happen for initial window size, and if it occurs
+      // we really want to wake up writes and ensure all the queued stream
+      // window updates are flushed, since stream flow control operates
+      // differently at zero window size.
+      FlowControlAction::Urgency urgency =
+          FlowControlAction::Urgency::QUEUE_UPDATE;
+      if (new_desired_value == 0) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      }
+      (action->*set)(urgency, *desired_value);
     }
   } else {
     int64_t delta = new_desired_value - *desired_value;
@@ -287,7 +296,8 @@ void TransportFlowControl::UpdateSetting(
     if (delta != 0 &&
         (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
       *desired_value = new_desired_value;
-      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE,
+                     static_cast<uint32_t>(*desired_value));
     }
   }
 }
@@ -362,15 +372,15 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
-  const uint32_t announce = DesiredAnnounceSize();
+  const int64_t announce = DesiredAnnounceSize();
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
   tfc_upd.MakeAction();
-  return announce;
+  return static_cast<uint32_t>(announce);
 }
 
-uint32_t StreamFlowControl::DesiredAnnounceSize() const {
+int64_t StreamFlowControl::DesiredAnnounceSize() const {
   int64_t desired_window_delta = [this]() {
     if (min_progress_size_ == 0) {
       if (pending_size_.has_value() &&
@@ -390,13 +400,34 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   const int64_t desired_announce_size = DesiredAnnounceSize();
   if (desired_announce_size > 0) {
-    if ((min_progress_size_ > 0 && announced_window_delta_ <= 0) ||
-        desired_announce_size >= 8192) {
-      action.set_send_stream_update(
-          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-    } else {
-      action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
+    FlowControlAction::Urgency urgency =
+        FlowControlAction::Urgency::QUEUE_UPDATE;
+    // Size at which we probably want to wake up and write regardless of whether
+    // we *have* to.
+    // Currently set at half the initial window size or 8kb (whichever is
+    // greater). 8kb means we don't send rapidly unnecessarily when the initial
+    // window size is small.
+    const int64_t hurry_up_size =
+        std::max(static_cast<int64_t>(tfc_->sent_init_window()) / 2,
+                 static_cast<int64_t>(8192));
+    if (desired_announce_size > hurry_up_size) {
+      urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
     }
+    // min_progress_size_ > 0 means we have a reader ready to read.
+    if (min_progress_size_ > 0) {
+      // If we're into initial window to receive that data we should wake up and
+      // send an update.
+      if (announced_window_delta_ < 0) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      } else if (announced_window_delta_ == 0 &&
+                 tfc_->sent_init_window() == 0) {
+        // Special case when initial window size is zero, meaning that
+        // announced_window_delta cannot become negative (it may already be so
+        // however).
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      }
+    }
+    action.set_send_stream_update(urgency);
   }
   return action;
 }

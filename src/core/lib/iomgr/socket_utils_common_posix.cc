@@ -50,6 +50,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 /* set a socket to use zerocopy */
@@ -347,12 +348,12 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
         if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                             sizeof(timeout))) {
           gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
-                  strerror(errno));
+                  grpc_core::StrError(errno).c_str());
           return absl::OkStatus();
         }
         if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
           gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s",
-                  strerror(errno));
+                  grpc_core::StrError(errno).c_str());
           return absl::OkStatus();
         }
         if (newval != timeout) {
@@ -421,7 +422,8 @@ static grpc_error_handle error_for_fd(int fd,
   if (fd >= 0) return absl::OkStatus();
   auto addr_str = grpc_sockaddr_to_string(addr, false);
   grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
+      GRPC_OS_ERROR(errno, "socket"),
+      grpc_core::StatusStrProperty::kTargetAddress,
       addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
   return err;
 }

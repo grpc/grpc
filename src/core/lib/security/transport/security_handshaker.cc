@@ -581,7 +581,7 @@ void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
 class FailHandshaker : public Handshaker {
  public:
   const char* name() const override { return "security_fail"; }
-  void Shutdown(grpc_error_handle why) override { GRPC_ERROR_UNREF(why); }
+  void Shutdown(grpc_error_handle /*why*/) override {}
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
@@ -617,6 +617,9 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
                                           handshake_mgr);
     }
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kSecurityHandshakers;
+  }
   ~ClientSecurityHandshakerFactory() override = default;
 };
 
@@ -630,6 +633,9 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
     }
+  }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kSecurityHandshakers;
   }
   ~ServerSecurityHandshakerFactory() override = default;
 };
@@ -654,11 +660,9 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
 
 void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      false /* at_start */, HANDSHAKER_CLIENT,
-      std::make_unique<ClientSecurityHandshakerFactory>());
+      HANDSHAKER_CLIENT, std::make_unique<ClientSecurityHandshakerFactory>());
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      false /* at_start */, HANDSHAKER_SERVER,
-      std::make_unique<ServerSecurityHandshakerFactory>());
+      HANDSHAKER_SERVER, std::make_unique<ServerSecurityHandshakerFactory>());
 }
 
 }  // namespace grpc_core

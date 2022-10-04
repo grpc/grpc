@@ -29,11 +29,7 @@
 #include <string>
 
 #include <google/protobuf/any.pb.h>
-#include <google/protobuf/message.h>
 #include <google/protobuf/struct.pb.h>
-#include <google/protobuf/stubs/status.h>
-#include <google/protobuf/unknown_field_set.h>
-#include <google/protobuf/util/json_util.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
@@ -59,6 +55,11 @@
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
+
+// IWYU pragma: no_include <google/protobuf/message.h>
+// IWYU pragma: no_include <google/protobuf/stubs/status.h>
+// IWYU pragma: no_include <google/protobuf/unknown_field_set.h>
+// IWYU pragma: no_include <google/protobuf/util/json_util.h>
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
@@ -226,6 +227,8 @@ class XdsClientTest : public ::testing::Test {
       : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
                                    ResourceStruct> {
    public:
+    using ResourceStructType = ResourceStruct;
+
     // A watcher implementation that queues delivered watches.
     class Watcher
         : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
@@ -358,11 +361,7 @@ class XdsClientTest : public ::testing::Test {
           result.resource = foo.status();
         } else {
           result.name = foo->name;
-          auto resource = std::make_unique<typename XdsResourceTypeImpl<
-              XdsTestResourceType<ResourceStruct>,
-              ResourceStruct>::ResourceDataSubclass>();
-          resource->resource = std::move(*foo);
-          result.resource = std::move(resource);
+          result.resource = std::make_unique<ResourceStruct>(std::move(*foo));
         }
       }
       return result;
@@ -379,9 +378,13 @@ class XdsClientTest : public ::testing::Test {
   };
 
   // A fake "Foo" xDS resource type.
-  struct XdsFooResource {
+  struct XdsFooResource : public XdsResourceType::ResourceData {
     std::string name;
     uint32_t value;
+
+    XdsFooResource() = default;
+    XdsFooResource(std::string name, uint32_t value)
+        : name(std::move(name)), value(value) {}
 
     bool operator==(const XdsFooResource& other) const {
       return name == other.name && value == other.value;
@@ -405,9 +408,13 @@ class XdsClientTest : public ::testing::Test {
   using XdsFooResourceType = XdsTestResourceType<XdsFooResource>;
 
   // A fake "Bar" xDS resource type.
-  struct XdsBarResource {
+  struct XdsBarResource : public XdsResourceType::ResourceData {
     std::string name;
     std::string value;
+
+    XdsBarResource() = default;
+    XdsBarResource(std::string name, std::string value)
+        : name(std::move(name)), value(std::move(value)) {}
 
     bool operator==(const XdsBarResource& other) const {
       return name == other.name && value == other.value;
@@ -449,7 +456,7 @@ class XdsClientTest : public ::testing::Test {
 
     template <typename ResourceType>
     ResponseBuilder& AddResource(
-        const decltype(ResourceType::ResourceDataSubclass::resource)& resource,
+        const typename ResourceType::ResourceStructType& resource,
         bool in_resource_wrapper = false) {
       auto* res = response_.add_resources();
       *res = ResourceType::EncodeAsAny(resource);
@@ -712,7 +719,7 @@ TEST_F(XdsClientTest, BasicWatch) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -760,7 +767,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -779,7 +786,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource("foo1", 9))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher->WaitForNextResource();
@@ -827,7 +834,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -856,7 +863,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource("foo1", 9))
           .Serialize());
   // XdsClient should deliver the response to both watchers.
   resource = watcher->WaitForNextResource();
@@ -912,7 +919,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -940,7 +947,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{"foo2", 7})
+          .AddFooResource(XdsFooResource("foo2", 7))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
@@ -996,7 +1003,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1024,7 +1031,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{"foo2", 7})
+          .AddFooResource(XdsFooResource("foo2", 7))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
@@ -1043,7 +1050,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("C")
-          .AddFooResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource("foo1", 9))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher->WaitForNextResource();
@@ -1138,7 +1145,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource("foo1", 9))
           .Serialize());
   // XdsClient should deliver the response to both watchers.
   auto resource = watcher->WaitForNextResource();
@@ -1233,7 +1240,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                               "{\"name\":\"foo3,\"value\":6}",
                               /*resource_wrapper_name=*/"foo3")
           // foo4: valid resource.
-          .AddFooResource(XdsFooResource{"foo4", 5})
+          .AddFooResource(XdsFooResource("foo4", 5))
           .Serialize());
   // XdsClient should deliver an error to the watchers for foo1 and foo3.
   auto error = watcher->WaitForNextError();
@@ -1316,7 +1323,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1415,7 +1422,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExist) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
@@ -1468,7 +1475,7 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1542,8 +1549,8 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{"foo1", 6})
-          .AddFooResource(XdsFooResource{"foo2", 7})
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .AddFooResource(XdsFooResource("foo2", 7))
           .Serialize());
   // Watchers for foo1 do NOT get an update, since the resource has not changed.
   EXPECT_FALSE(watcher->WaitForNextResource());
@@ -1598,7 +1605,7 @@ TEST_F(XdsClientTest, StreamClosedByServerAndResourcesNotResentOnNewStream) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1700,7 +1707,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
@@ -1752,7 +1759,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6},
+          .AddFooResource(XdsFooResource("foo1", 6),
                           /*in_resource_wrapper=*/true)
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
@@ -1801,7 +1808,7 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1831,7 +1838,7 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
       ResponseBuilder(XdsBarResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddBarResource(XdsBarResource{"bar1", "whee"})
+          .AddBarResource(XdsBarResource("bar1", "whee"))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource2 = watcher2->WaitForNextResource();
@@ -1890,7 +1897,7 @@ TEST_F(XdsClientTest, BasicWatchV2) {
       ResponseBuilder(XdsFooResourceType::Get()->v2_type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1947,7 +1954,7 @@ TEST_F(XdsClientTest, Federation) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1983,7 +1990,7 @@ TEST_F(XdsClientTest, Federation) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{kXdstpResourceName, 3})
+          .AddFooResource(XdsFooResource(kXdstpResourceName, 3))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
@@ -2048,7 +2055,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -2080,7 +2087,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{kXdstpResourceName, 3})
+          .AddFooResource(XdsFooResource(kXdstpResourceName, 3))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
@@ -2175,7 +2182,7 @@ TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{kXdstpResourceName, 6})
+          .AddFooResource(XdsFooResource(kXdstpResourceName, 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -2232,7 +2239,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -2268,7 +2275,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddFooResource(XdsFooResource{kXdstpResourceName, 3})
+          .AddFooResource(XdsFooResource(kXdstpResourceName, 3))
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();

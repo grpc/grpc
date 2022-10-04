@@ -78,8 +78,8 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -116,8 +116,9 @@ const grpc_transport_vtable kFakeTransportVTable = {
     [](grpc_transport*, grpc_stream*, grpc_stream_refcount*, const void*,
        Arena*) -> int { abort(); },
     // make_call_promise
-    [](grpc_transport*,
-       ClientMetadataHandle) -> ArenaPromise<ServerMetadataHandle> { abort(); },
+    [](grpc_transport*, CallArgs) -> ArenaPromise<ServerMetadataHandle> {
+      abort();
+    },
     // set_pollset
     [](grpc_transport*, grpc_stream*, grpc_pollset*) { abort(); },
     // set_pollset_set
@@ -317,11 +318,12 @@ const grpc_channel_filter* FindFilter(absl::string_view name) {
 
 class MainLoop {
  public:
-  MainLoop(RefCountedPtr<grpc_channel_stack> channel_stack,
+  MainLoop(bool is_client, RefCountedPtr<grpc_channel_stack> channel_stack,
            const ChannelArgs& channel_args)
       : memory_allocator_(channel_args.GetObject<ResourceQuota>()
                               ->memory_quota()
                               ->CreateMemoryAllocator("test")),
+        is_client_(is_client),
         channel_stack_(std::move(channel_stack)) {}
 
   ~MainLoop() {
@@ -349,9 +351,9 @@ class MainLoop {
         calls_.erase(action.call());
         break;
       case filter_fuzzer::Action::kCreateCall:
-        calls_.emplace(
-            action.call(),
-            std::make_unique<Call>(this, action.call(), action.create_call()));
+        calls_.emplace(action.call(), std::make_unique<Call>(
+                                          this, action.call(),
+                                          action.create_call(), is_client_));
         break;
       case filter_fuzzer::Action::kReceiveInitialMetadata:
         if (auto* call = GetCall(action.call())) {
@@ -407,6 +409,10 @@ class MainLoop {
     }
     void Drop() override { delete this; }
 
+    std::string ActivityDebugTag() const override {
+      return "WakeCall(" + std::to_string(id_) + ")";
+    }
+
    private:
     MainLoop* const main_loop_;
     uint32_t id_;
@@ -460,14 +466,20 @@ class MainLoop {
     };
 
     Call(MainLoop* main_loop, uint32_t id,
-         const filter_fuzzer::Metadata& client_initial_metadata)
+         const filter_fuzzer::Metadata& client_initial_metadata, bool is_client)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
       auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
-      promise_ = main_loop_->channel_stack_->MakeCallPromise(
-          CallArgs{std::move(*LoadMetadata(client_initial_metadata,
-                                           &client_initial_metadata_)),
-                   server_initial_metadata});
+      CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
+                                                 &client_initial_metadata_)),
+                         server_initial_metadata, nullptr, nullptr};
+      if (is_client) {
+        promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
+            std::move(call_args));
+      } else {
+        promise_ = main_loop_->channel_stack_->MakeServerCallPromise(
+            std::move(call_args));
+      }
       Step();
     }
 
@@ -574,7 +586,7 @@ class MainLoop {
     };
 
     template <typename R>
-    absl::optional<MetadataHandle<R>> LoadMetadata(
+    absl::optional<FragmentHandle<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
       if (*out != nullptr) return absl::nullopt;
       *out = std::make_unique<R>(arena_.get());
@@ -582,7 +594,7 @@ class MainLoop {
         (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
                        [](absl::string_view, const Slice&) {});
       }
-      return MetadataHandle<R>::TestOnlyWrap(out->get());
+      return FragmentHandle<R>::TestOnlyWrap(out->get());
     }
 
     void Step() {
@@ -626,6 +638,7 @@ class MainLoop {
   }
 
   MemoryAllocator memory_allocator_;
+  const bool is_client_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
   std::map<uint32_t, std::unique_ptr<Call>> calls_;
   std::vector<uint32_t> wakeups_;
@@ -642,7 +655,6 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
     return;
   }
 
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
@@ -681,7 +693,7 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }();
 
   if (stack.ok()) {
-    grpc_core::MainLoop main_loop(std::move(*stack), channel_args);
+    grpc_core::MainLoop main_loop(is_client, std::move(*stack), channel_args);
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
       main_loop.Run(action, &globals);

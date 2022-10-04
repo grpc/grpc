@@ -107,9 +107,9 @@ static void CFStreamRef(CFStreamEndpoint* ep) { gpr_ref(&ep->refcount); }
 static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error,
                                                CFStreamEndpoint* ep) {
   return grpc_error_set_str(
-      grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS,
+      grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, ep->peer_string);
+      grpc_core::StatusStrProperty::kTargetAddress, ep->peer_string);
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {

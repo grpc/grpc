@@ -49,6 +49,7 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/promise/test_context.h"
@@ -153,10 +154,8 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
   TestContext<Arena> context(arena_.get());
   TestContext<grpc_call_context_element> promise_call_context(call_context_);
   auto promise = filter->MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
+               nullptr, nullptr, nullptr},
       [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
@@ -185,10 +184,8 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   TestContext<Arena> context(arena_.get());
   TestContext<grpc_call_context_element> promise_call_context(call_context_);
   auto promise = filter->MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
+               nullptr, nullptr, nullptr},
       [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {

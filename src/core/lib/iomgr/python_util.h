@@ -32,7 +32,7 @@
 
 inline grpc_error_handle grpc_socket_error(char* error) {
   return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error),
-                            GRPC_ERROR_INT_GRPC_STATUS,
+                            grpc_core::StatusIntProperty::kRpcStatus,
                             GRPC_STATUS_UNAVAILABLE);
 }
 

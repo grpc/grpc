@@ -104,7 +104,7 @@ class CallData {
                       ForwardSendMessageBatch, elem, grpc_schedule_on_exec_ctx);
   }
 
-  ~CallData() { GRPC_ERROR_UNREF(cancel_error_); }
+  ~CallData() {}
 
   void CompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);

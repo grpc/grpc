@@ -427,9 +427,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
 /// Replace gRPC's default EventEngine factory.
 ///
-/// Applications may call \a SetEventEngineFactory time to replace the default
-/// factory used within gRPC. EventEngines will be created when necessary, when
-/// they are otherwise not provided by the application.
+/// Applications may call \a SetEventEngineFactory at any time to replace the
+/// default factory used within gRPC. EventEngines will be created when
+/// necessary, when they are otherwise not provided by the application.
 ///
 /// To be certain that none of the gRPC-provided built-in EventEngines are
 /// created, applications must set a custom EventEngine factory method *before*
@@ -437,14 +437,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 void SetEventEngineFactory(
     absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
 
-/// Revert to using gRPC's default EventEngine factory.
+/// Reset gRPC's EventEngine factory to the built-in default.
 ///
-/// Applications that have called \a SetEventEngineFactory can unregister their
-/// custom factory, reverting to use gRPC's built-in default EventEngines. This
-/// has no effect on any EventEngines that were already created using the custom
-/// factory.
-void RevertToDefaultEventEngineFactory();
-
+/// Applications that have called \a SetEventEngineFactory can remove their
+/// custom factory using this method. The built-in EventEngine factories will be
+/// used going forward. This has no affect on any EventEngines that were created
+/// using the previous factories.
+void EventEngineFactoryReset();
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
 

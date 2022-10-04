@@ -221,7 +221,7 @@ failure:
   grpc_error_handle final_error = grpc_error_set_str(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Failed to connect",
                                                        &error, 1),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
+      grpc_core::StatusStrProperty::kTargetAddress,
       addr_uri.ok() ? *addr_uri : addr_uri.status().ToString());
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

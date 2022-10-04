@@ -40,7 +40,6 @@
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -146,9 +145,7 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "");
   // Check defaults.
@@ -179,9 +176,7 @@ TEST_F(ClusterTypeTest, EdsConfigSourceAds) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "");
 }
@@ -201,9 +196,7 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "bar");
 }
@@ -306,9 +299,7 @@ TEST_F(ClusterTypeTest, LogicalDnsValid) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.cluster_type, resource.LOGICAL_DNS);
   EXPECT_EQ(resource.dns_hostname, "server.example.com:443");
 }
@@ -540,9 +531,7 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.cluster_type, resource.AGGREGATE);
   EXPECT_THAT(resource.prioritized_cluster_names,
               ::testing::ElementsAre("bar", "baz", "quux"));
@@ -594,9 +583,7 @@ TEST_F(LbPolicyTest, LbPolicyRingHash) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
             "[{\"ring_hash_experimental\":{"
             "\"max_ring_size\":8388608,\"min_ring_size\":1024}}]");
@@ -619,9 +606,7 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSize) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
             "[{\"ring_hash_experimental\":{"
             "\"max_ring_size\":4096,\"min_ring_size\":2048}}]");
@@ -780,9 +765,7 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.common_tls_context.certificate_validation_context
                 .ca_certificate_provider_instance.instance_name,
             "provider1");
@@ -924,9 +907,7 @@ TEST_F(LrsTest, Valid) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   ASSERT_TRUE(resource.lrs_load_reporting_server.has_value());
   EXPECT_EQ(*resource.lrs_load_reporting_server,
             xds_client_->bootstrap().server());
@@ -981,9 +962,7 @@ TEST_F(CircuitBreakingTest, Valid) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.max_concurrent_requests, 1701);
 }
 
@@ -1003,9 +982,7 @@ TEST_F(CircuitBreakingTest, NoDefaultThreshold) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.max_concurrent_requests, 1024);  // Default.
 }
 
@@ -1024,9 +1001,7 @@ TEST_F(CircuitBreakingTest, DefaultThresholdWithMaxRequestsUnset) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   EXPECT_EQ(resource.max_concurrent_requests, 1024);  // Default.
 }
 
@@ -1051,9 +1026,7 @@ TEST_F(OutlierDetectionTest, EnabledWithDefaults) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   ASSERT_TRUE(resource.outlier_detection.has_value());
   EXPECT_EQ(*resource.outlier_detection, OutlierDetectionConfig());
 }
@@ -1072,9 +1045,7 @@ TEST_F(OutlierDetectionTest, NotEnabledWithEnvVarUnset) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   ASSERT_FALSE(resource.outlier_detection.has_value());
 }
 
@@ -1105,9 +1076,7 @@ TEST_F(OutlierDetectionTest, AllFieldsSet) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
   ASSERT_TRUE(resource.outlier_detection.has_value());
   EXPECT_EQ(resource.outlier_detection->interval, Duration::Seconds(1));
   EXPECT_EQ(resource.outlier_detection->base_ejection_time,
