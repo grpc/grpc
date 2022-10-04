@@ -107,9 +107,9 @@ void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
 
 TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   ThreadPool p;
-  // Our first thread pool implementation tried to create ~4M threads for this
+  // Our first thread pool implementation tried to create ~1M threads for this
   // test.
-  ScheduleTwiceUntilZero(&p, 22);
+  ScheduleTwiceUntilZero(&p, 20);
 }
 
 }  // namespace experimental
