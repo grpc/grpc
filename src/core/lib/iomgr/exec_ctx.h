@@ -29,6 +29,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -96,8 +97,19 @@ class Combiner;
 class ExecCtx {
  public:
   /** Default Constructor */
-
-  ExecCtx() : flags_(0) {
+  // By default we start ExecCtx's as finished, meaning it's better to offload
+  // work from them then to spin and complete it - so that we complete API calls
+  // quickly and do follow up work on background threads.
+  // The one exception is for the top level ExecCtx on an EventEngine thread, in
+  // that case we never want to finish because if we are, then we'd want to
+  // offload work to another thread in the event engine, and probably it's
+  // better just to do that work here.
+  ExecCtx()
+      : flags_(ExecCtx::Get() == nullptr &&
+                       grpc_event_engine::experimental::ThreadPool::
+                           IsCurrentThreadThreadPoolThread()
+                   ? 0
+                   : GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
     Fork::IncExecCtxCount();
     Set(this);
   }

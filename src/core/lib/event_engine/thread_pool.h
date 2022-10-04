@@ -48,6 +48,8 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
   void PostforkParent() override;
   void PostforkChild() override;
 
+  static bool IsCurrentThreadThreadPoolThread() { return g_threadpool_thread_; }
+
  private:
   class Queue {
    public:
@@ -106,6 +108,10 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
 
   const int reserve_threads_;
   const StatePtr state_ = std::make_shared<State>(reserve_threads_);
+
+  // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
+  // current thread (with nullptr indicating not a threadpool thread).
+  static thread_local bool g_threadpool_thread_;
 };
 
 }  // namespace experimental

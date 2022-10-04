@@ -33,11 +33,9 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
 // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
 // current thread (with nullptr indicating not a threadpool thread).
-thread_local bool g_threadpool_thread;
-}  // namespace
+thread_local bool ThreadPool::g_threadpool_thread_;
 
 void ThreadPool::StartThread(StatePtr state, bool throttled) {
   state->thread_count.Add();
@@ -54,7 +52,7 @@ void ThreadPool::StartThread(StatePtr state, bool throttled) {
       "event_engine",
       [](void* arg) {
         std::unique_ptr<ThreadArg> a(static_cast<ThreadArg*>(arg));
-        g_threadpool_thread = true;
+        g_threadpool_thread_ = true;
         if (a->throttled) {
           GPR_ASSERT(a->state->currently_starting_one_thread.exchange(
               false, std::memory_order_relaxed));
@@ -112,7 +110,7 @@ ThreadPool::~ThreadPool() {
   // Note that if this is a threadpool thread then we won't exit this thread
   // until the callstack unwinds a little, so we need to wait for just one
   // thread running instead of zero.
-  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0,
+  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread_ ? 1 : 0,
                                              "shutting down");
 }
 
