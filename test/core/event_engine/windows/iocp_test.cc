@@ -28,6 +28,7 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/notification.h"
