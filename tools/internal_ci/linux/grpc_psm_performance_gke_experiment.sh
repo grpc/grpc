@@ -17,9 +17,9 @@ set -ex
 # Enter the gRPC repo root.
 cd "$(dirname "$0")/../../.."
 
-# Connect to benchmarks-dev1 cluster.
+# Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-dev1 \
+gcloud container clusters get-credentials psm-benchmarks-performance \
     --zone us-central1-b --project grpc-testing
 
 # Set up environment variables.
@@ -28,7 +28,8 @@ LOAD_TEST_PREFIX="wanlin-cpu-test"
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
-UNIQUE_IDENTIFIER="20220912140506"
+UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
+
 # Head of the workspace checked out by Kokoro.
 GRPC_GITREF="$(git show --format="%H" --no-patch)"
 # Prebuilt workers for core languages are always built from grpc/grpc.
@@ -56,19 +57,19 @@ PSM_IMAGE_TAG=v1.4.1
 # Build psm test configurations.
 psmBuildConfigs() {
     local -r pool="$1"
-    local -r table="$2"
-    local -r proxy_type="$3"
+    local -r proxy_type="$2"
 
-    shift 3
+    shift 2
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_psm_"${proxy_type}"_prebuilt_all_languages.yaml \
         -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
-        -s big_query_table="${table}" -s timeout_seconds=900 \
+        -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         -s psm_image_prefix="${PSM_IMAGE_PREFIX}" \
         -s psm_image_tag="${PSM_IMAGE_TAG}" \
+        -s big_query_table= \
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
@@ -80,28 +81,25 @@ psmBuildConfigs() {
         -o "psm_${proxy_type}_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-psmBuildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxied -a queue="${WORKER_POOL_8CORE}-proxied"  -l c++ --client_channels=8 --server_threads=16 --offered_loads 10000 --runs_per_test 24
+psmBuildConfigs "${WORKER_POOL_8CORE}" proxied -a queue="${WORKER_POOL_8CORE}-proxied"  -l c++ --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
 
-# psmBuildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxyless -a queue="${WORKER_POOL_8CORE}-proxyless" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
+psmBuildConfigs "${WORKER_POOL_8CORE}" proxyless -a queue="${WORKER_POOL_8CORE}-proxyless" -l c++ --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
 
 # Build regular test configurations.
 buildConfigs() {
     local -r pool="$1"
-    local -r table="$2"
-    shift 2
+    shift 1
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
         -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
-        -s big_query_table="${table}" -s timeout_seconds=900 \
+        -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
-        -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
+        -s big_query_table= \
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
-        -a ci_jobName="${KOKORO_JOB_NAME}" \
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
-        -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
         -a enablePrometheus=true \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=psm \
@@ -109,8 +107,7 @@ buildConfigs() {
         -o "regular_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-# buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -a queue="${WORKER_POOL_8CORE}-regular" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
-
+buildConfigs "${WORKER_POOL_8CORE}" -a queue="${WORKER_POOL_8CORE}-regular" -l c++ --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
 
 # Run tests.
 time ../test-infra/bin/runner \
