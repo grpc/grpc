@@ -19,11 +19,11 @@
 #ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 #define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
-#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <grpc/grpc.h>
-
-#include "test/core/util/test_config.h"
+#include <grpc/slice.h>
 
 #define GRPC_BAD_CLIENT_REGISTERED_METHOD "/registered/bar"
 #define GRPC_BAD_CLIENT_REGISTERED_HOST "localhost"

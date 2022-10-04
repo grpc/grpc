@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -48,6 +49,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
@@ -169,7 +171,8 @@ HttpRequest::HttpRequest(
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
-      test_only_generate_response_(std::move(test_only_generate_response)) {
+      test_only_generate_response_(std::move(test_only_generate_response)),
+      resolver_(GetDNSResolver()) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -192,7 +195,7 @@ HttpRequest::~HttpRequest() {
   if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
   }
-  grpc_slice_unref(request_text_);
+  CSliceUnref(request_text_);
   grpc_iomgr_unregister_object(&iomgr_obj_);
   grpc_slice_buffer_destroy(&incoming_);
   grpc_slice_buffer_destroy(&outgoing_);
@@ -206,7 +209,7 @@ void HttpRequest::Start() {
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  dns_request_handle_ = GetDNSResolver()->LookupHostname(
+  dns_request_handle_ = resolver_->LookupHostname(
       absl::bind_front(&HttpRequest::OnResolved, this), uri_.authority(),
       uri_.scheme(), kDefaultDNSRequestTimeout, pollset_set_,
       /*name_server=*/"");
@@ -219,7 +222,7 @@ void HttpRequest::Orphan() {
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (dns_request_handle_.has_value() &&
-        GetDNSResolver()->Cancel(dns_request_handle_.value())) {
+        resolver_->Cancel(dns_request_handle_.value())) {
       Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "cancelled during DNS resolution"));
       Unref();
@@ -247,7 +250,7 @@ void HttpRequest::AppendError(grpc_error_handle error) {
   overall_error_ = grpc_error_add_child(
       overall_error_,
       grpc_error_set_str(
-          error, GRPC_ERROR_STR_TARGET_ADDRESS,
+          error, StatusStrProperty::kTargetAddress,
           addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
 }
 
@@ -287,7 +290,7 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
 }
 
 void HttpRequest::StartWrite() {
-  grpc_slice_ref(request_text_);
+  CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
@@ -388,7 +391,7 @@ void HttpRequest::OnResolved(
   }
   addresses_ = std::move(*addresses_or);
   next_address_ = 0;
-  NextAddress(GRPC_ERROR_NONE);
+  NextAddress(absl::OkStatus());
 }
 
 }  // namespace grpc_core

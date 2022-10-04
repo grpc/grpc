@@ -74,7 +74,7 @@ grpc_error_handle CensusClientChannelData::Init(
   tracing_enabled_ = grpc_core::ChannelArgs::FromC(args->channel_args)
                          .GetInt(GRPC_ARG_ENABLE_OBSERVABILITY)
                          .value_or(true);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 //
@@ -91,7 +91,7 @@ grpc_error_handle CensusClientChannelData::CensusClientCallData::Init(
   args->context[GRPC_CONTEXT_CALL_TRACER].destroy = [](void* tracer) {
     (static_cast<OpenCensusCallTracer*>(tracer))->~OpenCensusCallTracer();
   };
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void CensusClientChannelData::CensusClientCallData::StartTransportStreamOpBatch(

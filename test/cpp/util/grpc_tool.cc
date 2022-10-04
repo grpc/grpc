@@ -537,7 +537,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   if (!absl::GetFlag(FLAGS_binary_input) ||
       !absl::GetFlag(FLAGS_binary_output)) {
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {
@@ -923,7 +923,7 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
       !absl::GetFlag(FLAGS_binary_output)) {
     std::shared_ptr<grpc::Channel> channel =
         CreateCliChannel(server_address, cred, grpc::ChannelArguments());
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {

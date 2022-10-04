@@ -30,6 +30,7 @@
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -57,6 +58,7 @@ class Epoll1Poller : public PosixEventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
+  bool CanTrackErrors() const override { return KernelSupportsErrqueue(); }
   ~Epoll1Poller() override;
 
  private:

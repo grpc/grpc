@@ -135,7 +135,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   GUID guid = WSAID_CONNECTEX;
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info* info;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   async_connect* ac = NULL;
   absl::StatusOr<std::string> addr_uri;
 
@@ -221,7 +221,7 @@ failure:
   grpc_error_handle final_error = grpc_error_set_str(
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Failed to connect",
                                                        &error, 1),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
+      grpc_core::StatusStrProperty::kTargetAddress,
       addr_uri.ok() ? *addr_uri : addr_uri.status().ToString());
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

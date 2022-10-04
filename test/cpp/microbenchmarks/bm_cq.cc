@@ -91,8 +91,8 @@ static void BM_Pass1Cpp(benchmark::State& state) {
     PhonyTag phony_tag;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(c_cq, &phony_tag));
-    grpc_cq_end_op(c_cq, &phony_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
-                   nullptr, &completion);
+    grpc_cq_end_op(c_cq, &phony_tag, absl::OkStatus(),
+                   DoneWithCompletionOnStack, nullptr, &completion);
 
     void* tag;
     bool ok;
@@ -111,7 +111,7 @@ static void BM_Pass1Core(benchmark::State& state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
-    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+    grpc_cq_end_op(cq, nullptr, absl::OkStatus(), DoneWithCompletionOnStack,
                    nullptr, &completion);
 
     grpc_completion_queue_next(cq, deadline, nullptr);
@@ -130,7 +130,7 @@ static void BM_Pluck1Core(benchmark::State& state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
-    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+    grpc_cq_end_op(cq, nullptr, absl::OkStatus(), DoneWithCompletionOnStack,
                    nullptr, &completion);
 
     grpc_completion_queue_pluck(cq, nullptr, deadline, nullptr);
@@ -230,7 +230,7 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion completion;
     GPR_ASSERT(grpc_cq_begin_op(cc, &tag_cb));
-    grpc_cq_end_op(cc, &tag_cb, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+    grpc_cq_end_op(cc, &tag_cb, absl::OkStatus(), DoneWithCompletionOnStack,
                    nullptr, &completion);
   }
   shutdown_and_destroy(cc);
@@ -275,7 +275,7 @@ static void BM_Callback_CQ_Pass1CoreHeapCompletion(benchmark::State& state) {
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion* completion = new grpc_cq_completion;
     GPR_ASSERT(grpc_cq_begin_op(cc, &tag_cb));
-    grpc_cq_end_op(cc, &tag_cb, GRPC_ERROR_NONE, DoneWithCompletionOnHeap,
+    grpc_cq_end_op(cc, &tag_cb, absl::OkStatus(), DoneWithCompletionOnHeap,
                    nullptr, completion);
   }
   shutdown_and_destroy(cc);

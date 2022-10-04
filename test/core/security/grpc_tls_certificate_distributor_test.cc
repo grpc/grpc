@@ -137,11 +137,11 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
       std::string identity_error_str;
       if (!root_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(
-            root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_str));
+            root_cert_error, StatusStrProperty::kDescription, &root_error_str));
       }
       if (!identity_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(identity_cert_error,
-                                      GRPC_ERROR_STR_DESCRIPTION,
+                                      StatusStrProperty::kDescription,
                                       &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
@@ -189,7 +189,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     // The TlsCertificatesTestWatcher dtor will set WatcherState::watcher back
     // to nullptr to indicate that it's been destroyed.
     auto watcher =
-        absl::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
+        std::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
     distributor_.WatchTlsCertificates(std::move(watcher),
                                       std::move(root_cert_name),
                                       std::move(identity_cert_name));

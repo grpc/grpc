@@ -94,7 +94,7 @@ void grpc_tcp_client_global_init() {
 static grpc_error_handle prepare_socket(
     const grpc_resolved_address* addr, int fd,
     const grpc_core::PosixTcpOptions& options) {
-  grpc_error_handle err = GRPC_ERROR_NONE;
+  grpc_error_handle err;
 
   GPR_ASSERT(fd >= 0);
 
@@ -186,14 +186,14 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (!error.ok()) {
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
+    error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kOsError,
+                               "Timeout occurred");
     goto finish;
   }
 
   if (connect_cancelled) {
     // The callback should not get scheduled in this case.
-    error = GRPC_ERROR_NONE;
+    error = absl::OkStatus();
     goto finish;
   }
 
@@ -261,12 +261,15 @@ finish:
   gpr_mu_unlock(&ac->mu);
   if (!error.ok()) {
     std::string str;
-    bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
+    bool ret = grpc_error_get_str(
+        error, grpc_core::StatusStrProperty::kDescription, &str);
     GPR_ASSERT(ret);
     std::string description =
         absl::StrCat("Failed to connect to remote host: ", str);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, description);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kDescription, description);
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kTargetAddress, addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -306,10 +309,10 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
       memcpy(mapped_addr, addr, sizeof(*mapped_addr));
     }
   }
-  if ((error = prepare_socket(mapped_addr, *fd, options)) != GRPC_ERROR_NONE) {
+  if ((error = prepare_socket(mapped_addr, *fd, options)) != absl::OkStatus()) {
     return error;
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 int64_t grpc_tcp_client_create_from_prepared_fd(
@@ -343,15 +346,15 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
     *ep = grpc_tcp_client_create_from_fd(fdobj, options, addr_uri.value());
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               addr_uri.value());
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kTargetAddress, addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
@@ -404,7 +407,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   grpc_error_handle error;
   *ep = nullptr;
   if ((error = grpc_tcp_client_prepare_fd(options, addr, &mapped_addr, &fd)) !=
-      GRPC_ERROR_NONE) {
+      absl::OkStatus()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
@@ -450,7 +453,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     // Shutdown the fd. This would cause on_writable to run as soon as possible.
     // We dont need to pass a custom error here because it wont be used since
     // the on_connect_closure is not run if connect cancellation is successfull.
-    grpc_fd_shutdown(ac->fd, GRPC_ERROR_NONE);
+    grpc_fd_shutdown(ac->fd, absl::OkStatus());
   }
   bool done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);

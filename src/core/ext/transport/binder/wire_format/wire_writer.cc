@@ -301,7 +301,7 @@ absl::Status WireWriterImpl::SendAck(int64_t num_bytes) {
     args->tx = RunScheduledTxArgs::AckTx();
     absl::get<RunScheduledTxArgs::AckTx>(args->tx).num_bytes = num_bytes;
     auto cl = GRPC_CLOSURE_CREATE(RunScheduledTx, args, nullptr);
-    combiner_->Run(cl, GRPC_ERROR_NONE);
+    combiner_->Run(cl, absl::OkStatus());
     return absl::OkStatus();
   }
   // Otherwise, we can directly send ack.
@@ -378,7 +378,7 @@ void WireWriterImpl::TryScheduleTransaction() {
       num_non_acked_tx_in_combiner_++;
       combiner_->Run(GRPC_CLOSURE_CREATE(RunScheduledTx,
                                          pending_outgoing_tx_.front(), nullptr),
-                     GRPC_ERROR_NONE);
+                     absl::OkStatus());
       pending_outgoing_tx_.pop();
     } else {
       // It is common to fill `kFlowControlWindowSize` completely because

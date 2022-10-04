@@ -60,7 +60,7 @@ grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
   status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
                     NULL, NULL);
   return status == 0
-             ? GRPC_ERROR_NONE
+             ? absl::OkStatus()
              : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
 }
 
@@ -70,7 +70,7 @@ static grpc_error_handle set_dualstack(SOCKET sock) {
   status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&param,
                       sizeof(param));
   return status == 0
-             ? GRPC_ERROR_NONE
+             ? absl::OkStatus()
              : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
@@ -82,7 +82,7 @@ static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
   if (status == SOCKET_ERROR) {
     status = WSAGetLastError();
   }
-  return status == 0 ? GRPC_ERROR_NONE
+  return status == 0 ? absl::OkStatus()
                      : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
 }
 
@@ -94,7 +94,7 @@ grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock) {
   if (!err.ok()) return err;
   err = enable_socket_low_latency(sock);
   if (!err.ok()) return err;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 typedef struct grpc_tcp {
@@ -222,7 +222,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
                 ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                       "TCP stream shutting down", &tcp->shutdown_error, 1)
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING("End of TCP stream"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       }
     }
   }
@@ -255,7 +255,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                 "TCP socket is shutting down", &tcp->shutdown_error, 1),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
     return;
   }
 
@@ -288,7 +288,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transferred = bytes_read;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &tcp->on_read, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &tcp->on_read, absl::OkStatus());
     return;
   }
 
@@ -369,7 +369,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                 "TCP socket is shutting down", &tcp->shutdown_error, 1),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
     return;
   }
 
@@ -398,7 +398,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
      avoid doing an async write operation at all. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     grpc_error_handle error = status == 0
-                                  ? GRPC_ERROR_NONE
+                                  ? absl::OkStatus()
                                   : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
     if (allocated) gpr_free(allocated);

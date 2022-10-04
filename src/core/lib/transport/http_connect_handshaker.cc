@@ -27,7 +27,7 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -303,7 +303,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       MutexLock lock(&mu_);
       is_shutdown_ = true;
     }
-    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, absl::OkStatus());
     return;
   }
   // Get headers from channel args.
@@ -385,6 +385,9 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kHTTPConnectHandshakers;
+  }
   ~HttpConnectHandshakerFactory() override = default;
 };
 
@@ -392,8 +395,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<HttpConnectHandshakerFactory>());
+      HANDSHAKER_CLIENT, std::make_unique<HttpConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

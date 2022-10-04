@@ -18,9 +18,11 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
+
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/util/test_config.h"
 

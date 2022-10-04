@@ -29,7 +29,7 @@
 #include <string>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -57,6 +57,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_factory.h"
@@ -319,7 +320,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, &slice,
           args_->args.ToC().get(), 1);
-      grpc_slice_unref(slice);
+      CSliceUnref(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, nullptr,
@@ -341,7 +342,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
         MakeChannelzSecurityFromAuthContext(auth_context_.get()));
   }
   // Invoke callback.
-  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, absl::OkStatus());
   // Set shutdown to true so that subsequent calls to
   // security_handshaker_shutdown() do nothing.
   is_shutdown_ = true;
@@ -362,13 +363,13 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   }
   connector_->check_peer(peer, args_->endpoint, args_->args, &auth_context_,
                          &on_peer_checked_);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     tsi_result result, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   // Handshaker was shutdown.
   if (is_shutdown_) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
@@ -459,7 +460,7 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
   if (result == TSI_ASYNC) {
     // Handshaker operating asynchronously. Nothing else to do here;
     // callback will be invoked in a TSI thread.
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   // Handshaker returned synchronously. Invoke callback directly in
   // this thread with our existing exec_ctx.
@@ -580,7 +581,7 @@ void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
 class FailHandshaker : public Handshaker {
  public:
   const char* name() const override { return "security_fail"; }
-  void Shutdown(grpc_error_handle why) override { GRPC_ERROR_UNREF(why); }
+  void Shutdown(grpc_error_handle /*why*/) override {}
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
@@ -616,6 +617,9 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
                                           handshake_mgr);
     }
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kSecurityHandshakers;
+  }
   ~ClientSecurityHandshakerFactory() override = default;
 };
 
@@ -629,6 +633,9 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
     }
+  }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kSecurityHandshakers;
   }
   ~ServerSecurityHandshakerFactory() override = default;
 };
@@ -653,11 +660,9 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
 
 void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      false /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<ClientSecurityHandshakerFactory>());
+      HANDSHAKER_CLIENT, std::make_unique<ClientSecurityHandshakerFactory>());
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      false /* at_start */, HANDSHAKER_SERVER,
-      absl::make_unique<ServerSecurityHandshakerFactory>());
+      HANDSHAKER_SERVER, std::make_unique<ServerSecurityHandshakerFactory>());
 }
 
 }  // namespace grpc_core

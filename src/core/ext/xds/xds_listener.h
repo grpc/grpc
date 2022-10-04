@@ -48,7 +48,7 @@ namespace grpc_core {
 
 // TODO(roth): When we can use absl::variant<>, consider using that
 // here, to enforce the fact that only one of the two fields can be set.
-struct XdsListenerResource {
+struct XdsListenerResource : public XdsResourceType::ResourceData {
   struct DownstreamTlsContext {
     CommonTlsContext common_tls_context;
     bool require_client_certificate = false;
