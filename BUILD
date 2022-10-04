@@ -4226,6 +4226,7 @@ grpc_cc_library(
         "src/core/ext/filters/message_size/message_size_filter.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -4249,6 +4250,7 @@ grpc_cc_library(
         "json_object_loader",
         "service_config_parser",
         "slice_buffer",
+        "status_helper",
         "validation_errors",
     ],
 )
