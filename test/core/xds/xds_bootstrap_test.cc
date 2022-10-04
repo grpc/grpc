@@ -598,8 +598,7 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
     if (it == config_json.object_value().end()) {
       return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
     } else if (it->second.type() != Json::Type::NUMBER) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:config field:value not of type number");
+      *error = GRPC_ERROR_CREATE("field:config field:value not of type number");
     } else {
       int value = 0;
       EXPECT_TRUE(absl::SimpleAtoi(it->second.string_value(), &value));

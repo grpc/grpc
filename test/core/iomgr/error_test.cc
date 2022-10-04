@@ -29,7 +29,7 @@
 #include "test/core/util/test_config.h"
 
 TEST(ErrorTest, SetGetInt) {
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
+  grpc_error_handle error = GRPC_ERROR_CREATE("Test");
   EXPECT_NE(error, absl::OkStatus());
   intptr_t i = 0;
 #ifndef NDEBUG
@@ -59,7 +59,7 @@ TEST(ErrorTest, SetGetInt) {
 }
 
 TEST(ErrorTest, SetGetStr) {
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
+  grpc_error_handle error = GRPC_ERROR_CREATE("Test");
 
   std::string str;
   EXPECT_TRUE(
@@ -89,7 +89,7 @@ TEST(ErrorTest, SetGetStr) {
 TEST(ErrorTest, CopyAndUnRef) {
   // error1 has one ref
   grpc_error_handle error1 =
-      grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test"),
+      grpc_error_set_str(GRPC_ERROR_CREATE("Test"),
                          grpc_core::StatusStrProperty::kGrpcMessage, "message");
   std::string str;
   EXPECT_TRUE(grpc_error_get_str(
@@ -114,27 +114,26 @@ TEST(ErrorTest, CopyAndUnRef) {
 
 TEST(ErrorTest, CreateReferencing) {
   grpc_error_handle child =
-      grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child"),
+      grpc_error_set_str(GRPC_ERROR_CREATE("Child"),
                          grpc_core::StatusStrProperty::kGrpcMessage, "message");
-  grpc_error_handle parent =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", &child, 1);
+  grpc_error_handle parent = GRPC_ERROR_CREATE_REFERENCING("Parent", &child, 1);
   EXPECT_NE(parent, absl::OkStatus());
 }
 
 TEST(ErrorTest, CreateReferencingMany) {
   grpc_error_handle children[3];
   children[0] =
-      grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child1"),
+      grpc_error_set_str(GRPC_ERROR_CREATE("Child1"),
                          grpc_core::StatusStrProperty::kGrpcMessage, "message");
   children[1] =
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child2"),
+      grpc_error_set_int(GRPC_ERROR_CREATE("Child2"),
                          grpc_core::StatusIntProperty::kHttp2Error, 5);
-  children[2] = grpc_error_set_str(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child3"),
-      grpc_core::StatusStrProperty::kGrpcMessage, "message 3");
+  children[2] = grpc_error_set_str(GRPC_ERROR_CREATE("Child3"),
+                                   grpc_core::StatusStrProperty::kGrpcMessage,
+                                   "message 3");
 
   grpc_error_handle parent =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 3);
+      GRPC_ERROR_CREATE_REFERENCING("Parent", children, 3);
   EXPECT_NE(parent, absl::OkStatus());
 
   for (size_t i = 0; i < 3; ++i) {
@@ -143,8 +142,8 @@ TEST(ErrorTest, CreateReferencingMany) {
 
 TEST(ErrorTest, PrintErrorString) {
   grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
-      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNIMPLEMENTED);
+      GRPC_ERROR_CREATE("Error"), grpc_core::StatusIntProperty::kRpcStatus,
+      GRPC_STATUS_UNIMPLEMENTED);
   error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kSize, 666);
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "message");
@@ -154,18 +153,18 @@ TEST(ErrorTest, PrintErrorString) {
 TEST(ErrorTest, PrintErrorStringReference) {
   grpc_error_handle children[2];
   children[0] = grpc_error_set_str(
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("1"),
+      grpc_error_set_int(GRPC_ERROR_CREATE("1"),
                          grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_UNIMPLEMENTED),
       grpc_core::StatusStrProperty::kGrpcMessage, "message for child 1");
   children[1] = grpc_error_set_str(
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("2sd"),
+      grpc_error_set_int(GRPC_ERROR_CREATE("2sd"),
                          grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_INTERNAL),
       grpc_core::StatusStrProperty::kGrpcMessage, "message for child 2");
 
   grpc_error_handle parent =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 2);
+      GRPC_ERROR_CREATE_REFERENCING("Parent", children, 2);
 
   for (size_t i = 0; i < 2; ++i) {
   }
