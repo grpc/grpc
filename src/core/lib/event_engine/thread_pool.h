@@ -68,6 +68,8 @@ class ThreadPool final : public Forkable, public Executor {
     // Return true if we should also spin up a new thread.
     bool Add(absl::AnyInvocable<void()> callback);
     void Reset() { SetState(State::kRunning); }
+    bool IsBacklogged();
+    void SleepIfRunning();
 
    private:
     enum class State { kRunning, kShutdown, kForking };
@@ -106,12 +108,18 @@ class ThreadPool final : public Forkable, public Executor {
 
   using StatePtr = std::shared_ptr<State>;
 
+  enum class StartThreadReason {
+    kInitialPool,
+    kNoWaitersWhenScheduling,
+    kNoWaitersWhenFinishedStarting,
+  };
+
   static void ThreadFunc(StatePtr state);
   // Start a new thread; throttled indicates whether the State::starting_thread
   // variable is being used to throttle this threads creation against others or
   // not: at thread pool startup we start several threads concurrently, but
   // after that we only start one at a time.
-  static void StartThread(StatePtr state, bool throttled);
+  static void StartThread(StatePtr state, StartThreadReason reason);
   void Postfork();
 
   const unsigned reserve_threads_ =

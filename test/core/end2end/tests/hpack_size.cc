@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <queue>
 #include <string>
 #include <vector>
 
@@ -38,6 +37,7 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -266,10 +266,9 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   extra_metadata[2].value =
       grpc_slice_from_static_string(dragons[index % GPR_ARRAY_SIZE(dragons)]);
 
-  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -310,7 +309,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -338,7 +337,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -394,24 +393,19 @@ void hpack_size(grpc_end2end_test_config config) {
   size_t i, j;
 
   auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-  std::queue<std::shared_ptr<absl::Notification>> dones;
+  std::vector<std::shared_ptr<absl::Notification>> dones;
   for (i = 0; i < GPR_ARRAY_SIZE(interesting_sizes); i++) {
     for (j = 0; j < GPR_ARRAY_SIZE(interesting_sizes); j++) {
       auto done = std::make_shared<absl::Notification>();
-      while (dones.size() > 4) {
-        dones.front()->WaitForNotification();
-        dones.pop();
-      }
-      dones.push(done);
+      dones.push_back(done);
       event_engine->Run([done, config, i, j] {
         test_size(config, interesting_sizes[i], interesting_sizes[j]);
         done->Notify();
       });
     }
   }
-  while (!dones.empty()) {
-    dones.front()->WaitForNotification();
-    dones.pop();
+  for (auto& done : dones) {
+    done->WaitForNotification();
   }
 }
 

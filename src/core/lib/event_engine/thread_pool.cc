@@ -22,6 +22,7 @@
 
 #include <atomic>
 #include <memory>
+#include <thread>
 #include <utility>
 
 #include "absl/time/clock.h"
@@ -41,40 +42,61 @@ namespace {
 thread_local bool g_threadpool_thread;
 }  // namespace
 
-void ThreadPool::StartThread(StatePtr state, bool throttled) {
+void ThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
   state->thread_count.Add();
-  if (throttled) {
-    auto time_since_last_start =
-        grpc_core::Timestamp::Now() -
-        grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
-            state->last_started_thread.load(std::memory_order_relaxed));
-    if (time_since_last_start < grpc_core::Duration::Seconds(1) ||
-        state->currently_starting_one_thread.exchange(
-            true, std::memory_order_relaxed)) {
-      state->thread_count.Remove();
-      return;
+  const auto now = grpc_core::Timestamp::Now();
+  switch (reason) {
+    case StartThreadReason::kNoWaitersWhenScheduling: {
+      auto time_since_last_start =
+          now - grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+                    state->last_started_thread.load(std::memory_order_relaxed));
+      if (time_since_last_start < grpc_core::Duration::Seconds(1)) {
+        state->thread_count.Remove();
+        return;
+      }
     }
+      ABSL_FALLTHROUGH_INTENDED;
+    case StartThreadReason::kNoWaitersWhenFinishedStarting:
+      if (state->currently_starting_one_thread.exchange(
+              true, std::memory_order_relaxed)) {
+        state->thread_count.Remove();
+        return;
+      }
+      state->last_started_thread.store(now.milliseconds_after_process_epoch(),
+                                       std::memory_order_relaxed);
+      break;
+    case StartThreadReason::kInitialPool:
+      break;
   }
-  // This may go backwards a little for non-throttled threads, but that's OK.
-  state->last_started_thread.store(
-      grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
-      std::memory_order_relaxed);
+  gpr_log(GPR_ERROR, "STARTING THREAD: reason=%d", (int)reason);
   struct ThreadArg {
     StatePtr state;
-    bool throttled;
+    StartThreadReason reason;
   };
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
         std::unique_ptr<ThreadArg> a(static_cast<ThreadArg*>(arg));
         g_threadpool_thread = true;
-        if (a->throttled) {
-          GPR_ASSERT(a->state->currently_starting_one_thread.exchange(
-              false, std::memory_order_relaxed));
+        switch (a->reason) {
+          case StartThreadReason::kInitialPool:
+            break;
+          case StartThreadReason::kNoWaitersWhenFinishedStarting:
+            a->state->queue.SleepIfRunning();
+            ABSL_FALLTHROUGH_INTENDED;
+          case StartThreadReason::kNoWaitersWhenScheduling:
+            // Release throttling variable
+            GPR_ASSERT(a->state->currently_starting_one_thread.exchange(
+                false, std::memory_order_relaxed));
+            if (a->state->queue.IsBacklogged()) {
+              StartThread(a->state,
+                          StartThreadReason::kNoWaitersWhenFinishedStarting);
+            }
+            break;
         }
         ThreadFunc(a->state);
       },
-      new ThreadArg{state, throttled}, nullptr,
+      new ThreadArg{state, reason}, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
@@ -122,7 +144,7 @@ bool ThreadPool::Queue::Step() {
 
 ThreadPool::ThreadPool() {
   for (unsigned i = 0; i < reserve_threads_; i++) {
-    StartThread(state_, /*throttled=*/false);
+    StartThread(state_, StartThreadReason::kInitialPool);
   }
 }
 
@@ -138,7 +160,7 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
   if (state_->queue.Add(std::move(callback))) {
-    StartThread(state_, /*throttled=*/true);
+    StartThread(state_, StartThreadReason::kNoWaitersWhenScheduling);
   }
 }
 
@@ -154,11 +176,40 @@ bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
   switch (state_) {
     case State::kRunning:
     case State::kShutdown:
-      return threads_waiting_ == 0;
+      return callbacks_.size() > threads_waiting_;
     case State::kForking:
       return false;
   }
   GPR_UNREACHABLE_CODE(return false);
+}
+
+bool ThreadPool::Queue::IsBacklogged() {
+  grpc_core::MutexLock lock(&mu_);
+  switch (state_) {
+    case State::kRunning:
+    case State::kShutdown:
+      return callbacks_.size() > 1;
+    case State::kForking:
+      return false;
+  }
+  GPR_UNREACHABLE_CODE(return false);
+}
+
+void ThreadPool::Queue::SleepIfRunning() {
+  grpc_core::MutexLock lock(&mu_);
+  auto end = grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
+  while (true) {
+    grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+    if (now >= end) return;
+    switch (state_) {
+      case State::kRunning:
+      case State::kShutdown:
+        cv_.WaitWithTimeout(&mu_, absl::Milliseconds((end - now).millis()));
+        break;
+      case State::kForking:
+        return;
+    }
+  }
 }
 
 void ThreadPool::Queue::SetState(State state) {
@@ -212,7 +263,7 @@ void ThreadPool::PostforkChild() { Postfork(); }
 void ThreadPool::Postfork() {
   state_->queue.Reset();
   for (unsigned i = 0; i < reserve_threads_; i++) {
-    StartThread(state_, /*throttled=*/false);
+    StartThread(state_, StartThreadReason::kInitialPool);
   }
 }
 
