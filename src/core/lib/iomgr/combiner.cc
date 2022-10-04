@@ -24,13 +24,12 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "exec_ctx.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/mpscq.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
