@@ -2231,6 +2231,7 @@ grpc_cc_library(
     deps = [
         "closure",
         "debug_location",
+        "default_event_engine",
         "error",
         "gpr",
         "gpr_atm",

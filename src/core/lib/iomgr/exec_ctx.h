@@ -97,7 +97,7 @@ class ExecCtx {
  public:
   /** Default Constructor */
 
-  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+  ExecCtx() : flags_(0) {
     Fork::IncExecCtxCount();
     Set(this);
   }
@@ -112,7 +112,6 @@ class ExecCtx {
 
   /** Destructor */
   virtual ~ExecCtx() {
-    flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {

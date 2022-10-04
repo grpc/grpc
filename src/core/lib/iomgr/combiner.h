@@ -49,7 +49,6 @@ class Combiner {
   gpr_atm state;
   bool time_to_execute_final_list = false;
   grpc_closure_list final_list;
-  grpc_closure offload;
   gpr_refcount refs;
 };
 }  // namespace grpc_core
