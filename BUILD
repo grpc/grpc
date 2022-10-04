@@ -994,19 +994,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "gpr_murmur_hash",
-    srcs = [
-        "src/core/lib/gpr/murmur_hash.cc",
-    ],
-    hdrs = [
-        "src/core/lib/gpr/murmur_hash.h",
-    ],
-    external_deps = ["absl/base:core_headers"],
-    language = "c++",
-    deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
     name = "gpr_spinlock",
     srcs = [],
     hdrs = [
@@ -2157,12 +2144,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "slice_refcount",
-    srcs = [
-        "src/core/lib/slice/slice_refcount.cc",
-    ],
     hdrs = [
         "src/core/lib/slice/slice_refcount.h",
-        "src/core/lib/slice/slice_refcount_base.h",
     ],
     public_hdrs = [
         "include/grpc/slice.h",
@@ -2185,10 +2168,12 @@ grpc_cc_library(
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/hash",
+        "absl/strings",
+    ],
     deps = [
         "gpr",
-        "gpr_murmur_hash",
         "grpc_public_hdrs",
         "slice_refcount",
     ],
@@ -2737,6 +2722,7 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_internal_errqueue",
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
@@ -3456,6 +3442,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/hash",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -3499,7 +3486,6 @@ grpc_cc_library(
         "gpr",
         "gpr_atm",
         "gpr_manual_constructor",
-        "gpr_murmur_hash",
         "gpr_spinlock",
         "grpc_public_hdrs",
         "grpc_sockaddr",
@@ -4070,6 +4056,7 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "subchannel_interface",
         "time",
         "transport_fwd",
@@ -4200,6 +4187,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "single_set_ptr",
         "sleep",
+        "status_helper",
         "time",
         "try_seq",
     ],
@@ -4233,6 +4221,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "iomgr_timer",
+        "status_helper",
         "time",
     ],
 )
@@ -4299,6 +4288,7 @@ grpc_cc_library(
         "json",
         "service_config_parser",
         "slice_buffer",
+        "status_helper",
     ],
 )
 
@@ -4375,6 +4365,7 @@ grpc_cc_library(
         "json",
         "json_util",
         "service_config_parser",
+        "status_helper",
         "transport_fwd",
     ],
 )
@@ -4427,6 +4418,7 @@ grpc_cc_library(
         "seq",
         "slice",
         "slice_buffer",
+        "status_helper",
         "transport_fwd",
     ],
 )
@@ -4926,6 +4918,7 @@ grpc_cc_library(
         "resolved_address",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "unique_type_name",
         "uri_parser",
         "xds_client",
@@ -5747,6 +5740,7 @@ grpc_cc_library(
         "server_address",
         "slice",
         "sockaddr_utils",
+        "status_helper",
         "time",
         "uri_parser",
     ],
@@ -5970,6 +5964,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "tcp_connect_handshaker",
         "time",
         "uri_parser",
@@ -6273,6 +6268,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "time",
         "unique_type_name",
         "uri_parser",
@@ -6623,6 +6619,7 @@ grpc_cc_library(
         "seq",
         "slice",
         "slice_refcount",
+        "status_helper",
         "try_seq",
         "tsi_base",
         "unique_type_name",
@@ -7175,6 +7172,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "sockaddr_utils",
+        "status_helper",
         "tcp_connect_handshaker",
         "transport_fwd",
         "unique_type_name",
@@ -7256,6 +7254,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
+        "status_helper",
         "time",
         "transport_fwd",
     ],

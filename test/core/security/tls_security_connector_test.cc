@@ -105,7 +105,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   static std::string GetErrorMsg(grpc_error_handle error) {
     std::string error_str;
     GPR_ASSERT(
-        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_str));
+        grpc_error_get_str(error, StatusStrProperty::kDescription, &error_str));
     return error_str;
   }
 

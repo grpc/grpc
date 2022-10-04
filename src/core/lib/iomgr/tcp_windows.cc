@@ -222,7 +222,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
                 ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                       "TCP stream shutting down", &tcp->shutdown_error, 1)
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING("End of TCP stream"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       }
     }
   }
@@ -255,7 +255,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                 "TCP socket is shutting down", &tcp->shutdown_error, 1),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
     return;
   }
 
@@ -369,7 +369,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                 "TCP socket is shutting down", &tcp->shutdown_error, 1),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
     return;
   }
 

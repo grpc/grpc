@@ -159,3 +159,15 @@ grpc_cc_library(
         "//:gpr",
     ],
 )
+
+grpc_cc_library(
+    name = "mock_event_engine",
+    hdrs = ["mock_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+    ],
+    deps = ["//:event_engine_base_hdrs"],
+)

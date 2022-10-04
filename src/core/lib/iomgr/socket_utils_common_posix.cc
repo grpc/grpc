@@ -422,7 +422,8 @@ static grpc_error_handle error_for_fd(int fd,
   if (fd >= 0) return absl::OkStatus();
   auto addr_str = grpc_sockaddr_to_string(addr, false);
   grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
+      GRPC_OS_ERROR(errno, "socket"),
+      grpc_core::StatusStrProperty::kTargetAddress,
       addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
   return err;
 }

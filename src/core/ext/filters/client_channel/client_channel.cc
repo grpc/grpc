@@ -64,6 +64,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
@@ -1700,7 +1701,8 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
     DestroyResolverAndLbPolicyLocked();
     intptr_t value;
     if (grpc_error_get_int(op->disconnect_with_error,
-                           GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) &&
+                           StatusIntProperty::ChannelConnectivityState,
+                           &value) &&
         static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
       if (disconnect_error_.ok()) {
         // Enter IDLE state.
@@ -3177,7 +3179,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             *error = grpc_error_set_int(
                 absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
                     std::move(drop_pick->status), "LB drop")),
-                GRPC_ERROR_INT_LB_POLICY_DROP, 1);
+                StatusIntProperty::kLbPolicyDrop, 1);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           });

@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -872,13 +873,13 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
   if (host->empty()) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+        grpc_core::StatusStrProperty::kTargetAddress, name);
     return error;
   } else if (check_port && port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, name);
+          grpc_core::StatusStrProperty::kTargetAddress, name);
       return error;
     }
     *port = default_port;

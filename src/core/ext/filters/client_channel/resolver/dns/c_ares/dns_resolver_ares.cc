@@ -45,6 +45,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -430,7 +431,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
                          grpc_error_std_string(error).c_str());
     std::string error_message;
-    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    grpc_error_get_str(error, StatusStrProperty::kDescription, &error_message);
     absl::Status status = absl::UnavailableError(
         absl::StrCat("DNS resolution failed for ", resolver_->name_to_resolve(),
                      ": ", error_message));
