@@ -301,8 +301,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Applies the update on the LB policy.
   absl::Status ApplyUpdate(LoadBalancingPolicy::UpdateArgs update_args,
-                           LoadBalancingPolicy* lb_policy,
-                           SourceLocation location = SourceLocation()) {
+                           LoadBalancingPolicy* lb_policy) {
     absl::Status status;
     absl::Notification notification;
     work_serializer_->Run(
