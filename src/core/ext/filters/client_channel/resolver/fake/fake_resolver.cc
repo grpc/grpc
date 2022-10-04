@@ -24,7 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -362,7 +361,7 @@ class FakeResolverFactory : public ResolverFactory {
 
 void RegisterFakeResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<FakeResolverFactory>());
+      std::make_unique<FakeResolverFactory>());
 }
 
 }  // namespace grpc_core

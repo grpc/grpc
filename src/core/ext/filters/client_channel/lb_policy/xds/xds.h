@@ -23,8 +23,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
-
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -44,7 +42,7 @@ class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
   }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
-    return absl::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
+    return std::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
   }
 
   int Cmp(const AttributeInterface* other) const override {

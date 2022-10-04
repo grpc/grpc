@@ -16,10 +16,7 @@
 
 #include "src/core/lib/gprpp/validation_errors.h"
 
-#include <memory>
-#include <thread>
-
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
 

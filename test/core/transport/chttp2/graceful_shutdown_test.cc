@@ -29,7 +29,6 @@
 #include <thread>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -79,7 +78,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void SetupAndStart() {
     ExecCtx exec_ctx;
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<CqVerifier>(cq_);
+    cqv_ = std::make_unique<CqVerifier>(cq_);
     grpc_arg server_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
@@ -98,11 +97,11 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     GPR_ASSERT(core_server->SetupTransport(transport, nullptr,
                                            core_server->channel_args(),
-                                           nullptr) == GRPC_ERROR_NONE);
+                                           nullptr) == absl::OkStatus());
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     // Start polling on the client
     Notification client_poller_thread_started_notification;
-    client_poll_thread_ = absl::make_unique<std::thread>(
+    client_poll_thread_ = std::make_unique<std::thread>(
         [this, &client_poller_thread_started_notification]() {
           grpc_completion_queue* client_cq =
               grpc_completion_queue_create_for_next(nullptr);
@@ -157,7 +156,7 @@ class GracefulShutdownTest : public ::testing::Test {
 
   static void OnReadDone(void* arg, grpc_error_handle error) {
     GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
@@ -236,7 +235,7 @@ class GracefulShutdownTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+    GPR_ASSERT(error.ok());
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }

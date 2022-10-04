@@ -21,7 +21,6 @@
 #include <cstdint>
 #include <new>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -115,7 +114,7 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
 
 void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<MessageSizeParser>());
+      std::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() {
@@ -165,7 +164,7 @@ struct call_data {
     }
   }
 
-  ~call_data() { GRPC_ERROR_UNREF(error); }
+  ~call_data() {}
 
   grpc_core::CallCombiner* call_combiner;
   grpc_core::MessageSizeParsedConfig limits;
@@ -174,8 +173,8 @@ struct call_data {
   // call our next_recv_message_ready member after handling it.
   grpc_closure recv_message_ready;
   grpc_closure recv_trailing_metadata_ready;
-  // The error caused by a message that is too large, or GRPC_ERROR_NONE
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  // The error caused by a message that is too large, or absl::OkStatus()
+  grpc_error_handle error;
   // Used by recv_message_ready.
   absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.
@@ -201,12 +200,10 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
         GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
             (*calld->recv_message)->Length(), *calld->limits.max_recv_size())),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
-    error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
-    GRPC_ERROR_UNREF(calld->error);
-    calld->error = GRPC_ERROR_REF(error);
-  } else {
-    (void)GRPC_ERROR_REF(error);
+        grpc_core::StatusIntProperty::kRpcStatus,
+        GRPC_STATUS_RESOURCE_EXHAUSTED);
+    error = grpc_error_add_child(error, new_error);
+    calld->error = error;
   }
   // Invoke the next callback.
   grpc_closure* closure = calld->next_recv_message_ready;
@@ -234,14 +231,13 @@ static void recv_trailing_metadata_ready(void* user_data,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->next_recv_message_ready != nullptr) {
     calld->seen_recv_trailing_metadata = true;
-    calld->recv_trailing_metadata_error = GRPC_ERROR_REF(error);
+    calld->recv_trailing_metadata_error = error;
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,
                             "deferring recv_trailing_metadata_ready until "
                             "after recv_message_ready");
     return;
   }
-  error =
-      grpc_error_add_child(GRPC_ERROR_REF(error), GRPC_ERROR_REF(calld->error));
+  error = grpc_error_add_child(error, calld->error);
   // Invoke the next callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->original_recv_trailing_metadata_ready, error);
@@ -261,7 +257,7 @@ static void message_size_start_transport_stream_op_batch(
                                "Sent message larger than max (%u vs. %d)",
                                op->payload->send_message.send_message->Length(),
                                *calld->limits.max_send_size())),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     return;
@@ -289,7 +285,7 @@ static grpc_error_handle message_size_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (elem->call_data) call_data(elem, *chand, *args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for call_data.
@@ -308,7 +304,7 @@ static grpc_error_handle message_size_init_channel_elem(
   new (chand) channel_data();
   chand->limits = grpc_core::MessageSizeParsedConfig::GetFromChannelArgs(
       grpc_core::ChannelArgs::FromC(args->channel_args));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for channel_data.

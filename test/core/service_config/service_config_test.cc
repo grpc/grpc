@@ -110,9 +110,9 @@ class ServiceConfigTest : public ::testing::Test {
     builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<TestParser1>());
+              std::make_unique<TestParser1>());
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<TestParser2>());
+              std::make_unique<TestParser2>());
         });
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
                   "test_parser_1"),
@@ -369,9 +369,9 @@ TEST(ServiceConfigParserTest, DoubleRegistration) {
       CoreConfiguration::WithSubstituteBuilder builder(
           [](CoreConfiguration::Builder* builder) {
             builder->service_config_parser()->RegisterParser(
-                absl::make_unique<TestParser1>());
+                std::make_unique<TestParser1>());
             builder->service_config_parser()->RegisterParser(
-                absl::make_unique<TestParser1>());
+                std::make_unique<TestParser1>());
           }),
       "test_parser_1.*already registered");
 }
@@ -410,9 +410,9 @@ class ErroredParsersScopingTest : public ::testing::Test {
     builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<ErrorParser>("ep1"));
+              std::make_unique<ErrorParser>("ep1"));
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<ErrorParser>("ep2"));
+              std::make_unique<ErrorParser>("ep2"));
         });
     EXPECT_EQ(
         CoreConfiguration::Get().service_config_parser().GetParserIndex("ep1"),

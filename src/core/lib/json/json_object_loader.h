@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/meta/type_traits.h"
@@ -398,7 +399,7 @@ class AutoLoader<std::unique_ptr<T>> final : public LoadOptional {
  public:
   void* Emplace(void* dst) const final {
     auto& p = *static_cast<std::unique_ptr<T>*>(dst);
-    p = absl::make_unique<T>();
+    p = std::make_unique<T>();
     return p.get();
   }
   void Reset(void* dst) const final {

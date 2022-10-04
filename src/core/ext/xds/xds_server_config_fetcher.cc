@@ -71,6 +71,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -1195,11 +1196,11 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
       VirtualHostListIterator(&virtual_hosts_), authority);
   if (!vhost_index.has_value()) {
-    call_config.error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                               "could not find VirtualHost for ", authority,
-                               " in RouteConfiguration")),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    call_config.error = grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("could not find VirtualHost for ", authority,
+                         " in RouteConfiguration")),
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
     return call_config;
   }
   auto& virtual_host = virtual_hosts_[vhost_index.value()];
@@ -1212,7 +1213,7 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
       call_config.error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Matching route has unsupported action"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+          StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       return call_config;
     }
     if (route.method_config != nullptr) {
@@ -1224,7 +1225,7 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
   }
   call_config.error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("No route matched"),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   return call_config;
 }
 

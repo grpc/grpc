@@ -22,7 +22,6 @@
 #include <map>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -295,7 +294,7 @@ struct RbacConfig {
             auto any = LoadJsonObjectField<bool>(
                 json.object_value(), args, "any", errors, /*required=*/false);
             if (any.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeAnyPermission());
               return;
             }
@@ -303,7 +302,7 @@ struct RbacConfig {
                 json.object_value(), args, "header", errors,
                 /*required=*/false);
             if (header.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeHeaderPermission(
                       std::move(header->matcher)));
               return;
@@ -312,7 +311,7 @@ struct RbacConfig {
                 json.object_value(), args, "urlPath", errors,
                 /*required=*/false);
             if (url_path.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakePathPermission(url_path->path.matcher));
               return;
             }
@@ -320,7 +319,7 @@ struct RbacConfig {
                 json.object_value(), args, "destinationIp", errors,
                 /*required=*/false);
             if (destination_ip.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeDestIpPermission(
                       std::move(destination_ip->cidr_range)));
               return;
@@ -329,7 +328,7 @@ struct RbacConfig {
                 json.object_value(), args, "destinationPort", errors,
                 /*required=*/false);
             if (destination_port.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeDestPortPermission(*destination_port));
               return;
             }
@@ -337,7 +336,7 @@ struct RbacConfig {
                 json.object_value(), args, "metadata", errors,
                 /*required=*/false);
             if (metadata.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeMetadataPermission(metadata->invert));
               return;
             }
@@ -345,7 +344,7 @@ struct RbacConfig {
                 json.object_value(), args, "requestedServerName", errors,
                 /*required=*/false);
             if (requested_server_name.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeReqServerNamePermission(
                       std::move(requested_server_name->matcher)));
               return;
@@ -354,7 +353,7 @@ struct RbacConfig {
                 json.object_value(), args, "andRules", errors,
                 /*required=*/false);
             if (rules.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeAndPermission(
                       MakeRbacPermissionList(std::move(rules->rules))));
               return;
@@ -363,7 +362,7 @@ struct RbacConfig {
                                                         args, "orRules", errors,
                                                         /*required=*/false);
             if (rules.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeOrPermission(
                       MakeRbacPermissionList(std::move(rules->rules))));
               return;
@@ -372,7 +371,7 @@ struct RbacConfig {
                 json.object_value(), args, "notRule", errors,
                 /*required=*/false);
             if (not_rule.has_value()) {
-              permission = absl::make_unique<Rbac::Permission>(
+              permission = std::make_unique<Rbac::Permission>(
                   Rbac::Permission::MakeNotPermission(
                       std::move(*not_rule->permission)));
               return;
@@ -441,7 +440,7 @@ struct RbacConfig {
             auto any = LoadJsonObjectField<bool>(
                 json.object_value(), args, "any", errors, /*required=*/false);
             if (any.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeAnyPrincipal());
               return;
             }
@@ -450,12 +449,12 @@ struct RbacConfig {
                 /*required=*/false);
             if (authenticated.has_value()) {
               if (authenticated->principal_name.has_value()) {
-                principal = absl::make_unique<Rbac::Principal>(
+                principal = std::make_unique<Rbac::Principal>(
                     Rbac::Principal::MakeAuthenticatedPrincipal(
                         std::move(authenticated->principal_name->matcher)));
               } else {
                 // No principalName found. Match for all users.
-                principal = absl::make_unique<Rbac::Principal>(
+                principal = std::make_unique<Rbac::Principal>(
                     Rbac::Principal::MakeAnyPrincipal());
               }
               return;
@@ -464,7 +463,7 @@ struct RbacConfig {
                 json.object_value(), args, "sourceIp", errors,
                 /*required=*/false);
             if (cidr_range.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeSourceIpPrincipal(
                       std::move(cidr_range->cidr_range)));
               return;
@@ -473,7 +472,7 @@ struct RbacConfig {
                 json.object_value(), args, "directRemoteIp", errors,
                 /*required=*/false);
             if (cidr_range.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeDirectRemoteIpPrincipal(
                       std::move(cidr_range->cidr_range)));
               return;
@@ -482,7 +481,7 @@ struct RbacConfig {
                 json.object_value(), args, "remoteIp", errors,
                 /*required=*/false);
             if (cidr_range.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeRemoteIpPrincipal(
                       std::move(cidr_range->cidr_range)));
               return;
@@ -491,7 +490,7 @@ struct RbacConfig {
                 json.object_value(), args, "header", errors,
                 /*required=*/false);
             if (header.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeHeaderPrincipal(
                       std::move(header->matcher)));
               return;
@@ -500,7 +499,7 @@ struct RbacConfig {
                 json.object_value(), args, "urlPath", errors,
                 /*required=*/false);
             if (url_path.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakePathPrincipal(
                       std::move(url_path->path.matcher)));
               return;
@@ -509,7 +508,7 @@ struct RbacConfig {
                 json.object_value(), args, "metadata", errors,
                 /*required=*/false);
             if (metadata.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeMetadataPrincipal(metadata->invert));
               return;
             }
@@ -517,7 +516,7 @@ struct RbacConfig {
                 json.object_value(), args, "andIds", errors,
                 /*required=*/false);
             if (ids.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeAndPrincipal(
                       MakeRbacPrincipalList(std::move(ids->ids))));
               return;
@@ -526,7 +525,7 @@ struct RbacConfig {
                                                      "orIds", errors,
                                                      /*required=*/false);
             if (ids.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeOrPrincipal(
                       MakeRbacPrincipalList(std::move(ids->ids))));
               return;
@@ -535,7 +534,7 @@ struct RbacConfig {
                 json.object_value(), args, "notId", errors,
                 /*required=*/false);
             if (not_rule.has_value()) {
-              principal = absl::make_unique<Rbac::Principal>(
+              principal = std::make_unique<Rbac::Principal>(
                   Rbac::Principal::MakeNotPrincipal(
                       std::move(*not_rule->principal)));
               return;
@@ -653,12 +652,12 @@ RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
   auto rbac_config = LoadFromJson<RbacConfig>(json, JsonArgs(), errors);
   std::vector<Rbac> rbac_policies = rbac_config.TakeAsRbacList();
   if (rbac_policies.empty()) return nullptr;
-  return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
+  return std::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
 }
 
 void RbacServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<RbacServiceConfigParser>());
+      std::make_unique<RbacServiceConfigParser>());
 }
 
 size_t RbacServiceConfigParser::ParserIndex() {

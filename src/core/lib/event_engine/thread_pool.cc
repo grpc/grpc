@@ -41,6 +41,11 @@ thread_local bool g_threadpool_thread;
 
 void ThreadPool::StartThread(StatePtr state, bool throttled) {
   state->thread_count.Add();
+  if (throttled && state->currently_starting_one_thread.exchange(
+                       true, std::memory_order_relaxed)) {
+    state->thread_count.Remove();
+    return;
+  }
   struct ThreadArg {
     StatePtr state;
     bool throttled;
@@ -113,10 +118,7 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   if (state_->queue.Add(std::move(callback))) {
-    if (!state_->currently_starting_one_thread.exchange(
-            true, std::memory_order_relaxed)) {
-      StartThread(state_, /*throttled=*/true);
-    }
+    StartThread(state_, /*throttled=*/true);
   }
 }
 

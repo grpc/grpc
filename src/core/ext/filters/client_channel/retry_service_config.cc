@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -228,7 +227,7 @@ size_t RetryServiceConfigParser::ParserIndex() {
 
 void RetryServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<RetryServiceConfigParser>());
+      std::make_unique<RetryServiceConfigParser>());
 }
 
 namespace {

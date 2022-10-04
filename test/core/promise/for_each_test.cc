@@ -18,7 +18,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -53,7 +52,7 @@ TEST(ForEachTest, SendThriceWithPipe) {
       [&num_received] {
         Pipe<int> pipe;
         auto sender = std::make_shared<std::unique_ptr<PipeSender<int>>>(
-            absl::make_unique<PipeSender<int>>(std::move(pipe.sender)));
+            std::make_unique<PipeSender<int>>(std::move(pipe.sender)));
         return Map(
             Join(
                 // Push 3 things into a pipe -- 1, 2, then 3 -- then close.

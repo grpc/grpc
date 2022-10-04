@@ -21,7 +21,6 @@
 #include <map>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -132,7 +131,7 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 void ClientChannelServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<ClientChannelServiceConfigParser>());
+      std::make_unique<ClientChannelServiceConfigParser>());
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>

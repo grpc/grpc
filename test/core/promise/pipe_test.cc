@@ -18,7 +18,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -100,7 +99,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
         Pipe<int> pipe;
         auto sender = std::move(pipe.sender);
         auto receiver = std::make_shared<std::unique_ptr<PipeReceiver<int>>>(
-            absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver)));
+            std::make_unique<PipeReceiver<int>>(std::move(pipe.receiver)));
         return Seq(
             // Concurrently:
             // - push 43 into the sender, which will stall because there is no
@@ -129,7 +128,7 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
       [] {
         Pipe<int> pipe;
         auto sender = std::make_shared<std::unique_ptr<PipeSender<int>>>(
-            absl::make_unique<PipeSender<int>>(std::move(pipe.sender)));
+            std::make_unique<PipeSender<int>>(std::move(pipe.sender)));
         auto receiver = std::move(pipe.receiver);
         return Seq(
             // Concurrently:

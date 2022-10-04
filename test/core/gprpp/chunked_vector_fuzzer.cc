@@ -12,9 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <utility>
 #include <vector>
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/chunked_vector.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/gprpp/chunked_vector_fuzzer.pb.h"

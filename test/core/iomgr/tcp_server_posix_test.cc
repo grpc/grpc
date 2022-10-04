@@ -45,6 +45,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -172,7 +173,7 @@ static void test_no_op(void) {
                   .channel_args_preconditioning()
                   .PreconditionChannelArgs(nullptr);
   ASSERT_EQ(
-      GRPC_ERROR_NONE,
+      absl::OkStatus(),
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
@@ -187,7 +188,7 @@ static void test_no_op_with_start(void) {
                   .channel_args_preconditioning()
                   .PreconditionChannelArgs(nullptr);
   ASSERT_EQ(
-      GRPC_ERROR_NONE,
+      absl::OkStatus(),
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
@@ -208,7 +209,7 @@ static void test_no_op_with_port(void) {
                   .channel_args_preconditioning()
                   .PreconditionChannelArgs(nullptr);
   ASSERT_EQ(
-      GRPC_ERROR_NONE,
+      absl::OkStatus(),
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
@@ -220,7 +221,7 @@ static void test_no_op_with_port(void) {
   addr->sin_family = AF_INET;
   int port = -1;
   ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &port),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   ASSERT_GT(port, 0);
 
   grpc_tcp_server_unref(s);
@@ -236,7 +237,7 @@ static void test_no_op_with_port_and_start(void) {
                   .channel_args_preconditioning()
                   .PreconditionChannelArgs(nullptr);
   ASSERT_EQ(
-      GRPC_ERROR_NONE,
+      absl::OkStatus(),
       grpc_tcp_server_create(
           nullptr,
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
@@ -248,7 +249,7 @@ static void test_no_op_with_port_and_start(void) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &port),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   ASSERT_GT(port, 0);
 
   std::vector<grpc_pollset*> empty_pollset;
@@ -288,7 +289,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
     grpc_pollset_worker* worker = nullptr;
     grpc_error_handle err;
     if ((err = grpc_pollset_work(g_pollset, &worker, deadline)) !=
-        GRPC_ERROR_NONE) {
+        absl::OkStatus()) {
       gpr_mu_unlock(g_mu);
       close(clifd);
       return err;
@@ -310,7 +311,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   gpr_log(GPR_INFO, "Result (%d, %d) fd %d", result->port_index,
           result->fd_index, result->server_fd);
   grpc_tcp_server_unref(result->server);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Tests a tcp server on "::" listeners with multiple ports. If channel_args is
@@ -339,7 +340,7 @@ static void test_connect(size_t num_connects,
   auto new_channel_args = grpc_core::CoreConfiguration::Get()
                               .channel_args_preconditioning()
                               .PreconditionChannelArgs(channel_args);
-  ASSERT_EQ(GRPC_ERROR_NONE,
+  ASSERT_EQ(absl::OkStatus(),
             grpc_tcp_server_create(
                 nullptr,
                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
@@ -373,7 +374,7 @@ static void test_connect(size_t num_connects,
   gpr_log(GPR_INFO, "Picked unused port %d", svr1_port);
   grpc_sockaddr_set_port(&resolved_addr1, svr1_port);
   ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr1, &port),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   ASSERT_EQ(port, svr1_port);
 
   /* Bad port_index. */
@@ -412,7 +413,7 @@ static void test_connect(size_t num_connects,
         test_addr_init_str(&dst);
         ++num_tested;
         on_connect_result_init(&result);
-        if ((err = tcp_connect(&dst, &result)) == GRPC_ERROR_NONE &&
+        if ((err = tcp_connect(&dst, &result)) == absl::OkStatus() &&
             result.server_fd >= 0 && result.server == s) {
           continue;
         }
@@ -420,7 +421,6 @@ static void test_connect(size_t num_connects,
                 grpc_error_std_string(err).c_str());
         ASSERT_TRUE(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
-        GRPC_ERROR_UNREF(err);
       }
       ASSERT_GT(num_tested, 0);
     }
@@ -500,7 +500,7 @@ TEST(TcpServerPosixTest, MainTest) {
     test_no_op_with_port_and_start();
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-      FAIL() << "getifaddrs: " << strerror(errno);
+      FAIL() << "getifaddrs: " << grpc_core::StrError(errno);
     }
     dst_addrs->naddrs = 0;
     for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;

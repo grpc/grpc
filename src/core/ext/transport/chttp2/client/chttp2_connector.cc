@@ -53,6 +53,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -133,9 +134,8 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   shutdown_ = true;
   if (handshake_mgr_ != nullptr) {
     // Handshaker will also shutdown the endpoint if it exists
-    handshake_mgr_->Shutdown(GRPC_ERROR_REF(error));
+    handshake_mgr_->Shutdown(error);
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
@@ -143,8 +143,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
   {
     MutexLock lock(&self->mu_);
-    if (!GRPC_ERROR_IS_NONE(error) || self->shutdown_) {
-      if (GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok() || self->shutdown_) {
+      if (error.ok()) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
@@ -153,13 +153,11 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
           // before destroying them, even if we know that there are no
           // pending read/write callbacks.  This should be fixed, at which
           // point this can be removed.
-          grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
+          grpc_endpoint_shutdown(args->endpoint, error);
           grpc_endpoint_destroy(args->endpoint);
           grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
         }
-      } else {
-        error = GRPC_ERROR_REF(error);
       }
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
@@ -200,19 +198,19 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
     if (!self->notify_error_.has_value()) {
       grpc_endpoint_delete_from_pollset_set(self->endpoint_,
                                             self->args_.interested_parties);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         // Transport got an error while waiting on SETTINGS frame.
         // TODO(yashykt): The following two lines should be moved to
         // SubchannelConnector::Result::Reset()
         grpc_transport_destroy(self->result_->transport);
         self->result_->Reset();
       }
-      self->MaybeNotify(GRPC_ERROR_REF(error));
+      self->MaybeNotify(error);
       grpc_timer_cancel(&self->timer_);
     } else {
       // OnTimeout() was already invoked. Call Notify() again so that notify_
       // can be invoked.
-      self->MaybeNotify(GRPC_ERROR_NONE);
+      self->MaybeNotify(absl::OkStatus());
     }
   }
   self->Unref();
@@ -236,7 +234,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
     } else {
       // OnReceiveSettings() was already invoked. Call Notify() again so that
       // notify_ can be invoked.
-      self->MaybeNotify(GRPC_ERROR_NONE);
+      self->MaybeNotify(absl::OkStatus());
     }
   }
   self->Unref();
@@ -244,7 +242,6 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
 
 void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
   if (notify_error_.has_value()) {
-    GRPC_ERROR_UNREF(error);
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
     // Clear state for a new Connect().
     // Clear out the endpoint_, since it is the responsibility of
@@ -348,7 +345,7 @@ grpc_channel* grpc_channel_create(const char* target,
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
                  (target, (void*)creds, (void*)c_args));
   grpc_channel* channel = nullptr;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.
@@ -370,10 +367,10 @@ grpc_channel* grpc_channel_create(const char* target,
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                           &integer)) {
       status = static_cast<grpc_status_code>(integer);
     }
-    GRPC_ERROR_UNREF(error);
     channel = grpc_lame_client_channel_create(
         target, status, "Failed to create secure client channel");
   }

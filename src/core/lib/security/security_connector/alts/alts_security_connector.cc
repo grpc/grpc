@@ -51,6 +51,7 @@
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -76,7 +77,7 @@ void alts_check_peer(tsi_peer peer,
   tsi_peer_destruct(&peer);
   grpc_error_handle error =
       *auth_context != nullptr
-          ? GRPC_ERROR_NONE
+          ? absl::OkStatus()
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Could not get ALTS auth context from TSI peer");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
@@ -120,9 +121,7 @@ class grpc_alts_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
@@ -179,9 +178,7 @@ class grpc_alts_server_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other) const override {
     return server_security_connector_cmp(
@@ -228,7 +225,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       rpc_versions_prop->value.data, rpc_versions_prop->value.length);
   bool decode_result =
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
-  grpc_slice_unref(slice);
+  CSliceUnref(slice);
   if (!decode_result) {
     gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return nullptr;

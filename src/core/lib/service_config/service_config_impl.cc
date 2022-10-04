@@ -34,6 +34,7 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -149,7 +150,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
                                           StringViewFromSlice(key)));
             // The map entry already existed, so we need to unref the
             // key we just created.
-            grpc_slice_unref(key);
+            CSliceUnref(key);
           } else {
             value = vector_ptr;
           }
@@ -162,7 +163,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
 
 ServiceConfigImpl::~ServiceConfigImpl() {
   for (auto& p : parsed_method_configs_map_) {
-    grpc_slice_unref(p.first);
+    CSliceUnref(p.first);
   }
 }
 

@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -34,6 +36,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -425,7 +428,7 @@ static grpc_error_handle init_call_elem(
     grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
   return grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("access denied"),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
+      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_PERMISSION_DENIED);
 }
 
 static void destroy_call_elem(grpc_call_element* /*elem*/,
@@ -437,9 +440,9 @@ static grpc_error_handle init_channel_elem(
   if (g_channel_filter_init_failure) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test channel filter init error"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
+        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_INVALID_ARGUMENT);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}

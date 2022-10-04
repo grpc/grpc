@@ -117,7 +117,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   ///
   /// When done, invokes \a on_handshake_done with a HandshakerArgs
   /// object as its argument.  If the callback is invoked with error !=
-  /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
+  /// absl::OkStatus(), then handshaking failed and the handshaker has done
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
   void DoHandshake(grpc_endpoint* endpoint, const ChannelArgs& channel_args,

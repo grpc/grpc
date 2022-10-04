@@ -42,6 +42,7 @@
 
 typedef absl::Status grpc_error_handle;
 
+/// TODO(veblush): Remove this enum once migration is done
 typedef enum {
   /// 'errno' from the operating system
   GRPC_ERROR_INT_ERRNO =
@@ -92,6 +93,7 @@ typedef enum {
   GRPC_ERROR_INT_MAX,
 } grpc_error_ints;
 
+/// TODO(veblush): Remove this enum once migration is done
 typedef enum {
   /// top-level textual description of this error
   GRPC_ERROR_STR_DESCRIPTION =
@@ -128,14 +130,6 @@ typedef enum {
   GRPC_ERROR_STR_MAX,
 } grpc_error_strs;
 
-typedef enum {
-  /// timestamp of error creation
-  GRPC_ERROR_TIME_CREATED,
-
-  /// Must always be last
-  GRPC_ERROR_TIME_MAX,
-} grpc_error_times;
-
 std::string grpc_error_std_string(grpc_error_handle error);
 
 // debug only toggles that allow for a sanity to check that ensures we will
@@ -147,6 +141,8 @@ void grpc_enable_error_creation();
 #define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError(""))
 #define GRPC_ERROR_CANCELLED absl::CancelledError()
 
+// Deprecated: Please do not use these macros.
+// These will be removed once migration is done.
 #define GRPC_ERROR_REF(err) (err)
 #define GRPC_ERROR_UNREF(err) (void)(err)
 
@@ -176,12 +172,12 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                      errs)
 
 // Consumes all the errors in the vector and forms a referencing error from
-// them. If the vector is empty, return GRPC_ERROR_NONE.
+// them. If the vector is empty, return absl::OkStatus().
 template <typename VectorType>
 static absl::Status grpc_status_create_from_vector(
     const grpc_core::DebugLocation& location, absl::string_view desc,
     VectorType* error_list) {
-  absl::Status error = GRPC_ERROR_NONE;
+  absl::Status error;
   if (error_list->size() != 0) {
     error = grpc_status_create(absl::StatusCode::kUnknown, desc, location,
                                error_list->size(), error_list->data());
@@ -199,7 +195,7 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;
 
 inline absl::Status grpc_assert_never_ok(absl::Status error) {
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   return error;
 }
 
@@ -215,18 +211,44 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   grpc_wsa_error(DEBUG_LOCATION, err, call_name)
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
-                                     grpc_error_ints which,
+                                     grpc_core::StatusIntProperty which,
                                      intptr_t value) GRPC_MUST_USE_RESULT;
 /// It is an error to pass nullptr as `p`. Caller should allocate a phony
 /// intptr_t for `p`, even if the value of `p` is not used.
-bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
-                        intptr_t* p);
+bool grpc_error_get_int(grpc_error_handle error,
+                        grpc_core::StatusIntProperty which, intptr_t* p);
 grpc_error_handle grpc_error_set_str(
-    grpc_error_handle src, grpc_error_strs which,
+    grpc_error_handle src, grpc_core::StatusStrProperty which,
     absl::string_view str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
-bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
-                        std::string* str);
+bool grpc_error_get_str(grpc_error_handle error,
+                        grpc_core::StatusStrProperty which, std::string* str);
+
+/// TODO(veblush): Remove these functions once migration is done
+/// PLEASE DON'T USE: begin
+inline grpc_error_handle grpc_error_set_int(grpc_error_handle src,
+                                            grpc_error_ints which,
+                                            intptr_t value) {
+  return grpc_error_set_int(
+      src, static_cast<grpc_core::StatusIntProperty>(which), value);
+}
+inline bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
+                               intptr_t* p) {
+  return grpc_error_get_int(
+      error, static_cast<grpc_core::StatusIntProperty>(which), p);
+}
+inline grpc_error_handle grpc_error_set_str(grpc_error_handle src,
+                                            grpc_error_strs which,
+                                            absl::string_view str) {
+  return grpc_error_set_str(
+      src, static_cast<grpc_core::StatusStrProperty>(which), str);
+}
+inline bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
+                               std::string* str) {
+  return grpc_error_get_str(
+      error, static_cast<grpc_core::StatusStrProperty>(which), str);
+}
+/// PLEASE DON'T USE: end
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level
@@ -234,9 +256,9 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
 /// child error.
 ///
 /// Edge Conditions -
-/// 1) If either of \a src or \a child is GRPC_ERROR_NONE, returns a reference
-/// to the other argument. 2) If both \a src and \a child are GRPC_ERROR_NONE,
-/// returns GRPC_ERROR_NONE. 3) If \a src and \a child point to the same error,
+/// 1) If either of \a src or \a child is absl::OkStatus(), returns a reference
+/// to the other argument. 2) If both \a src and \a child are absl::OkStatus(),
+/// returns absl::OkStatus(). 3) If \a src and \a child point to the same error,
 /// returns a single reference. (Note that, 2 references should have been
 /// received to the error in this case.)
 grpc_error_handle grpc_error_add_child(
@@ -246,8 +268,7 @@ bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line);
 inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
                               const char* file, int line) {
-  return GRPC_ERROR_IS_NONE(error) ? true
-                                   : grpc_log_error(what, error, file, line);
+  return error.ok() ? true : grpc_log_error(what, error, file, line);
 }
 
 #define GRPC_LOG_IF_ERROR(what, error) \
@@ -257,22 +278,16 @@ inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
 /// This could be considered as atomic<grpc_error_handle>.
 class AtomicError {
  public:
-  AtomicError() {
-    error_ = GRPC_ERROR_NONE;
-    lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
-  }
-  explicit AtomicError(grpc_error_handle error) {
-    error_ = GRPC_ERROR_REF(error);
-  }
-  ~AtomicError() { GRPC_ERROR_UNREF(error_); }
+  AtomicError() = default;
+  explicit AtomicError(grpc_error_handle error) { error_ = error; }
 
   AtomicError(const AtomicError&) = delete;
   AtomicError& operator=(const AtomicError&) = delete;
 
-  /// returns get() == GRPC_ERROR_NONE
+  /// returns get() == absl::OkStatus()
   bool ok() {
     gpr_spinlock_lock(&lock_);
-    bool ret = GRPC_ERROR_IS_NONE(error_);
+    bool ret = error_.ok();
     gpr_spinlock_unlock(&lock_);
     return ret;
   }
@@ -286,14 +301,13 @@ class AtomicError {
 
   void set(grpc_error_handle error) {
     gpr_spinlock_lock(&lock_);
-    GRPC_ERROR_UNREF(error_);
-    error_ = GRPC_ERROR_REF(error);
+    error_ = error;
     gpr_spinlock_unlock(&lock_);
   }
 
  private:
   grpc_error_handle error_;
-  gpr_spinlock lock_;
+  gpr_spinlock lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
 };
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

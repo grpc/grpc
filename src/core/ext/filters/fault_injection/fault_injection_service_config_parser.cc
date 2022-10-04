@@ -20,7 +20,6 @@
 
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
@@ -109,7 +108,7 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
 void FaultInjectionServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<FaultInjectionServiceConfigParser>());
+      std::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {
