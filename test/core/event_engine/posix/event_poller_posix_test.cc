@@ -704,10 +704,8 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   gpr_mu_init(&g_mu);
-  grpc_core::UniquePtr<char> poll_strategy =
-      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
+  auto strings = absl::StrSplit(poll_strategy, ',');
   if (std::find(strings.begin(), strings.end(), "none") != strings.end()) {
     // Skip the test entirely if poll strategy is none.
     return 0;

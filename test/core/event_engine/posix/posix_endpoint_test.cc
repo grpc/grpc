@@ -33,6 +33,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -41,7 +42,6 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -50,8 +50,6 @@
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 #include "test/core/util/port.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -334,10 +332,8 @@ INSTANTIATE_TEST_SUITE_P(PosixEndpoint, PosixEndpointTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::UniquePtr<char> poll_strategy =
-      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
+  auto strings = absl::StrSplit(poll_strategy, ',');
   if (std::find(strings.begin(), strings.end(), "none") != strings.end()) {
     // Skip the test entirely if poll strategy is none.
     return 0;
