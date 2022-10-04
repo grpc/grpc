@@ -24,7 +24,7 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
+#include "src/core/lib/event_engine/executor/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
@@ -34,14 +34,14 @@ namespace {
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::IOCP;
-using ::grpc_event_engine::experimental::ThreadedExecutor;
+using ::grpc_event_engine::experimental::ThreadPool;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
 class WinSocketTest : public testing::Test {};
 
 TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   WinSocket wrapped_client_socket(sockpair[0], &executor);
@@ -66,7 +66,7 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
 }
 
 TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   WinSocket wrapped_client_socket(sockpair[0], &executor);
