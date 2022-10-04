@@ -20,6 +20,7 @@
 
 #include "src/core/lib/event_engine/thread_pool.h"
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -29,6 +30,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -41,11 +43,22 @@ thread_local bool g_threadpool_thread;
 
 void ThreadPool::StartThread(StatePtr state, bool throttled) {
   state->thread_count.Add();
-  if (throttled && state->currently_starting_one_thread.exchange(
-                       true, std::memory_order_relaxed)) {
-    state->thread_count.Remove();
-    return;
+  if (throttled) {
+    auto time_since_last_start =
+        grpc_core::Timestamp::Now() -
+        grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+            state->last_started_thread.load(std::memory_order_relaxed));
+    if (time_since_last_start < grpc_core::Duration::Seconds(1) ||
+        state->currently_starting_one_thread.exchange(
+            true, std::memory_order_relaxed)) {
+      state->thread_count.Remove();
+      return;
+    }
   }
+  // This may go backwards a little for non-throttled threads, but that's OK.
+  state->last_started_thread.store(
+      grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
+      std::memory_order_relaxed);
   struct ThreadArg {
     StatePtr state;
     bool throttled;
@@ -78,10 +91,18 @@ bool ThreadPool::Queue::Step() {
   while (state_ == State::kRunning && callbacks_.empty()) {
     // If there are too many threads waiting, then quit this thread.
     // TODO(ctiller): wait some time in this case to be sure.
-    if (threads_waiting_ >= reserve_threads_) return false;
-    threads_waiting_++;
-    cv_.Wait(&mu_);
-    threads_waiting_--;
+    if (threads_waiting_ >= reserve_threads_) {
+      threads_waiting_++;
+      bool timeout = cv_.WaitWithTimeout(&mu_, absl::Seconds(30));
+      threads_waiting_--;
+      if (timeout && threads_waiting_ >= reserve_threads_) {
+        return false;
+      }
+    } else {
+      threads_waiting_++;
+      cv_.Wait(&mu_);
+      threads_waiting_--;
+    }
   }
   switch (state_) {
     case State::kRunning:
@@ -99,9 +120,8 @@ bool ThreadPool::Queue::Step() {
   return true;
 }
 
-ThreadPool::ThreadPool(int reserve_threads)
-    : reserve_threads_(reserve_threads) {
-  for (int i = 0; i < reserve_threads; i++) {
+ThreadPool::ThreadPool() {
+  for (unsigned i = 0; i < reserve_threads_; i++) {
     StartThread(state_, /*throttled=*/false);
   }
 }
@@ -116,10 +136,14 @@ ThreadPool::~ThreadPool() {
                                              "shutting down");
 }
 
-void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
+void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
   if (state_->queue.Add(std::move(callback))) {
     StartThread(state_, /*throttled=*/true);
   }
+}
+
+void ThreadPool::Run(EventEngine::Closure* closure) {
+  Run([closure]() { closure->Run(); });
 }
 
 bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
@@ -187,7 +211,7 @@ void ThreadPool::PostforkChild() { Postfork(); }
 
 void ThreadPool::Postfork() {
   state_->queue.Reset();
-  for (int i = 0; i < reserve_threads_; i++) {
+  for (unsigned i = 0; i < reserve_threads_; i++) {
     StartThread(state_, /*throttled=*/false);
   }
 }
