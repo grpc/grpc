@@ -689,33 +689,50 @@ void ClientCallData::StartPromise(Flusher* flusher) {
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
-  switch (recv_initial_metadata_->state) {
-    case RecvInitialMetadata::kHookedWaitingForLatch:
-      recv_initial_metadata_->state =
-          RecvInitialMetadata::kCompleteWaitingForLatch;
-      break;
-    case RecvInitialMetadata::kHookedAndGotLatch:
-      recv_initial_metadata_->state = RecvInitialMetadata::kCompleteAndGotLatch;
-      break;
-    case RecvInitialMetadata::kInitial:
-    case RecvInitialMetadata::kGotLatch:
-    case RecvInitialMetadata::kCompleteWaitingForLatch:
-    case RecvInitialMetadata::kCompleteAndGotLatch:
-    case RecvInitialMetadata::kCompleteAndSetLatch:
-    case RecvInitialMetadata::kResponded:
-    case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-    case RecvInitialMetadata::kRespondedButNeedToSetLatch:
-      abort();  // unreachable
-  }
   Flusher flusher(this);
   if (!error.ok()) {
-    recv_initial_metadata_->state =
-        RecvInitialMetadata::kRespondedButNeedToSetLatch;
+    switch (recv_initial_metadata_->state) {
+      case RecvInitialMetadata::kHookedWaitingForLatch:
+        recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
+        break;
+      case RecvInitialMetadata::kHookedAndGotLatch:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kRespondedButNeedToSetLatch;
+        break;
+      case RecvInitialMetadata::kInitial:
+      case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kCompleteWaitingForLatch:
+      case RecvInitialMetadata::kCompleteAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kResponded:
+      case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        abort();  // unreachable
+    }
     flusher.AddClosure(
         std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
         error, "propagate cancellation");
   } else if (send_initial_state_ == SendInitialState::kCancelled ||
              recv_trailing_state_ == RecvTrailingState::kResponded) {
+    switch (recv_initial_metadata_->state) {
+      case RecvInitialMetadata::kHookedWaitingForLatch:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kCompleteWaitingForLatch;
+        break;
+      case RecvInitialMetadata::kHookedAndGotLatch:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kCompleteAndGotLatch;
+        break;
+      case RecvInitialMetadata::kInitial:
+      case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kCompleteWaitingForLatch:
+      case RecvInitialMetadata::kCompleteAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kResponded:
+      case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+      case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        abort();  // unreachable
+    }
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
     flusher.AddClosure(
         std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
