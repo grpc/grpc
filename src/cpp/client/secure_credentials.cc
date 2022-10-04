@@ -42,6 +42,7 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -412,14 +413,6 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
 }
 
-namespace {
-void DeleteWrapper(void* wrapper, grpc_error_handle /*ignored*/) {
-  MetadataCredentialsPluginWrapper* w =
-      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
-  delete w;
-}
-}  // namespace
-
 char* MetadataCredentialsPluginWrapper::DebugString(void* wrapper) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
@@ -429,10 +422,11 @@ char* MetadataCredentialsPluginWrapper::DebugString(void* wrapper) {
 
 void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
-  grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper, nullptr),
-                           absl::OkStatus());
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([wrapper] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    delete static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+  });
 }
 
 int MetadataCredentialsPluginWrapper::GetMetadata(
