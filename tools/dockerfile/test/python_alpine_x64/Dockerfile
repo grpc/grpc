@@ -22,8 +22,6 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Install Python packages from PyPI
 RUN python3 -m pip install --upgrade pip==19.3.1
-RUN python3 -m pip install virtualenv
-RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
