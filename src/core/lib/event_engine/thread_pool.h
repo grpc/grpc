@@ -20,15 +20,19 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/cpu.h>
-#include <grpc/event_engine/event_engine.h>
+
 #include <stdint.h>
+
 #include <atomic>
 #include <memory>
 #include <queue>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/gpr/useful.h"
