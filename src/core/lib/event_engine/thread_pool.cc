@@ -68,7 +68,6 @@ void ThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
     case StartThreadReason::kInitialPool:
       break;
   }
-  gpr_log(GPR_ERROR, "STARTING THREAD: reason=%d", (int)reason);
   struct ThreadArg {
     StatePtr state;
     StartThreadReason reason;
