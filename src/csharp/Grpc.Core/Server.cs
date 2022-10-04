@@ -220,8 +220,26 @@ namespace Grpc.Core
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(!shutdownRequested);
+
+                if (!startRequested)
+                {
+                    Logger.Warning("Shutdown called without Start being called.");
+
+                    if (serverPortList.Count > 0)
+                    {
+                        // Ports have been added. They will already be bound and listening.
+                        // Need to call Start so that the grpc core native library is in the
+                        // correct state when shutdown is called. Otherwise the listening ports
+                        // will not be released. See https://github.com/grpc/grpc/issues/23390
+
+                        // lock is re-entrant so OK to call Start() while holding the lock.
+                        Start();
+                    }
+                }
+
                 shutdownRequested = true;
             }
+
             GrpcEnvironment.UnregisterServer(this);
 
             var cq = environment.CompletionQueues.First();  // any cq will do
@@ -381,9 +399,9 @@ namespace Grpc.Core
                     // Start asynchronous handler for the call.
                     // Don't await, the continuations will run on gRPC thread pool once triggered
                     // by cq.Next().
-                    #pragma warning disable 4014
+#pragma warning disable 4014
                     HandleCallAsync(newRpc, cq, (server, state) => server.AllowOneRpc(state));
-                    #pragma warning restore 4014
+#pragma warning restore 4014
                 }
             }
 
