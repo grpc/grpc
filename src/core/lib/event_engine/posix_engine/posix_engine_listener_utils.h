@@ -63,10 +63,9 @@ class ListenerSocketsContainer {
 // If successful, add a socket to ListenerSocketsContainer for \a addr, set \a
 // dsmode for the socket, and return the error handle and listening port
 // assigned for the socket.
-absl::StatusOr<int> ListenerAddAddress(
+absl::StatusOr<ListenerSocket> ListenerAddAddress(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
-    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-    PosixSocketWrapper::DSMode& dsmode);
+    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr);
 
 // Instead of creating and adding a socket bound to specific address, this
 // function creates and adds a socket bound to the wildcard address on the

@@ -384,6 +384,24 @@ TEST(TcpPosixSocketUtilsTest, SockAddrToStringTest) {
 #endif
 }
 
+TEST(TcpPosixSocketUtilsTest, SockAddrPortTest) {
+  EventEngine::ResolvedAddress wild6 = SockaddrMakeWild6(20);
+  EventEngine::ResolvedAddress wild4 = SockaddrMakeWild4(20);
+  // Verify the string description matches the expected wildcard address with
+  // correct port number.
+  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:20");
+  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:20");
+  // Update the port values.
+  ASSERT_TRUE(SockaddrSetPort(wild4, 21));
+  ASSERT_TRUE(SockaddrSetPort(wild6, 22));
+  // Read back the port values.
+  EXPECT_EQ(SockaddrGetPort(wild4), 21);
+  EXPECT_EQ(SockaddrGetPort(wild6), 22);
+  // Ensure the string description reflects the updated port values.
+  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:21");
+  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:22");
+}
+
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 

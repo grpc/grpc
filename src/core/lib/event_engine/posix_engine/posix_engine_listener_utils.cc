@@ -187,10 +187,9 @@ absl::Status AddSocketToListener(ListenerSocketsContainer& listener_sockets,
 }
 }  // namespace
 
-absl::StatusOr<int> ListenerAddAddress(
+absl::StatusOr<ListenerSocket> ListenerAddAddress(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
-    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
-    PosixSocketWrapper::DSMode& dsmode) {
+    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr) {
   ResolvedAddress addr4_copy;
   ListenerSocket socket;
   auto result = PosixSocketWrapper::CreateDualStackSocket(
@@ -207,8 +206,7 @@ absl::StatusOr<int> ListenerAddAddress(
   }
 
   GRPC_RETURN_IF_ERROR(AddSocketToListener(listener_sockets, options, socket));
-  dsmode = socket.dsmode;
-  return socket.port;
+  return socket;
 }
 
 absl::StatusOr<int> ListenerAddAllLocalAddresses(
@@ -265,14 +263,14 @@ absl::StatusOr<int> ListenerAddAllLocalAddresses(
               addr_str.c_str(), ifa_name);
       continue;
     }
-    auto result = ListenerAddAddress(listener_sockets, options, addr, dsmode);
+    auto result = ListenerAddAddress(listener_sockets, options, addr);
     if (!result.ok()) {
       status = absl::InternalError(
           absl::StrCat("Failed to add listener: ", addr_str,
                        " due to error: ", result.status().message()));
       break;
     } else {
-      assigned_port = *result;
+      assigned_port = result->port;
       no_local_addresses = false;
     }
   }
@@ -295,8 +293,8 @@ absl::StatusOr<int> AddWildCardAddrsToListener(
   ResolvedAddress wild4 = SockaddrMakeWild4(requested_port);
   ResolvedAddress wild6 = SockaddrMakeWild6(requested_port);
   PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<int> v6_err = absl::OkStatus();
-  absl::StatusOr<int> v4_err = absl::OkStatus();
+  absl::StatusOr<ListenerSocket> v6_sock = absl::OkStatus();
+  absl::StatusOr<ListenerSocket> v4_sock = absl::OkStatus();
   int assigned_port = 0;
 
   if (SystemHasIfAddrs() && options.expand_wildcard_addrs) {
@@ -305,38 +303,38 @@ absl::StatusOr<int> AddWildCardAddrsToListener(
   }
 
   // Try listening on IPv6 first.
-  v6_err = ListenerAddAddress(listener_sockets, options, wild6, dsmode);
-  if (v6_err.ok()) {
-    if (dsmode == PosixSocketWrapper::DSMODE_DUALSTACK ||
-        dsmode == PosixSocketWrapper::DSMODE_IPV4) {
-      return *v6_err;
+  v6_sock = ListenerAddAddress(listener_sockets, options, wild6);
+  if (v6_sock.ok()) {
+    if (v6_sock->dsmode == PosixSocketWrapper::DSMODE_DUALSTACK ||
+        v6_sock->dsmode == PosixSocketWrapper::DSMODE_IPV4) {
+      return v6_sock->port;
     }
-    requested_port = *v6_err;
-    assigned_port = *v6_err;
+    requested_port = v6_sock->port;
+    assigned_port = v6_sock->port;
   }
   // If we got a v6-only socket or nothing, try adding 0.0.0.0.
   SockaddrSetPort(wild4, requested_port);
-  v4_err = ListenerAddAddress(listener_sockets, options, wild4, dsmode);
+  v4_sock = ListenerAddAddress(listener_sockets, options, wild4);
   if (assigned_port > 0) {
-    if (!v6_err.ok()) {
+    if (!v6_sock.ok()) {
       gpr_log(
           GPR_INFO,
           "Failed to add :: listener, the environment may not support IPv6: %s",
-          v6_err.status().ToString().c_str());
+          v6_sock.status().ToString().c_str());
     }
-    if (!v4_err.ok()) {
+    if (!v4_sock.ok()) {
       gpr_log(GPR_INFO,
               "Failed to add 0.0.0.0 listener, "
               "the environment may not support IPv4: %s",
-              v4_err.status().ToString().c_str());
+              v4_sock.status().ToString().c_str());
     }
     return assigned_port;
   } else {
-    GPR_ASSERT(!v6_err.ok());
-    GPR_ASSERT(!v4_err.ok());
+    GPR_ASSERT(!v6_sock.ok());
+    GPR_ASSERT(!v4_sock.ok());
     return absl::InternalError(absl::StrCat(
-        "Failed to add any wildcard listeners: ", v6_err.status().message(),
-        v4_err.status().message()));
+        "Failed to add any wildcard listeners: ", v6_sock.status().message(),
+        v4_sock.status().message()));
   }
 }
 
