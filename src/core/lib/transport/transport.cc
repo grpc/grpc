@@ -22,15 +22,16 @@
 
 #include <string.h>
 
+#include <memory>
 #include <new>
 
 #include "absl/status/status.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
