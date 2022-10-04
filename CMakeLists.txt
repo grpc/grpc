@@ -7504,11 +7504,30 @@ add_executable(chunked_vector_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -7523,6 +7542,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -7551,6 +7571,7 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
   absl::hash
@@ -9630,8 +9651,27 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -9640,6 +9680,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -9668,7 +9709,9 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   absl::any_invocable
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -10087,11 +10130,30 @@ add_executable(flow_control_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -10105,6 +10167,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
@@ -10135,6 +10198,7 @@ target_include_directories(flow_control_test
 target_link_libraries(flow_control_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
   absl::hash
@@ -10153,11 +10217,30 @@ add_executable(for_each_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -10172,6 +10255,7 @@ add_executable(for_each_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14278,8 +14362,27 @@ add_executable(periodic_update_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -14288,6 +14391,7 @@ add_executable(periodic_update_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14316,10 +14420,12 @@ target_include_directories(periodic_update_test
 target_link_libraries(periodic_update_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
   absl::hash
   absl::statusor
+  absl::utility
   gpr
   upb
 )
@@ -14379,11 +14485,30 @@ add_executable(pipe_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/executor/threaded_executor.cc
+  src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -14398,6 +14523,7 @@ add_executable(pipe_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14426,6 +14552,7 @@ target_include_directories(pipe_test
 target_link_libraries(pipe_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
   absl::hash
