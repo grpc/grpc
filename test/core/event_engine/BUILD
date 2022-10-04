@@ -162,6 +162,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "mock_event_engine",
+    testonly = True,
     hdrs = ["mock_event_engine.h"],
     external_deps = [
         "absl/functional:any_invocable",
