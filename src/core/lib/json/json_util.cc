@@ -21,13 +21,14 @@
 #include "src/core/lib/json/json_util.h"
 
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
 bool ParseDurationFromJson(const Json& field, Duration* duration) {
-  ErrorList errors;
+  ValidationErrors errors;
   static_cast<json_detail::LoaderInterface*>(
       NoDestructSingleton<json_detail::AutoLoader<Duration>>::Get())
       ->LoadInto(field, JsonArgs(), duration, &errors);

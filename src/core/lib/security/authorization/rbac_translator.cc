@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -103,7 +102,7 @@ absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json& json) {
                           absl::StrCat("\"principals\" ", i, ": ",
                                        matcher_or.status().message()));
     }
-    principal_names.push_back(absl::make_unique<Rbac::Principal>(
+    principal_names.push_back(std::make_unique<Rbac::Principal>(
         Rbac::Principal::MakeAuthenticatedPrincipal(
             std::move(matcher_or.value()))));
   }
@@ -152,7 +151,7 @@ absl::StatusOr<Rbac::Permission> ParseHeaderValues(
           matcher_or.status().code(),
           absl::StrCat("\"values\" ", i, ": ", matcher_or.status().message()));
     }
-    values.push_back(absl::make_unique<Rbac::Permission>(
+    values.push_back(std::make_unique<Rbac::Permission>(
         Rbac::Permission::MakeHeaderPermission(std::move(matcher_or.value()))));
   }
   return Rbac::Permission::MakeOrPermission(std::move(values));
@@ -206,7 +205,7 @@ absl::StatusOr<Rbac::Permission> ParseHeadersArray(const Json& json) {
           absl::StrCat("\"headers\" ", i, ": ", headers_or.status().message()));
     }
     headers.push_back(
-        absl::make_unique<Rbac::Permission>(std::move(headers_or.value())));
+        std::make_unique<Rbac::Permission>(std::move(headers_or.value())));
   }
   return Rbac::Permission::MakeAndPermission(std::move(headers));
 }
@@ -225,7 +224,7 @@ absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json& json) {
           matcher_or.status().code(),
           absl::StrCat("\"paths\" ", i, ": ", matcher_or.status().message()));
     }
-    paths.push_back(absl::make_unique<Rbac::Permission>(
+    paths.push_back(std::make_unique<Rbac::Permission>(
         Rbac::Permission::MakePathPermission(std::move(matcher_or.value()))));
   }
   return Rbac::Permission::MakeOrPermission(std::move(paths));

@@ -20,14 +20,13 @@
 
 #include "src/core/lib/gpr/spinlock.h"
 
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"

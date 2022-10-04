@@ -20,6 +20,7 @@
 
 #include "src/core/lib/surface/validate_metadata.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -27,6 +28,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 
 static grpc_error_handle conforms_to(const grpc_slice& slice,
@@ -42,18 +44,18 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
           GRPC_SLICE_LENGTH(slice), GPR_DUMP_HEX | GPR_DUMP_ASCII, &len));
       grpc_error_handle error = grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
-                             GRPC_ERROR_INT_OFFSET,
+                             grpc_core::StatusIntProperty::kOffset,
                              p - GRPC_SLICE_START_PTR(slice)),
-          GRPC_ERROR_STR_RAW_BYTES, absl::string_view(ptr.get(), len));
+          grpc_core::StatusStrProperty::kRawBytes,
+          absl::string_view(ptr.get(), len));
       return error;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static int error2int(grpc_error_handle error) {
-  int r = (GRPC_ERROR_IS_NONE(error));
-  GRPC_ERROR_UNREF(error);
+  int r = (error.ok());
   return r;
 }
 

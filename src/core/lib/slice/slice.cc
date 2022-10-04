@@ -30,7 +30,7 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 char* grpc_slice_to_c_string(grpc_slice slice) {
   char* out = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1));
@@ -494,3 +494,9 @@ grpc_slice grpc_slice_dup(grpc_slice a) {
          GRPC_SLICE_LENGTH(a));
   return copy;
 }
+
+grpc_slice grpc_slice_ref(grpc_slice slice) {
+  return grpc_core::CSliceRef(slice);
+}
+
+void grpc_slice_unref(grpc_slice slice) { grpc_core::CSliceUnref(slice); }

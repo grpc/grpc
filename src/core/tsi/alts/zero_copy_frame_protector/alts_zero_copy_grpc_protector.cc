@@ -190,7 +190,7 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
       /* We have not parsed frame size yet. Parses frame size.  */
       if (!read_frame_size(&protector->protected_sb,
                            &protector->parsed_frame_size)) {
-        grpc_slice_buffer_reset_and_unref_internal(&protector->protected_sb);
+        grpc_slice_buffer_reset_and_unref(&protector->protected_sb);
         return TSI_DATA_CORRUPTED;
       }
     }
@@ -211,7 +211,7 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
     }
     protector->parsed_frame_size = 0;
     if (status != TSI_OK) {
-      grpc_slice_buffer_reset_and_unref_internal(&protector->protected_sb);
+      grpc_slice_buffer_reset_and_unref(&protector->protected_sb);
       return status;
     }
   }
@@ -235,9 +235,9 @@ static void alts_zero_copy_grpc_protector_destroy(
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
   alts_grpc_record_protocol_destroy(protector->record_protocol);
   alts_grpc_record_protocol_destroy(protector->unrecord_protocol);
-  grpc_slice_buffer_destroy_internal(&protector->unprotected_staging_sb);
-  grpc_slice_buffer_destroy_internal(&protector->protected_sb);
-  grpc_slice_buffer_destroy_internal(&protector->protected_staging_sb);
+  grpc_slice_buffer_destroy(&protector->unprotected_staging_sb);
+  grpc_slice_buffer_destroy(&protector->protected_sb);
+  grpc_slice_buffer_destroy(&protector->protected_staging_sb);
   gpr_free(protector);
 }
 

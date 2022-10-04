@@ -36,6 +36,7 @@
 #import "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -106,9 +107,9 @@ static void CFStreamRef(CFStreamEndpoint* ep) { gpr_ref(&ep->refcount); }
 static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error,
                                                CFStreamEndpoint* ep) {
   return grpc_error_set_str(
-      grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS,
+      grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, ep->peer_string);
+      grpc_core::StatusStrProperty::kTargetAddress, ep->peer_string);
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
@@ -147,9 +148,9 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 static void ReadAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
   GPR_ASSERT(ep->read_cb != nullptr);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
-    CallReadCb(ep, GRPC_ERROR_REF(error));
+  if (!error.ok()) {
+    grpc_slice_buffer_reset_and_unref(ep->read_slices);
+    CallReadCb(ep, error);
     EP_UNREF(ep, "read");
     return;
   }
@@ -160,7 +161,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
   CFIndex read_size =
       CFReadStreamRead(ep->read_stream, GRPC_SLICE_START_PTR(slice), len);
   if (read_size == -1) {
-    grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
+    grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(ep->read_stream);
     if (stream_error != nullptr) {
       error = CFStreamAnnotateError(
@@ -172,7 +173,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     CallReadCb(ep, error);
     EP_UNREF(ep, "read");
   } else if (read_size == 0) {
-    grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
+    grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CallReadCb(ep,
                CFStreamAnnotateError(
                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), ep));
@@ -181,7 +182,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     if (read_size < static_cast<CFIndex>(len)) {
       grpc_slice_buffer_trim_end(ep->read_slices, len - read_size, nullptr);
     }
-    CallReadCb(ep, GRPC_ERROR_NONE);
+    CallReadCb(ep, absl::OkStatus());
     EP_UNREF(ep, "read");
   }
 }
@@ -189,19 +190,18 @@ static void ReadAction(void* arg, grpc_error_handle error) {
 static void WriteAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
   GPR_ASSERT(ep->write_cb != nullptr);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    grpc_slice_buffer_reset_and_unref_internal(ep->write_slices);
-    CallWriteCb(ep, GRPC_ERROR_REF(error));
+  if (!error.ok()) {
+    grpc_slice_buffer_reset_and_unref(ep->write_slices);
+    CallWriteCb(ep, error);
     EP_UNREF(ep, "write");
     return;
   }
-
   grpc_slice slice = grpc_slice_buffer_take_first(ep->write_slices);
   size_t slice_len = GRPC_SLICE_LENGTH(slice);
   CFIndex write_size = CFWriteStreamWrite(
       ep->write_stream, GRPC_SLICE_START_PTR(slice), slice_len);
   if (write_size == -1) {
-    grpc_slice_buffer_reset_and_unref_internal(ep->write_slices);
+    grpc_slice_buffer_reset_and_unref(ep->write_slices);
     CFErrorRef stream_error = CFWriteStreamCopyError(ep->write_stream);
     if (stream_error != nullptr) {
       error = CFStreamAnnotateError(
@@ -220,7 +220,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     if (ep->write_slices->length > 0) {
       ep->stream_sync->NotifyOnWrite(&ep->write_action);
     } else {
-      CallWriteCb(ep, GRPC_ERROR_NONE);
+      CallWriteCb(ep, absl::OkStatus());
       EP_UNREF(ep, "write");
     }
 
@@ -230,10 +230,10 @@ static void WriteAction(void* arg, grpc_error_handle error) {
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(),
               dump);
       gpr_free(dump);
-      grpc_slice_unref_internal(trace_slice);
+      grpc_core::CSliceUnref(trace_slice);
     }
   }
-  grpc_slice_unref_internal(slice);
+  grpc_core::CSliceUnref(slice);
 }
 
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -247,7 +247,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   GPR_ASSERT(ep_impl->read_cb == nullptr);
   ep_impl->read_cb = cb;
   ep_impl->read_slices = slices;
-  grpc_slice_buffer_reset_and_unref_internal(slices);
+  grpc_slice_buffer_reset_and_unref(slices);
   grpc_slice_buffer_add_indexed(
       slices, GRPC_SLICE_MALLOC(GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
   EP_REF(ep_impl, "read");

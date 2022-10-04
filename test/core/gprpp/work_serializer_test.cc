@@ -18,22 +18,22 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
+#include <stddef.h>
+
+#include <algorithm>
 #include <memory>
 #include <thread>
+#include <vector>
 
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
 #include "absl/synchronization/barrier.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -115,7 +115,7 @@ TEST(WorkSerializerTest, ExecuteMany) {
   {
     std::vector<std::unique_ptr<TestThread>> threads;
     for (size_t i = 0; i < 10; ++i) {
-      threads.push_back(absl::make_unique<TestThread>(&lock));
+      threads.push_back(std::make_unique<TestThread>(&lock));
     }
   }
 }
@@ -176,7 +176,7 @@ TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
   {
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> threads;
     for (size_t i = 0; i < 10; ++i) {
-      threads.push_back(absl::make_unique<TestThreadScheduleAndDrain>(&lock));
+      threads.push_back(std::make_unique<TestThreadScheduleAndDrain>(&lock));
     }
   }
 }
@@ -187,9 +187,9 @@ TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
     std::vector<std::unique_ptr<TestThread>> run_threads;
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> schedule_threads;
     for (size_t i = 0; i < 10; ++i) {
-      run_threads.push_back(absl::make_unique<TestThread>(&lock));
+      run_threads.push_back(std::make_unique<TestThread>(&lock));
       schedule_threads.push_back(
-          absl::make_unique<TestThreadScheduleAndDrain>(&lock));
+          std::make_unique<TestThreadScheduleAndDrain>(&lock));
     }
   }
 }

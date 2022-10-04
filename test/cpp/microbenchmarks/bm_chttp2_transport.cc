@@ -73,7 +73,7 @@ class PhonyEndpoint : public grpc_endpoint {
       return;
     }
     grpc_slice_buffer_add(slices_, slice);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_cb_, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_cb_, absl::OkStatus());
     read_cb_ = nullptr;
   }
 
@@ -88,7 +88,7 @@ class PhonyEndpoint : public grpc_endpoint {
     if (have_slice_) {
       have_slice_ = false;
       grpc_slice_buffer_add(slices, buffered_slice_);
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
       return;
     }
     read_cb_ = cb;
@@ -103,7 +103,7 @@ class PhonyEndpoint : public grpc_endpoint {
 
   static void write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
                     grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
   }
 
   static void add_to_pollset(grpc_endpoint* /*ep*/, grpc_pollset* /*pollset*/) {
@@ -273,7 +273,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
   op = {};
   op.cancel_stream = true;
   op.payload = &op_payload;
-  op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  op_payload.cancel_stream.cancel_error = absl::CancelledError();
   std::unique_ptr<TestClosure> next =
       MakeTestClosure([&, s](grpc_error_handle /*error*/) {
         if (!state.KeepRunning()) {
@@ -284,7 +284,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
         s->Op(&op);
         s->DestroyThen(next.get());
       });
-  grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), absl::OkStatus());
   f.FlushExecCtx();
   track_counters.Finish(state);
 }
@@ -355,11 +355,11 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   done = MakeTestClosure([&](grpc_error_handle /*error*/) {
     reset_op();
     op.cancel_stream = true;
-    op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+    op.payload->cancel_stream.cancel_error = absl::CancelledError();
     s->Op(&op);
     s->DestroyThen(start.get());
   });
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), absl::OkStatus());
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
   track_counters.Finish(state);
@@ -386,16 +386,16 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
         op.on_complete = c.get();
         s->Op(&op);
       });
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c.get(), GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c.get(), absl::OkStatus());
   f.FlushExecCtx();
   reset_op();
   op.cancel_stream = true;
-  op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  op_payload.cancel_stream.cancel_error = absl::CancelledError();
   gpr_event* stream_cancel_done = new gpr_event;
   gpr_event_init(stream_cancel_done);
   std::unique_ptr<TestClosure> stream_cancel_closure =
       MakeTestClosure([&](grpc_error_handle error) {
-        GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+        GPR_ASSERT(error.ok());
         gpr_event_set(stream_cancel_done, reinterpret_cast<void*>(1));
       });
   op.on_complete = stream_cancel_closure.get();

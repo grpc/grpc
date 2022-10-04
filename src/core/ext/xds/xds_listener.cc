@@ -23,11 +23,12 @@
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -505,28 +506,30 @@ absl::StatusOr<XdsListenerResource::DownstreamTlsContext>
 DownstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket) {
-  absl::string_view name = UpbStringToAbsl(
-      envoy_config_core_v3_TransportSocket_name(transport_socket));
-  if (name != "envoy.transport_sockets.tls") {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Unrecognized transport socket: ", name));
-  }
-  std::vector<std::string> errors;
-  XdsListenerResource::DownstreamTlsContext downstream_tls_context;
-  auto* typed_config =
+  const auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
   if (typed_config == nullptr) {
     return absl::InvalidArgumentError("transport socket typed config unset");
   }
+  absl::string_view type_url = absl::StripPrefix(
+      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+      "type.googleapis.com/");
+  if (type_url !=
+      "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext") {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Unrecognized transport socket type: ", type_url));
+  }
   const upb_StringView encoded_downstream_tls_context =
       google_protobuf_Any_value(typed_config);
-  auto* downstream_tls_context_proto =
+  const auto* downstream_tls_context_proto =
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
           encoded_downstream_tls_context.data,
           encoded_downstream_tls_context.size, context.arena);
   if (downstream_tls_context_proto == nullptr) {
     return absl::InvalidArgumentError("Can't decode downstream tls context.");
   }
+  std::vector<std::string> errors;
+  XdsListenerResource::DownstreamTlsContext downstream_tls_context;
   auto* common_tls_context =
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
           downstream_tls_context_proto);
@@ -556,7 +559,6 @@ DownstreamTlsContextParse(
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
     errors.emplace_back("ocsp_staple_policy: Only LENIENT_STAPLING supported");
   }
-
   if (downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.instance_name.empty()) {
     errors.emplace_back(
@@ -712,10 +714,10 @@ absl::StatusOr<FilterChain> FilterChainParse(
     if (typed_config == nullptr) {
       errors.emplace_back("No typed_config found in filter.");
     } else {
-      absl::string_view type_url =
-          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
+      absl::string_view type_url = absl::StripPrefix(
+          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+          "type.googleapis.com/");
       if (type_url !=
-          "type.googleapis.com/"
           "envoy.extensions.filters.network.http_connection_manager.v3."
           "HttpConnectionManager") {
         errors.emplace_back(absl::StrCat("Unsupported filter type ", type_url));
@@ -1059,39 +1061,40 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
+XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
     absl::string_view serialized_resource, bool is_v2) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Listener resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse Listener resource.");
+    return result;
   }
   MaybeLogListener(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
   auto listener = LdsResourceParse(context, resource, is_v2);
   if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               listener.status().ToString().c_str());
     }
     result.resource = listener.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*listener);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsListenerResource>(std::move(*listener));
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core

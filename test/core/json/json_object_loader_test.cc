@@ -14,12 +14,15 @@
 
 #include "src/core/lib/json/json_object_loader.h"
 
+#include <algorithm>
 #include <cstdint>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
-#include "absl/strings/str_join.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 namespace {
@@ -841,7 +844,7 @@ TEST(JsonObjectLoader, PostLoadHook) {
     }
 
     void JsonPostLoad(const Json& /*source*/, const JsonArgs& /*args*/,
-                      ErrorList* /*errors*/) {
+                      ValidationErrors* /*errors*/) {
       ++a;
     }
   };
@@ -864,8 +867,8 @@ TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
     }
 
     void JsonPostLoad(const Json& /*source*/, const JsonArgs& /*args*/,
-                      ErrorList* errors) {
-      ScopedField field(errors, ".a");
+                      ValidationErrors* errors) {
+      ValidationErrors::ScopedField field(errors, ".a");
       if (!errors->FieldHasErrors() && a <= 0) {
         errors->AddError("must be greater than 0");
       }
@@ -890,7 +893,41 @@ TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
       << test_struct.status();
 }
 
-TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {
+TEST(JsonObjectLoader, LoadRefCountedFromJson) {
+  struct TestStruct : public RefCounted<TestStruct> {
+    int32_t a = 0;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>().Field("a", &TestStruct::a).Finish();
+      return loader;
+    }
+  };
+  // Valid.
+  {
+    absl::string_view json_str = "{\"a\":1}";
+    auto json = Json::Parse(json_str);
+    ASSERT_TRUE(json.ok()) << json.status();
+    absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
+        LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
+    ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+    EXPECT_EQ((*test_struct)->a, 1);
+  }
+  // Invalid.
+  {
+    absl::string_view json_str = "{\"a\":\"foo\"}";
+    auto json = Json::Parse(json_str);
+    ASSERT_TRUE(json.ok()) << json.status();
+    absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
+        LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
+    EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_EQ(test_struct.status().message(),
+              "errors validating JSON: [field:a error:failed to parse number]")
+        << test_struct.status();
+  }
+}
+
+TEST(JsonObjectLoader, LoadFromJsonWithValidationErrors) {
   struct TestStruct {
     int32_t a = 0;
 
@@ -905,10 +942,10 @@ TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {
     absl::string_view json_str = "{\"a\":1}";
     auto json = Json::Parse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
-    ErrorList errors;
+    ValidationErrors errors;
     TestStruct test_struct =
         LoadFromJson<TestStruct>(*json, JsonArgs(), &errors);
-    ASSERT_TRUE(errors.ok()) << errors.status();
+    ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
     EXPECT_EQ(test_struct.a, 1);
   }
   // Invalid.
@@ -916,9 +953,9 @@ TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {
     absl::string_view json_str = "{\"a\":\"foo\"}";
     auto json = Json::Parse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
-    ErrorList errors;
+    ValidationErrors errors;
     LoadFromJson<TestStruct>(*json, JsonArgs(), &errors);
-    absl::Status status = errors.status();
+    absl::Status status = errors.status("errors validating JSON");
     EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
               "errors validating JSON: [field:a error:failed to parse number]")
@@ -932,16 +969,16 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   ASSERT_TRUE(json.ok()) << json.status();
   // Load a valid field.
   {
-    ErrorList errors;
+    ValidationErrors errors;
     auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
                                               "int", &errors);
-    ASSERT_TRUE(value.has_value()) << errors.status();
+    ASSERT_TRUE(value.has_value()) << errors.status("unexpected errors");
     EXPECT_EQ(*value, 1);
     EXPECT_TRUE(errors.ok());
   }
   // An optional field that is not present.
   {
-    ErrorList errors;
+    ValidationErrors errors;
     auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
                                               "not_present", &errors,
                                               /*required=*/false);
@@ -950,11 +987,11 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   }
   // A required field that is not present.
   {
-    ErrorList errors;
+    ValidationErrors errors;
     auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
                                               "not_present", &errors);
     EXPECT_FALSE(value.has_value());
-    auto status = errors.status();
+    auto status = errors.status("errors validating JSON");
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
               "errors validating JSON: ["
@@ -963,11 +1000,11 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   }
   // Value has the wrong type.
   {
-    ErrorList errors;
+    ValidationErrors errors;
     auto value = LoadJsonObjectField<std::string>(json->object_value(),
                                                   JsonArgs(), "int", &errors);
     EXPECT_FALSE(value.has_value());
-    auto status = errors.status();
+    auto status = errors.status("errors validating JSON");
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
               "errors validating JSON: [field:int error:is not a string]")

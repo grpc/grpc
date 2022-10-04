@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -63,7 +62,6 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
@@ -71,7 +69,6 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -144,7 +141,7 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
       regex_substitution(other.regex_substitution) {
   if (other.regex != nullptr) {
     regex =
-        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+        std::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
 }
 
@@ -155,7 +152,7 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
   header_name = other.header_name;
   if (other.regex != nullptr) {
     regex =
-        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+        std::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
   regex_substitution = other.regex_substitution;
   return *this;
@@ -581,7 +578,7 @@ absl::Status RouteRuntimeFractionParse(
       route->matchers.fraction_per_million = numerator;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 template <typename ParentType, typename EntryType>
@@ -888,7 +885,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
           continue;
         }
         RE2::Options options;
-        policy.regex = absl::make_unique<RE2>(
+        policy.regex = std::make_unique<RE2>(
             UpbStringToStdString(
                 envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
             options);
@@ -1112,41 +1109,40 @@ void MaybeLogRouteConfiguration(
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult>
-XdsRouteConfigResourceType::Decode(
+XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
     absl::string_view serialized_resource, bool /*is_v2*/) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError(
-        "Can't parse RouteConfiguration resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse RouteConfiguration resource.");
+    return result;
   }
   MaybeLogRouteConfiguration(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_route_v3_RouteConfiguration_name(resource));
   auto rds_update = XdsRouteConfigResource::Parse(context, resource);
   if (!rds_update.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               rds_update.status().ToString().c_str());
     }
     result.resource = rds_update.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed RouteConfiguration %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               rds_update->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*rds_update);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsRouteConfigResource>(std::move(*rds_update));
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core

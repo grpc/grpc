@@ -18,11 +18,14 @@
 
 #include "test/core/xds/xds_transport_fake.h"
 
+#include <stdint.h>
+
 #include <functional>
 #include <memory>
 #include <utility>
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/event_engine/default_event_engine.h"

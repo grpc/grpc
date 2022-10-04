@@ -73,7 +73,7 @@ class RlsTest : public XdsEnd2endTest {
   };
 
   RlsTest() {
-    rls_server_ = absl::make_unique<RlsServerThread>(this);
+    rls_server_ = std::make_unique<RlsServerThread>(this);
     rls_server_->Start();
   }
 
@@ -301,7 +301,9 @@ TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
-      ::testing::HasSubstr("field:requiredMatch error:must not be present"));
+      ::testing::HasSubstr(
+          "field:routeLookupConfig.grpcKeybuilders[0].headers[0].requiredMatch "
+          "error:must not be present"));
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {

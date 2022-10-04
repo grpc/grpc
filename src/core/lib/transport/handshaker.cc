@@ -25,6 +25,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -37,7 +38,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 
@@ -78,10 +78,9 @@ void HandshakeManager::Shutdown(grpc_error_handle why) {
     // Shutdown the handshaker that's currently in progress, if any.
     if (!is_shutdown_ && index_ > 0) {
       is_shutdown_ = true;
-      handshakers_[index_ - 1]->Shutdown(GRPC_ERROR_REF(why));
+      handshakers_[index_ - 1]->Shutdown(why);
     }
   }
-  GRPC_ERROR_UNREF(why);
 }
 
 // Helper function to call either the next handshaker or the
@@ -99,9 +98,9 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
   // callback.  Otherwise, call the next handshaker.
-  if (!GRPC_ERROR_IS_NONE(error) || is_shutdown_ || args_.exit_early ||
+  if (!error.ok() || is_shutdown_ || args_.exit_early ||
       index_ == handshakers_.size()) {
-    if (GRPC_ERROR_IS_NONE(error) && is_shutdown_) {
+    if (error.ok() && is_shutdown_) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("handshaker shutdown");
       // It is possible that the endpoint has already been destroyed by
       // a shutdown call while this callback was sitting on the ExecCtx
@@ -111,11 +110,11 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
         // before destroying then, even when we know that there are no
         // pending read/write callbacks.  This should be fixed, at which
         // point this can be removed.
-        grpc_endpoint_shutdown(args_.endpoint, GRPC_ERROR_REF(error));
+        grpc_endpoint_shutdown(args_.endpoint, error);
         grpc_endpoint_destroy(args_.endpoint);
         args_.endpoint = nullptr;
         args_.args = ChannelArgs();
-        grpc_slice_buffer_destroy_internal(args_.read_buffer);
+        grpc_slice_buffer_destroy(args_.read_buffer);
         gpr_free(args_.read_buffer);
         args_.read_buffer = nullptr;
       }
@@ -151,7 +150,7 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
   bool done;
   {
     MutexLock lock(&mgr->mu_);
-    done = mgr->CallNextHandshakerLocked(GRPC_ERROR_REF(error));
+    done = mgr->CallNextHandshakerLocked(error);
   }
   // If we're invoked the final callback, we won't be coming back
   // to this function, so we can release our reference to the
@@ -163,7 +162,7 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
 
 void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
-  if (GRPC_ERROR_IS_NONE(error)) {  // Timer fired, rather than being cancelled
+  if (error.ok()) {  // Timer fired, rather than being cancelled
     mgr->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));
   }
   mgr->Unref();
@@ -207,7 +206,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     grpc_timer_init(&deadline_timer_, deadline, &on_timeout_);
     // Start first handshaker, which also owns a ref.
     Ref().release();
-    done = CallNextHandshakerLocked(GRPC_ERROR_NONE);
+    done = CallNextHandshakerLocked(absl::OkStatus());
   }
   if (done) {
     Unref();

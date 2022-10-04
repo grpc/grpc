@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -64,7 +65,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
   }
   parser->byte = 0;
   parser->amount = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_window_update_parser_parse(
@@ -117,5 +118,5 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

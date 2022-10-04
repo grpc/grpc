@@ -65,7 +65,7 @@ static grpc_error_handle get_unused_port(int* port) {
   int fd;
   grpc_error_handle err =
       grpc_create_dualstack_socket(&wild, SOCK_STREAM, 0, &dsmode, &fd);
-  if (!GRPC_ERROR_IS_NONE(err)) {
+  if (!err.ok()) {
     return err;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
@@ -86,7 +86,7 @@ static grpc_error_handle get_unused_port(int* port) {
   close(fd);
   *port = grpc_sockaddr_get_port(&wild);
   return *port <= 0 ? GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad port")
-                    : GRPC_ERROR_NONE;
+                    : absl::OkStatus();
 }
 
 grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
@@ -97,13 +97,13 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
   struct ifaddrs* ifa_it;
   unsigned fd_index = 0;
   grpc_tcp_listener* sp = nullptr;
-  grpc_error_handle err = GRPC_ERROR_NONE;
+  grpc_error_handle err;
   if (requested_port == 0) {
     /* Note: There could be a race where some local addrs can listen on the
        selected port and some can't. The sane way to handle this would be to
        retry by recreating the whole grpc_tcp_server. Backing out individual
        listeners and orphaning the FDs looks like too much trouble. */
-    if ((err = get_unused_port(&requested_port)) != GRPC_ERROR_NONE) {
+    if ((err = get_unused_port(&requested_port)) != absl::OkStatus()) {
       return err;
     } else if (requested_port <= 0) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad get_unused_port()");
@@ -148,7 +148,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
       continue;
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
-                                        &new_sp)) != GRPC_ERROR_NONE) {
+                                        &new_sp)) != absl::OkStatus()) {
       grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("Failed to add listener: ", addr_str.value()));
       err = grpc_error_add_child(root_err, err);
@@ -164,13 +164,13 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     }
   }
   freeifaddrs(ifa);
-  if (!GRPC_ERROR_IS_NONE(err)) {
+  if (!err.ok()) {
     return err;
   } else if (sp == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No local addresses");
   } else {
     *out_port = sp->port;
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 }
 

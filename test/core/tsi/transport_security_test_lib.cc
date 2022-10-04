@@ -65,13 +65,12 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
   args->handshake_buffer =
       static_cast<unsigned char*>(gpr_zalloc(args->handshake_buffer_size));
   args->is_client = is_client;
-  args->error = GRPC_ERROR_NONE;
+  args->error = absl::OkStatus();
   return args;
 }
 
 static void handshaker_args_destroy(handshaker_args* args) {
   gpr_free(args->handshake_buffer);
-  GRPC_ERROR_UNREF(args->error);
   delete args;
 }
 
@@ -297,7 +296,7 @@ grpc_error_handle on_handshake_next_done(
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
@@ -375,7 +374,7 @@ static void do_handshaker_next(handshaker_args* args) {
     if (result != TSI_ASYNC) {
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
-      if (!GRPC_ERROR_IS_NONE(args->error)) {
+      if (!args->error.ok()) {
         return;
       }
     }
@@ -395,11 +394,11 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     client_args->transferred_data = false;
     server_args->transferred_data = false;
     do_handshaker_next(client_args);
-    if (!GRPC_ERROR_IS_NONE(client_args->error)) {
+    if (!client_args->error.ok()) {
       break;
     }
     do_handshaker_next(server_args);
-    if (!GRPC_ERROR_IS_NONE(server_args->error)) {
+    if (!server_args->error.ok()) {
       break;
     }
     GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);

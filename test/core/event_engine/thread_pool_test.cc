@@ -14,13 +14,11 @@
 
 #include "src/core/lib/event_engine/thread_pool.h"
 
-#include <atomic>
+#include <stdlib.h>
+
 #include <chrono>
 #include <thread>
 
-#include <gtest/gtest.h>
-
-#include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
@@ -97,6 +95,21 @@ TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
         p.PrepareFork();
       }(),
       "Waiting for thread pool to idle before forking");
+}
+
+void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
+  if (n == 0) return;
+  p->Add([p, n] {
+    ScheduleTwiceUntilZero(p, n - 1);
+    ScheduleTwiceUntilZero(p, n - 1);
+  });
+}
+
+TEST(ThreadPoolTest, CanStartLotsOfClosures) {
+  ThreadPool p(1);
+  // Our first thread pool implementation tried to create ~256k threads for this
+  // test.
+  ScheduleTwiceUntilZero(&p, 18);
 }
 
 }  // namespace experimental

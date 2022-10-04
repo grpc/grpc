@@ -61,7 +61,7 @@ TEST(AuthorizationPolicyProviderTest,
 
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInitializationSuccessValidPolicy) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -81,7 +81,7 @@ TEST(AuthorizationPolicyProviderTest,
 
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInitializationFailedInvalidPolicy) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(INVALID_POLICY_PATH));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -90,7 +90,7 @@ TEST(AuthorizationPolicyProviderTest,
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -136,7 +136,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
 
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInvalidPolicyRefreshSkipReload) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
@@ -186,7 +186,7 @@ TEST(AuthorizationPolicyProviderTest,
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
-  auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_authz_policy->name(), /*refresh_interval_sec=*/1);

@@ -19,18 +19,25 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
+// TODO(ctiller): When removing this file, also reduce the number of *'s on the
+// server initial metadata latch.
+
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <atomic>
+#include <memory>
 #include <new>
+#include <string>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
@@ -39,6 +46,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -52,6 +60,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -142,6 +151,8 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
+  std::string ActivityDebugTag() const override { return DebugTag(); }
+
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
   }
@@ -151,7 +162,9 @@ class BaseCallData : public Activity, private Wakeable {
       : public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<grpc_polling_entity>,
-        public promise_detail::Context<CallFinalization> {
+        public promise_detail::Context<CallFinalization>,
+        public promise_detail::Context<
+            grpc_event_engine::experimental::EventEngine> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
@@ -159,8 +172,9 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->context_),
           promise_detail::Context<grpc_polling_entity>(
               call_data->pollent_.load(std::memory_order_acquire)),
-          promise_detail::Context<CallFinalization>(&call_data->finalization_) {
-    }
+          promise_detail::Context<CallFinalization>(&call_data->finalization_),
+          promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
+              call_data->event_engine_.get()) {}
   };
 
   class Flusher {
@@ -181,7 +195,7 @@ class BaseCallData : public Activity, private Wakeable {
     }
 
     void Complete(grpc_transport_stream_op_batch* batch) {
-      call_closures_.Add(batch->on_complete, GRPC_ERROR_NONE,
+      call_closures_.Add(batch->on_complete, absl::OkStatus(),
                          "Flusher::Complete");
     }
 
@@ -227,13 +241,13 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* batch_;
   };
 
-  static MetadataHandle<grpc_metadata_batch> WrapMetadata(
+  static FragmentHandle<grpc_metadata_batch> WrapMetadata(
       grpc_metadata_batch* p) {
-    return MetadataHandle<grpc_metadata_batch>(p);
+    return FragmentHandle<grpc_metadata_batch>(p, false);
   }
 
   static grpc_metadata_batch* UnwrapMetadata(
-      MetadataHandle<grpc_metadata_batch> p) {
+      FragmentHandle<grpc_metadata_batch> p) {
     return p.Unwrap();
   }
 
@@ -267,6 +281,7 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 
 class ClientCallData : public BaseCallData {
@@ -303,8 +318,8 @@ class ClientCallData : public BaseCallData {
     kQueued,
     // We've forwarded the op to the next filter.
     kForwarded,
-    // The op has completed from below, but we haven't yet forwarded it up (the
-    // promise gets to interject and mutate it).
+    // The op has completed from below, but we haven't yet forwarded it up
+    // (the promise gets to interject and mutate it).
     kComplete,
     // We've called the recv_metadata_ready callback from the original
     // recv_trailing_metadata op that was presented to us.
@@ -360,7 +375,7 @@ class ClientCallData : public BaseCallData {
   // Our closure pointing to RecvTrailingMetadataReadyCallback.
   grpc_closure recv_trailing_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancelled_error_;
   // State of the send_initial_metadata op.
   SendInitialState send_initial_state_ = SendInitialState::kInitial;
   // State of the recv_trailing_metadata op.
@@ -439,7 +454,7 @@ class ServerCallData : public BaseCallData {
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancelled_error_;
   // Trailing metadata batch
   CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.
@@ -510,7 +525,7 @@ MakePromiseBasedFilter(const char* name) {
       // init_call_elem
       [](grpc_call_element* elem, const grpc_call_element_args* args) {
         new (elem->call_data) CallData(elem, args, kFlags);
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       },
       // set_pollset_or_pollset_set
       [](grpc_call_element* elem, grpc_polling_entity* pollent) {
@@ -523,7 +538,7 @@ MakePromiseBasedFilter(const char* name) {
         cd->Finalize(final_info);
         cd->~CallData();
         if ((kFlags & kFilterIsLast) != 0) {
-          ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
         } else {
           GPR_ASSERT(then_schedule_closure == nullptr);
         }
@@ -544,7 +559,7 @@ MakePromiseBasedFilter(const char* name) {
           return absl_status_to_grpc_error(status.status());
         }
         new (elem->channel_data) F(std::move(*status));
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       },
       // post_init_channel_elem
       [](grpc_channel_stack*, grpc_channel_element* elem) {

@@ -152,7 +152,7 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
         "Cannot check peer: invalid ALPN value.");
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
@@ -162,7 +162,7 @@ grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,

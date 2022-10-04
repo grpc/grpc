@@ -176,9 +176,7 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
         grpc_error_handle error =
             GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
                 "No certificates available for cert_name \"", cert_name, "\""));
-        distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(error),
-                                      GRPC_ERROR_REF(error));
-        GRPC_ERROR_UNREF(error);
+        distributor_->SetErrorForCert(cert_name, error, error);
       } else {
         absl::optional<std::string> root_certificate;
         absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -431,24 +429,41 @@ class XdsSecurityTest : public XdsEnd2endTest {
   int backend_index_ = 0;
 };
 
-TEST_P(XdsSecurityTest, UnknownTransportSocket) {
+TEST_P(XdsSecurityTest, TransportSocketMissingTypedConfig) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("unknown_transport_socket");
+  cluster.mutable_transport_socket();
   balancer_->ads_service()->SetCdsResource(cluster);
   const auto response_state =
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized transport socket: unknown_transport_socket"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: [resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors parsing CDS resource: ["
+            "Error parsing security configuration: "
+            "transport_socket.typed_config not set]]");
+}
+
+TEST_P(XdsSecurityTest, UnknownTransportSocket) {
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->mutable_typed_config()->PackFrom(Listener());
+  balancer_->ads_service()->SetCdsResource(cluster);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: [resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors parsing CDS resource: ["
+            "Error parsing security configuration: "
+            "Unrecognized transport socket type: "
+            "envoy.config.listener.v3.Listener]]");
 }
 
 TEST_P(XdsSecurityTest,
        TLSConfigurationWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
   auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
+  transport_socket->mutable_typed_config()->PackFrom(UpstreamTlsContext());
   balancer_->ads_service()->SetCdsResource(cluster);
   const auto response_state =
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
@@ -1571,11 +1586,10 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> client_authenticated_identity_;
 };
 
-TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
+TEST_P(XdsServerSecurityTest, TransportSocketTypedConfigUnset) {
   Listener listener = default_server_listener_;
   auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("unknown_transport_socket");
+  filter_chain->mutable_transport_socket();
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
                                              backends_[0]->port(),
                                              default_server_route_config_);
@@ -1583,8 +1597,23 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized transport socket: unknown_transport_socket"));
+              ::testing::HasSubstr("transport socket typed config unset"));
+}
+
+TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->mutable_typed_config()->PackFrom(Listener());
+  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
+                                             backends_[0]->port(),
+                                             default_server_route_config_);
+  backends_[0]->Start();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("Unrecognized transport socket type: "
+                                   "envoy.config.listener.v3.Listener"));
 }
 
 TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
@@ -4057,30 +4086,28 @@ int main(int argc, char** argv) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
-                    grpc::testing::FakeCertificateProviderFactory>(
+                std::make_unique<grpc::testing::FakeCertificateProviderFactory>(
                     "fake1", grpc::testing::g_fake1_cert_data_map));
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
-                    grpc::testing::FakeCertificateProviderFactory>(
+                std::make_unique<grpc::testing::FakeCertificateProviderFactory>(
                     "fake2", grpc::testing::g_fake2_cert_data_map));
       });
   grpc_init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
           /* supported_on_clients = */ true, /* supported_on_servers = */ false,
           /* is_terminal_filter */ false),
       {"grpc.testing.client_only_http_filter"});
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.server_only_http_filter",
           /* supported_on_clients = */ false, /* supported_on_servers = */ true,
           /* is_terminal_filter */ false),
       {"grpc.testing.server_only_http_filter"});
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.terminal_http_filter",
           /* supported_on_clients = */ true, /* supported_on_servers = */ true,
           /* is_terminal_filter */ true),

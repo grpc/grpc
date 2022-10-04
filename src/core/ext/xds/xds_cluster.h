@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -43,7 +42,7 @@
 
 namespace grpc_core {
 
-struct XdsClusterResource {
+struct XdsClusterResource : public XdsResourceType::ResourceData {
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
   ClusterType cluster_type;
   // For cluster type EDS.
@@ -102,9 +101,9 @@ class XdsClusterResourceType
     return "envoy.api.v2.Cluster";
   }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_resource, bool is_v2) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource,
+                      bool is_v2) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
