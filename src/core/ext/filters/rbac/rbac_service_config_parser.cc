@@ -276,6 +276,7 @@ struct RbacConfig {
           static std::vector<std::unique_ptr<Rbac::Permission>>
           MakeRbacPermissionList(std::vector<Permission>&& permission_list) {
             std::vector<std::unique_ptr<Rbac::Permission>> permissions;
+            permissions.reserve(permission_list.size());
             for (auto& rule : permission_list) {
               permissions.emplace_back(std::move(rule.permission));
             }
@@ -422,6 +423,7 @@ struct RbacConfig {
           static std::vector<std::unique_ptr<Rbac::Principal>>
           MakeRbacPrincipalList(std::vector<Principal>&& principal_list) {
             std::vector<std::unique_ptr<Rbac::Principal>> principals;
+            principals.reserve(principal_list.size());
             for (auto& id : principal_list) {
               principals.emplace_back(std::move(id.principal));
             }
