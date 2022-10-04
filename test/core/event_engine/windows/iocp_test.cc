@@ -27,7 +27,6 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
@@ -42,14 +41,14 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
-using ::grpc_event_engine::experimental::ThreadedExecutor;
+using ::grpc_event_engine::experimental::ThreadPool;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
 class IOCPTest : public testing::Test {};
 
 TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -137,7 +136,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
 }
 
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -201,7 +200,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
 }
 
 TEST_F(IOCPTest, KickWorks) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   grpc_core::Notification kicked;
   executor.Run([&iocp, &kicked] {
@@ -225,7 +224,7 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // TODO(hork): evaluate if a kick count is going to be useful.
   // This documents the existing poller's behavior of maintaining a kick count,
   // but it's unclear if it's going to be needed.
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   // kick twice
   iocp.Kick();
@@ -248,7 +247,7 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -274,7 +273,7 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
   for (int thread_n = 0; thread_n < thread_count; thread_n++) {
     threads.emplace_back([thread_n, sockets_per_thread, &read_count,
                           &write_count] {
-      ThreadedExecutor executor{2};
+      ThreadPool executor;
       IOCP iocp(&executor);
       // Start a looping worker thread with a moderate timeout
       std::thread iocp_worker([&iocp, &executor] {
