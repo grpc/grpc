@@ -62,7 +62,6 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
@@ -1140,9 +1139,8 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
               context.client, result.name->c_str(),
               rds_update->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*rds_update);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsRouteConfigResource>(std::move(*rds_update));
   }
   return result;
 }

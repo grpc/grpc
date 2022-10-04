@@ -136,8 +136,7 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
-    grpc_fd_shutdown(
-        ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
+    grpc_fd_shutdown(ac->fd, GRPC_ERROR_CREATE("connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -328,8 +327,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
 
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   if (!addr_uri.ok()) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
+    grpc_error_handle error = GRPC_ERROR_CREATE(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }

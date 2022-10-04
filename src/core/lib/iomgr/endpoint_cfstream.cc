@@ -168,15 +168,14 @@ static void ReadAction(void* arg, grpc_error_handle error) {
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"), ep);
       CFRelease(stream_error);
     } else {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Read error");
+      error = GRPC_ERROR_CREATE("Read error");
     }
     CallReadCb(ep, error);
     EP_UNREF(ep, "read");
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CallReadCb(ep,
-               CFStreamAnnotateError(
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), ep));
+               CFStreamAnnotateError(GRPC_ERROR_CREATE("Socket closed"), ep));
     EP_UNREF(ep, "read");
   } else {
     if (read_size < static_cast<CFIndex>(len)) {
@@ -208,7 +207,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write failed."), ep);
       CFRelease(stream_error);
     } else {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("write failed.");
+      error = GRPC_ERROR_CREATE("write failed.");
     }
     CallWriteCb(ep, error);
     EP_UNREF(ep, "write");
