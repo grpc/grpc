@@ -27,6 +27,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -346,10 +347,10 @@ class ClientCallData::PollContext {
             grpc_error_handle error = grpc_error_set_int(
                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "early return from promise based filter"),
-                GRPC_ERROR_INT_GRPC_STATUS,
+                StatusIntProperty::kRpcStatus,
                 *md->get_pointer(GrpcStatusMetadata()));
             if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
-              error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+              error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                          message->as_string_view());
             }
             self_->cancelled_error_ = error;
@@ -1223,10 +1224,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           grpc_error_handle error =
               grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                      "early return from promise based filter"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 StatusIntProperty::kRpcStatus,
                                  *md->get_pointer(GrpcStatusMetadata()));
           if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
-            error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+            error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                        message->as_string_view());
           }
           Cancel(error, flusher);
