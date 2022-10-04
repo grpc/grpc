@@ -17,6 +17,13 @@ set -ex
 # Enter the gRPC repo root.
 cd "$(dirname "$0")/../../.."
 
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+# This is to ensure we can push and pull images from gcr.io. We do not
+# necessarily need it to run load tests, but will need it when we employ
+# pre-built images in the optimization.
+
+gcloud auth configure-docker
 # Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
 gcloud container clusters get-credentials psm-benchmarks-performance \
@@ -49,6 +56,19 @@ LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifac
 TEST_INFRA_GOVERSION=go1.17.1
 go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
+
+# Clone test-infra repository and build all tools.	
+pushd ..	
+git clone https://github.com/grpc/test-infra.git	
+cd test-infra	
+# Tools are built from HEAD.	
+git checkout --detach	
+make GOCMD="${TEST_INFRA_GOVERSION}" all-tools	
+
+# Find latest release tag of test-infra.	
+git fetch --all --tags	
+TEST_INFRA_VERSION=$(git describe --tags "$(git rev-list --tags --max-count=1)")	
+popd
 
 # PSM tests related ENV
 PSM_IMAGE_PREFIX=gcr.io/grpc-testing/e2etest/runtime
