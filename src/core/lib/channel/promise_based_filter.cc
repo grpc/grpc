@@ -714,6 +714,11 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
         error, "propagate cancellation");
   } else if (send_initial_state_ == SendInitialState::kCancelled ||
              recv_trailing_state_ == RecvTrailingState::kResponded) {
+    recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
+    flusher.AddClosure(
+        std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
+        cancelled_error_, "propagate cancellation");
+  } else {
     switch (recv_initial_metadata_->state) {
       case RecvInitialMetadata::kHookedWaitingForLatch:
         recv_initial_metadata_->state =
@@ -733,10 +738,6 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
       case RecvInitialMetadata::kRespondedButNeedToSetLatch:
         abort();  // unreachable
     }
-    recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
-    flusher.AddClosure(
-        std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
-        cancelled_error_, "propagate cancellation");
   }
   WakeInsideCombiner(&flusher);
 }
