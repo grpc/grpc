@@ -577,7 +577,7 @@ static void close_transport_locked(grpc_binder_transport* gbt) {
         gbt, gbt->registered_stream.begin()->second,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("transport closed"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
   }
 }
 
@@ -631,7 +631,8 @@ static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
   cancel_stream_locked(
       gbt, gbs,
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("destroy stream"),
-                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+                         grpc_core::StatusIntProperty::kRpcStatus,
+                         GRPC_STATUS_UNAVAILABLE));
   gbs->~grpc_binder_stream();
 }
 

@@ -561,8 +561,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       grpc_core::Arena::Create(kArenaSize, g_memory_allocator),
       nullptr};
   while (state.KeepRunning()) {
-    GRPC_ERROR_UNREF(
-        grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
+    (void)grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr,
+                               &call_args);
     typename TestOp::Op op(&test_op_data, call_stack, call_args.arena);
     grpc_call_stack_destroy(call_stack, &final_info, nullptr);
     op.Finish();

@@ -239,9 +239,13 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                     diff.stats_per_method[method].result[status] = count
         return diff
 
-    def assertRpcStatusCodes(self, test_client: XdsTestClient, *,
-                             status_code: grpc.StatusCode, duration: _timedelta,
-                             method: str) -> None:
+    def assertRpcStatusCodes(self,
+                             test_client: XdsTestClient,
+                             *,
+                             status_code: grpc.StatusCode,
+                             duration: _timedelta,
+                             method: str,
+                             stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
@@ -258,7 +262,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         stats = diff_stats.stats_per_method[method]
         status = status_code.value[0]
         for found_status, count in stats.result.items():
-            if found_status != status and count > 0:
+            if found_status != status and count > stray_rpc_limit:
                 self.fail(f"Expected only status {status} but found status "
                           f"{found_status} for method {method}:\n{diff_stats}")
         self.assertGreater(stats.result[status_code.value[0]], 0)

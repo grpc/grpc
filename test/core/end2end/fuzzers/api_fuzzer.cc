@@ -814,12 +814,10 @@ static grpc_channel_credentials* ReadChannelCreds(
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_event_engine::experimental::ResetDefaultEventEngine();
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
-
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         return std::make_unique<FuzzingEventEngine>(

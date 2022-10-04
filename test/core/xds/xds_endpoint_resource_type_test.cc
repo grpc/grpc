@@ -38,7 +38,6 @@
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -140,9 +139,7 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -190,9 +187,7 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -242,9 +237,7 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -295,9 +288,7 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -339,9 +330,7 @@ TEST_F(XdsEndpointTest, LocalityWithNoEndpoints) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -657,9 +646,7 @@ TEST_F(XdsEndpointTest, DropConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
   ASSERT_NE(resource.drop_config, nullptr);
   const auto& drop_list = resource.drop_config->drop_category_list();
   ASSERT_EQ(drop_list.size(), 3);
@@ -697,9 +684,7 @@ TEST_F(XdsEndpointTest, CapsDropPercentageAt100) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResourceType::ResourceDataSubclass*>(
-                       decode_result.resource->get())
-                       ->resource;
+  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
   ASSERT_NE(resource.drop_config, nullptr);
   const auto& drop_list = resource.drop_config->drop_category_list();
   ASSERT_EQ(drop_list.size(), 1);

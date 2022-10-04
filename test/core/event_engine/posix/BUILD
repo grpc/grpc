@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -20,6 +20,22 @@ grpc_package(
     name = "test/core/event_engine/posix",
     visibility = "public",
 )  # Useful for third party devs to test their io manager implementation.
+
+grpc_cc_library(
+    name = "posix_engine_test_utils",
+    testonly = True,
+    srcs = ["posix_engine_test_utils.cc"],
+    hdrs = ["posix_engine_test_utils.h"],
+    tags = [
+        "no_windows",
+    ],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:event_engine_common",
+        "//:posix_event_engine_event_poller",
+        "//test/core/util:grpc_test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "timer_heap_test",
@@ -78,6 +94,7 @@ grpc_cc_test(
         "//:posix_event_engine_closure",
         "//:posix_event_engine_event_poller",
         "//:posix_event_engine_poller_posix_default",
+        "//test/core/event_engine/posix:posix_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -145,6 +162,32 @@ grpc_cc_test(
         "//:event_engine_common",
         "//:posix_event_engine_tcp_socket_utils",
         "//:socket_mutator",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "posix_endpoint_test",
+    srcs = ["posix_endpoint_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:channel_args",
+        "//:common_event_engine_closures",
+        "//:event_engine_poller",
+        "//:posix_event_engine",
+        "//:posix_event_engine_closure",
+        "//:posix_event_engine_endpoint",
+        "//:posix_event_engine_event_poller",
+        "//:posix_event_engine_poller_posix_default",
+        "//test/core/event_engine/posix:posix_engine_test_utils",
+        "//test/core/event_engine/test_suite:conformance_test_base_lib",
+        "//test/core/event_engine/test_suite:oracle_event_engine_posix",
         "//test/core/util:grpc_test_util",
     ],
 )

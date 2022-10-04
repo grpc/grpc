@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -249,7 +250,7 @@ void HttpRequest::AppendError(grpc_error_handle error) {
   overall_error_ = grpc_error_add_child(
       overall_error_,
       grpc_error_set_str(
-          error, GRPC_ERROR_STR_TARGET_ADDRESS,
+          error, StatusStrProperty::kTargetAddress,
           addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
 }
 

@@ -54,6 +54,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -712,11 +713,12 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+          grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd,
+                             tcp->fd),
           /* All tcp errors are marked with UNAVAILABLE so that application may
            * choose to retry. */
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
+      grpc_core::StatusStrProperty::kTargetAddress, tcp->peer_string);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -862,7 +864,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
                  sizeof(remaining)) != 0) {
     gpr_log(GPR_ERROR, "%s",
             absl::StrCat("Cannot set SO_RCVLOWAT on fd=", tcp->fd,
-                         " err=", strerror(errno))
+                         " err=", grpc_core::StrError(errno).c_str())
                 .c_str());
     return;
   }

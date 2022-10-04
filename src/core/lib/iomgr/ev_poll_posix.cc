@@ -40,7 +40,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -494,7 +493,7 @@ static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   } else {
     return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                   "FD shutdown", &fd->shutdown_error, 1),
-                              GRPC_ERROR_INT_GRPC_STATUS,
+                              grpc_core::StatusIntProperty::kRpcStatus,
                               GRPC_STATUS_UNAVAILABLE);
   }
 }
@@ -505,7 +504,7 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */

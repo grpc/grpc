@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -179,7 +180,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
                 absl::StrFormat("Received message larger than max (%u vs. %d)",
                                 (*calld->recv_message_)->Length(),
                                 calld->max_recv_message_length_)),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+            StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
         return calld->ContinueRecvMessageReadyCallback(calld->error_);
       }
       SliceBuffer decompressed_slices;

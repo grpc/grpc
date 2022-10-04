@@ -109,6 +109,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "factory_test",
+    srcs = ["factory_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "aborting_event_engine",
+        "//:default_event_engine",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+        "//:grpc",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],
@@ -129,4 +143,32 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = ["//:gpr"],
+)
+
+grpc_cc_library(
+    name = "aborting_event_engine",
+    testonly = True,
+    hdrs = ["util/aborting_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "mock_event_engine",
+    testonly = True,
+    hdrs = ["mock_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+    ],
+    deps = ["//:event_engine_base_hdrs"],
 )
