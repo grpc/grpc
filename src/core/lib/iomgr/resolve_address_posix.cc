@@ -54,8 +54,8 @@ void NativeDNSRequest(
   grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
       [name = std::move(name), default_port = std::move(default_port),
        on_done = std::move(on_done)]() mutable {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-        grpc_core::ExecCtx exec_ctx;
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
         auto result =
             GetDNSResolver()->LookupHostnameBlocking(name, default_port);
         // running inline is safe since we've already been scheduled on the
