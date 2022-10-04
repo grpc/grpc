@@ -26,6 +26,7 @@
 
 #include "absl/status/status.h"
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -36,8 +37,7 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
                                                          "stream_refcount");
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount) {
-  if (!grpc_iomgr_is_any_background_poller_thread() &&
-      (grpc_core::ExecCtx::Get()->flags() &
+  if ((grpc_core::ExecCtx::Get()->flags() &
        GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP)) {
     /* Ick.
        The thread we're running on MAY be owned (indirectly) by a call-stack.
@@ -46,7 +46,12 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        cope with.
        Throw this over to the executor (on a core-owned thread) and process it
        there. */
-    grpc_core::Executor::Run(&refcount->destroy, absl::OkStatus());
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run([refcount] {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
+                              absl::OkStatus());
+    });
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
                             absl::OkStatus());
