@@ -199,7 +199,7 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
       (*calld->recv_message)->Length() >
           static_cast<size_t>(*calld->limits.max_recv_size())) {
     grpc_error_handle new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        GRPC_ERROR_CREATE(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
             (*calld->recv_message)->Length(), *calld->limits.max_recv_size())),
         grpc_core::StatusIntProperty::kRpcStatus,
@@ -255,7 +255,7 @@ static void message_size_start_transport_stream_op_batch(
           static_cast<size_t>(*calld->limits.max_send_size())) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        grpc_error_set_int(GRPC_ERROR_CREATE(absl::StrFormat(
                                "Sent message larger than max (%u vs. %d)",
                                op->payload->send_message.send_message->Length(),
                                *calld->limits.max_send_size())),

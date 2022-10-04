@@ -354,8 +354,7 @@ class ClientCallData::PollContext {
             GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
                        GRPC_STATUS_OK);
             grpc_error_handle error = grpc_error_set_int(
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "early return from promise based filter"),
+                GRPC_ERROR_CREATE("early return from promise based filter"),
                 StatusIntProperty::kRpcStatus,
                 *md->get_pointer(GrpcStatusMetadata()));
             if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
@@ -1256,11 +1255,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          grpc_error_handle error =
-              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "early return from promise based filter"),
-                                 StatusIntProperty::kRpcStatus,
-                                 *md->get_pointer(GrpcStatusMetadata()));
+          grpc_error_handle error = grpc_error_set_int(
+              GRPC_ERROR_CREATE("early return from promise based filter"),
+              StatusIntProperty::kRpcStatus,
+              *md->get_pointer(GrpcStatusMetadata()));
           if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
             error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                        message->as_string_view());

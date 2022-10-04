@@ -176,7 +176,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
               static_cast<uint32_t>(*calld->max_recv_message_length_)) {
         GPR_DEBUG_ASSERT(calld->error_.ok());
         calld->error_ = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            GRPC_ERROR_CREATE(
                 absl::StrFormat("Received message larger than max (%u vs. %d)",
                                 (*calld->recv_message_)->Length(),
                                 *calld->max_recv_message_length_)),
@@ -188,7 +188,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
                               (*calld->recv_message_)->c_slice_buffer(),
                               decompressed_slices.c_slice_buffer()) == 0) {
         GPR_DEBUG_ASSERT(calld->error_.ok());
-        calld->error_ = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        calld->error_ = GRPC_ERROR_CREATE(absl::StrCat(
             "Unexpected error decompressing data for algorithm with "
             "enum value ",
             calld->algorithm_));
