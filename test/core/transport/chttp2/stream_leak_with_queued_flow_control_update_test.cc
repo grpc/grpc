@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -191,22 +192,22 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
 
 class TransportCounter {
  public:
-  void CounterInitCallback() {
+  void InitCallback() {
     grpc_core::MutexLock lock(&mu_);
     ++num_created_;
     ++num_live_;
-    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld CounterInitCallback", num_created_, num_live_);
+    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld InitCallback", num_created_, num_live_);
   }
 
-  void CounterDestructCallback() {
+  void DestructCallback() {
     grpc_core::MutexLock lock(&mu_);
     --num_live_;
-    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld CounterDestructCallback", num_created_, num_live_);
+    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld DestructCallback", num_created_, num_live_);
   }
 
-  int64 num_live() {
+  int64_t num_live() {
     absl::MutexLock lock(&mu_);
-    return num_live;
+    return num_live_;
   }
 
   size_t num_created() {
@@ -216,11 +217,15 @@ class TransportCounter {
 
  private:
   absl::Mutex mu_;
-  int64 num_live_ ABSL_GUARDED_BY(mu_) = 0;
+  int64_t num_live_ ABSL_GUARDED_BY(mu_) = 0;
   size_t num_created_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
 TransportCounter* g_transport_counter;
+
+void CounterInitCallback() { g_transport_counter->InitCallback(); }
+
+void CounterDestructCallback() { g_transport_counter->DestructCallback(); }
 
 void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
   gpr_log(
@@ -243,11 +248,11 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
   for (;;) {
     // Note: the main goal of this test is to try to repro a chttp2 stream leak,
     // which also holds on to transports objects.
-    int64 live_transports = g_transport_counter->num_live();
+    int64_t live_transports = g_transport_counter->num_live();
     if (live_transports == 0) return;
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
       gpr_log(GPR_INFO,
-              "g_transport_counter->num_live() never returned 0.
+              "g_transport_counter->num_live() never returned 0. "
               "It's likely this test has triggered a connection leak.");
       GPR_ASSERT(0);
     }
@@ -328,10 +333,8 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   g_transport_counter = new TransportCounter();
-  grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(
-    std::bind(&TransportCounter::CounterInitCallback, g_transport_counter));
-  grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(
-    std::bind(&TransportCounter::CounterDestructCallback, g_transport_counter));
+  grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(CounterInitCallback);
+  grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(CounterDestructCallback);
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
