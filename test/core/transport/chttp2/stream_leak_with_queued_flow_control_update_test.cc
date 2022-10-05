@@ -213,17 +213,17 @@ class TransportCounter {
   }
 
   int64_t num_live() {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return num_live_;
   }
 
   size_t num_created() {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return num_created_;
   }
 
  private:
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   int64_t num_live_ ABSL_GUARDED_BY(mu_) = 0;
   size_t num_created_ ABSL_GUARDED_BY(mu_) = 0;
 };
