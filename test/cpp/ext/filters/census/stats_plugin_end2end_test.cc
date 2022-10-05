@@ -812,7 +812,7 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
   EnableOpenCensusStats(true);
 }
 
-// Test the working of OpenCensusEnableStats.
+// Test the working of EnableOpenCensusTracing.
 TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
   EnableOpenCensusTracing(false);
 
