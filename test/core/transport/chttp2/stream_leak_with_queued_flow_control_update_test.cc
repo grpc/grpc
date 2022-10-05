@@ -196,13 +196,17 @@ class TransportCounter {
     grpc_core::MutexLock lock(&mu_);
     ++num_created_;
     ++num_live_;
-    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld InitCallback", num_created_, num_live_);
+    gpr_log(GPR_INFO,
+            "TransportCounter num_created_=%ld num_live_=%ld InitCallback",
+            num_created_, num_live_);
   }
 
   void DestructCallback() {
     grpc_core::MutexLock lock(&mu_);
     --num_live_;
-    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld DestructCallback", num_created_, num_live_);
+    gpr_log(GPR_INFO,
+            "TransportCounter num_created_=%ld num_live_=%ld DestructCallback",
+            num_created_, num_live_);
   }
 
   int64_t num_live() {
@@ -240,8 +244,11 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
                  nullptr)
                  .type == GRPC_QUEUE_TIMEOUT);
   if (g_transport_counter->num_created() < 2) {
-    gpr_log(GPR_ERROR, "g_transport_counter->num_created() == %ld. This means that g_transport_counter isn't working and this test is broken. At least a couple of transport objects should have been created."
-            , g_transport_counter->num_created());
+    gpr_log(GPR_ERROR,
+            "g_transport_counter->num_created() == %ld. This means that "
+            "g_transport_counter isn't working and this test is broken. At "
+            "least a couple of transport objects should have been created.",
+            g_transport_counter->num_created());
     GPR_ASSERT(0);
   }
   gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
@@ -258,7 +265,8 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
     }
     gpr_log(GPR_INFO,
             "g_transport_counter->num_live() returned %ld, keep waiting "
-            "until it reaches 0", live_transports);
+            "until it reaches 0",
+            live_transports);
     GPR_ASSERT(grpc_completion_queue_next(
                    cq,
                    gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
@@ -334,7 +342,8 @@ int main(int argc, char** argv) {
   grpc_init();
   g_transport_counter = new TransportCounter();
   grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(CounterInitCallback);
-  grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(CounterDestructCallback);
+  grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(
+      CounterDestructCallback);
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
