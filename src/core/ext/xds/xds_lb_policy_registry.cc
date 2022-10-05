@@ -53,8 +53,9 @@ class RingHashLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* /*registry*/,
       const XdsResourceType::DecodeContext& context,
-      absl::string_view configuration, int /* recursion_depth */) override {
+      absl::string_view configuration, int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -98,9 +99,10 @@ class RoundRobinLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsResourceType::DecodeContext& /* context */,
-      absl::string_view /* configuration */,
-      int /* recursion_depth */) override {
+      const XdsLbPolicyRegistry* /*registry*/,
+      const XdsResourceType::DecodeContext& /*context*/,
+      absl::string_view /*configuration*/,
+      int /*recursion_depth*/) override {
     return Json::Object{{"round_robin", Json::Object()}};
   }
 
@@ -115,6 +117,7 @@ class WrrLocalityLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* registry,
       const XdsResourceType::DecodeContext& context,
       absl::string_view configuration, int recursion_depth) override {
     const auto* resource =
@@ -131,7 +134,7 @@ class WrrLocalityLbPolicyConfigFactory
       return absl::InvalidArgumentError(
           "WrrLocality: endpoint_picking_policy not found");
     }
-    auto child_policy = XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
+    auto child_policy = registry->ConvertXdsLbPolicyConfig(
         context, endpoint_picking_policy, recursion_depth + 1);
     if (!child_policy.ok()) {
       return absl::InvalidArgumentError(
@@ -183,10 +186,22 @@ absl::StatusOr<Json> ParseStructToJson(
 // XdsLbPolicyRegistry
 //
 
+XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
+  policy_config_factories_.emplace(
+      RingHashLbPolicyConfigFactory::Type(),
+      std::make_unique<RingHashLbPolicyConfigFactory>());
+  policy_config_factories_.emplace(
+      RoundRobinLbPolicyConfigFactory::Type(),
+      std::make_unique<RoundRobinLbPolicyConfigFactory>());
+  policy_config_factories_.emplace(
+      WrrLocalityLbPolicyConfigFactory::Type(),
+      std::make_unique<WrrLocalityLbPolicyConfigFactory>());
+}
+
 absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
-    int recursion_depth) {
+    int recursion_depth) const {
   constexpr int kMaxRecursionDepth = 16;
   if (recursion_depth >= kMaxRecursionDepth) {
     return absl::InvalidArgumentError(
@@ -224,10 +239,10 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     }
     absl::string_view value =
         UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-    auto config_factory_it = Get()->policy_config_factories_.find(type->type);
-    if (config_factory_it != Get()->policy_config_factories_.end()) {
+    auto config_factory_it = policy_config_factories_.find(type->type);
+    if (config_factory_it != policy_config_factories_.end()) {
       policy = config_factory_it->second->ConvertXdsLbPolicyConfig(
-          context, value, recursion_depth);
+          this, context, value, recursion_depth);
       if (!policy.ok()) {
         return absl::InvalidArgumentError(
             absl::StrCat("Error parsing "
@@ -247,7 +262,7 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
       // Convert typed struct to json.
       auto value = xds_type_v3_TypedStruct_value(type->typed_struct);
       if (value == nullptr) {
-        policy = Json::Object{{std::move(custom_type), Json() /* null */}};
+        policy = Json::Object{{std::move(custom_type), Json() /*null*/}};
       } else {
         auto parsed_value = ParseStructToJson(context, value);
         if (!parsed_value.ok()) {
@@ -266,24 +281,6 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
   }
   return absl::InvalidArgumentError(
       "No supported load balancing policy config found.");
-}
-
-XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
-  policy_config_factories_.emplace(
-      RingHashLbPolicyConfigFactory::Type(),
-      std::make_unique<RingHashLbPolicyConfigFactory>());
-  policy_config_factories_.emplace(
-      RoundRobinLbPolicyConfigFactory::Type(),
-      std::make_unique<RoundRobinLbPolicyConfigFactory>());
-  policy_config_factories_.emplace(
-      WrrLocalityLbPolicyConfigFactory::Type(),
-      std::make_unique<WrrLocalityLbPolicyConfigFactory>());
-}
-
-XdsLbPolicyRegistry* XdsLbPolicyRegistry::Get() {
-  // This is thread-safe since C++11
-  static XdsLbPolicyRegistry* instance = new XdsLbPolicyRegistry();
-  return instance;
 }
 
 }  // namespace grpc_core
