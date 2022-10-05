@@ -21,7 +21,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
