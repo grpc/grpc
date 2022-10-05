@@ -146,7 +146,7 @@ void XdsCertificateProvider::ClusterCertificateState::
       root_cert_watcher_ = nullptr;
       xds_certificate_provider_->distributor_->SetErrorForCert(
           "",
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          GRPC_ERROR_CREATE(
               "No certificate provider available for root certificates"),
           absl::nullopt);
     }
@@ -177,7 +177,7 @@ void XdsCertificateProvider::ClusterCertificateState::
       identity_cert_watcher_ = nullptr;
       xds_certificate_provider_->distributor_->SetErrorForCert(
           "", absl::nullopt,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          GRPC_ERROR_CREATE(
               "No certificate provider available for identity certificates"));
     }
   }
@@ -219,7 +219,7 @@ void XdsCertificateProvider::ClusterCertificateState::WatchStatusCallback(
     if (root_cert_distributor_ == nullptr) {
       xds_certificate_provider_->distributor_->SetErrorForCert(
           cert_name,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          GRPC_ERROR_CREATE(
               "No certificate provider available for root certificates"),
           absl::nullopt);
     } else {
@@ -239,7 +239,7 @@ void XdsCertificateProvider::ClusterCertificateState::WatchStatusCallback(
     if (identity_cert_distributor_ == nullptr) {
       xds_certificate_provider_->distributor_->SetErrorForCert(
           cert_name, absl::nullopt,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          GRPC_ERROR_CREATE(
               "No certificate provider available for identity certificates"));
     } else {
       UpdateIdentityCertWatcher(cert_name, identity_cert_distributor_.get());

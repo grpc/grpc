@@ -47,7 +47,6 @@ struct upb_Arena;
 namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusIntProperty {
   /// 'errno' from the operating system
   kErrorNo,
@@ -85,7 +84,6 @@ enum class StatusIntProperty {
 };
 
 /// This enum should have the same value of grpc_error_strs
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusStrProperty {
   /// top-level textual description of this error
   kDescription,

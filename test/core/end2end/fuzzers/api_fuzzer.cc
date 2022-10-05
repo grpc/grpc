@@ -126,9 +126,9 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, absl::OkStatus());
   } else {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
-                            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                "Resolution failed", &error, 1));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, r->on_done,
+        GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1));
   }
 
   gpr_free(r->addr);
@@ -299,9 +299,8 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
                           gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = nullptr;
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connect deadline exceeded"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                            GRPC_ERROR_CREATE("Connect deadline exceeded"));
     return;
   }
 
@@ -814,7 +813,6 @@ static grpc_channel_credentials* ReadChannelCreds(
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_event_engine::experimental::ResetDefaultEventEngine();
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }

@@ -42,6 +42,7 @@
 
 typedef absl::Status grpc_error_handle;
 
+/// TODO(veblush): Remove this enum once migration is done
 typedef enum {
   /// 'errno' from the operating system
   GRPC_ERROR_INT_ERRNO =
@@ -92,6 +93,7 @@ typedef enum {
   GRPC_ERROR_INT_MAX,
 } grpc_error_ints;
 
+/// TODO(veblush): Remove this enum once migration is done
 typedef enum {
   /// top-level textual description of this error
   GRPC_ERROR_STR_DESCRIPTION =
@@ -128,14 +130,6 @@ typedef enum {
   GRPC_ERROR_STR_MAX,
 } grpc_error_strs;
 
-typedef enum {
-  /// timestamp of error creation
-  GRPC_ERROR_TIME_CREATED,
-
-  /// Must always be last
-  GRPC_ERROR_TIME_MAX,
-} grpc_error_times;
-
 std::string grpc_error_std_string(grpc_error_handle error);
 
 // debug only toggles that allow for a sanity to check that ensures we will
@@ -154,28 +148,34 @@ void grpc_enable_error_creation();
 
 #define GRPC_ERROR_IS_NONE(err) (err).ok()
 
-#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) \
+#define GRPC_ERROR_CREATE(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
-#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) \
-  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
-#define GRPC_ERROR_CREATE_FROM_CPP_STRING(desc) \
-  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
-#define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) \
-  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
+
+// Deprecated: Please do not use these macros. begin
+// TODO(veblush): Remove this once migration is done.
+#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) GRPC_ERROR_CREATE(desc)
+#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) GRPC_ERROR_CREATE(desc)
+#define GRPC_ERROR_CREATE_FROM_CPP_STRING(desc) GRPC_ERROR_CREATE(desc)
+#define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) GRPC_ERROR_CREATE(desc)
+// Deprecated: end
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,
                                 size_t children_count,
                                 absl::Status* children) GRPC_MUST_USE_RESULT;
 
-// Create an error that references some other errors. This function adds a
-// reference to each error in errs - it does not consume an existing reference
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count)   \
+// Create an error that references some other errors.
+#define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)                      \
   grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, count, \
                      errs)
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)   \
-  grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, count, \
-                     errs)
+
+// Deprecated: Please do not use these macros. begin
+// TODO(veblush): Remove this once migration is done.
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count) \
+  GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count) \
+  GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)
+// Deprecated: end
 
 // Consumes all the errors in the vector and forms a referencing error from
 // them. If the vector is empty, return absl::OkStatus().
@@ -194,8 +194,12 @@ static absl::Status grpc_status_create_from_vector(
 
 #define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
   grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
+
+// Deprecated: Please do not use these macros. begin
+// TODO(veblush): Remove this once migration is done.
 #define GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(desc, error_list) \
-  grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
+  GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list)
+// Deprecated: end
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;
@@ -217,18 +221,44 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   grpc_wsa_error(DEBUG_LOCATION, err, call_name)
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
-                                     grpc_error_ints which,
+                                     grpc_core::StatusIntProperty which,
                                      intptr_t value) GRPC_MUST_USE_RESULT;
 /// It is an error to pass nullptr as `p`. Caller should allocate a phony
 /// intptr_t for `p`, even if the value of `p` is not used.
-bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
-                        intptr_t* p);
+bool grpc_error_get_int(grpc_error_handle error,
+                        grpc_core::StatusIntProperty which, intptr_t* p);
 grpc_error_handle grpc_error_set_str(
-    grpc_error_handle src, grpc_error_strs which,
+    grpc_error_handle src, grpc_core::StatusStrProperty which,
     absl::string_view str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
-bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
-                        std::string* str);
+bool grpc_error_get_str(grpc_error_handle error,
+                        grpc_core::StatusStrProperty which, std::string* str);
+
+/// TODO(veblush): Remove these functions once migration is done
+/// PLEASE DON'T USE: begin
+inline grpc_error_handle grpc_error_set_int(grpc_error_handle src,
+                                            grpc_error_ints which,
+                                            intptr_t value) {
+  return grpc_error_set_int(
+      src, static_cast<grpc_core::StatusIntProperty>(which), value);
+}
+inline bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
+                               intptr_t* p) {
+  return grpc_error_get_int(
+      error, static_cast<grpc_core::StatusIntProperty>(which), p);
+}
+inline grpc_error_handle grpc_error_set_str(grpc_error_handle src,
+                                            grpc_error_strs which,
+                                            absl::string_view str) {
+  return grpc_error_set_str(
+      src, static_cast<grpc_core::StatusStrProperty>(which), str);
+}
+inline bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
+                               std::string* str) {
+  return grpc_error_get_str(
+      error, static_cast<grpc_core::StatusStrProperty>(which), str);
+}
+/// PLEASE DON'T USE: end
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

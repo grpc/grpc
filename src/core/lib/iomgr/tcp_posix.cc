@@ -714,11 +714,12 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+          grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd,
+                             tcp->fd),
           /* All tcp errors are marked with UNAVAILABLE so that application may
            * choose to retry. */
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
+      grpc_core::StatusStrProperty::kTargetAddress, tcp->peer_string);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -736,9 +737,8 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
   /* The lock is not really necessary here, since all refs have been released */
   gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::Shutdown(
-      &tcp->tb_head, tcp->outgoing_buffer_arg,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+  grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, tcp->outgoing_buffer_arg,
+                                    GRPC_ERROR_CREATE("endpoint destroyed"));
   gpr_mu_unlock(&tcp->tb_mu);
   tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
@@ -959,8 +959,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
        * since the connection is closed we will drop the data here, because we
        * can't call the callback multiple times. */
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-      *error = tcp_annotate_error(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
+      *error = tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp);
       return true;
     }
 
@@ -1527,7 +1526,7 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::Shutdown(
         &tcp->tb_head, tcp->outgoing_buffer_arg,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TracedBuffer list shutdown"));
+        GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }
@@ -1858,8 +1857,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     grpc_core::Closure::Run(
         DEBUG_LOCATION, cb,
         grpc_fd_is_shutdown(tcp->em_fd)
-            ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
-                                 tcp)
+            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
             : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;

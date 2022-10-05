@@ -430,8 +430,7 @@ void grpc_channel_destroy_internal(grpc_channel* c_channel) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   grpc_channel_element* elem;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (c_channel));
-  op->disconnect_with_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
+  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   elem = grpc_channel_stack_element(channel->channel_stack(), 0);
   elem->filter->start_transport_op(elem, op);
 }

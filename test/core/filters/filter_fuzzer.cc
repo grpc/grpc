@@ -78,7 +78,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/handshaker.h"
@@ -656,7 +655,6 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
     return;
   }
 
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }

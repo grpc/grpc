@@ -36,7 +36,6 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args*) {}
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
