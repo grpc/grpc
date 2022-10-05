@@ -229,7 +229,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     const std::string name_;
 
-    uint32_t weight_;
+    uint32_t weight_ = 0;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
