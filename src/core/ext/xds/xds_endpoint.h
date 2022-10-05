@@ -41,7 +41,7 @@
 
 namespace grpc_core {
 
-struct XdsEndpointResource {
+struct XdsEndpointResource : public XdsResourceType::ResourceData {
   struct Priority {
     struct Locality {
       RefCountedPtr<XdsLocalityName> name;

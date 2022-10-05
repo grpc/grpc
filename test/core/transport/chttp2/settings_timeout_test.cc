@@ -173,8 +173,7 @@ class Client {
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_,
-                           GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
+    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE("shutdown"));
     grpc_slice_buffer_destroy(&read_buffer);
     return retval;
   }

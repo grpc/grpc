@@ -447,7 +447,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/channel_args_endpoint_config.cc',
     'src/core/lib/event_engine/default_event_engine.cc',
     'src/core/lib/event_engine/default_event_engine_factory.cc',
-    'src/core/lib/event_engine/executor/threaded_executor.cc',
     'src/core/lib/event_engine/forkable.cc',
     'src/core/lib/event_engine/memory_allocator.cc',
     'src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc',

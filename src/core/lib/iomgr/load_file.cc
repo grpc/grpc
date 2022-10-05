@@ -67,12 +67,9 @@ end:
   *output = result;
   if (file != nullptr) fclose(file);
   if (!error.ok()) {
-    grpc_error_handle error_out =
-        grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Failed to load file", &error, 1),
-                           GRPC_ERROR_STR_FILENAME,
-
-                           filename);
+    grpc_error_handle error_out = grpc_error_set_str(
+        GRPC_ERROR_CREATE_REFERENCING("Failed to load file", &error, 1),
+        grpc_core::StatusStrProperty::kFilename, filename);
     error = error_out;
   }
   GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;

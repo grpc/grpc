@@ -333,3 +333,13 @@ grpc_cc_library(
     srcs = ["build.cc"],
     hdrs = ["build.h"],
 )
+
+grpc_cc_library(
+    name = "scoped_env_var",
+    testonly = True,
+    hdrs = ["scoped_env_var.h"],
+    deps = [
+        "//:env",
+        "//:gpr_platform",
+    ],
+)

@@ -139,11 +139,11 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
       std::string identity_error_str;
       if (!root_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(
-            root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_str));
+            root_cert_error, StatusStrProperty::kDescription, &root_error_str));
       }
       if (!identity_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(identity_cert_error,
-                                      GRPC_ERROR_STR_DESCRIPTION,
+                                      StatusStrProperty::kDescription,
                                       &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),

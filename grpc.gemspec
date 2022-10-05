@@ -966,8 +966,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.cc )
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.h )
   s.files += %w( src/core/lib/event_engine/executor/executor.h )
-  s.files += %w( src/core/lib/event_engine/executor/threaded_executor.cc )
-  s.files += %w( src/core/lib/event_engine/executor/threaded_executor.h )
   s.files += %w( src/core/lib/event_engine/forkable.cc )
   s.files += %w( src/core/lib/event_engine/forkable.h )
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
