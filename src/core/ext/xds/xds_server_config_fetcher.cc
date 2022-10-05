@@ -71,6 +71,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -1180,14 +1181,13 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
         grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
-    call_config.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No path found");
+    call_config.error = GRPC_ERROR_CREATE("No path found");
     return call_config;
   }
   absl::string_view path =
       metadata->get_pointer(HttpPathMetadata())->as_string_view();
   if (metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    call_config.error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No authority found");
+    call_config.error = GRPC_ERROR_CREATE("No authority found");
     return call_config;
   }
   absl::string_view authority =
@@ -1195,11 +1195,10 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
       VirtualHostListIterator(&virtual_hosts_), authority);
   if (!vhost_index.has_value()) {
-    call_config.error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                               "could not find VirtualHost for ", authority,
-                               " in RouteConfiguration")),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    call_config.error = grpc_error_set_int(
+        GRPC_ERROR_CREATE(absl::StrCat("could not find VirtualHost for ",
+                                       authority, " in RouteConfiguration")),
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
     return call_config;
   }
   auto& virtual_host = virtual_hosts_[vhost_index.value()];
@@ -1210,9 +1209,8 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     // Found the matching route
     if (route.unsupported_action) {
       call_config.error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Matching route has unsupported action"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+          GRPC_ERROR_CREATE("Matching route has unsupported action"),
+          StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       return call_config;
     }
     if (route.method_config != nullptr) {
@@ -1222,9 +1220,9 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     }
     return call_config;
   }
-  call_config.error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("No route matched"),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  call_config.error = grpc_error_set_int(GRPC_ERROR_CREATE("No route matched"),
+                                         StatusIntProperty::kRpcStatus,
+                                         GRPC_STATUS_UNAVAILABLE);
   return call_config;
 }
 

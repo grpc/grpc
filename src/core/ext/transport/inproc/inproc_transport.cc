@@ -47,6 +47,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -626,7 +627,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if (*destfilled || s->trailing_md_sent) {
       // The buffer is already in use; that's an error!
       INPROC_LOG(GPR_INFO, "Extra trailing metadata %p", s);
-      new_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra trailing metadata");
+      new_err = GRPC_ERROR_CREATE("Extra trailing metadata");
       fail_helper_locked(s, new_err);
       goto done;
     } else {
@@ -665,8 +666,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
   }
   if (s->recv_initial_md_op) {
     if (s->initial_md_recvd) {
-      new_err =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already recvd initial md");
+      new_err = GRPC_ERROR_CREATE("Already recvd initial md");
       INPROC_LOG(
           GPR_INFO,
           "op_state_machine %p scheduling on_complete errors for already "
@@ -723,8 +723,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
         s->to_read_trailing_md_filled = false;
         s->trailing_md_recvd_implicit_only = false;
       } else {
-        new_err =
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already recvd trailing md");
+        new_err = GRPC_ERROR_CREATE("Already recvd trailing md");
         INPROC_LOG(
             GPR_INFO,
             "op_state_machine %p scheduling on_complete errors for already "
@@ -960,7 +959,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   inproc_stream* other = s->other_side;
   if (error.ok() && (op->send_initial_metadata || op->send_trailing_metadata)) {
     if (s->t->is_closed) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
+      error = GRPC_ERROR_CREATE("Endpoint already shutdown");
     }
     if (error.ok() && op->send_initial_metadata) {
       grpc_metadata_batch* dest = (other == nullptr)
@@ -971,7 +970,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
       if (*destfilled || s->initial_md_sent) {
         // The buffer is already in use; that's an error!
         INPROC_LOG(GPR_INFO, "Extra initial metadata %p", s);
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
+        error = GRPC_ERROR_CREATE("Extra initial metadata");
       } else {
         if (!s->other_side_closed) {
           fill_in_metadata(
@@ -1099,9 +1098,9 @@ void close_transport_locked(inproc_transport* t) {
       // cancel_stream_locked also adjusts stream list
       cancel_stream_locked(
           t->stream_list,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport closed"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+          grpc_error_set_int(GRPC_ERROR_CREATE("Transport closed"),
+                             grpc_core::StatusIntProperty::kRpcStatus,
+                             GRPC_STATUS_UNAVAILABLE));
     }
   }
 }
@@ -1243,7 +1242,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
               grpc_error_std_string(error).c_str());
       intptr_t integer;
       grpc_status_code status = GRPC_STATUS_INTERNAL;
-      if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                             &integer)) {
         status = static_cast<grpc_status_code>(integer);
       }
       // client_transport was destroyed when grpc_channel_create_internal saw an
@@ -1260,7 +1260,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
             grpc_error_std_string(error).c_str());
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                           &integer)) {
       status = static_cast<grpc_status_code>(integer);
     }
     grpc_transport_destroy(client_transport);
