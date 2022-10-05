@@ -221,18 +221,16 @@ void HttpRequest::Orphan() {
     // cancel potentially pending DNS resolution.
     if (dns_request_handle_.has_value() &&
         resolver_->Cancel(dns_request_handle_.value())) {
-      Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "cancelled during DNS resolution"));
+      Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
       Unref();
     }
     if (handshake_mgr_ != nullptr) {
       // Shutdown will cancel any ongoing tcp connect.
-      handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HTTP request cancelled during handshake"));
+      handshake_mgr_->Shutdown(
+          GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     }
     if (own_endpoint_ && ep_ != nullptr) {
-      grpc_endpoint_shutdown(
-          ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
+      grpc_endpoint_shutdown(ep_, GRPC_ERROR_CREATE("HTTP request cancelled"));
     }
   }
   Unref();
@@ -240,8 +238,7 @@ void HttpRequest::Orphan() {
 
 void HttpRequest::AppendError(grpc_error_handle error) {
   if (overall_error_.ok()) {
-    overall_error_ =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
+    overall_error_ = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
   auto addr_text = grpc_sockaddr_to_uri(addr);
@@ -265,8 +262,8 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
     }
   }
   if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "HTTP1 request cancelled during read", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("HTTP1 request cancelled during read",
+                                         &overall_error_, 1));
   } else if (error.ok()) {
     DoRead();
   } else if (!have_read_byte_) {
@@ -316,8 +313,8 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   req->ep_ = args->endpoint;
   req->handshake_mgr_.reset();
   if (req->cancelled_) {
-    req->NextAddress(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "HTTP request cancelled during handshake"));
+    req->NextAddress(
+        GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     return;
   }
   req->StartWrite();
@@ -330,14 +327,14 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
       channel_creds_->create_security_connector(
           nullptr /*call_creds*/, uri_.authority().c_str(), &args);
   if (sc == nullptr) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "failed to create security connector", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("failed to create security connector",
+                                         &overall_error_, 1));
     return;
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(addr);
   if (!address.ok()) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Failed to extract URI from address", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("Failed to extract URI from address",
+                                         &overall_error_, 1));
     return;
   }
   args = args.SetObject(std::move(sc))
@@ -360,13 +357,13 @@ void HttpRequest::NextAddress(grpc_error_handle error) {
     AppendError(error);
   }
   if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "HTTP request was cancelled", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("HTTP request was cancelled",
+                                         &overall_error_, 1));
     return;
   }
   if (next_address_ == addresses_.size()) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Failed HTTP requests to all targets", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("Failed HTTP requests to all targets",
+                                         &overall_error_, 1));
     return;
   }
   const grpc_resolved_address* addr = &addresses_[next_address_++];
@@ -379,8 +376,7 @@ void HttpRequest::OnResolved(
   MutexLock lock(&mu_);
   dns_request_handle_.reset();
   if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "cancelled during DNS resolution"));
+    Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
     return;
   }
   if (!addresses_or.ok()) {

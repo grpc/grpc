@@ -83,12 +83,12 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
     if (root_being_watched && !root_has_update) {
-      root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest root certificates.");
+      root_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }
     if (identity_being_watched && !identity_has_update) {
-      identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest identity certificates.");
+      identity_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
     }
     if (!root_cert_error.ok() || !identity_cert_error.ok()) {
       distributor_->SetErrorForCert(cert_name, root_cert_error,
@@ -177,12 +177,12 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
     if (root_being_watched && !root_certificate.has_value()) {
-      root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest root certificates.");
+      root_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }
     if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
-      identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Unable to get latest identity certificates.");
+      identity_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
     }
     if (!root_cert_error.ok() || !identity_cert_error.ok()) {
       distributor_->SetErrorForCert(cert_name, root_cert_error,
@@ -238,11 +238,10 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   }
   if (root_cert_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
-    grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Unable to get latest root certificates.");
+    grpc_error_handle root_cert_error =
+        GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     grpc_error_handle identity_cert_error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Unable to get latest identity certificates.");
+        GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;

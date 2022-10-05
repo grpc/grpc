@@ -241,7 +241,7 @@ static bool append_error(grpc_error_handle* composite, grpc_error_handle error,
                          const char* desc) {
   if (error.ok()) return true;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
+    *composite = GRPC_ERROR_CREATE(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
@@ -408,8 +408,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   bool is_release_fd = (release_fd != nullptr);
 
   if (!fd->read_closure->IsShutdown()) {
-    fd_shutdown_internal(fd, GRPC_ERROR_CREATE_FROM_COPIED_STRING(reason),
-                         is_release_fd);
+    fd_shutdown_internal(fd, GRPC_ERROR_CREATE(reason), is_release_fd);
   }
 
   /* If release_fd is not NULL, we should be relinquishing control of the file

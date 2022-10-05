@@ -276,8 +276,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     } while (ev.type != GRPC_QUEUE_SHUTDOWN);
     grpc_completion_queue_destroy(cq_);
     grpc_channel_destroy(channel_);
-    grpc_endpoint_shutdown(
-        tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+    grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Test Shutdown"));
     ExecCtx::Get()->Flush();
     GPR_ASSERT(read_end_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -538,8 +537,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Shutdown the server endpoint
-  grpc_endpoint_shutdown(
-      tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -764,8 +762,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  grpc_endpoint_shutdown(
-      tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();

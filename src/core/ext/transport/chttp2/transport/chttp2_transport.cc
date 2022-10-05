@@ -234,8 +234,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_slice_buffer_destroy(&outbuf);
 
-  grpc_error_handle error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed");
+  grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
   grpc_core::ContextList::Execute(cl, nullptr, error);
@@ -255,8 +254,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   GRPC_COMBINER_UNREF(combiner, "chttp2_transport");
 
-  cancel_pings(this,
-               GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed"));
+  cancel_pings(this, GRPC_ERROR_CREATE("Transport destroyed"));
 
   while (write_cb_pool) {
     grpc_chttp2_write_cb* next = write_cb_pool->next;
@@ -539,10 +537,9 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   t->destroying = 1;
   close_transport_locked(
-      t,
-      grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed"),
-          grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state));
+      t, grpc_error_set_int(GRPC_ERROR_CREATE("Transport destroyed"),
+                            grpc_core::StatusIntProperty::kOccurredDuringWrite,
+                            t->write_state));
   t->memory_owner.Reset();
   // Must be the last line.
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "destroy");
@@ -567,8 +564,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
       if (t->close_transport_on_writes_finished.ok()) {
         t->close_transport_on_writes_finished =
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Delayed close due to in-progress write");
+            GRPC_ERROR_CREATE("Delayed close due to in-progress write");
       }
       t->close_transport_on_writes_finished =
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
@@ -906,8 +902,7 @@ static void write_action_end_locked(void* tp, grpc_error_handle error) {
     t->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SENT;
     closed = true;
     if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-      close_transport_locked(
-          t, GRPC_ERROR_CREATE_FROM_STATIC_STRING("goaway sent"));
+      close_transport_locked(t, GRPC_ERROR_CREATE("goaway sent"));
     }
   }
 
@@ -977,10 +972,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   }
   t->goaway_error = grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
-              grpc_core::StatusIntProperty::kHttp2Error,
-              static_cast<intptr_t>(goaway_error)),
+          grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
+                             grpc_core::StatusIntProperty::kHttp2Error,
+                             static_cast<intptr_t>(goaway_error)),
           grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
       grpc_core::StatusStrProperty::kRawBytes, goaway_text);
 
@@ -1085,10 +1079,9 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
           grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
       grpc_chttp2_cancel_stream(
           t, s,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream IDs exhausted"),
-              grpc_core::StatusIntProperty::kRpcStatus,
-              GRPC_STATUS_UNAVAILABLE));
+          grpc_error_set_int(GRPC_ERROR_CREATE("Stream IDs exhausted"),
+                             grpc_core::StatusIntProperty::kRpcStatus,
+                             GRPC_STATUS_UNAVAILABLE));
     }
   }
 }
@@ -1146,7 +1139,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
     if (cl_err.ok()) {
-      cl_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      cl_err = GRPC_ERROR_CREATE(absl::StrCat(
           "Error in HTTP transport completing operation: ", desc,
           " write_state=", write_state_name(t->write_state), " refs=",
           closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
@@ -1258,8 +1251,8 @@ static void perform_stream_op_locked(void* stream_op,
           grpc_chttp2_cancel_stream(
               t, s,
               grpc_error_set_int(
-                  GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                      "Transport closed", &t->closed_with_error, 1),
+                  GRPC_ERROR_CREATE_REFERENCING("Transport closed",
+                                                &t->closed_with_error, 1),
                   grpc_core::StatusIntProperty::kRpcStatus,
                   GRPC_STATUS_UNAVAILABLE));
         }
@@ -1276,7 +1269,7 @@ static void perform_stream_op_locked(void* stream_op,
       s->send_initial_metadata = nullptr;
       grpc_chttp2_complete_closure_step(
           t, s, &s->send_initial_metadata_finished,
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          GRPC_ERROR_CREATE_REFERENCING(
               "Attempt to send initial metadata after stream was closed",
               &s->write_closed_error, 1),
           "send_initial_metadata_finished");
@@ -1381,9 +1374,8 @@ static void perform_stream_op_locked(void* stream_op,
           t, s, &s->send_trailing_metadata_finished,
           op->payload->send_trailing_metadata.send_trailing_metadata->empty()
               ? absl::OkStatus()
-              : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "Attempt to send trailing metadata after "
-                    "stream was closed"),
+              : GRPC_ERROR_CREATE("Attempt to send trailing metadata after "
+                                  "stream was closed"),
           "send_trailing_metadata_finished");
     } else if (s->id != 0) {
       // TODO(ctiller): check if there's flow control for any outstanding
@@ -1693,17 +1685,15 @@ void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
   if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
       t->ping_policy.max_ping_strikes != 0) {
     send_goaway(t,
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("too_many_pings"),
-                    grpc_core::StatusIntProperty::kHttp2Error,
-                    GRPC_HTTP2_ENHANCE_YOUR_CALM),
+                grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
+                                   grpc_core::StatusIntProperty::kHttp2Error,
+                                   GRPC_HTTP2_ENHANCE_YOUR_CALM),
                 /*immediate_disconnect_hint=*/true);
     // The transport will be closed after the write is done
     close_transport_locked(
-        t,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"),
-            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
+        t, grpc_error_set_int(GRPC_ERROR_CREATE("Too many pings"),
+                              grpc_core::StatusIntProperty::kRpcStatus,
+                              GRPC_STATUS_UNAVAILABLE));
   }
 }
 
@@ -1903,7 +1893,7 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
     post_benign_reclaimer(t);
     if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
       close_transport_locked(
-          t, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          t, GRPC_ERROR_CREATE_REFERENCING(
                  "Last stream closed after sending GOAWAY", &error, 1));
     }
   }
@@ -1990,8 +1980,7 @@ static grpc_error_handle removal_error(grpc_error_handle extra_error,
   add_error(extra_error, refs, &nrefs);
   grpc_error_handle error;
   if (nrefs > 0) {
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(main_error_msg,
-                                                             refs, nrefs);
+    error = GRPC_ERROR_CREATE_REFERENCING(main_error_msg, refs, nrefs);
   }
   return error;
 }
@@ -2326,10 +2315,9 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   if (parse_error.ok() &&
       (parse_error = grpc_http_parser_eof(&parser)) == absl::OkStatus()) {
     error = grpc_error_set_int(
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "Trying to connect an http1.x server"),
-                           grpc_core::StatusIntProperty::kHttpStatus,
-                           response.status),
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
+            grpc_core::StatusIntProperty::kHttpStatus, response.status),
         grpc_core::StatusIntProperty::kRpcStatus,
         grpc_http2_status_to_grpc_status(response.status));
   }
@@ -2351,10 +2339,9 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
 
   grpc_error_handle err = error;
   if (!err.ok()) {
-    err = grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                 "Endpoint read failed", &err, 1),
-                             grpc_core::StatusIntProperty::kOccurredDuringWrite,
-                             t->write_state);
+    err = grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
+        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
   }
   std::swap(err, error);
   if (t->closed_with_error.ok()) {
@@ -2365,8 +2352,8 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
     }
     if (errors[1] != absl::OkStatus()) {
       errors[2] = try_http_parsing(t);
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Failed parsing HTTP/2", errors, GPR_ARRAY_SIZE(errors));
+      error = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
+                                            GPR_ARRAY_SIZE(errors));
     }
     for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
     }
@@ -2386,8 +2373,8 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
 
   bool keep_reading = false;
   if (error.ok() && !t->closed_with_error.ok()) {
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Transport closed", &t->closed_with_error, 1);
+    error = GRPC_ERROR_CREATE_REFERENCING("Transport closed",
+                                          &t->closed_with_error, 1);
   }
   if (!error.ok()) {
     // If a goaway frame was received, this might be the reason why the read
@@ -2719,8 +2706,7 @@ static void keepalive_watchdog_fired_locked(void* arg,
               t->peer_string.c_str());
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
       close_transport_locked(
-          t, grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                    "keepalive watchdog timeout"),
+          t, grpc_error_set_int(GRPC_ERROR_CREATE("keepalive watchdog timeout"),
                                 grpc_core::StatusIntProperty::kRpcStatus,
                                 GRPC_STATUS_UNAVAILABLE));
     }
@@ -2818,12 +2804,11 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
       gpr_log(GPR_INFO, "HTTP2: %s - send goaway to free memory",
               t->peer_string.c_str());
     }
-    send_goaway(
-        t,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
-                           grpc_core::StatusIntProperty::kHttp2Error,
-                           GRPC_HTTP2_ENHANCE_YOUR_CALM),
-        /*immediate_disconnect_hint=*/true);
+    send_goaway(t,
+                grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
+                                   grpc_core::StatusIntProperty::kHttp2Error,
+                                   GRPC_HTTP2_ENHANCE_YOUR_CALM),
+                /*immediate_disconnect_hint=*/true);
   } else if (error.ok() && GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
@@ -2851,7 +2836,7 @@ static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
     }
     grpc_chttp2_cancel_stream(
         t, s,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
+        grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
                            grpc_core::StatusIntProperty::kHttp2Error,
                            GRPC_HTTP2_ENHANCE_YOUR_CALM));
     if (n > 1) {
