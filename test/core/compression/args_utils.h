@@ -15,7 +15,8 @@
 #ifndef GRPC_TEST_CORE_COMPRESSION_ARGS_UTILS_H_H
 #define GRPC_TEST_CORE_COMPRESSION_ARGS_UTILS_H_H
 
-#include "src/core/lib/channel/channel_args.h"
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
 
 // TODO(ctiller): when we do the channel args migration, just delete this.
 const grpc_channel_args*

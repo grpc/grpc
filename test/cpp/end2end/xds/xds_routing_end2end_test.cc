@@ -3187,19 +3187,19 @@ int main(int argc, char** argv) {
 #endif
   grpc_init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
           /* supported_on_clients = */ true, /* supported_on_servers = */ false,
           /* is_terminal_filter */ false),
       {"grpc.testing.client_only_http_filter"});
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.server_only_http_filter",
           /* supported_on_clients = */ false, /* supported_on_servers = */ true,
           /* is_terminal_filter */ false),
       {"grpc.testing.server_only_http_filter"});
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.terminal_http_filter",
           /* supported_on_clients = */ true, /* supported_on_servers = */ true,
           /* is_terminal_filter */ true),

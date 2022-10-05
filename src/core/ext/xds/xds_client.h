@@ -32,6 +32,8 @@
 #include "absl/strings/string_view.h"
 #include "upb/def.hpp"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -142,6 +144,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Expected to be invoked by wrapper languages in their CSDS service
   // implementation.
   std::string DumpClientConfigBinary();
+
+  grpc_event_engine::experimental::EventEngine* engine() {
+    return engine_.get();
+  }
 
  private:
   struct XdsResourceKey {
@@ -301,6 +307,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const bool xds_federation_enabled_;
   XdsApi api_;
   WorkSerializer work_serializer_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 
   Mutex mu_;
 

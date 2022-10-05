@@ -14,9 +14,9 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 28.0.0
   csharp_major_version: 2
-  g_stands_for: galley
+  g_stands_for: galaxy
   protobuf_version: 3.21.6
-  version: 1.50.0-dev
+  version: 1.51.0-dev
 configs:
   asan:
     CC: clang

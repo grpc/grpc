@@ -25,6 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
@@ -71,7 +72,7 @@ static tsi_result alts_grpc_integrity_only_extra_copy_protect(
     return TSI_INTERNAL_ERROR;
   }
   grpc_slice_buffer_add(protected_slices, protected_slice);
-  grpc_slice_buffer_reset_and_unref_internal(unprotected_slices);
+  grpc_slice_buffer_reset_and_unref(unprotected_slices);
   return TSI_OK;
 }
 
@@ -138,14 +139,13 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
       reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
   /* Strips frame header from protected slices.  */
-  grpc_slice_buffer_reset_and_unref_internal(&rp->header_sb);
+  grpc_slice_buffer_reset_and_unref(&rp->header_sb);
   grpc_slice_buffer_move_first(protected_slices, rp->header_length,
                                &rp->header_sb);
   GPR_ASSERT(rp->header_sb.length == rp->header_length);
   iovec_t header_iovec = alts_grpc_record_protocol_get_header_iovec(rp);
   /* Moves protected slices data to data_sb and leaves the remaining tag.  */
-  grpc_slice_buffer_reset_and_unref_internal(
-      &integrity_only_record_protocol->data_sb);
+  grpc_slice_buffer_reset_and_unref(&integrity_only_record_protocol->data_sb);
   grpc_slice_buffer_move_first(protected_slices,
                                protected_slices->length - rp->tag_length,
                                &integrity_only_record_protocol->data_sb);
@@ -173,8 +173,8 @@ static tsi_result alts_grpc_integrity_only_unprotect(
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
-  grpc_slice_buffer_reset_and_unref_internal(&rp->header_sb);
-  grpc_slice_buffer_reset_and_unref_internal(protected_slices);
+  grpc_slice_buffer_reset_and_unref(&rp->header_sb);
+  grpc_slice_buffer_reset_and_unref(protected_slices);
   grpc_slice_buffer_move_into(&integrity_only_record_protocol->data_sb,
                               unprotected_slices);
   return TSI_OK;
@@ -186,7 +186,7 @@ static void alts_grpc_integrity_only_destruct(alts_grpc_record_protocol* rp) {
   }
   alts_grpc_integrity_only_record_protocol* integrity_only_rp =
       reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
-  grpc_slice_buffer_destroy_internal(&integrity_only_rp->data_sb);
+  grpc_slice_buffer_destroy(&integrity_only_rp->data_sb);
   gpr_free(integrity_only_rp->tag_buf);
 }
 

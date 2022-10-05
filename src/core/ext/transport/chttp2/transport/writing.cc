@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice.h>
@@ -58,7 +59,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -193,13 +193,12 @@ static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     grpc_chttp2_write_cb* next = cb->next;
     if (cb->call_at_byte <= *ctr) {
       sched_any = true;
-      finish_write_cb(t, s, cb, GRPC_ERROR_REF(error));
+      finish_write_cb(t, s, cb, error);
     } else {
       add_to_write_list(list, cb);
     }
     cb = next;
   }
-  GRPC_ERROR_UNREF(error);
   return sched_any;
 }
 
@@ -317,7 +316,7 @@ class WriteContext {
   void UpdateStreamsNoLongerStalled() {
     grpc_chttp2_stream* s;
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
-      if (GRPC_ERROR_IS_NONE(t_->closed_with_error) &&
+      if (t_->closed_with_error.ok() &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
         if (!s->refcount->refs.RefIfNonZero()) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
@@ -412,7 +411,7 @@ class DataSendContext {
             t_, s_,
             static_cast<int64_t>(s_->sending_bytes - sending_bytes_before_),
             &s_->on_flow_controlled_cbs, &s_->flow_controlled_bytes_flowed,
-            GRPC_ERROR_NONE)) {
+            absl::OkStatus())) {
       write_context_->NoteScheduledResults();
     }
   }
@@ -474,7 +473,7 @@ class StreamWriteContext {
     s_->sent_initial_metadata = true;
     write_context_->NoteScheduledResults();
     grpc_chttp2_complete_closure_step(
-        t_, s_, &s_->send_initial_metadata_finished, GRPC_ERROR_NONE,
+        t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
   }
 
@@ -568,7 +567,7 @@ class StreamWriteContext {
 
     write_context_->NoteScheduledResults();
     grpc_chttp2_complete_closure_step(
-        t_, s_, &s_->send_trailing_metadata_finished, GRPC_ERROR_NONE,
+        t_, s_, &s_->send_trailing_metadata_finished, absl::OkStatus(),
         "send_trailing_metadata_finished");
   }
 
@@ -601,7 +600,7 @@ class StreamWriteContext {
                            s_->id, GRPC_HTTP2_NO_ERROR, &s_->stats.outgoing));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
-                                   GRPC_ERROR_NONE);
+                                   absl::OkStatus());
   }
 
   WriteContext* const write_context_;
@@ -673,11 +672,10 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     if (s->sending_bytes != 0) {
       update_list(t, s, static_cast<int64_t>(s->sending_bytes),
                   &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,
-                  GRPC_ERROR_REF(error));
+                  error);
       s->sending_bytes = 0;
     }
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:end");
   }
-  grpc_slice_buffer_reset_and_unref_internal(&t->outbuf);
-  GRPC_ERROR_UNREF(error);
+  grpc_slice_buffer_reset_and_unref(&t->outbuf);
 }

@@ -40,7 +40,8 @@
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
-  RegisterChannelFilter<CensusChannelData, CensusClientCallData>(
+  RegisterChannelFilter<CensusClientChannelData,
+                        CensusClientChannelData::CensusClientCallData>(
       "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
   RegisterChannelFilter<CensusChannelData, CensusServerCallData>(

@@ -140,7 +140,7 @@ class LoadReporterTest : public ::testing::Test {
     EXPECT_CALL(*mock_cpu, GetCpuStats())
         .WillOnce(Return(initial_cpu_stats_))
         .RetiresOnSaturation();
-    load_reporter_ = absl::make_unique<LoadReporter>(
+    load_reporter_ = std::make_unique<LoadReporter>(
         kFeedbackSampleWindowSeconds,
         std::unique_ptr<CensusViewProvider>(mock_census),
         std::unique_ptr<CpuStatsProvider>(mock_cpu));

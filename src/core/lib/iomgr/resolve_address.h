@@ -104,13 +104,12 @@ class DNSResolver {
 };
 
 // Override the active DNS resolver which should be used for all DNS
-// resolution in gRPC. Note this should only be used during library
-// initialization or within tests.
-void SetDNSResolver(DNSResolver* resolver);
+// resolution in gRPC.
+void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver);
 
 // Get the singleton DNS resolver instance which should be used for all
 // DNS resolution in gRPC.
-DNSResolver* GetDNSResolver();
+std::shared_ptr<DNSResolver> GetDNSResolver();
 
 }  // namespace grpc_core
 

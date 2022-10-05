@@ -75,7 +75,7 @@ struct grpc_ares_request {
   /** number of ongoing queries */
   size_t pending_queries ABSL_GUARDED_BY(mu) = 0;
   /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error_handle error ABSL_GUARDED_BY(mu) = GRPC_ERROR_NONE;
+  grpc_error_handle error ABSL_GUARDED_BY(mu);
 };
 
 /* Asynchronously resolve \a name (A/AAAA records only).

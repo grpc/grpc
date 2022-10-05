@@ -21,20 +21,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/builtins.h"
 
-#ifndef GRPC_NO_XDS
-namespace grpc_core {
-void XdsClientGlobalInit();
-void XdsClientGlobalShutdown();
-}  // namespace grpc_core
-#endif
-
-void grpc_register_extra_plugins() {
-#ifndef GRPC_NO_XDS
-  grpc_register_plugin(grpc_core::XdsClientGlobalInit,
-                       grpc_core::XdsClientGlobalShutdown);
-#endif
-}
-
 namespace grpc_core {
 #ifndef GRPC_NO_XDS
 extern void RbacFilterRegister(CoreConfiguration::Builder* builder);

@@ -14,9 +14,9 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
-#include <atomic>
+#include <time.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
@@ -24,6 +24,8 @@
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
+
+#include <linux/errqueue.h>
 
 #define NUM_ELEM 5
 

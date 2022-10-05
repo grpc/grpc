@@ -14,12 +14,9 @@
 
 #include "src/core/lib/gprpp/notification.h"
 
-#include <stdlib.h>
-
-#include <memory>
 #include <thread>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

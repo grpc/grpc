@@ -27,11 +27,22 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
+
+#define GRPC_LOG_EVERY_N_SEC(n, format, ...)                    \
+  do {                                                          \
+    static std::atomic<uint64_t> prev{0};                       \
+    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                       gpr_now(GPR_CLOCK_MONOTONIC))            \
+                       .milliseconds_after_process_epoch();     \
+    if ((now - prev.exchange(now)) > (n)*1000) {                \
+      gpr_log(GPR_INFO, format, __VA_ARGS__);                   \
+    }                                                           \
+  } while (0)
 
 namespace grpc_core {
 
@@ -150,7 +161,7 @@ class Timestamp {
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
   int64_t millis_ = 0;
-  static GPR_THREAD_LOCAL(Timestamp::Source*) thread_local_time_source_;
+  static thread_local Timestamp::Source* thread_local_time_source_;
 };
 
 class ScopedTimeCache final : public Timestamp::ScopedSource {

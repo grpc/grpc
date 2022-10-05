@@ -21,7 +21,6 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -108,7 +107,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* /* mu */) {
-  return absl::make_unique<GrpcPolledFdFactoryPosix>();
+  return std::make_unique<GrpcPolledFdFactoryPosix>();
 }
 
 }  // namespace grpc_core

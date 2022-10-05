@@ -130,6 +130,7 @@ ABSL_DECLARE_FLAG(std::string, protofiles);
 ABSL_DECLARE_FLAG(std::string, proto_path);
 ABSL_DECLARE_FLAG(std::string, default_service_config);
 ABSL_DECLARE_FLAG(double, timeout);
+ABSL_DECLARE_FLAG(int, max_recv_msg_size);
 
 namespace grpc {
 namespace testing {
@@ -1294,6 +1295,90 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
 
   absl::SetFlag(&FLAGS_metadata, "");
   absl::SetFlag(&FLAGS_protofiles, "");
+}
+
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeSmall) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=4"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to 4 which is not enough.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 4);
+
+  // This should fail.
+  EXPECT_FALSE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                    std::bind(PrintStream, &output_stream,
+                                              std::placeholders::_1)));
+  // No output expected.
+  EXPECT_TRUE(0 == output_stream.tellp());
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeEnough) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=1048576"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to a large enough number.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 1024 * 1024);
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: "message: \"Hello\""
+  EXPECT_TRUE(nullptr !=
+              strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeDefault) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=0"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to gRPC default, which should suffice.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: "message: \"Hello\""
+  EXPECT_TRUE(nullptr !=
+              strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+TEST_F(GrpcToolTest, CallMaxRecvMessageSizeUnlimited) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --max_recv_msg_size=-1"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max_recv_msg_size to unlimited (-1), which should work.
+  absl::SetFlag(&FLAGS_max_recv_msg_size, -1);
+
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  // Expected output: "message: \"Hello\""
+  EXPECT_TRUE(nullptr !=
+              strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
 }
 
 TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
