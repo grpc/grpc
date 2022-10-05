@@ -236,6 +236,7 @@ class TransportFlowControl final {
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
   uint32_t acked_init_window() const { return acked_init_window_; }
+  uint32_t sent_init_window() const { return target_initial_window_size_; }
 
   void SetAckedInitialWindow(uint32_t value) { acked_init_window_ = value; }
 
@@ -319,7 +320,7 @@ class StreamFlowControl final {
     absl::Status RecvData(int64_t incoming_frame_size);
 
     // the application is asking for a certain amount of bytes
-    void SetMinProgressSize(uint32_t min_progress_size) {
+    void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }
 
@@ -356,7 +357,7 @@ class StreamFlowControl final {
 
   int64_t remote_window_delta() const { return remote_window_delta_; }
   int64_t announced_window_delta() const { return announced_window_delta_; }
-  uint32_t min_progress_size() const { return min_progress_size_; }
+  int64_t min_progress_size() const { return min_progress_size_; }
 
  private:
   TransportFlowControl* const tfc_;
@@ -366,7 +367,7 @@ class StreamFlowControl final {
   absl::optional<int64_t> pending_size_;
 
   FlowControlAction UpdateAction(FlowControlAction action);
-  uint32_t DesiredAnnounceSize() const;
+  int64_t DesiredAnnounceSize() const;
 };
 
 class TestOnlyTransportTargetWindowEstimatesMocker {

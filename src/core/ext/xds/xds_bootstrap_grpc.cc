@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -235,7 +234,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
   };
   auto bootstrap = LoadFromJson<GrpcXdsBootstrap>(*json, XdsJsonArgs());
   if (!bootstrap.ok()) return bootstrap.status();
-  return absl::make_unique<GrpcXdsBootstrap>(std::move(*bootstrap));
+  return std::make_unique<GrpcXdsBootstrap>(std::move(*bootstrap));
 }
 
 const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {

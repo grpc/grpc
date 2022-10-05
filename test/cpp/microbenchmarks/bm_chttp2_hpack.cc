@@ -95,10 +95,10 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             &stats,
         },
         b, &outbuf);
-    grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+    grpc_slice_buffer_reset_and_unref(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_slice_buffer_destroy_internal(&outbuf);
+  grpc_slice_buffer_destroy(&outbuf);
 
   std::ostringstream label;
   label << "framing_bytes/iter:"
@@ -146,10 +146,10 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
         gpr_free(s);
       }
     }
-    grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+    grpc_slice_buffer_reset_and_unref(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_slice_buffer_destroy_internal(&outbuf);
+  grpc_slice_buffer_destroy(&outbuf);
 
   std::ostringstream label;
   label << "framing_bytes/iter:"
@@ -376,7 +376,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   auto parse_vec = [&p](const std::vector<grpc_slice>& slices) {
     for (size_t i = 0; i < slices.size(); ++i) {
       auto error = p.Parse(slices[i], i == slices.size() - 1);
-      GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+      GPR_ASSERT(error.ok());
     }
   };
   parse_vec(init_slices);
@@ -442,13 +442,13 @@ class FromEncoderFixture {
           b, &outbuf);
       if (i == iteration) {
         for (size_t s = 0; s < outbuf.count; s++) {
-          out.push_back(grpc_slice_ref_internal(outbuf.slices[s]));
+          out.push_back(grpc_slice_ref(outbuf.slices[s]));
         }
         done = true;
       }
-      grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+      grpc_slice_buffer_reset_and_unref(&outbuf);
       grpc_core::ExecCtx::Get()->Flush();
-      grpc_slice_buffer_destroy_internal(&outbuf);
+      grpc_slice_buffer_destroy(&outbuf);
       i++;
     }
     // Remove the HTTP header.

@@ -28,7 +28,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* /*s*/,
                                                       unsigned /*port_index*/,
                                                       int /*requested_port*/,
                                                       int* /*out_port*/) {
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ifaddrs available");
+  return GRPC_ERROR_CREATE("no ifaddrs available");
 }
 
 bool grpc_tcp_server_have_ifaddrs(void) { return false; }

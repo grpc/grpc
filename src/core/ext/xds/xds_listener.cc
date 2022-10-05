@@ -23,7 +23,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -450,7 +449,7 @@ HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
               http_connection_manager_proto);
       if (rds == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        return GRPC_ERROR_CREATE(
             "HttpConnectionManager neither has inlined route_config nor RDS.");
       }
       // Check that the ConfigSource specifies ADS.
@@ -1092,9 +1091,8 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
               context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*listener);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsListenerResource>(std::move(*listener));
   }
   return result;
 }

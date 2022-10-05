@@ -80,7 +80,7 @@ class BinderAndroid final : public Binder {
  public:
   explicit BinderAndroid(ndk_util::SpAIBinder binder)
       : binder_(binder),
-        input_parcel_(absl::make_unique<WritableParcelAndroid>()) {}
+        input_parcel_(std::make_unique<WritableParcelAndroid>()) {}
   ~BinderAndroid() override = default;
 
   void* GetRawBinder() override { return binder_.get(); }

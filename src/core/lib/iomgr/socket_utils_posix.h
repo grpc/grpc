@@ -64,7 +64,7 @@ struct PosixTcpOptions {
   PosixTcpOptions() = default;
   // Move ctor
   PosixTcpOptions(PosixTcpOptions&& other) noexcept {
-    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
     CopyIntegerOptions(other);
   }
@@ -73,7 +73,7 @@ struct PosixTcpOptions {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
     }
-    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
     CopyIntegerOptions(other);
     return *this;

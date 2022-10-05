@@ -20,19 +20,18 @@
 
 #include <string.h>
 
-#include <tuple>
 #include <vector>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

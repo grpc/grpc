@@ -34,8 +34,10 @@
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -728,6 +730,55 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
   ASSERT_NE(recv_span_data, recorded_spans.end());
   EXPECT_EQ(attempt_span_data->context().span_id(),
             recv_span_data->parent_span_id());
+}
+
+// Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
+TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    ChannelArguments args;
+    args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+    auto channel = CreateCustomChannel(server_address_,
+                                       InsecureChannelCredentials(), args);
+    ResetStub(channel);
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  auto GetSpanByName = [&recorded_spans](absl::string_view name) {
+    return std::find_if(
+        recorded_spans.begin(), recorded_spans.end(),
+        [name](auto const& span_data) { return span_data.name() == name; });
+  };
+
+  // The size might be 0 or 1, depending on whether the server-side ends up
+  // getting sampled or not.
+  ASSERT_LE(recorded_spans.size(), 1);
+  // Make sure that the client-side traces are not collected.
+  auto sent_span_data =
+      GetSpanByName(absl::StrCat("Sent.", client_method_name_));
+  ASSERT_EQ(sent_span_data, recorded_spans.end());
+  auto attempt_span_data =
+      GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_EQ(attempt_span_data, recorded_spans.end());
 }
 
 }  // namespace

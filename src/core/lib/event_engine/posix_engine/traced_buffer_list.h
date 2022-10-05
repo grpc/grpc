@@ -30,8 +30,6 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
 
-// #undef GRPC_LINUX_ERRQUEUE
-
 namespace grpc_event_engine {
 namespace posix_engine {
 

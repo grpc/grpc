@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -31,6 +33,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -206,9 +209,9 @@ static void recv_im_ready(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_core::Closure::Run(
       DEBUG_LOCATION, calld->recv_im_ready,
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING(
                              "Failure that's not preventable.", &error, 1),
-                         GRPC_ERROR_INT_GRPC_STATUS,
+                         grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_PERMISSION_DENIED));
 }
 
@@ -226,7 +229,7 @@ static void start_transport_stream_op_batch(
 
 static grpc_error_handle init_call_elem(
     grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_call_elem(grpc_call_element* /*elem*/,
@@ -235,7 +238,7 @@ static void destroy_call_elem(grpc_call_element* /*elem*/,
 
 static grpc_error_handle init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}

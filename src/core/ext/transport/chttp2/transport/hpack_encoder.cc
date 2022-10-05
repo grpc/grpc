@@ -319,7 +319,7 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   auto& table = framer->compressor_->table_;
   using It = std::vector<ValueIndex>::iterator;
   It prev = values_.end();
-  uint32_t transport_length =
+  size_t transport_length =
       key.length() + value.length() + hpack_constants::kEntryOverhead;
   if (transport_length > HPackEncoderTable::MaxEntrySize()) {
     framer->EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(key),
@@ -482,7 +482,7 @@ void HPackCompressor::Framer::Encode(HttpMethodMetadata,
 void HPackCompressor::Framer::EncodeAlwaysIndexed(uint32_t* index,
                                                   absl::string_view key,
                                                   Slice value,
-                                                  uint32_t transport_length) {
+                                                  size_t transport_length) {
   if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
     EmitIndexed(compressor_->table_.DynamicIndex(*index));
   } else {
@@ -579,7 +579,7 @@ void HPackCompressor::Framer::Encode(GrpcStatusMetadata,
   }
   Slice key = Slice::FromStaticString(GrpcStatusMetadata::key());
   Slice value = Slice::FromInt64(code);
-  const uint32_t transport_length =
+  const size_t transport_length =
       key.length() + value.length() + hpack_constants::kEntryOverhead;
   if (index != nullptr) {
     *index = compressor_->table_.AllocateIndex(transport_length);
@@ -601,7 +601,7 @@ void HPackCompressor::Framer::Encode(GrpcEncodingMetadata,
   }
   auto key = Slice::FromStaticString(GrpcEncodingMetadata::key());
   auto encoded_value = GrpcEncodingMetadata::Encode(value);
-  uint32_t transport_length =
+  size_t transport_length =
       key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
   if (index != nullptr) {
     *index = compressor_->table_.AllocateIndex(transport_length);
@@ -625,7 +625,7 @@ void HPackCompressor::Framer::Encode(GrpcAcceptEncodingMetadata,
   }
   auto key = Slice::FromStaticString(GrpcAcceptEncodingMetadata::key());
   auto encoded_value = GrpcAcceptEncodingMetadata::Encode(value);
-  uint32_t transport_length =
+  size_t transport_length =
       key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
   compressor_->grpc_accept_encoding_index_ =
       compressor_->table_.AllocateIndex(transport_length);

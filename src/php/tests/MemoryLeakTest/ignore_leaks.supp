@@ -1,0 +1,13 @@
+{                                   
+   static Posix NativeDNSResolver
+   Memcheck:Leak                                                                                                                                                                                                                                                                                                                                                                            
+   match-leak-kinds: possible                               
+   ...
+   fun:pthread_create@@GLIBC_2.2.5
+   ...
+   fun:_ZN17grpc_event_engine12experimental21GetDefaultEventEngineEv                                                                                                                          
+   fun:_ZN9grpc_core17NativeDNSResolverC1Ev
+   fun:_ZN9grpc_core17NativeDNSResolver11GetOrCreateEv
+   ...
+}
+

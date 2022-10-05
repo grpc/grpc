@@ -468,7 +468,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gpr\\log_linux.cc " +
     "src\\core\\lib\\gpr\\log_posix.cc " +
     "src\\core\\lib\\gpr\\log_windows.cc " +
-    "src\\core\\lib\\gpr\\murmur_hash.cc " +
     "src\\core\\lib\\gpr\\string.cc " +
     "src\\core\\lib\\gpr\\string_posix.cc " +
     "src\\core\\lib\\gpr\\string_util_windows.cc " +
@@ -496,6 +495,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gprpp\\stat_posix.cc " +
     "src\\core\\lib\\gprpp\\stat_windows.cc " +
     "src\\core\\lib\\gprpp\\status_helper.cc " +
+    "src\\core\\lib\\gprpp\\strerror.cc " +
     "src\\core\\lib\\gprpp\\tchar.cc " +
     "src\\core\\lib\\gprpp\\thd_posix.cc " +
     "src\\core\\lib\\gprpp\\thd_windows.cc " +
@@ -666,10 +666,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\slice\\b64.cc " +
     "src\\core\\lib\\slice\\percent_encoding.cc " +
     "src\\core\\lib\\slice\\slice.cc " +
-    "src\\core\\lib\\slice\\slice_api.cc " +
     "src\\core\\lib\\slice\\slice_buffer.cc " +
-    "src\\core\\lib\\slice\\slice_buffer_api.cc " +
-    "src\\core\\lib\\slice\\slice_refcount.cc " +
     "src\\core\\lib\\slice\\slice_string_helpers.cc " +
     "src\\core\\lib\\surface\\api_trace.cc " +
     "src\\core\\lib\\surface\\builtins.cc " +
@@ -678,6 +675,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\call.cc " +
     "src\\core\\lib\\surface\\call_details.cc " +
     "src\\core\\lib\\surface\\call_log_batch.cc " +
+    "src\\core\\lib\\surface\\call_trace.cc " +
     "src\\core\\lib\\surface\\channel.cc " +
     "src\\core\\lib\\surface\\channel_init.cc " +
     "src\\core\\lib\\surface\\channel_ping.cc " +
@@ -693,6 +691,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\validate_metadata.cc " +
     "src\\core\\lib\\surface\\version.cc " +
     "src\\core\\lib\\transport\\bdp_estimator.cc " +
+    "src\\core\\lib\\transport\\call_fragments.cc " +
     "src\\core\\lib\\transport\\connectivity_state.cc " +
     "src\\core\\lib\\transport\\error_utils.cc " +
     "src\\core\\lib\\transport\\handshaker.cc " +

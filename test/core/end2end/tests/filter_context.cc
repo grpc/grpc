@@ -24,6 +24,8 @@
 #include <initializer_list>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -239,7 +241,7 @@ static grpc_error_handle init_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->context = args->context;
   gpr_log(GPR_INFO, "init_call_elem(): context=%p", args->context);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void start_transport_stream_op_batch(
@@ -262,7 +264,7 @@ static void destroy_call_elem(grpc_call_element* /*elem*/,
 
 static grpc_error_handle init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
