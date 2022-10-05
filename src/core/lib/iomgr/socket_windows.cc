@@ -47,8 +47,6 @@ grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
-  grpc_iomgr_register_object(
-      &r->iomgr_object, absl::StrFormat("%s:socket=0x%p", name, r).c_str());
   grpc_iocp_add_socket(r);
   return r;
 }
@@ -93,7 +91,6 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
 }
 
 static void destroy(grpc_winsocket* winsocket) {
-  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   gpr_mu_destroy(&winsocket->state_mu);
   gpr_free(winsocket);
 }

@@ -176,7 +176,6 @@ HttpRequest::HttpRequest(
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
-  grpc_iomgr_register_object(&iomgr_obj_, name);
   GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&continue_on_read_after_schedule_on_exec_ctx_,
                     ContinueOnReadAfterScheduleOnExecCtx, this,
@@ -196,7 +195,6 @@ HttpRequest::~HttpRequest() {
     grpc_endpoint_destroy(ep_);
   }
   CSliceUnref(request_text_);
-  grpc_iomgr_unregister_object(&iomgr_obj_);
   grpc_slice_buffer_destroy(&incoming_);
   grpc_slice_buffer_destroy(&outgoing_);
   grpc_pollset_set_destroy(pollset_set_);

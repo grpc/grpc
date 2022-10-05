@@ -120,8 +120,6 @@ struct grpc_fd {
 
   grpc_closure* on_done_closure;
 
-  grpc_iomgr_object iomgr_object;
-
   /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
 };
@@ -354,7 +352,6 @@ static void unref_by(grpc_fd* fd, int n) {
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     gpr_mu_destroy(&fd->mu);
-    grpc_iomgr_unregister_object(&fd->iomgr_object);
     fork_fd_list_remove_node(fd->fork_fd_list);
     if (fd->shutdown) {
     }
@@ -386,7 +383,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   gpr_atm_no_barrier_store(&r->pollhup, 0);
 
   std::string name2 = absl::StrCat(name, " fd=", fd);
-  grpc_iomgr_register_object(&r->iomgr_object, name2.c_str());
   fork_fd_list_add_grpc_fd(r);
   return r;
 }
@@ -493,7 +489,7 @@ static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   } else {
     return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                   "FD shutdown", &fd->shutdown_error, 1),
-                              grpc_core::StatusIntProperty::kRpcStatus,
+                              GRPC_ERROR_INT_GRPC_STATUS,
                               GRPC_STATUS_UNAVAILABLE);
   }
 }
@@ -504,7 +500,7 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
-                           grpc_core::StatusIntProperty::kRpcStatus,
+                           GRPC_ERROR_INT_GRPC_STATUS,
                            GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */

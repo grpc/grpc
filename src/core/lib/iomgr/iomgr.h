@@ -54,7 +54,4 @@ bool grpc_iomgr_is_any_background_poller_thread();
 bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
                                                  grpc_error_handle error);
 
-/* Exposed only for testing */
-size_t grpc_iomgr_count_objects_for_testing();
-
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_H */

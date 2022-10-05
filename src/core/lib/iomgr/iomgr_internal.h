@@ -26,12 +26,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 
-typedef struct grpc_iomgr_object {
-  char* name;
-  struct grpc_iomgr_object* next;
-  struct grpc_iomgr_object* prev;
-} grpc_iomgr_object;
-
 typedef struct grpc_iomgr_platform_vtable {
   void (*init)(void);
   void (*flush)(void);
@@ -41,9 +35,6 @@ typedef struct grpc_iomgr_platform_vtable {
   bool (*add_closure_to_background_poller)(grpc_closure* closure,
                                            grpc_error_handle error);
 } grpc_iomgr_platform_vtable;
-
-void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name);
-void grpc_iomgr_unregister_object(grpc_iomgr_object* obj);
 
 bool grpc_have_determined_iomgr_platform();
 
@@ -68,7 +59,5 @@ bool grpc_iomgr_platform_is_any_background_poller_thread(void);
  * closure should not be blocking or long-running. */
 bool grpc_iomgr_platform_add_closure_to_background_poller(
     grpc_closure* closure, grpc_error_handle error);
-
-bool grpc_iomgr_abort_on_leaks(void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H */

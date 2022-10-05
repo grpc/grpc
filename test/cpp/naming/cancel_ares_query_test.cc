@@ -264,7 +264,6 @@ TEST_F(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   // requires a trip through the polling loop to schedule the callback.
   // So we need to do extra polling work on Windows to free things up.
   MaybePollArbitraryPollsetTwice();
-  EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }
 

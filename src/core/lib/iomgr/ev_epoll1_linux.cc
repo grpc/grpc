@@ -151,8 +151,6 @@ struct grpc_fd {
 
   struct grpc_fd* freelist_next;
 
-  grpc_iomgr_object iomgr_object;
-
   /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
 };
@@ -351,7 +349,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   new_fd->freelist_next = nullptr;
 
   std::string fd_name = absl::StrCat(name, " fd=", fd);
-  grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name.c_str());
   fork_fd_list_add_grpc_fd(new_fd);
 #ifndef NDEBUG
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
@@ -425,7 +422,6 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
 
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 
-  grpc_iomgr_unregister_object(&fd->iomgr_object);
   fork_fd_list_remove_grpc_fd(fd);
   fd->read_closure->DestroyEvent();
   fd->write_closure->DestroyEvent();
