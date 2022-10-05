@@ -2448,23 +2448,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_threaded_executor",
-    srcs = [
-        "src/core/lib/event_engine/executor/threaded_executor.cc",
-    ],
-    hdrs = [
-        "src/core/lib/event_engine/executor/threaded_executor.h",
-    ],
-    external_deps = ["absl/functional:any_invocable"],
-    deps = [
-        "event_engine_base_hdrs",
-        "event_engine_executor",
-        "event_engine_thread_pool",
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "common_event_engine_closures",
     hdrs = ["src/core/lib/event_engine/common_closures.h"],
     external_deps = ["absl/functional:any_invocable"],
@@ -2509,8 +2492,12 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
+        "event_engine_base_hdrs",
+        "event_engine_executor",
         "forkable",
         "gpr",
+        "time",
+        "useful",
     ],
 )
 
@@ -2886,7 +2873,7 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
-        "event_engine_threaded_executor",
+        "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "gpr",
@@ -2908,7 +2895,7 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
-        "event_engine_threaded_executor",
+        "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "gpr",

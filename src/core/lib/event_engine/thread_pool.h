@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <atomic>
 #include <memory>
 #include <queue>
@@ -28,19 +30,25 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/cpu.h>
+
+#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class ThreadPool final : public grpc_event_engine::experimental::Forkable {
+class ThreadPool final : public Forkable, public Executor {
  public:
-  explicit ThreadPool(int reserve_threads);
+  ThreadPool();
   // Ensures the thread pool is empty before destroying it.
   ~ThreadPool() override;
 
-  void Add(absl::AnyInvocable<void()> callback);
+  void Run(absl::AnyInvocable<void()> callback) override;
+  void Run(EventEngine::Closure* closure) override;
 
   // Forkable
   // Ensures that the thread pool is empty before forking.
@@ -53,7 +61,8 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
  private:
   class Queue {
    public:
-    explicit Queue(int reserve_threads) : reserve_threads_(reserve_threads) {}
+    explicit Queue(unsigned reserve_threads)
+        : reserve_threads_(reserve_threads) {}
     bool Step();
     void SetShutdown() { SetState(State::kShutdown); }
     void SetForking() { SetState(State::kForking); }
@@ -61,6 +70,8 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     // Return true if we should also spin up a new thread.
     bool Add(absl::AnyInvocable<void()> callback);
     void Reset() { SetState(State::kRunning); }
+    bool IsBacklogged();
+    void SleepIfRunning();
 
    private:
     enum class State { kRunning, kShutdown, kForking };
@@ -70,8 +81,8 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_;
     std::queue<absl::AnyInvocable<void()>> callbacks_ ABSL_GUARDED_BY(mu_);
-    int threads_waiting_ ABSL_GUARDED_BY(mu_) = 0;
-    const int reserve_threads_;
+    unsigned threads_waiting_ ABSL_GUARDED_BY(mu_) = 0;
+    const unsigned reserve_threads_;
     State state_ ABSL_GUARDED_BY(mu_) = State::kRunning;
   };
 
@@ -94,19 +105,27 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     // After pool creation we use this to rate limit creation of threads to one
     // at a time.
     std::atomic<bool> currently_starting_one_thread{false};
+    std::atomic<uint64_t> last_started_thread{0};
   };
 
   using StatePtr = std::shared_ptr<State>;
+
+  enum class StartThreadReason {
+    kInitialPool,
+    kNoWaitersWhenScheduling,
+    kNoWaitersWhenFinishedStarting,
+  };
 
   static void ThreadFunc(StatePtr state);
   // Start a new thread; throttled indicates whether the State::starting_thread
   // variable is being used to throttle this threads creation against others or
   // not: at thread pool startup we start several threads concurrently, but
   // after that we only start one at a time.
-  static void StartThread(StatePtr state, bool throttled);
+  static void StartThread(StatePtr state, StartThreadReason reason);
   void Postfork();
 
-  const int reserve_threads_;
+  const unsigned reserve_threads_ =
+      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
   const StatePtr state_ = std::make_shared<State>(reserve_threads_);
 
   // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
