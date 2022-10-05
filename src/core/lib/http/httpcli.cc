@@ -27,7 +27,6 @@
 
 #include "absl/functional/bind_front.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -43,7 +42,6 @@
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/api.h"
