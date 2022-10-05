@@ -193,7 +193,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Default values for locality fields.
   static const char kDefaultLocalityRegion[];
   static const char kDefaultLocalityZone[];
-  static const int kDefaultLocalityWeight = 3;
+  static const uint32_t kDefaultLocalityWeight = 3;
   static const int kDefaultLocalityPriority = 0;
 
   // Default resource names.
@@ -582,7 +582,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // A locality.
     struct Locality {
       Locality(std::string sub_zone, std::vector<Endpoint> endpoints,
-               int lb_weight = kDefaultLocalityWeight,
+               uint32_t lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority)
           : sub_zone(std::move(sub_zone)),
             endpoints(std::move(endpoints)),
@@ -591,7 +591,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
       const std::string sub_zone;
       std::vector<Endpoint> endpoints;
-      int lb_weight;
+      uint32_t lb_weight;
       int priority;
     };
 

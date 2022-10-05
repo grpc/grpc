@@ -697,6 +697,44 @@ TEST_P(EdsTest, WeightedRoundRobin) {
               ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
 }
 
+// Tests that we don't suffer from integer overflow in locality weights.
+TEST_P(EdsTest, NoIntegerOverflowInLocalityWeights) {
+  CreateAndStartBackends(2);
+  const uint32_t kLocalityWeight0 = std::numeric_limits<uint32_t>::max();
+  const uint32_t kLocalityWeight1 = kLocalityWeight0 / 2;
+  const uint64_t kTotalLocalityWeight =
+      static_cast<uint64_t>(kLocalityWeight0) +
+      static_cast<uint64_t>(kLocalityWeight1);
+  const double kLocalityWeightRate0 =
+      static_cast<double>(kLocalityWeight0) / kTotalLocalityWeight;
+  const double kLocalityWeightRate1 =
+      static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kLocalityWeightRate0, kErrorTolerance);
+  // ADS response contains 2 localities, each of which contains 1 backend.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1), kLocalityWeight0},
+      {"locality1", CreateEndpointsForBackends(1, 2), kLocalityWeight1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait for both backends to be ready.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
+  // The locality picking rates should be roughly equal to the expectation.
+  const double locality_picked_rate_0 =
+      static_cast<double>(backends_[0]->backend_service()->request_count()) /
+      kNumRpcs;
+  const double locality_picked_rate_1 =
+      static_cast<double>(backends_[1]->backend_service()->request_count()) /
+      kNumRpcs;
+  EXPECT_THAT(locality_picked_rate_0,
+              ::testing::DoubleNear(kLocalityWeightRate0, kErrorTolerance));
+  EXPECT_THAT(locality_picked_rate_1,
+              ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
+}
+
 // Tests that we correctly handle a locality containing no endpoints.
 TEST_P(EdsTest, LocalityContainingNoEndpoints) {
   CreateAndStartBackends(2);
