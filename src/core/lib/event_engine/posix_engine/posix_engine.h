@@ -55,7 +55,7 @@ namespace experimental {
 class AsyncConnect {
  public:
   AsyncConnect(EventEngine::OnConnectCallback on_connect,
-               std::shared_ptr<EventEngine> engine, ThreadedExecutor* executor,
+               std::shared_ptr<EventEngine> engine, ThreadPool* executor,
                grpc_event_engine::posix_engine::EventHandle* fd,
                MemoryAllocator&& allocator,
                const grpc_event_engine::posix_engine::PosixTcpOptions& options,
@@ -82,7 +82,7 @@ class AsyncConnect {
   grpc_event_engine::posix_engine::PosixEngineClosure* on_writable_ = nullptr;
   EventEngine::OnConnectCallback on_connect_;
   std::shared_ptr<EventEngine> engine_;
-  ThreadedExecutor* executor_;
+  ThreadPool* executor_;
   EventEngine::TaskHandle alarm_handle_;
   int refs_{2};
   grpc_event_engine::posix_engine::EventHandle* fd_;
