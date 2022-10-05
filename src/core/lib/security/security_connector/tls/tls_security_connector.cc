@@ -503,7 +503,7 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
   }
   grpc_error_handle error;
   if (!status.ok()) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error = GRPC_ERROR_CREATE(
         absl::StrCat("Custom verification check failed with error: ",
                      status.ToString())
             .c_str());
@@ -777,7 +777,7 @@ void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
   }
   grpc_error_handle error;
   if (!status.ok()) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error = GRPC_ERROR_CREATE(
         absl::StrCat("Custom verification check failed with error: ",
                      status.ToString())
             .c_str());

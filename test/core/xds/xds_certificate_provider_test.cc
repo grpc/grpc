@@ -142,11 +142,9 @@ TEST(
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for both root and identity
   root_cert_distributor->SetErrorForCert(
-      "root", GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      absl::nullopt);
+      "root", GRPC_ERROR_CREATE(kRootErrorMessage), absl::nullopt);
   identity_cert_distributor->SetErrorForCert(
-      "identity", absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+      "identity", absl::nullopt, GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
@@ -210,11 +208,9 @@ TEST(XdsCertificateProviderTest,
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for both root and identity
   root_cert_distributor->SetErrorForCert(
-      "test", GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      absl::nullopt);
+      "test", GRPC_ERROR_CREATE(kRootErrorMessage), absl::nullopt);
   identity_cert_distributor->SetErrorForCert(
-      "test", absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+      "test", absl::nullopt, GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
@@ -276,17 +272,16 @@ TEST(XdsCertificateProviderTest,
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for root
-  distributor->SetErrorForCert(
-      "root", GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage));
+  distributor->SetErrorForCert("root", GRPC_ERROR_CREATE(kRootErrorMessage),
+                               GRPC_ERROR_CREATE(kRootErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
               ::testing::HasSubstr(kRootErrorMessage));
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
-  distributor->SetErrorForCert(
-      "identity", GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage),
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  distributor->SetErrorForCert("identity",
+                               GRPC_ERROR_CREATE(kIdentityErrorMessage),
+                               GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
@@ -340,18 +335,16 @@ TEST(XdsCertificateProviderTest,
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for root
-  distributor->SetErrorForCert(
-      "", GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      absl::nullopt);
+  distributor->SetErrorForCert("", GRPC_ERROR_CREATE(kRootErrorMessage),
+                               absl::nullopt);
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
               ::testing::HasSubstr(kRootErrorMessage));
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for identity
-  distributor->SetErrorForCert(
-      "", absl::nullopt,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  distributor->SetErrorForCert("", absl::nullopt,
+                               GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
@@ -412,9 +405,8 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for both root and identity
-  distributor->SetErrorForCert(
-      "", GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
+  distributor->SetErrorForCert("", GRPC_ERROR_CREATE(kRootErrorMessage),
+                               GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_std_string(watcher->root_cert_error()),
