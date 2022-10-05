@@ -2843,11 +2843,13 @@ grpc_cc_library(
         "absl/cleanup",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",
         "gpr",
+        "iomgr_port",
         "posix_event_engine_tcp_socket_utils",
         "status_helper",
     ],

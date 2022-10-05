@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2022 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -34,44 +32,50 @@
 namespace grpc_event_engine {
 namespace posix_engine {
 
-struct ListenerSocket {
-  // Listener socket fd
-  PosixSocketWrapper sock;
-  // Assigned/chosen listening port
-  int port;
-  // Socket configuration
-  bool zero_copy_enabled;
-  // Address at which the socket is listening for connections
-  grpc_event_engine::experimental::EventEngine::ResolvedAddress addr;
-  // Dual stack mode.
-  PosixSocketWrapper::DSMode dsmode;
-};
-
+// This interface exists to allow different Event Engines to implement different
+// custom interception operations while a socket is Appended/Erased. The
+// listener util functions are defined over this interface and thus can be
+// shared across multiple event engines.
 class ListenerSocketsContainer {
  public:
+  struct ListenerSocket {
+    // Listener socket fd
+    PosixSocketWrapper sock;
+    // Assigned/chosen listening port
+    int port;
+    // Socket configuration
+    bool zero_copy_enabled;
+    // Address at which the socket is listening for connections
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress addr;
+    // Dual stack mode.
+    PosixSocketWrapper::DSMode dsmode;
+  };
   // Adds a socket to the internal db of sockets associated with a listener.
-  virtual void AddSocket(ListenerSocket socket) = 0;
+  virtual void Append(ListenerSocket socket) = 0;
 
-  virtual absl::StatusOr<ListenerSocket> FindSocket(
+  // Returns a non-OK status if the socket cannot be found. Otherwise, returns
+  // the socket.
+  virtual absl::StatusOr<ListenerSocket> Find(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
           addr) = 0;
   // Remove and close socket from the internal db of sockets associated with
   // a listener.
-  virtual void RemoveSocket(int fd) = 0;
+  virtual void Erase(int fd) = 0;
 };
 
 // If successful, add a socket to ListenerSocketsContainer for \a addr, set \a
 // dsmode for the socket, and return the error handle and listening port
 // assigned for the socket.
-absl::StatusOr<ListenerSocket> ListenerAddAddress(
-    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
+absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
+CreateAndPrepareListenerSocket(
+    const PosixTcpOptions& options,
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr);
 
 // Instead of creating and adding a socket bound to specific address, this
 // function creates and adds a socket bound to the wildcard address on the
 // server. Returns the port at which the created socket listens for incoming
 // connections.
-absl::StatusOr<int> AddWildCardAddrsToListener(
+absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
 
@@ -79,7 +83,7 @@ absl::StatusOr<int> AddWildCardAddrsToListener(
 // socket for each. requested_port is the port to use for every socket, or 0 to
 // select one random port that will be used for every socket. Return
 // assigned_port.
-absl::StatusOr<int> ListenerAddAllLocalAddresses(
+absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
 

@@ -33,42 +33,46 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
-#include <errno.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <string.h>
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
+#include <ifaddrs.h>
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "test/core/util/port.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
 
 namespace {
 
+using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+
 class TestListenerSocketsContainer : public ListenerSocketsContainer {
  public:
-  // Adds a socket to the internal db of sockets associated with a listener.
-  void AddSocket(ListenerSocket socket) override { sockets_.push_back(socket); }
+  void Append(ListenerSocket socket) override { sockets_.push_back(socket); }
 
-  absl::StatusOr<ListenerSocket> FindSocket(
-      const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-      /*addr*/) {
-    GPR_ASSERT(false && "unimplemented");
+  absl::StatusOr<ListenerSocket> Find(
+      const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr)
+      override {
+    for (auto socket = sockets_.begin(); socket != sockets_.end(); ++socket) {
+      if (socket->addr.size() == addr.size() &&
+          memcmp(socket->addr.address(), addr.address(), addr.size()) == 0) {
+        return *socket;
+      }
+    }
+    return absl::NotFoundError("Socket not found!");
   }
 
-  // Remove and close socket from the internal db of sockets associated with
-  // a listener.
-  void RemoveSocket(int /*fd*/) { GPR_ASSERT(false && "unimplemented"); }
+  void Erase(int /*fd*/) override { GPR_ASSERT(false && "unimplemented"); }
 
-  const std::list<ListenerSocket>& Sockets() { return sockets_; }
+  int Size() { return static_cast<int>(sockets_.size()); }
+
+  std::list<ListenerSocket>::const_iterator begin() { return sockets_.begin(); }
+  std::list<ListenerSocket>::const_iterator end() { return sockets_.end(); }
 
  private:
   std::list<ListenerSocket> sockets_;
@@ -76,23 +80,76 @@ class TestListenerSocketsContainer : public ListenerSocketsContainer {
 
 }  // namespace
 
-TEST(PosixEngineListenerUtils, SockAddrPortTest) {
-  EventEngine::ResolvedAddress wild6 = SockaddrMakeWild6(20);
-  EventEngine::ResolvedAddress wild4 = SockaddrMakeWild4(20);
-  // Verify the string description matches the expected wildcard address with
-  // correct port number.
-  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:20");
-  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:20");
-  // Update the port values.
-  ASSERT_TRUE(SockaddrSetPort(wild4, 21));
-  ASSERT_TRUE(SockaddrSetPort(wild6, 22));
-  // Read back the port values.
-  EXPECT_EQ(SockaddrGetPort(wild4), 21);
-  EXPECT_EQ(SockaddrGetPort(wild6), 22);
-  // Ensure the string description reflects the updated port values.
-  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:21");
-  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:22");
+TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
+  TestListenerSocketsContainer listener_sockets;
+  int port = grpc_pick_unused_port_or_die();
+  ChannelArgsEndpointConfig config;
+  auto result = ListenerContainerAddWildcardAddresses(
+      listener_sockets, TcpOptionsFromEndpointConfig(config), port);
+  EXPECT_TRUE(result.ok());
+  EXPECT_GT(*result, 0);
+  port = *result;
+  EXPECT_GE(listener_sockets.Size(), 1);
+  EXPECT_LE(listener_sockets.Size(), 2);
+  for (auto socket = listener_sockets.begin(); socket != listener_sockets.end();
+       ++socket) {
+    ASSERT_TRUE((*socket).addr.address()->sa_family == AF_INET6 ||
+                (*socket).addr.address()->sa_family == AF_INET);
+    if ((*socket).addr.address()->sa_family == AF_INET6) {
+      EXPECT_EQ(SockaddrToString(&(*socket).addr, true).value(),
+                absl::StrCat("[::]:", std::to_string(port)));
+    } else if ((*socket).addr.address()->sa_family == AF_INET) {
+      EXPECT_EQ(SockaddrToString(&(*socket).addr, true).value(),
+                absl::StrCat("0.0.0.0:", std::to_string(port)));
+    }
+    close(socket->sock.Fd());
+  }
 }
+
+#ifdef GRPC_HAVE_IFADDRS
+TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
+  TestListenerSocketsContainer listener_sockets;
+  int port = grpc_pick_unused_port_or_die();
+  ChannelArgsEndpointConfig config;
+  struct ifaddrs* ifa = nullptr;
+  struct ifaddrs* ifa_it;
+  if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
+    // No ifaddresses available.
+    gpr_log(GPR_INFO,
+            "Skipping ListenerAddAllLocalAddressesTest because the machine "
+            "does not have interfaces configured for listening.");
+    return;
+  }
+  int num_ifaddrs = 0;
+  for (ifa_it = ifa; ifa_it != nullptr; ifa_it = ifa_it->ifa_next) {
+    ++num_ifaddrs;
+  }
+  freeifaddrs(ifa);
+  auto result = ListenerContainerAddAllLocalAddresses(
+      listener_sockets, TcpOptionsFromEndpointConfig(config), port);
+  if (num_ifaddrs == 0 || !result.ok()) {
+    // Its possible that the machine may not have any Ipv4/Ipv6 interfaces
+    // configured for listening. In that case, dont fail test.
+    gpr_log(GPR_INFO,
+            "Skipping ListenerAddAllLocalAddressesTest because the machine "
+            "does not have Ipv6/Ipv6 interfaces configured for listening.");
+    return;
+  }
+  // Some sockets have been created and bound to interfaces on the machiene.
+  // Verify that they are listening on the correct port.
+  EXPECT_GT(*result, 0);
+  port = *result;
+  EXPECT_GE(listener_sockets.Size(), 1);
+  EXPECT_LE(listener_sockets.Size(), num_ifaddrs);
+  for (auto socket = listener_sockets.begin(); socket != listener_sockets.end();
+       ++socket) {
+    ASSERT_TRUE((*socket).addr.address()->sa_family == AF_INET6 ||
+                (*socket).addr.address()->sa_family == AF_INET);
+    EXPECT_EQ(SockaddrGetPort((*socket).addr), port);
+    close(socket->sock.Fd());
+  }
+}
+#endif  // GRPC_HAVE_IFADDRS
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

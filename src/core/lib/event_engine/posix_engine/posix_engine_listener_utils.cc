@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 
-#include <ifaddrs.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #include <cstring>
@@ -26,16 +26,27 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/port.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#include <ifaddrs.h>
+#include <sys/socket.h>
+
+#include "absl/strings/str_cat.h"
+#endif
+
 namespace grpc_event_engine {
 namespace posix_engine {
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 namespace {
 
 using ResolvedAddress =
     ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
 
 #ifdef GRPC_HAVE_IFADDRS
 
@@ -123,9 +134,9 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   bool close_fd = true;
   socket.zero_copy_enabled = false;
   socket.port = 0;
-  auto sock_cleanup = absl::MakeCleanup([&close_fd, &socket]() -> void {
-    if (close_fd and socket.sock.Fd() >= 0) {
-      close(socket.sock.Fd());
+  auto sock_cleanup = absl::MakeCleanup([&close_fd, fd]() -> void {
+    if (close_fd && fd >= 0) {
+      close(fd);
     }
   });
   if (PosixSocketWrapper::IsSocketReusePortSupported() &&
@@ -177,19 +188,10 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   return absl::OkStatus();
 }
 
-absl::Status AddSocketToListener(ListenerSocketsContainer& listener_sockets,
-                                 const PosixTcpOptions& options,
-                                 ListenerSocket& socket) {
-  GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket));
-  GPR_ASSERT(socket.port > 0);
-  listener_sockets.AddSocket(socket);
-  return absl::OkStatus();
-}
 }  // namespace
 
-absl::StatusOr<ListenerSocket> ListenerAddAddress(
-    ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
-    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr) {
+absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
+    const PosixTcpOptions& options, const ResolvedAddress& addr) {
   ResolvedAddress addr4_copy;
   ListenerSocket socket;
   auto result = PosixSocketWrapper::CreateDualStackSocket(
@@ -205,11 +207,12 @@ absl::StatusOr<ListenerSocket> ListenerAddAddress(
     socket.addr = addr;
   }
 
-  GRPC_RETURN_IF_ERROR(AddSocketToListener(listener_sockets, options, socket));
+  GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket));
+  GPR_ASSERT(socket.port > 0);
   return socket;
 }
 
-absl::StatusOr<int> ListenerAddAllLocalAddresses(
+absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
 #ifdef GRPC_HAVE_IFADDRS
@@ -234,7 +237,6 @@ absl::StatusOr<int> ListenerAddAllLocalAddresses(
   }
   for (ifa_it = ifa; ifa_it != nullptr; ifa_it = ifa_it->ifa_next) {
     ResolvedAddress addr;
-    PosixSocketWrapper::DSMode dsmode;
     socklen_t len;
     const char* ifa_name = (ifa_it->ifa_name ? ifa_it->ifa_name : "<unknown>");
     if (ifa_it->ifa_addr == nullptr) {
@@ -258,18 +260,19 @@ absl::StatusOr<int> ListenerAddAllLocalAddresses(
             ifa_name, ifa_it->ifa_flags, addr_str.c_str());
     // We could have multiple interfaces with the same address (e.g., bonding),
     // so look for duplicates.
-    if (listener_sockets.FindSocket(addr).ok()) {
+    if (listener_sockets.Find(addr).ok()) {
       gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
               addr_str.c_str(), ifa_name);
       continue;
     }
-    auto result = ListenerAddAddress(listener_sockets, options, addr);
+    auto result = CreateAndPrepareListenerSocket(options, addr);
     if (!result.ok()) {
       status = absl::InternalError(
           absl::StrCat("Failed to add listener: ", addr_str,
                        " due to error: ", result.status().message()));
       break;
     } else {
+      listener_sockets.Append(*result);
       assigned_port = result->port;
       no_local_addresses = false;
     }
@@ -287,34 +290,38 @@ absl::StatusOr<int> ListenerAddAllLocalAddresses(
 #endif
 }
 
-absl::StatusOr<int> AddWildCardAddrsToListener(
+absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
   ResolvedAddress wild4 = SockaddrMakeWild4(requested_port);
   ResolvedAddress wild6 = SockaddrMakeWild6(requested_port);
-  PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<ListenerSocket> v6_sock = absl::OkStatus();
-  absl::StatusOr<ListenerSocket> v4_sock = absl::OkStatus();
+  absl::StatusOr<ListenerSocket> v6_sock;
+  absl::StatusOr<ListenerSocket> v4_sock;
   int assigned_port = 0;
 
   if (SystemHasIfAddrs() && options.expand_wildcard_addrs) {
-    return ListenerAddAllLocalAddresses(listener_sockets, options,
-                                        requested_port);
+    return ListenerContainerAddAllLocalAddresses(listener_sockets, options,
+                                                 requested_port);
   }
 
   // Try listening on IPv6 first.
-  v6_sock = ListenerAddAddress(listener_sockets, options, wild6);
+  v6_sock = CreateAndPrepareListenerSocket(options, wild6);
   if (v6_sock.ok()) {
+    listener_sockets.Append(*v6_sock);
+    requested_port = v6_sock->port;
+    assigned_port = v6_sock->port;
     if (v6_sock->dsmode == PosixSocketWrapper::DSMODE_DUALSTACK ||
         v6_sock->dsmode == PosixSocketWrapper::DSMODE_IPV4) {
       return v6_sock->port;
     }
-    requested_port = v6_sock->port;
-    assigned_port = v6_sock->port;
   }
   // If we got a v6-only socket or nothing, try adding 0.0.0.0.
   SockaddrSetPort(wild4, requested_port);
-  v4_sock = ListenerAddAddress(listener_sockets, options, wild4);
+  v4_sock = CreateAndPrepareListenerSocket(options, wild4);
+  if (v4_sock.ok()) {
+    assigned_port = v4_sock->port;
+    listener_sockets.Append(*v4_sock);
+  }
   if (assigned_port > 0) {
     if (!v6_sock.ok()) {
       gpr_log(
@@ -337,6 +344,33 @@ absl::StatusOr<int> AddWildCardAddrsToListener(
         v4_sock.status().message()));
   }
 }
+
+#else  // GRPC_POSIX_SOCKET_UTILS_COMMON
+
+absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
+    const PosixTcpOptions& /*options*/,
+    const grpc_event_engine::experimental::EventEngine::
+        ResolvedAddress& /*addr*/) {
+  GPR_ASSERT(
+      false &&
+      "CreateAndPrepareListenerSocket is not supported on this platform");
+}
+
+absl::StatusOr<int> ListenerAddWildcardAddresses(
+    ListenerSocketsContainer& /*listener_sockets*/,
+    const PosixTcpOptions& /*options*/, int /*requested_port*/) {
+  GPR_ASSERT(false &&
+             "ListenerAddWildcardAddresses is not supported on this platform");
+}
+
+absl::StatusOr<int> ListenerAddAllLocalAddresses(
+    ListenerSocketsContainer& /*listener_sockets*/,
+    const PosixTcpOptions& /*options*/, int /*requested_port*/) {
+  GPR_ASSERT(false &&
+             "ListenerAddAllLocalAddresses is not supported on this platform");
+}
+
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
