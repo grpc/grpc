@@ -85,9 +85,6 @@ typedef struct grpc_winsocket {
   /* You can't add the same socket twice to the same IO Completion Port.
      This prevents that. */
   int added_to_iocp;
-
-  /* A label for iomgr to track outstanding objects */
-  grpc_iomgr_object iomgr_object;
 } grpc_winsocket;
 
 /* Create a wrapped windows handle. This takes ownership of it, meaning that
