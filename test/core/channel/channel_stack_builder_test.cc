@@ -21,17 +21,20 @@
 #include <limits.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include <algorithm>
 
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/util/test_config.h"
 
@@ -41,12 +44,12 @@ namespace {
 
 grpc_error_handle ChannelInitFunc(grpc_channel_element* /*elem*/,
                                   grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle CallInitFunc(grpc_call_element* /*elem*/,
                                const grpc_call_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void ChannelDestroyFunc(grpc_channel_element* /*elem*/) {}

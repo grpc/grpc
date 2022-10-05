@@ -18,15 +18,10 @@
 
 #include "src/core/lib/gprpp/env.h"
 
-#include <stdio.h>
-#include <string.h>
+#include "gtest/gtest.h"
 
-#include <gtest/gtest.h>
-
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)

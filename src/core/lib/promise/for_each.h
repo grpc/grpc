@@ -101,6 +101,7 @@ class ForEach {
       if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         if (p->has_value()) {
           auto action = self->action_factory_.Repeated(std::move(**p));
+          p->reset();
           return CallPoll<true>{self}(action);
         } else {
           return Done<Result>::Make();

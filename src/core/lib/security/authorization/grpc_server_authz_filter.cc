@@ -32,6 +32,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {

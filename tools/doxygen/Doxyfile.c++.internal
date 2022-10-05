@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.50.0-dev
+PROJECT_NUMBER         = 1.51.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1999,8 +1999,6 @@ src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \
-src/core/lib/gpr/murmur_hash.cc \
-src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
 src/core/lib/gpr/string.cc \
 src/core/lib/gpr/string.h \
@@ -2016,7 +2014,6 @@ src/core/lib/gpr/time_posix.cc \
 src/core/lib/gpr/time_precise.cc \
 src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
-src/core/lib/gpr/tls.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \
@@ -2065,6 +2062,8 @@ src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
 src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
+src/core/lib/gprpp/strerror.cc \
+src/core/lib/gprpp/strerror.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/table.h \
 src/core/lib/gprpp/tchar.cc \
@@ -2257,6 +2256,7 @@ src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
+src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
@@ -2414,14 +2414,10 @@ src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \
 src/core/lib/slice/slice.h \
-src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
 src/core/lib/slice/slice_buffer.h \
-src/core/lib/slice/slice_buffer_api.cc \
 src/core/lib/slice/slice_internal.h \
-src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
-src/core/lib/slice/slice_refcount_base.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/api_trace.cc \
@@ -2435,6 +2431,8 @@ src/core/lib/surface/call.h \
 src/core/lib/surface/call_details.cc \
 src/core/lib/surface/call_log_batch.cc \
 src/core/lib/surface/call_test_only.h \
+src/core/lib/surface/call_trace.cc \
+src/core/lib/surface/call_trace.h \
 src/core/lib/surface/channel.cc \
 src/core/lib/surface/channel.h \
 src/core/lib/surface/channel_init.cc \
@@ -2462,6 +2460,8 @@ src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
+src/core/lib/transport/call_fragments.cc \
+src/core/lib/transport/call_fragments.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \
@@ -2587,7 +2587,6 @@ src/cpp/common/version_cc.cc \
 src/cpp/server/async_generic_service.cc \
 src/cpp/server/channel_argument_option.cc \
 src/cpp/server/create_default_thread_pool.cc \
-src/cpp/server/dynamic_thread_pool.cc \
 src/cpp/server/dynamic_thread_pool.h \
 src/cpp/server/external_connection_acceptor_impl.cc \
 src/cpp/server/external_connection_acceptor_impl.h \

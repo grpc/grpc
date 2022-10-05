@@ -33,12 +33,20 @@ namespace grpc_core {
 static auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
+TEST(ArenaPromiseTest, DefaultInitializationYieldsNoValue) {
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  TestContext<Arena> context(arena.get());
+  ArenaPromise<int> p;
+  EXPECT_FALSE(p.has_value());
+}
+
 TEST(ArenaPromiseTest, AllocatedWorks) {
   ExecCtx exec_ctx;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   TestContext<Arena> context(arena.get());
   int x = 42;
   ArenaPromise<int> p([x] { return Poll<int>(x); });
+  EXPECT_TRUE(p.has_value());
   EXPECT_EQ(p(), Poll<int>(42));
   p = ArenaPromise<int>([] { return Poll<int>(43); });
   EXPECT_EQ(p(), Poll<int>(43));

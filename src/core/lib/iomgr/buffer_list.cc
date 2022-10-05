@@ -254,7 +254,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
           /* Got all timestamps. Do the callback and free this TracedBuffer.
            * The thing below can be passed by value if we don't want the
            * restriction on the lifetime. */
-          timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
+          timestamps_callback(elem->arg_, &(elem->ts_), absl::OkStatus());
           next = elem->next_;
           delete static_cast<TracedBuffer*>(elem);
           *head = elem = next;
@@ -282,7 +282,6 @@ void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
   if (remaining != nullptr) {
     timestamps_callback(remaining, nullptr, shutdown_err);
   }
-  GRPC_ERROR_UNREF(shutdown_err);
 }
 
 void grpc_tcp_set_write_timestamps_callback(

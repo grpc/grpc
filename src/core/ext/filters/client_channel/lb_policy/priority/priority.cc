@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -421,7 +420,7 @@ void PriorityLb::ChoosePriorityLocked() {
         absl::UnavailableError("priority policy has empty priority list");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     return;
   }
   // Iterate through priorities, searching for one in READY or IDLE,
@@ -566,14 +565,13 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<DeactivationTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
@@ -585,7 +583,6 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
     child_priority_->priority_policy_->DeleteChild(child_priority_.get());
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -630,14 +627,13 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
 void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<FailoverTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
@@ -652,7 +648,6 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
         nullptr);
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -691,10 +686,10 @@ void PriorityLb::ChildPriority::Orphan() {
 std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>
 PriorityLb::ChildPriority::GetPicker() {
   if (picker_wrapper_ == nullptr) {
-    return absl::make_unique<QueuePicker>(
+    return std::make_unique<QueuePicker>(
         priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"));
   }
-  return absl::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
+  return std::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
 }
 
 absl::Status PriorityLb::ChildPriority::UpdateLocked(
@@ -735,7 +730,7 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(const ChannelArgs& args) {
   lb_policy_args.work_serializer = priority_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_priority_trace);
@@ -948,7 +943,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<PriorityLbFactory>());
+      std::make_unique<PriorityLbFactory>());
 }
 
 }  // namespace grpc_core

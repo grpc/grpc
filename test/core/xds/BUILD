@@ -154,3 +154,19 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "xds_endpoint_resource_type_test",
+    srcs = ["xds_endpoint_resource_type_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_xds_client",
+        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//test/core/util:grpc_test_util",
+    ],
+)

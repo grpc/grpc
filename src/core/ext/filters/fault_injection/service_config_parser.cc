@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -45,7 +44,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
         fault_injection_policy;
     std::vector<grpc_error_handle> sub_error_list;
     if (policies_json_array[i].type() != Json::Type::OBJECT) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      error_list->push_back(GRPC_ERROR_CREATE(absl::StrCat(
           "faultInjectionPolicy index ", i, " is not a JSON object")));
       continue;
     }
@@ -56,7 +55,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
                              &sub_error_list, false)) {
       if (!grpc_status_code_from_string(abort_code_string.c_str(),
                                         &(fault_injection_policy.abort_code))) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        sub_error_list.push_back(GRPC_ERROR_CREATE(
             "field:abortCode error:failed to parse status code"));
       }
     }
@@ -86,7 +85,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       if (fault_injection_policy.abort_percentage_denominator != 100 &&
           fault_injection_policy.abort_percentage_denominator != 10000 &&
           fault_injection_policy.abort_percentage_denominator != 1000000) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        sub_error_list.push_back(GRPC_ERROR_CREATE(
             "field:abortPercentageDenominator error:Denominator can only be "
             "one of "
             "100, 10000, 1000000"));
@@ -116,7 +115,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       if (fault_injection_policy.delay_percentage_denominator != 100 &&
           fault_injection_policy.delay_percentage_denominator != 10000 &&
           fault_injection_policy.delay_percentage_denominator != 1000000) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        sub_error_list.push_back(GRPC_ERROR_CREATE(
             "field:delayPercentageDenominator error:Denominator can only be "
             "one of "
             "100, 10000, 1000000"));
@@ -130,7 +129,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
                          &fault_injection_policy.max_faults, &sub_error_list,
                          false);
     if (!sub_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
           absl::StrCat("failed to parse faultInjectionPolicy index ", i),
           &sub_error_list));
     }
@@ -165,18 +164,17 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing fault injection method parameters: ",
                      grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   if (fault_injection_policies.empty()) return nullptr;
-  return absl::make_unique<FaultInjectionMethodParsedConfig>(
+  return std::make_unique<FaultInjectionMethodParsedConfig>(
       std::move(fault_injection_policies));
 }
 
 void FaultInjectionServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<FaultInjectionServiceConfigParser>());
+      std::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {

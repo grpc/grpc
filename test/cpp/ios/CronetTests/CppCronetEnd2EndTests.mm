@@ -20,8 +20,8 @@
 #import <XCTest/XCTest.h>
 
 #import <grpc/grpc_cronet.h>
+#import <grpcpp/client_context.h>
 #import <grpcpp/create_channel.h>
-#import <grpcpp/impl/codegen/client_context.h>
 #import <grpcpp/resource_quota.h>
 #import <grpcpp/security/cronet_credentials.h>
 #import <grpcpp/server_builder.h>

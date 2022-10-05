@@ -23,7 +23,7 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
@@ -62,7 +62,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
  public:
   ParseTest() {
     grpc_init();
-    parser_ = absl::make_unique<grpc_core::HPackParser>();
+    parser_ = std::make_unique<grpc_core::HPackParser>();
   }
 
   ~ParseTest() override {
@@ -79,7 +79,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
       EXPECT_EQ(parser_->hpack_table()->SetCurrentTableSize(
                     GetParam().table_size.value()),
-                GRPC_ERROR_NONE);
+                absl::OkStatus());
     }
   }
 
@@ -106,7 +106,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     for (i = 0; i < nslices; i++) {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
-      if (!GRPC_ERROR_IS_NONE(err)) {
+      if (!err.ok()) {
         gpr_log(GPR_ERROR, "Unexpected parse error: %s",
                 grpc_error_std_string(err).c_str());
         abort();

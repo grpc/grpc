@@ -343,7 +343,7 @@ static int httpcli_get_google_keys_for_email(
                "/robot/v1/metadata/x509/"
                "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                "gserviceaccount.com");
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -388,7 +388,7 @@ static int httpcli_get_custom_keys_for_email(
   *response = http_response(200, gpr_strdup(good_jwk_set));
   EXPECT_STREQ(host, "keys.bar.com");
   EXPECT_STREQ(path, "/jwk/foo@bar.com");
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -424,7 +424,7 @@ static int httpcli_get_jwk_set(const grpc_http_request* /*request*/,
   *response = http_response(200, gpr_strdup(good_jwk_set));
   EXPECT_STREQ(host, "www.googleapis.com");
   EXPECT_STREQ(path, "/oauth2/v3/certs");
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -439,7 +439,7 @@ static int httpcli_get_openid_config(const grpc_http_request* /*request*/,
   grpc_core::HttpRequest::SetOverride(httpcli_get_jwk_set,
                                       httpcli_post_should_not_be_called,
                                       httpcli_put_should_not_be_called);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -481,7 +481,7 @@ static int httpcli_get_bad_json(const grpc_http_request* /* request */,
                                 grpc_closure* on_done,
                                 grpc_http_response* response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 

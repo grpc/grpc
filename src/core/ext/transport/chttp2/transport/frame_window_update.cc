@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -59,12 +60,12 @@ grpc_slice grpc_chttp2_window_update_create(
 grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
   if (flags || length != 4) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return GRPC_ERROR_CREATE(absl::StrFormat(
         "invalid window update: length=%d, flags=%02x", length, flags));
   }
   parser->byte = 0;
   parser->amount = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_window_update_parser_parse(
@@ -90,7 +91,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     // top bit is reserved and must be ignored.
     uint32_t received_update = p->amount & 0x7fffffffu;
     if (received_update == 0) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return GRPC_ERROR_CREATE(
           absl::StrCat("invalid window update bytes: ", p->amount));
     }
     GPR_ASSERT(is_last);
@@ -117,5 +118,5 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

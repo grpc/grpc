@@ -20,10 +20,12 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
+#include "test/core/util/test_config.h"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {

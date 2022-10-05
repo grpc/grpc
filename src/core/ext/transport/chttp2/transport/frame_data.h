@@ -54,7 +54,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              grpc_slice_buffer* outbuf);
 
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
-    grpc_chttp2_stream* s, uint32_t* min_progress_size,
+    grpc_chttp2_stream* s, int64_t* min_progress_size,
     grpc_core::SliceBuffer* stream_out, uint32_t* message_flags);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */
