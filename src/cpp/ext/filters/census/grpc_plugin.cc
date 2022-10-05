@@ -160,4 +160,20 @@ ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
 
 ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
     "grpc.io/server/started_rpcs";
+
+bool g_open_census_stats_enabled = true;
+bool g_open_census_tracing_enabled = true;
+
+void EnableOpenCensusStats(bool enable) {
+  g_open_census_stats_enabled = enable;
+}
+
+void EnableOpenCensusTracing(bool enable) {
+  g_open_census_tracing_enabled = enable;
+}
+
+bool OpenCensusStatsEnabled() { return g_open_census_stats_enabled; }
+
+bool OpenCensusTracingEnabled() { return g_open_census_tracing_enabled; }
+
 }  // namespace grpc
