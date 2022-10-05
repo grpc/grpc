@@ -735,7 +735,6 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -1449,7 +1448,6 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
@@ -1937,7 +1935,6 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -2292,7 +2289,6 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
@@ -10099,16 +10095,20 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/gprpp/notification.h
+  - src/core/lib/gprpp/time.h
   src:
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/gprpp/time.cc
   - test/core/event_engine/thread_pool_test.cc
   deps:
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
+  - absl/status:statusor
   - gpr
 - name: thread_quota_test
   gtest: true
