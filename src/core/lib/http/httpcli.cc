@@ -81,14 +81,12 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
                      deadline, on_done, response);
     };
   }
-  std::string name =
-      absl::StrFormat("HTTP:GET:%s:%s", uri.authority(), uri.path());
   const grpc_slice request_text = grpc_httpcli_format_get_request(
       request, uri.authority().c_str(), uri.path().c_str());
-  return MakeOrphanable<HttpRequest>(
-      std::move(uri), request_text, response, deadline, channel_args, on_done,
-      pollent, name.c_str(), std::move(test_only_generate_response),
-      std::move(channel_creds));
+  return MakeOrphanable<HttpRequest>(std::move(uri), request_text, response,
+                                     deadline, channel_args, on_done, pollent,
+                                     std::move(test_only_generate_response),
+                                     std::move(channel_creds));
 }
 
 OrphanablePtr<HttpRequest> HttpRequest::Post(
@@ -105,14 +103,12 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
                       response);
     };
   }
-  std::string name =
-      absl::StrFormat("HTTP:POST:%s:%s", uri.authority(), uri.path());
   const grpc_slice request_text = grpc_httpcli_format_post_request(
       request, uri.authority().c_str(), uri.path().c_str());
-  return MakeOrphanable<HttpRequest>(
-      std::move(uri), request_text, response, deadline, channel_args, on_done,
-      pollent, name.c_str(), std::move(test_only_generate_response),
-      std::move(channel_creds));
+  return MakeOrphanable<HttpRequest>(std::move(uri), request_text, response,
+                                     deadline, channel_args, on_done, pollent,
+                                     std::move(test_only_generate_response),
+                                     std::move(channel_creds));
 }
 
 OrphanablePtr<HttpRequest> HttpRequest::Put(
@@ -129,14 +125,12 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
                      response);
     };
   }
-  std::string name =
-      absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
   const grpc_slice request_text = grpc_httpcli_format_put_request(
       request, uri.authority().c_str(), uri.path().c_str());
-  return MakeOrphanable<HttpRequest>(
-      std::move(uri), request_text, response, deadline, channel_args, on_done,
-      pollent, name.c_str(), std::move(test_only_generate_response),
-      std::move(channel_creds));
+  return MakeOrphanable<HttpRequest>(std::move(uri), request_text, response,
+                                     deadline, channel_args, on_done, pollent,
+                                     std::move(test_only_generate_response),
+                                     std::move(channel_creds));
 }
 
 void HttpRequest::SetOverride(grpc_httpcli_get_override get,
@@ -155,7 +149,7 @@ void HttpRequest::TestOnlySetOnHandshakeDoneIntercept(
 HttpRequest::HttpRequest(
     URI uri, const grpc_slice& request_text, grpc_http_response* response,
     Timestamp deadline, const grpc_channel_args* channel_args,
-    grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
+    grpc_closure* on_done, grpc_polling_entity* pollent,
     absl::optional<std::function<void()>> test_only_generate_response,
     RefCountedPtr<grpc_channel_credentials> channel_creds)
     : uri_(std::move(uri)),

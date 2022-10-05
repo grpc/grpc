@@ -163,7 +163,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   HttpRequest(URI uri, const grpc_slice& request_text,
               grpc_http_response* response, Timestamp deadline,
               const grpc_channel_args* channel_args, grpc_closure* on_done,
-              grpc_polling_entity* pollent, const char* name,
+              grpc_polling_entity* pollent,
               absl::optional<std::function<void()>> test_only_generate_response,
               RefCountedPtr<grpc_channel_credentials> channel_creds);
 
