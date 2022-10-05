@@ -189,6 +189,39 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   grpc_slice_unref(details);
 }
 
+class TransportCounter {
+ public:
+  void CounterInitCallback() {
+    grpc_core::MutexLock lock(&mu_);
+    ++num_created_;
+    ++num_live_;
+    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld CounterInitCallback", num_created_, num_live_);
+  }
+
+  void CounterDestructCallback() {
+    grpc_core::MutexLock lock(&mu_);
+    --num_live_;
+    gpr_log(GPR_INFO, "TransportCounter num_created_=%ld num_live_=%ld CounterDestructCallback", num_created_, num_live_);
+  }
+
+  int64 num_live() {
+    absl::MutexLock lock(&mu_);
+    return num_live;
+  }
+
+  size_t num_created() {
+    absl::MutexLock lock(&mu_);
+    return num_created_;
+  }
+
+ private:
+  absl::Mutex mu_;
+  int64 num_live_ ABSL_GUARDED_BY(mu_) = 0;
+  size_t num_created_ ABSL_GUARDED_BY(mu_) = 0;
+};
+
+TransportCounter* g_transport_counter;
+
 void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
   gpr_log(
       GPR_INFO,
@@ -201,33 +234,26 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
                               gpr_time_from_millis(1, GPR_TIMESPAN)),
                  nullptr)
                  .type == GRPC_QUEUE_TIMEOUT);
+  if (g_transport_counter->num_created() < 2) {
+    gpr_log(GPR_ERROR, "g_transport_counter->num_created() == %ld. This means that g_transport_counter isn't working and this test is broken. At least a couple of transport objects should have been created."
+            , g_transport_counter->num_created());
+    GPR_ASSERT(0);
+  }
   gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
   for (;;) {
-    // TODO(apolcyn): grpc_iomgr_count_objects_for_testing() is an internal
-    // and unstable API. Consider a different method of detecting leaks if
-    // it becomes no longer useable. For example, perhaps use
-    // TestOnlySetGlobalHttp2TransportDestructCallback to check whether
-    // transports are still around. Note: the main goal of this test is to
-    // try to repro a chttp2 stream leak, which also holds on to transports
-    // and iomgr objects, so anything that can detect leaks of transports or
-    // sockets should suffice.
-    size_t active_fds = grpc_iomgr_count_objects_for_testing();
-    // We should arrive at exactly one iomgr object for the server's listener
-    // socket, because we haven't destroyed the server yet. This somewhat
-    // relies on iomgr implementation details; see above TODO if that becomes
-    // problematic.
-    if (active_fds == 1) return;
+    // Note: the main goal of this test is to try to repro a chttp2 stream leak,
+    // which also holds on to transports objects.
+    int64 live_transports = g_transport_counter->num_live();
+    if (live_transports == 0) return;
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
       gpr_log(GPR_INFO,
-              "grpc_iomgr_count_objects_for_testing() never returned 1 (only "
-              "the server listen socket should remain). "
+              "g_transport_counter->num_live() never returned 0.
               "It's likely this test has triggered a connection leak.");
       GPR_ASSERT(0);
     }
     gpr_log(GPR_INFO,
-            "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting "
-            "until it reaches 1 (only the server listen socket should remain)",
-            active_fds);
+            "g_transport_counter->num_live() returned %ld, keep waiting "
+            "until it reaches 0", live_transports);
     GPR_ASSERT(grpc_completion_queue_next(
                    cq,
                    gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
@@ -301,6 +327,11 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
+  g_transport_counter = new TransportCounter();
+  grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(
+    std::bind(&TransportCounter::CounterInitCallback, g_transport_counter));
+  grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(
+    std::bind(&TransportCounter::CounterDestructCallback, g_transport_counter));
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
