@@ -74,7 +74,7 @@ grpc_error_handle CensusClientChannelData::Init(
   tracing_enabled_ = grpc_core::ChannelArgs::FromC(args->channel_args)
                          .GetInt(GRPC_ARG_ENABLE_OBSERVABILITY)
                          .value_or(true);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 //

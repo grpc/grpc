@@ -1739,8 +1739,6 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/executor/executor.h \
-src/core/lib/event_engine/executor/threaded_executor.cc \
-src/core/lib/event_engine/executor/threaded_executor.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
@@ -1814,8 +1812,6 @@ src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \
-src/core/lib/gpr/murmur_hash.cc \
-src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
 src/core/lib/gpr/string.cc \
 src/core/lib/gpr/string.h \
@@ -2238,9 +2234,7 @@ src/core/lib/slice/slice.h \
 src/core/lib/slice/slice_buffer.cc \
 src/core/lib/slice/slice_buffer.h \
 src/core/lib/slice/slice_internal.h \
-src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
-src/core/lib/slice/slice_refcount_base.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/README.md \

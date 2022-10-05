@@ -188,31 +188,27 @@ void grpc_transport_stream_op_batch_queue_finish_with_failure(
 void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error) {
   if (batch->cancel_stream) {
-    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
   // Construct a list of closures to execute.
   if (batch->recv_initial_metadata) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION,
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error));
+        error);
   }
   if (batch->recv_message) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            batch->payload->recv_message.recv_message_ready,
-                            GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, batch->payload->recv_message.recv_message_ready, error);
   }
   if (batch->recv_trailing_metadata) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION,
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        GRPC_ERROR_REF(error));
+        error);
   }
   if (batch->on_complete != nullptr) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, batch->on_complete,
-                            GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, batch->on_complete, error);
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 struct made_transport_op {

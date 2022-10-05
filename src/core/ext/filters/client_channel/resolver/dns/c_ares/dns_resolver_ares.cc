@@ -46,6 +46,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -258,7 +259,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     return "";
   }
   if (json->type() != Json::Type::ARRAY) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    *error = GRPC_ERROR_CREATE(
         "Service Config Choices, error: should be of type array");
     return "";
   }
@@ -266,7 +267,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
   std::vector<grpc_error_handle> error_list;
   for (const Json& choice : json->array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "Service Config Choice, error: should be of type object"));
       continue;
     }
@@ -274,7 +275,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     auto it = choice.object_value().find("clientLanguage");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:clientLanguage error:should be of type array"));
       } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
         continue;
@@ -284,7 +285,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     it = choice.object_value().find("clientHostname");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:clientHostname error:should be of type array"));
       } else {
         char* hostname = grpc_gethostname();
@@ -298,13 +299,13 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     it = choice.object_value().find("percentage");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:percentage error:should be of type number"));
       } else {
         int random_pct = rand() % 100;
         int percentage;
         if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          error_list.push_back(GRPC_ERROR_CREATE(
               "field:percentage error:should be of type integer"));
         } else if (random_pct > percentage || percentage == 0) {
           continue;
@@ -314,10 +315,10 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     // Found service config.
     it = choice.object_value().find("serviceConfig");
     if (it == choice.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:serviceConfig error:required field missing"));
     } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:serviceConfig error:should be of type object"));
     } else if (service_config == nullptr) {
       service_config = &it->second;
@@ -433,7 +434,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
                          grpc_error_std_string(error).c_str());
     std::string error_message;
-    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    grpc_error_get_str(error, StatusStrProperty::kDescription, &error_message);
     absl::Status status = absl::UnavailableError(
         absl::StrCat("DNS resolution failed for ", resolver_->name_to_resolve(),
                      ": ", error_message));

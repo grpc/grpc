@@ -195,8 +195,7 @@ static grpc_error_handle connected_channel_init_call_elem(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data, args->arena);
   return r == 0 ? absl::OkStatus()
-                : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "transport stream initialization failed");
+                : GRPC_ERROR_CREATE("transport stream initialization failed");
 }
 
 static void set_pollset_or_pollset_set(grpc_call_element* elem,
@@ -289,7 +288,7 @@ class ClientStream : public Orphanable {
       auto* stream = stream_.get();
       cancel_op->on_complete = NewClosure(
           [this](grpc_error_handle) { Unref("shutdown client stream"); });
-      batch_payload_.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+      batch_payload_.cancel_stream.cancel_error = absl::CancelledError();
       grpc_transport_perform_stream_op(transport_, stream, cancel_op);
     }
     Unref("orphan client stream");
@@ -521,7 +520,7 @@ class ClientStream : public Orphanable {
   }
 
   void RecvInitialMetadataReady(grpc_error_handle error) {
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_ASSERT(error == absl::OkStatus());
     {
       MutexLock lock(&mu_);
       server_initial_metadata_state_ =
@@ -532,7 +531,7 @@ class ClientStream : public Orphanable {
   }
 
   void RecvTrailingMetadataReady(grpc_error_handle error) {
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_ASSERT(error == absl::OkStatus());
     {
       MutexLock lock(&mu_);
       queued_trailing_metadata_ = true;
@@ -542,14 +541,14 @@ class ClientStream : public Orphanable {
   }
 
   void MetadataBatchDone(grpc_error_handle error) {
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_ASSERT(error == absl::OkStatus());
     Unref("metadata_batch_done");
   }
 
   void SendMessageBatchDone(grpc_error_handle error) {
     {
       MutexLock lock(&mu_);
-      if (error != GRPC_ERROR_NONE) {
+      if (error != absl::OkStatus()) {
         // Note that we're in error here, the call will be closed by the
         // transport in a moment, and we'll return from the promise with an
         // error - so we don't need to do any extra work to close out pipes or
@@ -567,7 +566,7 @@ class ClientStream : public Orphanable {
   void RecvMessageBatchDone(grpc_error_handle error) {
     {
       MutexLock lock(&mu_);
-      if (error != GRPC_ERROR_NONE) {
+      if (error != absl::OkStatus()) {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
                   recv_message_waker_.ActivityDebugTag().c_str(),
@@ -597,7 +596,7 @@ class ClientStream : public Orphanable {
         grpc_transport_perform_stream_op(transport_, stream_.get(), batch);
       } else {
         grpc_transport_stream_op_batch_finish_with_failure_from_transport(
-            batch, GRPC_ERROR_CANCELLED);
+            batch, absl::CancelledError());
       }
     };
     bool push_metadata;
@@ -657,7 +656,7 @@ class ClientStream : public Orphanable {
   void SchedulePush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (std::exchange(scheduled_push_, true)) return;
     IncrementRefCount("push");
-    ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, &push_, absl::OkStatus());
   }
 
   std::string ActiveOpsString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {

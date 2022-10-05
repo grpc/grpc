@@ -34,10 +34,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -219,7 +219,7 @@ class PosixEventEngine final
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
   posix_engine::TimerManager timer_manager_;
-  ThreadedExecutor executor_{2};
+  ThreadPool executor_;
 };
 
 }  // namespace experimental
