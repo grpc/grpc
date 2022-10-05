@@ -4803,7 +4803,6 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -4870,7 +4869,6 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
@@ -5847,7 +5845,6 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -5899,7 +5896,6 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -6169,7 +6165,6 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -6239,7 +6234,6 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
@@ -6301,7 +6295,6 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -6375,7 +6368,6 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
@@ -8209,7 +8201,6 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -8252,7 +8243,6 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -8337,7 +8327,6 @@ targets:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
-  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
@@ -8409,7 +8398,6 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
