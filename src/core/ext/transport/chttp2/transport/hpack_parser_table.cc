@@ -104,7 +104,7 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
     return absl::OkStatus();
   }
   if (bytes > max_bytes_) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return GRPC_ERROR_CREATE(absl::StrFormat(
         "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
         max_bytes_));
   }
@@ -123,7 +123,7 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
 
 grpc_error_handle HPackTable::Add(Memento md) {
   if (current_table_bytes_ > max_bytes_) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return GRPC_ERROR_CREATE(absl::StrFormat(
         "HPACK max table size reduced to %d but not reflected by hpack "
         "stream (still at %d)",
         max_bytes_, current_table_bytes_));

@@ -1408,7 +1408,6 @@ add_library(end2end_tests
   test/core/end2end/tests/max_connection_idle.cc
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
-  test/core/end2end/tests/no_error_on_hotpath.cc
   test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc
@@ -2121,7 +2120,6 @@ add_library(grpc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/executor/threaded_executor.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
@@ -2730,7 +2728,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/executor/threaded_executor.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
@@ -18589,6 +18586,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(thread_pool_test
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/gprpp/time.cc
   test/core/event_engine/thread_pool_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -18618,6 +18616,7 @@ target_link_libraries(thread_pool_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::any_invocable
+  absl::statusor
   gpr
 )
 

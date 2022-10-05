@@ -137,8 +137,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void ShutdownAndDestroy() {
     shutdown_ = true;
     ExecCtx exec_ctx;
-    grpc_endpoint_shutdown(
-        fds_.client, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Client shutdown"));
+    grpc_endpoint_shutdown(fds_.client, GRPC_ERROR_CREATE("Client shutdown"));
     ExecCtx::Get()->Flush();
     client_poll_thread_->join();
     GPR_ASSERT(read_end_notification_.WaitForNotificationWithTimeout(

@@ -280,8 +280,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   channel_->GetState(/*try_to_connect=*/true);
   // Wait for backend 0 connection attempt to start, then fail it.
   hold0->Wait();
-  hold0->Fail(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("injected connection failure"));
+  hold0->Fail(GRPC_ERROR_CREATE("injected connection failure"));
   // The channel should trigger a connection attempt for backend 1 now,
   // but we've added a hold for that, so it will not complete yet.
   // Meanwhile, the channel will also start a second attempt for backend
