@@ -199,7 +199,8 @@ class TransportCounter {
     ++num_created_;
     ++num_live_;
     gpr_log(GPR_INFO,
-            "TransportCounter num_created_=%ld num_live_=%ld InitCallback",
+            "TransportCounter num_created_=%ld num_live_=%" PRId64
+            " InitCallback",
             num_created_, num_live_);
   }
 
@@ -207,7 +208,8 @@ class TransportCounter {
     grpc_core::MutexLock lock(&mu_);
     --num_live_;
     gpr_log(GPR_INFO,
-            "TransportCounter num_created_=%ld num_live_=%ld DestructCallback",
+            "TransportCounter num_created_=%ld num_live_=%" PRId64
+            " DestructCallback",
             num_created_, num_live_);
   }
 
@@ -266,7 +268,8 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
       GPR_ASSERT(0);
     }
     gpr_log(GPR_INFO,
-            "g_transport_counter->num_live() returned %ld, keep waiting "
+            "g_transport_counter->num_live() returned %" PRId64
+            ", keep waiting "
             "until it reaches 0",
             live_transports);
     GPR_ASSERT(grpc_completion_queue_next(
