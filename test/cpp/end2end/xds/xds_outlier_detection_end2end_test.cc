@@ -25,15 +25,12 @@
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
 namespace testing {
 namespace {
-
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 class OutlierDetectionTest : public XdsEnd2endTest {
  protected:

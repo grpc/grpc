@@ -52,7 +52,6 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
