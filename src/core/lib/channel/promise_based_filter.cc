@@ -691,7 +691,8 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               server_initial_metadata_latch(), nullptr, nullptr},
+               server_initial_metadata_latch(), outgoing_messages_pipe(),
+               incoming_messages_pipe()},
       [this](CallArgs call_args) {
         return MakeNextPromise(std::move(call_args));
       });
@@ -1203,7 +1204,8 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(recv_initial_metadata_),
-               server_initial_metadata_latch(), nullptr, nullptr},
+               server_initial_metadata_latch(), outgoing_messages_pipe(),
+               incoming_messages_pipe()},
       [this](CallArgs call_args) {
         return MakeNextPromise(std::move(call_args));
       });

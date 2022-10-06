@@ -255,9 +255,15 @@ class BaseCallData : public Activity, private Wakeable {
     return p.Unwrap();
   }
 
-  class SendMessage {};
+  class SendMessage {
+   public:
+    PipeReceiver<MessageHandle>* outgoing_pipe();
+  };
 
-  class ReceiveMessage {};
+  class ReceiveMessage {
+   public:
+    PipeSender<MessageHandle>* incoming_pipe();
+  };
 
   Arena* arena() { return arena_; }
   grpc_call_element* elem() const { return elem_; }
@@ -266,6 +272,13 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_stack* call_stack() const { return call_stack_; }
   Latch<ServerMetadata*>* server_initial_metadata_latch() const {
     return server_initial_metadata_latch_;
+  }
+  PipeReceiver<MessageHandle>* outgoing_messages_pipe() const {
+    return send_message_ == nullptr ? nullptr : send_message_->outgoing_pipe();
+  }
+  PipeSender<MessageHandle>* incoming_messages_pipe() const {
+    return receive_message_ == nullptr ? nullptr
+                                       : receive_message_->incoming_pipe();
   }
 
   bool is_last() const {
