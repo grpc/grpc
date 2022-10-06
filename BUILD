@@ -23,6 +23,7 @@ load(
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 
 licenses(["reciprocal"])
 
@@ -8062,4 +8063,11 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+compile_pip_requirements(
+    name = "pip",
+    extra_args = ["--allow-unsafe"],
+    requirements_in = "@com_github_grpc_grpc//:requirements.bazel.txt",
+    requirements_txt = "@com_github_grpc_grpc//:requirements.bazel_lock.txt",
 )

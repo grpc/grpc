@@ -82,11 +82,24 @@ rbe_autoconfig(
     ),
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
+load("@rules_python//python:pip.bzl", "pip_parse")
 
-pip_install(
+pip_parse(
     name = "grpc_python_dependencies",
-    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+    requirements_lock = "@com_github_grpc_grpc//:requirements.bazel_lock.txt",
+)
+
+load("@grpc_python_dependencies//:requirements.bzl", grpc_python_deps_install = "install_deps")
+
+grpc_python_deps_install()
+
+load("@upb//bazel:system_python.bzl", "system_python")
+
+system_python(name = "local_config_python")
+
+bind(
+    name = "python_headers",
+    actual = "@local_config_python//:python_headers",
 )
 
 http_archive(
@@ -97,6 +110,7 @@ http_archive(
 
 http_archive(
     name = "rules_pods",
+    sha256 = "c96bbfb6364a76e09d8239914990328e66074096038728f1a1b26c62d9081af6",
     urls = ["https://github.com/pinterest/PodToBUILD/releases/download/4.1.0-412495/PodToBUILD.zip"],
 )
 

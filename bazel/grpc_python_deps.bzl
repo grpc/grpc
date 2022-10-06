@@ -14,7 +14,6 @@
 """Load dependencies needed to compile and test the grpc python library as a 3rd-party consumer."""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 # buildifier: disable=unnamed-macro
 def grpc_python_deps():
@@ -49,21 +48,13 @@ def grpc_python_deps():
             urls = ["https://files.pythonhosted.org/packages/47/04/5fc6c74ad114032cd2c544c575bffc17582295e9cd6a851d6026ab4b2c00/futures-3.3.0.tar.gz"],
         )
 
-    if "io_bazel_rules_python" not in native.existing_rules():
+    if "rules_python" not in native.existing_rules():
         http_archive(
-            name = "io_bazel_rules_python",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/0.4.0/rules_python-0.4.0.tar.gz",
-            sha256 = "954aa89b491be4a083304a2cb838019c8b8c3720a7abb9c4cb81ac7a24230cea",
-            patches = ["@com_github_grpc_grpc//third_party:rules_python.patch"],
-            patch_args = ["-p1"],
+            name = "rules_python",
+            sha256 = "8c8fe44ef0a9afc256d1e75ad5f448bb59b81aba149b8958f02f7b3a98f5d9b4",
+            strip_prefix = "rules_python-0.13.0",
+            url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.13.0.tar.gz",
         )
-
-    python_configure(name = "local_config_python")
-
-    native.bind(
-        name = "python_headers",
-        actual = "@local_config_python//:python_headers",
-    )
 
     if "cython" not in native.existing_rules():
         http_archive(
