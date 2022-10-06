@@ -392,20 +392,10 @@ void hpack_size(grpc_end2end_test_config config) {
                                           1000, 32768, 4 * 1024 * 1024};
   size_t i, j;
 
-  auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-  std::vector<std::shared_ptr<absl::Notification>> dones;
   for (i = 0; i < GPR_ARRAY_SIZE(interesting_sizes); i++) {
     for (j = 0; j < GPR_ARRAY_SIZE(interesting_sizes); j++) {
-      auto done = std::make_shared<absl::Notification>();
-      dones.push_back(done);
-      event_engine->Run([done, config, i, j] {
-        test_size(config, interesting_sizes[i], interesting_sizes[j]);
-        done->Notify();
-      });
+      test_size(config, interesting_sizes[i], interesting_sizes[j]);
     }
-  }
-  for (auto& done : dones) {
-    done->WaitForNotification();
   }
 }
 
