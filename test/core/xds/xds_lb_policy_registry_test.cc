@@ -91,7 +91,7 @@ absl::StatusOr<std::string> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
 class CustomLbPolicyFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      LoadBalancingPolicy::Args /* args */) const override {
+      LoadBalancingPolicy::Args /*args*/) const override {
     GPR_ASSERT(false);
     return nullptr;
   }
@@ -99,7 +99,7 @@ class CustomLbPolicyFactory : public LoadBalancingPolicyFactory {
   absl::string_view name() const override { return "test.CustomLb"; }
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json) const override {
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return nullptr;
   }
 };
