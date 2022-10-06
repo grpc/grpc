@@ -54,8 +54,8 @@ CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
     cygrpc.StatusCode.data_loss: grpc.StatusCode.DATA_LOSS,
 }
 STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
-    grpc_code: cygrpc_code for cygrpc_code, grpc_code in
-        CYGRPC_STATUS_CODE_TO_STATUS_CODE.items()
+    grpc_code: cygrpc_code
+    for cygrpc_code, grpc_code in CYGRPC_STATUS_CODE_TO_STATUS_CODE.items()
 }
 
 MAXIMUM_WAIT_TIMEOUT = 0.1
