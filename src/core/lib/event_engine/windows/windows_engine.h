@@ -34,11 +34,14 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/surface/init_internally.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class WindowsEventEngine : public EventEngine {
+// TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
+// event engine is shut down before we shut down iomgr.
+class WindowsEventEngine : public EventEngine, public KeepsGrpcInitialized {
  public:
   class WindowsEndpoint : public EventEngine::Endpoint {
    public:
