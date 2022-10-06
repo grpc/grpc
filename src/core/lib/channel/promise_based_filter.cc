@@ -45,13 +45,25 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
       context_(args->context),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
-  if (flags & kFilterExaminesServerInitialMetadata) {
-    server_initial_metadata_latch_ = arena_->New<Latch<ServerMetadata*>>();
-  }
-}
+      server_initial_metadata_latch_(
+          flags & kFilterExaminesServerInitialMetadata
+              ? arena_->New<Latch<ServerMetadata*>>()
+              : nullptr),
+      send_message_(flags & kFilterExaminesOutboundMessages
+                        ? arena_->New<SendMessage>()
+                        : nullptr),
+      receive_message_(flags & kFilterExaminesInboundMessages
+                           ? arena_->New<ReceiveMessage>()
+                           : nullptr),
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
 BaseCallData::~BaseCallData() {
+  if (send_message_ != nullptr) {
+    send_message_->~SendMessage();
+  }
+  if (receive_message_ != nullptr) {
+    receive_message_->~ReceiveMessage();
+  }
   if (server_initial_metadata_latch_ != nullptr) {
     server_initial_metadata_latch_->~Latch();
   }

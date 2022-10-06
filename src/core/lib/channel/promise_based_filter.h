@@ -255,6 +255,10 @@ class BaseCallData : public Activity, private Wakeable {
     return p.Unwrap();
   }
 
+  class SendMessage {};
+
+  class ReceiveMessage {};
+
   Arena* arena() { return arena_; }
   grpc_call_element* elem() const { return elem_; }
   CallCombiner* call_combiner() const { return call_combiner_; }
@@ -284,8 +288,11 @@ class BaseCallData : public Activity, private Wakeable {
   CallFinalization finalization_;
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
-  Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  Latch<ServerMetadata*>* const server_initial_metadata_latch_;
+  SendMessage* const send_message_;
+  ReceiveMessage* const receive_message_;
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
 };
 
 class ClientCallData : public BaseCallData {
