@@ -174,6 +174,11 @@ int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr);
 // address.
 bool SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port);
 
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr);
+
+int SockaddrIsWildcard(const EventEngine::ResolvedAddress& addr);
+
 // Converts a EventEngine::ResolvedAddress into a newly-allocated
 // human-readable string.
 //

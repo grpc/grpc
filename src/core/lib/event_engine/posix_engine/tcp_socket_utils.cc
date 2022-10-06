@@ -59,6 +59,7 @@
 #include "src/core/lib/gprpp/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/stat.h>  // IWYU pragma: keep
 #include <sys/un.h>
 #endif
 
@@ -416,6 +417,57 @@ bool SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port) {
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
               addr->sa_family);
       return false;
+  }
+}
+
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr) {
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  if (resolved_addr.address()->sa_family != AF_UNIX) {
+    return;
+  }
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
+      const_cast<sockaddr*>(resolved_addr.address()));
+
+  // There is nothing to unlink for an abstract unix socket
+  if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
+    return;
+  }
+
+  struct stat st;
+  if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
+    unlink(un->sun_path);
+  }
+#endif
+}
+
+int SockaddrIsWildcard(const EventEngine::ResolvedAddress& addr) {
+  const EventEngine::ResolvedAddress* resolved_addr = &addr;
+  EventEngine::ResolvedAddress addr4_normalized;
+  if (SockaddrIsV4Mapped(resolved_addr, &addr4_normalized)) {
+    resolved_addr = &addr4_normalized;
+  }
+  if (resolved_addr->address()->sa_family == AF_INET) {
+    // Check for 0.0.0.0
+    const sockaddr_in* addr4 =
+        reinterpret_cast<const sockaddr_in*>(resolved_addr->address());
+    if (addr4->sin_addr.s_addr != 0) {
+      return -1;
+    }
+    return static_cast<int>(ntohs(addr4->sin_port));
+  } else if (resolved_addr->address()->sa_family == AF_INET6) {
+    // Check for ::
+    const sockaddr_in6* addr6 =
+        reinterpret_cast<const sockaddr_in6*>(resolved_addr->address());
+    int i;
+    for (i = 0; i < 16; i++) {
+      if (addr6->sin6_addr.s6_addr[i] != 0) {
+        return -1;
+      }
+    }
+    return static_cast<int>(ntohs(addr6->sin6_port));
+  } else {
+    return -1;
   }
 }
 
