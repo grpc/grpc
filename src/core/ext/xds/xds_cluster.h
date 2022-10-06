@@ -42,7 +42,7 @@
 
 namespace grpc_core {
 
-struct XdsClusterResource {
+struct XdsClusterResource : public XdsResourceType::ResourceData {
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
   ClusterType cluster_type;
   // For cluster type EDS.

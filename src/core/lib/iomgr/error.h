@@ -132,11 +132,6 @@ typedef enum {
 
 std::string grpc_error_std_string(grpc_error_handle error);
 
-// debug only toggles that allow for a sanity to check that ensures we will
-// never create any errors in the per-RPC hotpath.
-void grpc_disable_error_creation();
-void grpc_enable_error_creation();
-
 #define GRPC_ERROR_NONE absl::OkStatus()
 #define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError(""))
 #define GRPC_ERROR_CANCELLED absl::CancelledError()
@@ -148,28 +143,34 @@ void grpc_enable_error_creation();
 
 #define GRPC_ERROR_IS_NONE(err) (err).ok()
 
-#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) \
+#define GRPC_ERROR_CREATE(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
-#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) \
-  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
-#define GRPC_ERROR_CREATE_FROM_CPP_STRING(desc) \
-  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
-#define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) \
-  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
+
+// Deprecated: Please do not use these macros. begin
+// TODO(veblush): Remove this once migration is done.
+#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) GRPC_ERROR_CREATE(desc)
+#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) GRPC_ERROR_CREATE(desc)
+#define GRPC_ERROR_CREATE_FROM_CPP_STRING(desc) GRPC_ERROR_CREATE(desc)
+#define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) GRPC_ERROR_CREATE(desc)
+// Deprecated: end
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,
                                 size_t children_count,
                                 absl::Status* children) GRPC_MUST_USE_RESULT;
 
-// Create an error that references some other errors. This function adds a
-// reference to each error in errs - it does not consume an existing reference
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count)   \
+// Create an error that references some other errors.
+#define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)                      \
   grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, count, \
                      errs)
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)   \
-  grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, count, \
-                     errs)
+
+// Deprecated: Please do not use these macros. begin
+// TODO(veblush): Remove this once migration is done.
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count) \
+  GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count) \
+  GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)
+// Deprecated: end
 
 // Consumes all the errors in the vector and forms a referencing error from
 // them. If the vector is empty, return absl::OkStatus().
@@ -188,8 +189,12 @@ static absl::Status grpc_status_create_from_vector(
 
 #define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
   grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
+
+// Deprecated: Please do not use these macros. begin
+// TODO(veblush): Remove this once migration is done.
 #define GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(desc, error_list) \
-  grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
+  GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list)
+// Deprecated: end
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;

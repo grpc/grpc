@@ -52,6 +52,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 
 namespace grpc_core {
 
@@ -102,193 +103,226 @@ std::string XdsClusterResource::ToString() const {
 
 namespace {
 
-absl::StatusOr<CommonTlsContext> UpstreamTlsContextParse(
+absl::optional<CommonTlsContext> UpstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_TransportSocket* transport_socket) {
-  auto* typed_config =
+    const envoy_config_core_v3_TransportSocket* transport_socket,
+    ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".typed_config");
+  const auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
   if (typed_config == nullptr) {
-    return absl::InvalidArgumentError("transport_socket.typed_config not set");
+    errors->AddError("field not present");
+    return absl::nullopt;
   }
   absl::string_view type_url = absl::StripPrefix(
       UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
       "type.googleapis.com/");
   if (type_url !=
       "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext") {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Unrecognized transport socket type: ", type_url));
+    ValidationErrors::ScopedField field(errors, ".type_url");
+    errors->AddError(
+        absl::StrCat("unrecognized transport socket type: ", type_url));
+    return absl::nullopt;
   }
-  const upb_StringView encoded_upstream_tls_context =
-      google_protobuf_Any_value(typed_config);
-  auto* upstream_tls_context =
+  ValidationErrors::ScopedField field2(
+      errors,
+      ".value[envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]");
+  absl::string_view serialized_upstream_tls_context =
+      UpbStringToAbsl(google_protobuf_Any_value(typed_config));
+  const auto* upstream_tls_context =
       envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
-          encoded_upstream_tls_context.data, encoded_upstream_tls_context.size,
-          context.arena);
+          serialized_upstream_tls_context.data(),
+          serialized_upstream_tls_context.size(), context.arena);
   if (upstream_tls_context == nullptr) {
-    return absl::InvalidArgumentError("Can't decode upstream tls context.");
+    errors->AddError("can't decode UpstreamTlsContext");
+    return absl::nullopt;
   }
-  auto* common_tls_context_proto =
+  ValidationErrors::ScopedField field3(errors, ".common_tls_context");
+  const auto* common_tls_context_proto =
       envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
           upstream_tls_context);
   CommonTlsContext common_tls_context;
   if (common_tls_context_proto != nullptr) {
-    auto common_context =
-        CommonTlsContext::Parse(context, common_tls_context_proto);
-    if (!common_context.ok()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("Error parsing UpstreamTlsContext: ",
-                       common_context.status().message()));
-    }
-    common_tls_context = std::move(*common_context);
+    common_tls_context =
+        CommonTlsContext::Parse(context, common_tls_context_proto, errors);
   }
   if (common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name.empty()) {
-    return absl::InvalidArgumentError(
-        "UpstreamTlsContext: TLS configuration provided but no "
-        "ca_certificate_provider_instance found.");
+    errors->AddError("no CA certificate provider instance configured");
   }
   return common_tls_context;
 }
 
-absl::Status CdsLogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
-                                XdsClusterResource* cds_update) {
+void EdsConfigParse(const envoy_config_cluster_v3_Cluster* cluster,
+                    XdsClusterResource* cds_update, ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".eds_cluster_config");
+  const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
+      envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
+  if (eds_cluster_config == nullptr) {
+    errors->AddError("field not present");
+  } else {
+    ValidationErrors::ScopedField field(errors, ".eds_config");
+    const envoy_config_core_v3_ConfigSource* eds_config =
+        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
+            eds_cluster_config);
+    if (eds_config == nullptr) {
+      errors->AddError("field not present");
+    } else {
+      if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
+          !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
+        errors->AddError("ConfigSource is not ads or self");
+      }
+      // Record EDS service_name (if any).
+      upb_StringView service_name =
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+              eds_cluster_config);
+      if (service_name.size != 0) {
+        cds_update->eds_service_name = UpbStringToStdString(service_name);
+      }
+    }
+  }
+}
+
+void LogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
+                     XdsClusterResource* cds_update, ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".load_assignment");
   const auto* load_assignment =
       envoy_config_cluster_v3_Cluster_load_assignment(cluster);
   if (load_assignment == nullptr) {
-    return absl::InvalidArgumentError(
-        "load_assignment not present for LOGICAL_DNS cluster");
+    errors->AddError("field not present for LOGICAL_DNS cluster");
+    return;
   }
+  ValidationErrors::ScopedField field2(errors, ".endpoints");
   size_t num_localities;
   const auto* const* localities =
       envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(load_assignment,
                                                                &num_localities);
   if (num_localities != 1) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("load_assignment for LOGICAL_DNS cluster must have "
-                     "exactly one locality, found ",
-                     num_localities));
+    errors->AddError(absl::StrCat(
+        "must contain exactly one locality for LOGICAL_DNS cluster, found ",
+        num_localities));
+    return;
   }
+  ValidationErrors::ScopedField field3(errors, "[0].lb_endpoints");
   size_t num_endpoints;
   const auto* const* endpoints =
       envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(localities[0],
                                                                 &num_endpoints);
   if (num_endpoints != 1) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("locality for LOGICAL_DNS cluster must have "
-                     "exactly one endpoint, found ",
-                     num_endpoints));
+    errors->AddError(absl::StrCat(
+        "must contain exactly one endpoint for LOGICAL_DNS cluster, found ",
+        num_endpoints));
+    return;
   }
+  ValidationErrors::ScopedField field4(errors, "[0].endpoint");
   const auto* endpoint =
       envoy_config_endpoint_v3_LbEndpoint_endpoint(endpoints[0]);
   if (endpoint == nullptr) {
-    return absl::InvalidArgumentError("LbEndpoint endpoint field not set");
+    errors->AddError("field not present");
+    return;
   }
+  ValidationErrors::ScopedField field5(errors, ".address");
   const auto* address = envoy_config_endpoint_v3_Endpoint_address(endpoint);
   if (address == nullptr) {
-    return absl::InvalidArgumentError("Endpoint address field not set");
+    errors->AddError("field not present");
+    return;
   }
+  ValidationErrors::ScopedField field6(errors, ".socket_address");
   const auto* socket_address =
       envoy_config_core_v3_Address_socket_address(address);
   if (socket_address == nullptr) {
-    return absl::InvalidArgumentError("Address socket_address field not set");
+    errors->AddError("field not present");
+    return;
   }
   if (envoy_config_core_v3_SocketAddress_resolver_name(socket_address).size !=
       0) {
-    return absl::InvalidArgumentError(
+    ValidationErrors::ScopedField field(errors, ".resolver_name");
+    errors->AddError(
         "LOGICAL_DNS clusters must NOT have a custom resolver name set");
   }
   absl::string_view address_str = UpbStringToAbsl(
       envoy_config_core_v3_SocketAddress_address(socket_address));
   if (address_str.empty()) {
-    return absl::InvalidArgumentError("SocketAddress address field not set");
+    ValidationErrors::ScopedField field(errors, ".address");
+    errors->AddError("field not present");
   }
   if (!envoy_config_core_v3_SocketAddress_has_port_value(socket_address)) {
-    return absl::InvalidArgumentError("SocketAddress port_value field not set");
+    ValidationErrors::ScopedField field(errors, ".port_value");
+    errors->AddError("field not present");
   }
   cds_update->dns_hostname = JoinHostPort(
       address_str,
       envoy_config_core_v3_SocketAddress_port_value(socket_address));
-  return absl::OkStatus();
+}
+
+void AggregateClusterParse(const XdsResourceType::DecodeContext& context,
+                           absl::string_view serialized_config,
+                           XdsClusterResource* cds_update,
+                           ValidationErrors* errors) {
+  const auto* aggregate_cluster_config =
+      envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
+          serialized_config.data(), serialized_config.size(), context.arena);
+  if (aggregate_cluster_config == nullptr) {
+    errors->AddError("can't parse aggregate cluster config");
+    return;
+  }
+  size_t size;
+  const upb_StringView* clusters =
+      envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
+          aggregate_cluster_config, &size);
+  for (size_t i = 0; i < size; ++i) {
+    cds_update->prioritized_cluster_names.emplace_back(
+        UpbStringToStdString(clusters[i]));
+  }
 }
 
 absl::StatusOr<XdsClusterResource> CdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/) {
   XdsClusterResource cds_update;
-  std::vector<std::string> errors;
-  // Check the cluster_discovery_type.
-  if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
-      !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
-    errors.emplace_back("DiscoveryType not found.");
-  } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
-             envoy_config_cluster_v3_Cluster_EDS) {
+  ValidationErrors errors;
+  // Check the cluster discovery type.
+  if (envoy_config_cluster_v3_Cluster_type(cluster) ==
+      envoy_config_cluster_v3_Cluster_EDS) {
     cds_update.cluster_type = XdsClusterResource::ClusterType::EDS;
-    // Check the EDS config source.
-    const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
-        envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
-    const envoy_config_core_v3_ConfigSource* eds_config =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
-            eds_cluster_config);
-    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
-        !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
-      errors.emplace_back("EDS ConfigSource is not ADS or SELF.");
-    }
-    // Record EDS service_name (if any).
-    upb_StringView service_name =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
-            eds_cluster_config);
-    if (service_name.size != 0) {
-      cds_update.eds_service_name = UpbStringToStdString(service_name);
-    }
+    EdsConfigParse(cluster, &cds_update, &errors);
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
     cds_update.cluster_type = XdsClusterResource::ClusterType::LOGICAL_DNS;
-    absl::Status status = CdsLogicalDnsParse(cluster, &cds_update);
-    if (!status.ok()) errors.emplace_back(status.message());
-  } else {
+    LogicalDnsParse(cluster, &cds_update, &errors);
+  } else if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
+    ValidationErrors::ScopedField field(&errors, ".cluster_type");
     const auto* custom_cluster_type =
         envoy_config_cluster_v3_Cluster_cluster_type(cluster);
-    if (custom_cluster_type == nullptr) {
-      errors.push_back("DiscoveryType is not valid.");
+    GPR_ASSERT(custom_cluster_type != nullptr);
+    ValidationErrors::ScopedField field2(&errors, ".typed_config");
+    const auto* typed_config =
+        envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
+            custom_cluster_type);
+    if (typed_config == nullptr) {
+      errors.AddError("field not present");
     } else {
-      const auto* typed_config =
-          envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
-              custom_cluster_type);
-      if (typed_config == nullptr) {
-        errors.push_back("cluster_type.typed_config not set");
+      absl::string_view type_url = absl::StripPrefix(
+          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+          "type.googleapis.com/");
+      if (type_url != "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
+        ValidationErrors::ScopedField field(&errors, ".type_url");
+        errors.AddError(
+            absl::StrCat("unknown cluster_type extension: ", type_url));
       } else {
-        absl::string_view type_url = absl::StripPrefix(
-            UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
-            "type.googleapis.com/");
-        if (type_url !=
-            "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
-          errors.push_back(
-              absl::StrCat("unknown cluster_type extension: ", type_url));
-        } else {
-          cds_update.cluster_type = XdsClusterResource::ClusterType::AGGREGATE;
-          // Retrieve aggregate clusters.
-          const upb_StringView aggregate_cluster_config_upb_stringview =
-              google_protobuf_Any_value(typed_config);
-          const auto* aggregate_cluster_config =
-              envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
-                  aggregate_cluster_config_upb_stringview.data,
-                  aggregate_cluster_config_upb_stringview.size, context.arena);
-          if (aggregate_cluster_config == nullptr) {
-            errors.emplace_back("Can't parse aggregate cluster.");
-          } else {
-            size_t size;
-            const upb_StringView* clusters =
-                envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
-                    aggregate_cluster_config, &size);
-            for (size_t i = 0; i < size; ++i) {
-              const upb_StringView cluster = clusters[i];
-              cds_update.prioritized_cluster_names.emplace_back(
-                  UpbStringToStdString(cluster));
-            }
-          }
-        }
+        cds_update.cluster_type = XdsClusterResource::ClusterType::AGGREGATE;
+        // Retrieve aggregate clusters.
+        ValidationErrors::ScopedField field(
+            &errors,
+            ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
+        absl::string_view serialized_config =
+            UpbStringToAbsl(google_protobuf_Any_value(typed_config));
+        AggregateClusterParse(context, serialized_config, &cds_update, &errors);
       }
     }
+  } else {
+    ValidationErrors::ScopedField field(&errors, ".type");
+    errors.AddError("unknown discovery type");
   }
   // Check the LB policy.
   if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
@@ -301,52 +335,53 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     auto* ring_hash_config =
         envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
     if (ring_hash_config != nullptr) {
+      ValidationErrors::ScopedField field(&errors, ".ring_hash_lb_config");
       const google_protobuf_UInt64Value* max_ring_size =
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
               ring_hash_config);
       if (max_ring_size != nullptr) {
+        ValidationErrors::ScopedField field(&errors, ".maximum_ring_size");
         cds_update.max_ring_size =
             google_protobuf_UInt64Value_value(max_ring_size);
         if (cds_update.max_ring_size > 8388608 ||
             cds_update.max_ring_size == 0) {
-          errors.emplace_back(
-              "max_ring_size is not in the range of 1 to 8388608.");
+          errors.AddError("must be in the range of 1 to 8388608");
         }
       }
       const google_protobuf_UInt64Value* min_ring_size =
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
               ring_hash_config);
       if (min_ring_size != nullptr) {
+        ValidationErrors::ScopedField field(&errors, ".minimum_ring_size");
         cds_update.min_ring_size =
             google_protobuf_UInt64Value_value(min_ring_size);
         if (cds_update.min_ring_size > 8388608 ||
             cds_update.min_ring_size == 0) {
-          errors.emplace_back(
-              "min_ring_size is not in the range of 1 to 8388608.");
+          errors.AddError("must be in the range of 1 to 8388608");
         }
         if (cds_update.min_ring_size > cds_update.max_ring_size) {
-          errors.emplace_back(
-              "min_ring_size cannot be greater than max_ring_size.");
+          errors.AddError("cannot be greater than maximum_ring_size");
         }
       }
       if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
               ring_hash_config) !=
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
-        errors.emplace_back("ring hash lb config has invalid hash function.");
+        ValidationErrors::ScopedField field(&errors, ".hash_function");
+        errors.AddError("invalid hash function");
       }
     }
   } else {
-    errors.emplace_back("LB policy is not supported.");
+    ValidationErrors::ScopedField field(&errors, ".lb_policy");
+    errors.AddError("LB policy is not supported");
   }
+  // transport_socket
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
+    ValidationErrors::ScopedField field(&errors, ".transport_socket");
     auto common_tls_context =
-        UpstreamTlsContextParse(context, transport_socket);
-    if (!common_tls_context.ok()) {
-      errors.emplace_back(absl::StrCat("Error parsing security configuration: ",
-                                       common_tls_context.status().message()));
-    } else {
+        UpstreamTlsContextParse(context, transport_socket, &errors);
+    if (common_tls_context.has_value()) {
       cds_update.common_tls_context = std::move(*common_tls_context);
     }
   }
@@ -355,7 +390,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       envoy_config_cluster_v3_Cluster_lrs_server(cluster);
   if (lrs_server != nullptr) {
     if (!envoy_config_core_v3_ConfigSource_has_self(lrs_server)) {
-      errors.emplace_back("LRS ConfigSource is not self.");
+      ValidationErrors::ScopedField field(&errors, ".lrs_server");
+      errors.AddError("ConfigSource is not self");
     }
     cds_update.lrs_load_reporting_server.emplace(
         static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
@@ -393,23 +429,29 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
   // default values.
   if (XdsOutlierDetectionEnabled() &&
       envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
+    ValidationErrors::ScopedField field(&errors, ".outlier_detection");
     OutlierDetectionConfig outlier_detection_update;
     const envoy_config_cluster_v3_OutlierDetection* outlier_detection =
         envoy_config_cluster_v3_Cluster_outlier_detection(cluster);
     const google_protobuf_Duration* duration =
         envoy_config_cluster_v3_OutlierDetection_interval(outlier_detection);
     if (duration != nullptr) {
-      outlier_detection_update.interval = ParseDuration(duration);
+      ValidationErrors::ScopedField field(&errors, ".interval");
+      outlier_detection_update.interval = ParseDuration(duration, &errors);
     }
     duration = envoy_config_cluster_v3_OutlierDetection_base_ejection_time(
         outlier_detection);
     if (duration != nullptr) {
-      outlier_detection_update.base_ejection_time = ParseDuration(duration);
+      ValidationErrors::ScopedField field(&errors, ".base_ejection_time");
+      outlier_detection_update.base_ejection_time =
+          ParseDuration(duration, &errors);
     }
     duration = envoy_config_cluster_v3_OutlierDetection_max_ejection_time(
         outlier_detection);
     if (duration != nullptr) {
-      outlier_detection_update.max_ejection_time = ParseDuration(duration);
+      ValidationErrors::ScopedField field(&errors, ".max_ejection_time");
+      outlier_detection_update.max_ejection_time =
+          ParseDuration(duration, &errors);
     }
     const google_protobuf_UInt32Value* max_ejection_percent =
         envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(
@@ -417,6 +459,10 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     if (max_ejection_percent != nullptr) {
       outlier_detection_update.max_ejection_percent =
           google_protobuf_UInt32Value_value(max_ejection_percent);
+      if (outlier_detection_update.max_ejection_percent > 100) {
+        ValidationErrors::ScopedField field(&errors, ".max_ejection_percent");
+        errors.AddError("value must be <= 100");
+      }
     }
     const google_protobuf_UInt32Value* enforcing_success_rate =
         envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(
@@ -424,6 +470,10 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     if (enforcing_success_rate != nullptr) {
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_success_rate);
+      if (enforcement_percentage > 100) {
+        ValidationErrors::ScopedField field(&errors, ".enforcing_success_rate");
+        errors.AddError("value must be <= 100");
+      }
       if (enforcement_percentage != 0) {
         OutlierDetectionConfig::SuccessRateEjection success_rate_ejection;
         success_rate_ejection.enforcement_percentage = enforcement_percentage;
@@ -457,6 +507,11 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     if (enforcing_failure_percentage != nullptr) {
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_failure_percentage);
+      if (enforcement_percentage > 100) {
+        ValidationErrors::ScopedField field(&errors,
+                                            ".enforcing_failure_percentage");
+        errors.AddError("value must be <= 100");
+      }
       if (enforcement_percentage != 0) {
         OutlierDetectionConfig::FailurePercentageEjection
             failure_percentage_ejection;
@@ -482,6 +537,11 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
         if (threshold != nullptr) {
           failure_percentage_ejection.threshold =
               google_protobuf_UInt32Value_value(threshold);
+          if (enforcement_percentage > 100) {
+            ValidationErrors::ScopedField field(
+                &errors, ".failure_percentage_threshold");
+            errors.AddError("value must be <= 100");
+          }
         }
         outlier_detection_update.failure_percentage_ejection =
             failure_percentage_ejection;
@@ -490,10 +550,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     cds_update.outlier_detection = outlier_detection_update;
   }
   // Return result.
-  if (!errors.empty()) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "errors parsing CDS resource: [", absl::StrJoin(errors, "; "), "]"));
-  }
+  if (!errors.ok()) return errors.status("errors validating Cluster resource");
   return cds_update;
 }
 
@@ -540,9 +597,8 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
       gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
               result.name->c_str(), cds_resource->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*cds_resource);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsClusterResource>(std::move(*cds_resource));
   }
   return result;
 }

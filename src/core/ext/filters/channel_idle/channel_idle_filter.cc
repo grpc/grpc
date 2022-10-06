@@ -187,7 +187,7 @@ void MaxAgeFilter::PostInit() {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
+                    GRPC_ERROR_CREATE("max_age"),
                     StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
@@ -278,7 +278,7 @@ void ChannelIdleFilter::StartIdleTimer() {
 void ChannelIdleFilter::CloseChannel() {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
+      GRPC_ERROR_CREATE("enter idle"),
       StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);

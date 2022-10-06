@@ -1032,8 +1032,6 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     OutlierDetectionConfig outlier_detection_config;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     {
-      ValidationErrors::ScopedField field(
-          &errors, "[\"outlier_detection_experimental\"]");
       outlier_detection_config =
           LoadFromJson<OutlierDetectionConfig>(json, JsonArgs(), &errors);
       // Parse childPolicy manually.
@@ -1082,6 +1080,14 @@ OutlierDetectionConfig::SuccessRateEjection::JsonLoader(const JsonArgs&) {
   return loader;
 }
 
+void OutlierDetectionConfig::SuccessRateEjection::JsonPostLoad(
+    const Json&, const JsonArgs&, ValidationErrors* errors) {
+  if (enforcement_percentage > 100) {
+    ValidationErrors::ScopedField field(errors, ".enforcement_percentage");
+    errors->AddError("value must be <= 100");
+  }
+}
+
 const JsonLoaderInterface*
 OutlierDetectionConfig::FailurePercentageEjection::JsonLoader(const JsonArgs&) {
   static const auto* loader =
@@ -1095,6 +1101,18 @@ OutlierDetectionConfig::FailurePercentageEjection::JsonLoader(const JsonArgs&) {
                          &FailurePercentageEjection::request_volume)
           .Finish();
   return loader;
+}
+
+void OutlierDetectionConfig::FailurePercentageEjection::JsonPostLoad(
+    const Json&, const JsonArgs&, ValidationErrors* errors) {
+  if (enforcement_percentage > 100) {
+    ValidationErrors::ScopedField field(errors, ".enforcement_percentage");
+    errors->AddError("value must be <= 100");
+  }
+  if (threshold > 100) {
+    ValidationErrors::ScopedField field(errors, ".threshold");
+    errors->AddError("value must be <= 100");
+  }
 }
 
 const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
@@ -1116,10 +1134,14 @@ const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
 }
 
 void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
-                                          ValidationErrors* /*errors*/) {
+                                          ValidationErrors* errors) {
   if (json.object_value().find("maxEjectionTime") ==
       json.object_value().end()) {
     max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));
+  }
+  if (max_ejection_percent > 100) {
+    ValidationErrors::ScopedField field(errors, ".max_ejection_percent");
+    errors->AddError("value must be <= 100");
   }
 }
 
