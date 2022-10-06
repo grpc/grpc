@@ -83,7 +83,9 @@ class ValidationErrors {
       return *this;
     }
 
-    ~ScopedField() { if (errors_ != nullptr) errors_->PopField(); }
+    ~ScopedField() {
+      if (errors_ != nullptr) errors_->PopField();
+    }
 
    private:
     ValidationErrors* errors_;

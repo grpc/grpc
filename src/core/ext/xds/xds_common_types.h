@@ -31,9 +31,9 @@
 #include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {

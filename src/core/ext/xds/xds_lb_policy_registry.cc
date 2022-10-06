@@ -82,11 +82,10 @@ class RingHashLbPolicyConfigFactory
     }
     if (envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_hash_function(
             resource) !=
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_XX_HASH
-        &&
+            envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_XX_HASH &&
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_hash_function(
             resource) !=
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_DEFAULT_HASH) {
+            envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_DEFAULT_HASH) {
       ValidationErrors::ScopedField field(errors, ".hash_function");
       errors->AddError("unsupported value (must be XX_HASH)");
     }
@@ -234,9 +233,8 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     // Check for custom LB policy type.
     Json* json = absl::get_if<Json>(&extension->value);
     if (json != nullptr &&
-        CoreConfiguration::Get()
-            .lb_policy_registry()
-            .LoadBalancingPolicyExists(extension->type, nullptr)) {
+        CoreConfiguration::Get().lb_policy_registry().LoadBalancingPolicyExists(
+            extension->type, nullptr)) {
       return Json::Array{
           Json::Object{{std::string(extension->type), std::move(*json)}}};
     }

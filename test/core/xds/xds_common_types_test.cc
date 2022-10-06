@@ -556,11 +556,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStruct) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
@@ -578,11 +577,10 @@ TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
@@ -598,11 +596,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
@@ -656,11 +653,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
@@ -696,11 +692,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlMissing) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
@@ -736,11 +731,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNoSlash) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
@@ -776,11 +770,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNothingAfterSlash) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
@@ -796,11 +789,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNothingAfterSlash) {
 TEST_F(ExtractXdsExtensionTest, TypedStructParseFailure) {
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(std::string("\0", 1)));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(std::string("\0", 1)));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
@@ -820,11 +812,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithInvalidProtobufStruct) {
   std::string serialized_typed_struct = typed_struct.SerializeAsString();
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(
-      any_proto,
-      StdStringToUpbString(
-          absl::string_view("type.googleapis.com/xds.type.v3.TypedStruct")));
-  google_protobuf_Any_set_value(
-      any_proto, StdStringToUpbString(serialized_typed_struct));
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());

@@ -460,8 +460,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
   strip_type_prefix();
   extension.validation_fields.emplace_back(
       errors, absl::StrCat(".value[", extension.type, "]"));
-  absl::string_view any_value =
-      UpbStringToAbsl(google_protobuf_Any_value(any));
+  absl::string_view any_value = UpbStringToAbsl(google_protobuf_Any_value(any));
   if (extension.type == "xds.type.v3.TypedStruct" ||
       extension.type == "udpa.type.v1.TypedStruct") {
     const auto* typed_struct = xds_type_v3_TypedStruct_parse(
