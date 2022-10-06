@@ -37,7 +37,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
@@ -156,7 +155,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     grpc_resolver_dns_ares_shutdown();
-    grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;
