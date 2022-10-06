@@ -295,7 +295,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
     ],
 )
 
