@@ -52,11 +52,11 @@
 namespace grpc_core {
 
 const grpc_channel_filter MessageCompressFilter::kClientFilter =
-    MakePromiseBasedFilter<MessageCompressFilter, FilterEndpoint::kClient>(
-        "message_compress");
+    MakePromiseBasedFilter<MessageCompressFilter, FilterEndpoint::kClient,
+                           kFilterExaminesOutboundMessages>("message_compress");
 const grpc_channel_filter MessageCompressFilter::kServerFilter =
-    MakePromiseBasedFilter<MessageCompressFilter, FilterEndpoint::kServer>(
-        "message_compress");
+    MakePromiseBasedFilter<MessageCompressFilter, FilterEndpoint::kServer,
+                           kFilterExaminesOutboundMessages>("message_compress");
 
 absl::StatusOr<MessageCompressFilter> MessageCompressFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {

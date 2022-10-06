@@ -121,6 +121,8 @@ enum class FilterEndpoint {
 // Flags for MakePromiseBasedFilter.
 static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 static constexpr uint8_t kFilterIsLast = 2;
+static constexpr uint8_t kFilterExaminesOutboundMessages = 4;
+static constexpr uint8_t kFilterExaminesInboundMessages = 8;
 
 namespace promise_filter_detail {
 

@@ -36,6 +36,7 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -54,11 +55,15 @@
 namespace grpc_core {
 
 const grpc_channel_filter ClientMessageDecompressFilter::kFilter =
-    MakePromiseBasedFilter<ClientMessageDecompressFilter,
-                           FilterEndpoint::kClient>("message_decompress");
+    MakePromiseBasedFilter<
+        ClientMessageDecompressFilter, FilterEndpoint::kClient,
+        kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages>(
+        "message_decompress");
 const grpc_channel_filter ServerMessageDecompressFilter::kFilter =
     MakePromiseBasedFilter<ServerMessageDecompressFilter,
-                           FilterEndpoint::kServer>("message_decompress");
+                           FilterEndpoint::kServer,
+                           kFilterExaminesInboundMessages>(
+        "message_decompress");
 
 absl::StatusOr<ClientMessageDecompressFilter>
 ClientMessageDecompressFilter::Create(const ChannelArgs& args,
