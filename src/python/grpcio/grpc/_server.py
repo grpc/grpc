@@ -276,9 +276,10 @@ class _Context(grpc.ServicerContext):
         return id_key if id_key is None else _common.decode(id_key)
 
     def auth_context(self):
+        auth_context = cygrpc.auth_context(self._rpc_event.call)
+        auth_context_dict = {} if auth_context is None else auth_context
         return {
-            _common.decode(key): value for key, value in six.iteritems(
-                cygrpc.auth_context(self._rpc_event.call))
+            _common.decode(key): value for key, value in auth_context_dict.items()
         }
 
     def set_compression(self, compression):

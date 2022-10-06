@@ -675,8 +675,8 @@ def main():
                     jobs, newline_on_success=True, maxjobs=1)
                 total_scenario_failures += scenario_failures
                 merged_resultset = dict(
-                    itertools.chain(six.iteritems(merged_resultset),
-                                    six.iteritems(resultset)))
+                    itertools.chain(merged_resultset.items(),
+                                    resultset.items()))
             finally:
                 # Consider qps workers that need to be killed as failures
                 qps_workers_killed += finish_qps_workers(

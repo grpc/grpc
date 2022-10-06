@@ -64,7 +64,7 @@ def metadata_transmitted(original_metadata, transmitted_metadata):
     for key, value in transmitted_metadata:
         transmitted[key].append(value)
 
-    for key, values in six.iteritems(original):
+    for key, values in original.items():
         transmitted_values = transmitted[key]
         transmitted_iterator = iter(transmitted_values)
         try:

@@ -48,7 +48,7 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
         self._name = service
         self._method_handlers = {
             _common.fully_qualified_method(service, method): method_handler
-            for method, method_handler in six.iteritems(method_handlers)
+            for method, method_handler in method_handlers.items()
         }
 
     def service_name(self):

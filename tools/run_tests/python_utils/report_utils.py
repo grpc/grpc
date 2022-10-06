@@ -65,7 +65,7 @@ def render_junit_xml_report(resultset,
     else:
         # To have each test result displayed as a separate target by the Resultstore/Sponge UI,
         # we generate a separate XML report file for each test result
-        for shortname, results in six.iteritems(resultset):
+        for shortname, results in resultset.items():
             one_result = {shortname: results}
             tree = new_junit_xml_tree()
             append_junit_xml_results(tree, one_result,
@@ -111,7 +111,7 @@ def append_junit_xml_results(tree,
                               timestamp=datetime.datetime.now().isoformat())
     failure_count = 0
     error_count = 0
-    for shortname, results in six.iteritems(resultset):
+    for shortname, results in resultset.items():
         for result in results:
             xml_test = ET.SubElement(testsuite, 'testcase', name=shortname)
             if result.elapsed_time:
