@@ -69,7 +69,7 @@ class XdsCommonTypesTest : public ::testing::Test {
                         upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     auto bootstrap = GrpcXdsBootstrap::Create(
         "{\n"
         "  \"xds_servers\": [\n"
