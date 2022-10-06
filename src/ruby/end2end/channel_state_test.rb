@@ -31,7 +31,7 @@ def main
   Process.kill('SIGTERM', client_controller.client_pid)
 
   begin
-    Timeout.timeout(10) { Process.wait(client_controller.client_pid) }
+    Timeout.timeout(120) { Process.wait(client_controller.client_pid) }
   rescue Timeout::Error
     STDERR.puts "timeout wait for client pid #{client_controller.client_pid}"
     Process.kill('SIGKILL', client_controller.client_pid)
