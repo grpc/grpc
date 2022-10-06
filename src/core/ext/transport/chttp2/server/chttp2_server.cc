@@ -58,6 +58,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -324,7 +325,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
       listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "Error adding port to server: %s",
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
     // TODO(yashykt): We wouldn't need to assert here if we bound to the
     // port earlier during AddPort.
     GPR_ASSERT(0);
@@ -443,7 +444,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   {
     MutexLock connection_lock(&self->connection_->mu_);
     if (!error.ok() || self->connection_->shutdown_) {
-      std::string error_str = grpc_error_std_string(error);
+      std::string error_str = StatusToString(error);
       gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
       cleanup_connection = true;
       if (error.ok() && args->endpoint != nullptr) {
@@ -509,7 +510,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         } else {
           // Failed to create channel from transport. Clean up.
           gpr_log(GPR_ERROR, "Failed to create channel: %s",
-                  grpc_error_std_string(channel_init_err).c_str());
+                  StatusToString(channel_init_err).c_str());
           grpc_transport_destroy(transport);
           grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
@@ -822,7 +823,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     args = self->args_modifier_(*args_result, &error);
     if (!error.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
-              grpc_error_std_string(error).c_str());
+              StatusToString(error).c_str());
       endpoint_cleanup(error);
       return;
     }
@@ -965,7 +966,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
           resolved_or->size() - error_list.size(), resolved_or->size());
       error = GRPC_ERROR_CREATE_REFERENCING(msg.c_str(), error_list.data(),
                                             error_list.size());
-      gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "WARNING: %s", StatusToString(error).c_str());
       // we managed to bind some addresses: continue without error
     }
     return absl::OkStatus();
@@ -1041,7 +1042,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
 done:
   sc.reset(DEBUG_LOCATION, "server");
   if (!err.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
+    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(err).c_str());
   }
   return port_num;
 }
@@ -1078,7 +1079,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     gpr_log(GPR_ERROR, "Failed to create channel: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     grpc_transport_destroy(transport);
   }
 }
