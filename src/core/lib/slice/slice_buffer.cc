@@ -38,6 +38,11 @@ void SliceBuffer::Append(Slice slice) {
   grpc_slice_buffer_add(&slice_buffer_, slice.TakeCSlice());
 }
 
+void SliceBuffer::Append(const SliceBuffer& other) {
+  grpc_slice_buffer_addn(&slice_buffer_, other.slice_buffer_.slices,
+                         other.slice_buffer_.count);
+}
+
 size_t SliceBuffer::AppendIndexed(Slice slice) {
   return grpc_slice_buffer_add_indexed(&slice_buffer_, slice.TakeCSlice());
 }

@@ -80,10 +80,17 @@ class HPackCompressor {
     headers.Encode(&framer);
   }
 
+  template <typename HeaderSet>
+  void EncodeRawHeaders(const HeaderSet& headers, grpc_slice_buffer* output) {
+    Framer framer(this, output);
+    headers.Encode(&framer);
+  }
+
   class Framer {
    public:
     Framer(const EncodeHeaderOptions& options, HPackCompressor* compressor,
            grpc_slice_buffer* output);
+    Framer(HPackCompressor* compressor, grpc_slice_buffer* output);
     ~Framer() { FinishFrame(true); }
 
     Framer(const Framer&) = delete;
