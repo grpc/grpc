@@ -22,6 +22,8 @@
 
 #include <limits.h>
 
+#include <atomic>
+
 #include "absl/base/attributes.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
