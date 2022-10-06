@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 
 #include "absl/status/statusor.h"
@@ -55,4 +57,4 @@ struct FrameHeader {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
