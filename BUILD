@@ -3189,6 +3189,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:span",
     ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "gpr",
         "histogram_view",
