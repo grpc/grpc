@@ -40,6 +40,9 @@ namespace {
 // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
 // current thread (with nullptr indicating not a threadpool thread).
 thread_local bool g_threadpool_thread;
+
+const grpc_core::Duration kStartThreadCooldown =
+    grpc_core::Duration::Milliseconds(100);
 }  // namespace
 
 void ThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
@@ -50,7 +53,7 @@ void ThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
       auto time_since_last_start =
           now - grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
                     state->last_started_thread.load(std::memory_order_relaxed));
-      if (time_since_last_start < grpc_core::Duration::Seconds(1)) {
+      if (time_since_last_start < kStartThreadCooldown) {
         state->thread_count.Remove();
         return;
       }
@@ -196,7 +199,7 @@ bool ThreadPool::Queue::IsBacklogged() {
 
 void ThreadPool::Queue::SleepIfRunning() {
   grpc_core::MutexLock lock(&mu_);
-  auto end = grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
+  auto end = kStartThreadCooldown + grpc_core::Timestamp::Now();
   while (true) {
     grpc_core::Timestamp now = grpc_core::Timestamp::Now();
     if (now >= end) return;
