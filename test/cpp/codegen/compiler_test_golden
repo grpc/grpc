@@ -33,7 +33,7 @@
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/message_allocator.h>
+#include <grpcpp/support/message_allocator.h>
 #include <grpcpp/support/method_handler.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/codegen/rpc_method.h>

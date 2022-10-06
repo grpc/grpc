@@ -132,11 +132,6 @@ typedef enum {
 
 std::string grpc_error_std_string(grpc_error_handle error);
 
-// debug only toggles that allow for a sanity to check that ensures we will
-// never create any errors in the per-RPC hotpath.
-void grpc_disable_error_creation();
-void grpc_enable_error_creation();
-
 #define GRPC_ERROR_NONE absl::OkStatus()
 #define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError(""))
 #define GRPC_ERROR_CANCELLED absl::CancelledError()

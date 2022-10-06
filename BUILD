@@ -7326,6 +7326,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
+        "default_event_engine",
         "env",
         "error",
         "gpr",
