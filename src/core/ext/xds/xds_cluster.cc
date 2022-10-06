@@ -47,8 +47,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -273,6 +275,102 @@ void AggregateClusterParse(const XdsResourceType::DecodeContext& context,
   }
 }
 
+void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
+                         const envoy_config_cluster_v3_Cluster* cluster,
+                         XdsClusterResource* cds_update,
+                         ValidationErrors* errors) {
+  // First, check the new load_balancing_policy field.
+  const auto* load_balancing_policy =
+      envoy_config_cluster_v3_Cluster_load_balancing_policy(cluster);
+  if (load_balancing_policy != nullptr) {
+    const auto& registry =
+        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+            .lb_policy_registry();
+    ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
+    const size_t original_error_count = errors->size();
+    cds_update->lb_policy_config = registry.ConvertXdsLbPolicyConfig(
+        context, load_balancing_policy, errors);
+    // If there were no conversion errors, validate that the converted config
+    // parses with the gRPC LB policy registry.
+    if (original_error_count == errors->size()) {
+      auto config = CoreConfiguration::Get()
+                        .lb_policy_registry()
+                        .ParseLoadBalancingConfig(cds_update->lb_policy_config);
+      if (!config.ok()) errors->AddError(config.status().message());
+    }
+    return;
+  }
+  // Didn't find load_balancing_policy field, so fall back to the old
+  // lb_policy enum field.
+  if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
+      envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
+    cds_update->lb_policy_config = {
+        Json::Object{
+            {"xds_wrr_locality_experimental",
+             Json::Object{
+                 {"childPolicy",
+                  Json::Array{
+                      Json::Object{
+                          {"round_robin", Json::Object()},
+                      },
+                  }},
+             }},
+        },
+    };
+  } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
+             envoy_config_cluster_v3_Cluster_RING_HASH) {
+    // Record ring hash lb config
+    auto* ring_hash_config =
+        envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
+    uint64_t min_ring_size = 1024;
+    uint64_t max_ring_size = 8388608;
+    if (ring_hash_config != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".ring_hash_lb_config");
+      const google_protobuf_UInt64Value* uint64_value =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
+              ring_hash_config);
+      if (uint64_value != nullptr) {
+        ValidationErrors::ScopedField field(errors, ".maximum_ring_size");
+        max_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        if (max_ring_size > 8388608 || max_ring_size == 0) {
+          errors->AddError("must be in the range of 1 to 8388608");
+        }
+      }
+      uint64_value =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
+              ring_hash_config);
+      if (uint64_value != nullptr) {
+        ValidationErrors::ScopedField field(errors, ".minimum_ring_size");
+        min_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        if (min_ring_size > 8388608 || min_ring_size == 0) {
+          errors->AddError("must be in the range of 1 to 8388608");
+        }
+        if (min_ring_size > max_ring_size) {
+          errors->AddError("cannot be greater than maximum_ring_size");
+        }
+      }
+      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+              ring_hash_config) !=
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
+        ValidationErrors::ScopedField field(errors, ".hash_function");
+        errors->AddError("invalid hash function");
+      }
+    }
+    cds_update->lb_policy_config = {
+        Json::Object{
+            {"ring_hash_experimental",
+             Json::Object{
+                 {"minRingSize", min_ring_size},
+                 {"maxRingSize", max_ring_size},
+             }},
+        },
+    };
+  } else {
+    ValidationErrors::ScopedField field(errors, ".lb_policy");
+    errors->AddError("LB policy is not supported");
+  }
+}
+
 absl::StatusOr<XdsClusterResource> CdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/) {
@@ -322,73 +420,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     errors.AddError("unknown discovery type");
   }
   // Check the LB policy.
-  if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
-      envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
-    cds_update.lb_policy_config = {
-        Json::Object{
-            {"xds_wrr_locality_experimental",
-             Json::Object{
-                 {"childPolicy",
-                  Json::Array{
-                      Json::Object{
-                          {"round_robin", Json::Object()},
-                      },
-                  }},
-             }},
-        },
-    };
-  } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
-             envoy_config_cluster_v3_Cluster_RING_HASH) {
-    // Record ring hash lb config
-    auto* ring_hash_config =
-        envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
-    uint64_t min_ring_size = 1024;
-    uint64_t max_ring_size = 8388608;
-    if (ring_hash_config != nullptr) {
-      ValidationErrors::ScopedField field(&errors, ".ring_hash_lb_config");
-      const google_protobuf_UInt64Value* uint64_value =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
-              ring_hash_config);
-      if (uint64_value != nullptr) {
-        ValidationErrors::ScopedField field(&errors, ".maximum_ring_size");
-        max_ring_size = google_protobuf_UInt64Value_value(uint64_value);
-        if (max_ring_size > 8388608 || max_ring_size == 0) {
-          errors.AddError("must be in the range of 1 to 8388608");
-        }
-      }
-      uint64_value =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
-              ring_hash_config);
-      if (uint64_value != nullptr) {
-        ValidationErrors::ScopedField field(&errors, ".minimum_ring_size");
-        min_ring_size = google_protobuf_UInt64Value_value(uint64_value);
-        if (min_ring_size > 8388608 || min_ring_size == 0) {
-          errors.AddError("must be in the range of 1 to 8388608");
-        }
-        if (min_ring_size > max_ring_size) {
-          errors.AddError("cannot be greater than maximum_ring_size");
-        }
-      }
-      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) !=
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
-        ValidationErrors::ScopedField field(&errors, ".hash_function");
-        errors.AddError("invalid hash function");
-      }
-    }
-    cds_update.lb_policy_config = {
-        Json::Object{
-            {"ring_hash_experimental",
-             Json::Object{
-                 {"min_ring_size", min_ring_size},
-                 {"max_ring_size", max_ring_size},
-             }},
-        },
-    };
-  } else {
-    ValidationErrors::ScopedField field(&errors, ".lb_policy");
-    errors.AddError("LB policy is not supported");
-  }
+  ParseLbPolicyConfig(context, cluster, &cds_update, &errors);
   // transport_socket
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);

@@ -406,6 +406,10 @@ CommonTlsContext CommonTlsContext::Parse(
   return common_tls_context;
 }
 
+//
+// ExtractXdsExtension
+//
+
 namespace {
 
 absl::StatusOr<Json> ParseProtobufStructToJson(
@@ -417,7 +421,7 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
                                     nullptr, 0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
     return absl::InvalidArgumentError(
-        absl::StrCat("Error parsing google::Protobuf::Struct: ",
+        absl::StrCat("error encoding google::Protobuf::Struct as JSON: ",
                      upb_Status_ErrorMessage(status.ptr())));
   }
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
@@ -425,9 +429,9 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   auto json = Json::Parse(reinterpret_cast<char*>(buf));
   if (!json.ok()) {
-    // This should not happen
+    // This should never happen.
     return absl::InternalError(
-        absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "
+        absl::StrCat("error parsing JSON form of google::Protobuf::Struct "
                      "produced by upb library: ",
                      json.status().ToString()));
   }
@@ -441,10 +445,14 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     const google_protobuf_Any* any, ValidationErrors* errors) {
   XdsExtension extension;
   auto strip_type_prefix = [&]() {
+    ValidationErrors::ScopedField field(errors, ".type_url");
+    if (extension.type.empty()) {
+      errors->AddError("field not present");
+      return;
+    }
     size_t pos = extension.type.rfind('/');
     if (pos == absl::string_view::npos || pos == extension.type.size() - 1) {
-      ValidationErrors::ScopedField field(errors, ".type_url");
-      errors->AddError(absl::StrCat("Invalid type_url ", extension.type));
+      errors->AddError(absl::StrCat("invalid value \"", extension.type, "\""));
     }
     extension.type = extension.type.substr(pos + 1);
   };
@@ -469,7 +477,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
     if (protobuf_struct == nullptr) {
-      extension.value = Json();  // JSON null
+      extension.value = Json::Object();  // Default to empty object.
     } else {
       auto json = ParseProtobufStructToJson(context, protobuf_struct);
       if (!json.ok()) {

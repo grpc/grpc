@@ -47,6 +47,24 @@ namespace grpc_core {
 
 namespace {
 
+class RoundRobinLbPolicyConfigFactory
+    : public XdsLbPolicyRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* /*registry*/,
+      const XdsResourceType::DecodeContext& /*context*/,
+      absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
+      int /*recursion_depth*/) override {
+    return Json::Object{{"round_robin", Json::Object()}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin";
+  }
+};
+
 class RingHashLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
@@ -64,50 +82,52 @@ class RingHashLbPolicyConfigFactory
     }
     if (envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_hash_function(
             resource) !=
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_XX_HASH) {
+        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_XX_HASH
+        &&
+        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_hash_function(
+            resource) !=
+        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_DEFAULT_HASH) {
       ValidationErrors::ScopedField field(errors, ".hash_function");
       errors->AddError("unsupported value (must be XX_HASH)");
     }
-    Json::Object json;
-    const auto* min_ring_size =
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
-            resource);
-    if (min_ring_size != nullptr) {
-      json.emplace("minRingSize",
-                   google_protobuf_UInt64Value_value(min_ring_size));
-    }
-    const auto* max_ring_size =
+    uint64_t max_ring_size = 8388608;
+    const auto* uint64_value =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(
             resource);
-    if (max_ring_size != nullptr) {
-      json.emplace("maxRingSize",
-                   google_protobuf_UInt64Value_value(max_ring_size));
+    if (uint64_value != nullptr) {
+      max_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+      if (max_ring_size == 0 || max_ring_size > 8388608) {
+        ValidationErrors::ScopedField field(errors, ".maximum_ring_size");
+        errors->AddError("value must be in the range [1, 8388608]");
+      }
     }
-    return Json::Object{{"ring_hash_experimental", std::move(json)}};
+    uint64_t min_ring_size = 1024;
+    uint64_value =
+        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
+            resource);
+    if (uint64_value != nullptr) {
+      min_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+      ValidationErrors::ScopedField field(errors, ".minimum_ring_size");
+      if (min_ring_size == 0 || min_ring_size > 8388608) {
+        errors->AddError("value must be in the range [1, 8388608]");
+      }
+      if (min_ring_size > max_ring_size) {
+        errors->AddError("cannot be greater than maximum_ring_size");
+      }
+    }
+    return Json::Object{
+        {"ring_hash_experimental",
+         Json::Object{
+             {"minRingSize", min_ring_size},
+             {"maxRingSize", max_ring_size},
+         }},
+    };
   }
 
   absl::string_view type() override { return Type(); }
 
   static absl::string_view Type() {
     return "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash";
-  }
-};
-
-class RoundRobinLbPolicyConfigFactory
-    : public XdsLbPolicyRegistry::ConfigFactory {
- public:
-  Json::Object ConvertXdsLbPolicyConfig(
-      const XdsLbPolicyRegistry* /*registry*/,
-      const XdsResourceType::DecodeContext& /*context*/,
-      absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
-      int /*recursion_depth*/) override {
-    return Json::Object{{"round_robin", Json::Object()}};
-  }
-
-  absl::string_view type() override { return Type(); }
-
-  static absl::string_view Type() {
-    return "envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin";
   }
 };
 
@@ -138,7 +158,7 @@ class WrrLocalityLbPolicyConfigFactory
         context, endpoint_picking_policy, errors, recursion_depth + 1);
     return Json::Object{
         {"xds_wrr_locality_experimental",
-         Json::Object{{"child_policy", std::move(child_policy)}}}};
+         Json::Object{{"childPolicy", std::move(child_policy)}}}};
   }
 
   absl::string_view type() override { return Type(); }
