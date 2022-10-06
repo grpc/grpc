@@ -359,10 +359,11 @@ struct grpc_transport_stream_op_batch_payload {
 
   /** Forcefully close this stream.
       The HTTP2 semantics should be:
-      - server side: if cancel_error has GRPC_ERROR_INT_GRPC_STATUS, and
-        trailing metadata has not been sent, send trailing metadata with status
-        and message from cancel_error (use grpc_error_get_status) followed by
-        a RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
+      - server side: if cancel_error has
+     grpc_core::StatusIntProperty::kRpcStatus, and trailing metadata has not
+     been sent, send trailing metadata with status and message from cancel_error
+     (use grpc_error_get_status) followed by a RST_STREAM with
+     error=GRPC_CHTTP2_NO_ERROR to force a full close
       - at all other times: use grpc_error_get_status to get a status code, and
         convert to a HTTP2 error code using
         grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this

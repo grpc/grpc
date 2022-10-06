@@ -62,7 +62,6 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
@@ -70,6 +69,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -696,14 +696,23 @@ absl::Status RetryPolicyParse(
       errors.emplace_back(
           "RouteAction RetryPolicy RetryBackoff missing base interval.");
     } else {
+      ValidationErrors validation_errors;
       retry_to_return.retry_back_off.base_interval =
-          ParseDuration(base_interval);
+          ParseDuration(base_interval, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status("base_interval").message());
+      }
     }
     const google_protobuf_Duration* max_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
     Duration max;
     if (max_interval != nullptr) {
-      max = ParseDuration(max_interval);
+      ValidationErrors validation_errors;
+      max = ParseDuration(max_interval, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(validation_errors.status("max_interval").message());
+      }
     } else {
       // if max interval is not set, it is 10x the base.
       max = 10 * retry_to_return.retry_back_off.base_interval;
@@ -845,7 +854,11 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
                 max_stream_duration);
       }
       if (duration != nullptr) {
-        route.max_stream_duration = ParseDuration(duration);
+        ValidationErrors validation_errors;
+        route.max_stream_duration = ParseDuration(duration, &validation_errors);
+        if (!validation_errors.ok()) {
+          return validation_errors.status("max_stream_duration");
+        }
       }
     }
   }
@@ -1140,9 +1153,8 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
               context.client, result.name->c_str(),
               rds_update->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*rds_update);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsRouteConfigResource>(std::move(*rds_update));
   }
   return result;
 }

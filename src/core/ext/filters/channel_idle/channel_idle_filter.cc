@@ -38,6 +38,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -186,8 +187,8 @@ void MaxAgeFilter::PostInit() {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
-                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
+                    GRPC_ERROR_CREATE("max_age"),
+                    StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
                 elem->filter->start_transport_op(elem, op);
@@ -277,8 +278,8 @@ void ChannelIdleFilter::StartIdleTimer() {
 void ChannelIdleFilter::CloseChannel() {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-      GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+      GRPC_ERROR_CREATE("enter idle"),
+      StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);

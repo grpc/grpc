@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
@@ -103,9 +104,9 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
       }
       break;
     default:
-      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      error = GRPC_ERROR_CREATE(
           absl::StrFormat("Bad GRPC frame type 0x%02x", header[0]));
-      error = grpc_error_set_int(error, GRPC_ERROR_INT_STREAM_ID,
+      error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
                                  static_cast<intptr_t>(s->id));
       return error;
   }
@@ -146,9 +147,9 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
   if (is_last && s->received_last_frame) {
     grpc_chttp2_mark_stream_closed(
         t, s, true, false,
-        t->is_client ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                           "Data frame with END_STREAM flag received")
-                     : absl::OkStatus());
+        t->is_client
+            ? GRPC_ERROR_CREATE("Data frame with END_STREAM flag received")
+            : absl::OkStatus());
   }
 
   return absl::OkStatus();

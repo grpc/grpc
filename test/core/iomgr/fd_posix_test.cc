@@ -120,8 +120,7 @@ static void session_shutdown_cb(void* arg, /*session */
   grpc_fd_orphan(se->em_fd, nullptr, nullptr, "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
-  grpc_fd_shutdown(sv->em_fd,
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("session_shutdown_cb"));
+  grpc_fd_shutdown(sv->em_fd, GRPC_ERROR_CREATE("session_shutdown_cb"));
 }
 
 /* Called when data become readable in a session. */

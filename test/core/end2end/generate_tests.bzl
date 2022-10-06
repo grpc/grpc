@@ -265,7 +265,6 @@ END2END_TESTS = {
     "max_connection_idle": _test_options(needs_fullstack = True, proxyable = False),
     "max_message_length": _test_options(exclude_minstack = True),
     "negative_deadline": _test_options(exclude_minstack = True),
-    "no_error_on_hotpath": _test_options(proxyable = False),
     "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
     "payload": _test_options(exclude_1byte = True),

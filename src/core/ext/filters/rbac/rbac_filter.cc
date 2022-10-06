@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -92,7 +93,7 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
         service_config_call_data->GetMethodParsedConfig(
             filter->service_config_parser_index_));
     if (method_params == nullptr) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
+      error = GRPC_ERROR_CREATE("No RBAC policy found.");
     } else {
       RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
       auto* authorization_engine =
@@ -101,12 +102,11 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
               ->Evaluate(EvaluateArgs(calld->recv_initial_metadata_,
                                       &chand->per_channel_evaluate_args_))
               .type == AuthorizationEngine::Decision::Type::kDeny) {
-        error =
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
+        error = GRPC_ERROR_CREATE("Unauthorized RPC rejected");
       }
     }
     if (!error.ok()) {
-      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+      error = grpc_error_set_int(error, StatusIntProperty::kRpcStatus,
                                  GRPC_STATUS_PERMISSION_DENIED);
     }
   }
@@ -146,14 +146,14 @@ grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
   GPR_ASSERT(elem->filter == &kFilterVtable);
   auto* auth_context = grpc_find_auth_context_in_args(args->channel_args);
   if (auth_context == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No auth context found");
+    return GRPC_ERROR_CREATE("No auth context found");
   }
   auto* transport = grpc_channel_args_find_pointer<grpc_transport>(
       args->channel_args, GRPC_ARG_TRANSPORT);
   if (transport == nullptr) {
     // This should never happen since the transport is always set on the server
     // side.
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No transport configured");
+    return GRPC_ERROR_CREATE("No transport configured");
   }
   new (elem->channel_data) RbacFilter(
       grpc_channel_stack_filter_instance_number(args->channel_stack, elem),

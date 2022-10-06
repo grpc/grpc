@@ -30,7 +30,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
 // They aim to keep you safe by providing strong guarantees around lifetime and
