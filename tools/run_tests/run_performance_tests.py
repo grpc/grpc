@@ -31,6 +31,8 @@ import time
 import traceback
 import uuid
 
+import six
+
 import performance.scenario_config as scenario_config
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -593,7 +595,7 @@ def main():
 
     languages = set(
         scenario_config.LANGUAGES[l] for l in itertools.chain.from_iterable(
-            scenario_config.LANGUAGES.keys() if x == 'all' else [x]
+            six.iterkeys(scenario_config.LANGUAGES) if x == 'all' else [x]
             for x in args.language))
 
     # Put together set of remote hosts where to run and build
@@ -673,8 +675,8 @@ def main():
                     jobs, newline_on_success=True, maxjobs=1)
                 total_scenario_failures += scenario_failures
                 merged_resultset = dict(
-                    itertools.chain(merged_resultset.items(),
-                                    resultset.items()))
+                    itertools.chain(six.iteritems(merged_resultset),
+                                    six.iteritems(resultset)))
             finally:
                 # Consider qps workers that need to be killed as failures
                 qps_workers_killed += finish_qps_workers(

@@ -18,6 +18,9 @@ from __future__ import print_function
 import re
 import subprocess
 
+import six
+
+
 class TestSuite:
     """
   Contains label to identify job as belonging to this test suite and
@@ -113,7 +116,7 @@ _ALLOWLIST_DICT = {
 _ALL_TRIGGERS = "(" + ")|(".join(list(_ALLOWLIST_DICT.keys())) + ")"
 
 # Add all triggers to their respective test suites
-for trigger, test_suites in _ALLOWLIST_DICT.items():
+for trigger, test_suites in six.iteritems(_ALLOWLIST_DICT):
     for test_suite in test_suites:
         test_suite.add_trigger(trigger)
 
