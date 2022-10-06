@@ -107,7 +107,7 @@ void grpc_free_port_using_server(int port) {
     GPR_ASSERT(uri.ok());
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, &pr.pops, &req,
-        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(30),
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(30),
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
         &rsp,
@@ -121,7 +121,7 @@ void grpc_free_port_using_server(int port) {
       if (!GRPC_LOG_IF_ERROR(
               "pollset_work",
               grpc_pollset_work(grpc_polling_entity_pollset(&pr.pops), &worker,
-                                grpc_core::ExecCtx::Get()->Now() +
+                                grpc_core::Timestamp::Now() +
                                     grpc_core::Duration::Seconds(1)))) {
         pr.done = 1;
       }
@@ -154,7 +154,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   int failed = 0;
   grpc_http_response* response = &pr->response;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
             grpc_error_std_string(error).c_str());
@@ -191,7 +191,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     GPR_ASSERT(uri.ok());
     pr->http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, &pr->pops, &req,
-        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(30),
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(30),
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
         &pr->response,
@@ -238,7 +238,7 @@ int grpc_pick_port_using_server(void) {
     GPR_ASSERT(uri.ok());
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, &pr.pops, &req,
-        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(30),
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(30),
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
         &pr.response,
@@ -252,7 +252,7 @@ int grpc_pick_port_using_server(void) {
       if (!GRPC_LOG_IF_ERROR(
               "pollset_work",
               grpc_pollset_work(grpc_polling_entity_pollset(&pr.pops), &worker,
-                                grpc_core::ExecCtx::Get()->Now() +
+                                grpc_core::Timestamp::Now() +
                                     grpc_core::Duration::Seconds(1)))) {
         pr.port = 0;
       }

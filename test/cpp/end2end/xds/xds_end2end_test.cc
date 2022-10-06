@@ -105,6 +105,7 @@
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -130,6 +131,8 @@ using ::envoy::type::matcher::v3::StringMatcher;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
+
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
@@ -173,12 +176,9 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       if (!root_being_watched && !identity_being_watched) return;
       auto it = cert_data_map_.find(cert_name);
       if (it == cert_data_map_.end()) {
-        grpc_error_handle error =
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                "No certificates available for cert_name \"", cert_name, "\""));
-        distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(error),
-                                      GRPC_ERROR_REF(error));
-        GRPC_ERROR_UNREF(error);
+        grpc_error_handle error = GRPC_ERROR_CREATE(absl::StrCat(
+            "No certificates available for cert_name \"", cert_name, "\""));
+        distributor_->SetErrorForCert(cert_name, error, error);
       } else {
         absl::optional<std::string> root_certificate;
         absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -430,384 +430,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> fallback_authenticated_identity_;
   int backend_index_ = 0;
 };
-
-TEST_P(XdsSecurityTest, TransportSocketMissingTypedConfig) {
-  auto cluster = default_cluster_;
-  cluster.mutable_transport_socket();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(response_state->error_message,
-            "xDS response validation errors: [resource index 0: cluster_name: "
-            "INVALID_ARGUMENT: errors parsing CDS resource: ["
-            "Error parsing security configuration: "
-            "transport_socket.typed_config not set]]");
-}
-
-TEST_P(XdsSecurityTest, UnknownTransportSocket) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->mutable_typed_config()->PackFrom(Listener());
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(response_state->error_message,
-            "xDS response validation errors: [resource index 0: cluster_name: "
-            "INVALID_ARGUMENT: errors parsing CDS resource: ["
-            "Error parsing security configuration: "
-            "Unrecognized transport socket type: "
-            "envoy.config.listener.v3.Listener]]");
-}
-
-TEST_P(XdsSecurityTest,
-       TLSConfigurationWithoutValidationContextCertificateProviderInstance) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->mutable_typed_config()->PackFrom(UpstreamTlsContext());
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "ca_certificate_provider_instance found."));
-}
-
-TEST_P(
-    XdsSecurityTest,
-    MatchSubjectAltNamesProvidedWithoutValidationContextCertificateProviderInstance) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  auto* validation_context = upstream_tls_context.mutable_common_tls_context()
-                                 ->mutable_validation_context();
-  *validation_context->add_match_subject_alt_names() = server_san_exact_;
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "ca_certificate_provider_instance found."));
-}
-
-TEST_P(
-    XdsSecurityTest,
-    TlsCertificateProviderInstanceWithoutValidationContextCertificateProviderInstance) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name(std::string("fake_plugin1"));
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "ca_certificate_provider_instance found."));
-}
-
-TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name(std::string("fake_plugin1"));
-  auto* validation_context = upstream_tls_context.mutable_common_tls_context()
-                                 ->mutable_validation_context();
-  StringMatcher matcher;
-  matcher.mutable_safe_regex()->mutable_google_re2();
-  matcher.mutable_safe_regex()->set_regex(
-      "(foo|waterzooi).test.google.(fr|be)");
-  matcher.set_ignore_case(true);
-  *validation_context->add_match_subject_alt_names() = matcher;
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
-}
-
-TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("unknown");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
-}
-
-TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name("unknown");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithVerifyCertificateSpki) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->add_verify_certificate_spki("spki");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "CertificateValidationContext: verify_certificate_spki unsupported"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithVerifyCertificateHash) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->add_verify_certificate_hash("hash");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "CertificateValidationContext: verify_certificate_hash unsupported"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithRequireSignedCertificateTimes) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_require_signed_certificate_timestamp()
-      ->set_value(true);
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("CertificateValidationContext: "
-                           "require_signed_certificate_timestamp unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksCertificateValidationContextWithCrl) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_crl();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("CertificateValidationContext: crl unsupported"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithCustomValidatorConfig) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_custom_validator_config();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "CertificateValidationContext: custom_validator_config unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksValidationContextSdsSecretConfig) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context_sds_secret_config();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("validation_context_sds_secret_config unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksTlsParams) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()->mutable_tls_params();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("tls_params unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksCustomHandshaker) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_custom_handshaker();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("custom_handshaker unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksTlsCertificates) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("tls_certificates unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksTlsCertificateSdsSecretConfigs) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->add_tls_certificate_sds_secret_configs();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("tls_certificate_sds_secret_configs unsupported"));
-}
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
@@ -1741,7 +1363,7 @@ TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
+                  "unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
@@ -1752,7 +1374,7 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
+                  "unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsServerSecurityTest,
@@ -4088,30 +3710,28 @@ int main(int argc, char** argv) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
-                    grpc::testing::FakeCertificateProviderFactory>(
+                std::make_unique<grpc::testing::FakeCertificateProviderFactory>(
                     "fake1", grpc::testing::g_fake1_cert_data_map));
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
-                    grpc::testing::FakeCertificateProviderFactory>(
+                std::make_unique<grpc::testing::FakeCertificateProviderFactory>(
                     "fake2", grpc::testing::g_fake2_cert_data_map));
       });
   grpc_init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
           /* supported_on_clients = */ true, /* supported_on_servers = */ false,
           /* is_terminal_filter */ false),
       {"grpc.testing.client_only_http_filter"});
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.server_only_http_filter",
           /* supported_on_clients = */ false, /* supported_on_servers = */ true,
           /* is_terminal_filter */ false),
       {"grpc.testing.server_only_http_filter"});
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.terminal_http_filter",
           /* supported_on_clients = */ true, /* supported_on_servers = */ true,
           /* is_terminal_filter */ true),

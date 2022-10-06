@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
@@ -28,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/surface/event_string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -68,6 +71,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev = grpc_completion_queue_next(
       f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+  gpr_log(GPR_DEBUG, "shutdown event: %s", grpc_event_string(&ev).c_str());
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag(1000));
   grpc_server_destroy(f->server);
@@ -81,8 +85,8 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
   shutdown_client(f);
+  shutdown_server(f);
 
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);

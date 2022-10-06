@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -77,8 +76,8 @@ class FlowControlFuzzer {
  public:
   explicit FlowControlFuzzer(bool enable_bdp) {
     ExecCtx exec_ctx;
-    tfc_ = absl::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
-                                                   &memory_owner_);
+    tfc_ = std::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
+                                                  &memory_owner_);
   }
 
   ~FlowControlFuzzer() {
@@ -162,7 +161,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                                             kMaxAdvanceTimeMillis),
                                       GPR_TIMESPAN));
       exec_ctx.InvalidateNow();
-      if (exec_ctx.Now() >= next_bdp_ping_) {
+      if (Timestamp::Now() >= next_bdp_ping_) {
         scheduled_write_ = true;
       }
     } break;
@@ -289,7 +288,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
   }
   if (scheduled_write_) {
     SendToRemote send;
-    if (exec_ctx.Now() >= next_bdp_ping_) {
+    if (Timestamp::Now() >= next_bdp_ping_) {
       if (auto* bdp = tfc_->bdp_estimator()) {
         bdp->SchedulePing();
         bdp->StartPing();

@@ -25,17 +25,6 @@
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 
-extern void grpc_register_extra_plugins(void);
-
-void grpc_resolver_dns_ares_init(void);
-void grpc_resolver_dns_ares_shutdown(void);
-
-void grpc_register_built_in_plugins(void) {
-  grpc_register_plugin(grpc_resolver_dns_ares_init,
-                       grpc_resolver_dns_ares_shutdown);
-  grpc_register_extra_plugins();
-}
-
 namespace grpc_core {
 
 extern void BuildClientChannelConfiguration(

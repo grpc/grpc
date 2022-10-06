@@ -14,23 +14,28 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
+#include "src/core/lib/gprpp/strerror.h"
 
-#include <utility>
+#include <string.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include "absl/strings/str_format.h"
 
-ThreadedExecutor::ThreadedExecutor(int reserve_threads)
-    : thread_pool_(reserve_threads){};
+namespace grpc_core {
 
-void ThreadedExecutor::Run(EventEngine::Closure* closure) {
-  thread_pool_.Add([closure]() { closure->Run(); });
+#ifdef GPR_WINDOWS
+std::string StrError(int err) { return strerror(err); }
+#else
+std::string StrError(int err) {
+  struct Finish {
+    static std::string Run(char* buf, int err, int r) {
+      if (r == 0) return buf;
+      return absl::StrFormat("strerror_r(%d) failed: %d", err, r);
+    }
+    static std::string Run(char*, int, const char* r) { return r; }
+  };
+  char buf[256];
+  return Finish::Run(buf, err, strerror_r(err, buf, sizeof(buf)));
 }
+#endif  // !GPR_WINDOWS
 
-void ThreadedExecutor::Run(absl::AnyInvocable<void()> closure) {
-  thread_pool_.Add(std::move(closure));
-}
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_core

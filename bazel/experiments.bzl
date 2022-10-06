@@ -26,6 +26,9 @@ EXPERIMENTS = {
         ],
     },
     "off": {
+        "core_end2end_test": [
+            "promise_based_client_call",
+        ],
         "endpoint_test": [
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
@@ -41,8 +44,18 @@ EXPERIMENTS = {
             "tcp_rcv_lowat",
             "tcp_read_chunks",
         ],
+        "hpack_test": [
+            "periodic_resource_quota_reclamation",
+        ],
+        "lame_client_test": [
+            "promise_based_client_call",
+        ],
+        "promise_test": [
+            "periodic_resource_quota_reclamation",
+        ],
         "resource_quota_test": [
             "memory_pressure_controller",
+            "periodic_resource_quota_reclamation",
             "unconstrained_max_quota_buffer_size",
         ],
     },

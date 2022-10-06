@@ -101,7 +101,7 @@ ConnectionAttemptInjector::~ConnectionAttemptInjector() {
 std::unique_ptr<ConnectionAttemptInjector::Hold>
 ConnectionAttemptInjector::AddHold(int port, bool intercept_completion) {
   grpc_core::MutexLock lock(&mu_);
-  auto hold = absl::make_unique<Hold>(this, port, intercept_completion);
+  auto hold = std::make_unique<Hold>(this, port, intercept_completion);
   holds_.push_back(hold.get());
   return hold;
 }
@@ -129,7 +129,7 @@ void ConnectionAttemptInjector::HandleConnection(
           closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
                                       hold, nullptr);
         }
-        hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
+        hold->queued_attempt_ = std::make_unique<QueuedAttempt>(
             closure, ep, interested_parties, config, addr, deadline);
         hold->start_cv_.Signal();
         holds_.erase(it);
@@ -192,7 +192,7 @@ ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
     : attempt_(closure, ep, interested_parties, config, addr, deadline) {
   GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   duration = std::min(duration, deadline - now);
   grpc_timer_init(&timer_, now + duration, &timer_callback_);
 }
@@ -270,7 +270,7 @@ void ConnectionAttemptInjector::Hold::OnComplete(void* arg,
     self->original_on_complete_ = nullptr;
     self->complete_cv_.Signal();
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, error);
 }
 
 }  // namespace testing

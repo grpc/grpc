@@ -80,9 +80,6 @@ extern grpc_call_details_init_type grpc_call_details_init_import;
 typedef void(*grpc_call_details_destroy_type)(grpc_call_details* details);
 extern grpc_call_details_destroy_type grpc_call_details_destroy_import;
 #define grpc_call_details_destroy grpc_call_details_destroy_import
-typedef void(*grpc_register_plugin_type)(void (*init)(void), void (*destroy)(void));
-extern grpc_register_plugin_type grpc_register_plugin_import;
-#define grpc_register_plugin grpc_register_plugin_import
 typedef void(*grpc_init_type)(void);
 extern grpc_init_type grpc_init_import;
 #define grpc_init grpc_init_import

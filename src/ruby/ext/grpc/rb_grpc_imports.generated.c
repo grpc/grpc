@@ -35,7 +35,6 @@ grpc_metadata_array_init_type grpc_metadata_array_init_import;
 grpc_metadata_array_destroy_type grpc_metadata_array_destroy_import;
 grpc_call_details_init_type grpc_call_details_init_import;
 grpc_call_details_destroy_type grpc_call_details_destroy_import;
-grpc_register_plugin_type grpc_register_plugin_import;
 grpc_init_type grpc_init_import;
 grpc_shutdown_type grpc_shutdown_import;
 grpc_is_initialized_type grpc_is_initialized_import;
@@ -321,7 +320,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_metadata_array_destroy_import = (grpc_metadata_array_destroy_type) GetProcAddress(library, "grpc_metadata_array_destroy");
   grpc_call_details_init_import = (grpc_call_details_init_type) GetProcAddress(library, "grpc_call_details_init");
   grpc_call_details_destroy_import = (grpc_call_details_destroy_type) GetProcAddress(library, "grpc_call_details_destroy");
-  grpc_register_plugin_import = (grpc_register_plugin_type) GetProcAddress(library, "grpc_register_plugin");
   grpc_init_import = (grpc_init_type) GetProcAddress(library, "grpc_init");
   grpc_shutdown_import = (grpc_shutdown_type) GetProcAddress(library, "grpc_shutdown");
   grpc_is_initialized_import = (grpc_is_initialized_type) GetProcAddress(library, "grpc_is_initialized");

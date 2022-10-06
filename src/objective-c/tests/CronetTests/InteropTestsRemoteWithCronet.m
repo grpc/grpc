@@ -23,7 +23,7 @@
 #import <GRPCClient/GRPCCall+Cronet.h>
 
 #import "../ConfigureCronet.h"
-#import "InteropTests.h"
+#import "../InteropTests/InteropTests.h"
 
 // The server address is derived from preprocessor macro, which is
 // in turn derived from environment variable of the same name.

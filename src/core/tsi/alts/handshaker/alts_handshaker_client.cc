@@ -135,11 +135,11 @@ static void alts_grpc_handshaker_client_unref(
     client->send_buffer = nullptr;
     client->recv_buffer = nullptr;
     grpc_metadata_array_destroy(&client->recv_initial_metadata);
-    grpc_slice_unref_internal(client->recv_bytes);
-    grpc_slice_unref_internal(client->target_name);
+    grpc_core::CSliceUnref(client->recv_bytes);
+    grpc_core::CSliceUnref(client->target_name);
     grpc_alts_credentials_options_destroy(client->options);
     gpr_free(client->buffer);
-    grpc_slice_unref_internal(client->handshake_status_details);
+    grpc_core::CSliceUnref(client->handshake_status_details);
     delete client;
   }
 }
@@ -488,7 +488,7 @@ static grpc_byte_buffer* get_serialized_handshaker_req(
   }
   grpc_slice slice = grpc_slice_from_copied_buffer(buf, buf_length);
   grpc_byte_buffer* byte_buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref_internal(slice);
+  grpc_core::CSliceUnref(slice);
   return byte_buffer;
 }
 
@@ -639,8 +639,8 @@ static tsi_result handshaker_client_next(alts_handshaker_client* c,
   }
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  grpc_slice_unref_internal(client->recv_bytes);
-  client->recv_bytes = grpc_slice_ref_internal(*bytes_received);
+  grpc_core::CSliceUnref(client->recv_bytes);
+  client->recv_bytes = grpc_core::CSliceRef(*bytes_received);
   grpc_byte_buffer* buffer = get_serialized_next(bytes_received);
   if (buffer == nullptr) {
     gpr_log(GPR_ERROR, "get_serialized_next() failed");
@@ -692,7 +692,7 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
           DEBUG_LOCATION,
           GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
                               grpc_schedule_on_exec_ctx),
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
     }
   }
 }
@@ -741,7 +741,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
                 grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
                 grpc_core::Timestamp::InfFuture(), nullptr);
-  grpc_slice_unref_internal(slice);
+  grpc_core::CSliceUnref(slice);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,
@@ -789,7 +789,7 @@ void alts_handshaker_client_set_recv_bytes_for_testing(
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  client->recv_bytes = grpc_slice_ref_internal(*recv_bytes);
+  client->recv_bytes = CSliceRef(*recv_bytes);
 }
 
 void alts_handshaker_client_set_fields_for_testing(

@@ -18,7 +18,7 @@
 
 #include "src/core/lib/channel/status_util.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace internal {

@@ -83,8 +83,6 @@ static void on_connect(void* acp, grpc_error_handle error) {
   GPR_ASSERT(*ep == NULL);
   grpc_closure* on_done = ac->on_done;
 
-  (void)GRPC_ERROR_REF(error);
-
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
   ac->socket = NULL;
@@ -94,7 +92,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
 
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     if (socket != NULL) {
       DWORD transfered_bytes = 0;
       DWORD flags;
@@ -110,7 +108,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
         socket = nullptr;
       }
     } else {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("socket is null");
+      error = GRPC_ERROR_CREATE("socket is null");
     }
   }
 
@@ -137,13 +135,13 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   GUID guid = WSAID_CONNECTEX;
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info* info;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   async_connect* ac = NULL;
   absl::StatusOr<std::string> addr_uri;
 
   addr_uri = grpc_sockaddr_to_uri(addr);
   if (!addr_uri.ok()) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
+    error = GRPC_ERROR_CREATE(addr_uri.status().ToString());
     goto failure;
   }
 
@@ -162,7 +160,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   }
 
   error = grpc_tcp_prepare_socket(sock);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     goto failure;
   }
 
@@ -219,13 +217,11 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   return 0;
 
 failure:
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   grpc_error_handle final_error = grpc_error_set_str(
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Failed to connect",
-                                                       &error, 1),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
+      GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
+      grpc_core::StatusStrProperty::kTargetAddress,
       addr_uri.ok() ? *addr_uri : addr_uri.status().ToString());
-  GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);
   } else if (sock != INVALID_SOCKET) {

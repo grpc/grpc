@@ -14,18 +14,41 @@
 // limitations under the License.
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "src/core/ext/xds/xds_bootstrap.h"
 
+#include <stdio.h>
+
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/alloc.h>
+
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -575,8 +598,7 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
     if (it == config_json.object_value().end()) {
       return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
     } else if (it->second.type() != Json::Type::NUMBER) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:config field:value not of type number");
+      *error = GRPC_ERROR_CREATE("field:config field:value not of type number");
     } else {
       int value = 0;
       EXPECT_TRUE(absl::SimpleAtoi(it->second.string_value(), &value));
@@ -716,7 +738,7 @@ int main(int argc, char** argv) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
+                std::make_unique<
                     grpc_core::testing::FakeCertificateProviderFactory>());
       });
   grpc_init();

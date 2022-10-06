@@ -27,11 +27,11 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
@@ -41,16 +41,15 @@ using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
-using ::grpc_event_engine::experimental::ThreadedExecutor;
+using ::grpc_event_engine::experimental::ThreadPool;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
 class IOCPTest : public testing::Test {};
 
 TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -58,8 +57,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
       static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
   WinSocket* wrapped_server_socket =
       static_cast<WinSocket*>(iocp.Watch(sockpair[1]));
-  Promise<bool> read_called{false};
-  Promise<bool> write_called{false};
+  grpc_core::Notification read_called;
+  grpc_core::Notification write_called;
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   AnyInvocableClosure* on_write;
@@ -84,7 +83,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Set(true);
+      read_called.Notify();
     });
     wrapped_client_socket->NotifyOnRead(on_read);
   }
@@ -109,7 +108,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     }
     on_write = new AnyInvocableClosure([&write_called] {
       gpr_log(GPR_DEBUG, "Notified on write");
-      write_called.Set(true);
+      write_called.Notify();
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
@@ -126,8 +125,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
   ASSERT_TRUE(cb_invoked);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.Get());
-  ASSERT_TRUE(write_called.Get());
+  read_called.WaitForNotification();
+  write_called.WaitForNotification();
 
   delete on_read;
   delete on_write;
@@ -138,13 +137,13 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
 }
 
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   WinSocket* wrapped_client_socket =
       static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
-  Promise<bool> read_called{false};
+  grpc_core::Notification read_called;
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   {
@@ -169,7 +168,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Set(true);
+      read_called.Notify();
     });
   }
   {
@@ -194,7 +193,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   // register the closure, which should trigger it immediately.
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.Get());
+  read_called.WaitForNotification();
 
   delete on_read;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
@@ -202,16 +201,16 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
 }
 
 TEST_F(IOCPTest, KickWorks) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
-  Promise<bool> kicked{false};
+  grpc_core::Notification kicked;
   executor.Run([&iocp, &kicked] {
     bool cb_invoked = false;
     Poller::WorkResult result = iocp.Work(
         std::chrono::seconds(30), [&cb_invoked]() { cb_invoked = true; });
     ASSERT_TRUE(result == Poller::WorkResult::kKicked);
     ASSERT_FALSE(cb_invoked);
-    kicked.Set(true);
+    kicked.Notify();
   });
   executor.Run([&iocp] {
     // give the worker thread a chance to start
@@ -219,14 +218,14 @@ TEST_F(IOCPTest, KickWorks) {
     iocp.Kick();
   });
   // wait for the callbacks to run
-  ASSERT_TRUE(kicked.Get());
+  kicked.WaitForNotification();
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // TODO(hork): evaluate if a kick count is going to be useful.
   // This documents the existing poller's behavior of maintaining a kick count,
   // but it's unclear if it's going to be needed.
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   // kick twice
   iocp.Kick();
@@ -249,7 +248,7 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
@@ -275,7 +274,7 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
   for (int thread_n = 0; thread_n < thread_count; thread_n++) {
     threads.emplace_back([thread_n, sockets_per_thread, &read_count,
                           &write_count] {
-      ThreadedExecutor executor{2};
+      ThreadPool executor;
       IOCP iocp(&executor);
       // Start a looping worker thread with a moderate timeout
       std::thread iocp_worker([&iocp, &executor] {

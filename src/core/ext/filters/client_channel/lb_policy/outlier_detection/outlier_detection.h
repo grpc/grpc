@@ -44,6 +44,8 @@ struct OutlierDetectionConfig {
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 100;
 
+    SuccessRateEjection() {}
+
     bool operator==(const SuccessRateEjection& other) const {
       return stdev_factor == other.stdev_factor &&
              enforcement_percentage == other.enforcement_percentage &&
@@ -52,12 +54,15 @@ struct OutlierDetectionConfig {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
     uint32_t enforcement_percentage = 0;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 50;
+
+    FailurePercentageEjection() {}
 
     bool operator==(const FailurePercentageEjection& other) const {
       return threshold == other.threshold &&
@@ -67,6 +72,7 @@ struct OutlierDetectionConfig {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   absl::optional<SuccessRateEjection> success_rate_ejection;
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;

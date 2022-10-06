@@ -17,7 +17,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -28,13 +27,13 @@
 #ifdef GRPC_POSIX_WAKEUP_FD
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #endif
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
+#include "src/core/lib/gprpp/strerror.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -47,14 +46,14 @@ absl::Status SetSocketNonBlocking(int fd) {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", strerror(errno)));
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   oldflags |= O_NONBLOCK;
 
   if (fcntl(fd, F_SETFL, oldflags) != 0) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", strerror(errno)));
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   return absl::OkStatus();
@@ -66,7 +65,7 @@ absl::Status PipeWakeupFd::Init() {
   int r = pipe(pipefd);
   if (0 != r) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("pipe: ", strerror(errno)));
+                        absl::StrCat("pipe: ", grpc_core::StrError(errno)));
   }
   auto status = SetSocketNonBlocking(pipefd[0]);
   if (!status.ok()) return status;
@@ -91,7 +90,7 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
         continue;
       default:
         return absl::Status(absl::StatusCode::kInternal,
-                            absl::StrCat("read: ", strerror(errno)));
+                            absl::StrCat("read: ", grpc_core::StrError(errno)));
     }
   }
 }
@@ -120,7 +119,7 @@ bool PipeWakeupFd::IsSupported() {
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
   static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
   if (kIsPipeWakeupFdSupported) {
-    auto pipe_wakeup_fd = absl::make_unique<PipeWakeupFd>();
+    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>();
     auto status = pipe_wakeup_fd->Init();
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(pipe_wakeup_fd));

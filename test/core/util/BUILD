@@ -283,7 +283,6 @@ grpc_cc_library(
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -316,7 +315,6 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
-        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -334,4 +332,14 @@ grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
+)
+
+grpc_cc_library(
+    name = "scoped_env_var",
+    testonly = True,
+    hdrs = ["scoped_env_var.h"],
+    deps = [
+        "//:env",
+        "//:gpr_platform",
+    ],
 )

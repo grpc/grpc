@@ -39,7 +39,7 @@ TEST(WireWriterTest, RpcCall) {
   grpc::internal::GrpcLibrary init_lib;
   // Required because wire writer uses combiner internally.
   grpc_core::ExecCtx exec_ctx;
-  auto mock_binder = absl::make_unique<MockBinder>();
+  auto mock_binder = std::make_unique<MockBinder>();
   MockBinder& mock_binder_ref = *mock_binder;
   MockWritableParcel mock_writable_parcel;
   ON_CALL(mock_binder_ref, GetWritableParcel)

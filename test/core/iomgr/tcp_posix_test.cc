@@ -184,7 +184,7 @@ static void read_cb(void* user_data, grpc_error_handle error) {
   size_t read_bytes;
   int current_data;
 
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
@@ -269,7 +269,7 @@ static void read_test(size_t num_bytes, size_t slice_size,
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(ep);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
@@ -333,7 +333,7 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(ep);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
@@ -370,7 +370,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
 
 static void write_done(void* user_data /* write_socket_state */,
                        grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   struct write_socket_state* state =
       static_cast<struct write_socket_state*>(user_data);
   gpr_mu_lock(g_mu);
@@ -423,7 +423,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
 /* Verifier for timestamps callback for write_test */
 void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
                          grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(ts->sendmsg_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->scheduled_time.time.clock_type == GPR_CLOCK_REALTIME);
@@ -516,7 +516,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   }
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&outgoing);
+  grpc_slice_buffer_destroy(&outgoing);
   grpc_endpoint_destroy(ep);
   gpr_free(slices);
   grpc_resource_quota_unref(
@@ -597,7 +597,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(ep, &fd, &fd_released_cb);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);

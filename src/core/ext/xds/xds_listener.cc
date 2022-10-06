@@ -23,8 +23,8 @@
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -57,6 +57,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/json/json.h"
@@ -314,8 +315,13 @@ HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
+      ValidationErrors validation_errors;
       http_connection_manager.http_max_stream_duration =
-          ParseDuration(duration);
+          ParseDuration(duration, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status("max_stream_duration").message());
+      }
     }
   }
   // Parse filters.
@@ -449,7 +455,7 @@ HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
               http_connection_manager_proto);
       if (rds == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        return GRPC_ERROR_CREATE(
             "HttpConnectionManager neither has inlined route_config nor RDS.");
       }
       // Check that the ConfigSource specifies ADS.
@@ -534,11 +540,12 @@ DownstreamTlsContextParse(
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
           downstream_tls_context_proto);
   if (common_tls_context != nullptr) {
-    auto common_context = CommonTlsContext::Parse(context, common_tls_context);
-    if (!common_context.ok()) {
-      errors.emplace_back(common_context.status().message());
-    } else {
-      downstream_tls_context.common_tls_context = std::move(*common_context);
+    ValidationErrors validation_errors;
+    downstream_tls_context.common_tls_context = CommonTlsContext::Parse(
+        context, common_tls_context, &validation_errors);
+    if (!validation_errors.ok()) {
+      errors.emplace_back(
+          validation_errors.status("errors in common_tls_context").message());
     }
   }
   auto* require_client_certificate =
@@ -1061,39 +1068,40 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
+XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
     absl::string_view serialized_resource, bool is_v2) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Listener resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse Listener resource.");
+    return result;
   }
   MaybeLogListener(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
   auto listener = LdsResourceParse(context, resource, is_v2);
   if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               listener.status().ToString().c_str());
     }
     result.resource = listener.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*listener);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsListenerResource>(std::move(*listener));
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core

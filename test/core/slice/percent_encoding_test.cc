@@ -18,9 +18,12 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
-#include <gtest/gtest.h>
+#include <stddef.h>
 
-#include <grpc/grpc.h>
+#include <utility>
+
+#include "gtest/gtest.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

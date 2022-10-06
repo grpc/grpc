@@ -40,7 +40,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/hash/hash.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -94,8 +93,8 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -728,7 +727,7 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
                                                      : nullptr),
       lb_policy_(lb_policy),
       target_(std::move(target)),
-      picker_(absl::make_unique<QueuePicker>(std::move(lb_policy))) {
+      picker_(std::make_unique<QueuePicker>(std::move(lb_policy))) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -809,7 +808,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
               config.status().ToString().c_str());
     }
     pending_config_.reset();
-    picker_ = absl::make_unique<TransientFailurePicker>(
+    picker_ = std::make_unique<TransientFailurePicker>(
         absl::UnavailableError(config.status().message()));
     child_policy_.reset();
   } else {
@@ -825,7 +824,7 @@ absl::Status RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   if (child_policy_ == nullptr) {
     Args create_args;
     create_args.work_serializer = lb_policy_->work_serializer();
-    create_args.channel_control_helper = absl::make_unique<ChildPolicyHelper>(
+    create_args.channel_control_helper = std::make_unique<ChildPolicyHelper>(
         WeakRef(DEBUG_LOCATION, "ChildPolicyHelper"));
     create_args.args = lb_policy_->channel_args_;
     child_policy_ = MakeOrphanable<ChildPolicyHandler>(std::move(create_args),
@@ -1020,7 +1019,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
@@ -1156,7 +1155,7 @@ void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer(
 //
 
 std::unique_ptr<BackOff> MakeCacheEntryBackoff() {
-  return absl::make_unique<BackOff>(
+  return std::make_unique<BackOff>(
       BackOff::Options()
           .set_initial_backoff(kCacheBackoffInitial)
           .set_multiplier(kCacheBackoffMultiplier)
@@ -1170,7 +1169,7 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "CacheEntry" : nullptr),
       lb_policy_(std::move(lb_policy)),
       backoff_state_(MakeCacheEntryBackoff()),
-      min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime),
+      min_expiration_time_(Timestamp::Now() + kMinExpirationTime),
       lru_iterator_(lb_policy_->cache_.lru_list_.insert(
           lb_policy_->cache_.lru_list_.end(), key)) {}
 
@@ -1248,12 +1247,12 @@ void RlsLb::Cache::Entry::ResetBackoff() {
 }
 
 bool RlsLb::Cache::Entry::ShouldRemove() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return data_expiration_time_ < now && backoff_expiration_time_ < now;
 }
 
 bool RlsLb::Cache::Entry::CanEvict() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return min_expiration_time_ < now;
 }
 
@@ -1279,7 +1278,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
       backoff_state_ = MakeCacheEntryBackoff();
     }
     backoff_time_ = backoff_state_->NextAttemptTime();
-    Timestamp now = ExecCtx::Get()->Now();
+    Timestamp now = Timestamp::Now();
     backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
         Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
@@ -1288,7 +1287,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
   }
   // Request succeeded, so store the result.
   header_data_ = std::move(response.header_data);
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   data_expiration_time_ = now + lb_policy_->config_->max_age();
   stale_time_ = now + lb_policy_->config_->stale_age();
   status_ = absl::OkStatus();
@@ -1354,7 +1353,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
   GRPC_CLOSURE_INIT(&timer_callback_, OnCleanupTimer, this, nullptr);
   grpc_timer_init(&cleanup_timer_, now + kCacheCleanupTimerInterval,
@@ -1417,7 +1416,6 @@ void RlsLb::Cache::Shutdown() {
 
 void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
   Cache* cache = static_cast<Cache*>(arg);
-  (void)GRPC_ERROR_REF(error);
   cache->lb_policy_->work_serializer()->Run(
       [cache, error]() {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
@@ -1425,7 +1423,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
           gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
                   cache->lb_policy_, grpc_error_std_string(error).c_str());
         }
-        if (error == GRPC_ERROR_CANCELLED) return;
+        if (error == absl::CancelledError()) return;
         MutexLock lock(&lb_policy->mu_);
         if (lb_policy->is_shutdown_) return;
         for (auto it = cache->map_.begin(); it != cache->map_.end();) {
@@ -1437,7 +1435,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
             ++it;
           }
         }
-        Timestamp now = ExecCtx::Get()->Now();
+        Timestamp now = Timestamp::Now();
         lb_policy.release();
         grpc_timer_init(&cache->cleanup_timer_,
                         now + kCacheCleanupTimerInterval,
@@ -1506,7 +1504,7 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 //
 
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   while (!requests_.empty() && now - requests_.front() > window_size_) {
     requests_.pop_front();
   }
@@ -1534,7 +1532,7 @@ bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   requests_.push_back(now);
   if (!success) failures_.push_back(now);
 }
@@ -1683,7 +1681,7 @@ RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&call_start_cb_, StartCall,
                         Ref(DEBUG_LOCATION, "StartCall").release(), nullptr),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 RlsLb::RlsRequest::~RlsRequest() { GPR_ASSERT(call_ == nullptr); }
@@ -1714,7 +1712,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   deadline_ = now + lb_policy_->config_->lookup_service_timeout();
   grpc_metadata_array_init(&recv_initial_metadata_);
   grpc_metadata_array_init(&recv_trailing_metadata_);
@@ -1754,7 +1752,6 @@ void RlsLb::RlsRequest::StartCallLocked() {
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   auto* request = static_cast<RlsRequest*>(arg);
-  (void)GRPC_ERROR_REF(error);
   request->lb_policy_->work_serializer()->Run(
       [request, error]() {
         request->OnRlsCallCompleteLocked(error);
@@ -1775,7 +1772,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   }
   // Parse response.
   ResponseInfo response;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_status_code code;
     std::string message;
     grpc_error_get_status(error, deadline_, &code, &message,
@@ -1793,7 +1790,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   grpc_byte_buffer_destroy(recv_message_);
   grpc_metadata_array_destroy(&recv_initial_metadata_);
   grpc_metadata_array_destroy(&recv_trailing_metadata_);
-  grpc_slice_unref_internal(status_details_recv_);
+  CSliceUnref(status_details_recv_);
   grpc_call_unref(call_);
   call_ = nullptr;
   // Return result to cache.
@@ -1844,7 +1841,7 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
       grpc_lookup_v1_RouteLookupRequest_serialize(req, arena.ptr(), &len);
   grpc_slice send_slice = grpc_slice_from_copied_buffer(buf, len);
   grpc_byte_buffer* byte_buffer = grpc_raw_byte_buffer_create(&send_slice, 1);
-  grpc_slice_unref_internal(send_slice);
+  CSliceUnref(send_slice);
   return byte_buffer;
 }
 
@@ -1859,7 +1856,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
       grpc_lookup_v1_RouteLookupResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(recv_slice)),
           GRPC_SLICE_LENGTH(recv_slice), arena.ptr());
-  grpc_slice_unref_internal(recv_slice);
+  CSliceUnref(recv_slice);
   if (response == nullptr) {
     response_info.status = absl::InternalError("cannot parse RLS response");
     return response_info;
@@ -2076,7 +2073,7 @@ void RlsLb::UpdatePickerAsync() {
       GRPC_CLOSURE_CREATE(UpdatePickerCallback,
                           Ref(DEBUG_LOCATION, "UpdatePickerCallback").release(),
                           grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
@@ -2142,7 +2139,7 @@ void RlsLb::UpdatePickerLocked() {
     status = absl::UnavailableError("no children available");
   }
   channel_control_helper()->UpdateState(
-      state, status, absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "Picker")));
+      state, status, std::make_unique<Picker>(Ref(DEBUG_LOCATION, "Picker")));
 }
 
 //
@@ -2421,13 +2418,12 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error = GRPC_ERROR_NONE;
+    grpc_error_handle child_error;
     rls_channel_service_config_ = it->second.Dump();
     auto service_config = MakeRefCounted<ServiceConfigImpl>(
         ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
-    if (!GRPC_ERROR_IS_NONE(child_error)) {
+    if (!child_error.ok()) {
       errors->AddError(grpc_error_std_string(child_error));
-      GRPC_ERROR_UNREF(child_error);
     }
   }
   // Validate childPolicyConfigTargetFieldName.
@@ -2507,7 +2503,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<RlsLbFactory>());
+      std::make_unique<RlsLbFactory>());
 }
 
 }  // namespace grpc_core

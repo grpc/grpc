@@ -37,6 +37,7 @@
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;

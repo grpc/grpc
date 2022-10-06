@@ -12,24 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
+#include <sys/socket.h>
 #include <sys/un.h>
 
-#include <cstring>
-
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 
@@ -112,7 +122,7 @@ class BinderResolverTest : public ::testing::Test {
     grpc_core::ResolverArgs args;
     args.uri = std::move(*uri);
     args.result_handler =
-        absl::make_unique<BinderResolverTest::ResultHandler>(expected_path);
+        std::make_unique<BinderResolverTest::ResultHandler>(expected_path);
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
         factory_->CreateResolver(std::move(args));
     ASSERT_TRUE(resolver != nullptr);
@@ -127,8 +137,7 @@ class BinderResolverTest : public ::testing::Test {
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
     grpc_core::ResolverArgs args;
     args.uri = std::move(*uri);
-    args.result_handler =
-        absl::make_unique<BinderResolverTest::ResultHandler>();
+    args.result_handler = std::make_unique<BinderResolverTest::ResultHandler>();
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
         factory_->CreateResolver(std::move(args));
     EXPECT_TRUE(resolver == nullptr);

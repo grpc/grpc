@@ -18,15 +18,23 @@
 
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 
-#include <gtest/gtest.h>
+#include <string.h>
+
+#include <algorithm>
+#include <string>
+
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
 #include "test/core/util/test_config.h"
 

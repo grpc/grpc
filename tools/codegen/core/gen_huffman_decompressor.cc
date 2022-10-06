@@ -357,13 +357,13 @@ class Sink : public Item {
 
   // Add one string to our output.
   void Add(std::string s) {
-    children_.push_back(absl::make_unique<String>(std::move(s)));
+    children_.push_back(std::make_unique<String>(std::move(s)));
   }
 
   // Add an item of type T to our output (constructing it with args).
   template <typename T, typename... Args>
   T* Add(Args&&... args) {
-    auto v = absl::make_unique<T>(std::forward<Args>(args)...);
+    auto v = std::make_unique<T>(std::forward<Args>(args)...);
     auto* r = v.get();
     children_.push_back(std::move(v));
     return r;
@@ -819,7 +819,7 @@ class TableBuilder {
   // Given a number of slices (2**slice_bits), generate a table that uses a
   // single level lookup for each slice based on our input.
   std::unique_ptr<Table> MakeTable(size_t slice_bits) const {
-    std::unique_ptr<Table> table = absl::make_unique<Table>();
+    std::unique_ptr<Table> table = std::make_unique<Table>();
     int slices = 1 << slice_bits;
     table->slices.resize(slices);
     table->slice_bits = slice_bits;
@@ -1180,8 +1180,8 @@ struct BuildOutput {
 // Given max_bits_for_depth = {n1,n2,n3,...}
 // Build a decoder that first considers n1 bits, then n2, then n3, ...
 BuildOutput Build(std::vector<int> max_bits_for_depth) {
-  auto hdr = absl::make_unique<Sink>();
-  auto src = absl::make_unique<Sink>();
+  auto hdr = std::make_unique<Sink>();
+  auto src = std::make_unique<Sink>();
   hdr->Add<Prelude>();
   src->Add<Prelude>();
   hdr->Add("#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
@@ -1291,7 +1291,7 @@ int main(void) {
       threads.front().join();
       threads.pop();
     }
-    results.emplace_back(absl::make_unique<BuildOutput>());
+    results.emplace_back(std::make_unique<BuildOutput>());
     threads.emplace([perm, r = results.back().get()] { *r = Build(perm); });
   }
   while (!threads.empty()) {
