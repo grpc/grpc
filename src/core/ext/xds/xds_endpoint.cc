@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "absl/status/status.h"

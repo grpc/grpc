@@ -16,6 +16,7 @@
 
 #include <map>
 #include <memory>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
