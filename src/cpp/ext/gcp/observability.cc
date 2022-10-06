@@ -74,6 +74,10 @@ absl::Status GcpObservabilityInit() {
   if (!config.ok()) {
     return config.status();
   }
+  if (!config->cloud_trace.has_value() &&
+      !config->cloud_monitoring.has_value()) {
+    return absl::OkStatus();
+  }
   grpc::RegisterOpenCensusPlugin();
   RegisterOpenCensusViewsForGcpObservability();
   ChannelArguments args;
@@ -91,6 +95,9 @@ absl::Status GcpObservabilityInit() {
                                 GoogleDefaultCredentials(), args));
     opencensus::exporters::trace::StackdriverExporter::Register(
         std::move(trace_opts));
+  } else {
+    // Disable OpenCensus tracing
+    EnableOpenCensusTracing(false);
   }
   if (config->cloud_monitoring.has_value()) {
     opencensus::exporters::stats::StackdriverOptions stats_opts;
@@ -100,8 +107,11 @@ absl::Status GcpObservabilityInit() {
             kGoogleStackdriverStatsAddress, GoogleDefaultCredentials(), args));
     opencensus::exporters::stats::StackdriverExporter::Register(
         std::move(stats_opts));
+  } else {
+    // Disable OpenCensus stats
+    EnableOpenCensusStats(false);
   }
-  return absl::Status();
+  return absl::OkStatus();
 }
 
 }  // namespace experimental

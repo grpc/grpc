@@ -22,6 +22,8 @@
 
 #include <limits.h>
 
+#include <atomic>
+
 #include "absl/base/attributes.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
@@ -160,4 +162,24 @@ ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
 
 ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
     "grpc.io/server/started_rpcs";
+
+std::atomic<bool> g_open_census_stats_enabled(true);
+std::atomic<bool> g_open_census_tracing_enabled(true);
+
+void EnableOpenCensusStats(bool enable) {
+  g_open_census_stats_enabled = enable;
+}
+
+void EnableOpenCensusTracing(bool enable) {
+  g_open_census_tracing_enabled = enable;
+}
+
+bool OpenCensusStatsEnabled() {
+  return g_open_census_stats_enabled.load(std::memory_order_relaxed);
+}
+
+bool OpenCensusTracingEnabled() {
+  return g_open_census_tracing_enabled.load(std::memory_order_relaxed);
+}
+
 }  // namespace grpc
