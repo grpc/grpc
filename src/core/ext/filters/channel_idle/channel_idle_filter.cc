@@ -186,9 +186,10 @@ void MaxAgeFilter::PostInit() {
               auto fn = [](void* arg, grpc_error_handle) {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
-                op->goaway_error = grpc_error_set_int(
-                    GRPC_ERROR_CREATE("max_age"),
-                    StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
+                op->goaway_error = GRPC_ERROR_BUILDER(kUnknown, "max_age")
+                                       .Set(StatusIntProperty::kHttp2Error,
+                                            GRPC_HTTP2_NO_ERROR)
+                                       .build();
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
                 elem->filter->start_transport_op(elem, op);
@@ -277,9 +278,10 @@ void ChannelIdleFilter::StartIdleTimer() {
 
 void ChannelIdleFilter::CloseChannel() {
   auto* op = grpc_make_transport_op(nullptr);
-  op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE("enter idle"),
-      StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
+  op->disconnect_with_error =
+      GRPC_ERROR_BUILDER(kUnknown, "enter idle")
+          .Set(StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE)
+          .build();
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);

@@ -157,6 +157,29 @@ std::vector<absl::Status> StatusGetChildren(absl::Status status)
 ///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
 std::string StatusToString(const absl::Status& status) GRPC_MUST_USE_RESULT;
 
+/// gRPC-specialized absl::Status builder
+class ErrorBuilder {
+ public:
+  explicit ErrorBuilder(absl::StatusCode code, absl::string_view msg,
+                        const DebugLocation& location);
+  explicit ErrorBuilder(absl::Status status);
+
+  ErrorBuilder& Set(StatusIntProperty key, intptr_t value);
+  ErrorBuilder& Set(StatusStrProperty key, absl::string_view value);
+  ErrorBuilder& Set(StatusTimeProperty key, absl::Time value);
+
+  ErrorBuilder& Add(absl::Status child);
+  ErrorBuilder& Add(std::vector<absl::Status> children);
+
+  absl::Status build();
+
+ private:
+  absl::Status status_;
+};
+
+#define GRPC_ERROR_BUILDER(code, msg) \
+  grpc_core::ErrorBuilder(::absl::StatusCode::code, msg, DEBUG_LOCATION)
+
 namespace internal {
 
 /// Builds a upb message, google_rpc_Status from a status

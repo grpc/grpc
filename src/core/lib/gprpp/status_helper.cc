@@ -349,14 +349,51 @@ std::string StatusToString(const absl::Status& status) {
                      : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
 }
 
-namespace internal {
+ErrorBuilder::ErrorBuilder(absl::StatusCode code, absl::string_view msg,
+                           const DebugLocation& location)
+    : status_(StatusCreate(code, msg, location, {})) {}
 
+ErrorBuilder::ErrorBuilder(absl::Status status) : status_(status) {}
+
+ErrorBuilder& ErrorBuilder::Set(StatusIntProperty key, intptr_t value) {
+  StatusSetInt(&status_, key, value);
+  return *this;
+}
+
+ErrorBuilder& ErrorBuilder::Set(StatusStrProperty key,
+                                absl::string_view value) {
+  StatusSetStr(&status_, key, value);
+  return *this;
+}
+
+ErrorBuilder& ErrorBuilder::Set(StatusTimeProperty key, absl::Time value) {
+  StatusSetTime(&status_, key, value);
+  return *this;
+}
+
+ErrorBuilder& ErrorBuilder::Add(absl::Status child) {
+  StatusAddChild(&status_, child);
+  return *this;
+}
+
+ErrorBuilder& ErrorBuilder::Add(std::vector<absl::Status> children) {
+  for (const absl::Status& child : children) {
+    if (!child.ok()) {
+      StatusAddChild(&status_, child);
+    }
+  }
+  return *this;
+}
+
+absl::Status ErrorBuilder::build() { return std::move(status_); }
+
+namespace internal {
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
-  // Protobuf string field requires to be utf-8 encoding but C++ string doesn't
-  // this requirement so it can be a non utf-8 string. So it should be converted
-  // to a percent-encoded string to keep it as a utf-8 string.
+  // Protobuf string field requires to be utf-8 encoding but C++ string
+  // doesn't this requirement so it can be a non utf-8 string. So it should be
+  // converted to a percent-encoded string to keep it as a utf-8 string.
   Slice message_percent_slice =
       PercentEncodeSlice(Slice::FromExternalString(status.message()),
                          PercentEncodingType::Compatible);

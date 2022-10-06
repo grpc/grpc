@@ -196,7 +196,9 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     WeakRef().release();  // Take a weak ref until completion is finished.
     grpc_error_handle error =
         timer_fired_
-            ? GRPC_ERROR_CREATE("Timed out waiting for connection state change")
+            ? GRPC_ERROR_BUILDER(
+                  kUnknown, "Timed out waiting for connection state change")
+                  .build()
             : absl::OkStatus();
     grpc_cq_end_op(cq_, tag_, error, FinishedCompletion, this,
                    &completion_storage_);
