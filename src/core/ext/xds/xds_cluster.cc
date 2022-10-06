@@ -483,13 +483,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       }
     }
   }
-  // As long as outlier detection field is present in the cluster update,
-  // we will end up with a outlier detection in the cluster resource which will
-  // lead to the creation of outlier detection in discovery mechanism.  Values
-  // for outlier detection will be based on fields received and
-  // default values.
-  if (XdsOutlierDetectionEnabled() &&
-      envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
+  // Outlier detection config.
+  if (envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
     ValidationErrors::ScopedField field(&errors, ".outlier_detection");
     OutlierDetectionConfig outlier_detection_update;
     const envoy_config_cluster_v3_OutlierDetection* outlier_detection =

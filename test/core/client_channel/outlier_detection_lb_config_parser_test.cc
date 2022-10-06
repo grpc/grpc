@@ -23,7 +23,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/service_config/service_config_impl.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -32,14 +31,9 @@ namespace {
 
 class OutlierDetectionConfigParsingTest : public ::testing::Test {
  public:
-  OutlierDetectionConfigParsingTest()
-      : env_var_("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION") {}
-
   static void SetUpTestSuite() { grpc_init(); }
 
   static void TearDownTestSuite() { grpc_shutdown_blocking(); }
-
-  ScopedExperimentalEnvVar env_var_;
 };
 
 TEST_F(OutlierDetectionConfigParsingTest, ValidConfig) {
