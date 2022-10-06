@@ -18,7 +18,6 @@ from concurrent import futures
 import threading
 
 import grpc
-import six
 
 INVOCATION_INITIAL_METADATA = (
     ('0', 'abc'),

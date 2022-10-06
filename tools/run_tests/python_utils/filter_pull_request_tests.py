@@ -18,9 +18,6 @@ from __future__ import print_function
 import re
 import subprocess
 
-import six
-
-
 class TestSuite:
     """
   Contains label to identify job as belonging to this test suite and

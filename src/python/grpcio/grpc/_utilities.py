@@ -20,7 +20,6 @@ import time
 
 import grpc
 from grpc import _common
-import six
 
 _LOGGER = logging.getLogger(__name__)
 

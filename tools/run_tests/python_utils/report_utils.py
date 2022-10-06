@@ -24,9 +24,6 @@ import os
 import string
 import xml.etree.cElementTree as ET
 
-import six
-
-
 def _filter_msg(msg, output_format):
     """Filters out nonprintable and illegal characters from the message."""
     if output_format in ['XML', 'HTML']:

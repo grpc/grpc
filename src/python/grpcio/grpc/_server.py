@@ -25,7 +25,6 @@ from grpc import _common
 from grpc import _compression
 from grpc import _interceptor
 from grpc._cython import cygrpc
-import six
 
 _LOGGER = logging.getLogger(__name__)
 
