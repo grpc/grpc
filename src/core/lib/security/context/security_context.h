@@ -64,7 +64,7 @@ struct grpc_auth_context
     : public grpc_core::RefCounted<grpc_auth_context,
                                    grpc_core::NonPolymorphicRefCount> {
  public:
-  // Base class for all extensions to inherit form.
+  // Base class for all extensions to inherit from.
   class Extension {
    public:
     virtual ~Extension() = default;
