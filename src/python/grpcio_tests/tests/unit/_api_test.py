@@ -17,7 +17,6 @@ import logging
 import unittest
 
 import grpc
-import six
 
 from tests.unit import _from_grpc_import_star
 
@@ -92,7 +91,7 @@ class AllTest(unittest.TestCase):
             'insecure_server_credentials',
         )
 
-        six.assertCountEqual(self, expected_grpc_code_elements,
+        self.assertCountEqual(expected_grpc_code_elements,
                              _from_grpc_import_star.GRPC_ELEMENTS)
 
 
