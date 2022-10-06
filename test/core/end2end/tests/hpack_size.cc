@@ -20,22 +20,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <algorithm>
-#include <memory>
 #include <string>
-#include <vector>
 
 #include "absl/strings/str_format.h"
-#include "absl/synchronization/notification.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
