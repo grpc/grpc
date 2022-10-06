@@ -743,6 +743,7 @@ TEST_F(LbPolicyTest, EnumUnsupportedPolicy) {
 }
 
 TEST_F(LbPolicyTest, LoadBalancingPolicyField) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -773,10 +774,38 @@ TEST_F(LbPolicyTest, LoadBalancingPolicyField) {
             "\"childPolicy\":[{\"round_robin\":{}}]}}]");
 }
 
+TEST_F(LbPolicyTest, LoadBalancingPolicyFieldIgnoredUnlessEnabled) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  // New field says to use round_robin, but the old enum field says to use
+  // ring_hash.  The env var is not enabled, so we use the old enum field.
+  cluster.mutable_load_balancing_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(RoundRobin());
+  cluster.set_lb_policy(cluster.RING_HASH);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+            "[{\"ring_hash_experimental\":{"
+            "\"maxRingSize\":8388608,\"minRingSize\":1024}}]");
+}
+
 // This tests that we're passing along errors from XdsLbPolicyRegistry.
 // A complete list of error cases for that class is in
 // xds_lb_policy_registry_test.
 TEST_F(LbPolicyTest, XdsLbPolicyRegistryConversionFails) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -805,6 +834,7 @@ TEST_F(LbPolicyTest, XdsLbPolicyRegistryConversionFails) {
 }
 
 TEST_F(LbPolicyTest, ConvertedCustomPolicyFailsValidation) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);

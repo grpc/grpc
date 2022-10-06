@@ -52,11 +52,22 @@
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 
 namespace grpc_core {
+
+// TODO(roth): Remove once custom LB policy support is no longer experimental.
+bool XdsCustomLbPolicyEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 //
 // XdsClusterResource
@@ -280,25 +291,28 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
                          XdsClusterResource* cds_update,
                          ValidationErrors* errors) {
   // First, check the new load_balancing_policy field.
-  const auto* load_balancing_policy =
-      envoy_config_cluster_v3_Cluster_load_balancing_policy(cluster);
-  if (load_balancing_policy != nullptr) {
-    const auto& registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .lb_policy_registry();
-    ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
-    const size_t original_error_count = errors->size();
-    cds_update->lb_policy_config = registry.ConvertXdsLbPolicyConfig(
-        context, load_balancing_policy, errors);
-    // If there were no conversion errors, validate that the converted config
-    // parses with the gRPC LB policy registry.
-    if (original_error_count == errors->size()) {
-      auto config = CoreConfiguration::Get()
-                        .lb_policy_registry()
-                        .ParseLoadBalancingConfig(cds_update->lb_policy_config);
-      if (!config.ok()) errors->AddError(config.status().message());
+  if (XdsCustomLbPolicyEnabled()) {
+    const auto* load_balancing_policy =
+        envoy_config_cluster_v3_Cluster_load_balancing_policy(cluster);
+    if (load_balancing_policy != nullptr) {
+      const auto& registry =
+          static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+              .lb_policy_registry();
+      ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
+      const size_t original_error_count = errors->size();
+      cds_update->lb_policy_config = registry.ConvertXdsLbPolicyConfig(
+          context, load_balancing_policy, errors);
+      // If there were no conversion errors, validate that the converted config
+      // parses with the gRPC LB policy registry.
+      if (original_error_count == errors->size()) {
+        auto config = CoreConfiguration::Get()
+                          .lb_policy_registry()
+                          .ParseLoadBalancingConfig(
+                              cds_update->lb_policy_config);
+        if (!config.ok()) errors->AddError(config.status().message());
+      }
+      return;
     }
-    return;
   }
   // Didn't find load_balancing_policy field, so fall back to the old
   // lb_policy enum field.
