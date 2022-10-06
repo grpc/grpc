@@ -41,16 +41,6 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
-/* --- grpc_security_context_extension ---
-
-   Extension to the security context that may be set in a filter and accessed
-   later by a higher level method on a grpc_call object. */
-
-struct grpc_security_context_extension {
-  void* instance = nullptr;
-  void (*destroy)(void*) = nullptr;
-};
-
 /* --- grpc_auth_context ---
 
    High level authentication context object. Can optionally be chained. */
@@ -74,6 +64,11 @@ struct grpc_auth_context
     : public grpc_core::RefCounted<grpc_auth_context,
                                    grpc_core::NonPolymorphicRefCount> {
  public:
+  // Base class for all extensions to inherit form.
+  class Extension {
+   public:
+    virtual ~Extension() = default;
+  };
   explicit grpc_auth_context(
       grpc_core::RefCountedPtr<grpc_auth_context> chained)
       : grpc_core::RefCounted<grpc_auth_context,
@@ -95,9 +90,6 @@ struct grpc_auth_context
       }
       gpr_free(properties_.array);
     }
-    if (extension_.instance != nullptr && extension_.destroy != nullptr) {
-      extension_.destroy(extension_.instance);
-    }
   }
 
   static absl::string_view ChannelArgName() { return GRPC_AUTH_CONTEXT_ARG; }
@@ -118,8 +110,8 @@ struct grpc_auth_context
   void set_peer_identity_property_name(const char* name) {
     peer_identity_property_name_ = name;
   }
-  void set_extension(grpc_security_context_extension extension) {
-    this->extension_ = extension;
+  void set_extension(std::unique_ptr<Extension> extension) {
+    extension_ = std::move(extension);
   }
 
   void ensure_capacity();
@@ -130,7 +122,17 @@ struct grpc_auth_context
   grpc_core::RefCountedPtr<grpc_auth_context> chained_;
   grpc_auth_property_array properties_;
   const char* peer_identity_property_name_ = nullptr;
-  grpc_security_context_extension extension_;
+  std::unique_ptr<Extension> extension_;
+};
+
+/* --- grpc_security_context_extension ---
+
+   Extension to the security context that may be set in a filter and accessed
+   later by a higher level method on a grpc_call object. */
+
+struct grpc_security_context_extension {
+  void* instance = nullptr;
+  void (*destroy)(void*) = nullptr;
 };
 
 /* --- grpc_client_security_context ---
