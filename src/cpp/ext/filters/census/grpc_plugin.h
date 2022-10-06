@@ -129,6 +129,14 @@ const ::opencensus::stats::ViewDescriptor& ServerStartedCountHour();
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsHour();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
 
+// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
+// of a program, before any channels/servers are built.
+void EnableOpenCensusStats(bool enable);
+void EnableOpenCensusTracing(bool enable);
+// Gets the current status of OpenCensus stats/tracing
+bool OpenCensusStatsEnabled();
+bool OpenCensusTracingEnabled();
+
 }  // namespace grpc
 
 #endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H */

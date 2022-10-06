@@ -53,7 +53,6 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
@@ -1011,8 +1010,7 @@ TEST_F(CircuitBreakingTest, DefaultThresholdWithMaxRequestsUnset) {
 
 using OutlierDetectionTest = XdsClusterTest;
 
-TEST_F(OutlierDetectionTest, EnabledWithDefaults) {
-  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+TEST_F(OutlierDetectionTest, DefaultValues) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1031,26 +1029,7 @@ TEST_F(OutlierDetectionTest, EnabledWithDefaults) {
   EXPECT_EQ(*resource.outlier_detection, OutlierDetectionConfig());
 }
 
-TEST_F(OutlierDetectionTest, NotEnabledWithEnvVarUnset) {
-  Cluster cluster;
-  cluster.set_name("foo");
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  cluster.mutable_outlier_detection();
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  ASSERT_FALSE(resource.outlier_detection.has_value());
-}
-
 TEST_F(OutlierDetectionTest, AllFieldsSet) {
-  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1102,7 +1081,6 @@ TEST_F(OutlierDetectionTest, AllFieldsSet) {
 }
 
 TEST_F(OutlierDetectionTest, InvalidValues) {
-  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
