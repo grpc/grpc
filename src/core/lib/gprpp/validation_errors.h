@@ -69,7 +69,21 @@ class ValidationErrors {
         : errors_(errors) {
       errors_->PushField(field_name);
     }
-    ~ScopedField() { errors_->PopField(); }
+
+    // Not copyable.
+    ScopedField(const ScopedField& other) = delete;
+    ScopedField& operator=(const ScopedField& other) = delete;
+
+    // Movable.
+    ScopedField(ScopedField&& other) noexcept
+        : errors_(std::exchange(other.errors_, nullptr)) {}
+    ScopedField& operator=(ScopedField&& other) noexcept {
+      if (errors_ != nullptr) errors_->PopField();
+      errors_ = std::exchange(other.errors_, nullptr);
+      return *this;
+    }
+
+    ~ScopedField() { if (errors_ != nullptr) errors_->PopField(); }
 
    private:
     ValidationErrors* errors_;

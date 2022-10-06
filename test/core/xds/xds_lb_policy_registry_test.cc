@@ -39,6 +39,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -75,15 +76,21 @@ absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
                                             nullptr, symtab.ptr(), arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
-  return XdsLbPolicyRegistry().ConvertXdsLbPolicyConfig(context, upb_policy);
+  ValidationErrors errors;
+  ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
+  auto config = XdsLbPolicyRegistry().ConvertXdsLbPolicyConfig(
+      context, upb_policy, &errors);
+  if (!errors.ok()) return errors.status("validation errors");
+  return config;
 }
 
 TEST(XdsLbPolicyRegistryTest, EmptyLoadBalancingPolicy) {
   auto result = ConvertXdsPolicy(LoadBalancingPolicyProto());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("No supported load balancing policy config found"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: [field:load_balancing_policy "
+            "error:no supported load balancing policy config found]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltinType) {
@@ -93,9 +100,10 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltinType) {
       LoadBalancingPolicyProto());
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("No supported load balancing policy config found"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: [field:load_balancing_policy "
+            "error:no supported load balancing policy config found]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, MissingTypedExtensionConfig) {
@@ -103,9 +111,11 @@ TEST(XdsLbPolicyRegistryTest, MissingTypedExtensionConfig) {
   policy.add_policies();
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(result.status().message()),
-              ::testing::HasSubstr("Error parsing LoadBalancingPolicy::Policy "
-                                   "- Missing typed_extension_config field"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config "
+            "error:field not present]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, MissingTypedConfig) {
@@ -114,25 +124,29 @@ TEST(XdsLbPolicyRegistryTest, MissingTypedConfig) {
   lb_policy->mutable_typed_extension_config();
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("Error parsing LoadBalancingPolicy::Policy - "
-                           "Missing TypedExtensionConfig::typed_config field"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config error:field not present]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, RingHashInvalidHash) {
   RingHash ring_hash;
-  ring_hash.set_hash_function(RingHash::DEFAULT_HASH);
+  ring_hash.set_hash_function(RingHash::MURMUR_HASH_2);
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       ring_hash);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("Invalid hash function provided for RingHash "
-                           "loadbalancing policy. Only XX_HASH is supported"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config.value[envoy.extensions.load_balancing_policies"
+            ".ring_hash.v3.RingHash].hash_function "
+            "error:unsupported value (must be XX_HASH)]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, RingHashRingSizeDefaults) {
@@ -143,7 +157,7 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeDefaults) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       ring_hash);
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
@@ -161,7 +175,7 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeCustom) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       ring_hash);
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
@@ -177,7 +191,7 @@ TEST(XdsLbPolicyRegistryTest, RoundRobin) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       RoundRobin());
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
@@ -197,7 +211,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocality) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       wrr_locality);
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"xds_wrr_locality_experimental\": {"
@@ -215,10 +229,13 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityMissingEndpointPickingPolicy) {
       WrrLocality());
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(result.status().message()),
-              ::testing::ContainsRegex(
-                  "Error parsing LoadBalancingPolicy.*WrrLocality: "
-                  "endpoint_picking_policy not found"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config.value[envoy.extensions.load_balancing_policies"
+            ".wrr_locality.v3.WrrLocality].endpoint_picking_policy "
+            "error:field not present]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, WrrLocalityChildPolicyError) {
@@ -234,12 +251,16 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityChildPolicyError) {
       wrr_locality);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(result.status().message()),
-              ::testing::ContainsRegex(
-                  "Error parsing LoadBalancingPolicy.*Error parsing "
-                  "WrrLocality load balancing policy.*Error parsing "
-                  "LoadBalancingPolicy.*Invalid hash function provided for "
-                  "RingHash loadbalancing policy. Only XX_HASH is supported."));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config.value[envoy.extensions.load_balancing_policies"
+            ".wrr_locality.v3.WrrLocality].endpoint_picking_policy.policies[0]"
+            ".typed_extension_config.typed_config.value["
+            "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash]"
+            ".hash_function "
+            "error:unsupported value (must be XX_HASH)]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, WrrLocalityUnsupportedTypeSkipped) {
@@ -262,7 +283,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityUnsupportedTypeSkipped) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       wrr_locality);
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"xds_wrr_locality_experimental\": {"
@@ -297,7 +318,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": null}").value());
 }
@@ -310,7 +331,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": null}").value());
 }
@@ -324,9 +345,10 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("No supported load balancing policy config found"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: [field:load_balancing_policy "
+            "error:no supported load balancing policy config found]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlMissingSlash) {
@@ -338,11 +360,12 @@ TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlMissingSlash) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("Error parsing "
-                           "LoadBalancingPolicy::Policy::TypedExtensionConfig::"
-                           "typed_config: Invalid type_url test.UnknownLb"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config.value[xds.type.v3.TypedStruct].type_url "
+            "error:Invalid type_url test.UnknownLb]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlEmptyType) {
@@ -354,11 +377,12 @@ TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlEmptyType) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("Error parsing "
-                           "LoadBalancingPolicy::Policy::TypedExtensionConfig::"
-                           "typed_config: Invalid type_url myorg/"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config.value[xds.type.v3.TypedStruct].type_url "
+            "error:Invalid type_url myorg/]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
@@ -407,7 +431,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse(
                               R"json({
@@ -437,11 +461,13 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(result.status().message()),
-              ::testing::HasSubstr(
-                  "Error parsing LoadBalancingPolicy: Custom Policy: "
-                  "test.CustomLb: Error parsing google::Protobuf::Struct: No "
-                  "value set in Value proto"));
+  EXPECT_EQ(result.status().message(),
+            "validation errors: ["
+            "field:load_balancing_policy.policies[0].typed_extension_config"
+            ".typed_config.value[xds.type.v3.TypedStruct].value[test.CustomLb] "
+            "error:Error parsing google::Protobuf::Struct: "
+            "No value set in Value proto]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
@@ -456,7 +482,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       RoundRobin());
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
@@ -478,7 +504,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeSkipped) {
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       RoundRobin());
   auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(result->size(), 1);
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
@@ -511,8 +537,7 @@ TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
   auto result = ConvertXdsPolicy(BuildRecursiveLoadBalancingPolicy(0));
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(std::string(result.status().message()),
-              ::testing::ContainsRegex("LoadBalancingPolicy configuration has "
-                                       "a recursion depth of more than 16"));
+              ::testing::EndsWith("error:exceeded max recursion depth of 16]"));
 }
 
 }  // namespace
