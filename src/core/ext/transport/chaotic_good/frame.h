@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
 #define GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -108,4 +110,4 @@ using ServerFrame = absl::variant<ServerFragmentFrame>;
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_H
