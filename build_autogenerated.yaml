@@ -9533,6 +9533,15 @@ targets:
   - linux
   - posix
   - mac
+- name: stream_leak_with_queued_flow_control_update_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/stream_leak_with_queued_flow_control_update_test.cc
+  deps:
+  - grpc_test_util
 - name: stream_map_test
   gtest: true
   build: test
