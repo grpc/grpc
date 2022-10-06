@@ -31,8 +31,6 @@ import time
 import traceback
 import uuid
 
-import six
-
 import performance.scenario_config as scenario_config
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -595,7 +593,7 @@ def main():
 
     languages = set(
         scenario_config.LANGUAGES[l] for l in itertools.chain.from_iterable(
-            six.iterkeys(scenario_config.LANGUAGES) if x == 'all' else [x]
+            scenario_config.LANGUAGES.keys() if x == 'all' else [x]
             for x in args.language))
 
     # Put together set of remote hosts where to run and build

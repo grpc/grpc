@@ -909,7 +909,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in six.iterkeys(tests_by_assembly):
+            for assembly in tests_by_assembly.keys():
                 assembly_file = 'src/csharp/%s/%s/%s%s' % (
                     assembly, assembly_subdir, assembly, assembly_extension)
 

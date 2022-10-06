@@ -30,8 +30,6 @@ import time
 import traceback
 import uuid
 
-import six
-
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -586,7 +584,7 @@ def run_one_scenario(scenario_config):
             if not job.is_running():
                 print('Server "%s" has exited prematurely.' % server)
         suppress_failure = suppress_server_logs and not args.verbose
-        dockerjob.finish_jobs([j for j in six.itervalues(server_jobs)],
+        dockerjob.finish_jobs([j for j in server_jobs.values()],
                               suppress_failure=suppress_failure)
 
 
