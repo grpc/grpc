@@ -373,9 +373,9 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
         for (const auto& p : priority.localities) {
           total_weight += p.second.lb_weight;
           if (total_weight > std::numeric_limits<uint32_t>::max()) {
-            errors.AddError(absl::StrCat(
-                "sum of locality weights for priority ", i,
-                " exceeds uint32 max"));
+            errors.AddError(
+                absl::StrCat("sum of locality weights for priority ", i,
+                             " exceeds uint32 max"));
             break;
           }
         }
