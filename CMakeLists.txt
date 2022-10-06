@@ -1359,7 +1359,6 @@ if(gRPC_BUILD_TESTS)
 add_library(end2end_tests
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/rbac_translator.cc
-  test/core/compression/args_utils.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
@@ -8275,7 +8274,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(compression_test
-  test/core/compression/args_utils.cc
   test/core/compression/compression_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
