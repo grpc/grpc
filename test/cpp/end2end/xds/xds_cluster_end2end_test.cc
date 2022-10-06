@@ -957,7 +957,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
         seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
         return seen_drop_rate < kDropRateThreshold;
       },
-      /*timeout_ms=*/20000);
+      /*timeout_ms=*/40000);
   // Send kNumRpcsBoth RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
