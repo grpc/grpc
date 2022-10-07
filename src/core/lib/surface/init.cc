@@ -137,7 +137,8 @@ void grpc_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
 
   if (g_in_grpc_init) {
-    // Check for recursion: can happen when DNS creates an event engine which calls grpc_init.
+    // Check for recursion: can happen when DNS creates an event engine which
+    // calls grpc_init.
     ++g_initializations;
     return;
   }
