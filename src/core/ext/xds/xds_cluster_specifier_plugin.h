@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -54,18 +55,36 @@ class XdsRouteLookupClusterSpecifierPlugin
 
 class XdsClusterSpecifierPluginRegistry {
  public:
-  static void RegisterPlugin(
+  XdsClusterSpecifierPluginRegistry();
+
+  // Not copyable.
+  XdsClusterSpecifierPluginRegistry(
+      const XdsClusterSpecifierPluginRegistry&) = delete;
+  XdsClusterSpecifierPluginRegistry& operator=(
+      const XdsClusterSpecifierPluginRegistry&) = delete;
+
+  // Movable.
+  XdsClusterSpecifierPluginRegistry(
+      XdsClusterSpecifierPluginRegistry&& other) noexcept
+      : registry_(std::move(other.registry_)) {}
+  XdsClusterSpecifierPluginRegistry& operator=(
+      XdsClusterSpecifierPluginRegistry&& other) noexcept {
+    registry_ = std::move(other.registry_);
+    return *this;
+  }
+
+  void RegisterPlugin(
       std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
       absl::string_view config_proto_type_name);
 
-  static void PopulateSymtab(upb_DefPool* symtab);
+  void PopulateSymtab(upb_DefPool* symtab) const;
 
-  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
-      absl::string_view config_proto_type_name);
+  const XdsClusterSpecifierPluginImpl* GetPluginForType(
+      absl::string_view config_proto_type_name) const;
 
-  // Global init and shutdown.
-  static void Init();
-  static void Shutdown();
+ private:
+  std::map<absl::string_view, std::unique_ptr<XdsClusterSpecifierPluginImpl>>
+      registry_;
 };
 
 }  // namespace grpc_core
