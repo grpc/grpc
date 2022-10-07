@@ -13,12 +13,10 @@
 # limitations under the License.
 """Interfaces related to streams of values or objects."""
 
-import abc
-
-import six
+from abc import ABC
 
 
-class Consumer(six.with_metaclass(abc.ABCMeta)):
+class Consumer(ABC):
     """Interface for consumers of finite streams of values or objects."""
 
     @abc.abstractmethod
