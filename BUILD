@@ -468,7 +468,7 @@ grpc_cc_library(
     name = "atomic_utils",
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/atomic_utils.h"],
-    deps = ["//:gpr_platform"],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
