@@ -139,6 +139,7 @@ void grpc_init(void) {
   if (g_in_grpc_init) {
     // Check for recursion: can happen when DNS creates an event engine which
     // calls grpc_init.
+    g_init_mu->AssertHeld();
     ++g_initializations;
     return;
   }
