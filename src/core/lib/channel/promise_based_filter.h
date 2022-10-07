@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include <atomic>
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <new>
@@ -258,11 +259,40 @@ class BaseCallData : public Activity, private Wakeable {
 
   class SendMessage {
    public:
-    explicit SendMessage(Arena* arena) : pipe_(arena) {}
+    explicit SendMessage(BaseCallData* base)
+        : base_(base), pipe_(base->arena()) {}
     PipeReceiver<MessageHandle>* outgoing_pipe() { return &pipe_.receiver; }
 
+    void StartOp(CapturedBatch batch);
+    void GotPipe(PipeReceiver<MessageHandle>* receiver);
+    void WakeInsideCombiner(Flusher* flusher);
+
    private:
+    enum class State : uint8_t {
+      kInitial,
+      kIdle,
+      kGotBatchNoPipe,
+      kGotBatch,
+      kPushedToPipe,
+      kForwardedBatch,
+      kBatchCompleted,
+      kCancelled,
+    };
+
+    void OnComplete(absl::Status status);
+
+    BaseCallData* const base_;
+    State state_ = State::kInitial;
     Pipe<MessageHandle> pipe_;
+    PipeReceiver<MessageHandle>* receiver_ = nullptr;
+    absl::optional<PipeSender<MessageHandle>::PushType> push_;
+    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    absl::optional<NextResult<MessageHandle>> next_result_;
+    Message message_;
+    CapturedBatch batch_;
+    grpc_closure* intercepted_on_complete_;
+    grpc_closure on_complete_ =
+        MakeMemberClosure<SendMessage, &SendMessage::OnComplete>(this);
   };
 
   class ReceiveMessage {
@@ -289,11 +319,14 @@ class BaseCallData : public Activity, private Wakeable {
     return receive_message_ == nullptr ? nullptr
                                        : receive_message_->incoming_pipe();
   }
+  SendMessage* send_message() const { return send_message_; }
 
   bool is_last() const {
     return grpc_call_stack_element(call_stack_, call_stack_->count - 1) ==
            elem_;
   }
+
+  virtual void WakeInsideCombiner(Flusher* flusher) = 0;
 
  private:
   // Wakeable implementation.
@@ -392,7 +425,7 @@ class ClientCallData : public BaseCallData {
   void SetStatusFromError(grpc_metadata_batch* metadata,
                           grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner(Flusher* flusher);
+  void WakeInsideCombiner(Flusher* flusher) override;
   void OnWakeup() override;
 
   // Contained promise
@@ -473,7 +506,7 @@ class ServerCallData : public BaseCallData {
                                                grpc_error_handle error);
   void RecvInitialMetadataReady(grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner(Flusher* flusher);
+  void WakeInsideCombiner(Flusher* flusher) override;
   void OnWakeup() override;
 
   // Contained promise

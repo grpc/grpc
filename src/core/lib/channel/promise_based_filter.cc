@@ -50,7 +50,7 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
               ? arena_->New<Latch<ServerMetadata*>>()
               : nullptr),
       send_message_(flags & kFilterExaminesOutboundMessages
-                        ? arena_->New<SendMessage>(arena_)
+                        ? arena_->New<SendMessage>(this)
                         : nullptr),
       receive_message_(flags & kFilterExaminesInboundMessages
                            ? arena_->New<ReceiveMessage>(arena_)
@@ -219,6 +219,125 @@ BaseCallData::Flusher::~Flusher() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// BaseCallData::SendMessage
+
+void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
+  gpr_log(GPR_DEBUG, "SendMessage::StartOp:%d", static_cast<int>(state_));
+  switch (state_) {
+    case State::kInitial:
+      state_ = State::kGotBatchNoPipe;
+      break;
+    case State::kIdle:
+      state_ = State::kGotBatch;
+      break;
+    case State::kGotBatch:
+    case State::kGotBatchNoPipe:
+    case State::kForwardedBatch:
+    case State::kBatchCompleted:
+    case State::kPushedToPipe:
+      abort();
+    case State::kCancelled:
+      return;
+  }
+  batch_ = batch;
+  intercepted_on_complete_ = batch_->on_complete;
+  batch_->on_complete = &on_complete_;
+}
+
+void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
+  gpr_log(GPR_DEBUG, "SendMessage::GotPipe:%d", static_cast<int>(state_));
+  switch (state_) {
+    case State::kInitial:
+      state_ = State::kIdle;
+      break;
+    case State::kGotBatchNoPipe:
+      state_ = State::kGotBatch;
+      break;
+    case State::kIdle:
+    case State::kGotBatch:
+    case State::kForwardedBatch:
+    case State::kBatchCompleted:
+    case State::kPushedToPipe:
+      abort();
+    case State::kCancelled:
+      return;
+  }
+  receiver_ = receiver;
+}
+
+void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
+  gpr_log(GPR_DEBUG, "SendMessage::WakeInsideCombiner:%d",
+          static_cast<int>(state_));
+  switch (state_) {
+    case State::kInitial:
+    case State::kIdle:
+    case State::kGotBatchNoPipe:
+    case State::kForwardedBatch:
+    case State::kCancelled:
+      break;
+    case State::kGotBatch:
+      state_ = State::kPushedToPipe;
+      message_.payload()->Swap(batch_->payload->send_message.send_message);
+      message_.mutable_flags() = batch_->payload->send_message.flags;
+      push_ = pipe_.sender.Push(MessageHandle(&message_, false));
+      next_ = receiver_->Next();
+      ABSL_FALLTHROUGH_INTENDED;
+    case State::kPushedToPipe: {
+      GPR_ASSERT(push_.has_value());
+      auto r_push = (*push_)();
+      if (auto* p = absl::get_if<bool>(&r_push)) {
+        // We haven't pulled through yet, so this certainly shouldn't succeed.
+        GPR_ASSERT(!*p);
+        state_ = State::kCancelled;
+        batch_.CancelWith(absl::CancelledError(), flusher);
+        break;
+      }
+      GPR_ASSERT(next_.has_value());
+      auto r_next = (*next_)();
+      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r_next)) {
+        GPR_ASSERT(p->has_value());
+        batch_->payload->send_message.send_message->Swap((**p)->payload());
+        batch_->payload->send_message.flags = (**p)->flags();
+        state_ = State::kForwardedBatch;
+        batch_.CompleteWith(flusher);
+        next_result_ = std::move(*p);
+        next_.reset();
+      }
+    } break;
+    case State::kBatchCompleted:
+      state_ = State::kIdle;
+      next_result_.reset();
+      GPR_ASSERT(!absl::holds_alternative<Pending>((*push_)()));
+      push_.reset();
+      flusher->AddClosure(intercepted_on_complete_, absl::OkStatus(),
+                          "batch_completed");
+      break;
+  }
+}
+
+void BaseCallData::SendMessage::OnComplete(absl::Status status) {
+  Flusher flusher(base_);
+  gpr_log(GPR_DEBUG, "SendMessage::OnComplete:%d:%s", static_cast<int>(state_),
+          status.ToString().c_str());
+  if (!status.ok()) abort();
+  switch (state_) {
+    case State::kInitial:
+    case State::kIdle:
+    case State::kGotBatchNoPipe:
+    case State::kPushedToPipe:
+    case State::kCancelled:
+    case State::kGotBatch:
+    case State::kBatchCompleted:
+      abort();
+      break;
+    case State::kForwardedBatch:
+      state_ = State::kBatchCompleted;
+      break;
+  }
+  base_->WakeInsideCombiner(&flusher);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // ClientCallData
 
 struct ClientCallData::RecvInitialMetadata final {
@@ -269,6 +388,9 @@ class ClientCallData::PollContext {
   void Run() {
     GPR_ASSERT(have_scoped_activity_);
     repoll_ = false;
+    if (self_->send_message() != nullptr) {
+      self_->send_message()->WakeInsideCombiner(flusher_);
+    }
     if (self_->server_initial_metadata_latch() != nullptr) {
       switch (self_->recv_initial_metadata_->state) {
         case RecvInitialMetadata::kInitial:
@@ -574,6 +696,10 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     }
   }
 
+  if (send_message() != nullptr && batch->send_message) {
+    send_message()->StartOp(batch);
+  }
+
   // send_initial_metadata: seeing this triggers the start of the promise part
   // of this filter.
   if (batch->send_initial_metadata) {
@@ -809,6 +935,11 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     }
   } else {
     GPR_ASSERT(call_args.server_initial_metadata == nullptr);
+  }
+  if (send_message() != nullptr) {
+    send_message()->GotPipe(call_args.outgoing_messages);
+  } else {
+    GPR_ASSERT(call_args.outgoing_messages == nullptr);
   }
   return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
@@ -1064,6 +1195,11 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     wake = true;
   }
 
+  if (send_message() != nullptr && batch->send_message) {
+    send_message()->StartOp(batch);
+    wake = true;
+  }
+
   // send_trailing_metadata
   if (batch.is_captured() && batch->send_trailing_metadata) {
     switch (send_trailing_state_) {
@@ -1154,6 +1290,11 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
   } else {
     GPR_ASSERT(call_args.server_initial_metadata == nullptr);
   }
+  if (send_message() != nullptr) {
+    send_message()->GotPipe(call_args.outgoing_messages);
+  } else {
+    GPR_ASSERT(call_args.outgoing_messages == nullptr);
+  }
   return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
 }
@@ -1230,6 +1371,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
             .send_initial_metadata);
   }
   poll_ctx.ClearRepoll();
+  if (send_message() != nullptr) {
+    send_message()->WakeInsideCombiner(flusher);
+  }
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
