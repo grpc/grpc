@@ -92,7 +92,7 @@ class AllTest(unittest.TestCase):
         )
 
         self.assertCountEqual(expected_grpc_code_elements,
-                             _from_grpc_import_star.GRPC_ELEMENTS)
+                              _from_grpc_import_star.GRPC_ELEMENTS)
 
 
 class ChannelConnectivityTest(unittest.TestCase):
