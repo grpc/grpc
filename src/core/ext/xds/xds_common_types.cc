@@ -443,6 +443,10 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 absl::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors) {
+  if (any == nullptr) {
+    errors->AddError("field not present");
+    return absl::nullopt;
+  }
   XdsExtension extension;
   auto strip_type_prefix = [&]() {
     ValidationErrors::ScopedField field(errors, ".type_url");

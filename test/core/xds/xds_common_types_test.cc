@@ -75,7 +75,6 @@ class XdsCommonTypesTest : public ::testing::Test {
                         upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
-    grpc_error_handle error = GRPC_ERROR_NONE;
     auto bootstrap = GrpcXdsBootstrap::Create(
         "{\n"
         "  \"xds_servers\": [\n"
@@ -671,6 +670,18 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
             "\"string\":\"value\","
             "\"struct\":{\"key\":null}"
             "}");
+}
+
+TEST_F(ExtractXdsExtensionTest, FieldMissing) {
+  ValidationErrors errors;
+  ValidationErrors::ScopedField field(&errors, "any");
+  auto extension = ExtractXdsExtension(decode_context_, nullptr, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: [field:any error:field not present]")
+      << status;
 }
 
 TEST_F(ExtractXdsExtensionTest, TypeUrlMissing) {

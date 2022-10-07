@@ -30,6 +30,7 @@
 #include "upb/def.h"
 #include "upb/upb.h"
 
+#include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/json/json.h"
@@ -75,12 +76,12 @@ class XdsHttpFilterImpl {
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const = 0;
+      XdsExtension extension, upb_Arena* arena) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const = 0;
+      XdsExtension extension, upb_Arena* arena) const = 0;
 
   // C-core channel filter implementation.
   virtual const grpc_channel_filter* channel_filter() const = 0;

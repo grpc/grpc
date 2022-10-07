@@ -39,11 +39,11 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
 
   // Overrides the GenerateFilterConfig method
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
+      XdsExtension extension, upb_Arena* arena) const override;
 
   // Overrides the GenerateFilterConfigOverride method
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
+      XdsExtension extension, upb_Arena* arena) const override;
 
   // Overrides the channel_filter method
   const grpc_channel_filter* channel_filter() const override;
