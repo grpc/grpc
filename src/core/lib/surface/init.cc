@@ -131,18 +131,8 @@ static void do_basic_init(void) {
   grpc_client_channel_global_init_backup_polling();
 }
 
-static thread_local bool g_in_grpc_init = false;
-
 void grpc_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
-
-  if (g_in_grpc_init) {
-    // Check for recursion: can happen when DNS creates an event engine which calls grpc_init.
-    ++g_initializations;
-    return;
-  }
-
-  g_in_grpc_init = true;
 
   grpc_core::MutexLock lock(g_init_mu);
   if (++g_initializations == 1) {
@@ -154,8 +144,6 @@ void grpc_init(void) {
     grpc_resolver_dns_ares_init();
     grpc_iomgr_start();
   }
-
-  g_in_grpc_init = false;
 
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
