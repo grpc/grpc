@@ -1595,17 +1595,27 @@ class ThreadingMixIn(threading.Thread):
     """
 
     def __init__(self):
-        super(ThreadingMixIn, self).__init__()
+        super().__init__()
         self._event = Event()
-        self._worker_thread: threading.Thread = threading.Thread()
+        self._worker_thread = None
         self._await_time = 20
 
     def thread_start(self, *args, **kwargs):
+        """
+        thread_start
+        :param args:
+        :param kwargs:
+        :return:
+        """
         self._worker_thread = threading.Thread(target=self.thread_run, args=args, kwargs=kwargs)
         self._worker_thread.daemon = True
         self._worker_thread.start()
 
     def thread_stop(self):
+        """
+        thread_stop
+        :return:
+        """
         self._event.set()
         self._worker_thread.join(self._await_time)
 
@@ -1637,14 +1647,15 @@ class DNSResolver:
             flag = True
         except Exception as err:
             print(err)
-            print("DNS resolving failed")
+            print("DNS resolving  failed")
         return flag, ip_set
 
 
 class ChannelPool:
     """
-
+    ChannelPool
     """
+
     def __init__(self, host, port, channel_num=1, await_time=20):
         self.host = host
         self.port = port
@@ -1655,23 +1666,46 @@ class ChannelPool:
 
     @abstractmethod
     def init_channel(self, host, port):
-        ...
+        """
+        init_channel
+        :param host:
+        :param port:
+        :return:
+        """
 
     def init_channel_pool(self):
+        """
+        init_channel_pool
+        :return:
+        """
         self.pool = [self.init_channel(self.host, self.port) for _ in range(self.channel_num)]
 
     def flush_channel_pool(self):
+        """
+        flush_channel_pool
+        :return:
+        """
+
         def await_close(channel_pool: List[Channel]):
+            """
+
+            :param channel_pool:
+            :return:
+            """
             for channel in channel_pool:
                 channel.close()
 
         tmp_pool = self.pool.copy()
         self.pool = []
-        t = threading.Thread(target=await_close, args=(tmp_pool,))
-        t.start()
-        t.join(self.await_time)
+        tmp_thread = threading.Thread(target=await_close, args=(tmp_pool,))
+        tmp_thread.start()
+        tmp_thread.join(self.await_time)
 
     def refresh_channel_pool(self):
+        """
+
+        :return:
+        """
         print("refresh")
         self.flush_channel_pool()
         self.init_channel_pool()
@@ -1696,19 +1730,32 @@ class ChannelManager(ThreadingMixIn):
 
     @property
     def channel_pool(self):
+        """
+        channel_pool
+        :return:
+        """
         return self._channel_pool.pool
 
     def check_ip_set(self):
+        """
+
+        :return:
+        """
         flag = False
         dns_flag, ip_set = DNSResolver.resolve(self.host, self.port)
-        if dns_flag and ip_set - self._ip_set:
+        if dns_flag and ip_set != self._ip_set:
             flag = True
             self._ip_set = ip_set
         return flag
 
     def thread_run(self):
+        """
+
+        :return:
+        """
         while True:
             flag = self.check_ip_set()
+            print(flag)
             if flag:
                 self._channel_pool.refresh_channel_pool()
             time.sleep(self.time_interval)
