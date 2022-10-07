@@ -220,7 +220,12 @@ struct ChannelArgNameTraits<std::shared_ptr<T>> {
 // Specialization for the EventEngine
 template <>
 struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
-  static absl::string_view ChannelArgName() { return GRPC_ARG_EVENT_ENGINE; }
+  static absl::string_view ChannelArgName() {
+    // TODO(hork): When we're ready to allow setting via a channel arg
+    // from the application, replace this with a macro in
+    // include/grpc/impl/codegen/grpc_types.h.
+    return "grpc.internal.event_engine";
+  }
 };
 class ChannelArgs {
  public:

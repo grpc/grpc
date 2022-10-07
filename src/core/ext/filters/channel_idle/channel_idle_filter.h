@@ -61,11 +61,9 @@ class ChannelIdleFilter : public ChannelFilter {
       SingleSetPtr<Activity, typename ActivityPtr::deleter_type>;
 
   ChannelIdleFilter(
-      grpc_channel_stack* channel_stack, Duration client_idle_timeout,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
+      grpc_channel_stack* channel_stack, Duration client_idle_timeout)
       : channel_stack_(channel_stack),
-        client_idle_timeout_(client_idle_timeout),
-        engine_(engine) {}
+        client_idle_timeout_(client_idle_timeout) {}
 
   grpc_channel_stack* channel_stack() { return channel_stack_; };
 
@@ -91,7 +89,6 @@ class ChannelIdleFilter : public ChannelFilter {
       std::make_shared<IdleFilterState>(false)};
 
   SingleSetActivityPtr activity_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 class ClientIdleFilter final : public ChannelIdleFilter {
@@ -133,15 +130,13 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   };
 
   MaxAgeFilter(
-      grpc_channel_stack* channel_stack, const Config& max_age_config,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine);
+      grpc_channel_stack* channel_stack, const Config& max_age_config);
 
   void Shutdown() override;
 
   SingleSetActivityPtr max_age_activity_;
   Duration max_connection_age_;
   Duration max_connection_age_grace_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

@@ -158,7 +158,7 @@ class Channel : public RefCounted<Channel>,
   }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return event_engine_.get();
+    return channel_stack_->EventEngine();
   }
 
  private:
@@ -176,8 +176,6 @@ class Channel : public RefCounted<Channel>,
   MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
-  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-      event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 }  // namespace grpc_core
