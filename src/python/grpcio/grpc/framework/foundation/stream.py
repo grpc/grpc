@@ -13,7 +13,7 @@
 # limitations under the License.
 """Interfaces related to streams of values or objects."""
 
-from abc import ABC
+import ABC
 
 
 class Consumer(ABC):
