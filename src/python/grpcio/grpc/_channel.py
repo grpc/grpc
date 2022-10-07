@@ -20,6 +20,10 @@ import os
 import sys
 import threading
 import time
+from abc import abstractmethod
+from socket import getaddrinfo as gai
+from threading import Event
+from typing import List
 
 import grpc
 from grpc import _common
@@ -1583,3 +1587,128 @@ class Channel(grpc.Channel):
             # Exceptions in __del__ are ignored by Python anyway, but they can
             # keep spamming logs.  Just silence them.
             pass
+
+
+class ThreadingMixIn(threading.Thread):
+    """
+    Threading Mix-in class
+    """
+
+    def __init__(self):
+        super(ThreadingMixIn, self).__init__()
+        self._event = Event()
+        self._worker_thread: threading.Thread = threading.Thread()
+        self._await_time = 20
+
+    def thread_start(self, *args, **kwargs):
+        self._worker_thread = threading.Thread(target=self.thread_run, args=args, kwargs=kwargs)
+        self._worker_thread.daemon = True
+        self._worker_thread.start()
+
+    def thread_stop(self):
+        self._event.set()
+        self._worker_thread.join(self._await_time)
+
+    @abstractmethod
+    def thread_run(self):
+        """
+
+        :return:
+        """
+
+
+class DNSResolver:
+    """
+    DNSResolver
+    """
+
+    @classmethod
+    def resolve(cls, host, port):
+        """
+        resolve
+        :param host:
+        :param port:
+        :return:
+        """
+        ip_set = set()
+        flag = False
+        try:
+            ip_set = {item[4][0] for item in gai(host, port)}
+            flag = True
+        except Exception as err:
+            print(err)
+            print("DNS resolving failed")
+        return flag, ip_set
+
+
+class ChannelPool:
+    """
+
+    """
+    def __init__(self, host, port, channel_num=1, await_time=20):
+        self.host = host
+        self.port = port
+        self.channel_num = channel_num
+        self.await_time = await_time
+        self.pool = []
+        self.init_channel_pool()
+
+    @abstractmethod
+    def init_channel(self, host, port):
+        ...
+
+    def init_channel_pool(self):
+        self.pool = [self.init_channel(self.host, self.port) for _ in range(self.channel_num)]
+
+    def flush_channel_pool(self):
+        def await_close(channel_pool: List[Channel]):
+            for channel in channel_pool:
+                channel.close()
+
+        tmp_pool = self.pool.copy()
+        self.pool = []
+        t = threading.Thread(target=await_close, args=(tmp_pool,))
+        t.start()
+        t.join(self.await_time)
+
+    def refresh_channel_pool(self):
+        print("refresh")
+        self.flush_channel_pool()
+        self.init_channel_pool()
+
+
+class ChannelManager(ThreadingMixIn):
+    """
+    ChannelManager
+    """
+
+    def __init__(self, host="", port="", channel_pool: ChannelPool = None, time_interval=120):
+        super().__init__()
+        if channel_pool is None and host and port:
+            self._channel_pool = ChannelPool(host, port)
+        else:
+            self._channel_pool = channel_pool
+        self.host = self._channel_pool.host
+        self.port = self._channel_pool.port
+        _, self._ip_set = DNSResolver.resolve(self.host, self.port)
+        self.time_interval = time_interval
+        self.thread_start()
+
+    @property
+    def channel_pool(self):
+        return self._channel_pool.pool
+
+    def check_ip_set(self):
+        flag = False
+        dns_flag, ip_set = DNSResolver.resolve(self.host, self.port)
+        if dns_flag and ip_set - self._ip_set:
+            flag = True
+            self._ip_set = ip_set
+        return flag
+
+    def thread_run(self):
+        while True:
+            flag = self.check_ip_set()
+            if flag:
+                self._channel_pool.refresh_channel_pool()
+            time.sleep(self.time_interval)
