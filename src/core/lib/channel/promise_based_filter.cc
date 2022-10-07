@@ -50,10 +50,10 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
               ? arena_->New<Latch<ServerMetadata*>>()
               : nullptr),
       send_message_(flags & kFilterExaminesOutboundMessages
-                        ? arena_->New<SendMessage>()
+                        ? arena_->New<SendMessage>(arena_)
                         : nullptr),
       receive_message_(flags & kFilterExaminesInboundMessages
-                           ? arena_->New<ReceiveMessage>()
+                           ? arena_->New<ReceiveMessage>(arena_)
                            : nullptr),
       event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 

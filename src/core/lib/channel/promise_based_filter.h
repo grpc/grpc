@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include <atomic>
+#include <cstdlib>
 #include <memory>
 #include <new>
 #include <string>
@@ -257,12 +258,20 @@ class BaseCallData : public Activity, private Wakeable {
 
   class SendMessage {
    public:
-    PipeReceiver<MessageHandle>* outgoing_pipe();
+    explicit SendMessage(Arena* arena) : pipe_(arena) {}
+    PipeReceiver<MessageHandle>* outgoing_pipe() { return &pipe_.receiver; }
+
+   private:
+    Pipe<MessageHandle> pipe_;
   };
 
   class ReceiveMessage {
    public:
-    PipeSender<MessageHandle>* incoming_pipe();
+    explicit ReceiveMessage(Arena* arena) : pipe_(arena) {}
+    PipeSender<MessageHandle>* incoming_pipe() { return &pipe_.sender; }
+
+   private:
+    Pipe<MessageHandle> pipe_;
   };
 
   Arena* arena() { return arena_; }
