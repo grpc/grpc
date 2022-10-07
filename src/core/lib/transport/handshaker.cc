@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -91,7 +92,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
             ", args=%s",
-            this, grpc_error_std_string(error).c_str(), is_shutdown_, index_,
+            this, StatusToString(error).c_str(), is_shutdown_, index_,
             HandshakerArgsString(&args_).c_str());
   }
   GPR_ASSERT(index_ <= handshakers_.size());
@@ -123,7 +124,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
       gpr_log(GPR_INFO,
               "handshake_manager %p: handshaking complete -- scheduling "
               "on_handshake_done with error=%s",
-              this, grpc_error_std_string(error).c_str());
+              this, StatusToString(error).c_str());
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.

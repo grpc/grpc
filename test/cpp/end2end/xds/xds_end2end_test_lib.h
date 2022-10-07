@@ -33,7 +33,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -461,18 +460,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
     std::string server_listener_resource_name_template_ =
         "grpc/server?xds.resource.listening_address=%s";
-  };
-
-  class ScopedExperimentalEnvVar {
-   public:
-    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      grpc_core::SetEnv(env_var_, "true");
-    }
-
-    ~ScopedExperimentalEnvVar() { grpc_core::UnsetEnv(env_var_); }
-
-   private:
-    const char* env_var_;
   };
 
   // RPC services used to talk to the backends.

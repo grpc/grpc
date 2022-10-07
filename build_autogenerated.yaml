@@ -101,7 +101,6 @@ libs:
   - test/core/end2end/tests/max_connection_idle.cc
   - test/core/end2end/tests/max_message_length.cc
   - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_error_on_hotpath.cc
   - test/core/end2end/tests/no_logging.cc
   - test/core/end2end/tests/no_op.cc
   - test/core/end2end/tests/payload.cc
@@ -7937,6 +7936,16 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: outlier_detection_lb_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/scoped_env_var.h
+  src:
+  - test/core/client_channel/outlier_detection_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
 - name: overload_test
   gtest: true
   build: test
@@ -10986,6 +10995,28 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_cluster_resource_type_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - src/proto/grpc/testing/xds/v3/tls.proto
+  - test/core/xds/xds_cluster_resource_type_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: xds_cluster_type_end2end_test
   gtest: true
   build: test
@@ -11045,12 +11076,29 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_common_types_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - src/proto/grpc/testing/xds/v3/tls.proto
+  - test/core/xds/xds_common_types_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: xds_core_end2end_test
   gtest: true
   build: test
   run: false
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11215,6 +11263,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/no_op_http_filter.h
@@ -11554,6 +11603,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
