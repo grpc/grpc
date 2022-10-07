@@ -32,6 +32,7 @@
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+#include <grpcpp/support/status_code_enum.h>
 #include <grpcpp/support/string_ref.h>
 
 namespace grpc {
