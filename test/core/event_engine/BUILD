@@ -150,6 +150,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["util/aborting_event_engine.h"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
     ],
@@ -157,4 +158,17 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
+)
+
+grpc_cc_library(
+    name = "mock_event_engine",
+    testonly = True,
+    hdrs = ["mock_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+    ],
+    deps = ["//:event_engine_base_hdrs"],
 )

@@ -70,6 +70,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_channel_element_args {
@@ -202,7 +203,6 @@ struct grpc_call_element {
    guarantees they live within a single malloc() allocation */
 struct grpc_channel_stack {
   grpc_stream_refcount refcount;
-  bool is_client;
   size_t count;
   /* Memory required for a call stack (computed at channel stack
      initialization) */
@@ -225,8 +225,10 @@ struct grpc_channel_stack {
     return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
   }
 
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-      grpc_core::CallArgs call_args);
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+  MakeClientCallPromise(grpc_core::CallArgs call_args);
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+  MakeServerCallPromise(grpc_core::CallArgs call_args);
 };
 
 /* A call stack tracks a set of related filters for one call, and guarantees

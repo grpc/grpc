@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -224,8 +225,7 @@ static void fd_node_shutdown_locked(fd_node* fdn, const char* reason)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   if (!fdn->already_shutdown) {
     fdn->already_shutdown = true;
-    fdn->grpc_polled_fd->ShutdownLocked(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(reason));
+    fdn->grpc_polled_fd->ShutdownLocked(GRPC_ERROR_CREATE(reason));
   }
 }
 
@@ -293,7 +293,7 @@ static void on_timeout(void* arg, grpc_error_handle error) {
       "request:%p ev_driver=%p on_timeout_locked. driver->shutting_down=%d. "
       "err=%s",
       driver->request, driver, driver->shutting_down,
-      grpc_error_std_string(error).c_str());
+      grpc_core::StatusToString(error).c_str());
   if (!driver->shutting_down && error.ok()) {
     grpc_ares_ev_driver_shutdown_locked(driver);
   }
@@ -319,7 +319,7 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
       "driver->shutting_down=%d. "
       "err=%s",
       driver->request, driver, driver->shutting_down,
-      grpc_error_std_string(error).c_str());
+      grpc_core::StatusToString(error).c_str());
   if (!driver->shutting_down && error.ok()) {
     fd_node* fdn = driver->fds;
     while (fdn != nullptr) {
@@ -526,7 +526,7 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   grpc_ares_test_only_inject_config((*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
-    grpc_error_handle err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+    grpc_error_handle err = GRPC_ERROR_CREATE(absl::StrCat(
         "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
     delete *ev_driver;
     return err;
@@ -708,7 +708,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         hr->qtype, hr->host, hr->is_balancer, ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(error_msg);
+    grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
     r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
@@ -755,7 +755,7 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
         ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(error_msg);
+    grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
     r->error = grpc_error_add_child(error, r->error);
   }
   delete q;
@@ -818,7 +818,7 @@ fail:
                       q->name(), ares_strerror(status));
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                        error_msg.c_str());
-  error = GRPC_ERROR_CREATE_FROM_CPP_STRING(error_msg);
+  error = GRPC_ERROR_CREATE(error_msg);
   r->error = grpc_error_add_child(error, r->error);
 }
 
@@ -846,13 +846,13 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
       r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
       r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
     } else {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return GRPC_ERROR_CREATE(
           absl::StrCat("cannot parse authority ", dns_server));
     }
     int status =
         ares_set_servers_ports(r->ev_driver->channel, &r->dns_server_addr);
     if (status != ARES_SUCCESS) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      return GRPC_ERROR_CREATE(absl::StrCat(
           "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
     }
   }
@@ -870,15 +870,15 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
-    error = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    error =
+        grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                           grpc_core::StatusStrProperty::kTargetAddress, name);
     return error;
   } else if (check_port && port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
-      error = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, name);
+      error = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
+                                 grpc_core::StatusStrProperty::kTargetAddress,
+                                 name);
       return error;
     }
     *port = default_port;
@@ -1189,7 +1189,7 @@ void (*grpc_cancel_ares_request)(grpc_ares_request* r) =
 grpc_error_handle grpc_ares_init(void) {
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return GRPC_ERROR_CREATE(
         absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
   }
   return absl::OkStatus();

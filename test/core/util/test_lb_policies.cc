@@ -35,6 +35,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -528,8 +529,7 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
     if (!error_list.empty()) {
       grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "errors parsing fixed_address_lb config", &error_list);
-      absl::Status status =
-          absl::InvalidArgumentError(grpc_error_std_string(error));
+      absl::Status status = absl::InvalidArgumentError(StatusToString(error));
       return status;
     }
     return MakeRefCounted<FixedAddressConfig>(std::move(address));

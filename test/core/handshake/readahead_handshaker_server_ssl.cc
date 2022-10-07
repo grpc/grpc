@@ -67,6 +67,9 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kReadAheadSecurityHandshakers;
+  }
   ~ReadAheadHandshakerFactory() override = default;
 };
 
@@ -77,7 +80,7 @@ TEST(HandshakeServerWithReadaheadHandshakerTest, MainTest) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         BuildCoreConfiguration(builder);
         builder->handshaker_registry()->RegisterHandshakerFactory(
-            true /* at_start */, grpc_core::HANDSHAKER_SERVER,
+            grpc_core::HANDSHAKER_SERVER,
             std::make_unique<grpc_core::ReadAheadHandshakerFactory>());
       });
 

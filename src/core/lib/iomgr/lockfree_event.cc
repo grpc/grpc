@@ -141,9 +141,9 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
         if ((curr & kShutdownBit) > 0) {
           grpc_error_handle shutdown_err =
               internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
-          ExecCtx::Run(DEBUG_LOCATION, closure,
-                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "FD Shutdown", &shutdown_err, 1));
+          ExecCtx::Run(
+              DEBUG_LOCATION, closure,
+              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
           return;
         }
 
@@ -168,7 +168,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG,
               "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
-              &state_, curr, grpc_error_std_string(shutdown_error).c_str());
+              &state_, curr, StatusToString(shutdown_error).c_str());
     }
     switch (curr) {
       case kClosureReady:
@@ -195,9 +195,9 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(&state_, curr, new_state)) {
-          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
-                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "FD Shutdown", &shutdown_error, 1));
+          ExecCtx::Run(
+              DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
+              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_error, 1));
           return true;
         }
 

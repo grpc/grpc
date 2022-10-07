@@ -54,6 +54,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -684,7 +685,7 @@ static void tcp_drop_uncovered_then_handle_write(void* arg,
                                                  grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   drop_uncovered(static_cast<grpc_tcp*>(arg));
   tcp_handle_write(arg, error);
@@ -712,11 +713,12 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+          grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd,
+                             tcp->fd),
           /* All tcp errors are marked with UNAVAILABLE so that application may
            * choose to retry. */
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
+      grpc_core::StatusStrProperty::kTargetAddress, tcp->peer_string);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -734,9 +736,8 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
   /* The lock is not really necessary here, since all refs have been released */
   gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::Shutdown(
-      &tcp->tb_head, tcp->outgoing_buffer_arg,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+  grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, tcp->outgoing_buffer_arg,
+                                    GRPC_ERROR_CREATE("endpoint destroyed"));
   gpr_mu_unlock(&tcp->tb_mu);
   tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
@@ -813,7 +814,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
     gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
-            tcp->peer_string.c_str(), grpc_error_std_string(error).c_str());
+            tcp->peer_string.c_str(), grpc_core::StatusToString(error).c_str());
     if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
@@ -862,7 +863,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
                  sizeof(remaining)) != 0) {
     gpr_log(GPR_ERROR, "%s",
             absl::StrCat("Cannot set SO_RCVLOWAT on fd=", tcp->fd,
-                         " err=", strerror(errno))
+                         " err=", grpc_core::StrError(errno).c_str())
                 .c_str());
     return;
   }
@@ -955,8 +956,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
        * since the connection is closed we will drop the data here, because we
        * can't call the callback multiple times. */
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-      *error = tcp_annotate_error(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
+      *error = tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp);
       return true;
     }
 
@@ -1115,7 +1115,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
@@ -1468,7 +1468,7 @@ static void tcp_handle_error(void* arg /* grpc_tcp */,
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
 
   if (!error.ok() ||
@@ -1523,7 +1523,7 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::Shutdown(
         &tcp->tb_head, tcp->outgoing_buffer_arg,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TracedBuffer list shutdown"));
+        GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }
@@ -1817,7 +1817,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     tcp->write_cb = nullptr;
     tcp->current_zerocopy_send = nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
     }
     // No need to take a ref on error since tcp_flush provides a ref.
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
@@ -1854,8 +1854,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     grpc_core::Closure::Run(
         DEBUG_LOCATION, cb,
         grpc_fd_is_shutdown(tcp->em_fd)
-            ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
-                                 tcp)
+            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
             : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;
@@ -1886,7 +1885,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     notify_on_write(tcp);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
     }
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
   }

@@ -50,6 +50,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -242,7 +243,7 @@ static bool append_error(grpc_error_handle* composite, grpc_error_handle error,
                          const char* desc) {
   if (error.ok()) return true;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
+    *composite = GRPC_ERROR_CREATE(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
@@ -368,7 +369,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_fd) |
                                         (track_err ? 1 : 0));
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
+            grpc_core::StrError(errno).c_str());
   }
 
   return new_fd;
@@ -389,7 +391,8 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
       epoll_event phony_event;
       if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_DEL, fd->fd, &phony_event) !=
           0) {
-        gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+        gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
+                grpc_core::StrError(errno).c_str());
       }
     }
     fd->write_closure->SetShutdown(why);
@@ -408,8 +411,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   bool is_release_fd = (release_fd != nullptr);
 
   if (!fd->read_closure->IsShutdown()) {
-    fd_shutdown_internal(fd, GRPC_ERROR_CREATE_FROM_COPIED_STRING(reason),
-                         is_release_fd);
+    fd_shutdown_internal(fd, GRPC_ERROR_CREATE(reason), is_release_fd);
   }
 
   /* If release_fd is not NULL, we should be relinquishing control of the file

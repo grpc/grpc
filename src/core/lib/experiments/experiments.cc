@@ -48,6 +48,9 @@ const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
+const char* const description_promise_based_client_call =
+    "If set, use the new gRPC promise based call code when it's appropriate "
+    "(ie when all filters in a stack are promise based)";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -73,6 +76,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      kDefaultForDebugOnly},
     {"event_engine_client", description_event_engine_client, false},
     {"monitoring_experiment", description_monitoring_experiment, true},
+    {"promise_based_client_call", description_promise_based_client_call, false},
 };
 
 }  // namespace grpc_core

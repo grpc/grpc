@@ -430,7 +430,7 @@ class GrpcPolledFdWindows {
         "fd:%s InnerOnTcpConnectLocked error:|%s| "
         "pending_register_for_readable:%d"
         " pending_register_for_writeable:%d",
-        GetName(), grpc_error_std_string(error).c_str(),
+        GetName(), StatusToString(error).c_str(),
         pending_continue_register_for_on_readable_locked_,
         pending_continue_register_for_on_writeable_locked_);
     GPR_ASSERT(!connect_done_);
@@ -592,7 +592,7 @@ class GrpcPolledFdWindows {
               "fd:|%s| OnIocpReadableInner winsocket_->read_info.wsa_error "
               "code:|%d| msg:|%s|",
               GetName(), winsocket_->read_info.wsa_error,
-              grpc_error_std_string(error).c_str());
+              StatusToString(error).c_str());
         }
       }
     }
@@ -627,7 +627,7 @@ class GrpcPolledFdWindows {
             "fd:|%s| OnIocpWriteableInner. winsocket_->write_info.wsa_error "
             "code:|%d| msg:|%s|",
             GetName(), winsocket_->write_info.wsa_error,
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
       }
     }
     GPR_ASSERT(tcp_write_state_ == WRITE_PENDING);
@@ -794,7 +794,7 @@ class SockToPolledFdMap {
     // If a gRPC polled fd has not made it in to the driver's list yet, then
     // the driver has not and will never see this socket.
     if (!polled_fd->gotten_into_driver_list()) {
-      polled_fd->ShutdownLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      polled_fd->ShutdownLocked(GRPC_ERROR_CREATE(
           "Shut down c-ares fd before without it ever having made it into the "
           "driver's list"));
     }

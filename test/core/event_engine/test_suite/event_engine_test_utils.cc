@@ -14,13 +14,19 @@
 
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 
+#include <stdlib.h>
+
+#include <algorithm>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -43,6 +49,43 @@ using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 
 namespace grpc_event_engine {
 namespace experimental {
+
+namespace {
+
+constexpr int kMinMessageSize = 1024;
+constexpr int kMaxMessageSize = 4096;
+
+}  // namespace
+
+// Returns a random message with bounded length.
+std::string GetNextSendMessage() {
+  static const char alphanum[] =
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
+  static std::random_device rd;
+  static std::seed_seq seed{rd()};
+  static std::mt19937 gen(seed);
+  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
+  static grpc_core::Mutex g_mu;
+  std::string tmp_s;
+  int len;
+  {
+    grpc_core::MutexLock lock(&g_mu);
+    len = dis(gen);
+  }
+  tmp_s.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+  return tmp_s;
+}
+
+void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
+  while (engine.use_count() > 1) {
+    absl::SleepFor(absl::Milliseconds(100));
+  }
+}
 
 EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
   grpc_resolved_address addr;
@@ -79,23 +122,34 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   grpc_core::Notification read_signal;
   grpc_core::Notification write_signal;
   SliceBuffer read_slice_buf;
+  SliceBuffer read_store_buf;
   SliceBuffer write_slice_buf;
+
+  read_slice_buf.Clear();
+  write_slice_buf.Clear();
+  read_store_buf.Clear();
+  // std::cout << "SendValidatePayload ... " << std::endl;
+  // fflush(stdout);
 
   AppendStringToSliceBuffer(&write_slice_buf, data);
   EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
   std::function<void(absl::Status)> read_cb;
-  read_cb = [receive_endpoint, &read_slice_buf, &read_cb, &read_signal,
-             &args](absl::Status status) {
+  read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
+             &read_signal, &args](absl::Status status) {
     GPR_ASSERT(status.ok());
     if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
+      read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
+                                                    read_store_buf);
       read_signal.Notify();
       return;
     }
     args.read_hint_bytes -= read_slice_buf.Length();
-    receive_endpoint->Read(std::move(read_cb), &read_slice_buf, &args);
+    read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
+                                                  read_store_buf);
+    receive_endpoint->Read(read_cb, &read_slice_buf, &args);
   };
   // Start asynchronous reading at the receive_endpoint.
-  receive_endpoint->Read(std::move(read_cb), &read_slice_buf, &args);
+  receive_endpoint->Read(read_cb, &read_slice_buf, &args);
   // Start asynchronous writing at the send_endpoint.
   send_endpoint->Write(
       [&write_signal](absl::Status status) {
@@ -106,7 +160,10 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   write_signal.WaitForNotification();
   read_signal.WaitForNotification();
   // Check if data written == data read
-  if (data != ExtractSliceBufferIntoString(&read_slice_buf)) {
+  std::string data_read = ExtractSliceBufferIntoString(&read_store_buf);
+  if (data != data_read) {
+    gpr_log(GPR_INFO, "Data written = %s", data.c_str());
+    gpr_log(GPR_INFO, "Data read = %s", data_read.c_str());
     return absl::CancelledError("Data read != Data written");
   }
   return absl::OkStatus();
