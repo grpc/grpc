@@ -652,8 +652,9 @@ TEST_P(EdsTest, WeightedRoundRobin) {
 // Tests that we don't suffer from integer overflow in locality weights.
 TEST_P(EdsTest, NoIntegerOverflowInLocalityWeights) {
   CreateAndStartBackends(2);
-  const uint32_t kLocalityWeight0 = std::numeric_limits<uint32_t>::max();
-  const uint32_t kLocalityWeight1 = kLocalityWeight0 / 2;
+  const uint32_t kLocalityWeight1 = std::numeric_limits<uint32_t>::max() / 3;
+  const uint32_t kLocalityWeight0 =
+      std::numeric_limits<uint32_t>::max() - kLocalityWeight1;
   const uint64_t kTotalLocalityWeight =
       static_cast<uint64_t>(kLocalityWeight0) +
       static_cast<uint64_t>(kLocalityWeight1);
