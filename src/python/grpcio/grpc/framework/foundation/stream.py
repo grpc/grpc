@@ -13,10 +13,10 @@
 # limitations under the License.
 """Interfaces related to streams of values or objects."""
 
-import ABC
+import abc
 
 
-class Consumer(ABC):
+class Consumer(abc.ABC):
     """Interface for consumers of finite streams of values or objects."""
 
     @abc.abstractmethod
