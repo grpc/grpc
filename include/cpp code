@@ -1,0 +1,10 @@
+#include<iostream>
+using namespace std;
+int main()
+{
+int minindex;
+for(i=0;i<5;i++)
+{
+minindex=i;
+for(int j=0;j<n;j++)
+{
