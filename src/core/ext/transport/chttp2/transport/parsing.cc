@@ -715,7 +715,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
   } else if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
                                 &unused)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-      gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
+      gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(err).c_str());
     }
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {

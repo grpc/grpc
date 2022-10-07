@@ -1028,7 +1028,7 @@ void ClientCallData::SetStatusFromError(grpc_metadata_batch* metadata,
   metadata->Set(GrpcStatusMetadata(), status_code);
   metadata->Set(GrpcMessageMetadata(), Slice::FromCopiedString(status_details));
   metadata->GetOrCreatePointer(GrpcStatusContext())
-      ->emplace_back(grpc_error_std_string(error));
+      ->emplace_back(StatusToString(error));
 }
 
 // Wakeup and poll the promise if appropriate.

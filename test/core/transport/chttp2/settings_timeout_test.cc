@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -206,8 +207,7 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s",
-              grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "OnEventDone(): %s", StatusToString(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
