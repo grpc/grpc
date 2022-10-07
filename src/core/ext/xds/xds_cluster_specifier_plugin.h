@@ -58,8 +58,8 @@ class XdsClusterSpecifierPluginRegistry {
   XdsClusterSpecifierPluginRegistry();
 
   // Not copyable.
-  XdsClusterSpecifierPluginRegistry(
-      const XdsClusterSpecifierPluginRegistry&) = delete;
+  XdsClusterSpecifierPluginRegistry(const XdsClusterSpecifierPluginRegistry&) =
+      delete;
   XdsClusterSpecifierPluginRegistry& operator=(
       const XdsClusterSpecifierPluginRegistry&) = delete;
 
@@ -73,9 +73,8 @@ class XdsClusterSpecifierPluginRegistry {
     return *this;
   }
 
-  void RegisterPlugin(
-      std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-      absl::string_view config_proto_type_name);
+  void RegisterPlugin(std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
+                      absl::string_view config_proto_type_name);
 
   void PopulateSymtab(upb_DefPool* symtab) const;
 

@@ -231,8 +231,8 @@ class XdsRouteConfigResourceType
                       absl::string_view serialized_resource,
                       bool /*is_v2*/) const override;
 
-  void InitUpbSymtab(XdsClient* xds_client, upb_DefPool* symtab)
-      const override {
+  void InitUpbSymtab(XdsClient* xds_client,
+                     upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
     const auto& cluster_specifier_plugin_registry =
         static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
