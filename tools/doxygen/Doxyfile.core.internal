@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 27.0.0
+PROJECT_NUMBER         = 28.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1723,6 +1723,8 @@ src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
 src/core/lib/config/core_configuration.cc \
 src/core/lib/config/core_configuration.h \
+src/core/lib/debug/event_log.cc \
+src/core/lib/debug/event_log.h \
 src/core/lib/debug/stats.cc \
 src/core/lib/debug/stats.h \
 src/core/lib/debug/stats_data.cc \
@@ -1736,8 +1738,6 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/executor/executor.h \
-src/core/lib/event_engine/executor/threaded_executor.cc \
-src/core/lib/event_engine/executor/threaded_executor.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
@@ -1751,7 +1751,6 @@ src/core/lib/event_engine/posix_engine/timer_heap.cc \
 src/core/lib/event_engine/posix_engine/timer_heap.h \
 src/core/lib/event_engine/posix_engine/timer_manager.cc \
 src/core/lib/event_engine/posix_engine/timer_manager.h \
-src/core/lib/event_engine/promise.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
@@ -1787,8 +1786,6 @@ src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \
-src/core/lib/gpr/murmur_hash.cc \
-src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
 src/core/lib/gpr/string.cc \
 src/core/lib/gpr/string.h \
@@ -1804,7 +1801,6 @@ src/core/lib/gpr/time_posix.cc \
 src/core/lib/gpr/time_precise.cc \
 src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
-src/core/lib/gpr/tls.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \
@@ -1844,6 +1840,7 @@ src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
+src/core/lib/gprpp/per_cpu.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/single_set_ptr.h \
@@ -1853,6 +1850,8 @@ src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
 src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
+src/core/lib/gprpp/strerror.cc \
+src/core/lib/gprpp/strerror.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/table.h \
 src/core/lib/gprpp/tchar.cc \
@@ -2046,6 +2045,7 @@ src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
+src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
@@ -2203,14 +2203,10 @@ src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \
 src/core/lib/slice/slice.h \
-src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
 src/core/lib/slice/slice_buffer.h \
-src/core/lib/slice/slice_buffer_api.cc \
 src/core/lib/slice/slice_internal.h \
-src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
-src/core/lib/slice/slice_refcount_base.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/README.md \
@@ -2225,6 +2221,8 @@ src/core/lib/surface/call.h \
 src/core/lib/surface/call_details.cc \
 src/core/lib/surface/call_log_batch.cc \
 src/core/lib/surface/call_test_only.h \
+src/core/lib/surface/call_trace.cc \
+src/core/lib/surface/call_trace.h \
 src/core/lib/surface/channel.cc \
 src/core/lib/surface/channel.h \
 src/core/lib/surface/channel_init.cc \
@@ -2253,6 +2251,8 @@ src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
+src/core/lib/transport/call_fragments.cc \
+src/core/lib/transport/call_fragments.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \

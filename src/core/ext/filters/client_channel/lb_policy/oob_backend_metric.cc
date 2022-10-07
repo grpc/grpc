@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -263,7 +262,7 @@ class OrcaProducer::OrcaStreamEventHandler
     // BackendMetricAllocator object.
     void AsyncNotifyWatchersAndDelete() {
       GRPC_CLOSURE_INIT(&closure_, NotifyWatchersInExecCtx, this, nullptr);
-      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
     }
 
    private:
@@ -348,7 +347,7 @@ void OrcaProducer::MaybeStartStreamLocked() {
   if (connected_subchannel_ == nullptr) return;
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
       connected_subchannel_, subchannel_->pollset_set(),
-      absl::make_unique<OrcaStreamEventHandler>(WeakRef(), report_interval_),
+      std::make_unique<OrcaStreamEventHandler>(WeakRef(), report_interval_),
       GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace) ? "OrcaClient" : nullptr);
 }
 
@@ -410,7 +409,7 @@ void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
 std::unique_ptr<SubchannelInterface::DataWatcherInterface>
 MakeOobBackendMetricWatcher(Duration report_interval,
                             std::unique_ptr<OobBackendMetricWatcher> watcher) {
-  return absl::make_unique<OrcaWatcher>(report_interval, std::move(watcher));
+  return std::make_unique<OrcaWatcher>(report_interval, std::move(watcher));
 }
 
 }  // namespace grpc_core

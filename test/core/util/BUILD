@@ -126,7 +126,6 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:env",
         "//:gpr",
         "//:gpr_atm",
         "//:grpc",
@@ -142,6 +141,7 @@ grpc_cc_library(
         "//:resolved_address",
         "//:slice",
         "//:slice_refcount",
+        "//:status_helper",
         "//:time",
         "//:tsi_ssl_credentials",
         "//:uri_parser",
@@ -166,7 +166,6 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:env",
         "//:gpr",
         "//:gpr_atm",
         "//:grpc_security_base",
@@ -178,6 +177,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:resolved_address",
+        "//:status_helper",
         "//:time",
         "//:uri_parser",
         "//test/core/event_engine:test_init",
@@ -285,7 +285,6 @@ grpc_cc_library(
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -307,6 +306,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:resolved_address",
         "//:server_address",
+        "//:status_helper",
         "//:subchannel_interface",
         "//:time",
         "//:uri_parser",
@@ -318,7 +318,6 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
-        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -336,4 +335,14 @@ grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
+)
+
+grpc_cc_library(
+    name = "scoped_env_var",
+    testonly = True,
+    hdrs = ["scoped_env_var.h"],
+    deps = [
+        "//:env",
+        "//:gpr_platform",
+    ],
 )

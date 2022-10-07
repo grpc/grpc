@@ -20,16 +20,18 @@
 
 #include "src/core/lib/event_engine/thread_pool.h"
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -37,18 +39,63 @@ namespace experimental {
 namespace {
 // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
 // current thread (with nullptr indicating not a threadpool thread).
-GPR_THREAD_LOCAL(bool) g_threadpool_thread;
+thread_local bool g_threadpool_thread;
 }  // namespace
 
-void ThreadPool::StartThread(StatePtr state) {
+void ThreadPool::StartThread(StatePtr state, StartThreadReason reason) {
   state->thread_count.Add();
+  const auto now = grpc_core::Timestamp::Now();
+  switch (reason) {
+    case StartThreadReason::kNoWaitersWhenScheduling: {
+      auto time_since_last_start =
+          now - grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+                    state->last_started_thread.load(std::memory_order_relaxed));
+      if (time_since_last_start < grpc_core::Duration::Seconds(1)) {
+        state->thread_count.Remove();
+        return;
+      }
+    }
+      ABSL_FALLTHROUGH_INTENDED;
+    case StartThreadReason::kNoWaitersWhenFinishedStarting:
+      if (state->currently_starting_one_thread.exchange(
+              true, std::memory_order_relaxed)) {
+        state->thread_count.Remove();
+        return;
+      }
+      state->last_started_thread.store(now.milliseconds_after_process_epoch(),
+                                       std::memory_order_relaxed);
+      break;
+    case StartThreadReason::kInitialPool:
+      break;
+  }
+  struct ThreadArg {
+    StatePtr state;
+    StartThreadReason reason;
+  };
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
+        std::unique_ptr<ThreadArg> a(static_cast<ThreadArg*>(arg));
         g_threadpool_thread = true;
-        ThreadFunc(*std::unique_ptr<StatePtr>(static_cast<StatePtr*>(arg)));
+        switch (a->reason) {
+          case StartThreadReason::kInitialPool:
+            break;
+          case StartThreadReason::kNoWaitersWhenFinishedStarting:
+            a->state->queue.SleepIfRunning();
+            ABSL_FALLTHROUGH_INTENDED;
+          case StartThreadReason::kNoWaitersWhenScheduling:
+            // Release throttling variable
+            GPR_ASSERT(a->state->currently_starting_one_thread.exchange(
+                false, std::memory_order_relaxed));
+            if (a->state->queue.IsBacklogged()) {
+              StartThread(a->state,
+                          StartThreadReason::kNoWaitersWhenFinishedStarting);
+            }
+            break;
+        }
+        ThreadFunc(a->state);
       },
-      new StatePtr(state), nullptr,
+      new ThreadArg{state, reason}, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
@@ -65,10 +112,18 @@ bool ThreadPool::Queue::Step() {
   while (state_ == State::kRunning && callbacks_.empty()) {
     // If there are too many threads waiting, then quit this thread.
     // TODO(ctiller): wait some time in this case to be sure.
-    if (threads_waiting_ >= reserve_threads_) return false;
-    threads_waiting_++;
-    cv_.Wait(&mu_);
-    threads_waiting_--;
+    if (threads_waiting_ >= reserve_threads_) {
+      threads_waiting_++;
+      bool timeout = cv_.WaitWithTimeout(&mu_, absl::Seconds(30));
+      threads_waiting_--;
+      if (timeout && threads_waiting_ >= reserve_threads_) {
+        return false;
+      }
+    } else {
+      threads_waiting_++;
+      cv_.Wait(&mu_);
+      threads_waiting_--;
+    }
   }
   switch (state_) {
     case State::kRunning:
@@ -86,10 +141,9 @@ bool ThreadPool::Queue::Step() {
   return true;
 }
 
-ThreadPool::ThreadPool(int reserve_threads)
-    : reserve_threads_(reserve_threads) {
-  for (int i = 0; i < reserve_threads; i++) {
-    StartThread(state_);
+ThreadPool::ThreadPool() {
+  for (unsigned i = 0; i < reserve_threads_; i++) {
+    StartThread(state_, StartThreadReason::kInitialPool);
   }
 }
 
@@ -103,10 +157,14 @@ ThreadPool::~ThreadPool() {
                                              "shutting down");
 }
 
-void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
+void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
   if (state_->queue.Add(std::move(callback))) {
-    StartThread(state_);
+    StartThread(state_, StartThreadReason::kNoWaitersWhenScheduling);
   }
+}
+
+void ThreadPool::Run(EventEngine::Closure* closure) {
+  Run([closure]() { closure->Run(); });
 }
 
 bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
@@ -117,11 +175,40 @@ bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
   switch (state_) {
     case State::kRunning:
     case State::kShutdown:
-      return threads_waiting_ == 0;
+      return callbacks_.size() > threads_waiting_;
     case State::kForking:
       return false;
   }
   GPR_UNREACHABLE_CODE(return false);
+}
+
+bool ThreadPool::Queue::IsBacklogged() {
+  grpc_core::MutexLock lock(&mu_);
+  switch (state_) {
+    case State::kRunning:
+    case State::kShutdown:
+      return callbacks_.size() > 1;
+    case State::kForking:
+      return false;
+  }
+  GPR_UNREACHABLE_CODE(return false);
+}
+
+void ThreadPool::Queue::SleepIfRunning() {
+  grpc_core::MutexLock lock(&mu_);
+  auto end = grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
+  while (true) {
+    grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+    if (now >= end) return;
+    switch (state_) {
+      case State::kRunning:
+      case State::kShutdown:
+        cv_.WaitWithTimeout(&mu_, absl::Milliseconds((end - now).millis()));
+        break;
+      case State::kForking:
+        return;
+    }
+  }
 }
 
 void ThreadPool::Queue::SetState(State state) {
@@ -174,8 +261,8 @@ void ThreadPool::PostforkChild() { Postfork(); }
 
 void ThreadPool::Postfork() {
   state_->queue.Reset();
-  for (int i = 0; i < reserve_threads_; i++) {
-    StartThread(state_);
+  for (unsigned i = 0; i < reserve_threads_; i++) {
+    StartThread(state_, StartThreadReason::kInitialPool);
   }
 }
 

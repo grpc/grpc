@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
@@ -74,12 +75,11 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
     }
     if (factory == nullptr) return;
     // Use plugin to validate and parse config.
-    grpc_error_handle parse_error = GRPC_ERROR_NONE;
+    grpc_error_handle parse_error;
     config =
         factory->CreateCertificateProviderConfig(config_json, &parse_error);
-    if (!GRPC_ERROR_IS_NONE(parse_error)) {
-      errors->AddError(grpc_error_std_string(parse_error));
-      GRPC_ERROR_UNREF(parse_error);
+    if (!parse_error.ok()) {
+      errors->AddError(StatusToString(parse_error));
     }
   }
 }

@@ -117,7 +117,7 @@ void PrintExperimentsList() {
                                 strlen(g_experiment_metadata[i].name) + 1,
                             ' '),
                 IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
-                g_experiment_metadata->default_value ? "ON" : "OFF",
+                g_experiment_metadata[i].default_value ? "ON" : "OFF",
                 g_forced_experiments[i].forced
                     ? absl::StrCat(" force:",
                                    g_forced_experiments[i].value ? "ON" : "OFF")

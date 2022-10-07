@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -106,7 +107,6 @@ void PollingResolver::ShutdownLocked() {
 
 void PollingResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   auto* self = static_cast<PollingResolver*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->work_serializer_->Run(
       [self, error]() { self->OnNextResolutionLocked(error); }, DEBUG_LOCATION);
 }
@@ -116,14 +116,13 @@ void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO,
             "[polling resolver %p] re-resolution timer fired: error=\"%s\", "
             "shutdown_=%d",
-            this, grpc_error_std_string(error).c_str(), shutdown_);
+            this, StatusToString(error).c_str(), shutdown_);
   }
   have_next_resolution_timer_ = false;
-  if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
+  if (error.ok() && !shutdown_) {
     StartResolvingLocked();
   }
   Unref(DEBUG_LOCATION, "retry-timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 void PollingResolver::OnRequestComplete(Result result) {
@@ -190,7 +189,7 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
     Timestamp next_try = backoff_.NextAttemptTime();
-    Duration timeout = next_try - ExecCtx::Get()->Now();
+    Duration timeout = next_try - Timestamp::Now();
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
@@ -223,11 +222,11 @@ void PollingResolver::MaybeStartResolvingLocked() {
     const Timestamp earliest_next_resolution =
         *last_resolution_timestamp_ + min_time_between_resolutions_;
     const Duration time_until_next_resolution =
-        earliest_next_resolution - ExecCtx::Get()->Now();
+        earliest_next_resolution - Timestamp::Now();
     if (time_until_next_resolution > Duration::Zero()) {
       if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
         const Duration last_resolution_ago =
-            ExecCtx::Get()->Now() - *last_resolution_timestamp_;
+            Timestamp::Now() - *last_resolution_timestamp_;
         gpr_log(GPR_INFO,
                 "[polling resolver %p] in cooldown from last resolution "
                 "(from %" PRId64 " ms ago); will resolve again in %" PRId64
@@ -239,7 +238,7 @@ void PollingResolver::MaybeStartResolvingLocked() {
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
       GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this, nullptr);
       grpc_timer_init(&next_resolution_timer_,
-                      ExecCtx::Get()->Now() + time_until_next_resolution,
+                      Timestamp::Now() + time_until_next_resolution,
                       &on_next_resolution_);
       return;
     }
@@ -249,7 +248,7 @@ void PollingResolver::MaybeStartResolvingLocked() {
 
 void PollingResolver::StartResolvingLocked() {
   request_ = StartRequest();
-  last_resolution_timestamp_ = ExecCtx::Get()->Now();
+  last_resolution_timestamp_ = Timestamp::Now();
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO, "[polling resolver %p] starting resolution, request_=%p",
             this, request_.get());

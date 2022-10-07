@@ -50,14 +50,14 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error);
 
 /// Utility function to convert an absl::Status \a status to grpc_error. Note
 /// that this method does not return "special case" errors such as
-/// GRPC_ERROR_CANCELLED, with the exception of GRPC_ERROR_NONE returned for
+/// absl::CancelledError(), with the exception of absl::OkStatus() returned for
 /// \a absl::OkStatus().
 grpc_error_handle absl_status_to_grpc_error(absl::Status status);
 
 /// A utility function to check whether there is a clear status code that
 /// doesn't need to be guessed in \a error. This means that \a error or some
-/// child has GRPC_ERROR_INT_GRPC_STATUS set, or that it is GRPC_ERROR_NONE or
-/// GRPC_ERROR_CANCELLED
+/// child has grpc_core::StatusIntProperty::kRpcStatus set, or that it is
+/// absl::OkStatus() or absl::CancelledError()
 bool grpc_error_has_clear_grpc_status(grpc_error_handle error);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H */

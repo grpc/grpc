@@ -56,7 +56,7 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
   }
   buf = absl::StripAsciiWhitespace(buf);
   auto decimal_point = buf.find('.');
-  int nanos = 0;
+  int32_t nanos = 0;
   if (decimal_point != absl::string_view::npos) {
     absl::string_view after_decimal = buf.substr(decimal_point + 1);
     buf = buf.substr(0, decimal_point);
@@ -73,10 +73,15 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
       nanos *= 10;
     }
   }
-  int seconds;
+  int64_t seconds;
   if (!absl::SimpleAtoi(buf, &seconds)) {
     errors->AddError("Not a duration (not a number of seconds)");
     return;
+  }
+  // Acceptable range for seconds documented at
+  // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Duration
+  if (seconds < 0 || seconds > 315576000000) {
+    errors->AddError("seconds must be in the range [0, 315576000000]");
   }
   *static_cast<Duration*>(dst) =
       Duration::FromSecondsAndNanoseconds(seconds, nanos);
@@ -157,7 +162,9 @@ void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                             ValidationErrors* errors) const {
   if (json.type() == Json::Type::JSON_NULL) return;
   void* element = Emplace(dst);
+  size_t starting_error_size = errors->size();
   ElementLoader()->LoadInto(json, args, element, errors);
+  if (errors->size() > starting_error_size) Reset(dst);
 }
 
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,

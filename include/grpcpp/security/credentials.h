@@ -25,11 +25,11 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 

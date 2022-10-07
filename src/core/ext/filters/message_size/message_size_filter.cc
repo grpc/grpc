@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -85,13 +85,13 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING &&
         it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:maxRequestMessageBytes error:should be of type number"));
     } else {
       max_request_message_bytes =
           gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_request_message_bytes == -1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:maxRequestMessageBytes error:should be non-negative"));
       }
     }
@@ -102,13 +102,13 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING &&
         it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:maxResponseMessageBytes error:should be of type number"));
     } else {
       max_response_message_bytes =
           gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_response_message_bytes == -1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:maxResponseMessageBytes error:should be non-negative"));
       }
     }
@@ -118,17 +118,16 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
         GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing message size method parameters: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
+                     StatusToString(error)));
     return status;
   }
-  return absl::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
-                                                    max_response_message_bytes);
+  return std::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
+                                                   max_response_message_bytes);
 }
 
 void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<MessageSizeParser>());
+      std::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() {
@@ -187,7 +186,7 @@ struct call_data {
     }
   }
 
-  ~call_data() { GRPC_ERROR_UNREF(error); }
+  ~call_data() {}
 
   grpc_core::CallCombiner* call_combiner;
   grpc_core::MessageSizeParsedConfig::message_size_limits limits;
@@ -196,8 +195,8 @@ struct call_data {
   // call our next_recv_message_ready member after handling it.
   grpc_closure recv_message_ready;
   grpc_closure recv_trailing_metadata_ready;
-  // The error caused by a message that is too large, or GRPC_ERROR_NONE
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  // The error caused by a message that is too large, or absl::OkStatus()
+  grpc_error_handle error;
   // Used by recv_message_ready.
   absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.
@@ -219,15 +218,13 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
       (*calld->recv_message)->Length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
     grpc_error_handle new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        GRPC_ERROR_CREATE(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
             (*calld->recv_message)->Length(), calld->limits.max_recv_size)),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
-    error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
-    GRPC_ERROR_UNREF(calld->error);
-    calld->error = GRPC_ERROR_REF(error);
-  } else {
-    (void)GRPC_ERROR_REF(error);
+        grpc_core::StatusIntProperty::kRpcStatus,
+        GRPC_STATUS_RESOURCE_EXHAUSTED);
+    error = grpc_error_add_child(error, new_error);
+    calld->error = error;
   }
   // Invoke the next callback.
   grpc_closure* closure = calld->next_recv_message_ready;
@@ -255,14 +252,13 @@ static void recv_trailing_metadata_ready(void* user_data,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->next_recv_message_ready != nullptr) {
     calld->seen_recv_trailing_metadata = true;
-    calld->recv_trailing_metadata_error = GRPC_ERROR_REF(error);
+    calld->recv_trailing_metadata_error = error;
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,
                             "deferring recv_trailing_metadata_ready until "
                             "after recv_message_ready");
     return;
   }
-  error =
-      grpc_error_add_child(GRPC_ERROR_REF(error), GRPC_ERROR_REF(calld->error));
+  error = grpc_error_add_child(error, calld->error);
   // Invoke the next callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->original_recv_trailing_metadata_ready, error);
@@ -278,11 +274,11 @@ static void message_size_start_transport_stream_op_batch(
           static_cast<size_t>(calld->limits.max_send_size)) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        grpc_error_set_int(GRPC_ERROR_CREATE(absl::StrFormat(
                                "Sent message larger than max (%u vs. %d)",
                                op->payload->send_message.send_message->Length(),
                                calld->limits.max_send_size)),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     return;
@@ -310,7 +306,7 @@ static grpc_error_handle message_size_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (elem->call_data) call_data(elem, *chand, *args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for call_data.
@@ -337,7 +333,7 @@ static grpc_error_handle message_size_init_channel_elem(
   new (chand) channel_data();
   chand->limits = get_message_size_limits(
       grpc_core::ChannelArgs::FromC(args->channel_args));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for channel_data.

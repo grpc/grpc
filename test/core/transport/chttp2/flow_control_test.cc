@@ -160,7 +160,7 @@ TEST(FlowControl, GradualReadsUpdate) {
         break;
     }
   }
-  EXPECT_GT(immediate_updates, 0);
+  EXPECT_GE(immediate_updates, 0);
   EXPECT_GT(queued_updates, 0);
   EXPECT_EQ(immediate_updates + queued_updates, 65535);
 }

@@ -27,7 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/slice/slice.h"
 
 /* --- Constants. --- */
 
@@ -234,6 +234,6 @@ grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
   return result;
 
 fail:
-  grpc_slice_unref_internal(result);
+  grpc_core::CSliceUnref(result);
   return grpc_empty_slice();
 }

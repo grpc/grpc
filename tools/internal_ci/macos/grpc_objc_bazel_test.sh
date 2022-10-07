@@ -57,6 +57,7 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:CronetTests
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test
   //src/objective-c/tests:objc_codegen_plugin_option_test

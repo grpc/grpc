@@ -190,6 +190,16 @@ def grpc_deps():
         actual = "@com_github_libuv_libuv//:libuv_test",
     )
 
+    native.bind(
+        name = "googleapis_trace_grpc_service",
+        actual = "@com_google_googleapis//google/devtools/cloudtrace/v2:cloudtrace_cc_grpc",
+    )
+
+    native.bind(
+        name = "googleapis_monitoring_grpc_service",
+        actual = "@com_google_googleapis//google/monitoring/v3:monitoring_cc_grpc",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",

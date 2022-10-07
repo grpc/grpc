@@ -55,6 +55,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -81,7 +82,6 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -160,8 +160,8 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   };
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
-  if (GPR_UNLIKELY(!GRPC_ERROR_IS_NONE(*error))) {
-    gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
+  if (GPR_UNLIKELY(!error->ok())) {
+    gpr_log(GPR_ERROR, "error: %s", StatusToString(*error).c_str());
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
@@ -255,12 +255,11 @@ namespace {
 // Sets *status based on the rest of the parameters.
 void GetCallStatus(grpc_status_code* status, Timestamp deadline,
                    grpc_metadata_batch* md_batch, grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
     *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace
@@ -270,8 +269,7 @@ void SubchannelCall::RecvTrailingMetadataReady(void* arg,
   SubchannelCall* call = static_cast<SubchannelCall*>(arg);
   GPR_ASSERT(call->recv_trailing_metadata_ != nullptr);
   grpc_status_code status = GRPC_STATUS_OK;
-  GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_,
-                GRPC_ERROR_REF(error));
+  GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_, error);
   channelz::SubchannelNode* channelz_subchannel =
       call->connected_subchannel_->channelz_subchannel();
   GPR_ASSERT(channelz_subchannel != nullptr);
@@ -280,8 +278,7 @@ void SubchannelCall::RecvTrailingMetadataReady(void* arg,
   } else {
     channelz_subchannel->RecordCallFailed();
   }
-  Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_,
-               GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_, error);
 }
 
 void SubchannelCall::IncrementRefCount() {
@@ -365,7 +362,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
                        delete self;
                      },
                      this, nullptr),
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
   }
 
  private:
@@ -627,7 +624,8 @@ Subchannel::Subchannel(SubchannelKey key,
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
-      backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)) {
+      backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a
@@ -764,10 +762,10 @@ void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
+      engine_->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
-    next_attempt_time_ = ExecCtx::Get()->Now();
+    next_attempt_time_ = Timestamp::Now();
   }
 }
 
@@ -871,7 +869,7 @@ void Subchannel::OnRetryTimerLocked() {
 
 void Subchannel::StartConnectingLocked() {
   // Set next attempt time.
-  const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
+  const Timestamp min_deadline = min_connect_timeout_ + Timestamp::Now();
   next_attempt_time_ = backoff_.NextAttemptTime();
   // Report CONNECTING.
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
@@ -889,14 +887,13 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
   {
     MutexLock lock(&c->mu_);
-    c->OnConnectingFinishedLocked(GRPC_ERROR_REF(error));
+    c->OnConnectingFinishedLocked(error);
   }
   c.reset(DEBUG_LOCATION, "Connect");
 }
 
 void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (shutdown_) {
-    (void)GRPC_ERROR_UNREF(error);
     return;
   }
   // If we didn't get a transport or we fail to publish it, report
@@ -906,15 +903,15 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   // transition back to IDLE.
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
-        next_attempt_time_ - ExecCtx::Get()->Now();
+        next_attempt_time_ - Timestamp::Now();
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
-            this, key_.ToString().c_str(), grpc_error_std_string(error).c_str(),
+            this, key_.ToString().c_str(), StatusToString(error).c_str(),
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    retry_timer_handle_ = GetDefaultEventEngine()->RunAfter(
+    retry_timer_handle_ = engine_->RunAfter(
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
@@ -931,7 +928,6 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
           }
         });
   }
-  (void)GRPC_ERROR_UNREF(error);
 }
 
 bool Subchannel::PublishTransportLocked() {
@@ -948,8 +944,7 @@ bool Subchannel::PublishTransportLocked() {
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR,
             "subchannel %p %s: error initializing subchannel stack: %s", this,
-            key_.ToString().c_str(), grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
+            key_.ToString().c_str(), StatusToString(error).c_str());
     return false;
   }
   RefCountedPtr<channelz::SocketNode> socket =

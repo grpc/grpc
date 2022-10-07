@@ -19,6 +19,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/config/core_configuration.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -30,6 +31,8 @@ TEST(GcpObservabilityTest, RegistrationTest) {
                 "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
                 "GRPC_OBSERVABILITY_CONFIG "
                 "not defined"));
+
+  grpc_core::CoreConfiguration::Reset();
 }
 
 }  // namespace

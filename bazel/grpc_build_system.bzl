@@ -288,6 +288,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             "deps": deps,
             "tags": tags,
             "args": args,
+            "env": {},
         })
     else:
         # On linux we run the same test with the default EventEngine, once for each
@@ -304,7 +305,10 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "no_mac",
                     "bazel_only",
                 ]),
-                "args": args + ["--poller=" + poller],
+                "args": args,
+                "env": {
+                    "GRPC_POLL_STRATEGY": poller,
+                },
             })
 
         # Now generate one test for each subsequent EventEngine, all using the
@@ -320,6 +324,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "deps": deps,
                 "tags": tags + ["no_linux"],
                 "args": args,
+                "env": {},
             })
         else:
             for engine_name, engine in EVENT_ENGINES.items():
@@ -338,6 +343,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "deps": deps,
                     "tags": test_tags,
                     "args": test_args,
+                    "env": {},
                 })
 
     experiments = {}
@@ -354,8 +360,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
         "dbg": (["noopt"], ["nodbg"]),
         "opt": (["nodbg"], ["noopt"]),
-        "on": ([], None),
-        "off": (None, []),
+        "on": (None, []),
+        "off": ([], None),
     }
 
     must_have_tags = [
@@ -376,7 +382,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
-                    config["args"] = config["args"] + ["--experiment=" + experiment]
+                    env = dict(config["env"])
+                    env["GRPC_EXPERIMENTS"] = experiment
+                    config["env"] = env
                     tags = config["tags"]
                     for tag in must_have_tags + enabled_tags:
                         if tag not in tags:
@@ -388,7 +396,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=no_" + experiment
-                    config["args"] = config["args"] + ["--experiment=-" + experiment]
+                    env = dict(config["env"])
+                    env["GRPC_EXPERIMENTS"] = "-" + experiment
+                    config["env"] = env
                     tags = config["tags"]
                     for tag in must_have_tags + disabled_tags:
                         if tag not in tags:
@@ -460,6 +470,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             deps = poller_config["deps"],
             tags = poller_config["tags"],
             args = poller_config["args"],
+            env = poller_config["env"],
             **test_args
         )
 
@@ -553,6 +564,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
             deps = poller_config["deps"],
             tags = poller_config["tags"],
             args = poller_config["args"],
+            env = poller_config["env"],
             **test_args
         )
 
