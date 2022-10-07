@@ -117,7 +117,8 @@ static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_read_cb %p %p:%p", ep,
             ep->read_cb, ep->read_cb->cb, ep->read_cb->cb_arg);
     size_t i;
-    gpr_log(GPR_DEBUG, "read: error=%s", grpc_error_std_string(error).c_str());
+    gpr_log(GPR_DEBUG, "read: error=%s",
+            grpc_core::StatusToString(error).c_str());
 
     for (i = 0; i < ep->read_slices->count; i++) {
       char* dump = grpc_dump_slice(ep->read_slices->slices[i],
@@ -137,7 +138,8 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_write_cb %p %p:%p", ep,
             ep->write_cb, ep->write_cb->cb, ep->write_cb->cb_arg);
-    gpr_log(GPR_DEBUG, "write: error=%s", grpc_error_std_string(error).c_str());
+    gpr_log(GPR_DEBUG, "write: error=%s",
+            grpc_core::StatusToString(error).c_str());
   }
   grpc_closure* cb = ep->write_cb;
   ep->write_cb = nullptr;
@@ -271,14 +273,14 @@ void CFStreamShutdown(grpc_endpoint* ep, grpc_error_handle why) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown (%s)", ep_impl,
-            grpc_error_std_string(why).c_str());
+            grpc_core::StatusToString(why).c_str());
   }
   CFReadStreamClose(ep_impl->read_stream);
   CFWriteStreamClose(ep_impl->write_stream);
   ep_impl->stream_sync->Shutdown(why);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%s)", ep_impl,
-            grpc_error_std_string(why).c_str());
+            grpc_core::StatusToString(why).c_str());
   }
 }
 

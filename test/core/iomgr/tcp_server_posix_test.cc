@@ -417,7 +417,7 @@ static void test_connect(size_t num_connects,
           continue;
         }
         gpr_log(GPR_ERROR, "Failed to connect to %s: %s", dst.str,
-                grpc_error_std_string(err).c_str());
+                grpc_core::StatusToString(err).c_str());
         ASSERT_TRUE(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
       }

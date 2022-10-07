@@ -1270,8 +1270,7 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     gpr_log(GPR_INFO,
             "chand=%p calld=%p attempt=%p: perAttemptRecvTimeout timer fired: "
             "error=%s, per_attempt_recv_timer_pending_=%d",
-            calld->chand_, calld, call_attempt,
-            grpc_error_std_string(error).c_str(),
+            calld->chand_, calld, call_attempt, StatusToString(error).c_str(),
             call_attempt->per_attempt_recv_timer_pending_);
   }
   CallCombinerClosureList closures;
@@ -1426,7 +1425,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(
             "chand=%p calld=%p attempt=%p batch_data=%p: "
             "got recv_initial_metadata_ready, error=%s",
             calld->chand_, calld, call_attempt, batch_data.get(),
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
   }
   call_attempt->completed_recv_initial_metadata_ = true;
   // If this attempt has been abandoned, then we're not going to use the
@@ -1525,7 +1524,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
             "chand=%p calld=%p attempt=%p batch_data=%p: "
             "got recv_message_ready, error=%s",
             calld->chand_, calld, call_attempt, batch_data.get(),
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
   }
   ++call_attempt->completed_recv_message_count_;
   // If this attempt has been abandoned, then we're not going to use the
@@ -1719,7 +1718,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
             "chand=%p calld=%p attempt=%p batch_data=%p: "
             "got recv_trailing_metadata_ready, error=%s",
             calld->chand_, calld, call_attempt, batch_data.get(),
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
   }
   call_attempt->completed_recv_trailing_metadata_ = true;
   // If this attempt has been abandoned, then we're not going to use the
@@ -1882,7 +1881,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
             "chand=%p calld=%p attempt=%p batch_data=%p: "
             "got on_complete, error=%s, batch=%s",
             calld->chand_, calld, call_attempt, batch_data.get(),
-            grpc_error_std_string(error).c_str(),
+            StatusToString(error).c_str(),
             grpc_transport_stream_op_batch_string(&batch_data->batch_).c_str());
   }
   // If this attempt has been abandoned, then we're not going to propagate
@@ -1957,7 +1956,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnCompleteForCancelOp(
             "chand=%p calld=%p attempt=%p batch_data=%p: "
             "got on_complete for cancel_stream batch, error=%s, batch=%s",
             calld->chand_, calld, call_attempt, batch_data.get(),
-            grpc_error_std_string(error).c_str(),
+            StatusToString(error).c_str(),
             grpc_transport_stream_op_batch_string(&batch_data->batch_).c_str());
   }
   GRPC_CALL_COMBINER_STOP(
@@ -2204,7 +2203,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     cancelled_from_surface_ = batch->payload->cancel_stream.cancel_error;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO, "chand=%p calld=%p: cancelled from surface: %s", chand_,
-              this, grpc_error_std_string(cancelled_from_surface_).c_str());
+              this, StatusToString(cancelled_from_surface_).c_str());
     }
     // Fail any pending batches.
     PendingBatchesFail(cancelled_from_surface_);
@@ -2509,7 +2508,7 @@ void RetryFilter::CallData::PendingBatchesFail(grpc_error_handle error) {
     }
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
-            chand_, this, num_batches, grpc_error_std_string(error).c_str());
+            chand_, this, num_batches, StatusToString(error).c_str());
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
