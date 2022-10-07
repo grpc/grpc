@@ -153,7 +153,7 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/service_type.h",
         "grpcpp/impl/codegen/status.h",
         "grpcpp/impl/codegen/stub_options.h",
-        "grpcpp/impl/codegen/sync_stream.h",
+        "grpcpp/support/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
@@ -1660,7 +1660,7 @@ std::string GetSourceIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/server_callback_handlers.h",
         "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
-        "grpcpp/impl/codegen/sync_stream.h"};
+        "grpcpp/support/sync_stream.h"};
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
@@ -2185,7 +2185,7 @@ std::string GetMockIncludes(grpc_generator::File* file,
 
     static const char* headers_strs[] = {
         "grpcpp/support/async_stream.h",
-        "grpcpp/impl/codegen/sync_stream.h",
+        "grpcpp/support/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
