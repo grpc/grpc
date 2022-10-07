@@ -151,32 +151,6 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
-absl::StatusOr<Json> ParseStructToJson(
-    const XdsResourceType::DecodeContext& context,
-    const google_protobuf_Struct* resource) {
-  upb::Status status;
-  const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
-  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
-                                    nullptr, 0, status.ptr());
-  if (json_size == static_cast<size_t>(-1)) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Error parsing google::Protobuf::Struct: ",
-                     upb_Status_ErrorMessage(status.ptr())));
-  }
-  void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
-  upb_JsonEncode(resource, msg_def, context.symtab, 0,
-                 reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  auto json = Json::Parse(reinterpret_cast<char*>(buf));
-  if (!json.ok()) {
-    // This should not happen
-    return absl::InternalError(
-        absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "
-                     "produced by upb library: ",
-                     json.status().ToString()));
-  }
-  return std::move(*json);
-}
-
 }  // namespace
 
 //
@@ -215,16 +189,18 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
           "Error parsing LoadBalancingPolicy::Policy - Missing "
           "TypedExtensionConfig::typed_config field");
     }
-    auto type = ExtractExtensionTypeName(context, typed_config);
-    if (!type.ok()) {
-      return absl::InvalidArgumentError(absl::StrCat(
+    ValidationErrors errors;
+    auto extension = ExtractXdsExtension(context, typed_config, &errors);
+    if (!errors.ok()) {
+      return errors.status(
           "Error parsing "
-          "LoadBalancingPolicy::Policy::TypedExtensionConfig::typed_config: ",
-          type.status().message()));
+          "LoadBalancingPolicy::Policy::TypedExtensionConfig::typed_config");
     }
+    GPR_ASSERT(extension.has_value());
     absl::string_view value =
         UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-    auto config_factory_it = Get()->policy_config_factories_.find(type->type);
+    auto config_factory_it =
+        Get()->policy_config_factories_.find(extension->type);
     if (config_factory_it != Get()->policy_config_factories_.end()) {
       policy = config_factory_it->second->ConvertXdsLbPolicyConfig(
           context, value, recursion_depth);
@@ -235,29 +211,17 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
                          "typed_config to JSON: ",
                          policy.status().message()));
       }
-    } else if (type->typed_struct != nullptr) {
+    } else if (absl::holds_alternative<Json>(extension->value)) {
       // Custom lb policy config
-      std::string custom_type = std::string(type->type);
       if (!CoreConfiguration::Get()
                .lb_policy_registry()
-               .LoadBalancingPolicyExists(custom_type.c_str(), nullptr)) {
+               .LoadBalancingPolicyExists(extension->type, nullptr)) {
         // Skip unsupported custom lb policy.
         continue;
       }
-      // Convert typed struct to json.
-      auto value = xds_type_v3_TypedStruct_value(type->typed_struct);
-      if (value == nullptr) {
-        policy = Json::Object{{std::move(custom_type), Json() /* null */}};
-      } else {
-        auto parsed_value = ParseStructToJson(context, value);
-        if (!parsed_value.ok()) {
-          return absl::InvalidArgumentError(absl::StrCat(
-              "Error parsing LoadBalancingPolicy: Custom Policy: ", custom_type,
-              ": ", parsed_value.status().message()));
-        }
-        policy =
-            Json::Object{{std::move(custom_type), *(std::move(parsed_value))}};
-      }
+      Json* json = absl::get_if<Json>(&extension->value);
+      policy =
+          Json::Object{{std::string(extension->type), std::move(*json)}};
     } else {
       // Unsupported type. Skipping entry.
       continue;

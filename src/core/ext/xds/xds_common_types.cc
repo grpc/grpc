@@ -35,7 +35,10 @@
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/struct.upb.h"
+#include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/json_encode.h"
 #include "upb/upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
 
@@ -403,30 +406,89 @@ CommonTlsContext CommonTlsContext::Parse(
   return common_tls_context;
 }
 
-absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
+//
+// ExtractXdsExtension
+//
+
+namespace {
+
+absl::StatusOr<Json> ParseProtobufStructToJson(
     const XdsResourceType::DecodeContext& context,
-    const google_protobuf_Any* any) {
-  ExtractExtensionTypeNameResult result;
-  result.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (result.type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
-      result.type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
-    upb_StringView any_value = google_protobuf_Any_value(any);
-    result.typed_struct = xds_type_v3_TypedStruct_parse(
-        any_value.data, any_value.size, context.arena);
-    if (result.typed_struct == nullptr) {
-      return absl::InvalidArgumentError(
-          "could not parse TypedStruct from extension");
-    }
-    result.type =
-        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(result.typed_struct));
-  }
-  size_t pos = result.type.rfind('/');
-  if (pos == absl::string_view::npos || pos == result.type.size() - 1) {
+    const google_protobuf_Struct* resource) {
+  upb::Status status;
+  const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
+  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
+                                    nullptr, 0, status.ptr());
+  if (json_size == static_cast<size_t>(-1)) {
     return absl::InvalidArgumentError(
-        absl::StrCat("Invalid type_url ", result.type));
+        absl::StrCat("error encoding google::Protobuf::Struct as JSON: ",
+                     upb_Status_ErrorMessage(status.ptr())));
   }
-  result.type = result.type.substr(pos + 1);
-  return result;
+  void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
+  upb_JsonEncode(resource, msg_def, context.symtab, 0,
+                 reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
+  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  if (!json.ok()) {
+    // This should never happen.
+    return absl::InternalError(
+        absl::StrCat("error parsing JSON form of google::Protobuf::Struct "
+                     "produced by upb library: ",
+                     json.status().ToString()));
+  }
+  return std::move(*json);
+}
+
+}  // namespace
+
+absl::optional<XdsExtension> ExtractXdsExtension(
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Any* any, ValidationErrors* errors) {
+  XdsExtension extension;
+  auto strip_type_prefix = [&]() {
+    ValidationErrors::ScopedField field(errors, ".type_url");
+    if (extension.type.empty()) {
+      errors->AddError("field not present");
+      return;
+    }
+    size_t pos = extension.type.rfind('/');
+    if (pos == absl::string_view::npos || pos == extension.type.size() - 1) {
+      errors->AddError(absl::StrCat("invalid value \"", extension.type, "\""));
+    }
+    extension.type = extension.type.substr(pos + 1);
+  };
+  extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
+  strip_type_prefix();
+  extension.validation_fields.emplace_back(
+      errors, absl::StrCat(".value[", extension.type, "]"));
+  absl::string_view any_value = UpbStringToAbsl(google_protobuf_Any_value(any));
+  if (extension.type == "xds.type.v3.TypedStruct" ||
+      extension.type == "udpa.type.v1.TypedStruct") {
+    const auto* typed_struct = xds_type_v3_TypedStruct_parse(
+        any_value.data(), any_value.size(), context.arena);
+    if (typed_struct == nullptr) {
+      errors->AddError("could not parse");
+      return absl::nullopt;
+    }
+    extension.type =
+        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
+    strip_type_prefix();
+    extension.validation_fields.emplace_back(
+        errors, absl::StrCat(".value[", extension.type, "]"));
+    auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
+    if (protobuf_struct == nullptr) {
+      extension.value = Json::Object();  // Default to empty object.
+    } else {
+      auto json = ParseProtobufStructToJson(context, protobuf_struct);
+      if (!json.ok()) {
+        errors->AddError(json.status().message());
+        return absl::nullopt;
+      }
+      extension.value = std::move(*json);
+    }
+  } else {
+    extension.value = any_value;
+  }
+  return extension;
 }
 
 }  // namespace grpc_core

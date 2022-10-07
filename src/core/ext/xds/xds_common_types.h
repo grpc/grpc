@@ -24,6 +24,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
@@ -32,6 +33,7 @@
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -87,14 +89,20 @@ struct CommonTlsContext {
       ValidationErrors* errors);
 };
 
-struct ExtractExtensionTypeNameResult {
+struct XdsExtension {
+  // The type, either from the top level or from inside the TypedStruct.
   absl::string_view type;
-  xds_type_v3_TypedStruct* typed_struct = nullptr;
+  // A Json object for a TypedStruct, or the serialized config otherwise.
+  absl::variant<absl::string_view /*serialized_value*/, Json /*typed_struct*/>
+      value;
+  // Validation fields that need to stay in scope until we're done
+  // processing the extension.
+  std::vector<ValidationErrors::ScopedField> validation_fields;
 };
 
-absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
+absl::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
-    const google_protobuf_Any* any);
+    const google_protobuf_Any* any, ValidationErrors* errors);
 
 }  // namespace grpc_core
 
