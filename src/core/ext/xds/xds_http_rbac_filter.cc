@@ -520,8 +520,8 @@ XdsHttpRbacFilter::GenerateFilterConfig(XdsExtension extension,
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfigOverride(
-    XdsExtension extension, upb_Arena* arena) const {
+XdsHttpRbacFilter::GenerateFilterConfigOverride(XdsExtension extension,
+                                                upb_Arena* arena) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {

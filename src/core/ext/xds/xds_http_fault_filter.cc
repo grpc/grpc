@@ -184,8 +184,8 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
-    XdsExtension extension, upb_Arena* arena) const {
+XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
+                                         upb_Arena* arena) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
@@ -201,8 +201,8 @@ XdsHttpFaultFilter::GenerateFilterConfig(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(
-    XdsExtension extension, upb_Arena* arena) const {
+XdsHttpFaultFilter::GenerateFilterConfigOverride(XdsExtension extension,
+                                                 upb_Arena* arena) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
   return GenerateFilterConfig(std::move(extension), arena);

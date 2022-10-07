@@ -367,8 +367,9 @@ ClusterSpecifierPluginParse(
           "Could not obtrain TypedExtensionConfig for plugin config.");
     }
     ValidationErrors validation_errors;
-    ValidationErrors::ScopedField field(&validation_errors, absl::StrCat(
-        ".cluster_specifier_plugins[", i, "].extension.typed_config"));
+    ValidationErrors::ScopedField field(
+        &validation_errors, absl::StrCat(".cluster_specifier_plugins[", i,
+                                         "].extension.typed_config"));
     auto extension = ExtractXdsExtension(context, any, &validation_errors);
     if (!validation_errors.ok()) {
       return validation_errors.status("could not determine extension type");
@@ -648,8 +649,8 @@ ParseTypedPerFilterConfig(
           "no filter registered for config type ", extension->type));
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            std::move(*extension), context.arena);
+        filter_impl->GenerateFilterConfigOverride(std::move(*extension),
+                                                  context.arena);
     if (!filter_config.ok()) {
       return absl::InvalidArgumentError(
           absl::StrCat("filter config for type ", extension->type,

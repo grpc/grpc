@@ -220,8 +220,7 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
         continue;
       }
       Json* json = absl::get_if<Json>(&extension->value);
-      policy =
-          Json::Object{{std::string(extension->type), std::move(*json)}};
+      policy = Json::Object{{std::string(extension->type), std::move(*json)}};
     } else {
       // Unsupported type. Skipping entry.
       continue;
