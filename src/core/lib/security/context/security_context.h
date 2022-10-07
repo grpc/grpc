@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include <utility>
+#include <memory>
 
 #include "absl/strings/string_view.h"
 
