@@ -17,6 +17,7 @@
  */
 
 #include <grpcpp/support/status.h>
+#include <grpcpp/support/status_code_enum.h>
 
 namespace grpc {
 

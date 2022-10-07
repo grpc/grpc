@@ -151,7 +151,7 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/server_callback_handlers.h",
         "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
-        "grpcpp/impl/codegen/status.h",
+        "grpcpp/support/status.h",
         "grpcpp/impl/codegen/stub_options.h",
         "grpcpp/impl/codegen/sync_stream.h",
     };
