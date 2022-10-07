@@ -304,6 +304,7 @@ def grpc_cc_library(name,
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
         filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), src)
+        filename = filename.replace('//src/core:', 'src/core/')
         for line in open(filename):
             m = re.search(r'^#include <(.*)>', line)
             if m:
@@ -395,6 +396,7 @@ args = parser.parse_args()
 
 for dirname in [
         "",
+        "src/core",
         "src/cpp/ext/gcp",
         "test/core/uri",
         "test/core/util",
@@ -498,7 +500,8 @@ class Choices:
             choices = new_choices
 
         best = None
-        final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
+        def final_scorer(x): return (
+            total_avoidness(x), scorer(x), total_score(x))
         for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
