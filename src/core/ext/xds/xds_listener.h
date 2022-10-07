@@ -36,6 +36,7 @@
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "upb/def.h"
 
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
@@ -215,11 +216,15 @@ class XdsListenerResourceType
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
-  void InitUpbSymtab(upb_DefPool* symtab) const override {
+  void InitUpbSymtab(XdsClient* xds_client, upb_DefPool* symtab)
+      const override {
     envoy_config_listener_v3_Listener_getmsgdef(symtab);
     envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
         symtab);
-    XdsHttpFilterRegistry::PopulateSymtab(symtab);
+    const auto& http_filter_registry =
+        static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
+            .http_filter_registry();
+    http_filter_registry.PopulateSymtab(symtab);
   }
 };
 

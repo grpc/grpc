@@ -77,39 +77,9 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   bool IsTerminalFilter() const override { return true; }
 };
 
-using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;
-using FilterRegistryMap = std::map<absl::string_view, XdsHttpFilterImpl*>;
-
-FilterOwnerList* g_filters = nullptr;
-FilterRegistryMap* g_filter_registry = nullptr;
-
 }  // namespace
 
-void XdsHttpFilterRegistry::RegisterFilter(
-    std::unique_ptr<XdsHttpFilterImpl> filter,
-    const std::set<absl::string_view>& config_proto_type_names) {
-  for (auto config_proto_type_name : config_proto_type_names) {
-    (*g_filter_registry)[config_proto_type_name] = filter.get();
-  }
-  g_filters->push_back(std::move(filter));
-}
-
-const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
-    absl::string_view proto_type_name) {
-  auto it = g_filter_registry->find(proto_type_name);
-  if (it == g_filter_registry->end()) return nullptr;
-  return it->second;
-}
-
-void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) {
-  for (const auto& filter : *g_filters) {
-    filter->PopulateSymtab(symtab);
-  }
-}
-
-void XdsHttpFilterRegistry::Init() {
-  g_filters = new FilterOwnerList;
-  g_filter_registry = new FilterRegistryMap;
+XdsHttpFilterRegistry::XdsHttpFilterRegistry() {
   RegisterFilter(std::make_unique<XdsHttpRouterFilter>(),
                  {kXdsHttpRouterFilterConfigName});
   RegisterFilter(std::make_unique<XdsHttpFaultFilter>(),
@@ -120,9 +90,26 @@ void XdsHttpFilterRegistry::Init() {
                  {kXdsHttpRbacFilterConfigOverrideName});
 }
 
-void XdsHttpFilterRegistry::Shutdown() {
-  delete g_filter_registry;
-  delete g_filters;
+void XdsHttpFilterRegistry::RegisterFilter(
+    std::unique_ptr<XdsHttpFilterImpl> filter,
+    const std::set<absl::string_view>& config_proto_type_names) {
+  for (auto config_proto_type_name : config_proto_type_names) {
+    registry_map_[config_proto_type_name] = filter.get();
+  }
+  owning_list_.push_back(std::move(filter));
+}
+
+const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
+    absl::string_view proto_type_name) const {
+  auto it = registry_map_.find(proto_type_name);
+  if (it == registry_map_.end()) return nullptr;
+  return it->second;
+}
+
+void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) const {
+  for (const auto& filter : owning_list_) {
+    filter->PopulateSymtab(symtab);
+  }
 }
 
 }  // namespace grpc_core

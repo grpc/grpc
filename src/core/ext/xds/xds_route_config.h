@@ -230,7 +230,7 @@ class XdsRouteConfigResourceType
                       absl::string_view serialized_resource,
                       bool /*is_v2*/) const override;
 
-  void InitUpbSymtab(upb_DefPool* symtab) const override {
+  void InitUpbSymtab(XdsClient*, upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
     XdsClusterSpecifierPluginRegistry::PopulateSymtab(symtab);
   }

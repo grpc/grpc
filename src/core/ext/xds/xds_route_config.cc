@@ -627,8 +627,11 @@ ParseTypedPerFilterConfig(
     }
     auto type = ExtractExtensionTypeName(context, any);
     if (!type.ok()) return type.status();
+    const auto& http_filter_registry =
+        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+            .http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(type->type);
+        http_filter_registry.GetFilterForType(type->type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
       return absl::InvalidArgumentError(
