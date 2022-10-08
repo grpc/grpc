@@ -917,6 +917,10 @@ class ClientChannel::ClientChannelControlHelper
     return chand_->default_authority_;
   }
 
+  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+    return chand_->owning_stack_->EventEngine();
+  }
+
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.

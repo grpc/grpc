@@ -467,6 +467,7 @@ class GrpcLb : public LoadBalancingPolicy {
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -870,6 +871,10 @@ void GrpcLb::Helper::RequestReresolution() {
 
 absl::string_view GrpcLb::Helper::GetAuthority() {
   return parent_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine* GrpcLb::Helper::GetEventEngine() {
+  return parent_->channel_control_helper()->GetEventEngine();
 }
 
 void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,

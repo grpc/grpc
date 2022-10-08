@@ -291,6 +291,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Returns the channel authority.
     virtual absl::string_view GetAuthority() = 0;
 
+    /// Returns the EventEngine to use for timers and async work.
+    virtual grpc_event_engine::experimental::EventEngine* GetEventEngine() = 0;
+
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
     virtual void AddTraceEvent(TraceSeverity severity,
