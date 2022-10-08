@@ -1846,6 +1846,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
+        "status_helper",
         "time",
     ],
 )
@@ -2446,23 +2447,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_threaded_executor",
-    srcs = [
-        "src/core/lib/event_engine/executor/threaded_executor.cc",
-    ],
-    hdrs = [
-        "src/core/lib/event_engine/executor/threaded_executor.h",
-    ],
-    external_deps = ["absl/functional:any_invocable"],
-    deps = [
-        "event_engine_base_hdrs",
-        "event_engine_executor",
-        "event_engine_thread_pool",
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "common_event_engine_closures",
     hdrs = ["src/core/lib/event_engine/common_closures.h"],
     external_deps = ["absl/functional:any_invocable"],
@@ -2507,8 +2491,12 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
+        "event_engine_base_hdrs",
+        "event_engine_executor",
         "forkable",
         "gpr",
+        "time",
+        "useful",
     ],
 )
 
@@ -2884,11 +2872,12 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
-        "event_engine_threaded_executor",
+        "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "gpr",
         "grpc_trace",
+        "init_internally",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
     ],
@@ -2906,10 +2895,11 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
-        "event_engine_threaded_executor",
+        "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
         "gpr",
+        "init_internally",
         "posix_event_engine_timer_manager",
         "time",
         "windows_iocp",
@@ -4131,6 +4121,7 @@ grpc_cc_library(
         "grpc_service_config",
         "promise",
         "ref_counted_ptr",
+        "status_helper",
     ],
 )
 
@@ -4333,6 +4324,7 @@ grpc_cc_library(
         "json_util",
         "service_config_parser",
         "sleep",
+        "status_helper",
         "time",
         "try_seq",
     ],
@@ -4514,6 +4506,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "subchannel_interface",
         "time",
         "uri_parser",
@@ -4577,6 +4570,7 @@ grpc_cc_library(
         "server_address",
         "slice",
         "slice_refcount",
+        "status_helper",
         "subchannel_interface",
         "time",
         "uri_parser",
@@ -5061,7 +5055,6 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
-        "grpc_outlier_detection_header",
         "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_resolver_fake",
@@ -5357,7 +5350,6 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
-        "env",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
@@ -5656,6 +5648,7 @@ grpc_cc_library(
         "iomgr_timer",
         "orphanable",
         "ref_counted_ptr",
+        "status_helper",
         "time",
         "uri_parser",
         "work_serializer",
@@ -5809,6 +5802,7 @@ grpc_cc_library(
         "orphanable",
         "resolved_address",
         "server_address",
+        "status_helper",
         "uri_parser",
     ],
 )
@@ -5935,6 +5929,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "resource_quota",
+        "status_helper",
         "time",
         "uri_parser",
         "work_serializer",
@@ -6354,6 +6349,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "tsi_base",
         "tsi_ssl_credentials",
         "tsi_ssl_session_cache",
@@ -6476,6 +6472,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "time",
         "unique_type_name",
         "uri_parser",
@@ -6523,6 +6520,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "time",
         "uri_parser",
     ],
@@ -6909,6 +6907,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "useful",
     ],
 )
@@ -7237,6 +7236,7 @@ grpc_cc_library(
         "resolved_address",
         "resource_quota",
         "sockaddr_utils",
+        "status_helper",
         "time",
         "transport_fwd",
         "unique_type_name",
@@ -7391,6 +7391,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
+        "default_event_engine",
         "env",
         "error",
         "gpr",
@@ -7415,6 +7416,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "slice_refcount",
+        "status_helper",
         "thread_quota",
         "time",
         "useful",

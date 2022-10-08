@@ -60,16 +60,20 @@ TEST_P(CdsTest, Vanilla) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that CDS client should send a NACK if the cluster type in CDS
-// response is unsupported.
-TEST_P(CdsTest, UnsupportedClusterType) {
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsClusterResourceType have exhaustive tests for all
+// of the invalid cases.
+TEST_P(CdsTest, InvalidClusterResource) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
   const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("DiscoveryType is not valid."));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors validating Cluster resource: ["
+            "field:type error:unknown discovery type]]");
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource
@@ -88,63 +92,11 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(response_state->error_message,
-            "xDS response validation errors: [resource index 0: cluster_name: "
-            "INVALID_ARGUMENT: errors parsing CDS resource: ["
-            "DiscoveryType is not valid.]]");
+            "xDS response validation errors: ["
+            "resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors validating Cluster resource: ["
+            "field:type error:unknown discovery type]]");
   CheckRpcSendOk(DEBUG_LOCATION);
-}
-
-// Tests that CDS client should send a NACK if the eds_config in CDS response
-// is other than ADS or SELF.
-TEST_P(CdsTest, EdsConfigSourceDoesNotSpecifyAdsOrSelf) {
-  auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->set_path(
-      "/foo/bar");
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("EDS ConfigSource is not ADS or SELF."));
-}
-
-// Tests that CDS client accepts an eds_config of type ADS.
-TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
-  CreateAndStartBackends(1);
-  auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
-                     /*check_status=*/nullptr, WaitForBackendOptions(),
-                     RpcOptions().set_timeout_ms(5000));
-  auto response_state = balancer_->ads_service()->cds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Tests that CDS client should send a NACK if the lb_policy in CDS response
-// is other than ROUND_ROBIN.
-TEST_P(CdsTest, WrongLbPolicy) {
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::LEAST_REQUEST);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LB policy is not supported."));
-}
-
-// Tests that CDS client should send a NACK if the lrs_server in CDS response
-// is other than SELF.
-TEST_P(CdsTest, WrongLrsServer) {
-  auto cluster = default_cluster_;
-  cluster.mutable_lrs_server()->mutable_ads();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LRS ConfigSource is not self."));
 }
 
 // Tests round robin is not implacted by the endpoint weight, and that the
@@ -1005,7 +957,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
         seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
         return seen_drop_rate < kDropRateThreshold;
       },
-      /*timeout_ms=*/20000);
+      /*timeout_ms=*/40000);
   // Send kNumRpcsBoth RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,

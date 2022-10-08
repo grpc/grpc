@@ -73,6 +73,7 @@ grpc_cc_library(
         "//:resolved_address",
         "//:slice_refcount",
         "//:sockaddr_utils",
+        "//:status_helper",
         "//:time",
         "//test/core/util:grpc_test_util",
     ],
@@ -117,6 +118,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:iomgr_fwd",
+        "//:status_helper",
         "//test/core/util:grpc_test_util",
     ],
 )

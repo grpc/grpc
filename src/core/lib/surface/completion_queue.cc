@@ -46,6 +46,7 @@
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -693,7 +694,7 @@ static void cq_end_op_for_next(
     grpc_cq_completion* storage, bool /*internal*/) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
-    std::string errmsg = grpc_error_std_string(error);
+    std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_next(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
@@ -734,7 +735,7 @@ static void cq_end_op_for_next(
 
         if (!kick_error.ok()) {
           gpr_log(GPR_ERROR, "Kick failed: %s",
-                  grpc_error_std_string(kick_error).c_str());
+                  grpc_core::StatusToString(kick_error).c_str());
         }
       }
       if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
@@ -767,7 +768,7 @@ static void cq_end_op_for_pluck(
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
-    std::string errmsg = grpc_error_std_string(error).c_str();
+    std::string errmsg = grpc_core::StatusToString(error).c_str();
     GRPC_API_TRACE(
         "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
@@ -810,7 +811,7 @@ static void cq_end_op_for_pluck(
     gpr_mu_unlock(cq->mu);
     if (!kick_error.ok()) {
       gpr_log(GPR_ERROR, "Kick failed: %s",
-              grpc_error_std_string(kick_error).c_str());
+              grpc_core::StatusToString(kick_error).c_str());
     }
   }
 }
@@ -829,7 +830,7 @@ static void cq_end_op_for_callback(
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
-    std::string errmsg = grpc_error_std_string(error);
+    std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_callback(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
@@ -1036,7 +1037,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 
     if (!err.ok()) {
       gpr_log(GPR_ERROR, "Completion queue next failed: %s",
-              grpc_error_std_string(err).c_str());
+              grpc_core::StatusToString(err).c_str());
       if (err == absl::CancelledError()) {
         ret.type = GRPC_QUEUE_SHUTDOWN;
       } else {
@@ -1280,7 +1281,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
       gpr_log(GPR_ERROR, "Completion queue pluck failed: %s",
-              grpc_error_std_string(err).c_str());
+              grpc_core::StatusToString(err).c_str());
       ret.type = GRPC_QUEUE_TIMEOUT;
       ret.success = 0;
       dump_pending_tags(cq);

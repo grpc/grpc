@@ -62,6 +62,10 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [
         ":helpers",

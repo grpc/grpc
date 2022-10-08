@@ -857,7 +857,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", is_client() ? "CLI" : "SVR");
-    gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
+    gpr_log(GPR_DEBUG, "%s", StatusToString(error).c_str());
   }
   if (is_client()) {
     std::string status_details;

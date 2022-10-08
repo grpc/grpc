@@ -140,6 +140,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
         "//test/cpp/util:tls_test_utils",
@@ -215,6 +216,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -346,6 +348,7 @@ grpc_cc_test(
         "//src/proto/grpc/lookup/v1:rls_config_proto",
         "//src/proto/grpc/lookup/v1:rls_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:rls_server",
     ],
 )
