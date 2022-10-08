@@ -110,6 +110,13 @@ bool GenerateDocCommentBody(grpc::protobuf::io::Printer* printer,
   return GenerateDocCommentBodyImpl(printer, location);
 }
 
+void GenerateObsoleteAttributeIfObsolete(grpc::protobuf::io::Printer* printer,
+                                           const MethodDescriptor* method) {
+  if(method->options().deprecated()) {
+    printer->Print("[global::System.Obsolete]\n");
+  }
+}
+
 void GenerateDocCommentServerMethod(grpc::protobuf::io::Printer* printer,
                                     const MethodDescriptor* method) {
   if (GenerateDocCommentBody(printer, method)) {
@@ -449,8 +456,11 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
+
     GenerateDocCommentServerMethod(out, method);
     GenerateGeneratedCodeAttribute(out);
+    GenerateObsoleteAttributeIfObsolete(out, method);
+
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request$$response_stream_maybe$, "
@@ -529,6 +539,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       // unary calls have an extra synchronous stub method
       GenerateDocCommentClientMethod(out, method, true, false);
       GenerateGeneratedCodeAttribute(out);
+      GenerateObsoleteAttributeIfObsolete(out, method);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "grpc::Metadata "
@@ -552,6 +563,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       // overload taking CallOptions as a param
       GenerateDocCommentClientMethod(out, method, true, true);
       GenerateGeneratedCodeAttribute(out);
+      GenerateObsoleteAttributeIfObsolete(out, method);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "grpc::CallOptions options)\n",
@@ -574,6 +586,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
     }
     GenerateDocCommentClientMethod(out, method, false, false);
     GenerateGeneratedCodeAttribute(out);
+    GenerateObsoleteAttributeIfObsolete(out, method);
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request_maybe$grpc::Metadata "
@@ -678,9 +691,15 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
+    if(method->options().deprecated()) {
+      out->Print("\n#pragma warning disable CS0612");
+    }
     out->Print("\n.AddMethod($methodfield$, serviceImpl.$methodname$)",
                "methodfield", GetMethodFieldName(method), "methodname",
                method->name());
+    if(method->options().deprecated()) {
+      out->Print("\n#pragma warning restore CS0612");
+    }
   }
   out->Print(".Build();\n");
   out->Outdent();
@@ -718,6 +737,9 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
 
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
+    if(method->options().deprecated()) {
+      out->Print("#pragma warning disable CS0612\n");
+    }
     out->Print(
         "serviceBinder.AddMethod($methodfield$, serviceImpl == null ? null : "
         "new $servermethodtype$<$inputtype$, $outputtype$>("
@@ -727,6 +749,9 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "outputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()), "methodname",
         method->name());
+    if(method->options().deprecated()) {
+      out->Print("#pragma warning restore CS0612\n");
+    }
   }
 
   out->Outdent();
