@@ -62,6 +62,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -297,11 +298,40 @@ class BaseCallData : public Activity, private Wakeable {
 
   class ReceiveMessage {
    public:
-    explicit ReceiveMessage(Arena* arena) : pipe_(arena) {}
+    explicit ReceiveMessage(BaseCallData* base)
+        : base_(base), pipe_(base->arena()) {}
     PipeSender<MessageHandle>* incoming_pipe() { return &pipe_.sender; }
 
+    void StartOp(CapturedBatch& batch);
+    void GotPipe(PipeSender<MessageHandle>* sender);
+    void WakeInsideCombiner(Flusher* flusher);
+
    private:
+    enum class State : uint8_t {
+      kInitial,
+      kIdle,
+      kForwardedBatchNoPipe,
+      kForwardedBatch,
+      kBatchCompletedNoPipe,
+      kBatchCompleted,
+      kPushedToPipe,
+      kCancelled,
+    };
+
+    void OnComplete(absl::Status status);
+
+    BaseCallData* const base_;
     Pipe<MessageHandle> pipe_;
+    PipeSender<MessageHandle>* sender_;
+    State state_ = State::kInitial;
+    Message message_;
+    absl::optional<SliceBuffer>* intercepted_slice_buffer_;
+    uint32_t* intercepted_flags_;
+    absl::optional<PipeSender<MessageHandle>::PushType> push_;
+    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    grpc_closure* intercepted_on_complete_;
+    grpc_closure on_complete_ =
+        MakeMemberClosure<ReceiveMessage, &ReceiveMessage::OnComplete>(this);
   };
 
   Arena* arena() { return arena_; }
@@ -320,6 +350,7 @@ class BaseCallData : public Activity, private Wakeable {
                                        : receive_message_->incoming_pipe();
   }
   SendMessage* send_message() const { return send_message_; }
+  ReceiveMessage* receive_message() const { return receive_message_; }
 
   bool is_last() const {
     return grpc_call_stack_element(call_stack_, call_stack_->count - 1) ==
