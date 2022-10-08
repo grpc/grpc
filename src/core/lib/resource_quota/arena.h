@@ -31,7 +31,11 @@
 
 #include <atomic>
 #include <memory>
+#include <new>
 #include <utility>
+
+#include "absl/meta/type_traits.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 

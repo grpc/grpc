@@ -191,6 +191,7 @@ TEST(ArenaTest, CreateManyObjects) {
   };
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   std::vector<Arena::PoolPtr<TestObj>> objs;
+  objs.reserve(1000);
   for (int i = 0; i < 1000; i++) {
     objs.emplace_back(arena->MakePooled<TestObj>());
   }
