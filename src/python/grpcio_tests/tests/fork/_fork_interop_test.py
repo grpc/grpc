@@ -13,11 +13,15 @@
 # limitations under the License.
 """Client-side fork interop tests as a unit test."""
 
+import os
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
+
+# Must be set before any Core code runs.
+os.environ['GRPC_ENABLE_FORK_SUPPORT'] = '1'
 
 from grpc._cython import cygrpc
 import six
@@ -49,7 +53,7 @@ _SUBPROCESS_TIMEOUT_S = 30
 @unittest.skipUnless(
     sys.platform.startswith("linux"),
     "not supported on windows, and fork+exec networking blocked on mac")
-@unittest.skipUnless(six.PY2, "https://github.com/grpc/grpc/issues/18075")
+@unittest.skipIf(sys.version_info[:2] == (3, 7), "https://github.com/grpc/grpc/issues/18075")
 class ForkInteropTest(unittest.TestCase):
 
     def setUp(self):
