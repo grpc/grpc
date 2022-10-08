@@ -39,12 +39,13 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/util/test_config.h"
 
-using grpc_core::Arena;
-using grpc_core::ExecCtx;
+namespace grpc_core {
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+namespace {
+auto* g_memory_allocator = new grpc_core::MemoryAllocator(
     grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
         "test"));
+}
 
 TEST(ArenaTest, NoOp) {
   ExecCtx exec_ctx;
@@ -171,6 +172,32 @@ TEST(ArenaTest, ConcurrentManagedNew) {
 
   args.arena->Destroy();
 }
+
+TEST(ArenaTest, PooledObjectsArePooled) {
+  struct TestObj {
+    char a[100];
+  };
+
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  auto obj = arena->MakePooled<TestObj>();
+  void* p = obj.get();
+  obj.reset();
+  obj = arena->MakePooled<TestObj>();
+  EXPECT_EQ(p, obj.get());
+}
+
+TEST(ArenaTest, CreateManyObjects) {
+  struct TestObj {
+    char a[100];
+  };
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  std::vector<Arena::PoolPtr<TestObj>> objs;
+  for (int i = 0; i < 1000; i++) {
+    objs.emplace_back(arena->MakePooled<TestObj>());
+  }
+}
+
+}  // namespace grpc_core
 
 int main(int argc, char* argv[]) {
   grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
