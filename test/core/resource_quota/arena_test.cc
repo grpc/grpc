@@ -42,9 +42,8 @@
 namespace grpc_core {
 
 namespace {
-auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
+auto* g_memory_allocator = new MemoryAllocator(
+    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 }
 
 TEST(ArenaTest, NoOp) {
@@ -117,10 +116,10 @@ TEST(ArenaTest, ConcurrentAlloc) {
   gpr_event_init(&args.ev_start);
   args.arena = Arena::Create(1024, g_memory_allocator);
 
-  grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
+  Thread thds[CONCURRENT_TEST_THREADS];
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    thds[i] = grpc_core::Thread(
+    thds[i] = Thread(
         "grpc_concurrent_test",
         [](void* arg) {
           concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
@@ -147,10 +146,10 @@ TEST(ArenaTest, ConcurrentManagedNew) {
   gpr_event_init(&args.ev_start);
   args.arena = Arena::Create(1024, g_memory_allocator);
 
-  grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
+  Thread thds[CONCURRENT_TEST_THREADS];
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    thds[i] = grpc_core::Thread(
+    thds[i] = Thread(
         "grpc_concurrent_test",
         [](void* arg) {
           concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
@@ -178,7 +177,7 @@ TEST(ArenaTest, PooledObjectsArePooled) {
     char a[100];
   };
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   auto obj = arena->MakePooled<TestObj>();
   void* p = obj.get();
   obj.reset();
@@ -190,7 +189,7 @@ TEST(ArenaTest, CreateManyObjects) {
   struct TestObj {
     char a[100];
   };
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   std::vector<Arena::PoolPtr<TestObj>> objs;
   for (int i = 0; i < 1000; i++) {
     objs.emplace_back(arena->MakePooled<TestObj>());
