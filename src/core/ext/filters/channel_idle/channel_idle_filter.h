@@ -60,8 +60,8 @@ class ChannelIdleFilter : public ChannelFilter {
   using SingleSetActivityPtr =
       SingleSetPtr<Activity, typename ActivityPtr::deleter_type>;
 
-  ChannelIdleFilter(
-      grpc_channel_stack* channel_stack, Duration client_idle_timeout)
+  ChannelIdleFilter(grpc_channel_stack* channel_stack,
+                    Duration client_idle_timeout)
       : channel_stack_(channel_stack),
         client_idle_timeout_(client_idle_timeout) {}
 
@@ -129,8 +129,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
     MaxAgeFilter* filter_;
   };
 
-  MaxAgeFilter(
-      grpc_channel_stack* channel_stack, const Config& max_age_config);
+  MaxAgeFilter(grpc_channel_stack* channel_stack, const Config& max_age_config);
 
   void Shutdown() override;
 

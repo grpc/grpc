@@ -463,7 +463,8 @@ void XdsClusterManagerLb::ClusterChild::Orphan() {
   // the child.
   picker_wrapper_.reset();
   if (delayed_removal_timer_handle_.has_value()) {
-    xds_cluster_manager_policy_->channel_control_helper()->GetEventEngine()
+    xds_cluster_manager_policy_->channel_control_helper()
+        ->GetEventEngine()
         ->Cancel(*delayed_removal_timer_handle_);
   }
   shutdown_ = true;
@@ -507,7 +508,8 @@ absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
   // Update child weight.
   // Reactivate if needed.
   if (delayed_removal_timer_handle_.has_value() &&
-      xds_cluster_manager_policy_->channel_control_helper()->GetEventEngine()
+      xds_cluster_manager_policy_->channel_control_helper()
+          ->GetEventEngine()
           ->Cancel(*delayed_removal_timer_handle_)) {
     delayed_removal_timer_handle_.reset();
   }
@@ -545,7 +547,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   if (delayed_removal_timer_handle_.has_value()) return;
   // Start a timer to delete the child.
   delayed_removal_timer_handle_ =
-      xds_cluster_manager_policy_->channel_control_helper()->GetEventEngine()
+      xds_cluster_manager_policy_->channel_control_helper()
+          ->GetEventEngine()
           ->RunAfter(
               kChildRetentionInterval,
               [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
@@ -557,7 +560,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
                     },
                     DEBUG_LOCATION);
               });
-    }
+}
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked() {
   delayed_removal_timer_handle_.reset();

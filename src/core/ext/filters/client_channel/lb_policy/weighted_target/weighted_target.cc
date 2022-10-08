@@ -481,15 +481,13 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
   timer_handle_ =
       weighted_child_->weighted_target_policy_->channel_control_helper()
           ->GetEventEngine()
-          ->RunAfter(
-              kChildRetentionInterval, [self = Ref()]() mutable {
-                ApplicationCallbackExecCtx app_exec_ctx;
-                ExecCtx exec_ctx;
-                self->weighted_child_->weighted_target_policy_
-                    ->work_serializer()
-                    ->Run([self = std::move(self)] { self->OnTimerLocked(); },
-                          DEBUG_LOCATION);
-              });
+          ->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
+            ApplicationCallbackExecCtx app_exec_ctx;
+            ExecCtx exec_ctx;
+            self->weighted_child_->weighted_target_policy_->work_serializer()
+                ->Run([self = std::move(self)] { self->OnTimerLocked(); },
+                      DEBUG_LOCATION);
+          });
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {

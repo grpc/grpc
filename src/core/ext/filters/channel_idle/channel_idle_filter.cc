@@ -309,8 +309,8 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       });
 }
 
-MaxAgeFilter::MaxAgeFilter(
-    grpc_channel_stack* channel_stack, const Config& max_age_config)
+MaxAgeFilter::MaxAgeFilter(grpc_channel_stack* channel_stack,
+                           const Config& max_age_config)
     : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle),
       max_connection_age_(max_age_config.max_connection_age),
       max_connection_age_grace_(max_age_config.max_connection_age_grace) {}
