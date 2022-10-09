@@ -463,16 +463,16 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     md_.Set(HttpPathMetadata(), Slice::FromStaticString(path));
     activity_ = MakeActivity(
         [this, creds] {
-          return Seq(creds->GetRequestMetadata(
-                         ClientMetadataHandle(
-                             &md_, grpc_core::Arena::PooledDeleter(nullptr)),
-                         &get_request_metadata_args_),
-                     [this](absl::StatusOr<ClientMetadataHandle> metadata) {
-                       if (metadata.ok()) {
-                         GPR_ASSERT(metadata->get() == &md_);
-                       }
-                       return metadata.status();
-                     });
+          return Seq(
+              creds->GetRequestMetadata(
+                  ClientMetadataHandle(&md_, Arena::PooledDeleter(nullptr)),
+                  &get_request_metadata_args_),
+              [this](absl::StatusOr<ClientMetadataHandle> metadata) {
+                if (metadata.ok()) {
+                  GPR_ASSERT(metadata->get() == &md_);
+                }
+                return metadata.status();
+              });
         },
         ExecCtxWakeupScheduler(),
         [self](absl::Status status) mutable {
