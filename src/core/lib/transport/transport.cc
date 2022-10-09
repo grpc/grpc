@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <memory>
 #include <new>
 
 #include "absl/status/status.h"
@@ -30,6 +31,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,

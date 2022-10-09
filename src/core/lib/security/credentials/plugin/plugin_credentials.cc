@@ -21,6 +21,7 @@
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 
 #include <atomic>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
