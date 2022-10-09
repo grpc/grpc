@@ -207,7 +207,6 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   EXPECT_EQ(message_md->as_string_view(),
             "Illegal status code from call credentials; original status: "
             "ABORTED: nope");
-  (*server_metadata)->~ServerMetadata();
 }
 
 }  // namespace
