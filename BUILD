@@ -3458,6 +3458,7 @@ grpc_cc_library(
         "poll",
         "pollset_set",
         "promise",
+        "promise_status",
         "ref_counted",
         "ref_counted_ptr",
         "resolved_address",
