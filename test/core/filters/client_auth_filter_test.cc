@@ -174,7 +174,6 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
       (*server_metadata)->get_pointer(GrpcMessageMetadata());
   ASSERT_TRUE(message_md != nullptr);
   EXPECT_EQ(message_md->as_string_view(), "access denied");
-  (*server_metadata)->~ServerMetadata();
 }
 
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
