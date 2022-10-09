@@ -413,7 +413,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       if (!service_config_error.ok()) {
         result.service_config = absl::UnavailableError(
             absl::StrCat("failed to parse service config: ",
-                         grpc_error_std_string(service_config_error)));
+                         StatusToString(service_config_error)));
       } else if (!service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
@@ -432,7 +432,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     }
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
-                         grpc_error_std_string(error).c_str());
+                         StatusToString(error).c_str());
     std::string error_message;
     grpc_error_get_str(error, StatusStrProperty::kDescription, &error_message);
     absl::Status status = absl::UnavailableError(

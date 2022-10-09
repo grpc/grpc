@@ -517,8 +517,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   void CheckRequestMetadata(grpc_error_handle error) {
     gpr_log(GPR_INFO, "expected_error: %s",
-            grpc_error_std_string(expected_error_).c_str());
-    gpr_log(GPR_INFO, "actual_error: %s", grpc_error_std_string(error).c_str());
+            StatusToString(expected_error_).c_str());
+    gpr_log(GPR_INFO, "actual_error: %s", StatusToString(error).c_str());
     if (expected_error_.ok()) {
       GPR_ASSERT(error.ok());
     } else {

@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -570,7 +571,7 @@ class ClientStream : public Orphanable {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
                   recv_message_waker_.ActivityDebugTag().c_str(),
-                  grpc_error_std_string(error).c_str());
+                  StatusToString(error).c_str());
         }
       } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
         if (grpc_call_trace.enabled()) {

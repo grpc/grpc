@@ -31,6 +31,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -139,7 +140,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
         "Client channel global parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing client channel global parameters: ",
-                     grpc_error_std_string(error)));
+                     StatusToString(error)));
     return status;
   }
   return std::make_unique<ClientChannelGlobalParsedConfig>(
@@ -174,7 +175,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
         GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing client channel method parameters: ",
-                     grpc_error_std_string(error)));
+                     StatusToString(error)));
     return status;
   }
   return std::make_unique<ClientChannelMethodParsedConfig>(timeout,

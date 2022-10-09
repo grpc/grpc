@@ -18,6 +18,7 @@
 
 #include "absl/status/status.h"
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -126,7 +127,7 @@ class BinderResolverFactory : public ResolverFactory {
       }
       grpc_error_handle error = BinderAddrPopulate(uri.path(), &addr);
       if (!error.ok()) {
-        gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
+        gpr_log(GPR_ERROR, "%s", StatusToString(error).c_str());
         return false;
       }
     }
