@@ -84,7 +84,7 @@ constexpr size_t AllocationSizeFromObjectSize(
 }  // namespace arena_detail
 
 class Arena {
-  using PoolSizes = absl::integer_sequence<size_t, 256, 512>;
+  using PoolSizes = absl::integer_sequence<size_t, 256, 512, 768>;
 
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
