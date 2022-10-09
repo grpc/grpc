@@ -129,7 +129,7 @@ void* Arena::AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head) {
 
 void Arena::FreePooled(void* p, std::atomic<FreePoolNode*>* head) {
   FreePoolNode* node = static_cast<FreePoolNode*>(p);
-  node->next = head->load(std::memory_order_relaxed);
+  node->next = head->load(std::memory_order_acquire);
   while (!head->compare_exchange_weak(
       node->next, node, std::memory_order_acq_rel, std::memory_order_relaxed)) {
   }

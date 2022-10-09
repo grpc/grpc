@@ -58,7 +58,7 @@ struct PoolIndexForSize<
     absl::enable_if_t<kObjectSize <= kSmallestRemainingBucket>, kIndex,
     kObjectSize, kSmallestRemainingBucket, kBucketSizes...> {
   static constexpr size_t kPool = kIndex;
-  static constexpr size_t kSize = kObjectSize;
+  static constexpr size_t kSize = kSmallestRemainingBucket;
 };
 
 template <size_t kObjectSize, size_t kIndex, size_t kSmallestRemainingBucket,
