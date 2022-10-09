@@ -2043,6 +2043,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/utility",
+    ],
     deps = [
         "construct_destruct",
         "context",
