@@ -1455,8 +1455,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_fragments.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_fragments.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />

@@ -2251,8 +2251,6 @@ src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
-src/core/lib/transport/call_fragments.cc \
-src/core/lib/transport/call_fragments.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \
