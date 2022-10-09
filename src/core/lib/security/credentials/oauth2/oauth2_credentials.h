@@ -48,7 +48,6 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // Constants.

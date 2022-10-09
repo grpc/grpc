@@ -24,7 +24,6 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/transport/call_fragments.h"
 
 namespace grpc_core {
 

@@ -464,7 +464,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     activity_ = MakeActivity(
         [this, creds] {
           return Seq(creds->GetRequestMetadata(
-                         ClientMetadataHandle::TestOnlyWrap(&md_),
+                         ClientMetadataHandle(
+                             &md_, grpc_core::Arena::PooledDeleter(nullptr)),
                          &get_request_metadata_args_),
                      [this](absl::StatusOr<ClientMetadataHandle> metadata) {
                        if (metadata.ok()) {

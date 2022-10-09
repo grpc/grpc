@@ -261,3 +261,17 @@ grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
   op->op.on_complete = &op->outer_on_complete;
   return &op->op;
 }
+
+namespace grpc_core {
+
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status) {
+  auto hdl =
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  hdl->Set(GrpcStatusMetadata(), static_cast<grpc_status_code>(status.code()));
+  if (!status.ok()) {
+    hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(status.message()));
+  }
+  return hdl;
+}
+
+}  // namespace grpc_core

@@ -33,7 +33,6 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/call_fragments.h"
 
 class grpc_google_iam_credentials : public grpc_call_credentials {
  public:

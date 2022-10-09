@@ -39,7 +39,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -132,11 +131,11 @@ ServerConfigSelectorFilter::~ServerConfigSelectorFilter() {
 ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto sel = config_selector();
-  if (!sel.ok()) return Immediate(ServerMetadataHandle(sel.status()));
+  if (!sel.ok()) return Immediate(ServerMetadataFromStatus(sel.status()));
   auto call_config =
       sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
   if (!call_config.error.ok()) {
-    auto r = Immediate(ServerMetadataHandle(
+    auto r = Immediate(ServerMetadataFromStatus(
         absl::UnavailableError(grpc_error_std_string(call_config.error))));
     return std::move(r);
   }

@@ -93,7 +93,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -1944,17 +1943,14 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallContext>,
-        public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<FragmentAllocator> {
+        public promise_detail::Context<CallFinalization> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
-          promise_detail::Context<CallFinalization>(&call->finalization_),
-          promise_detail::Context<FragmentAllocator>(
-              &call->fragment_allocator_) {}
+          promise_detail::Context<CallFinalization>(&call->finalization_) {}
   };
 
   class Completion {
@@ -2177,7 +2173,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_);
-  FragmentAllocator fragment_allocator_ ABSL_GUARDED_BY(mu_);
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
@@ -2371,7 +2366,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     ScopedContext context(this);
     send_initial_metadata_ =
-        GetContext<FragmentAllocator>()->MakeClientMetadata();
+        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
@@ -2400,7 +2395,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   void Orphan() override {
     MutexLock lock(mu());
     ScopedContext ctx(this);
-    if (!completed_) Finish(ServerMetadataHandle(absl::CancelledError()));
+    if (!completed_) Finish(ServerMetadataFromStatus(absl::CancelledError()));
   }
   bool is_trailers_only() const override {
     MutexLock lock(mu());
@@ -2484,7 +2479,7 @@ void ClientPromiseBasedCall::StartPromise(
 void ClientPromiseBasedCall::CancelWithError(grpc_error_handle error) {
   MutexLock lock(mu());
   ScopedContext context(this);
-  Finish(ServerMetadataHandle(grpc_error_to_absl_status(error)));
+  Finish(ServerMetadataFromStatus(grpc_error_to_absl_status(error)));
 }
 
 grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
@@ -2567,8 +2562,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
               &op.data.send_message.send_message->data.raw.slice_buffer,
               send.c_slice_buffer());
           outstanding_send_.emplace(client_to_server_messages_.sender.Push(
-              GetContext<FragmentAllocator>()->MakeMessage(std::move(send),
-                                                           op.flags)));
+              GetContext<Arena>()->MakePooled<Message>(std::move(send),
+                                                       op.flags)));
         } else {
           FailCompletion(completion);
         }
@@ -2680,7 +2675,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
       outstanding_send_.reset();
       if (!*result) {
         FailCompletion(send_message_completion_);
-        Finish(ServerMetadataHandle(absl::Status(
+        Finish(ServerMetadataFromStatus(absl::Status(
             absl::StatusCode::kInternal, "Failed to send message to server")));
       }
     }

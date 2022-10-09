@@ -134,9 +134,15 @@ class Arena {
   class PooledDeleter {
    public:
     explicit PooledDeleter(Arena* arena) : arena_(arena) {}
+    PooledDeleter() = default;
     template <typename T>
     void operator()(T* p) {
-      arena_->DeletePooled(p);
+      // TODO(ctiller): promise based filter hijacks ownership of some pointers
+      // to make them appear as PoolPtr without really transferring ownership,
+      // by setting the arena to nullptr.
+      // This is a transitional hack and should be removed once promise based
+      // filter is removed.
+      if (arena_ != nullptr) arena_->DeletePooled(p);
     }
 
    private:
