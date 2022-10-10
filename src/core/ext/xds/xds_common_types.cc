@@ -38,8 +38,10 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/arena.h"
 #include "upb/json_encode.h"
-#include "upb/upb.h"
+#include "upb/status.h"
+#include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"

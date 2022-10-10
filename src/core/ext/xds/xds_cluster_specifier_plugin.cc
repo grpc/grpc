@@ -26,6 +26,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/variant.h"
 #include "upb/json_encode.h"
 #include "upb/status.h"
 #include "upb/upb.hpp"

@@ -28,7 +28,6 @@
 #include "absl/strings/string_view.h"
 #include "upb/arena.h"
 #include "upb/def.h"
-#include "upb/upb.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/channel/channel_args.h"

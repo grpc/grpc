@@ -28,6 +28,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"

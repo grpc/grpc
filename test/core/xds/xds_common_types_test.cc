@@ -16,11 +16,13 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
@@ -46,7 +48,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/proto/grpc/testing/xds/v3/regex.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
