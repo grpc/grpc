@@ -41,3 +41,31 @@ grpc_cc_library(
     ],
     language = "c++",
 )
+
+grpc_cc_library(
+    name = "event_engine_common",
+    srcs = [
+        "lib/event_engine/resolved_address.cc",
+        "lib/event_engine/slice.cc",
+        "lib/event_engine/slice_buffer.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/handle_containers.h",
+        "//:include/grpc/event_engine/slice.h",
+        "//:include/grpc/event_engine/slice_buffer.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/hash",
+        "absl/strings",
+        "absl/utility",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:slice",
+        "//:slice_buffer",
+        "//:slice_refcount",
+    ],
+)

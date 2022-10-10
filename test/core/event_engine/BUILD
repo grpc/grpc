@@ -127,7 +127,7 @@ grpc_cc_test(
     srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:event_engine_common",
+        "//src/core:event_engine_common",
         "//:gpr",
         "//:gpr_platform",
         "//:slice",

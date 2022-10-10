@@ -2863,7 +2863,6 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
-        "event_engine_common",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
@@ -2871,6 +2870,7 @@ grpc_cc_library(
         "grpc_trace",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
+        "//src/core:event_engine_common",
     ],
 )
 
@@ -2885,7 +2885,6 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
-        "event_engine_common",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
@@ -2893,6 +2892,7 @@ grpc_cc_library(
         "posix_event_engine_timer_manager",
         "time",
         "windows_iocp",
+        "//src/core:event_engine_common",
     ],
 )
 
@@ -2922,34 +2922,6 @@ grpc_cc_library(
         "event_engine_trace",
         "gpr",
         "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "event_engine_common",
-    srcs = [
-        "//src/core:lib/event_engine/resolved_address.cc",
-        "//src/core:lib/event_engine/slice.cc",
-        "//src/core:lib/event_engine/slice_buffer.cc",
-    ],
-    hdrs = [
-        "include/grpc/event_engine/slice.h",
-        "include/grpc/event_engine/slice_buffer.h",
-        "//src/core:lib/event_engine/handle_containers.h",
-    ],
-    external_deps = [
-        "absl/container:flat_hash_set",
-        "absl/hash",
-        "absl/strings",
-        "absl/utility",
-    ],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr",
-        "gpr_platform",
-        "slice",
-        "slice_buffer",
-        "slice_refcount",
     ],
 )
 
@@ -5670,7 +5642,6 @@ grpc_cc_library(
         "backoff",
         "config",
         "debug_location",
-        "event_engine_common",
         "gpr",
         "grpc_base",
         "grpc_grpclb_balancer_addresses",
@@ -5696,6 +5667,7 @@ grpc_cc_library(
         "status_helper",
         "time",
         "uri_parser",
+        "//src/core:event_engine_common",
     ],
 )
 
