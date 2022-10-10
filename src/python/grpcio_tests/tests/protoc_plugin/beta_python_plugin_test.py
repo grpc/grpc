@@ -14,6 +14,7 @@
 
 import contextlib
 import importlib
+from itertools import zip_longest
 import os
 from os import path
 import pkgutil
@@ -28,7 +29,6 @@ from grpc.beta import interfaces
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 from grpc_tools import protoc
-from six import moves
 
 from tests.unit.framework.common import test_constants
 
@@ -433,7 +433,7 @@ class PythonPluginTest(unittest.TestCase):
                                                  test_constants.LONG_TIMEOUT)
             expected_responses = methods.StreamingOutputCall(
                 request, 'not a real RpcContext!')
-            for expected_response, response in moves.zip_longest(
+            for expected_response, response in zip_longest(
                     expected_responses, responses):
                 self.assertEqual(expected_response, response)
 
@@ -559,7 +559,7 @@ class PythonPluginTest(unittest.TestCase):
             expected_responses = methods.FullDuplexCall(
                 _full_duplex_request_iterator(self._requests_pb2),
                 'not a real RpcContext!')
-            for expected_response, response in moves.zip_longest(
+            for expected_response, response in zip_longest(
                     expected_responses, responses):
                 self.assertEqual(expected_response, response)
 
@@ -620,7 +620,7 @@ class PythonPluginTest(unittest.TestCase):
                                             test_constants.LONG_TIMEOUT)
             expected_responses = methods.HalfDuplexCall(
                 half_duplex_request_iterator(), 'not a real RpcContext!')
-            for check in moves.zip_longest(expected_responses, responses):
+            for check in zip_longest(expected_responses, responses):
                 expected_response, response = check
                 self.assertEqual(expected_response, response)
 
