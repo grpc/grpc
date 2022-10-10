@@ -44,25 +44,29 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
     envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
   }
 
-  absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      XdsExtension extension, upb_Arena* arena) const override {
+  absl::optional<FilterConfig> GenerateFilterConfig(
+      XdsExtension extension, upb_Arena* arena, ValidationErrors* errors)
+      const override {
     absl::string_view* serialized_filter_config =
         absl::get_if<absl::string_view>(&extension.value);
     if (serialized_filter_config == nullptr) {
-      return absl::InvalidArgumentError("could not parse router filter config");
+      errors->AddError("could not parse router filter config");
+      return absl::nullopt;
     }
     if (envoy_extensions_filters_http_router_v3_Router_parse(
             serialized_filter_config->data(), serialized_filter_config->size(),
             arena) == nullptr) {
-      return absl::InvalidArgumentError("could not parse router filter config");
+      errors->AddError("could not parse router filter config");
+      return absl::nullopt;
     }
     return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
   }
 
-  absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      XdsExtension /*extension*/, upb_Arena* /*arena*/) const override {
-    return absl::InvalidArgumentError(
-        "router filter does not support config override");
+  absl::optional<FilterConfig> GenerateFilterConfigOverride(
+      XdsExtension /*extension*/, upb_Arena* /*arena*/,
+      ValidationErrors* errors) const override {
+    errors->AddError("router filter does not support config override");
+    return absl::nullopt;
   }
 
   const grpc_channel_filter* channel_filter() const override { return nullptr; }

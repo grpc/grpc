@@ -37,11 +37,13 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
  public:
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
-  absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      XdsExtension extension, upb_Arena* arena) const override;
+  absl::optional<FilterConfig> GenerateFilterConfig(
+      XdsExtension extension, upb_Arena* arena,
+      ValidationErrors* errors) const override;
 
-  absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      XdsExtension extension, upb_Arena* arena) const override;
+  absl::optional<FilterConfig> GenerateFilterConfigOverride(
+      XdsExtension extension, upb_Arena* arena,
+      ValidationErrors* errors) const override;
 
   const grpc_channel_filter* channel_filter() const override;
 

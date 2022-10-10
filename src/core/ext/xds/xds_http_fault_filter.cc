@@ -74,13 +74,28 @@ uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
   return 100;
 }
 
-absl::StatusOr<Json> ParseHttpFaultIntoJson(
-    absl::string_view serialized_http_fault, upb_Arena* arena) {
+}  // namespace
+
+void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
+  envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
+}
+
+absl::optional<XdsHttpFilterImpl::FilterConfig>
+XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
+                                         upb_Arena* arena,
+                                         ValidationErrors* errors) const {
+  absl::string_view* serialized_filter_config =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse fault injection filter config");
+    return absl::nullopt;
+  }
   auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
-      serialized_http_fault.data(), serialized_http_fault.size(), arena);
+      serialized_filter_config->data(), serialized_filter_config->size(),
+      arena);
   if (http_fault == nullptr) {
-    return absl::InvalidArgumentError(
-        "could not parse fault injection filter config");
+    errors->AddError("could not parse fault injection filter config");
+    return absl::nullopt;
   }
   // NOTE(lidiz): Here, we are manually translating the upb messages into the
   // JSON form of the filter config as part of method config, which will be
@@ -103,8 +118,9 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
     if (abort_grpc_status_code_raw != 0) {
       if (!grpc_status_code_from_int(abort_grpc_status_code_raw,
                                      &abort_grpc_status_code)) {
-        return absl::InvalidArgumentError(absl::StrCat(
-            "invalid gRPC status code: ", abort_grpc_status_code_raw));
+        ValidationErrors::ScopedField field(errors, ".grpc_status");
+        errors->AddError(absl::StrCat("invalid gRPC status code: ",
+                                      abort_grpc_status_code_raw));
       }
     } else {
       // if gRPC status code is empty, check http status
@@ -145,9 +161,8 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
         envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
             fault_delay);
     if (delay_duration != nullptr) {
-      ValidationErrors errors;
-      Duration duration = ParseDuration(delay_duration, &errors);
-      if (!errors.ok()) return errors.status("fixed_delay");
+      ValidationErrors::ScopedField field(errors, ".fixed_delay");
+      Duration duration = ParseDuration(delay_duration, errors);
       fault_injection_policy_json["delay"] = duration.ToJsonString();
     }
     // Set the headers if we enabled header delay injection control
@@ -175,38 +190,16 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
     fault_injection_policy_json["maxFaults"] =
         google_protobuf_UInt32Value_value(max_fault_wrapper);
   }
-  return fault_injection_policy_json;
+  return FilterConfig{kXdsHttpFaultFilterConfigName,
+                      std::move(fault_injection_policy_json)};
 }
 
-}  // namespace
-
-void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
-  envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
-}
-
-absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
-                                         upb_Arena* arena) const {
-  absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
-  if (serialized_filter_config == nullptr) {
-    return absl::InvalidArgumentError(
-        "could not parse fault injection filter config");
-  }
-  absl::StatusOr<Json> parse_result =
-      ParseHttpFaultIntoJson(*serialized_filter_config, arena);
-  if (!parse_result.ok()) {
-    return parse_result.status();
-  }
-  return FilterConfig{kXdsHttpFaultFilterConfigName, std::move(*parse_result)};
-}
-
-absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(XdsExtension extension,
-                                                 upb_Arena* arena) const {
+absl::optional<XdsHttpFilterImpl::FilterConfig>
+XdsHttpFaultFilter::GenerateFilterConfigOverride(
+    XdsExtension extension, upb_Arena* arena, ValidationErrors* errors) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(std::move(extension), arena);
+  return GenerateFilterConfig(std::move(extension), arena, errors);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
