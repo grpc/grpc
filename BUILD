@@ -5426,6 +5426,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
