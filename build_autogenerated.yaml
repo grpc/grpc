@@ -727,6 +727,7 @@ libs:
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/event_log.h
+  - src/core/lib/debug/histogram_view.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -1441,6 +1442,7 @@ libs:
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/event_log.cc
+  - src/core/lib/debug/histogram_view.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -1927,6 +1929,7 @@ libs:
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/event_log.h
+  - src/core/lib/debug/histogram_view.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -2282,6 +2285,7 @@ libs:
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/event_log.cc
+  - src/core/lib/debug/histogram_view.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -8392,7 +8396,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/util/core_stats.h
   - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
@@ -8406,7 +8409,6 @@ targets:
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
-  - src/proto/grpc/core/stats.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -8414,7 +8416,6 @@ targets:
   - src/proto/grpc/testing/report_qps_scenario_service.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
-  - src/cpp/util/core_stats.cc
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -8437,7 +8438,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/util/core_stats.h
   - test/cpp/qps/client.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
@@ -8447,14 +8447,12 @@ targets:
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
-  - src/proto/grpc/core/stats.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
-  - src/cpp/util/core_stats.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
