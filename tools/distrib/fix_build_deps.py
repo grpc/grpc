@@ -303,7 +303,10 @@ def grpc_cc_library(name,
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), src)
+        filename = '%s%s' % (
+            (parsing_path + '/' if
+             (parsing_path and not src.startswith('//')) else ''), src)
+        filename = filename.replace('//:', '')
         filename = filename.replace('//src/core:', 'src/core/')
         for line in open(filename):
             m = re.search(r'^#include <(.*)>', line)
