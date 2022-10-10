@@ -457,8 +457,9 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     size_t pos = extension.type.rfind('/');
     if (pos == absl::string_view::npos || pos == extension.type.size() - 1) {
       errors->AddError(absl::StrCat("invalid value \"", extension.type, "\""));
+    } else {
+      extension.type = extension.type.substr(pos + 1);
     }
-    extension.type = extension.type.substr(pos + 1);
   };
   extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
   strip_type_prefix();

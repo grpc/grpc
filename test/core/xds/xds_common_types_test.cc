@@ -802,8 +802,9 @@ TEST_F(ExtractXdsExtensionTest, TypedStructParseFailure) {
   google_protobuf_Any_set_type_url(
       any_proto, StdStringToUpbString(absl::string_view(
                      "type.googleapis.com/xds.type.v3.TypedStruct")));
+  std::string serialized_type_struct("\0", 1);
   google_protobuf_Any_set_value(any_proto,
-                                StdStringToUpbString(std::string("\0", 1)));
+                                StdStringToUpbString(serialized_type_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
