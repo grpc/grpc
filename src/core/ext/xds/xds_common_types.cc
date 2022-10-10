@@ -495,7 +495,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
   } else {
     extension.value = any_value;
   }
-  return extension;
+  return std::move(extension);
 }
 
 }  // namespace grpc_core
