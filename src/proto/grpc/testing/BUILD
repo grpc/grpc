@@ -172,6 +172,9 @@ grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
     has_services = False,
+    deps = [
+        "//src/proto/grpc/core:stats_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -249,6 +252,12 @@ py_grpc_library(
     name = "worker_service_py_pb2_grpc",
     srcs = [":worker_service_descriptor"],
     deps = [":worker_service_py_pb2"],
+)
+
+proto_library(
+    name = "stats_descriptor",
+    srcs = ["stats.proto"],
+    deps = ["//src/proto/grpc/core:stats_descriptor"],
 )
 
 py_proto_library(

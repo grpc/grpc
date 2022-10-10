@@ -174,12 +174,17 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   }
   gpr_mu_unlock(&g_mu);
 
+  // Use a TrackCounters object to monitor the gRPC performance statistics
+  // (optionally including low-level counters) before and after the test
+  TrackCounters track_counters;
+
   for (auto _ : state) {
     GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
                GRPC_OP_COMPLETE);
   }
 
   state.SetItemsProcessed(state.iterations());
+  track_counters.Finish(state);
 
   gpr_mu_lock(&g_mu);
   g_threads_active--;

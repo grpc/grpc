@@ -101,6 +101,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     }
     GPR_ASSERT(final_status.ok());
   }
+  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }
@@ -157,6 +158,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
       need_tags &= ~(1 << i);
     }
   }
+  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }

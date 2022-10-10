@@ -59,15 +59,19 @@ static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
 //
 
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
+  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_core::HPackCompressor c;
     grpc_core::ExecCtx::Get()->Flush();
   }
+
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderInitDestroy);
 
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
+  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Timestamp saved_now = grpc_core::Timestamp::Now();
 
@@ -95,11 +99,22 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_slice_buffer_destroy(&outbuf);
+
+  std::ostringstream label;
+  label << "framing_bytes/iter:"
+        << (static_cast<double>(stats.framing_bytes) /
+            static_cast<double>(state.iterations()))
+        << " header_bytes/iter:"
+        << (static_cast<double>(stats.header_bytes) /
+            static_cast<double>(state.iterations()));
+  track_counters.AddLabel(label.str());
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderEncodeDeadline);
 
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
+  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
@@ -135,6 +150,16 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_slice_buffer_destroy(&outbuf);
+
+  std::ostringstream label;
+  label << "framing_bytes/iter:"
+        << (static_cast<double>(stats.framing_bytes) /
+            static_cast<double>(state.iterations()))
+        << " header_bytes/iter:"
+        << (static_cast<double>(stats.header_bytes) /
+            static_cast<double>(state.iterations()));
+  track_counters.AddLabel(label.str());
+  track_counters.Finish(state);
 }
 
 namespace hpack_encoder_fixtures {
@@ -321,16 +346,20 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 //
 
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
+  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     { grpc_core::HPackParser(); }
     grpc_core::ExecCtx::Get()->Flush();
   }
+
+  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
+  TrackCounters track_counters;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::ExecCtx exec_ctx;
@@ -373,6 +402,8 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   arena->Destroy();
+
+  track_counters.Finish(state);
 }
 
 namespace hpack_parser_fixtures {

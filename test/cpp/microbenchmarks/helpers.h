@@ -29,7 +29,6 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 
 class LibraryInitializer {
  public:
@@ -40,6 +39,19 @@ class LibraryInitializer {
 
  private:
   grpc::internal::GrpcLibrary init_lib_;
+};
+
+class TrackCounters {
+ public:
+  TrackCounters() { grpc_stats_collect(&stats_begin_); }
+  virtual ~TrackCounters() {}
+  virtual void Finish(benchmark::State& state);
+  virtual void AddLabel(const std::string& label);
+  virtual void AddToLabel(std::ostream& out, benchmark::State& state);
+
+ private:
+  grpc_stats_data stats_begin_;
+  std::vector<std::string> labels_;
 };
 
 #endif

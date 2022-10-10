@@ -40,3 +40,40 @@ LibraryInitializer& LibraryInitializer::get() {
   GPR_ASSERT(g_libraryInitializer != nullptr);
   return *g_libraryInitializer;
 }
+
+void TrackCounters::Finish(benchmark::State& state) {
+  std::ostringstream out;
+  for (const auto& l : labels_) {
+    out << l << ' ';
+  }
+  AddToLabel(out, state);
+  std::string label = out.str();
+  if (label.length() && label[0] == ' ') {
+    label = label.substr(1);
+  }
+  state.SetLabel(label.c_str());
+}
+
+void TrackCounters::AddLabel(const std::string& label) {
+  labels_.push_back(label);
+}
+
+void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
+  grpc_stats_data stats_end;
+  grpc_stats_collect(&stats_end);
+  grpc_stats_data stats;
+  grpc_stats_diff(&stats_end, &stats_begin_, &stats);
+  for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
+    out << " " << grpc_stats_counter_name[i] << "/iter:"
+        << (static_cast<double>(stats.counters[i]) /
+            static_cast<double>(state.iterations()));
+  }
+  for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
+    out << " " << grpc_stats_histogram_name[i] << "-median:"
+        << grpc_stats_histo_percentile(
+               &stats, static_cast<grpc_stats_histograms>(i), 50.0)
+        << " " << grpc_stats_histogram_name[i] << "-99p:"
+        << grpc_stats_histo_percentile(
+               &stats, static_cast<grpc_stats_histograms>(i), 99.0);
+  }
+}

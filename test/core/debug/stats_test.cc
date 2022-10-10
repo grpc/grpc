@@ -19,73 +19,150 @@
 #include "src/core/lib/debug/stats.h"
 
 #include <algorithm>
+#include <map>
 #include <memory>
+#include <queue>
+#include <random>
+#include <thread>
+#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc_core {
+namespace grpc {
 namespace testing {
 
 class Snapshot {
  public:
-  std::unique_ptr<GlobalStats> delta() {
-    auto now = global_stats().Collect();
-    return now->Diff(*begin_);
+  Snapshot() { grpc_stats_collect(&begin_); }
+
+  grpc_stats_data delta() {
+    grpc_stats_data now;
+    grpc_stats_collect(&now);
+    grpc_stats_data delta;
+    grpc_stats_diff(&now, &begin_, &delta);
+    return delta;
   }
 
  private:
-  std::unique_ptr<GlobalStats> begin_ = global_stats().Collect();
+  grpc_stats_data begin_;
 };
+
+TEST(StatsTest, IncCounters) {
+  for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
+    std::unique_ptr<Snapshot> snapshot(new Snapshot);
+
+    grpc_core::ExecCtx exec_ctx;
+    GRPC_STATS_INC_COUNTER((grpc_stats_counters)i);
+
+    EXPECT_EQ(snapshot->delta().counters[i], 1);
+  }
+}
 
 TEST(StatsTest, IncSpecificCounter) {
   std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
-  ExecCtx exec_ctx;
-  global_stats().IncrementClientCallsCreated();
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_STATS_INC_CLIENT_CALLS_CREATED();
 
-  EXPECT_EQ(snapshot->delta()->client_calls_created, 1);
+  EXPECT_EQ(snapshot->delta().counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED],
+            1);
 }
 
-static int FindExpectedBucket(const HistogramView& h, int value) {
-  if (value < 0) {
+static int FindExpectedBucket(int i, int j) {
+  if (j < 0) {
     return 0;
   }
-  if (value >= h.bucket_boundaries[h.num_buckets]) {
-    return h.num_buckets - 1;
+  if (j >= grpc_stats_histo_bucket_boundaries[i][grpc_stats_histo_buckets[i]]) {
+    return grpc_stats_histo_buckets[i] - 1;
   }
-  return std::upper_bound(h.bucket_boundaries,
-                          h.bucket_boundaries + h.num_buckets, value) -
-         h.bucket_boundaries - 1;
+  return std::upper_bound(grpc_stats_histo_bucket_boundaries[i],
+                          grpc_stats_histo_bucket_boundaries[i] +
+                              grpc_stats_histo_buckets[i],
+                          j) -
+         grpc_stats_histo_bucket_boundaries[i] - 1;
 }
 
 class HistogramTest : public ::testing::TestWithParam<int> {};
 
 TEST_P(HistogramTest, CheckBucket) {
-  const GlobalStats::Histogram kHistogram =
-      static_cast<GlobalStats::Histogram>(GetParam());
-  auto some_stats = std::make_unique<GlobalStats>();
-  auto view = some_stats->histogram(kHistogram);
-  const int max_bucket_boundary = view.bucket_boundaries[view.num_buckets];
+  const int kHistogram = GetParam();
+  int max_bucket_boundary =
+      grpc_stats_histo_bucket_boundaries[kHistogram]
+                                        [grpc_stats_histo_buckets[kHistogram] -
+                                         1];
   for (int i = -1000; i < max_bucket_boundary + 1000; i++) {
-    ASSERT_EQ(FindExpectedBucket(view, i), view.bucket_for(i))
+    ASSERT_EQ(FindExpectedBucket(kHistogram, i),
+              grpc_stats_get_bucket[kHistogram](i))
         << "i=" << i << " expect_bucket="
-        << view.bucket_boundaries[FindExpectedBucket(view, i)]
-        << " actual_bucket=" << view.bucket_boundaries[view.bucket_for(i)];
+        << grpc_stats_histo_bucket_boundaries[kHistogram]
+                                             [FindExpectedBucket(kHistogram, i)]
+        << " actual_bucket="
+        << grpc_stats_histo_bucket_boundaries[kHistogram]
+                                             [grpc_stats_get_bucket[kHistogram](
+                                                 i)];
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    HistogramTestCases, HistogramTest,
-    ::testing::Range<int>(0, static_cast<int>(GlobalStats::Histogram::COUNT)));
+TEST_P(HistogramTest, IncHistogram) {
+  const int kHistogram = GetParam();
+  std::queue<std::thread> threads;
+  auto run = [kHistogram](const std::vector<int>& test_values,
+                          int expected_bucket) {
+    grpc_core::ExecCtx exec_ctx;
+    for (auto j : test_values) {
+      std::unique_ptr<Snapshot> snapshot(new Snapshot);
+
+      grpc_stats_inc_histogram_value(kHistogram, j);
+
+      auto delta = snapshot->delta();
+
+      EXPECT_EQ(
+          delta
+              .histograms[grpc_stats_histo_start[kHistogram] + expected_bucket],
+          1)
+          << "\nhistogram:" << kHistogram
+          << "\nexpected_bucket:" << expected_bucket << "\nj:" << j;
+    }
+  };
+  // largest bucket boundary for current histogram type.
+  int max_bucket_boundary =
+      grpc_stats_histo_bucket_boundaries[kHistogram]
+                                        [grpc_stats_histo_buckets[kHistogram] -
+                                         1];
+  std::map<int /* expected_bucket */, std::vector<int> /* test_values */>
+      test_values_by_expected_bucket;
+  std::random_device rd;
+  std::uniform_int_distribution<int> dist(-1000, max_bucket_boundary + 1000);
+  for (int i = 0; i < 100; i++) {
+    int j = dist(rd);
+    int expected_bucket = FindExpectedBucket(kHistogram, j);
+    test_values_by_expected_bucket[expected_bucket].push_back(j);
+  }
+  for (auto& p : test_values_by_expected_bucket) {
+    while (threads.size() >= 10) {
+      threads.front().join();
+      threads.pop();
+    }
+    threads.emplace(
+        [test_values = std::move(p.second), run,
+         cur_bucket = p.first]() mutable { run(test_values, cur_bucket); });
+  }
+  while (!threads.empty()) {
+    threads.front().join();
+    threads.pop();
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
+                         ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
 
 }  // namespace testing
-}  // namespace grpc_core
+}  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

@@ -60,7 +60,6 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -1283,7 +1282,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->send_message) {
     t->num_messages_in_next_write++;
-    grpc_core::global_stats().IncrementHttp2SendMessageSize(
+    GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(
         op->payload->send_message.send_message->Length());
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_message_finished = add_closure_barrier(op->on_complete);

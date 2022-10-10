@@ -206,12 +206,14 @@ def gen_bucket_code(shape):
                 type_for_uint_table(map_table))
             last_code = (
                 (len(map_table) - 1) << shift_data[0]) + first_nontrivial_code
+            code += '// first_nontrivial_code=%d\n// last_code=%d [%f]\n' % (
+                first_nontrivial_code, last_code, u642dbl(last_code))
             code += 'DblUint val;\n'
             code += 'val.dbl = value;\n'
             code += 'const int bucket = '
-            code += 'kStatsTable%d[((val.uint - %dull) >> %d)];\n' % (
+            code += 'grpc_stats_table_%d[((val.uint - %dull) >> %d)];\n' % (
                 map_table_idx, first_nontrivial_code, shift_data[0])
-            code += 'return bucket - (value < kStatsTable%d[bucket]);' % bounds_idx
+            code += 'return bucket - (value < grpc_stats_table_%d[bucket]);' % bounds_idx
             cases.append((int(u642dbl(last_code)) + 1, code))
             first_nontrivial_code = last_code
         last = u642dbl(last_code) + 1
@@ -236,11 +238,6 @@ def put_banner(files, banner):
 shapes = set()
 for histogram in inst_map['Histogram']:
     shapes.add(Shape(max=histogram.max, buckets=histogram.buckets))
-
-
-def snake_to_pascal(name):
-    return ''.join([x.capitalize() for x in name.split('_')])
-
 
 with open('src/core/lib/debug/stats_data.h', 'w') as H:
     # copy-paste copyright notice from this file
@@ -267,113 +264,78 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print("#define GRPC_CORE_LIB_DEBUG_STATS_DATA_H", file=H)
     print(file=H)
     print("#include <grpc/support/port_platform.h>", file=H)
-    print("#include <atomic>", file=H)
-    print("#include <memory>", file=H)
-    print("#include <stdint.h>", file=H)
-    print("#include \"src/core/lib/debug/histogram_view.h\"", file=H)
-    print("#include \"absl/strings/string_view.h\"", file=H)
-    print("#include \"src/core/lib/gprpp/per_cpu.h\"", file=H)
     print(file=H)
+    print("// IWYU pragma: private, include \"src/core/lib/debug/stats.h\"",
+          file=H)
+    print(file=H)
+
+    for typename, instances in sorted(inst_map.items()):
+        print("typedef enum {", file=H)
+        for inst in instances:
+            print("  GRPC_STATS_%s_%s," % (typename.upper(), inst.name.upper()),
+                  file=H)
+        print("  GRPC_STATS_%s_COUNT" % (typename.upper()), file=H)
+        print("} grpc_stats_%ss;" % (typename.lower()), file=H)
+        print("extern const char *grpc_stats_%s_name[GRPC_STATS_%s_COUNT];" %
+              (typename.lower(), typename.upper()),
+              file=H)
+        print("extern const char *grpc_stats_%s_doc[GRPC_STATS_%s_COUNT];" %
+              (typename.lower(), typename.upper()),
+              file=H)
+
+    histo_start = []
+    histo_buckets = []
+
+    print("typedef enum {", file=H)
+    first_slot = 0
+    for histogram in inst_map['Histogram']:
+        histo_start.append(first_slot)
+        histo_buckets.append(histogram.buckets)
+        print("  GRPC_STATS_HISTOGRAM_%s_FIRST_SLOT = %d," %
+              (histogram.name.upper(), first_slot),
+              file=H)
+        print("  GRPC_STATS_HISTOGRAM_%s_BUCKETS = %d," %
+              (histogram.name.upper(), histogram.buckets),
+              file=H)
+        first_slot += histogram.buckets
+    print("  GRPC_STATS_HISTOGRAM_BUCKETS = %d" % first_slot, file=H)
+    print("} grpc_stats_histogram_constants;", file=H)
+
+    for ctr in inst_map['Counter']:
+        print(("#define GRPC_STATS_INC_%s() " +
+               "GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_%s)") %
+              (ctr.name.upper(), ctr.name.upper()),
+              file=H)
+    for histogram in inst_map['Histogram']:
+        print(
+            "#define GRPC_STATS_INC_%s(value) GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, grpc_core::BucketForHistogramValue_%d_%d(static_cast<int>(value)))"
+            % (histogram.name.upper(), histogram.name.upper(), histogram.max,
+               histogram.buckets),
+            file=H)
     print("namespace grpc_core {", file=H)
-
     for shape in shapes:
-        print("class HistogramCollector_%d_%d;" % (shape.max, shape.buckets),
-              file=H)
-        print("class Histogram_%d_%d {" % (shape.max, shape.buckets), file=H)
-        print(" public:", file=H)
-        print("  static int BucketFor(int value);", file=H)
-        print("  const uint64_t* buckets() const { return buckets_; }", file=H)
-        print(
-            "  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right);"
-            % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max,
-               shape.buckets),
-            file=H)
-        print(" private:", file=H)
-        print("  friend class HistogramCollector_%d_%d;" %
+        print("int BucketForHistogramValue_%d_%d(int value);" %
               (shape.max, shape.buckets),
               file=H)
-        print("  uint64_t buckets_[%d]{};" % shape.buckets, file=H)
-        print("};", file=H)
-        print("class HistogramCollector_%d_%d {" % (shape.max, shape.buckets),
-              file=H)
-        print(" public:", file=H)
-        print("  void Increment(int value) {", file=H)
-        print("    buckets_[Histogram_%d_%d::BucketFor(value)]" %
-              (shape.max, shape.buckets),
-              file=H)
-        print("        .fetch_add(1, std::memory_order_relaxed);", file=H)
-        print("  }", file=H)
-        print("  void Collect(Histogram_%d_%d* result) const;" %
-              (shape.max, shape.buckets),
-              file=H)
-        print(" private:", file=H)
-        print("  std::atomic<uint64_t> buckets_[%d]{};" % shape.buckets, file=H)
-        print("};", file=H)
-
-    print("struct GlobalStats {", file=H)
-    print("  enum class Counter {", file=H)
-    for ctr in inst_map['Counter']:
-        print("    k%s," % snake_to_pascal(ctr.name), file=H)
-    print("    COUNT", file=H)
-    print("  };", file=H)
-    print("  enum class Histogram {", file=H)
-    for ctr in inst_map['Histogram']:
-        print("    k%s," % snake_to_pascal(ctr.name), file=H)
-    print("    COUNT", file=H)
-    print("  };", file=H)
-    print("  GlobalStats();", file=H)
-    print(
-        "  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];",
-        file=H)
-    print(
-        "  static const absl::string_view histogram_name[static_cast<int>(Histogram::COUNT)];",
-        file=H)
-    print(
-        "  static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];",
-        file=H)
-    print(
-        "  static const absl::string_view histogram_doc[static_cast<int>(Histogram::COUNT)];",
-        file=H)
-    print("  union {", file=H)
-    print("    struct {", file=H)
-    for ctr in inst_map['Counter']:
-        print("    uint64_t %s;" % ctr.name, file=H)
-    print("    };", file=H)
-    print("    uint64_t counters[static_cast<int>(Counter::COUNT)];", file=H)
-    print("  };", file=H)
-    for ctr in inst_map['Histogram']:
-        print("  Histogram_%d_%d %s;" % (ctr.max, ctr.buckets, ctr.name),
-              file=H)
-    print("  HistogramView histogram(Histogram which) const;", file=H)
-    print(
-        "  std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;",
-        file=H)
-    print("};", file=H)
-    print("class GlobalStatsCollector {", file=H)
-    print(" public:", file=H)
-    print("  std::unique_ptr<GlobalStats> Collect() const;", file=H)
-    for ctr in inst_map['Counter']:
-        print(
-            "  void Increment%s() { data_.this_cpu().%s.fetch_add(1, std::memory_order_relaxed); }"
-            % (snake_to_pascal(ctr.name), ctr.name),
-            file=H)
-    for ctr in inst_map['Histogram']:
-        print(
-            "  void Increment%s(int value) { data_.this_cpu().%s.Increment(value); }"
-            % (snake_to_pascal(ctr.name), ctr.name),
-            file=H)
-    print(" private:", file=H)
-    print("  struct Data {", file=H)
-    for ctr in inst_map['Counter']:
-        print("    std::atomic<uint64_t> %s{0};" % ctr.name, file=H)
-    for ctr in inst_map['Histogram']:
-        print("    HistogramCollector_%d_%d %s;" %
-              (ctr.max, ctr.buckets, ctr.name),
-              file=H)
-    print("  };", file=H)
-    print("  PerCpu<Data> data_;", file=H)
-    print("};", file=H)
     print("}", file=H)
+
+    for i, tbl in enumerate(static_tables):
+        print("extern const %s grpc_stats_table_%d[%d];" %
+              (tbl[0], i, len(tbl[1])),
+              file=H)
+
+    print("extern const int grpc_stats_histo_buckets[%d];" %
+          len(inst_map['Histogram']),
+          file=H)
+    print("extern const int grpc_stats_histo_start[%d];" %
+          len(inst_map['Histogram']),
+          file=H)
+    print("extern const int *const grpc_stats_histo_bucket_boundaries[%d];" %
+          len(inst_map['Histogram']),
+          file=H)
+    print("extern int (*const grpc_stats_get_bucket[%d])(int value);" %
+          len(inst_map['Histogram']),
+          file=H)
 
     print(file=H)
     print("#endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */", file=H)
@@ -401,9 +363,9 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
 
     print("#include <grpc/support/port_platform.h>", file=C)
     print(file=C)
+    print("#include \"src/core/lib/debug/stats.h\"", file=C)
     print("#include \"src/core/lib/debug/stats_data.h\"", file=C)
     print("#include <stdint.h>", file=C)
-    print("#include \"absl/memory/memory.h\"", file=C)
     print(file=C)
 
     histo_code = []
@@ -413,105 +375,50 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
         histo_bucket_boundaries[shape] = bounds_idx
         histo_code.append(code)
 
-    print("namespace grpc_core {", file=C)
     print("namespace { union DblUint { double dbl; uint64_t uint; }; }", file=C)
 
-    for shape in shapes:
-        print(
-            "void HistogramCollector_%d_%d::Collect(Histogram_%d_%d* result) const {"
-            % (shape.max, shape.buckets, shape.max, shape.buckets),
-            file=C)
-        print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
-        print(
-            "    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);",
-            file=C)
-        print("  }", file=C)
-        print("}", file=C)
-        print(
-            "Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right) {"
-            % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max,
-               shape.buckets),
-            file=C)
-        print("  Histogram_%d_%d result;" % (shape.max, shape.buckets), file=C)
-        print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
-        print("    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];",
-              file=C)
-        print("  }", file=C)
-        print("  return result;", file=C)
-        print("}", file=C)
-
     for typename, instances in sorted(inst_map.items()):
-        print(
-            "const absl::string_view GlobalStats::%s_name[static_cast<int>(%s::COUNT)] = {"
-            % (typename.lower(), typename),
-            file=C)
+        print("const char *grpc_stats_%s_name[GRPC_STATS_%s_COUNT] = {" %
+              (typename.lower(), typename.upper()),
+              file=C)
         for inst in instances:
             print("  %s," % c_str(inst.name), file=C)
         print("};", file=C)
-        print(
-            "const absl::string_view GlobalStats::%s_doc[static_cast<int>(%s::COUNT)] = {"
-            % (typename.lower(), typename),
-            file=C)
+        print("const char *grpc_stats_%s_doc[GRPC_STATS_%s_COUNT] = {" %
+              (typename.lower(), typename.upper()),
+              file=C)
         for inst in instances:
             print("  %s," % c_str(inst.doc), file=C)
         print("};", file=C)
 
-    print("namespace {", file=C)
     for i, tbl in enumerate(static_tables):
-        print("const %s kStatsTable%d[%d] = {%s};" %
+        print("const %s grpc_stats_table_%d[%d] = {%s};" %
               (tbl[0], i, len(tbl[1]), ','.join('%s' % x for x in tbl[1])),
               file=C)
-    print("}  // namespace", file=C)
 
+    print("namespace grpc_core {", file=C)
     for shape, code in zip(shapes, histo_code):
-        print(("int Histogram_%d_%d::BucketFor(int value) {%s}") %
+        print(("int BucketForHistogramValue_%d_%d(int value) {%s}") %
               (shape.max, shape.buckets, code),
               file=C)
-
-    print("GlobalStats::GlobalStats() : %s {}" %
-          ",".join("%s{0}" % ctr.name for ctr in inst_map['Counter']),
-          file=C)
-
-    print("HistogramView GlobalStats::histogram(Histogram which) const {",
-          file=C)
-    print("  switch (which) {", file=C)
-    print("    default: GPR_UNREACHABLE_CODE(return HistogramView());", file=C)
-    for inst in inst_map['Histogram']:
-        print("    case Histogram::k%s:" % snake_to_pascal(inst.name), file=C)
-        print(
-            "      return HistogramView{&Histogram_%d_%d::BucketFor, kStatsTable%d, %d, %s.buckets()};"
-            % (inst.max, inst.buckets, histo_bucket_boundaries[Shape(
-                inst.max, inst.buckets)], inst.buckets, inst.name),
-            file=C)
-    print("  }", file=C)
     print("}", file=C)
 
     print(
-        "std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {",
+        "const int grpc_stats_histo_buckets[%d] = {%s};" %
+        (len(inst_map['Histogram']), ','.join('%s' % x for x in histo_buckets)),
         file=C)
-    print("  auto result = std::make_unique<GlobalStats>();", file=C)
-    print("  for (const auto& data : data_) {", file=C)
-    for ctr in inst_map['Counter']:
-        print("    result->%s += data.%s.load(std::memory_order_relaxed);" %
-              (ctr.name, ctr.name),
-              file=C)
-    for h in inst_map['Histogram']:
-        print("    data.%s.Collect(&result->%s);" % (h.name, h.name), file=C)
-    print("  }", file=C)
-    print("  return result;", file=C)
-    print("}", file=C)
-
-    print(
-        "std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {",
-        file=C)
-    print("  auto result = std::make_unique<GlobalStats>();", file=C)
-    for ctr in inst_map['Counter']:
-        print("  result->%s = %s - other.%s;" % (ctr.name, ctr.name, ctr.name),
-              file=C)
-    for h in inst_map['Histogram']:
-        print("  result->%s = %s - other.%s;" % (h.name, h.name, h.name),
-              file=C)
-    print("  return result;", file=C)
-    print("}", file=C)
-
-    print("}", file=C)
+    print("const int grpc_stats_histo_start[%d] = {%s};" %
+          (len(inst_map['Histogram']), ','.join('%s' % x for x in histo_start)),
+          file=C)
+    print("const int *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" %
+          (len(inst_map['Histogram']), ','.join(
+              'grpc_stats_table_%d' %
+              histo_bucket_boundaries[Shape(h.max, h.buckets)]
+              for h in inst_map['Histogram'])),
+          file=C)
+    print("int (*const grpc_stats_get_bucket[%d])(int value) = {%s};" %
+          (len(inst_map['Histogram']), ','.join(
+              'grpc_core::BucketForHistogramValue_%d_%d' %
+              (histogram.max, histogram.buckets)
+              for histogram in inst_map['Histogram'])),
+          file=C)
