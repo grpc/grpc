@@ -297,7 +297,11 @@ def grpc_cc_library(name,
                               proto.replace('.proto', '.pb.h'))
         skip_headers[name].add(proto_hdr)
     for hdr in hdrs + public_hdrs:
-        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), hdr)
+        filename = '%s%s' % (
+            (parsing_path + '/' if
+             (parsing_path and not hdr.startswith('//')) else ''), hdr)
+        filename = filename.replace('//:', '')
+        filename = filename.replace('//src/core:', 'src/core/')
         vendors[filename].append(name)
     inc = set()
     original_deps[name] = frozenset(deps)

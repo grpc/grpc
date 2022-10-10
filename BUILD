@@ -485,8 +485,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr",
-        "//:gpr_platform",
-        "//:no_destruct",
+        "no_destruct",
     ],
 )
 
@@ -494,7 +493,7 @@ grpc_cc_library(
     name = "init_internally",
     srcs = ["//src/core:lib/surface/init_internally.cc"],
     hdrs = ["//src/core:lib/surface/init_internally.h"],
-    deps = ["//:gpr_platform"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
