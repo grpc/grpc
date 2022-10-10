@@ -669,7 +669,10 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = ["@grpc:public"],
-    deps = ["grpc_public_hdrs"],
+    deps = [
+        "gpr_atm",
+        "grpc_public_hdrs",
+    ],
 )
 
 grpc_cc_library(
@@ -701,6 +704,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "gpr_atm",
         "grpc++_base",
         "slice",
     ],
@@ -3905,7 +3909,6 @@ grpc_cc_library(
     hdrs = ["src/core/lib/load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
     deps = [
-        "channel_args",
         "gpr_platform",
         "grpc_public_hdrs",
         "iomgr_fwd",
@@ -5425,6 +5428,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -7398,6 +7402,7 @@ grpc_cc_library(
         "env",
         "error",
         "gpr",
+        "gpr_atm",
         "gpr_manual_constructor",
         "grpc",
         "grpc++_codegen_proto",
@@ -7454,6 +7459,7 @@ grpc_cc_library(
         "channel_init",
         "config",
         "gpr",
+        "gpr_atm",
         "gpr_manual_constructor",
         "grpc_base",
         "grpc_health_upb",
