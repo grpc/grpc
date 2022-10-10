@@ -41,6 +41,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -513,13 +514,13 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
   switch (completion_type) {
     case GRPC_CQ_NEXT:
-      GRPC_STATS_INC_CQ_NEXT_CREATES();
+      grpc_core::global_stats().IncrementCqNextCreates();
       break;
     case GRPC_CQ_PLUCK:
-      GRPC_STATS_INC_CQ_PLUCK_CREATES();
+      grpc_core::global_stats().IncrementCqPluckCreates();
       break;
     case GRPC_CQ_CALLBACK:
-      GRPC_STATS_INC_CQ_CALLBACK_CREATES();
+      grpc_core::global_stats().IncrementCqCallbackCreates();
       break;
   }
 

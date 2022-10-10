@@ -132,7 +132,6 @@ static void BM_StreamingPingPong(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
@@ -218,7 +217,6 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     GPR_ASSERT(recv_status.ok());
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * 2);
 }
@@ -394,7 +392,6 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
