@@ -251,6 +251,11 @@ py_grpc_library(
     deps = [":worker_service_py_pb2"],
 )
 
+proto_library(
+    name = "stats_descriptor",
+    srcs = ["stats.proto"],
+)
+
 py_proto_library(
     name = "stats_py_pb2",
     deps = [":stats_descriptor"],
