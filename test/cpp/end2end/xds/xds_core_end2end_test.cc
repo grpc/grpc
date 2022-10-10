@@ -23,6 +23,7 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -30,6 +31,8 @@ namespace testing {
 namespace {
 
 using ClientStats = LrsServiceImpl::ClientStats;
+
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 //
 // XdsClientTest - basic tests of XdsClient functionality
@@ -188,12 +191,12 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
                    "INVALID_ARGUMENT: Can't parse Cluster resource.; "
                    "resource index 3: ",
                    kClusterName2,
-                   ": INVALID_ARGUMENT: errors parsing CDS resource: "
-                   "[DiscoveryType is not valid.]; "
+                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
+                   "field:type error:unknown discovery type]; "
                    "resource index 4: ",
                    kClusterName3,
-                   ": INVALID_ARGUMENT: errors parsing CDS resource: "
-                   "[DiscoveryType is not valid.]]"));
+                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
+                   "field:type error:unknown discovery type]]"));
   // RPCs for default cluster should succeed.
   std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
       {"cluster", kDefaultClusterName},
@@ -207,8 +210,9 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   };
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "cluster_name_2: UNAVAILABLE: invalid resource: INVALID_ARGUMENT:.*"
-      "errors parsing CDS resource.*DiscoveryType is not valid.*",
+      "cluster_name_2: UNAVAILABLE: invalid resource: "
+      "INVALID_ARGUMENT: errors validating Cluster resource: \\["
+      "field:type error:unknown discovery type\\] .*",
       RpcOptions().set_metadata(std::move(metadata_cluster_2)));
 }
 

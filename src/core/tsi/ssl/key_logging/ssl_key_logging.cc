@@ -55,7 +55,7 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
     gpr_log(GPR_ERROR,
             "Ignoring TLS Key logging. ERROR Opening TLS Keylog "
             "file: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   cache_->tls_session_key_logger_map_.emplace(tls_session_key_log_file_path_,
                                               this);
@@ -88,7 +88,7 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
   if (err) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fwrite");
     gpr_log(GPR_ERROR, "Error Appending to TLS session key log file: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     fclose(fd_);
     fd_ = nullptr;  // disable future attempts to write to this file
   } else {

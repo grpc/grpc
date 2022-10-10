@@ -311,7 +311,7 @@ static grpc_error_handle create_default_creds_from_path(
   grpc_error_handle error;
   Json json;
   if (creds_path.empty()) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("creds_path unset");
+    error = GRPC_ERROR_CREATE("creds_path unset");
     goto end;
   }
   error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
@@ -325,10 +325,9 @@ static grpc_error_handle create_default_creds_from_path(
     json = std::move(*json_or);
   }
   if (json.type() != Json::Type::OBJECT) {
-    error = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
-        grpc_core::StatusStrProperty::kRawBytes,
-        grpc_core::StringViewFromSlice(creds_data));
+    error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
+                               grpc_core::StatusStrProperty::kRawBytes,
+                               grpc_core::StringViewFromSlice(creds_data));
     goto end;
   }
 
@@ -339,7 +338,7 @@ static grpc_error_handle create_default_creds_from_path(
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             key, grpc_max_auth_token_lifetime());
     if (result == nullptr) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error = GRPC_ERROR_CREATE(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
           "key failed");
     }
@@ -352,7 +351,7 @@ static grpc_error_handle create_default_creds_from_path(
     result =
         grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
     if (result == nullptr) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error = GRPC_ERROR_CREATE(
           "grpc_refresh_token_credentials_create_from_auth_refresh_token "
           "failed");
     }
@@ -361,8 +360,7 @@ static grpc_error_handle create_default_creds_from_path(
 
   /* Finally try an external account credentials.*/
   if (!ValidateExteralAccountCredentials(json)) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid external account credentials format.");
+    error = GRPC_ERROR_CREATE("Invalid external account credentials format.");
     goto end;
   }
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
@@ -420,11 +418,9 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
     if (call_creds == nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
+      *error = GRPC_ERROR_CREATE(GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
       *error = grpc_error_add_child(
-          *error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "Failed to get credentials from network"));
+          *error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
     }
   }
 
@@ -464,7 +460,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     GPR_ASSERT(result != nullptr);
   } else {
     gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   return result;
 }

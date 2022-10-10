@@ -102,7 +102,7 @@ void grpc_error_get_status(grpc_error_handle error,
   if (code != nullptr) *code = status;
 
   if (error_string != nullptr && status != GRPC_STATUS_OK) {
-    *error_string = gpr_strdup(grpc_error_std_string(error).c_str());
+    *error_string = gpr_strdup(grpc_core::StatusToString(error).c_str());
   }
 
   if (http_error != nullptr) {
@@ -128,7 +128,7 @@ void grpc_error_get_status(grpc_error_handle error,
       if (!grpc_error_get_str(found_error,
                               grpc_core::StatusStrProperty::kDescription,
                               message)) {
-        *message = grpc_error_std_string(error);
+        *message = grpc_core::StatusToString(error);
       }
     }
   }
@@ -150,10 +150,9 @@ grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
   if (status.ok()) {
     return absl::OkStatus();
   }
-  return grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STRING_VIEW(status.message()),
-      grpc_core::StatusIntProperty::kRpcStatus,
-      static_cast<grpc_status_code>(status.code()));
+  return grpc_error_set_int(GRPC_ERROR_CREATE(status.message()),
+                            grpc_core::StatusIntProperty::kRpcStatus,
+                            static_cast<grpc_status_code>(status.code()));
 }
 
 bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {

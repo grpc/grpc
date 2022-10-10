@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -366,6 +367,19 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
       const auto& priority = eds_resource.priorities[i];
       if (priority.localities.empty()) {
         errors.AddError(absl::StrCat("priority ", i, " empty"));
+      } else {
+        // Check that the sum of the locality weights in this priority
+        // does not exceed the max value for a uint32.
+        uint64_t total_weight = 0;
+        for (const auto& p : priority.localities) {
+          total_weight += p.second.lb_weight;
+          if (total_weight > std::numeric_limits<uint32_t>::max()) {
+            errors.AddError(
+                absl::StrCat("sum of locality weights for priority ", i,
+                             " exceeds uint32 max"));
+            break;
+          }
+        }
       }
     }
   }
@@ -423,9 +437,8 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
               context.client, result.name->c_str(),
               eds_resource->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*eds_resource);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsEndpointResource>(std::move(*eds_resource));
   }
   return result;
 }

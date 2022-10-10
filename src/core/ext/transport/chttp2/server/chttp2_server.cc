@@ -58,6 +58,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -324,7 +325,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
       listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "Error adding port to server: %s",
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
     // TODO(yashykt): We wouldn't need to assert here if we bound to the
     // port earlier during AddPort.
     GPR_ASSERT(0);
@@ -388,8 +389,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
   {
     MutexLock lock(&connection_->mu_);
     if (handshake_mgr_ != nullptr) {
-      handshake_mgr_->Shutdown(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Listener stopped serving."));
+      handshake_mgr_->Shutdown(GRPC_ERROR_CREATE("Listener stopped serving."));
     }
   }
   Unref();
@@ -415,7 +415,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
   // or with an error indicating that the timer system is being shut down.
   if (error != absl::CancelledError()) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->disconnect_with_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    op->disconnect_with_error = GRPC_ERROR_CREATE(
         "Did not receive HTTP/2 settings before handshake timeout");
     grpc_chttp2_transport* transport = nullptr;
     {
@@ -444,7 +444,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   {
     MutexLock connection_lock(&self->connection_->mu_);
     if (!error.ok() || self->connection_->shutdown_) {
-      std::string error_str = grpc_error_std_string(error);
+      std::string error_str = StatusToString(error);
       gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
       cleanup_connection = true;
       if (error.ok() && args->endpoint != nullptr) {
@@ -510,7 +510,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         } else {
           // Failed to create channel from transport. Clean up.
           gpr_log(GPR_ERROR, "Failed to create channel: %s",
-                  grpc_error_std_string(channel_init_err).c_str());
+                  StatusToString(channel_init_err).c_str());
           grpc_transport_destroy(transport);
           grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
@@ -598,8 +598,8 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
   }
   if (transport != nullptr) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->goaway_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Server is stopping to serve requests.");
+    op->goaway_error =
+        GRPC_ERROR_CREATE("Server is stopping to serve requests.");
     grpc_transport_perform_op(&transport->base, op);
   }
 }
@@ -656,7 +656,7 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry(
       transport = self->transport_;
     }
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->disconnect_with_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    op->disconnect_with_error = GRPC_ERROR_CREATE(
         "Drain grace time expired. Closing connection immediately.");
     grpc_transport_perform_op(&transport->base, op);
   }
@@ -695,8 +695,7 @@ grpc_error_handle Chttp2ServerListener::Create(
             .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
       auto string_address = grpc_sockaddr_to_uri(addr);
       if (!string_address.ok()) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            string_address.status().ToString());
+        return GRPC_ERROR_CREATE(string_address.status().ToString());
       }
       listener->channelz_listen_socket_ =
           MakeRefCounted<channelz::ListenSocketNode>(
@@ -807,7 +806,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   };
   if (self->server_->config_fetcher() != nullptr) {
     if (connection_manager == nullptr) {
-      grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      grpc_error_handle error = GRPC_ERROR_CREATE(
           "No ConnectionManager configured. Closing connection.");
       endpoint_cleanup(error);
       return;
@@ -817,15 +816,14 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     if (!args_result.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
               args_result.status().ToString().c_str());
-      endpoint_cleanup(
-          GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
+      endpoint_cleanup(GRPC_ERROR_CREATE(args_result.status().ToString()));
       return;
     }
     grpc_error_handle error;
     args = self->args_modifier_(*args_result, &error);
     if (!error.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
-              grpc_error_std_string(error).c_str());
+              StatusToString(error).c_str());
       endpoint_cleanup(error);
       return;
     }
@@ -908,8 +906,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                       Chttp2ServerArgsModifier args_modifier,
                                       int* port_num) {
   if (addr == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid address: addr cannot be a nullptr.");
+    return GRPC_ERROR_CREATE("Invalid address: addr cannot be a nullptr.");
   }
   if (strncmp(addr, "external:", 9) == 0) {
     return Chttp2ServerListener::CreateWithAcceptor(server, addr, args,
@@ -960,16 +957,16 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       std::string msg = absl::StrFormat(
           "No address added out of total %" PRIuPTR " resolved for '%s'",
           resolved_or->size(), addr);
-      return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-          msg.c_str(), error_list.data(), error_list.size());
+      return GRPC_ERROR_CREATE_REFERENCING(msg.c_str(), error_list.data(),
+                                           error_list.size());
     } else if (!error_list.empty()) {
       std::string msg = absl::StrFormat(
           "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
           " resolved",
           resolved_or->size() - error_list.size(), resolved_or->size());
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-          msg.c_str(), error_list.data(), error_list.size());
-      gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());
+      error = GRPC_ERROR_CREATE_REFERENCING(msg.c_str(), error_list.data(),
+                                            error_list.size());
+      gpr_log(GPR_INFO, "WARNING: %s", StatusToString(error).c_str());
       // we managed to bind some addresses: continue without error
     }
     return absl::OkStatus();
@@ -984,13 +981,12 @@ ChannelArgs ModifyArgsForConnection(const ChannelArgs& args,
                                     grpc_error_handle* error) {
   auto* server_credentials = args.GetObject<grpc_server_credentials>();
   if (server_credentials == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Could not find server credentials");
+    *error = GRPC_ERROR_CREATE("Could not find server credentials");
     return args;
   }
   auto security_connector = server_credentials->create_security_connector(args);
   if (security_connector == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    *error = GRPC_ERROR_CREATE(
         absl::StrCat("Unable to create secure server with credentials of type ",
                      server_credentials->type().name()));
     return args;
@@ -1013,7 +1009,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
                  (server, addr, creds));
   // Create security context.
   if (creds == nullptr) {
-    err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    err = GRPC_ERROR_CREATE(
         "No credentials specified for secure server port (creds==NULL)");
     goto done;
   }
@@ -1033,7 +1029,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
   } else {
     sc = creds->create_security_connector(grpc_core::ChannelArgs());
     if (sc == nullptr) {
-      err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      err = GRPC_ERROR_CREATE(absl::StrCat(
           "Unable to create secure server with credentials of type ",
           creds->type().name()));
       goto done;
@@ -1046,7 +1042,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
 done:
   sc.reset(DEBUG_LOCATION, "server");
   if (!err.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
+    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(err).c_str());
   }
   return port_num;
 }
@@ -1083,7 +1079,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     gpr_log(GPR_ERROR, "Failed to create channel: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     grpc_transport_destroy(transport);
   }
 }

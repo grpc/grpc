@@ -44,7 +44,7 @@ void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p) {
 grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
     grpc_chttp2_goaway_parser* p, uint32_t length, uint8_t /*flags*/) {
   if (length < 8) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return GRPC_ERROR_CREATE(
         absl::StrFormat("goaway frame too short (%d bytes)", length));
   }
 
@@ -149,8 +149,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       return absl::OkStatus();
   }
-  GPR_UNREACHABLE_CODE(
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
 }
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,

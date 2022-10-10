@@ -64,6 +64,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/time_precise.h"
@@ -309,7 +310,7 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
   // copying 'description' is needed to ensure the grpc_call_cancel_with_status
   // guarantee that can be short-lived.
   CancelWithError(grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
+      grpc_error_set_str(GRPC_ERROR_CREATE(description),
                          StatusStrProperty::kGrpcMessage, description),
       StatusIntProperty::kRpcStatus, status));
 }
@@ -627,7 +628,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                            grpc_error_handle new_err) {
     if (new_err.ok()) return;
     if (composite->ok()) {
-      *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Call creation failed");
+      *composite = GRPC_ERROR_CREATE("Call creation failed");
     }
     *composite = grpc_error_add_child(*composite, new_err);
   };
@@ -637,7 +638,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   grpc_error_handle error;
   grpc_channel_stack* channel_stack = channel->channel_stack();
   size_t initial_size = channel->CallSizeEstimate();
-  GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
+  global_stats().IncrementCallInitialSize(initial_size);
   size_t call_alloc_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
@@ -654,7 +655,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->final_op_.client.status_details = nullptr;
     call->final_op_.client.status = nullptr;
     call->final_op_.client.error_string = nullptr;
-    GRPC_STATS_INC_CLIENT_CALLS_CREATED();
+    global_stats().IncrementClientCallsCreated();
     path = CSliceRef(args->path->c_slice());
     call->send_initial_metadata_.Set(HttpPathMetadata(),
                                      std::move(*args->path));
@@ -663,7 +664,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                        std::move(*args->authority));
     }
   } else {
-    GRPC_STATS_INC_SERVER_CALLS_CREATED();
+    global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
     call->final_op_.server.core_server = args->server;
   }
@@ -856,7 +857,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", is_client() ? "CLI" : "SVR");
-    gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
+    gpr_log(GPR_DEBUG, "%s", StatusToString(error).c_str());
   }
   if (is_client()) {
     std::string status_details;
@@ -1018,8 +1019,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
       if (status_code != GRPC_STATUS_OK) {
         char* peer = GetPeer();
         error = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(
-                absl::StrCat("Error received from peer ", peer)),
+            GRPC_ERROR_CREATE(absl::StrCat("Error received from peer ", peer)),
             StatusIntProperty::kRpcStatus, static_cast<intptr_t>(status_code));
         gpr_free(peer);
       }
@@ -1036,9 +1036,9 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
     } else {
       gpr_log(GPR_DEBUG,
               "Received trailing metadata with no error and no status");
-      SetFinalStatus(grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("No status received"),
-          StatusIntProperty::kRpcStatus, GRPC_STATUS_UNKNOWN));
+      SetFinalStatus(grpc_error_set_int(GRPC_ERROR_CREATE("No status received"),
+                                        StatusIntProperty::kRpcStatus,
+                                        GRPC_STATUS_UNKNOWN));
     }
   }
   PublishAppMetadata(b, true);
@@ -1112,7 +1112,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
   if (op_.send_message) {
     if (op_.payload->send_message.stream_write_closed && error.ok()) {
       error = grpc_error_add_child(
-          error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          error, GRPC_ERROR_CREATE(
                      "Attempt to send message after stream was closed."));
     }
     call->sending_message_ = false;
@@ -1552,8 +1552,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             op->data.send_status_from_server.status == GRPC_STATUS_OK
                 ? absl::OkStatus()
                 : grpc_error_set_int(
-                      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                          "Server returned error"),
+                      GRPC_ERROR_CREATE("Server returned error"),
                       StatusIntProperty::kRpcStatus,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
@@ -2370,7 +2369,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
       : PromiseBasedCall(arena, *args) {
-    GRPC_STATS_INC_CLIENT_CALLS_CREATED();
+    global_stats().IncrementClientCallsCreated();
     ScopedContext context(this);
     send_initial_metadata_ =
         GetContext<FragmentAllocator>()->MakeClientMetadata();
