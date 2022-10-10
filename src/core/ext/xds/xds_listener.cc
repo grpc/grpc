@@ -378,19 +378,17 @@ HttpConnectionManagerParse(
           }
           continue;
         }
-// FIXME: plumb errors into ExtractExtensionTypeName()
-        auto filter_type = ExtractExtensionTypeName(context, typed_config);
-        if (!filter_type.ok()) {
-          errors.emplace_back(absl::StrCat("filter name ", name, ": ",
-                                           filter_type.status().message()));
-          continue;
+        auto extension =
+            ExtractXdsExtension(context, typed_config, &validation_errors);
+        const XdsHttpFilterImpl* filter_impl = nullptr;
+        if (extension.has_value()) {
+          filter_impl =
+              XdsHttpFilterRegistry::GetFilterForType(extension->type);
         }
-        const XdsHttpFilterImpl* filter_impl =
-            XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
         if (filter_impl == nullptr) {
           if (!is_optional) {
             errors.emplace_back(absl::StrCat(
-                "no filter registered for config type ", filter_type->type));
+                "no filter registered for config type ", extension->type));
           }
           continue;
         }
@@ -398,7 +396,7 @@ HttpConnectionManagerParse(
             (!is_client && !filter_impl->IsSupportedOnServers())) {
           if (!is_optional) {
             errors.emplace_back(absl::StrFormat(
-                "Filter %s is not supported on %s", filter_type->type,
+                "Filter %s is not supported on %s", extension->type,
                 is_client ? "clients" : "servers"));
           }
           continue;
@@ -408,7 +406,7 @@ HttpConnectionManagerParse(
                                               context.arena);
         if (!filter_config.ok()) {
           errors.emplace_back(absl::StrCat(
-              "filter config for type ", filter_type->type,
+              "filter config for type ", extension->type,
               " failed to parse: ", StatusToString(filter_config.status())));
           continue;
         }

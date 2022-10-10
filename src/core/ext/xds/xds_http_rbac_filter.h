@@ -22,8 +22,8 @@
 #include "absl/status/statusor.h"
 #include "upb/arena.h"
 #include "upb/def.h"
-#include "upb/upb.h"
 
+#include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -38,10 +38,10 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
+      XdsExtension extension, upb_Arena* arena) const override;
 
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
+      XdsExtension extension, upb_Arena* arena) const override;
 
   const grpc_channel_filter* channel_filter() const override;
 

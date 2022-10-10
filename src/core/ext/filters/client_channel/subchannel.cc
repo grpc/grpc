@@ -49,6 +49,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
@@ -635,7 +636,7 @@ Subchannel::Subchannel(SubchannelKey key,
   // triggering segmentation faults. To prevent this issue, we call a grpc_init
   // here and a grpc_shutdown in the subchannel destructor.
   InitInternally();
-  GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
+  global_stats().IncrementClientSubchannelsCreated();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
