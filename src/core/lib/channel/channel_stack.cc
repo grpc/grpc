@@ -30,6 +30,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/alloc.h"
 
+using grpc_event_engine::experimental::EventEngine;
+
 grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 grpc_core::TraceFlag grpc_trace_channel_stack(false, "channel_stack");
 
@@ -116,8 +118,7 @@ grpc_error_handle grpc_channel_stack_init(
   }
 
   stack->on_destroy.Init([]() {});
-  stack->event_engine.Init(
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  stack->event_engine.Init(channel_args.GetObjectRef<EventEngine>());
 
   size_t call_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
