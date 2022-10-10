@@ -48,7 +48,7 @@ print(result)
 ```
 
 We also call `sys.exit(0)` to terminate the process. If we do not do this, then
-`future.result()` with throw an `RpcError`. Alternatively, you may catch this
+`future.result()` will throw an `RpcError`. Alternatively, you may catch this
 exception.
 
 
