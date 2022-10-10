@@ -47,7 +47,6 @@ static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {
 }
 
 static void BM_CreateDestroyPollset(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_malloc(ps_sz));
   gpr_mu* mu;
@@ -65,7 +64,6 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
   }
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_CreateDestroyPollset);
 
@@ -73,7 +71,6 @@ BENCHMARK(BM_CreateDestroyPollset);
 static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
   // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
   // what the speed of light would be if we abstracted perfectly
-  TrackCounters track_counters;
   int epfd = epoll_create1(0);
   GPR_ASSERT(epfd != -1);
   size_t nev = state.range(0);
@@ -94,7 +91,6 @@ static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
   }
   close(epfd);
   delete[] ev;
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_PollEmptyPollset_SpeedOfLight)
     ->Args({1, 0})
@@ -110,7 +106,6 @@ BENCHMARK(BM_PollEmptyPollset_SpeedOfLight)
 #endif
 
 static void BM_PollEmptyPollset(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
@@ -127,12 +122,10 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_PollEmptyPollset);
 
 static void BM_PollAddFd(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
@@ -155,7 +148,6 @@ static void BM_PollAddFd(benchmark::State& state) {
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_PollAddFd);
 
@@ -181,7 +173,6 @@ TestClosure* MakeTestClosure(F f) {
 static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
   // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
   // what the speed of light would be if we abstracted perfectly
-  TrackCounters track_counters;
   int epfd = epoll_create1(0);
   GPR_ASSERT(epfd != -1);
   epoll_event ev[100];
@@ -206,13 +197,11 @@ static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
   }
   close(fd);
   close(epfd);
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_SingleThreadPollOneFd_SpeedOfLight);
 #endif
 
 static void BM_SingleThreadPollOneFd(benchmark::State& state) {
-  TrackCounters track_counters;
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
@@ -248,7 +237,6 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_wakeup_fd_destroy(&wakeup_fd);
   gpr_free(ps);
-  track_counters.Finish(state);
   delete continue_closure;
 }
 BENCHMARK(BM_SingleThreadPollOneFd);
