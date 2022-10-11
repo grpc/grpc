@@ -1371,6 +1371,7 @@ grpc_cc_library(
         "bitset",
         "construct_destruct",
         "gpr",
+        "poll",
         "promise_like",
         "promise_status",
     ],
