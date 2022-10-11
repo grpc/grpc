@@ -31,6 +31,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 
+extern grpc_core::TraceFlag grpc_trace_channel;
+
 namespace grpc_core {
 namespace promise_filter_detail {
 
@@ -93,6 +95,10 @@ void BaseCallData::Wakeup() {
 }
 
 void BaseCallData::Drop() { GRPC_CALL_STACK_UNREF(call_stack_, "waker"); }
+
+std::string BaseCallData::LogTag() const {
+  return absl::StrCat(ClientOrServerString(), "[", elem_->filter->name, "]");
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData::CapturedBatch
@@ -221,8 +227,33 @@ BaseCallData::Flusher::~Flusher() {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData::SendMessage
 
+const char* BaseCallData::SendMessage::StateString(State state) {
+  switch (state) {
+    case State::kInitial:
+      return "INITIAL";
+    case State::kIdle:
+      return "IDLE";
+    case State::kGotBatchNoPipe:
+      return "GOT_BATCH_NO_PIPE";
+    case State::kGotBatch:
+      return "GOT_BATCH";
+    case State::kPushedToPipe:
+      return "PUSHED_TO_PIPE";
+    case State::kForwardedBatch:
+      return "FORWARDED_BATCH";
+    case State::kBatchCompleted:
+      return "BATCH_COMPLETED";
+    case State::kCancelled:
+      return "CANCELLED";
+  }
+  return "UNKNOWN";
+}
+
 void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
-  gpr_log(GPR_DEBUG, "SendMessage::StartOp:%d", static_cast<int>(state_));
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s SendMessage.StartOp st=%s", base_->LogTag().c_str(),
+            StateString(state_));
+  }
   switch (state_) {
     case State::kInitial:
       state_ = State::kGotBatchNoPipe;
@@ -244,7 +275,10 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
 }
 
 void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
-  gpr_log(GPR_DEBUG, "SendMessage::GotPipe:%d", static_cast<int>(state_));
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s SendMessage.GotPipe st=%s", base_->LogTag().c_str(),
+            StateString(state_));
+  }
   GPR_ASSERT(receiver != nullptr);
   switch (state_) {
     case State::kInitial:
@@ -268,8 +302,11 @@ void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
 
 void BaseCallData::SendMessage::OnComplete(absl::Status status) {
   Flusher flusher(base_);
-  gpr_log(GPR_DEBUG, "SendMessage::OnComplete:%d:%s", static_cast<int>(state_),
-          status.ToString().c_str());
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s SendMessage.OnComplete st=%s status=%s",
+            base_->LogTag().c_str(), StateString(state_),
+            status.ToString().c_str());
+  }
   if (!status.ok()) abort();
   switch (state_) {
     case State::kInitial:
@@ -289,8 +326,10 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
 }
 
 void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
-  gpr_log(GPR_DEBUG, "SendMessage::WakeInsideCombiner:%d",
-          static_cast<int>(state_));
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s SendMessage.WakeInsideCombiner st=%s",
+            base_->LogTag().c_str(), StateString(state_));
+  }
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
@@ -341,8 +380,35 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData::ReceiveMessage
 
+const char* BaseCallData::ReceiveMessage::StateString(State state) {
+  switch (state) {
+    case State::kInitial:
+      return "INITIAL";
+    case State::kIdle:
+      return "IDLE";
+    case State::kForwardedBatchNoPipe:
+      return "FORWARDED_BATCH_NO_PIPE";
+    case State::kForwardedBatch:
+      return "FORWARDED_BATCH";
+    case State::kBatchCompletedNoPipe:
+      return "BATCH_COMPLETED_NO_PIPE";
+    case State::kBatchCompleted:
+      return "BATCH_COMPLETED";
+    case State::kPushedToPipe:
+      return "PUSHED_TO_PIPE";
+    case State::kPulledFromPipe:
+      return "PULLED_FROM_PIPE";
+    case State::kCancelled:
+      return "CANCELLED";
+  }
+  return "UNKNOWN";
+}
+
 void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
-  gpr_log(GPR_DEBUG, "ReceiveMessage::StartOp:%d", static_cast<int>(state_));
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s ReceiveMessage.StartOp st=%s",
+            base_->LogTag().c_str(), StateString(state_));
+  }
   switch (state_) {
     case State::kInitial:
       state_ = State::kForwardedBatchNoPipe;
@@ -367,7 +433,10 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
 }
 
 void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
-  gpr_log(GPR_DEBUG, "ReceiveMessage::GotPipe:%d", static_cast<int>(state_));
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s ReceiveMessage.GotPipe st=%s",
+            base_->LogTag().c_str(), StateString(state_));
+  }
   switch (state_) {
     case State::kInitial:
       state_ = State::kIdle;
@@ -392,8 +461,11 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
 }
 
 void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
-  gpr_log(GPR_DEBUG, "ReceiveMessage::OnComplete:%d:%s",
-          static_cast<int>(state_), status.ToString().c_str());
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s ReceiveMessage.OnComplete st=%s status=%s",
+            base_->LogTag().c_str(), StateString(state_),
+            status.ToString().c_str());
+  }
   if (!status.ok()) abort();
   switch (state_) {
     case State::kInitial:
@@ -417,8 +489,10 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
 }
 
 void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
-  gpr_log(GPR_DEBUG, "ReceiveMessage::WakeInsideCombiner:%d",
-          static_cast<int>(state_));
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s ReceiveMessage.WakeInsideCombiner st=%s",
+            base_->LogTag().c_str(), StateString(state_));
+  }
   switch (state_) {
     case State::kInitial:
     case State::kIdle:

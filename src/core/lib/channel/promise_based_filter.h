@@ -279,6 +279,7 @@ class BaseCallData : public Activity, private Wakeable {
       kBatchCompleted,
       kCancelled,
     };
+    static const char* StateString(State);
 
     void OnComplete(absl::Status status);
 
@@ -318,6 +319,7 @@ class BaseCallData : public Activity, private Wakeable {
       kPulledFromPipe,
       kCancelled,
     };
+    static const char* StateString(State);
 
     void OnComplete(absl::Status status);
 
@@ -359,6 +361,9 @@ class BaseCallData : public Activity, private Wakeable {
   }
 
   virtual void WakeInsideCombiner(Flusher* flusher) = 0;
+
+  virtual absl::string_view ClientOrServerString() const = 0;
+  std::string LogTag() const;
 
  private:
   // Wakeable implementation.
@@ -460,6 +465,8 @@ class ClientCallData : public BaseCallData {
   void WakeInsideCombiner(Flusher* flusher) override;
   void OnWakeup() override;
 
+  absl::string_view ClientOrServerString() const override { return "CLI"; }
+
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
   // Queued batch containing at least a send_initial_metadata op.
@@ -492,6 +499,9 @@ class ServerCallData : public BaseCallData {
   void ForceImmediateRepoll() final;
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
+
+ protected:
+  absl::string_view ClientOrServerString() const override { return "SVR"; }
 
  private:
   // At what stage is our handling of recv initial metadata?
