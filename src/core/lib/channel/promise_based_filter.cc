@@ -355,6 +355,7 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kPushedToPipe:
+    case State::kPulledFromPipe:
       abort();
     case State::kCancelled:
       return;
@@ -382,6 +383,7 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
     case State::kForwardedBatch:
     case State::kBatchCompleted:
     case State::kPushedToPipe:
+    case State::kPulledFromPipe:
       abort();
     case State::kCancelled:
       return;
@@ -397,6 +399,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kInitial:
     case State::kIdle:
     case State::kPushedToPipe:
+    case State::kPulledFromPipe:
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
       abort();
@@ -436,7 +439,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       }
       GPR_ASSERT(state_ == State::kPushedToPipe);
       ABSL_FALLTHROUGH_INTENDED;
-    case State::kPushedToPipe:
+    case State::kPushedToPipe: {
       GPR_ASSERT(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = absl::get_if<bool>(&r_push)) {
@@ -448,22 +451,30 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       GPR_ASSERT(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r_next)) {
+        next_.reset();
         if (p->has_value()) {
           *intercepted_slice_buffer_ = std::move(*(**p)->payload());
           *intercepted_flags_ = (**p)->flags();
-          state_ = State::kIdle;
+          state_ = State::kPulledFromPipe;
         } else {
           *intercepted_slice_buffer_ = absl::nullopt;
           *intercepted_flags_ = 0;
           state_ = State::kCancelled;
         }
-        GPR_ASSERT(!absl::holds_alternative<Pending>((*push_)()));
+      }
+    }
+      if (state_ != State::kPulledFromPipe) break;
+      ABSL_FALLTHROUGH_INTENDED;
+    case State::kPulledFromPipe: {
+      GPR_ASSERT(push_.has_value());
+      if (!absl::holds_alternative<Pending>((*push_)())) {
+        state_ = State::kIdle;
         push_.reset();
-        next_.reset();
         flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                             absl::OkStatus(), "recv_message");
       }
       break;
+    }
   }
 }
 

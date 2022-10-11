@@ -315,6 +315,7 @@ class BaseCallData : public Activity, private Wakeable {
       kBatchCompletedNoPipe,
       kBatchCompleted,
       kPushedToPipe,
+      kPulledFromPipe,
       kCancelled,
     };
 
