@@ -39,6 +39,14 @@ exports_files([
     "etc/roots.pem",
 ])
 
+exports_files(
+    [
+        "include/grpc/event_engine/slice.h",
+        "include/grpc/event_engine/slice_buffer.h",
+    ],
+    ["//:__subpackages__"],
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},

@@ -417,7 +417,7 @@ for dirname in [
             'load': lambda filename, *args: None,
             'licenses': lambda licenses: None,
             'package': lambda **kwargs: None,
-            'exports_files': lambda files: None,
+            'exports_files': lambda files, visibility=None: None,
             'config_setting': lambda **kwargs: None,
             'selects': FakeSelects(),
             'python_config_settings': lambda **kwargs: None,
