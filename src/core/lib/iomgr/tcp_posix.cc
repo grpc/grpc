@@ -50,6 +50,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
@@ -917,11 +918,13 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     }
     msg.msg_flags = 0;
 
-    GRPC_STATS_INC_TCP_READ_OFFER(tcp->incoming_buffer->length);
-    GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(tcp->incoming_buffer->count);
+    grpc_core::global_stats().IncrementTcpReadOffer(
+        tcp->incoming_buffer->length);
+    grpc_core::global_stats().IncrementTcpReadOfferIovSize(
+        tcp->incoming_buffer->count);
 
     do {
-      GRPC_STATS_INC_SYSCALL_READ();
+      grpc_core::global_stats().IncrementSyscallRead();
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
@@ -960,7 +963,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       return true;
     }
 
-    GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
+    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     GPR_DEBUG_ASSERT((size_t)read_bytes <=
                      tcp->incoming_buffer->length - total_read_bytes);
@@ -1070,14 +1073,14 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
           extra_wanted -= kBigAlloc;
           grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
                                         tcp->memory_owner.MakeSlice(kBigAlloc));
-          GRPC_STATS_INC_TCP_READ_ALLOC_64K();
+          grpc_core::global_stats().IncrementTcpReadAlloc64k();
         }
       } else {
         while (extra_wanted > 0) {
           extra_wanted -= kSmallAlloc;
           grpc_slice_buffer_add_indexed(
               tcp->incoming_buffer, tcp->memory_owner.MakeSlice(kSmallAlloc));
-          GRPC_STATS_INC_TCP_READ_ALLOC_8K();
+          grpc_core::global_stats().IncrementTcpReadAlloc8k();
         }
       }
       maybe_post_reclaimer(tcp);
@@ -1187,7 +1190,7 @@ ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
   ssize_t sent_length;
   do {
     /* TODO(klempner): Cork if this is a partial write */
-    GRPC_STATS_INC_SYSCALL_WRITE();
+    grpc_core::global_stats().IncrementSyscallWrite();
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
   } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
   return sent_length;
@@ -1618,8 +1621,8 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
-      GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
-      GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterSend(
@@ -1731,8 +1734,8 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
 
-      GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
-      GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
 
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno);
     }

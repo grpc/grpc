@@ -812,7 +812,6 @@ static grpc_channel_credentials* ReadChannelCreds(
 }
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
-  grpc_event_engine::experimental::ResetDefaultEventEngine();
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }

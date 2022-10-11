@@ -669,7 +669,10 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = ["@grpc:public"],
-    deps = ["grpc_public_hdrs"],
+    deps = [
+        "gpr_atm",
+        "grpc_public_hdrs",
+    ],
 )
 
 grpc_cc_library(
@@ -701,6 +704,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "gpr_atm",
         "grpc++_base",
         "slice",
     ],
@@ -2877,6 +2881,7 @@ grpc_cc_library(
         "event_engine_utils",
         "gpr",
         "grpc_trace",
+        "init_internally",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
     ],
@@ -2898,6 +2903,7 @@ grpc_cc_library(
         "event_engine_trace",
         "event_engine_utils",
         "gpr",
+        "init_internally",
         "posix_event_engine_timer_manager",
         "time",
         "windows_iocp",
@@ -3139,6 +3145,56 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "histogram_view",
+    srcs = [
+        "src/core/lib/debug/histogram_view.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/histogram_view.h",
+    ],
+    deps = ["gpr"],
+)
+
+grpc_cc_library(
+    name = "stats_data",
+    srcs = [
+        "src/core/lib/debug/stats_data.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/stats_data.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "gpr_platform",
+        "histogram_view",
+        "per_cpu",
+    ],
+)
+
+grpc_cc_library(
+    name = "stats",
+    srcs = [
+        "src/core/lib/debug/stats.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/stats.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
+    deps = [
+        "gpr",
+        "histogram_view",
+        "no_destruct",
+        "stats_data",
+    ],
+)
+
+grpc_cc_library(
     name = "per_cpu",
     hdrs = [
         "src/core/lib/gprpp/per_cpu.h",
@@ -3184,8 +3240,6 @@ grpc_cc_library(
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_internal.cc",
         "src/core/lib/compression/message_compress.cc",
-        "src/core/lib/debug/stats.cc",
-        "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/channel_args_endpoint_config.cc",
         "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
@@ -3294,8 +3348,6 @@ grpc_cc_library(
         "src/core/lib/compression/compression_internal.h",
         "src/core/lib/resource_quota/api.h",
         "src/core/lib/compression/message_compress.h",
-        "src/core/lib/debug/stats.h",
-        "src/core/lib/debug/stats_data.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/buffer_list.h",
@@ -3463,6 +3515,8 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "stats",
+        "stats_data",
         "status_helper",
         "strerror",
         "thread_quota",
@@ -3852,7 +3906,6 @@ grpc_cc_library(
     hdrs = ["src/core/lib/load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
     deps = [
-        "channel_args",
         "gpr_platform",
         "grpc_public_hdrs",
         "iomgr_fwd",
@@ -4002,6 +4055,8 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "stats",
+        "stats_data",
         "status_helper",
         "subchannel_interface",
         "time",
@@ -5372,6 +5427,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -7081,6 +7137,8 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "slice_refcount",
+        "stats",
+        "stats_data",
         "status_helper",
         "time",
         "transport_fwd",
@@ -7343,6 +7401,7 @@ grpc_cc_library(
         "env",
         "error",
         "gpr",
+        "gpr_atm",
         "gpr_manual_constructor",
         "grpc",
         "grpc++_codegen_proto",
@@ -7399,6 +7458,7 @@ grpc_cc_library(
         "channel_init",
         "config",
         "gpr",
+        "gpr_atm",
         "gpr_manual_constructor",
         "grpc_base",
         "grpc_health_upb",
@@ -7657,23 +7717,6 @@ grpc_cc_library(
     deps = [
         "grpc++",
         "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_core_stats",
-    srcs = [
-        "src/cpp/util/core_stats.cc",
-    ],
-    hdrs = [
-        "src/cpp/util/core_stats.h",
-    ],
-    language = "c++",
-    deps = [
-        "gpr",
-        "gpr_atm",
-        "grpc_base",
-        "//src/proto/grpc/core:stats_proto",
     ],
 )
 

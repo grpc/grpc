@@ -23,6 +23,14 @@ namespace grpc_core {
 extern void (*InitInternally)();
 extern void (*ShutdownInternally)();
 
+class KeepsGrpcInitialized {
+ public:
+  KeepsGrpcInitialized() { InitInternally(); }
+  ~KeepsGrpcInitialized() { ShutdownInternally(); }
+  KeepsGrpcInitialized(const KeepsGrpcInitialized&) = delete;
+  KeepsGrpcInitialized& operator=(const KeepsGrpcInitialized&) = delete;
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
