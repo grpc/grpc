@@ -19,6 +19,7 @@
 #include "src/core/ext/xds/xds_endpoint.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <limits>
