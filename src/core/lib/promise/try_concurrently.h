@@ -158,7 +158,6 @@ class TryConcurrently<Main, List<PreMain...>, List<PostMain...>> {
     static const uint8_t kNecessaryBits =
         1 | (NecessaryBits<PreMain...>::value << 1) |
         (NecessaryBits<PostMain...>::value << (1 + sizeof...(PreMain)));
-    printf("done_bits=%d necessary_bits=%d\n", done_bits_, kNecessaryBits);
     if ((done_bits_ & kNecessaryBits) == kNecessaryBits) {
       return std::move(result_);
     }

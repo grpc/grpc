@@ -637,6 +637,9 @@ class ClientCallData::PollContext {
     if (self_->send_message() != nullptr) {
       self_->send_message()->WakeInsideCombiner(flusher_);
     }
+    if (self_->receive_message() != nullptr) {
+      self_->receive_message()->WakeInsideCombiner(flusher_);
+    }
     if (self_->server_initial_metadata_latch() != nullptr) {
       switch (self_->recv_initial_metadata_->state) {
         case RecvInitialMetadata::kInitial:
@@ -918,7 +921,7 @@ std::string ClientCallData::DebugString() const {
   return absl::StrCat(
       "sent_initial_state=", StateString(send_initial_state_),
       " recv_trailing_state=", StateString(recv_trailing_state_),
-      recv_initial_metadata_ == nullptr
+      server_initial_metadata_latch() == nullptr
           ? ""
           : absl::StrCat(" recv_initial_metadata=",
                          RecvInitialMetadata::StateString(
