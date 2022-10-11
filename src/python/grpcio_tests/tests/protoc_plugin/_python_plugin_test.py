@@ -16,7 +16,7 @@ import collections
 import contextlib
 import distutils.spawn
 import errno
-from itertools import zip_longest
+import itertools
 import os
 import shutil
 import subprocess
@@ -308,8 +308,8 @@ class PythonPluginTest(unittest.TestCase):
         responses = service.stub.StreamingOutputCall(request)
         expected_responses = service.servicer_methods.StreamingOutputCall(
             request, 'not a real RpcContext!')
-        for expected_response, response in zip_longest(expected_responses,
-                                                       responses):
+        for expected_response, response in itertools.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
         service.server.stop(None)
 
@@ -408,8 +408,8 @@ class PythonPluginTest(unittest.TestCase):
         responses = service.stub.FullDuplexCall(_full_duplex_request_iterator())
         expected_responses = service.servicer_methods.FullDuplexCall(
             _full_duplex_request_iterator(), 'not a real RpcContext!')
-        for expected_response, response in zip_longest(expected_responses,
-                                                       responses):
+        for expected_response, response in itertools.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
         service.server.stop(None)
 
@@ -463,8 +463,8 @@ class PythonPluginTest(unittest.TestCase):
         responses = service.stub.HalfDuplexCall(half_duplex_request_iterator())
         expected_responses = service.servicer_methods.HalfDuplexCall(
             half_duplex_request_iterator(), 'not a real RpcContext!')
-        for expected_response, response in zip_longest(expected_responses,
-                                                       responses):
+        for expected_response, response in itertools.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
         service.server.stop(None)
 
@@ -575,8 +575,8 @@ class SimpleStubsPluginTest(unittest.TestCase):
             channel_credentials=grpc.experimental.insecure_channel_credentials(
             ),
             wait_for_ready=True)
-        for expected_response, response in zip_longest(expected_responses,
-                                                       responses):
+        for expected_response, response in itertools.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
 
     def testStreamingInputCall(self):
@@ -599,8 +599,8 @@ class SimpleStubsPluginTest(unittest.TestCase):
             wait_for_ready=True)
         expected_responses = self.servicer_methods.FullDuplexCall(
             _full_duplex_request_iterator(), 'not a real RpcContext!')
-        for expected_response, response in zip_longest(expected_responses,
-                                                       responses):
+        for expected_response, response in itertools.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
 
     def testHalfDuplexCall(self):
@@ -622,8 +622,8 @@ class SimpleStubsPluginTest(unittest.TestCase):
             wait_for_ready=True)
         expected_responses = self.servicer_methods.HalfDuplexCall(
             half_duplex_request_iterator(), 'not a real RpcContext!')
-        for expected_response, response in zip_longest(expected_responses,
-                                                       responses):
+        for expected_response, response in itertools.zip_longest(
+                expected_responses, responses):
             self.assertEqual(expected_response, response)
 
 
