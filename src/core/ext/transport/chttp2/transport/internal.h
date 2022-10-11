@@ -65,6 +65,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/surface/init_internally.h"
 
 namespace grpc_core {
 class ContextList;
@@ -236,7 +237,7 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport {
+struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
