@@ -9861,18 +9861,26 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
 - name: test_core_gpr_time_test
   gtest: true
