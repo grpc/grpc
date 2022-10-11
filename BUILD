@@ -332,6 +332,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/call_op_set_interface.h",
     "include/grpcpp/impl/call.h",
     "include/grpcpp/impl/channel_argument_option.h",
+    "include/grpcpp/impl/channel_interface.h",
     "include/grpcpp/impl/client_unary_call.h",
     "include/grpcpp/impl/codegen/core_codegen.h",
     "include/grpcpp/impl/grpc_library.h",
