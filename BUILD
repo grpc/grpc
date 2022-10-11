@@ -654,6 +654,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
+    visibility = ["@grpc:public"],
     deps = ["gpr_public_hdrs"],
 )
 
