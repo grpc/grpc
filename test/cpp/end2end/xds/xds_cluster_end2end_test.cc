@@ -421,27 +421,6 @@ TEST_P(EdsTest, IgnoresUnhealthyEndpoints) {
   }
 }
 
-// Tests that subchannel sharing works when the same backend is listed
-// multiple times.
-TEST_P(EdsTest, SameBackendListedMultipleTimes) {
-  CreateAndStartBackends(1);
-  // Same backend listed twice.
-  auto endpoints = CreateEndpointsForBackends();
-  endpoints.push_back(endpoints.front());
-  EdsResourceArgs args({{"locality0", endpoints}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // We need to wait for the backend to come online.
-  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
-                     /*check_status=*/nullptr, WaitForBackendOptions(),
-                     RpcOptions().set_timeout_ms(2000));
-  // Send kNumRpcsPerAddress RPCs per server.
-  const size_t kNumRpcsPerAddress = 10;
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * endpoints.size());
-  // Backend should have gotten 20 requests.
-  EXPECT_EQ(kNumRpcsPerAddress * endpoints.size(),
-            backends_[0]->backend_service()->request_count());
-}
-
 TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   CreateAndStartBackends(1);
   // Initial EDS resource has one locality with no endpoints.
@@ -712,28 +691,31 @@ TEST_P(EdsTest, LocalityContainingNoEndpoints) {
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
 TEST_P(EdsTest, ManyLocalitiesStressTest) {
-  CreateAndStartBackends(2);
-  const size_t kNumLocalities = 100;
+  const size_t kNumLocalities = 50;
+  CreateAndStartBackends(kNumLocalities + 1);
   const uint32_t kRpcTimeoutMs = 5000;
   // The first ADS response contains kNumLocalities localities, each of which
-  // contains backend 0.
+  // contains its own backend.
   EdsResourceArgs args;
   for (size_t i = 0; i < kNumLocalities; ++i) {
     std::string name = absl::StrCat("locality", i);
-    EdsResourceArgs::Locality locality(name, CreateEndpointsForBackends(0, 1));
+    EdsResourceArgs::Locality locality(
+        name, CreateEndpointsForBackends(i, i + 1));
     args.locality_list.emplace_back(std::move(locality));
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until backend 0 is ready.
-  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_reset_counters(false),
-                 RpcOptions().set_timeout_ms(kRpcTimeoutMs));
-  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  // The second ADS response contains 1 locality, which contains backend 1.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  // Wait until all backends are ready.
+  WaitForAllBackends(DEBUG_LOCATION, 0, kNumLocalities,
+                     /*check_status=*/nullptr,
+                     WaitForBackendOptions().set_reset_counters(false),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  // The second ADS response contains 1 locality, which contains backend 50.
+  args = EdsResourceArgs({{
+      "locality0",
+      CreateEndpointsForBackends(kNumLocalities, kNumLocalities + 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until backend 1 is ready.
-  WaitForBackend(DEBUG_LOCATION, 1);
+  // Wait until backend 50 is ready.
+  WaitForBackend(DEBUG_LOCATION, kNumLocalities);
 }
 
 // Tests that the localities in a locality map are picked correctly after
