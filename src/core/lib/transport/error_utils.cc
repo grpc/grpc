@@ -102,7 +102,7 @@ void grpc_error_get_status(grpc_error_handle error,
   if (code != nullptr) *code = status;
 
   if (error_string != nullptr && status != GRPC_STATUS_OK) {
-    *error_string = gpr_strdup(grpc_error_std_string(error).c_str());
+    *error_string = gpr_strdup(grpc_core::StatusToString(error).c_str());
   }
 
   if (http_error != nullptr) {
@@ -128,7 +128,7 @@ void grpc_error_get_status(grpc_error_handle error,
       if (!grpc_error_get_str(found_error,
                               grpc_core::StatusStrProperty::kDescription,
                               message)) {
-        *message = grpc_error_std_string(error);
+        *message = grpc_core::StatusToString(error);
       }
     }
   }

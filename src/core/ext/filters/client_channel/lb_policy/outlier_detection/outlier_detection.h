@@ -31,8 +31,6 @@
 
 namespace grpc_core {
 
-bool XdsOutlierDetectionEnabled();
-
 struct OutlierDetectionConfig {
   Duration interval = Duration::Seconds(10);
   Duration base_ejection_time = Duration::Milliseconds(30000);
@@ -54,6 +52,7 @@ struct OutlierDetectionConfig {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
@@ -71,6 +70,7 @@ struct OutlierDetectionConfig {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   absl::optional<SuccessRateEjection> success_rate_ejection;
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;

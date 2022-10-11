@@ -33,7 +33,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -193,7 +192,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Default values for locality fields.
   static const char kDefaultLocalityRegion[];
   static const char kDefaultLocalityZone[];
-  static const int kDefaultLocalityWeight = 3;
+  static const uint32_t kDefaultLocalityWeight = 3;
   static const int kDefaultLocalityPriority = 0;
 
   // Default resource names.
@@ -463,18 +462,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
         "grpc/server?xds.resource.listening_address=%s";
   };
 
-  class ScopedExperimentalEnvVar {
-   public:
-    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      grpc_core::SetEnv(env_var_, "true");
-    }
-
-    ~ScopedExperimentalEnvVar() { grpc_core::UnsetEnv(env_var_); }
-
-   private:
-    const char* env_var_;
-  };
-
   // RPC services used to talk to the backends.
   enum RpcService {
     SERVICE_ECHO,
@@ -582,7 +569,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // A locality.
     struct Locality {
       Locality(std::string sub_zone, std::vector<Endpoint> endpoints,
-               int lb_weight = kDefaultLocalityWeight,
+               uint32_t lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority)
           : sub_zone(std::move(sub_zone)),
             endpoints(std::move(endpoints)),
@@ -591,7 +578,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
       const std::string sub_zone;
       std::vector<Endpoint> endpoints;
-      int lb_weight;
+      uint32_t lb_weight;
       int priority;
     };
 

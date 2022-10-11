@@ -1937,6 +1937,8 @@ src/core/lib/config/core_configuration.cc \
 src/core/lib/config/core_configuration.h \
 src/core/lib/debug/event_log.cc \
 src/core/lib/debug/event_log.h \
+src/core/lib/debug/histogram_view.cc \
+src/core/lib/debug/histogram_view.h \
 src/core/lib/debug/stats.cc \
 src/core/lib/debug/stats.h \
 src/core/lib/debug/stats_data.cc \
@@ -1950,8 +1952,6 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/executor/executor.h \
-src/core/lib/event_engine/executor/threaded_executor.cc \
-src/core/lib/event_engine/executor/threaded_executor.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
