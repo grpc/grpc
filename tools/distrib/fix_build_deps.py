@@ -296,23 +296,22 @@ def grpc_cc_library(name,
         proto_hdr = '%s%s' % ((parsing_path + '/' if parsing_path else ''),
                               proto.replace('.proto', '.pb.h'))
         skip_headers[name].add(proto_hdr)
-    for hdr in hdrs + public_hdrs:
+
+    # Convert the source or header target to a relative path.
+    def get_filename(name, parsing_path):
         filename = '%s%s' % (
             (parsing_path + '/' if
-             (parsing_path and not hdr.startswith('//')) else ''), hdr)
+             (parsing_path and not name.startswith('//')) else ''), name)
         filename = filename.replace('//:', '')
-        filename = filename.replace('//src/core:', 'src/core/')
-        vendors[filename].append(name)
+        return filename.replace('//src/core:', 'src/core/')
+
+    for hdr in hdrs + public_hdrs:
+        vendors[get_filename(hdr, parsing_path)].append(name)
     inc = set()
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        filename = '%s%s' % (
-            (parsing_path + '/' if
-             (parsing_path and not src.startswith('//')) else ''), src)
-        filename = filename.replace('//:', '')
-        filename = filename.replace('//src/core:', 'src/core/')
-        for line in open(filename):
+        for line in open(get_filename(src, parsing_path)):
             m = re.search(r'^#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
