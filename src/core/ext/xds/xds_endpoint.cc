@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -44,6 +45,7 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -221,9 +223,19 @@ struct ParsedLocality {
   XdsEndpointResource::Priority::Locality locality;
 };
 
+struct ResolvedAddressLessThan {
+  bool operator()(const grpc_resolved_address& a1,
+                  const grpc_resolved_address& a2) const {
+    if (a1.len != a2.len) return a1.len < a2.len;
+    return memcmp(a1.addr, a2.addr, a1.len) < 0;
+  }
+};
+using ResolvedAddressSet =
+    std::set<grpc_resolved_address, ResolvedAddressLessThan>;
+
 absl::optional<ParsedLocality> LocalityParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
-    ValidationErrors* errors) {
+    ResolvedAddressSet* address_set, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
   ParsedLocality parsed_locality;
   // load_balancing_weight
@@ -265,6 +277,13 @@ absl::optional<ParsedLocality> LocalityParse(
                                         absl::StrCat(".lb_endpoints[", i, "]"));
     auto address = ServerAddressParse(lb_endpoints[i], errors);
     if (address.has_value()) {
+      bool inserted = address_set->insert(address->address()).second;
+      if (!inserted) {
+        errors->AddError(absl::StrCat(
+            "duplicate endpoint address \"",
+            grpc_sockaddr_to_uri(&address->address()).value_or("<unknown>"),
+            "\""));
+      }
       parsed_locality.locality.endpoints.push_back(std::move(*address));
     }
   }
@@ -335,13 +354,14 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
   // endpoints
   {
     ValidationErrors::ScopedField field(&errors, "endpoints");
+    ResolvedAddressSet address_set;
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
             cluster_load_assignment, &locality_size);
     for (size_t i = 0; i < locality_size; ++i) {
       ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
-      auto parsed_locality = LocalityParse(endpoints[i], &errors);
+      auto parsed_locality = LocalityParse(endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
         GPR_ASSERT(parsed_locality->locality.lb_weight != 0);
         // Make sure prorities is big enough. Note that they might not
