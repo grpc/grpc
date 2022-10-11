@@ -21,6 +21,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/types/variant.h"
+#include "promise_based_filter.h"
 
 #include <grpc/status.h>
 
@@ -584,6 +585,32 @@ struct ClientCallData::RecvInitialMetadata final {
   grpc_closure on_ready;
   grpc_metadata_batch* metadata = nullptr;
   Latch<ServerMetadata*>* server_initial_metadata_publisher = nullptr;
+
+  static const char* StateString(State state) {
+    switch (state) {
+      case kInitial:
+        return "INITIAL";
+      case kGotLatch:
+        return "GOT_LATCH";
+      case kRespondedToTrailingMetadataPriorToHook:
+        return "RESPONDED_TO_TRAILING_METADATA_PRIOR_TO_HOOK";
+      case kHookedWaitingForLatch:
+        return "HOOKED_WAITING_FOR_LATCH";
+      case kHookedAndGotLatch:
+        return "HOOKED_AND_GOT_LATCH";
+      case kCompleteWaitingForLatch:
+        return "COMPLETE_WAITING_FOR_LATCH";
+      case kCompleteAndGotLatch:
+        return "COMPLETE_AND_GOT_LATCH";
+      case kCompleteAndSetLatch:
+        return "COMPLETE_AND_SET_LATCH";
+      case kResponded:
+        return "RESPONDED";
+      case kRespondedButNeedToSetLatch:
+        return "RESPONDED_BUT_NEED_TO_SET_LATCH";
+    }
+    return "UNKNOWN";
+  }
 };
 
 class ClientCallData::PollContext {
@@ -601,6 +628,10 @@ class ClientCallData::PollContext {
   PollContext& operator=(const PollContext&) = delete;
 
   void Run() {
+    if (grpc_trace_channel.enabled()) {
+      gpr_log(GPR_DEBUG, "%s ClientCallData.PollContext.Run %s",
+              self_->LogTag().c_str(), self_->DebugString().c_str());
+    }
     GPR_ASSERT(have_scoped_activity_);
     repoll_ = false;
     if (self_->send_message() != nullptr) {
@@ -851,12 +882,60 @@ void ClientCallData::ForceImmediateRepoll() {
   poll_ctx_->Repoll();
 }
 
+const char* ClientCallData::StateString(SendInitialState state) {
+  switch (state) {
+    case SendInitialState::kInitial:
+      return "INITIAL";
+    case SendInitialState::kQueued:
+      return "QUEUED";
+    case SendInitialState::kForwarded:
+      return "FORWARDED";
+    case SendInitialState::kCancelled:
+      return "CANCELLED";
+  }
+  return "UNKNOWN";
+}
+
+const char* ClientCallData::StateString(RecvTrailingState state) {
+  switch (state) {
+    case RecvTrailingState::kInitial:
+      return "INITIAL";
+    case RecvTrailingState::kQueued:
+      return "QUEUED";
+    case RecvTrailingState::kComplete:
+      return "COMPLETE";
+    case RecvTrailingState::kForwarded:
+      return "FORWARDED";
+    case RecvTrailingState::kCancelled:
+      return "CANCELLED";
+    case RecvTrailingState::kResponded:
+      return "RESPONDED";
+  }
+  return "UNKNOWN";
+}
+
+std::string ClientCallData::DebugString() const {
+  return absl::StrCat(
+      "sent_initial_state=", StateString(send_initial_state_),
+      " recv_trailing_state=", StateString(recv_trailing_state_),
+      recv_initial_metadata_ == nullptr
+          ? ""
+          : absl::StrCat(" recv_initial_metadata=",
+                         RecvInitialMetadata::StateString(
+                             recv_initial_metadata_->state)));
+}
+
 // Handle one grpc_transport_stream_op_batch
 void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // Fake out the activity based context.
   ScopedContext context(this);
   CapturedBatch batch(b);
   Flusher flusher(this);
+
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s StartBatch %s", LogTag().c_str(),
+            DebugString().c_str());
+  }
 
   // If this is a cancel stream, cancel anything we have pending and propagate
   // the cancellation.
