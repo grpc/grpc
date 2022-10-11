@@ -47,22 +47,35 @@
 namespace grpc_core {
 namespace {
 
-void NativeDNSRequest(
-    std::string name, std::string default_port,
-    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done) {
-  grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-      [name = std::move(name), default_port = std::move(default_port),
-       on_done = std::move(on_done)]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        auto result =
-            GetDNSResolver()->LookupHostnameBlocking(name, default_port);
-        // running inline is safe since we've already been scheduled on the
-        // executor
-        on_done(std::move(result));
-      });
-}
+class NativeDNSRequest {
+ public:
+  NativeDNSRequest(
+      absl::string_view name, absl::string_view default_port,
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done)
+      : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
+    GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
+    Executor::Run(&request_closure_, absl::OkStatus(), ExecutorType::RESOLVER);
+  }
+
+ private:
+  // Callback to be passed to grpc Executor to asynch-ify
+  // LookupHostnameBlocking
+  static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
+    NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
+    auto result =
+        GetDNSResolver()->LookupHostnameBlocking(r->name_, r->default_port_);
+    // running inline is safe since we've already been scheduled on the executor
+    r->on_done_(std::move(result));
+    delete r;
+  }
+
+  const std::string name_;
+  const std::string default_port_;
+  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+      on_done_;
+  grpc_closure request_closure_;
+};
 
 }  // namespace
 
@@ -72,8 +85,8 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  NativeDNSRequest(std::string(name), std::string(default_port),
-                   std::move(on_done));
+  // self-deleting class
+  new NativeDNSRequest(name, default_port, std::move(on_done));
   return kNullHandle;
 }
 
