@@ -19,8 +19,6 @@
 #ifndef GRPCPP_IMPL_CHANNEL_INTERFACE_H
 #define GRPCPP_IMPL_CHANNEL_INTERFACE_H
 
-// IWYU pragma: private
-
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/support/status.h>
