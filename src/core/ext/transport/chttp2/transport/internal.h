@@ -60,12 +60,12 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
-#include "src/core/lib/surface/init_internally.h"
 
 namespace grpc_core {
 class ContextList;
