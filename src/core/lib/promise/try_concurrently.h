@@ -15,10 +15,10 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_CONCURRENTLY_H
 #define GRPC_CORE_LIB_PROMISE_TRY_CONCURRENTLY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <tuple>
-
-#include "poll.h"
 
 #include <grpc/support/log.h>
 
@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/status.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -233,4 +234,4 @@ auto TryConcurrently(Main main) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_TRY_CONCURRENTLY_H
