@@ -1364,15 +1364,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "call_push_pull",
-    hdrs = ["src/core/lib/promise/call_push_pull.h"],
-    external_deps = ["absl/types:variant"],
+    name = "try_concurrently",
+    hdrs = ["src/core/lib/promise/try_concurrently.h"],
     language = "c++",
     deps = [
         "bitset",
         "construct_destruct",
-        "gpr_platform",
-        "poll",
+        "gpr",
         "promise_like",
         "promise_status",
     ],
@@ -4403,7 +4401,6 @@ grpc_cc_library(
         "arena",
         "arena_promise",
         "basic_seq",
-        "call_push_pull",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
@@ -4424,6 +4421,7 @@ grpc_cc_library(
         "slice_buffer",
         "status_helper",
         "transport_fwd",
+        "try_concurrently",
         "try_seq",
     ],
 )

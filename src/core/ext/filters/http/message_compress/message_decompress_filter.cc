@@ -43,10 +43,10 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/call_push_pull.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_concurrently.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -148,18 +148,18 @@ ClientMessageDecompressFilter::MakeCallPromise(
   auto* pipe = GetContext<Arena>()->New<Pipe<MessageHandle>>();
   auto* sender = std::exchange(call_args.incoming_messages, &pipe->sender);
   auto* receiver = &pipe->receiver;
-  return CallPushPull(
-      next_promise_factory(std::move(call_args)),
-      [] { return absl::OkStatus(); },
-      Seq(server_initial_metadata->Wait(),
-          [this, receiver, sender](ServerMetadata** server_initial_metadata)
-              -> ArenaPromise<absl::Status> {
-            if (server_initial_metadata == nullptr) return ImmediateOkStatus();
-            const auto algorithm = (*server_initial_metadata)
-                                       ->get(GrpcEncodingMetadata())
-                                       .value_or(GRPC_COMPRESS_NONE);
-            return DecompressLoop(algorithm, sender, receiver);
-          }));
+  return TryConcurrently(next_promise_factory(std::move(call_args)))
+      .HelperPull(
+          Seq(server_initial_metadata->Wait(),
+              [this, receiver, sender](ServerMetadata** server_initial_metadata)
+                  -> ArenaPromise<absl::Status> {
+                if (server_initial_metadata == nullptr)
+                  return ImmediateOkStatus();
+                const auto algorithm = (*server_initial_metadata)
+                                           ->get(GrpcEncodingMetadata())
+                                           .value_or(GRPC_COMPRESS_NONE);
+                return DecompressLoop(algorithm, sender, receiver);
+              }));
 }
 
 ArenaPromise<ServerMetadataHandle>
@@ -171,10 +171,8 @@ ServerMessageDecompressFilter::MakeCallPromise(
   auto* pipe = GetContext<Arena>()->New<Pipe<MessageHandle>>();
   auto* sender = std::exchange(call_args.incoming_messages, &pipe->sender);
   auto* receiver = &pipe->receiver;
-  return CallPushPull(
-      next_promise_factory(std::move(call_args)),
-      [] { return absl::OkStatus(); },
-      DecompressLoop(algorithm, sender, receiver));
+  return TryConcurrently(next_promise_factory(std::move(call_args)))
+      .HelperPull(DecompressLoop(algorithm, sender, receiver));
 }
 
 }  // namespace grpc_core
