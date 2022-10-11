@@ -763,9 +763,9 @@ class ClientCallData::PollContext {
           if (destroy_md) {
             md->~grpc_metadata_batch();
           }
+          self_->promise_ = ArenaPromise<ServerMetadataHandle>();
           scoped_activity_.Destroy();
           have_scoped_activity_ = false;
-          self_->promise_ = ArenaPromise<ServerMetadataHandle>();
         }
       } break;
       case SendInitialState::kInitial:
@@ -1409,6 +1409,11 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   Flusher flusher(this);
   bool wake = false;
 
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s StartBatch: %s", LogTag().c_str(),
+            DebugString().c_str());
+  }
+
   // If this is a cancel stream, cancel anything we have pending and
   // propagate the cancellation.
   if (batch->cancel_stream) {
@@ -1639,21 +1644,25 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   }
 }
 
+std::string ServerCallData::DebugString() const {
+  return absl::StrCat(
+      "have_promise=", promise_.has_value() ? "true" : "false",
+      " recv_initial_state=", StateString(recv_initial_state_),
+      " send_trailing_state=", StateString(send_trailing_state_),
+      send_initial_metadata_ == nullptr
+          ? ""
+          : absl::StrCat(
+                " send_initial_metadata=",
+                SendInitialMetadata::StateString(send_initial_metadata_->state))
+                .c_str());
+}
+
 // Wakeup and poll the promise if appropriate.
 void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   PollContext poll_ctx(this, flusher);
   if (grpc_trace_channel.enabled()) {
-    gpr_log(GPR_DEBUG,
-            "%s: WakeInsideCombiner have_promise=%s recv_initial_state=%s "
-            "send_trailing_state=%s%s",
-            LogTag().c_str(), promise_.has_value() ? "true" : "false",
-            StateString(recv_initial_state_), StateString(send_trailing_state_),
-            send_initial_metadata_ == nullptr
-                ? ""
-                : absl::StrCat(" send_initial_metadata=",
-                               SendInitialMetadata::StateString(
-                                   send_initial_metadata_->state))
-                      .c_str());
+    gpr_log(GPR_DEBUG, "%s: WakeInsideCombiner %s", LogTag().c_str(),
+            DebugString().c_str());
   }
   if (send_initial_metadata_ != nullptr &&
       send_initial_metadata_->state ==

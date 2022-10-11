@@ -432,6 +432,10 @@ class ClientCallData : public BaseCallData {
     kCancelled
   };
 
+  static const char* StateString(SendInitialState);
+  static const char* StateString(RecvTrailingState);
+  std::string DebugString() const;
+
   struct RecvInitialMetadata;
   class PollContext;
 
@@ -532,6 +536,7 @@ class ServerCallData : public BaseCallData {
 
   static const char* StateString(RecvInitialState state);
   static const char* StateString(SendTrailingState state);
+  std::string DebugString() const;
 
   class PollContext;
   struct SendInitialMetadata;
