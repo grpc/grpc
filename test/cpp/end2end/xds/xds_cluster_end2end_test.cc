@@ -699,8 +699,8 @@ TEST_P(EdsTest, ManyLocalitiesStressTest) {
   EdsResourceArgs args;
   for (size_t i = 0; i < kNumLocalities; ++i) {
     std::string name = absl::StrCat("locality", i);
-    EdsResourceArgs::Locality locality(
-        name, CreateEndpointsForBackends(i, i + 1));
+    EdsResourceArgs::Locality locality(name,
+                                       CreateEndpointsForBackends(i, i + 1));
     args.locality_list.emplace_back(std::move(locality));
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -710,9 +710,9 @@ TEST_P(EdsTest, ManyLocalitiesStressTest) {
                      WaitForBackendOptions().set_reset_counters(false),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   // The second ADS response contains 1 locality, which contains backend 50.
-  args = EdsResourceArgs({{
-      "locality0",
-      CreateEndpointsForBackends(kNumLocalities, kNumLocalities + 1)}});
+  args =
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(
+                                         kNumLocalities, kNumLocalities + 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until backend 50 is ready.
   WaitForBackend(DEBUG_LOCATION, kNumLocalities);
