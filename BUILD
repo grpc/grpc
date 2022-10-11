@@ -44,7 +44,7 @@ exports_files(
         "include/grpc/event_engine/slice.h",
         "include/grpc/event_engine/slice_buffer.h",
     ],
-    ["//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 config_setting(

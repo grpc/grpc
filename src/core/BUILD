@@ -17,17 +17,16 @@ load(
     "grpc_cc_library",
 )
 
-exports_files(glob(["**"]))
-
 licenses(["reciprocal"])
 
 package(
     default_visibility = ["//visibility:public"],
     features = [
         "layering_check",
-        "-parse_headers",
     ],
 )
+
+exports_files(glob(["**"]))
 
 grpc_cc_library(
     name = "channel_fwd",
