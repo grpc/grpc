@@ -57,13 +57,6 @@ constexpr char kCdsTypeUrl[] =
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
 
-constexpr char kLdsV2TypeUrl[] = "type.googleapis.com/envoy.api.v2.Listener";
-constexpr char kRdsV2TypeUrl[] =
-    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
-constexpr char kCdsV2TypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
-constexpr char kEdsV2TypeUrl[] =
-    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
-
 // An ADS service implementation.
 class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
  public:
@@ -77,17 +70,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     std::string error_message;
   };
 
-  AdsServiceImpl()
-      : v2_rpc_service_(this, /*is_v2=*/true),
-        v3_rpc_service_(this, /*is_v2=*/false) {}
-
-  bool seen_v2_client() const { return seen_v2_client_; }
-  bool seen_v3_client() const { return seen_v3_client_; }
-
-  ::envoy::service::discovery::v2::AggregatedDiscoveryService::Service*
-  v2_rpc_service() {
-    return &v2_rpc_service_;
-  }
+  AdsServiceImpl() : v3_rpc_service_(this) {}
 
   ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service*
   v3_rpc_service() {
@@ -243,8 +226,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
    public:
     using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
 
-    RpcService(AdsServiceImpl* parent, bool is_v2)
-        : parent_(parent), is_v2_(is_v2) {}
+    RpcService(AdsServiceImpl* parent) : parent_(parent) {}
 
     Status StreamAggregatedResources(ServerContext* context,
                                      Stream* stream) override {
@@ -261,11 +243,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         }
       }
       parent_->AddClient(context->peer());
-      if (is_v2_) {
-        parent_->seen_v2_client_ = true;
-      } else {
-        parent_->seen_v3_client_ = true;
-      }
       // Take a reference of the AdsServiceImpl object, which will go
       // out of scope when this request handler returns.  This ensures
       // that the parent won't be destroyed until this stream is complete.
@@ -307,12 +284,10 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                     "ADS[%p]: Received request for type %s with content %s",
                     this, request.type_url().c_str(),
                     request.DebugString().c_str());
-            const std::string v3_resource_type =
-                TypeUrlToV3(request.type_url());
-            SentState& sent_state = sent_state_map[v3_resource_type];
+            SentState& sent_state = sent_state_map[request.type_url()];
             // Process request.
-            ProcessRequest(request, v3_resource_type, &update_queue,
-                           &subscription_map, &sent_state, &response);
+            ProcessRequest(request, &update_queue, &subscription_map,
+                           &sent_state, &response);
           }
         }
         if (response.has_value()) {
@@ -404,7 +379,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     // Processes a response read from the client.
     // Populates response if needed.
     void ProcessRequest(const DiscoveryRequest& request,
-                        const std::string& v3_resource_type,
                         UpdateQueue* update_queue,
                         SubscriptionMap* subscription_map,
                         SentState* sent_state,
@@ -420,8 +394,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                                       &client_resource_type_version));
         }
         EXPECT_GE(client_resource_type_version,
-                  parent_->resource_type_min_versions_[v3_resource_type])
-            << "resource_type: " << v3_resource_type;
+                  parent_->resource_type_min_versions_[request.type_url()])
+            << "resource_type: " << request.type_url();
       } else {
         int client_nonce;
         GPR_ASSERT(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
@@ -443,19 +417,19 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                   request.version_info().c_str(),
                   response_state.error_message.c_str());
         }
-        parent_->resource_type_response_state_[v3_resource_type].emplace_back(
+        parent_->resource_type_response_state_[request.type_url()].emplace_back(
             std::move(response_state));
         // Ignore requests with stale nonces.
         if (client_nonce < sent_state->nonce) return;
       }
       // Ignore resource types as requested by tests.
-      if (parent_->resource_types_to_ignore_.find(v3_resource_type) !=
+      if (parent_->resource_types_to_ignore_.find(request.type_url()) !=
           parent_->resource_types_to_ignore_.end()) {
         return;
       }
       // Inject bad resources if needed.
       if (parent_->inject_bad_resources_for_resource_type_ ==
-          v3_resource_type) {
+          request.type_url()) {
         response->emplace();
         // Unparseable Resource wrapper.
         auto* resource = (*response)->add_resources();
@@ -466,13 +440,13 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         envoy::service::discovery::v3::Resource resource_wrapper;
         resource_wrapper.set_name("foo");
         resource = resource_wrapper.mutable_resource();
-        resource->set_type_url(v3_resource_type);
+        resource->set_type_url(request.type_url());
         resource->set_value(std::string("\0", 1));
         (*response)->add_resources()->PackFrom(resource_wrapper);
       }
       // Look at all the resource names in the request.
-      auto& subscription_name_map = (*subscription_map)[v3_resource_type];
-      auto& resource_type_state = parent_->resource_map_[v3_resource_type];
+      auto& subscription_name_map = (*subscription_map)[request.type_url()];
+      auto& resource_type_state = parent_->resource_map_[request.type_url()];
       auto& resource_name_map = resource_type_state.resource_name_map;
       std::set<std::string> resources_in_current_request;
       std::set<std::string> resources_added_to_response;
@@ -484,7 +458,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         // Send the resource in the response if either (a) this is
         // a new subscription or (b) there is an updated version of
         // this resource to send.
-        if (parent_->MaybeSubscribe(v3_resource_type, resource_name,
+        if (parent_->MaybeSubscribe(request.type_url(), resource_name,
                                     &subscription_state, &resource_state,
                                     update_queue) ||
             ClientNeedsResourceUpdate(resource_type_state, resource_state,
@@ -496,9 +470,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
           if (resource_state.resource.has_value()) {
             auto* resource = (*response)->add_resources();
             resource->CopyFrom(resource_state.resource.value());
-            if (is_v2_) {
-              resource->set_type_url(request.type_url());
-            }
             if (parent_->wrap_resources_) {
               envoy::service::discovery::v3::Resource resource_wrapper;
               *resource_wrapper.mutable_resource() = std::move(*resource);
@@ -514,14 +485,14 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       // Process unsubscriptions for any resource no longer
       // present in the request's resource list.
       parent_->ProcessUnsubscriptions(
-          v3_resource_type, resources_in_current_request,
+          request.type_url(), resources_in_current_request,
           &subscription_name_map, &resource_name_map);
       // Construct response if needed.
       if (!resources_added_to_response.empty()) {
         CompleteBuildingDiscoveryResponse(
-            v3_resource_type, request.type_url(),
-            resource_type_state.resource_type_version, subscription_name_map,
-            resources_added_to_response, sent_state, &response->value());
+            request.type_url(), resource_type_state.resource_type_version,
+            subscription_name_map, resources_added_to_response, sent_state,
+            &response->value());
       }
     }
 
@@ -533,7 +504,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                        absl::optional<DiscoveryResponse>* response)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
       NoopMutexLock mu(parent_->ads_mu_);
-      const std::string v2_resource_type = TypeUrlToV2(resource_type);
       gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s", this,
               resource_type.c_str(), resource_name.c_str());
       auto& subscription_name_map = (*subscription_map)[resource_type];
@@ -550,14 +520,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
           if (resource_state.resource.has_value()) {
             auto* resource = (*response)->add_resources();
             resource->CopyFrom(resource_state.resource.value());
-            if (is_v2_) {
-              resource->set_type_url(v2_resource_type);
-            }
           }
           CompleteBuildingDiscoveryResponse(
-              resource_type, v2_resource_type,
-              resource_type_state.resource_type_version, subscription_name_map,
-              {resource_name}, sent_state, &response->value());
+              resource_type, resource_type_state.resource_type_version,
+              subscription_name_map, {resource_name}, sent_state,
+              &response->value());
         }
       }
     }
@@ -574,7 +541,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                       ::testing::UnorderedElementsAre(
                           "envoy.lb.does_not_support_overprovisioning",
                           "xds.config.resource-in-sotw"));
-          CheckBuildVersion(request);
           seen_first_request = true;
         }
         {
@@ -590,13 +556,13 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     // Completing the building a DiscoveryResponse by adding common information
     // for all resources and by adding all subscribed resources for LDS and CDS.
     void CompleteBuildingDiscoveryResponse(
-        const std::string& resource_type, const std::string& v2_resource_type,
-        const int version, const SubscriptionNameMap& subscription_name_map,
+        const std::string& resource_type, const int version,
+        const SubscriptionNameMap& subscription_name_map,
         const std::set<std::string>& resources_added_to_response,
         SentState* sent_state, DiscoveryResponse* response)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
       NoopMutexLock mu(parent_->ads_mu_);
-      response->set_type_url(is_v2_ ? v2_resource_type : resource_type);
+      response->set_type_url(resource_type);
       response->set_version_info(std::to_string(version));
       response->set_nonce(std::to_string(++sent_state->nonce));
       if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
@@ -613,9 +579,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
             if (resource_state.resource.has_value()) {
               auto* resource = response->add_resources();
               resource->CopyFrom(resource_state.resource.value());
-              if (is_v2_) {
-                resource->set_type_url(v2_resource_type);
-              }
             }
           }
         }
@@ -623,32 +586,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       sent_state->resource_type_version = version;
     }
 
-    static std::string TypeUrlToV2(const std::string& resource_type) {
-      if (resource_type == kLdsTypeUrl) return kLdsV2TypeUrl;
-      if (resource_type == kRdsTypeUrl) return kRdsV2TypeUrl;
-      if (resource_type == kCdsTypeUrl) return kCdsV2TypeUrl;
-      if (resource_type == kEdsTypeUrl) return kEdsV2TypeUrl;
-      return resource_type;
-    }
-
-    static std::string TypeUrlToV3(const std::string& resource_type) {
-      if (resource_type == kLdsV2TypeUrl) return kLdsTypeUrl;
-      if (resource_type == kRdsV2TypeUrl) return kRdsTypeUrl;
-      if (resource_type == kCdsV2TypeUrl) return kCdsTypeUrl;
-      if (resource_type == kEdsV2TypeUrl) return kEdsTypeUrl;
-      return resource_type;
-    }
-
-    static void CheckBuildVersion(
-        const ::envoy::api::v2::DiscoveryRequest& request) {
-      EXPECT_FALSE(request.node().build_version().empty());
-    }
-
-    static void CheckBuildVersion(
-        const ::envoy::service::discovery::v3::DiscoveryRequest& /*request*/) {}
-
     AdsServiceImpl* parent_;
-    const bool is_v2_;
   };
 
   // Checks whether the client needs to receive a newer version of
@@ -683,17 +621,10 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     clients_.erase(client);
   }
 
-  RpcService<::envoy::service::discovery::v2::AggregatedDiscoveryService,
-             ::envoy::api::v2::DiscoveryRequest,
-             ::envoy::api::v2::DiscoveryResponse>
-      v2_rpc_service_;
   RpcService<::envoy::service::discovery::v3::AggregatedDiscoveryService,
              ::envoy::service::discovery::v3::DiscoveryRequest,
              ::envoy::service::discovery::v3::DiscoveryResponse>
       v3_rpc_service_;
-
-  std::atomic_bool seen_v2_client_{false};
-  std::atomic_bool seen_v3_client_{false};
 
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
@@ -803,29 +734,19 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 
   LrsServiceImpl(int client_load_reporting_interval_seconds,
                  std::set<std::string> cluster_names)
-      : v2_rpc_service_(this),
-        v3_rpc_service_(this),
+      : v3_rpc_service_(this),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         cluster_names_(std::move(cluster_names)) {}
-
-  ::envoy::service::load_stats::v2::LoadReportingService::Service*
-  v2_rpc_service() {
-    return &v2_rpc_service_;
-  }
 
   ::envoy::service::load_stats::v3::LoadReportingService::Service*
   v3_rpc_service() {
     return &v3_rpc_service_;
   }
 
-  size_t request_count() {
-    return v2_rpc_service_.request_count() + v3_rpc_service_.request_count();
-  }
+  size_t request_count() { return v3_rpc_service_.request_count(); }
 
-  size_t response_count() {
-    return v2_rpc_service_.response_count() + v3_rpc_service_.response_count();
-  }
+  size_t response_count() { return v3_rpc_service_.response_count(); }
 
   // Must be called before the LRS call is started.
   void set_send_all_clusters(bool send_all_clusters) {
@@ -909,10 +830,6 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     LrsServiceImpl* parent_;
   };
 
-  RpcService<::envoy::service::load_stats::v2::LoadReportingService,
-             ::envoy::service::load_stats::v2::LoadStatsRequest,
-             ::envoy::service::load_stats::v2::LoadStatsResponse>
-      v2_rpc_service_;
   RpcService<::envoy::service::load_stats::v3::LoadReportingService,
              ::envoy::service::load_stats::v3::LoadStatsRequest,
              ::envoy::service::load_stats::v3::LoadStatsResponse>

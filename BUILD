@@ -4602,7 +4602,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
-        "src/core/ext/xds/xds_resource_type.cc",
     ],
     hdrs = [
         "src/core/ext/xds/xds_api.h",

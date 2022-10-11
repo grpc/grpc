@@ -988,7 +988,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_lb_policy_registry.h',
                       'src/core/ext/xds/xds_listener.cc',
                       'src/core/ext/xds/xds_listener.h',
-                      'src/core/ext/xds/xds_resource_type.cc',
                       'src/core/ext/xds/xds_resource_type.h',
                       'src/core/ext/xds/xds_resource_type_impl.h',
                       'src/core/ext/xds/xds_route_config.cc',

@@ -97,13 +97,9 @@ class XdsClusterResourceType
   absl::string_view type_url() const override {
     return "envoy.config.cluster.v3.Cluster";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.Cluster";
-  }
 
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource,
-                      bool is_v2) const override;
+                      absl::string_view serialized_resource) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
