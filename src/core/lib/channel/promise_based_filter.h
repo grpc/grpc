@@ -530,6 +530,9 @@ class ServerCallData : public BaseCallData {
     kCancelled
   };
 
+  static const char* StateString(RecvInitialState state);
+  static const char* StateString(SendTrailingState state);
+
   class PollContext;
   struct SendInitialMetadata;
 

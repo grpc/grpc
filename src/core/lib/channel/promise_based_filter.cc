@@ -1281,6 +1281,26 @@ struct ServerCallData::SendInitialMetadata {
   State state = kInitial;
   CapturedBatch batch;
   Latch<ServerMetadata*>* server_initial_metadata_publisher = nullptr;
+
+  static const char* StateString(State state) {
+    switch (state) {
+      case kInitial:
+        return "INITIAL";
+      case kGotLatch:
+        return "GOT_LATCH";
+      case kQueuedWaitingForLatch:
+        return "QUEUED_WAITING_FOR_LATCH";
+      case kQueuedAndGotLatch:
+        return "QUEUED_AND_GOT_LATCH";
+      case kQueuedAndSetLatch:
+        return "QUEUED_AND_SET_LATCH";
+      case kForwarded:
+        return "FORWARDED";
+      case kCancelled:
+        return "CANCELLED";
+    }
+    return "UNKNOWN";
+  }
 };
 
 class ServerCallData::PollContext {
@@ -1332,6 +1352,34 @@ class ServerCallData::PollContext {
   bool repoll_ = false;
   bool have_scoped_activity_;
 };
+
+const char* ServerCallData::StateString(RecvInitialState state) {
+  switch (state) {
+    case RecvInitialState::kInitial:
+      return "INITIAL";
+    case RecvInitialState::kForwarded:
+      return "FORWARDED";
+    case RecvInitialState::kComplete:
+      return "COMPLETE";
+    case RecvInitialState::kResponded:
+      return "RESPONDED";
+  }
+  return "UNKNOWN";
+}
+
+const char* ServerCallData::StateString(SendTrailingState state) {
+  switch (state) {
+    case SendTrailingState::kInitial:
+      return "INITIAL";
+    case SendTrailingState::kForwarded:
+      return "FORWARDED";
+    case SendTrailingState::kQueued:
+      return "QUEUED";
+    case SendTrailingState::kCancelled:
+      return "CANCELLED";
+  }
+  return "UNKNOWN";
+}
 
 ServerCallData::ServerCallData(grpc_call_element* elem,
                                const grpc_call_element_args* args,
@@ -1594,6 +1642,19 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
 // Wakeup and poll the promise if appropriate.
 void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   PollContext poll_ctx(this, flusher);
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG,
+            "%s: WakeInsideCombiner have_promise=%s recv_initial_state=%s "
+            "send_trailing_state=%s%s",
+            LogTag().c_str(), promise_.has_value() ? "true" : "false",
+            StateString(recv_initial_state_), StateString(send_trailing_state_),
+            send_initial_metadata_ == nullptr
+                ? ""
+                : absl::StrCat(" send_initial_metadata=",
+                               SendInitialMetadata::StateString(
+                                   send_initial_metadata_->state))
+                      .c_str());
+  }
   if (send_initial_metadata_ != nullptr &&
       send_initial_metadata_->state ==
           SendInitialMetadata::kQueuedAndGotLatch) {
@@ -1612,6 +1673,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
+    gpr_log(GPR_DEBUG, "%s: WakeInsideCombiner poll=%s", LogTag().c_str(),
+            PollToString(poll, [](const ServerMetadataHandle& h) {
+              return h->DebugString();
+            }).c_str());
     if (send_initial_metadata_ != nullptr &&
         send_initial_metadata_->state ==
             SendInitialMetadata::kQueuedAndSetLatch) {
