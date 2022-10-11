@@ -392,8 +392,8 @@ HttpConnectionManagerParse(
         if ((is_client && !filter_impl->IsSupportedOnClients()) ||
             (!is_client && !filter_impl->IsSupportedOnServers())) {
           if (!is_optional) {
-            errors->AddError(absl::StrFormat(
-                "filter %s is not supported on %s", extension->type,
+            errors->AddError(absl::StrCat(
+                "filter is not supported on ",
                 is_client ? "clients" : "servers"));
           }
           continue;
@@ -471,6 +471,10 @@ HttpConnectionManagerParse(
       if (rds == nullptr) {
         errors->AddError("neither route_config nor rds fields are present");
       } else {
+        // Get the route_config_name.
+        http_connection_manager.route_config_name = UpbStringToStdString(
+            envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+                rds));
         // Check that the ConfigSource specifies ADS.
         const envoy_config_core_v3_ConfigSource* config_source =
             envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
@@ -481,11 +485,6 @@ HttpConnectionManagerParse(
         } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
                    !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
           errors->AddError("ConfigSource does not specify ADS or SELF");
-        } else {
-          // Get the route_config_name.
-          http_connection_manager.route_config_name = UpbStringToStdString(
-              envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-                  rds));
         }
       }
     }
@@ -510,7 +509,8 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     auto hcm = HttpConnectionManagerParse(true /* is_client */, context,
                                           serialized_hcm_config, is_v2,
                                           &errors);
-    if (hcm.has_value()) {
+    if (errors.ok()) {
+      GPR_ASSERT(hcm.has_value());
       XdsListenerResource lds_update;
       lds_update.type = XdsListenerResource::ListenerType::kHttpApiListener;
       lds_update.http_connection_manager = std::move(*hcm);

@@ -64,10 +64,13 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   balancer_->ads_service()->SetLdsResource(listener);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::HasSubstr(
-          "HttpConnectionManager neither has inlined route_config nor RDS."));
+      "xDS response validation errors: ["
+      "resource index 0: server.example.com: INVALID_ARGUMENT: "
+      "errors validating ApiListener: ["
+      "field:api_listener.api_listener.value[HttpConnectionManager] "
+      "error:neither route_config nor rds fields are present]]");
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -84,9 +87,12 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
   balancer_->ads_service()->SetLdsResource(listener);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "HttpConnectionManager missing config_source for RDS."));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value[HttpConnectionManager]"
+            ".rds.config_source error:field not present]]");
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -105,9 +111,13 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
   balancer_->ads_service()->SetLdsResource(listener);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
-                                   "RDS does not specify ADS or SELF."));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value[HttpConnectionManager]"
+            ".rds.config_source "
+            "error:ConfigSource does not specify ADS or SELF]]");
 }
 
 // Tests that LDS client accepts the rds message in the
@@ -197,8 +207,12 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("empty filter name at index 0"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value[HttpConnectionManager]"
+            ".http_filters[0].name error:empty filter name]]");
 }
 
 // Test that we NACK duplicate HTTP filter names.
@@ -335,11 +349,15 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::HasSubstr(
-          "filter config for type "
-          "envoy.extensions.filters.http.fault.v3.HTTPFault failed to parse"));
+      "xDS response validation errors: ["
+      "resource index 0: server.example.com: INVALID_ARGUMENT: "
+      "errors validating ApiListener: ["
+      "field:api_listener.api_listener.value[HttpConnectionManager]"
+      ".http_filters[0].typed_config.value["
+      "envoy.extensions.filters.http.fault.v3.HTTPFault] "
+      "error:could not parse fault injection filter config]]");
 }
 
 // Test that we NACK HTTP filters unsupported on client-side.
@@ -360,10 +378,15 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::HasSubstr("Filter grpc.testing.server_only_http_filter is not "
-                           "supported on clients"));
+      "xDS response validation errors: ["
+      "resource index 0: server.example.com: INVALID_ARGUMENT: "
+      "errors validating ApiListener: ["
+      "field:api_listener.api_listener.value[HttpConnectionManager]"
+      ".http_filters[0].typed_config.value["
+      "grpc.testing.server_only_http_filter] "
+      "error:filter is not supported on clients]]");
 }
 
 // Test that we ignore optional HTTP filters unsupported on client-side.
@@ -405,8 +428,12 @@ TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value[HttpConnectionManager]"
+            ".xff_num_trusted_hops error:must be zero]]");
 }
 
 // Test that we NACK non-empty original_ip_detection_extensions
@@ -422,9 +449,13 @@ TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
+      "xDS response validation errors: ["
+      "resource index 0: server.example.com: INVALID_ARGUMENT: "
+      "errors validating ApiListener: ["
+      "field:api_listener.api_listener.value[HttpConnectionManager]"
+      ".original_ip_detection_extensions error:must be empty]]");
 }
 
 using LdsV2Test = XdsEnd2endTest;

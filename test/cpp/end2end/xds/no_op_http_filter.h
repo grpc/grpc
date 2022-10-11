@@ -31,16 +31,18 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 
   void PopulateSymtab(upb_DefPool* /*symtab*/) const override {}
 
-  absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
+  absl::optional<grpc_core::XdsHttpFilterImpl::FilterConfig>
   GenerateFilterConfig(grpc_core::XdsExtension /*extension*/,
-                       upb_Arena* /*arena*/) const override {
+                       upb_Arena* /*arena*/,
+                       grpc_core::ValidationErrors* /*errors*/) const override {
     return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
   }
 
-  absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
+  absl::optional<grpc_core::XdsHttpFilterImpl::FilterConfig>
   GenerateFilterConfigOverride(
       grpc_core::XdsExtension /*serialized_filter_config*/,
-      upb_Arena* /*arena*/) const override {
+      upb_Arena* /*arena*/,
+      grpc_core::ValidationErrors* /*errors*/) const override {
     return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
   }
 
