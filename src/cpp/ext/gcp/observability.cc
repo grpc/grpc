@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"

@@ -506,8 +506,10 @@ class Choices:
             choices = new_choices
 
         best = None
-        def final_scorer(x): return (
-            total_avoidness(x), scorer(x), total_score(x))
+
+        def final_scorer(x):
+            return (total_avoidness(x), scorer(x), total_score(x))
+
         for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
