@@ -20,6 +20,7 @@ import os
 import sys
 import threading
 import time
+from typing import Optional
 
 import grpc
 from grpc import _common
@@ -27,6 +28,8 @@ from grpc import _compression
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 import grpc.experimental
+
+from ._typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1447,7 +1450,7 @@ def _augment_options(base_options, compression):
     ),)
 
 
-def _separate_channel_options(options):
+def _separate_channel_options(options: ChannelArgumentType):
     """Separates core channel options from Python channel options."""
     core_options = []
     python_options = []
@@ -1462,7 +1465,9 @@ def _separate_channel_options(options):
 class Channel(grpc.Channel):
     """A cygrpc.Channel-backed implementation of grpc.Channel."""
 
-    def __init__(self, target, options, credentials, compression):
+    def __init__(self, target: str, options: ChannelArgumentType,
+                 credentials: Optional[grpc.ChannelCredentials],
+                 compression: Optional[grpc.Compression]):
         """Constructor.
 
         Args:
@@ -1484,7 +1489,7 @@ class Channel(grpc.Channel):
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_increment_channel_count()
 
-    def _process_python_options(self, python_options):
+    def _process_python_options(self, python_options: ChannelArgumentType):
         """Sets channel attributes according to python-only channel options."""
         for pair in python_options:
             if pair[0] == grpc.experimental.ChannelOptions.SingleThreadedUnaryStream:
