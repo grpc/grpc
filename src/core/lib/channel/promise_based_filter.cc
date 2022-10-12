@@ -328,6 +328,37 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
   }
 }
 
+void BaseCallData::SendMessage::Done(const ServerMetadataHandle& metadata,
+                                     Flusher* flusher) {
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(
+        GPR_DEBUG, "%s SendMessage.Done st=%s md=%s", base_->LogTag().c_str(),
+        StateString(state_),
+        metadata.get() == nullptr ? "null" : metadata->DebugString().c_str());
+  }
+  switch (state_) {
+    case State::kCancelled:
+      break;
+    case State::kInitial:
+    case State::kIdle:
+      state_ = State::kCancelled;
+      break;
+    case State::kGotBatchNoPipe:
+    case State::kGotBatch:
+    case State::kForwardedBatch:
+    case State::kBatchCompleted:
+      abort();
+      break;
+    case State::kPushedToPipe:
+      GPR_ASSERT(metadata->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK) !=
+                 GRPC_STATUS_OK);
+      push_.reset();
+      next_.reset();
+      state_ = State::kCancelled;
+      break;
+  }
+}
+
 void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG, "%s SendMessage.WakeInsideCombiner st=%s",
@@ -493,7 +524,49 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
       return;
   }
   Flusher flusher(base_);
+  ScopedContext ctx(base_);
   base_->WakeInsideCombiner(&flusher);
+}
+
+void BaseCallData::ReceiveMessage::Done(const ServerMetadataHandle& md,
+                                        Flusher* flusher) {
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s ReceiveMessage.done st=%s md=%s",
+            base_->LogTag().c_str(), StateString(state_),
+            md.get() == nullptr ? "null" : md->DebugString().c_str());
+  }
+  switch (state_) {
+    case State::kInitial:
+    case State::kIdle:
+      state_ = State::kCancelled;
+      break;
+    case State::kPushedToPipe: {
+      auto status_code = GRPC_STATUS_UNKNOWN;
+      if (md.get() != nullptr) {
+        status_code = md->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK);
+      }
+      GPR_ASSERT(status_code != GRPC_STATUS_OK);
+      Slice* message = md.get() == nullptr
+                           ? nullptr
+                           : md->get_pointer(GrpcMessageMetadata());
+      push_.reset();
+      next_.reset();
+      flusher->AddClosure(
+          intercepted_on_complete_,
+          absl::Status(static_cast<absl::StatusCode>(status_code),
+                       message == nullptr ? "" : message->as_string_view()),
+          "recv_message_done");
+      state_ = State::kCancelled;
+    } break;
+    case State::kPulledFromPipe:
+    case State::kBatchCompleted:
+    case State::kBatchCompletedNoPipe:
+    case State::kForwardedBatch:
+    case State::kForwardedBatchNoPipe:
+      abort();
+    case State::kCancelled:
+      break;
+  }
 }
 
 void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
@@ -1845,6 +1918,12 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
       promise_ = ArenaPromise<ServerMetadataHandle>();
       auto* md = UnwrapMetadata(std::move(*r));
       bool destroy_md = true;
+      if (send_message() != nullptr) {
+        send_message()->Done(*r, flusher);
+      }
+      if (receive_message() != nullptr) {
+        receive_message()->Done(*r, flusher);
+      }
       switch (send_trailing_state_) {
         case SendTrailingState::kQueued: {
           if (send_trailing_metadata_batch_->payload->send_trailing_metadata

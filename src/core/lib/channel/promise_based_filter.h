@@ -267,6 +267,7 @@ class BaseCallData : public Activity, private Wakeable {
     void StartOp(CapturedBatch batch);
     void GotPipe(PipeReceiver<MessageHandle>* receiver);
     void WakeInsideCombiner(Flusher* flusher);
+    void Done(const ServerMetadataHandle& metadata, Flusher* flusher);
 
    private:
     enum class State : uint8_t {
@@ -307,6 +308,7 @@ class BaseCallData : public Activity, private Wakeable {
     void StartOp(CapturedBatch& batch);
     void GotPipe(PipeSender<MessageHandle>* sender);
     void WakeInsideCombiner(Flusher* flusher);
+    void Done(const ServerMetadataHandle& metadata, Flusher* flusher);
 
    private:
     enum class State : uint8_t {
