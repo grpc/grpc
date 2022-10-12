@@ -346,28 +346,6 @@ class AdsServiceImpl
     return Status::OK;
   }
 
-  // NB: clang's annotalysis is confused by the use of inner template
-  // classes here and *ignores* the exclusive lock annotation on some
-  // functions. See https://bugs.llvm.org/show_bug.cgi?id=51368.
-  //
-  // This class is used for a dual purpose:
-  // - it convinces clang that the lock is held in a given scope
-  // - when used in a function that is annotated to require the inner lock it
-  //   will cause compilation to fail if the upstream bug is fixed!
-  //
-  // If you arrive here because of a compilation failure, that might mean the
-  // clang bug is fixed! Please report that on the ticket.
-  //
-  // Since the buggy compiler will still need to be supported, consider
-  // wrapping this class in a compiler version #if and replace its usage
-  // with a macro whose expansion is conditional on the compiler version. In
-  // time (years? decades?) this code can be deleted altogether.
-  class ABSL_SCOPED_LOCKABLE NoopMutexLock {
-   public:
-    explicit NoopMutexLock(grpc_core::Mutex& mu)
-        ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) {}
-    ~NoopMutexLock() ABSL_UNLOCK_FUNCTION() {}
-  };
   // Processes a response read from the client.
   // Populates response if needed.
   void ProcessRequest(const DiscoveryRequest& request,
@@ -376,7 +354,6 @@ class AdsServiceImpl
                       SentState* sent_state,
                       absl::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
-    NoopMutexLock mu(ads_mu_);
     // Check the nonce sent by the client, if any.
     // (This will be absent on the first request on a stream.)
     if (request.response_nonce().empty()) {
@@ -495,7 +472,6 @@ class AdsServiceImpl
                      SubscriptionMap* subscription_map, SentState* sent_state,
                      absl::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
-    NoopMutexLock mu(ads_mu_);
     gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s", this,
             resource_type.c_str(), resource_name.c_str());
     auto& subscription_name_map = (*subscription_map)[resource_type];
@@ -553,7 +529,6 @@ class AdsServiceImpl
       const std::set<std::string>& resources_added_to_response,
       SentState* sent_state, DiscoveryResponse* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
-    NoopMutexLock mu(ads_mu_);
     response->set_type_url(resource_type);
     response->set_version_info(std::to_string(version));
     response->set_nonce(std::to_string(++sent_state->nonce));
