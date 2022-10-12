@@ -457,9 +457,6 @@ def grpc_end2end_tests():
         visibility = [
             "//src/objective-c/tests:__subpackages__",
         ],
-        visibility = [
-            "//src/objective-c/tests:__subpackages__",
-        ],
     )
     for f, fopt in END2END_FIXTURES.items():
         bin_name = "%s_test" % f
