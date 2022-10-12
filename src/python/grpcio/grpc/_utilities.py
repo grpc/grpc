@@ -17,9 +17,11 @@ import collections
 import logging
 import threading
 import time
+from typing import Dict, Optional
 
 import grpc
 from grpc import _common
+from grpc._typing import DoneCallbackType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,23 +45,26 @@ class RpcMethodHandler(
 
 class DictionaryGenericHandler(grpc.ServiceRpcHandler):
 
-    def __init__(self, service, method_handlers):
+    def __init__(self, service: str,
+                 method_handlers: Dict[str, grpc.RpcMethodHandler]):
         self._name = service
         self._method_handlers = {
             _common.fully_qualified_method(service, method): method_handler
             for method, method_handler in method_handlers.items()
         }
 
-    def service_name(self):
+    def service_name(self) -> str:
         return self._name
 
-    def service(self, handler_call_details):
+    def service(
+            self, handler_call_details: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         return self._method_handlers.get(handler_call_details.method)
 
 
 class _ChannelReadyFuture(grpc.Future):
 
-    def __init__(self, channel):
+    def __init__(self, channel: grpc.Channel):
         self._condition = threading.Condition()
         self._channel = channel
 
@@ -67,7 +72,7 @@ class _ChannelReadyFuture(grpc.Future):
         self._cancelled = False
         self._done_callbacks = []
 
-    def _block(self, timeout):
+    def _block(self, timeout: Optional[float]) -> None:
         until = None if timeout is None else time.time() + timeout
         with self._condition:
             while True:
@@ -85,7 +90,7 @@ class _ChannelReadyFuture(grpc.Future):
                         else:
                             self._condition.wait(timeout=remaining)
 
-    def _update(self, connectivity):
+    def _update(self, connectivity: Optional[grpc.ChannelConnectivity]) -> None:
         with self._condition:
             if (not self._cancelled and
                     connectivity is grpc.ChannelConnectivity.READY):
@@ -103,7 +108,7 @@ class _ChannelReadyFuture(grpc.Future):
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception(_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE)
 
-    def cancel(self):
+    def cancel(self) -> bool:
         with self._condition:
             if not self._matured:
                 self._cancelled = True
@@ -122,28 +127,28 @@ class _ChannelReadyFuture(grpc.Future):
 
         return True
 
-    def cancelled(self):
+    def cancelled(self) -> bool:
         with self._condition:
             return self._cancelled
 
-    def running(self):
+    def running(self) -> bool:
         with self._condition:
             return not self._cancelled and not self._matured
 
-    def done(self):
+    def done(self) -> bool:
         with self._condition:
             return self._cancelled or self._matured
 
-    def result(self, timeout=None):
+    def result(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def exception(self, timeout=None):
+    def exception(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def traceback(self, timeout=None):
+    def traceback(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn: DoneCallbackType):
         with self._condition:
             if not self._cancelled and not self._matured:
                 self._done_callbacks.append(fn)
@@ -161,7 +166,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._channel.unsubscribe(self._update)
 
 
-def channel_ready_future(channel):
+def channel_ready_future(channel: grpc.Channel) -> _ChannelReadyFuture:
     ready_future = _ChannelReadyFuture(channel)
     ready_future.start()
     return ready_future

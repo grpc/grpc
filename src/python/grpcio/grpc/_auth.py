@@ -14,11 +14,13 @@
 """GRPCAuthMetadataPlugins for standard authentication."""
 
 import inspect
+from typing import Optional
 
 import grpc
 
 
-def _sign_request(callback, token, error):
+def _sign_request(callback: grpc.AuthMetadataPluginCallback, token: str,
+                  error: Optional[Exception]):
     metadata = (('authorization', 'Bearer {}'.format(token)),)
     callback(metadata, error)
 
@@ -33,7 +35,8 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         self._is_jwt = 'additional_claims' in inspect.getfullargspec(
             credentials.get_access_token).args
 
-    def __call__(self, context, callback):
+    def __call__(self, context: grpc.AuthMetadataContext,
+                 callback: grpc.AuthMetadataPluginCallback):
         try:
             if self._is_jwt:
                 access_token = self._credentials.get_access_token(
@@ -51,8 +54,9 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
 class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
     """Metadata wrapper for raw access token credentials."""
 
-    def __init__(self, access_token):
+    def __init__(self, access_token: str):
         self._access_token = access_token
 
-    def __call__(self, context, callback):
+    def __call__(self, context: grpc.AuthMetadataContext,
+                 callback: grpc.AuthMetadataPluginCallback):
         _sign_request(callback, self._access_token, None)
