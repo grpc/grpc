@@ -265,7 +265,6 @@ std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_StreamCreateDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
-  TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
@@ -286,7 +285,6 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
       });
   grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), absl::OkStatus());
   f.FlushExecCtx();
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_StreamCreateDestroy);
 
@@ -318,7 +316,6 @@ class RepresentativeClientInitialMetadata {
 
 template <class Metadata>
 static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
@@ -362,13 +359,11 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), absl::OkStatus());
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
-  track_counters.Finish(state);
 }
 BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
                    RepresentativeClientInitialMetadata);
 
 static void BM_TransportEmptyOp(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
@@ -406,7 +401,6 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   s->DestroyThen(
       MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
   f.FlushExecCtx();
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_TransportEmptyOp);
 

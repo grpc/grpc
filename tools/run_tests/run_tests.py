@@ -278,7 +278,8 @@ class CLanguage(object):
             self._cmake_architecture_windows = 'x64' if self.args.arch == 'x64' else 'Win32'
             # when builing with Ninja, the VS common tools need to be activated first
             self._activate_vs_tools_windows = activate_vs_tools
-            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x86'
+            # "x64_x86" means create 32bit binaries, but use 64bit toolkit to secure more memory for the build
+            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x64_x86'
 
         else:
             if self.platform == 'linux':

@@ -13,18 +13,16 @@
 # limitations under the License.
 """Utilities for working with callables."""
 
-import abc
+from abc import ABC
 import collections
 import enum
 import functools
 import logging
 
-import six
-
 _LOGGER = logging.getLogger(__name__)
 
 
-class Outcome(six.with_metaclass(abc.ABCMeta)):
+class Outcome(ABC):
     """A sum type describing the outcome of some call.
 
   Attributes:

@@ -952,6 +952,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/config/core_configuration.h )
   s.files += %w( src/core/lib/debug/event_log.cc )
   s.files += %w( src/core/lib/debug/event_log.h )
+  s.files += %w( src/core/lib/debug/histogram_view.cc )
+  s.files += %w( src/core/lib/debug/histogram_view.h )
   s.files += %w( src/core/lib/debug/stats.cc )
   s.files += %w( src/core/lib/debug/stats.h )
   s.files += %w( src/core/lib/debug/stats_data.cc )
