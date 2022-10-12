@@ -21,6 +21,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/types/variant.h"
+#include "promise_based_filter.h"
 
 #include <grpc/status.h>
 
@@ -951,7 +952,9 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->send_trailing_metadata && !batch->send_message &&
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
+    PollContext poll_ctx(this, &flusher);
     Cancel(batch->payload->cancel_stream.cancel_error);
+    poll_ctx.Run();
     if (is_last()) {
       batch.CompleteWith(&flusher);
     } else {
@@ -1477,9 +1480,18 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_,
                     RecvInitialMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                    RecvTrailingMetadataReadyCallback, this,
+                    grpc_schedule_on_exec_ctx);
 }
 
-ServerCallData::~ServerCallData() { GPR_ASSERT(poll_ctx_ == nullptr); }
+ServerCallData::~ServerCallData() {
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s ~ServerCallData %s", LogTag().c_str(),
+            DebugString().c_str());
+  }
+  GPR_ASSERT(poll_ctx_ == nullptr);
+}
 
 // Activity implementation.
 void ServerCallData::ForceImmediateRepoll() {
@@ -1507,6 +1519,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->send_trailing_metadata && !batch->send_message &&
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
+    PollContext poll_ctx(this, &flusher);
     Cancel(batch->payload->cancel_stream.cancel_error, &flusher);
     if (is_last()) {
       batch.CompleteWith(&flusher);
@@ -1532,6 +1545,16 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &recv_initial_metadata_ready_;
     recv_initial_state_ = RecvInitialState::kForwarded;
+  }
+
+  // Hook recv_trailing_metadata so we can see cancellation from the client.
+  if (batch->recv_trailing_metadata) {
+    recv_trailing_metadata_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+    original_recv_trailing_metadata_ready_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &recv_trailing_metadata_ready_;
   }
 
   // send_initial_metadata
@@ -1691,13 +1714,36 @@ Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
   GPR_UNREACHABLE_CODE(return Pending{});
 }
 
+void ServerCallData::RecvTrailingMetadataReadyCallback(
+    void* arg, grpc_error_handle error) {
+  static_cast<ServerCallData*>(arg)->RecvTrailingMetadataReady(
+      std::move(error));
+}
+
+void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s: RecvTrailingMetadataReady %s %s", LogTag().c_str(),
+            error.ToString().c_str(),
+            recv_trailing_metadata_->DebugString().c_str());
+  }
+  Flusher flusher(this);
+  PollContext poll_ctx(this, &flusher);
+  Cancel(error, &flusher);
+  flusher.AddClosure(original_recv_trailing_metadata_ready_, std::move(error),
+                     "continue recv trailing");
+}
+
 void ServerCallData::RecvInitialMetadataReadyCallback(void* arg,
                                                       grpc_error_handle error) {
-  static_cast<ServerCallData*>(arg)->RecvInitialMetadataReady(error);
+  static_cast<ServerCallData*>(arg)->RecvInitialMetadataReady(std::move(error));
 }
 
 void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG, "%s: RecvInitialMetadataReady %s", LogTag().c_str(),
+            error.ToString().c_str());
+  }
   GPR_ASSERT(recv_initial_state_ == RecvInitialState::kForwarded);
   // If there was an error we just propagate that through
   if (!error.ok()) {

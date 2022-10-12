@@ -555,6 +555,9 @@ class ServerCallData : public BaseCallData {
   static void RecvInitialMetadataReadyCallback(void* arg,
                                                grpc_error_handle error);
   void RecvInitialMetadataReady(grpc_error_handle error);
+  static void RecvTrailingMetadataReadyCallback(void* arg,
+                                                grpc_error_handle error);
+  void RecvTrailingMetadataReady(grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner(Flusher* flusher) override;
   void OnWakeup() override;
@@ -563,12 +566,18 @@ class ServerCallData : public BaseCallData {
   ArenaPromise<ServerMetadataHandle> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  // Pointer to where trailing metadata will be stored.
+  grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   // State for sending initial metadata.
   SendInitialMetadata* send_initial_metadata_ = nullptr;
-  // Closure to call when we're done with the trailing metadata.
+  // Closure to call when we're done with the initial metadata.
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
+  // Closure to call when we're done with the trailing metadata.
+  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
+  // Our closure pointing to RecvTrailingMetadataReadyCallback.
+  grpc_closure recv_trailing_metadata_ready_;
   // Error received during cancellation.
   grpc_error_handle cancelled_error_;
   // Trailing metadata batch
