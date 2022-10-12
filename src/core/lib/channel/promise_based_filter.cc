@@ -510,7 +510,11 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
         push_ = sender_->Push(MessageHandle(&message_, false));
         next_ = pipe_.receiver.Next();
       } else {
-        abort();
+        sender_->Close();
+        state_ = State::kCancelled;
+        flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
+                            absl::OkStatus(), "recv_message");
+        break;
       }
       GPR_ASSERT(state_ == State::kPushedToPipe);
       ABSL_FALLTHROUGH_INTENDED;
