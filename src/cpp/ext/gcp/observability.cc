@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/gcp/observability.h"
-
 #include <stdint.h>
 
 #include <memory>
@@ -34,6 +32,7 @@
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
+#include <grpcpp/ext/gcp_observability.h>
 #include <grpcpp/opencensus.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>

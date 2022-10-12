@@ -39,6 +39,11 @@ exports_files([
     "etc/roots.pem",
 ])
 
+exports_files(
+    glob(["include/**"]),
+    visibility = ["//:__subpackages__"],
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},
@@ -7772,6 +7777,20 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "slice_refcount",
+    ],
+)
+
+# This is an EXPERIMENTAL target subject to change.
+grpc_cc_library(
+    name = "grpcpp_gcp_observability",
+    hdrs = [
+        "include/grpcpp/ext/gcp_observability.h",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:grpcpp_gcp_observability"],
+    deps = [
+        "//src/cpp/ext/gcp:observability",
     ],
 )
 

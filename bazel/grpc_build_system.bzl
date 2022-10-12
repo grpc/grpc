@@ -94,6 +94,7 @@ def _update_visibility(visibility):
         "endpoint_tests": PRIVATE,
         "grpclb": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
+        "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
