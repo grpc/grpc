@@ -175,6 +175,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_listener_resource_type_test",
+    srcs = ["xds_listener_resource_type_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_xds_client",
+        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
+        "//src/proto/grpc/testing/xds/v3:listener_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//src/proto/grpc/testing/xds/v3:tls_proto",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_cluster_resource_type_test",
     srcs = ["xds_cluster_resource_type_test.cc"],
     external_deps = ["gtest"],
