@@ -712,8 +712,8 @@ TEST_F(XdsEndpointTest, DuplicateAddresses) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
