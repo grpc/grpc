@@ -283,8 +283,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
-  builder->RegisterService(ads_service_->v3_rpc_service());
-  builder->RegisterService(lrs_service_->v3_rpc_service());
+  builder->RegisterService(ads_service_.get());
+  builder->RegisterService(lrs_service_.get());
 }
 
 void XdsEnd2endTest::BalancerServerThread::StartAllServices() {
