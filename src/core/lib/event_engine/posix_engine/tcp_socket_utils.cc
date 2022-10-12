@@ -197,7 +197,7 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec) {
   int fd, flags;
-  socklen_t len = addr.size();
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   fd = accept(sockfd, const_cast<sockaddr*>(addr.address()), &len);
   if (fd >= 0) {
     if (nonblock) {
@@ -226,13 +226,8 @@ int Accept4(int sockfd,
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
-  grpc_event_engine::experimental::EventEngine::ResolvedAddress temp_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  memset(const_cast<sockaddr*>(temp_addr.address()), 0,
-         EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
-  int ret =
-      accept4(sockfd, const_cast<sockaddr*>(temp_addr.address()), &len, flags);
-  addr = EventEngine::ResolvedAddress(temp_addr.address(), len);
+  int ret = accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
   return ret;
 }
 
