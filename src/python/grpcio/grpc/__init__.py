@@ -18,6 +18,7 @@ import contextlib
 import enum
 import logging
 import sys
+import six
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -659,7 +660,7 @@ class ServerCertificateConfiguration(object):
 ########################  Multi-Callable Interfaces  ###########################
 
 
-class UnaryUnaryMultiCallable(abc.ABC):
+class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     """Affords invoking a unary-unary RPC from client-side."""
 
     @abc.abstractmethod
