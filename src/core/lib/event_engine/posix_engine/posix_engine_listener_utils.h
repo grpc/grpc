@@ -58,9 +58,6 @@ class ListenerSocketsContainer {
   virtual absl::StatusOr<ListenerSocket> Find(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
           addr) = 0;
-  // Remove and close socket from the internal db of sockets associated with
-  // a listener.
-  virtual void Erase(int fd) = 0;
 };
 
 // If successful, add a socket to ListenerSocketsContainer for \a addr, set \a

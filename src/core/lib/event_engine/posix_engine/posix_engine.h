@@ -100,22 +100,6 @@ class PosixEventEngine final
     : public EventEngine,
       public grpc_event_engine::posix_engine::Scheduler {
  public:
-  class PosixEndpoint : public EventEngine::Endpoint {
-   public:
-    ~PosixEndpoint() override;
-    void Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs* args) override;
-    void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* args) override;
-    const ResolvedAddress& GetPeerAddress() const override;
-    const ResolvedAddress& GetLocalAddress() const override;
-  };
-  class PosixListener : public EventEngine::Listener {
-   public:
-    ~PosixListener() override;
-    absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
-    absl::Status Start() override;
-  };
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
     ~PosixDNSResolver() override;

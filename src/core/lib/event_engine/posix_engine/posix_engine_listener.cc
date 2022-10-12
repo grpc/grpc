@@ -24,7 +24,6 @@
 #include <thread>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -34,38 +33,39 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#ifdef GRPC_POSIX_SOCKET_TCP
+#include <errno.h>  // IWYU pragma: keep
+
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/posix_engine/timer.h"
-#include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/gprpp/sync.h"
+#endif
 
 namespace grpc_event_engine {
 namespace posix_engine {
 
-PosixEngineListener::PosixEngineListener(
+#ifdef GRPC_POSIX_SOCKET_TCP
+PosixEngineListenerImpl::PosixEngineListenerImpl(
     EventEngine::Listener::AcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const grpc_event_engine::experimental::EndpointConfig& config,
     std::unique_ptr<grpc_event_engine::experimental::MemoryAllocatorFactory>
         memory_allocator_factory,
     PosixEventPoller* poller, std::shared_ptr<EventEngine> engine)
-    : on_accept_(std::move(on_accept)),
-      on_shutdown_(std::move(on_shutdown)),
+    : poller_(poller),
       options_(TcpOptionsFromEndpointConfig(config)),
-      memory_allocator_factory_(std::move(memory_allocator_factory)),
       engine_(std::move(engine)),
-      sockets_(this) {}
+      acceptors_(this),
+      on_accept_(std::move(on_accept)),
+      on_shutdown_(std::move(on_shutdown)),
+      memory_allocator_factory_(std::move(memory_allocator_factory)) {}
 
-absl::StatusOr<int> PosixEngineListener::Bind(
+absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr) {
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = SockaddrGetPort(res_addr);
   absl::StatusOr<int> err;
-  int assigned_port;
   absl::MutexLock lock(&this->mu_);
   GPR_ASSERT(!this->started_);
   GPR_ASSERT(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
@@ -73,11 +73,11 @@ absl::StatusOr<int> PosixEngineListener::Bind(
 
   /// Check if this is a wildcard port, and if so, try to keep the port the same
   /// as some previously created listener socket.
-  for (auto it = sockets_.begin(); requested_port == 0 && it != sockets_.end();
-       it++) {
+  for (auto it = acceptors_.begin();
+       requested_port == 0 && it != acceptors_.end(); it++) {
     EventEngine::ResolvedAddress sockname_temp;
     socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-    if (0 == getsockname(it->sock.Fd(),
+    if (0 == getsockname((*it)->Socket().sock.Fd(),
                          const_cast<sockaddr*>(sockname_temp.address()),
                          &len)) {
       int used_port = SockaddrGetPort(sockname_temp);
@@ -92,7 +92,7 @@ absl::StatusOr<int> PosixEngineListener::Bind(
   int used_port = SockaddrIsWildcard(res_addr);
   if (used_port > 0) {
     requested_port = used_port;
-    return ListenerContainerAddWildcardAddresses(sockets_, options_,
+    return ListenerContainerAddWildcardAddresses(acceptors_, options_,
                                                  requested_port);
   }
   if (SockaddrToV4Mapped(&res_addr, &addr6_v4mapped)) {
@@ -101,96 +101,141 @@ absl::StatusOr<int> PosixEngineListener::Bind(
 
   auto result = CreateAndPrepareListenerSocket(options_, res_addr);
   if (result.ok()) {
-    sockets_.Append(*result);
+    acceptors_.Append(*result);
     return result->port;
   } else {
     return result.status();
   }
 }
 
-void PosixEngineListener::NotifyOnAccept(
-    ListenerSocketsContainer::ListenerSocket* socket) {
-  EventMgrEventEngineListener* listener = socket->listener;
-  grpc_error_handle err;
-  /* loop until accept4 returns EAGAIN,
-      and then re-arm notification */
+void PosixEngineListenerImpl::AsyncConnectionAcceptor::Start() {
+  Ref();
+  handle_->NotifyOnRead(notify_on_accept_);
+}
+
+void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
+    absl::Status status) {
+  if (!status.ok()) {
+    // Shutting down the acceptor. Unref the ref grabbed in
+    // AsyncConnectionAcceptor::Start().
+    Unref();
+    return;
+  }
+  // loop until accept4 returns EAGAIN, and then re-arm notification.
   for (;;) {
-    grpc_resolved_address addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-    /* Note: If we ever decide to return this address to the user,
-    remember to strip off the ::ffff:0.0.0.0/96 prefix first. */
-    int fd = grpc_accept4(socket->fd, &addr, 1, 1);
+    EventEngine::ResolvedAddress addr;
+    memset(const_cast<sockaddr*>(addr.address()), 0, addr.size());
+    // Note: If we ever decide to return this address to the user, remember to
+    // strip off the ::ffff:0.0.0.0/96 prefix first.
+    int fd = Accept4(handle_->WrappedFd(), addr, 1, 1);
     if (fd < 0) {
       switch (errno) {
         case EINTR:
           continue;
         case EAGAIN:
-          socket->desc_if->NotifyWhenReadable(::util::functional::ToCallback(
-              [socket]() { socket->listener->NotifyOnAccept(socket); }));
+        case ECONNABORTED:
+          handle_->NotifyOnRead(notify_on_accept_);
           return;
         default:
-          gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
-          socket->Unref();
+          gpr_log(GPR_ERROR, "Closing acceptor. Failed accept4: %s",
+                  strerror(errno));
+          // Shutting down the acceptor. Unref the ref grabbed in
+          // AsyncConnectionAcceptor::Start().
+          Unref();
           return;
       }
     }
 
-    /* For UNIX sockets, the accept call might not fill up the member sun_path
-     * of sockaddr_un, so explicitly call getsockname to get it. */
-    if (grpc_is_unix_socket(&addr)) {
-      memset(&addr, 0, sizeof(addr));
-      addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-      if (getsockname(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
-                      &(addr.len)) < 0) {
-        gpr_log(GPR_ERROR, "Failed getsockname: %s", strerror(errno));
+    // For UNIX sockets, the accept call might not fill up the member
+    // sun_path of sockaddr_un, so explicitly call getsockname to get it.
+    if (addr.address()->sa_family == AF_UNIX) {
+      socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+      if (getsockname(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+        gpr_log(GPR_ERROR, "Closing acceptor. Failed getsockname: %s",
+                strerror(errno));
         close(fd);
-        socket->Unref();
+        // Shutting down the acceptor. Unref the ref grabbed in
+        // AsyncConnectionAcceptor::Start().
+        Unref();
         return;
       }
     }
 
-    grpc_set_socket_no_sigpipe_if_possible(fd);
-
-    err = grpc_apply_socket_mutator_in_args(
-        fd, GRPC_FD_SERVER_CONNECTION_USAGE,
-        listener->GetEndpointConfig().GetChannelArgs());
-    if (err != GRPC_ERROR_NONE) {
-      socket->Unref();
+    PosixSocketWrapper sock(fd);
+    (void)sock.SetSocketNoSigpipeIfPossible();
+    auto result = sock.ApplySocketMutatorInOptions(
+        GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
+    if (!result.ok()) {
+      gpr_log(GPR_ERROR, "Closing acceptor. Failed to apply socket mutator: %s",
+              result.ToString().c_str());
+      // Shutting down the acceptor. Unref the ref grabbed in
+      // AsyncConnectionAcceptor::Start().
+      Unref();
       return;
     }
 
-    // TODO(vigneshbabu): Add tracing information here about incoming
-    // connection.
-
-    // Create an Endpoint here
-    auto e = absl::make_unique<EventMgrEventEngineEndpoint>(
-        fd, listener,
-        listener->slice_allocator_factory_->CreateSliceAllocator(
-            "TODO(vigneshbabu): get peer name"));
-    // TODO(vigneshbabu): Figure out how to handle errors in
-    // PopulateAddresses()
-    e->PopulateAddresses();
-    auto slice_allocator = e->GetSliceAllocator();
-    // Call listener->on_accept_ with endpoint
-    listener->on_accept_(std::move(e), *slice_allocator);
+    // Create an Endpoint here.
+    std::string connection_name =
+        absl::StrCat("tcp-server-connection: ", *SockaddrToString(&addr, true));
+    auto endpoint = CreatePosixEndpoint(
+        /*handle=*/listener_->poller_->CreateHandle(
+            fd, connection_name, listener_->poller_->CanTrackErrors()),
+        /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
+        /*allocator=*/
+        listener_->memory_allocator_factory_->CreateMemoryAllocator(
+            connection_name),
+        /*options=*/listener_->options_);
+    // Call on_accept_ and then resume accepting new connections by continuing
+    // the parent for-loop.
+    listener_->on_accept_(
+        std::move(endpoint),
+        listener_->memory_allocator_factory_->CreateMemoryAllocator(
+            connection_name));
   }
   GPR_UNREACHABLE_CODE(return);
 }
 
-absl::Status PosixEngineListener::Start() {
+void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
+  // The ShutdownHandle whould trigger any waiting notify_on_accept_ to get
+  // scheduled with the not-OK status.
+  handle_->ShutdownHandle(absl::InternalError("Shutting down acceptor"));
+  Unref();
+}
+
+absl::Status PosixEngineListenerImpl::Start() {
   absl::MutexLock lock(&this->mu_);
+  // Start each asynchronous acceptor.
   GPR_ASSERT(!this->started_);
   this->started_ = true;
-  for (auto it = sockets_.begin(); it != sockets_.end(); it++) {
-    (*it)->desc_if->NotifyWhenReadable(
-        // TODO(vigneshbabu): Think about converting these callbacks to
-        // permanent closures as well.
-        ::util::functional::ToCallback(
-            [socket = (*it)]() { socket->listener->NotifyOnAccept(socket); }));
+  for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
+    (*it)->Start();
   }
   return absl::OkStatus();
 }
+
+void PosixEngineListenerImpl::TriggerShutdown() {
+  // This would get invoked from the destructor of the parent
+  // PosixEngineListener object.
+  absl::MutexLock lock(&this->mu_);
+  for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
+    // Trigger shutdown of each asynchronous acceptor. This in-turn calls
+    // ShutdownHandle on the associated poller event handle. It may also
+    // immediately delete the asynchronous acceptor if the acceptor was never
+    // started.
+    (*it)->Shutdown();
+  }
+}
+
+PosixEngineListenerImpl::~PosixEngineListenerImpl() {
+  // This should get invoked only after all the AsyncConnectionAcceptor's have
+  // been destroyed. This is because each AsyncConnectionAcceptor has a
+  // shared_ptr ref to the parent PosixEngineListenerImpl.
+  if (on_shutdown_ != nullptr) {
+    on_shutdown_(absl::InternalError("Shutting down listener"));
+  }
+}
+
+#endif  // GRPC_POSIX_SOCKET_TCP
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

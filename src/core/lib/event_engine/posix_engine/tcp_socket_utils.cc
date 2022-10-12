@@ -226,8 +226,14 @@ int Accept4(int sockfd,
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
-  socklen_t len = addr.size();
-  return accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress temp_addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  memset(const_cast<sockaddr*>(temp_addr.address()), 0,
+         EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
+  int ret =
+      accept4(sockfd, const_cast<sockaddr*>(temp_addr.address()), &len, flags);
+  addr = EventEngine::ResolvedAddress(temp_addr.address(), len);
+  return ret;
 }
 
 #endif /* GRPC_LINUX_SOCKETUTILS */
