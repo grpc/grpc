@@ -1764,10 +1764,12 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
-    gpr_log(GPR_DEBUG, "%s: WakeInsideCombiner poll=%s", LogTag().c_str(),
-            PollToString(poll, [](const ServerMetadataHandle& h) {
-              return h->DebugString();
-            }).c_str());
+    if (grpc_trace_channel.enabled()) {
+      gpr_log(GPR_DEBUG, "%s: WakeInsideCombiner poll=%s", LogTag().c_str(),
+              PollToString(poll, [](const ServerMetadataHandle& h) {
+                return h->DebugString();
+              }).c_str());
+    }
     if (send_initial_metadata_ != nullptr &&
         send_initial_metadata_->state ==
             SendInitialMetadata::kQueuedAndSetLatch) {
