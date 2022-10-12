@@ -60,7 +60,6 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
