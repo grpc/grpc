@@ -7124,6 +7124,7 @@ grpc_cc_library(
         "http2_settings",
         "httpcli",
         "huffsyms",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_timer",
         "memory_quota",
