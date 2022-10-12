@@ -3298,6 +3298,7 @@ foreach(_hdr
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/config_protobuf.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_binder.h
   include/grpcpp/create_channel_posix.h
@@ -3970,6 +3971,7 @@ foreach(_hdr
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/config_protobuf.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/call_metric_recorder.h
@@ -4145,6 +4147,7 @@ target_link_libraries(grpc_plugin_support
 
 foreach(_hdr
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpcpp/config_protobuf.h
   include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})

@@ -41,7 +41,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/config_protobuf.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"

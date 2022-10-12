@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/config_protobuf.h>
 #include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {

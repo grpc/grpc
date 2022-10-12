@@ -24,7 +24,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>

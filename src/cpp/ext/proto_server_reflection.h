@@ -23,8 +23,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <grpcpp/config_protobuf.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/sync_stream.h>
