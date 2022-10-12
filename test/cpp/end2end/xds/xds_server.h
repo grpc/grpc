@@ -274,13 +274,12 @@ class AdsServiceImpl
           requests.pop_front();
           did_work = true;
           gpr_log(GPR_INFO,
-                  "ADS[%p]: Received request for type %s with content %s",
-                  this, request.type_url().c_str(),
-                  request.DebugString().c_str());
+                  "ADS[%p]: Received request for type %s with content %s", this,
+                  request.type_url().c_str(), request.DebugString().c_str());
           SentState& sent_state = sent_state_map[request.type_url()];
           // Process request.
-          ProcessRequest(request, &update_queue, &subscription_map,
-                         &sent_state, &response);
+          ProcessRequest(request, &update_queue, &subscription_map, &sent_state,
+                         &response);
         }
       }
       if (response.has_value()) {
@@ -318,8 +317,7 @@ class AdsServiceImpl
       // If we didn't find anything to do, delay before the next loop
       // iteration; otherwise, check whether we should exit and then
       // immediately continue.
-      gpr_sleep_until(
-          grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10));
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10));
     }
     // Done with main loop.  Clean up before returning.
     // Join reader thread.
@@ -350,8 +348,7 @@ class AdsServiceImpl
   // Populates response if needed.
   void ProcessRequest(const DiscoveryRequest& request,
                       UpdateQueue* update_queue,
-                      SubscriptionMap* subscription_map,
-                      SentState* sent_state,
+                      SubscriptionMap* subscription_map, SentState* sent_state,
                       absl::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
     // Check the nonce sent by the client, if any.
@@ -377,13 +374,11 @@ class AdsServiceImpl
                 request.version_info().c_str());
       } else {
         response_state.state = ResponseState::NACKED;
-        EXPECT_EQ(request.error_detail().code(),
-                  GRPC_STATUS_INVALID_ARGUMENT);
+        EXPECT_EQ(request.error_detail().code(), GRPC_STATUS_INVALID_ARGUMENT);
         response_state.error_message = request.error_detail().message();
         gpr_log(GPR_INFO,
-                "ADS[%p]: client NACKed resource_type=%s version=%s: %s",
-                this, request.type_url().c_str(),
-                request.version_info().c_str(),
+                "ADS[%p]: client NACKed resource_type=%s version=%s: %s", this,
+                request.type_url().c_str(), request.version_info().c_str(),
                 response_state.error_message.c_str());
       }
       resource_type_response_state_[request.type_url()].emplace_back(
@@ -397,8 +392,7 @@ class AdsServiceImpl
       return;
     }
     // Inject bad resources if needed.
-    if (inject_bad_resources_for_resource_type_ ==
-        request.type_url()) {
+    if (inject_bad_resources_for_resource_type_ == request.type_url()) {
       response->emplace();
       // Unparseable Resource wrapper.
       auto* resource = (*response)->add_resources();
@@ -427,9 +421,8 @@ class AdsServiceImpl
       // Send the resource in the response if either (a) this is
       // a new subscription or (b) there is an updated version of
       // this resource to send.
-      if (MaybeSubscribe(request.type_url(), resource_name,
-                                  &subscription_state, &resource_state,
-                                  update_queue) ||
+      if (MaybeSubscribe(request.type_url(), resource_name, &subscription_state,
+                         &resource_state, update_queue) ||
           ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                     sent_state->resource_type_version)) {
         gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
@@ -453,9 +446,8 @@ class AdsServiceImpl
     }
     // Process unsubscriptions for any resource no longer
     // present in the request's resource list.
-    ProcessUnsubscriptions(
-        request.type_url(), resources_in_current_request,
-        &subscription_name_map, &resource_name_map);
+    ProcessUnsubscriptions(request.type_url(), resources_in_current_request,
+                           &subscription_name_map, &resource_name_map);
     // Construct response if needed.
     if (!resources_added_to_response.empty()) {
       CompleteBuildingDiscoveryResponse(
@@ -719,8 +711,7 @@ class LrsServiceImpl
   using LoadStatsResponse = ::envoy::service::load_stats::v3::LoadStatsResponse;
   using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
-  Status StreamLoadStats(ServerContext* /*context*/,
-                         Stream* stream) override {
+  Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
     EXPECT_GT(client_load_reporting_interval_seconds_, 0);
     // Take a reference of the LrsServiceImpl object, reference will go
@@ -731,9 +722,8 @@ class LrsServiceImpl
     if (stream->Read(&request)) {
       IncreaseRequestCount();
       // Verify client features.
-      EXPECT_THAT(
-          request.node().client_features(),
-          ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
+      EXPECT_THAT(request.node().client_features(),
+                  ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
       // Send initial response.
       LoadStatsResponse response;
       if (send_all_clusters_) {
