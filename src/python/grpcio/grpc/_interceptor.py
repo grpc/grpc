@@ -201,7 +201,7 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def cancel(self) -> bool:
         return self._call.cancel()
 
-    def add_callback(self, callback) -> None:
+    def add_callback(self, callback) -> bool:
         return self._call.add_callback(callback)
 
     def cancelled(self) -> bool:
