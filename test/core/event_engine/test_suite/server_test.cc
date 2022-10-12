@@ -268,7 +268,6 @@ TEST_F(EventEngineServerTest,
   server_endpoint.reset();
   listener.reset();
   WaitForSingleOwner(std::move(test_ee));
-  // EXPECT_TRUE(listener_on_shutdown_cb_executed);
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix
