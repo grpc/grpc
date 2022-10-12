@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_PROTOBUF_H
-#define GRPCPP_PROTOBUF_H
+#ifndef GRPCPP_CONFIG_PROTOBUF_H
+#define GRPCPP_CONFIG_PROTOBUF_H
 
 #define GRPC_OPEN_SOURCE_PROTO
 
@@ -103,4 +103,4 @@ typedef GRPC_CUSTOM_CODEDINPUTSTREAM CodedInputStream;
 }  // namespace protobuf
 }  // namespace grpc
 
-#endif  // GRPCPP_PROTOBUF_H
+#endif  // GRPCPP_CONFIG_PROTOBUF_H
