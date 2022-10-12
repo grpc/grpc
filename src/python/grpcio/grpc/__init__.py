@@ -36,6 +36,8 @@ except ImportError:
 try:
     # pylint: disable=ungrouped-imports
     import six
+    sys.stderr.write("six_found")
+    sys.stderr.flush()
 except ImportError:
     sys.stderr.write("no_six_found")
     sys.stderr.flush()
