@@ -114,15 +114,14 @@ TEST_F(XdsClusterTest, Definition) {
   auto* resource_type = XdsClusterResourceType::Get();
   ASSERT_NE(resource_type, nullptr);
   EXPECT_EQ(resource_type->type_url(), "envoy.config.cluster.v3.Cluster");
-  EXPECT_EQ(resource_type->v2_type_url(), "envoy.api.v2.Cluster");
   EXPECT_TRUE(resource_type->AllResourcesRequiredInSotW());
 }
 
 TEST_F(XdsClusterTest, UnparseableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -138,8 +137,8 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -167,8 +166,8 @@ TEST_F(ClusterTypeTest, EdsConfigSourceAds) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -187,8 +186,8 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -203,8 +202,8 @@ TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -222,8 +221,8 @@ TEST_F(ClusterTypeTest, EdsClusterConfigMissing) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -242,8 +241,8 @@ TEST_F(ClusterTypeTest, EdsConfigSourceMissing) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -262,8 +261,8 @@ TEST_F(ClusterTypeTest, EdsConfigSourceWrongType) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -290,8 +289,8 @@ TEST_F(ClusterTypeTest, LogicalDnsValid) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -307,8 +306,8 @@ TEST_F(ClusterTypeTest, LogicalDnsMissingLoadAssignment) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -328,8 +327,8 @@ TEST_F(ClusterTypeTest, LogicalDnsMissingLocalities) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -350,8 +349,8 @@ TEST_F(ClusterTypeTest, LogicalDnsTooManyLocalities) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -371,8 +370,8 @@ TEST_F(ClusterTypeTest, LogicalDnsLocalityMissingEndpoints) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -394,8 +393,8 @@ TEST_F(ClusterTypeTest, LogicalDnsLocalityTooManyEndpoints) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -415,8 +414,8 @@ TEST_F(ClusterTypeTest, LogicalDnsEndpointMissing) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -439,8 +438,8 @@ TEST_F(ClusterTypeTest, LogicalDnsAddressMissing) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -464,8 +463,8 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressMissing) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -491,8 +490,8 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalid) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -522,8 +521,8 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -545,8 +544,8 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -574,8 +573,8 @@ TEST_F(LbPolicyTest, LbPolicyRingHash) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -597,8 +596,8 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSize) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -620,8 +619,8 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSizeToZero) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -647,8 +646,8 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSizeTooLarge) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -674,8 +673,8 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinRingSizeLargerThanMaxRingSize) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -698,8 +697,8 @@ TEST_F(LbPolicyTest, LbPolicyRingHashUnsupportedHashFunction) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -720,8 +719,8 @@ TEST_F(LbPolicyTest, UnsupportedPolicy) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -756,8 +755,8 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -794,8 +793,8 @@ TEST_F(TlsConfigTest, UnknownCertificateProviderInstance) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -820,8 +819,8 @@ TEST_F(TlsConfigTest, TransportSocketTypedConfigUnset) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -846,8 +845,8 @@ TEST_F(TlsConfigTest, UnknownTransportSocketType) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -871,8 +870,8 @@ TEST_F(TlsConfigTest, CaCertProviderUnset) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -901,8 +900,8 @@ TEST_F(LrsTest, Valid) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -924,8 +923,8 @@ TEST_F(LrsTest, NotSelfConfigSource) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -959,8 +958,8 @@ TEST_F(CircuitBreakingTest, Valid) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -979,8 +978,8 @@ TEST_F(CircuitBreakingTest, NoDefaultThreshold) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -998,8 +997,8 @@ TEST_F(CircuitBreakingTest, DefaultThresholdWithMaxRequestsUnset) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1022,8 +1021,8 @@ TEST_F(OutlierDetectionTest, DefaultValues) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1053,8 +1052,8 @@ TEST_F(OutlierDetectionTest, AllFieldsSet) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1099,8 +1098,8 @@ TEST_F(OutlierDetectionTest, InvalidValues) {
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
