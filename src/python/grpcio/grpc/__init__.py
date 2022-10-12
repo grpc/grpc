@@ -18,7 +18,6 @@ import contextlib
 import enum
 import logging
 import sys
-import six
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -33,6 +32,13 @@ try:
     from grpc._grpcio_metadata import __version__
 except ImportError:
     __version__ = "dev0"
+
+try:
+    # pylint: disable=ungrouped-imports
+    import six
+except ImportError:
+    sys.stderr.write("no_six_found")
+    sys.stderr.flush()
 
 ############################## Future Interface  ###############################
 
@@ -660,7 +666,7 @@ class ServerCertificateConfiguration(object):
 ########################  Multi-Callable Interfaces  ###########################
 
 
-class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
+class UnaryUnaryMultiCallable(abc.ABC):
     """Affords invoking a unary-unary RPC from client-side."""
 
     @abc.abstractmethod
