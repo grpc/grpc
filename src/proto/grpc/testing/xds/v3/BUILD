@@ -19,6 +19,7 @@ licenses(["notice"])
 
 exports_files([
     "orca_load_report.proto",
+    "xds_test_config_service.proto",
 ])
 
 grpc_package(
@@ -415,6 +416,14 @@ grpc_proto_library(
     name = "udpa_typed_struct_proto",
     srcs = [
         "udpa_typed_struct.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "xds_test_config_service_proto",
+    srcs = [
+        "xds_test_config_service.proto",
     ],
     well_known_protos = True,
 )

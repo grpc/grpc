@@ -1,0 +1,107 @@
+// Copyright 2022 The gRPC Authors
+// All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
+
+syntax = "proto3";
+
+package grpc.testing;
+
+option java_package = "io.grpc.testing.protobuf";
+option java_outer_classname = "XdsTestConfigServiceProto";
+option java_multiple_files = true;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+
+// A service for configuring a fake xds server.
+service XdsTestConfigService {
+  // unary RPC to set configuration served by the fake xds server.
+  rpc SetXdsConfigRpc (XdsConfig) returns (AckResponse) {}
+
+  // Unary RPC to set control data for the fake control plane.
+  rpc UpdateControlData (UpdateControlDataRequest) returns (AckResponse) {}
+
+  // Unary RPC to set extra resources to return in addition to the regular ones.
+  rpc SetExtraResources (ExtraResourceRequest) returns (AckResponse) {}
+
+  rpc clear(google.protobuf.Empty) returns (AckResponse) {}
+}
+
+// Specify configuration for a particular type.
+message XdsConfig {
+  message Resource {
+    string name = 1;
+    google.protobuf.Any configuration = 2;
+  }
+
+  XdsTestResourceType type = 1;
+  repeated Resource configuration = 2;
+}
+
+// Specify configuration for a particular type of aberration.  Null control_data to clear
+message UpdateControlDataRequest {
+  // Describes desired behavior.  Updates may be sent out as a result of this changing
+  ControlData control_data = 1;
+}
+
+// Specify configuration for a particular type.
+message ExtraResourceRequest {
+  repeated XdsConfig configurations = 1;
+}
+
+// A simple command completion acknowledgement.
+message AckResponse {
+  // 0 for okay, non-zero for error.
+  int32 status = 1;
+}
+
+enum TriggerTime{
+  BEFORE_LDS = 0;
+  BEFORE_RDS = 1;
+  BEFORE_CDS = 2;
+  BEFORE_ENDPOINTS = 3;
+  AFTER_ENDPOINTS = 4;
+}
+
+enum ExtraResourceChoice {
+  EXTRA_ONLY = 0; // Only extra, not the ones requested
+  ALL_REQ = 1;   // All requested plus the extra
+  SOME_REQ = 2;  //replace as many required as there are extra so total number is what was expected
+}
+
+enum XdsTestResourceType {
+  LDS = 0;
+  RDS = 1;
+  CDS = 2;
+  EDS = 3;
+}
+
+enum AberrationType {
+  STATUS_CODE = 0;
+  SEND_EXTRA = 1;
+  SEND_EMPTY = 2;
+  SEND_REDUNDANT = 3;
+  MISSING_RESOURCES = 4;
+}
+
+
+message ControlData {
+  TriggerTime trigger_aberration = 1;
+  AberrationType aberration_type = 2;
+  int32 status_code = 3;
+  repeated XdsTestResourceType affected_types = 4;
+  repeated string names_to_skip = 5;
+}
