@@ -35,6 +35,7 @@ message AllocationRequest {
 }
 
 message Action {
+    reserved 15;
     int32 quota = 1;
     int32 allocator = 2;
     int32 allocation = 3;
@@ -45,7 +46,6 @@ message Action {
         Empty create_allocator = 12;
         Empty delete_allocator = 13;
         uint64 set_quota_size = 14;
-        Empty rebind_quota = 15;
         AllocationRequest create_allocation = 16;
         Empty delete_allocation = 17;
         Reclaimer post_reclaimer = 18;

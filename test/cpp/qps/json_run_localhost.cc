@@ -30,7 +30,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
 
@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
     first = false;
   }
 
-  gpr_setenv("QPS_WORKERS", env.str().c_str());
+  grpc_core::SetEnv("QPS_WORKERS", env.str().c_str());
   std::vector<std::string> args = {bin_dir + "/qps_json_driver"};
   for (int i = 1; i < argc; i++) {
     args.push_back(argv[i]);

@@ -21,8 +21,10 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/api_trace.h"
 
 void grpc_metadata_array_init(grpc_metadata_array* array) {

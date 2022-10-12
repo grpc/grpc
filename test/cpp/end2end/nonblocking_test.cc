@@ -27,7 +27,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -44,7 +43,7 @@
 // non-blocking (not polls from resolver, timer thread, etc), and only when the
 // thread is waiting on polls caused by CompletionQueue::AsyncNext (not for
 // picking a port or other reasons).
-static GPR_THREAD_LOCAL(bool) g_is_nonblocking_poll;
+static thread_local bool g_is_nonblocking_poll;
 
 namespace {
 
@@ -111,8 +110,7 @@ class NonblockingTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
-    service_ =
-        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    service_ = std::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -199,7 +197,7 @@ int main(int argc, char** argv) {
   // Override the poll function before anything else can happen
   grpc_poll_function = maybe_assert_non_blocking_poll;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
 
   // Start the nonblocking poll thread-local variable as false because the

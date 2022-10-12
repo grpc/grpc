@@ -19,7 +19,13 @@
 #ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 #define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
+#include <string>
+#include <vector>
+
+#include <grpc/grpc_security.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"

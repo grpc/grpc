@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 
+// IWYU pragma: private, include "src/core/lib/iomgr/sockaddr.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"

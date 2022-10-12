@@ -19,15 +19,16 @@
 #include <functional>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/time/time.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_buffer.h>
 
-// TODO(hork): Define the Endpoint::Write metrics collection system
+// TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -71,8 +72,13 @@ namespace experimental {
 ///    server->Wait();
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine {
+class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
+  /// A duration between two events.
+  ///
+  /// Throughout the EventEngine API durations are used to express how long
+  /// until an action should be performed.
+  using Duration = std::chrono::duration<int64_t, std::nano>;
   /// A custom closure type for EventEngine task execution.
   ///
   /// Throughout the EventEngine API, \a Closure ownership is retained by the
@@ -138,6 +144,18 @@ class EventEngine {
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
     virtual ~Endpoint() = default;
+    /// A struct representing optional arguments that may be provided to an
+    /// EventEngine Endpoint Read API  call.
+    ///
+    /// Passed as argument to an Endpoint \a Read
+    struct ReadArgs {
+      // A suggestion to the endpoint implementation to read at-least the
+      // specified number of bytes over the network connection before marking
+      // the endpoint read operation as complete. gRPC may use this argument
+      // to minimize the number of endpoint read API calls over the lifetime
+      // of a connection.
+      int64_t read_hint_bytes;
+    };
     /// Reads data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
@@ -155,8 +173,22 @@ class EventEngine {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual void Read(std::function<void(absl::Status)> on_read,
-                      SliceBuffer* buffer) = 0;
+    virtual void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                      SliceBuffer* buffer, const ReadArgs* args) = 0;
+    /// A struct representing optional arguments that may be provided to an
+    /// EventEngine Endpoint Write API call.
+    ///
+    /// Passed as argument to an Endpoint \a Write
+    struct WriteArgs {
+      // Represents private information that may be passed by gRPC for
+      // select endpoints expected to be used only within google.
+      void* google_specific = nullptr;
+      // A suggestion to the endpoint implementation to group data to be written
+      // into frames of the specified max_frame_size. gRPC may use this
+      // argument to dynamically control the max sizes of frames sent to a
+      // receiver in response to high receiver memory pressure.
+      int64_t max_frame_size;
+    };
     /// Writes data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
@@ -175,8 +207,8 @@ class EventEngine {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual void Write(std::function<void(absl::Status)> on_writable,
-                       SliceBuffer* data) = 0;
+    virtual void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                       SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
@@ -190,14 +222,14 @@ class EventEngine {
   /// expect to receive DEADLINE_EXCEEDED statuses when appropriate, or
   /// CANCELLED statuses on EventEngine shutdown.
   using OnConnectCallback =
-      std::function<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
+      absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
 
   /// Listens for incoming connection requests from gRPC clients and initiates
   /// request processing once connections are established.
   class Listener {
    public:
     /// Called when the listener has accepted a new client connection.
-    using AcceptCallback = std::function<void(
+    using AcceptCallback = absl::AnyInvocable<void(
         std::unique_ptr<Endpoint>, MemoryAllocator memory_allocator)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
@@ -225,7 +257,7 @@ class EventEngine {
   /// MemoryAllocators for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
@@ -243,7 +275,7 @@ class EventEngine {
                                    const ResolvedAddress& addr,
                                    const EndpointConfig& args,
                                    MemoryAllocator memory_allocator,
-                                   absl::Time deadline) = 0;
+                                   Duration timeout) = 0;
 
   /// Request cancellation of a connection attempt.
   ///
@@ -259,7 +291,13 @@ class EventEngine {
    public:
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key[2];
+      intptr_t keys[2];
+    };
+    /// Optional configuration for DNSResolvers.
+    struct ResolverOptions {
+      /// If empty, default DNS servers will be used.
+      /// Must be in the "IP:port" format as described in naming.md.
+      std::string dns_server;
     };
     /// DNS SRV record type.
     struct SRVRecord {
@@ -271,12 +309,13 @@ class EventEngine {
     /// Called with the collection of sockaddrs that were resolved from a given
     /// target address.
     using LookupHostnameCallback =
-        std::function<void(absl::StatusOr<std::vector<ResolvedAddress>>)>;
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<ResolvedAddress>>)>;
     /// Called with a collection of SRV records.
     using LookupSRVCallback =
-        std::function<void(absl::StatusOr<std::vector<SRVRecord>>)>;
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
-    using LookupTXTCallback = std::function<void(absl::StatusOr<std::string>)>;
+    using LookupTXTCallback =
+        absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
 
     virtual ~DNSResolver() = default;
 
@@ -293,23 +332,23 @@ class EventEngine {
     ///
     /// If cancelled, \a on_resolve will not be executed.
     virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                            absl::string_view address,
+                                            absl::string_view name,
                                             absl::string_view default_port,
-                                            absl::Time deadline) = 0;
+                                            Duration timeout) = 0;
     /// Asynchronously perform an SRV record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
     virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                        absl::string_view name,
-                                       absl::Time deadline) = 0;
+                                       Duration timeout) = 0;
     /// Asynchronously perform a TXT record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
     virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                        absl::string_view name,
-                                       absl::Time deadline) = 0;
+                                       Duration timeout) = 0;
     /// Cancel an asynchronous lookup operation.
     ///
     /// This shares the same semantics with \a EventEngine::Cancel: successfully
@@ -331,8 +370,10 @@ class EventEngine {
   // de-experimentalize this API.
   virtual bool IsWorkerThread() = 0;
 
-  /// Creates and returns an instance of a DNSResolver.
-  virtual std::unique_ptr<DNSResolver> GetDNSResolver() = 0;
+  /// Creates and returns an instance of a DNSResolver, optionally configured by
+  /// the \a options struct.
+  virtual std::unique_ptr<DNSResolver> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options) = 0;
 
   /// Asynchronously executes a task as soon as possible.
   ///
@@ -342,55 +383,68 @@ class EventEngine {
   /// Asynchronously executes a task as soon as possible.
   ///
   /// \a Closures scheduled with \a Run cannot be cancelled. Unlike the
-  /// overloaded \a Closure alternative, the std::function version's \a closure
-  /// will be deleted by the EventEngine after the closure has been run.
+  /// overloaded \a Closure alternative, the absl::AnyInvocable version's \a
+  /// closure will be deleted by the EventEngine after the closure has been run.
   ///
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
-  virtual void Run(std::function<void()> closure) = 0;
-  /// Synonymous with scheduling an alarm to run at time \a when.
+  virtual void Run(absl::AnyInvocable<void()> closure) = 0;
+  /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
   /// run, nor will it be deleted. Ownership remains with the caller.
-  virtual TaskHandle RunAt(absl::Time when, Closure* closure) = 0;
-  /// Synonymous with scheduling an alarm to run at time \a when.
+  virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
+  /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
-  /// run. Unilke the overloaded \a Closure alternative, the std::function
+  /// run. Unilke the overloaded \a Closure alternative, the absl::AnyInvocable
   /// version's \a closure will be deleted by the EventEngine after the closure
   /// has been run, or upon cancellation.
   ///
-  /// This version of \a RunAt may be less performant than the \a Closure
+  /// This version of \a RunAfter may be less performant than the \a Closure
   /// version in some scenarios. This overload is useful in situations where
   /// performance is not a critical concern.
-  virtual TaskHandle RunAt(absl::Time when, std::function<void()> closure) = 0;
+  virtual TaskHandle RunAfter(Duration when,
+                              absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
   /// If the associated closure has already been scheduled to run, it will not
   /// be cancelled, and this function will return false.
   ///
   /// If the associated callback has not been scheduled to run, it will be
-  /// cancelled, and the associated std::function or \a Closure* will not be
-  /// executed. In this case, Cancel will return true.
+  /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
+  /// be executed. In this case, Cancel will return true.
+  ///
+  /// Implementation note: closures should be destroyed in a timely manner after
+  /// execution or cancelliation (milliseconds), since any state bound to the
+  /// closure may need to be destroyed for things to progress (e.g., if a
+  /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
-/// Replace gRPC's default EventEngine factory
+/// Replace gRPC's default EventEngine factory.
 ///
-/// Applications may call \a SetDefaultEventEngineFactory at any time to replace
-/// the default factory used within gRPC. EventEngines will be created when
+/// Applications may call \a SetEventEngineFactory at any time to replace the
+/// default factory used within gRPC. EventEngines will be created when
 /// necessary, when they are otherwise not provided by the application.
 ///
 /// To be certain that none of the gRPC-provided built-in EventEngines are
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
-void SetDefaultEventEngineFactory(
-    const std::function<std::unique_ptr<EventEngine>()>* factory);
+void SetEventEngineFactory(
+    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
 
-/// Create an EventEngine using the default factory
+/// Reset gRPC's EventEngine factory to the built-in default.
+///
+/// Applications that have called \a SetEventEngineFactory can remove their
+/// custom factory using this method. The built-in EventEngine factories will be
+/// used going forward. This has no affect on any EventEngines that were created
+/// using the previous factories.
+void EventEngineFactoryReset();
+/// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
 
 }  // namespace experimental

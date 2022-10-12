@@ -8,7 +8,7 @@ tests because that gives us the opportunity to run tests using the same commandl
 Builds gRPC in given language and runs unit tests. Use `tools/run_tests/run_tests.py --help` for more help.
 
 ###### Example
-`tools/run_tests/run_tests.py -l csharp -c dbg`
+`tools/run_tests/run_tests.py -l python -c dbg`
 
 ###### Useful options (among many others)
 - `--use_docker` Builds a docker container containing all the prerequisites for given language and runs the tests under that container.
@@ -26,7 +26,7 @@ Runs tests for cross-platform/cross-language interoperability. For more details,
 The script is also capable of running interop tests for grpc-java and grpc-go, using sources checked out alongside the ones of the grpc repository.
 
 ###### Example
-`tools/run_tests/run_interop_tests.py -l csharp -s c++ --use_docker` (run interop tests with C# client and C++ server)
+`tools/run_tests/run_interop_tests.py -l python -s c++ --use_docker` (run interop tests with C# client and C++ server)
 
 Note: if you see an error like `no space left on device` when running the
 interop tests using Docker, make sure that Docker is building the image files in
@@ -34,15 +34,8 @@ a location with sufficient disk space.
 
 # Performance benchmarks (run_performance_tests.py)
 
-Runs predefined benchmark scenarios for given languages. Besides the simple configuration of running all the scenarios locally,
-the script also supports orchestrating test runs with client and server running on different machines and uploading the results
-to BigQuery.
-
-###### Example
-`tools/run_tests/run_performance_tests.py -l c++ node`
-
-###### Useful options
-- `--regex` use regex to select particular scenarios to run.
+The `run_performance_tests.py` script is deprecated.
+See [end-to-end benchmarking documentation](/tools/run_tests/peformance/README.md) for more info.
 
 # Artifacts & Packages (task_runner.py)
 

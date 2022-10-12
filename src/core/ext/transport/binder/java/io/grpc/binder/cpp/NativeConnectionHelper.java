@@ -15,7 +15,10 @@
 package io.grpc.binder.cpp;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Parcel;
+import android.util.Log;
+// copybara: Import proguard UsedByNative annotation here
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,16 +27,44 @@ import java.util.Map;
  * src/core/ext/transport/binder/client/jni_utils.cc) to perform operations that are only possible
  * in Java
  */
+// copybara: Add @UsedByNative("jni_utils.cc")
 final class NativeConnectionHelper {
   // Maps connection id to GrpcBinderConnection instances
-  static Map<String, GrpcBinderConnection> s = new HashMap<>();
+  static Map<String, GrpcBinderConnection> connectionIdToGrpcBinderConnectionMap = new HashMap<>();
 
-  static void tryEstablishConnection(Context context, String pkg, String cls, String connId) {
+  // copybara: Add @UsedByNative("jni_utils.cc")
+  static void tryEstablishConnection(
+      Context context, String pkg, String cls, String actionName, String connId) {
     // TODO(mingcl): Assert that connId is unique
-    s.put(connId, new GrpcBinderConnection(context, connId));
-    s.get(connId).tryConnect(pkg, cls);
+    connectionIdToGrpcBinderConnectionMap.put(connId, new GrpcBinderConnection(context, connId));
+    connectionIdToGrpcBinderConnectionMap.get(connId).tryConnect(pkg, cls, actionName);
   }
 
+  // copybara: Add @UsedByNative("jni_utils.cc")
+  static void tryEstablishConnectionWithUri(Context context, String uri, String connId) {
+    // TODO(mingcl): Assert that connId is unique
+    connectionIdToGrpcBinderConnectionMap.put(connId, new GrpcBinderConnection(context, connId));
+    connectionIdToGrpcBinderConnectionMap.get(connId).tryConnect(uri);
+  }
+
+  // Returns true if the packages signature of the 2 UIDs match.
+  // `context` is used to get PackageManager.
+  // Suppress unnecessary internal warnings related to checkSignatures compatibility issue.
+  // BinderTransport code is only used on newer Android platform versions so this is fine.
+  @SuppressWarnings("CheckSignatures")
+  // copybara: Add @UsedByNative("jni_utils.cc")
+  static boolean isSignatureMatch(Context context, int uid1, int uid2) {
+    int result = context.getPackageManager().checkSignatures(uid1, uid2);
+    if (result == PackageManager.SIGNATURE_MATCH) {
+      return true;
+    }
+    Log.e(
+        "NativeConnectionHelper",
+        "Signatures does not match. checkSignature return value = " + result);
+    return false;
+  }
+
+  // copybara: Add @UsedByNative("jni_utils.cc")
   static Parcel getEmptyParcel() {
     return Parcel.obtain();
   }

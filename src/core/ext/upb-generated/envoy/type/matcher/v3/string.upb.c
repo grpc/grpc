@@ -16,48 +16,50 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_type_matcher_v3_StringMatcher_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_type_matcher_v3_StringMatcher_submsgs[1] = {
   {.submsg = &envoy_type_matcher_v3_RegexMatcher_msginit},
 };
 
-static const upb_msglayout_field envoy_type_matcher_v3_StringMatcher__fields[6] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_type_matcher_v3_StringMatcher__fields[6] = {
+  {1, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_type_matcher_v3_StringMatcher_msginit = {
+const upb_MiniTable envoy_type_matcher_v3_StringMatcher_msginit = {
   &envoy_type_matcher_v3_StringMatcher_submsgs[0],
   &envoy_type_matcher_v3_StringMatcher__fields[0],
-  UPB_SIZE(16, 32), 6, _UPB_MSGEXT_NONE, 3, 255,
+  UPB_SIZE(16, 24), 6, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_type_matcher_v3_ListStringMatcher_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_type_matcher_v3_ListStringMatcher_submsgs[1] = {
   {.submsg = &envoy_type_matcher_v3_StringMatcher_msginit},
 };
 
-static const upb_msglayout_field envoy_type_matcher_v3_ListStringMatcher__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_type_matcher_v3_ListStringMatcher__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_type_matcher_v3_ListStringMatcher_msginit = {
+const upb_MiniTable envoy_type_matcher_v3_ListStringMatcher_msginit = {
   &envoy_type_matcher_v3_ListStringMatcher_submsgs[0],
   &envoy_type_matcher_v3_ListStringMatcher__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[2] = {
+static const upb_MiniTable *messages_layout[2] = {
   &envoy_type_matcher_v3_StringMatcher_msginit,
   &envoy_type_matcher_v3_ListStringMatcher_msginit,
 };
 
-const upb_msglayout_file envoy_type_matcher_v3_string_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_type_matcher_v3_string_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   2,
+  0,
   0,
 };
 

@@ -17,6 +17,8 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/time.h>
 
 #include "test/core/util/test_config.h"
 
@@ -28,7 +30,7 @@ int main(int argc, char** argv) {
 
   grpc_server* server;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   attr.version = 1;
@@ -47,7 +49,10 @@ int main(int argc, char** argv) {
 
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq1, nullptr);
-  grpc_server_add_insecure_http2_port(server, "[::]:0");
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  grpc_server_add_http2_port(server, "[::]:0", server_creds);
+  grpc_server_credentials_release(server_creds);
   grpc_server_register_completion_queue(server, cq2, nullptr);
   grpc_server_register_completion_queue(server, cq3, nullptr);
 

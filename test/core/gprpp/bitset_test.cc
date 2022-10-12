@@ -15,8 +15,9 @@
 #include "src/core/lib/gprpp/bitset.h"
 
 #include <random>
+#include <set>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -88,6 +89,24 @@ TYPED_TEST(BitSetTest, Count) {
     b.set(bit);
     EXPECT_EQ(b.count(), bits_set.size());
   }
+}
+
+TEST(ToIntTest, ToInt) {
+  auto make_bitset = [](bool b0, bool b1, bool b2) {
+    BitSet<3> b;
+    b.set(0, b0);
+    b.set(1, b1);
+    b.set(2, b2);
+    return b;
+  };
+  EXPECT_EQ(make_bitset(false, false, false).ToInt<uint32_t>(), 0);
+  EXPECT_EQ(make_bitset(true, false, false).ToInt<uint32_t>(), 1);
+  EXPECT_EQ(make_bitset(false, true, false).ToInt<uint32_t>(), 2);
+  EXPECT_EQ(make_bitset(true, true, false).ToInt<uint32_t>(), 3);
+  EXPECT_EQ(make_bitset(false, false, true).ToInt<uint32_t>(), 4);
+  EXPECT_EQ(make_bitset(true, false, true).ToInt<uint32_t>(), 5);
+  EXPECT_EQ(make_bitset(false, true, true).ToInt<uint32_t>(), 6);
+  EXPECT_EQ(make_bitset(true, true, true).ToInt<uint32_t>(), 7);
 }
 
 TEST(EmptyBitSet, Empty) {

@@ -25,93 +25,85 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-typedef struct {
-  gpr_mu* mu;
-  grpc_polling_entity pops;
-  bool is_done;
-  char* token;
-
-  grpc_credentials_mdelem_array md_array;
-  grpc_closure closure;
-} oauth2_request;
-
-static void on_oauth2_response(void* arg, grpc_error_handle error) {
-  oauth2_request* request = static_cast<oauth2_request*>(arg);
-  char* token = nullptr;
-  grpc_slice token_slice;
-  if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Fetching token failed: %s",
-            grpc_error_std_string(error).c_str());
-  } else {
-    GPR_ASSERT(request->md_array.size == 1);
-    token_slice = GRPC_MDVALUE(request->md_array.md[0]);
-    token = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1));
-    memcpy(token, GRPC_SLICE_START_PTR(token_slice),
-           GRPC_SLICE_LENGTH(token_slice));
-    token[GRPC_SLICE_LENGTH(token_slice)] = '\0';
-  }
-  grpc_credentials_mdelem_array_destroy(&request->md_array);
-  gpr_mu_lock(request->mu);
-  request->is_done = true;
-  request->token = token;
-  GRPC_LOG_IF_ERROR(
-      "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops), nullptr));
-  gpr_mu_unlock(request->mu);
-}
-
-static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
-  oauth2_request request;
-  memset(&request, 0, sizeof(request));
   grpc_core::ExecCtx exec_ctx;
-  grpc_closure do_nothing_closure;
-  grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};
+  grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args;
 
   grpc_pollset* pollset =
       static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(pollset, &request.mu);
-  request.pops = grpc_polling_entity_create_from_pollset(pollset);
-  request.is_done = false;
+  gpr_mu* mu = nullptr;
+  grpc_pollset_init(pollset, &mu);
+  auto pops = grpc_polling_entity_create_from_pollset(pollset);
+  bool is_done = false;
 
-  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_metadata_batch initial_metadata{arena.get()};
+  char* token = nullptr;
 
-  GRPC_CLOSURE_INIT(&request.closure, on_oauth2_response, &request,
-                    grpc_schedule_on_exec_ctx);
+  auto activity = grpc_core::MakeActivity(
+      [creds, &initial_metadata, &get_request_metadata_args]() {
+        return grpc_core::Map(
+            creds->GetRequestMetadata(
+                grpc_core::ClientMetadataHandle::TestOnlyWrap(
+                    &initial_metadata),
+                &get_request_metadata_args),
+            [](const absl::StatusOr<grpc_core::ClientMetadataHandle>& s) {
+              return s.status();
+            });
+      },
+      grpc_core::ExecCtxWakeupScheduler(),
+      [&is_done, &token, &initial_metadata](absl::Status result) {
+        is_done = true;
+        if (!result.ok()) {
+          gpr_log(GPR_ERROR, "Fetching token failed: %s",
+                  result.ToString().c_str());
+        } else {
+          std::string buffer;
+          token = gpr_strdup(
+              std::string(
+                  initial_metadata
+                      .GetStringValue(GRPC_AUTHORIZATION_METADATA_KEY, &buffer)
+                      .value_or(""))
+                  .c_str());
+        }
+      },
+      arena.get(), &pops);
 
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  if (creds->get_request_metadata(&request.pops, null_ctx, &request.md_array,
-                                  &request.closure, &error)) {
-    // Synchronous result; invoke callback directly.
-    on_oauth2_response(&request, error);
-    GRPC_ERROR_UNREF(error);
-  }
   grpc_core::ExecCtx::Get()->Flush();
 
-  gpr_mu_lock(request.mu);
-  while (!request.is_done) {
+  gpr_mu_lock(mu);
+  while (!is_done) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(grpc_polling_entity_pollset(&request.pops),
-                              &worker, GRPC_MILLIS_INF_FUTURE))) {
-      request.is_done = true;
+            grpc_pollset_work(grpc_polling_entity_pollset(&pops), &worker,
+                              grpc_core::Timestamp::InfFuture()))) {
+      is_done = true;
     }
   }
-  gpr_mu_unlock(request.mu);
+  gpr_mu_unlock(mu);
 
-  grpc_pollset_shutdown(grpc_polling_entity_pollset(&request.pops),
-                        &do_nothing_closure);
+  grpc_pollset_shutdown(
+      grpc_polling_entity_pollset(&pops),
+      GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr, nullptr));
   grpc_core::ExecCtx::Get()->Flush();
-  grpc_pollset_destroy(grpc_polling_entity_pollset(&request.pops));
+  grpc_pollset_destroy(grpc_polling_entity_pollset(&pops));
   gpr_free(pollset);
-  return request.token;
+
+  return token;
 }

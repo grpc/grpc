@@ -16,8 +16,13 @@
 
 #include "src/core/lib/surface/builtins.h"
 
+#include <limits.h>
+
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
 
@@ -35,14 +40,14 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
                                          grpc_add_connected_filter);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        return grpc_channel_stack_builder_append_filter(
-            builder, &grpc_lame_filter, nullptr, nullptr);
+      [](ChannelStackBuilder* builder) {
+        builder->AppendFilter(&LameClientFilter::kFilter);
+        return true;
       });
   builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX, [](grpc_channel_stack_builder* builder) {
-        return grpc_channel_stack_builder_prepend_filter(
-            builder, &Server::kServerTopFilter, nullptr, nullptr);
+      GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
+        builder->PrependFilter(&Server::kServerTopFilter);
+        return true;
       });
 }
 

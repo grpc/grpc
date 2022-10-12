@@ -12,9 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
+#include <stdint.h>
+#include <sys/types.h>
 
+#include <functional>
+#include <limits>
+#include <map>
+#include <memory>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -85,12 +104,6 @@ class Fuzzer {
                              uint64_t{std::numeric_limits<ssize_t>::max()}));
           });
           break;
-        case memory_quota_fuzzer::Action::kRebindQuota:
-          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
-            WithAllocator(action.allocator(),
-                          [q](MemoryOwner* a) { a->Rebind(q); });
-          });
-          break;
         case memory_quota_fuzzer::Action::kCreateAllocation: {
           auto min = action.create_allocation().min();
           auto max = action.create_allocation().max();
@@ -128,7 +141,7 @@ class Fuzzer {
                     delete args;
                   },
                   args, nullptr);
-              ExecCtx::Get()->Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+              ExecCtx::Get()->Run(DEBUG_LOCATION, closure, absl::OkStatus());
             };
             auto pass = MapReclamationPass(cfg.pass());
             WithAllocator(

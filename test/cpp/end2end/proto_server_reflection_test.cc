@@ -59,8 +59,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
     std::shared_ptr<Channel> channel =
         grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
-    desc_db_ = absl::make_unique<ProtoReflectionDescriptorDatabase>(channel);
-    desc_pool_ = absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
+    desc_db_ = std::make_unique<ProtoReflectionDescriptorDatabase>(channel);
+    desc_pool_ = std::make_unique<protobuf::DescriptorPool>(desc_db_.get());
   }
 
   string to_string(const int number) {
@@ -146,7 +146,7 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -88,9 +88,10 @@
 #define UPB_INLINE static
 #endif
 
+#define UPB_MALLOC_ALIGN 8
 #define UPB_ALIGN_UP(size, align) (((size) + (align) - 1) / (align) * (align))
 #define UPB_ALIGN_DOWN(size, align) ((size) / (align) * (align))
-#define UPB_ALIGN_MALLOC(size) UPB_ALIGN_UP(size, 16)
+#define UPB_ALIGN_MALLOC(size) UPB_ALIGN_UP(size, UPB_MALLOC_ALIGN)
 #define UPB_ALIGN_OF(type) offsetof (struct { char c; type member; }, member)
 
 /* Hints to the compiler about likely/unlikely branches. */
@@ -250,4 +251,12 @@ void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
   ((void)(addr), (void)(size))
 #define UPB_UNPOISON_MEMORY_REGION(addr, size) \
   ((void)(addr), (void)(size))
+#endif
+
+/* Disable proto2 arena behavior (TEMPORARY) **********************************/
+
+#ifdef UPB_DISABLE_PROTO2_ENUM_CHECKING
+#define UPB_TREAT_PROTO2_ENUMS_LIKE_PROTO3 1
+#else
+#define UPB_TREAT_PROTO2_ENUMS_LIKE_PROTO3 0
 #endif

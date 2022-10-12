@@ -24,13 +24,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-#include <stdlib.h>
 
-#include <new>
-#include <type_traits>
 #include <utility>
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 
@@ -102,70 +97,6 @@ class max_align_of<A, B...> {
 };
 
 }  // namespace manual_ctor_impl
-
-template <class BaseType, class... DerivedTypes>
-class PolymorphicManualConstructor {
- public:
-  // No constructor or destructor because one of the most useful uses of
-  // this class is as part of a union, and members of a union could not have
-  // constructors or destructors till C++11.  And, anyway, the whole point of
-  // this class is to bypass constructor and destructor.
-
-  BaseType* get() { return reinterpret_cast<BaseType*>(&space_); }
-  const BaseType* get() const {
-    return reinterpret_cast<const BaseType*>(&space_);
-  }
-
-  BaseType* operator->() { return get(); }
-  const BaseType* operator->() const { return get(); }
-
-  BaseType& operator*() { return *get(); }
-  const BaseType& operator*() const { return *get(); }
-
-  template <class DerivedType>
-  void Init() {
-    FinishInit(new (&space_) DerivedType);
-  }
-
-  // Init() constructs the Type instance using the given arguments
-  // (which are forwarded to Type's constructor).
-  //
-  // Note that Init() with no arguments performs default-initialization,
-  // not zero-initialization (i.e it behaves the same as "new Type;", not
-  // "new Type();"), so it will leave non-class types uninitialized.
-  template <class DerivedType, typename... Ts>
-  void Init(Ts&&... args) {
-    FinishInit(new (&space_) DerivedType(std::forward<Ts>(args)...));
-  }
-
-  // Init() that is equivalent to copy and move construction.
-  // Enables usage like this:
-  //   ManualConstructor<std::vector<int>> v;
-  //   v.Init({1, 2, 3});
-  template <class DerivedType>
-  void Init(const DerivedType& x) {
-    FinishInit(new (&space_) DerivedType(x));
-  }
-  template <class DerivedType>
-  void Init(DerivedType&& x) {
-    FinishInit(new (&space_) DerivedType(std::forward<DerivedType>(x)));
-  }
-
-  void Destroy() { get()->~BaseType(); }
-
- private:
-  template <class DerivedType>
-  void FinishInit(DerivedType* p) {
-    static_assert(
-        manual_ctor_impl::is_one_of<DerivedType, DerivedTypes...>::value,
-        "DerivedType must be one of the predeclared DerivedTypes");
-    GPR_ASSERT(static_cast<BaseType*>(p) == p);
-  }
-
-  typename std::aligned_storage<
-      manual_ctor_impl::max_size_of<DerivedTypes...>::value,
-      manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type space_;
-};
 
 template <typename Type>
 class ManualConstructor {

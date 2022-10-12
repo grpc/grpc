@@ -37,19 +37,23 @@ tools/distrib/gen_compilation_database.py \
   "//test/cpp/..." \
   $MANUAL_TARGETS
 
-# build clang-tidy docker image
-docker build -t grpc_iwyu tools/dockerfile/grpc_iwyu
-
-# run clang-tidy against the checked out codebase
+# run iwyu against the checked out codebase
 # when modifying the checked-out files, the current user will be impersonated
 # so that the updated files don't end up being owned by "root".
-docker run \
-  -e TEST="$TEST" \
-  -e CHANGED_FILES="$CHANGED_FILES" \
-  -e IWYU_ROOT="/local-code" \
-  --rm=true \
-  -v "${REPO_ROOT}":/local-code \
-  -v "${HOME/.cache/bazel}":"${HOME/.cache/bazel}" \
-  --user "$(id -u):$(id -g)" \
-  -t grpc_iwyu /iwyu.sh "$@"
+if [ "$IWYU_SKIP_DOCKER" == "" ]
+then
+  # build iwyu docker image
+  docker build -t grpc_iwyu tools/dockerfile/grpc_iwyu
 
+  docker run \
+    -e TEST="$TEST" \
+    -e CHANGED_FILES="$CHANGED_FILES" \
+    -e IWYU_ROOT="/local-code" \
+    --rm=true \
+    -v "${REPO_ROOT}":/local-code \
+    -v "${HOME/.cache/bazel}":"${HOME/.cache/bazel}" \
+    --user "$(id -u):$(id -g)" \
+    -t grpc_iwyu /iwyu.sh "$@"
+else
+  IWYU_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_iwyu/iwyu.sh
+fi

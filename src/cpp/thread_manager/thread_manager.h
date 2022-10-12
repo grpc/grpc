@@ -20,14 +20,11 @@
 #define GRPC_INTERNAL_CPP_THREAD_MANAGER_H
 
 #include <list>
-#include <memory>
-
-#include <grpc/grpc.h>
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/thread_quota.h"
 
 namespace grpc {
 

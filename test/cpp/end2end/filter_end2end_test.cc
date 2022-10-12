@@ -104,7 +104,7 @@ class ChannelDataImpl : public ChannelData {
   grpc_error_handle Init(grpc_channel_element* /*elem*/,
                          grpc_channel_element_args* /*args*/) override {
     IncrementConnectionCounter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 };
 
@@ -161,7 +161,7 @@ class FilterEnd2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
-    generic_stub_ = absl::make_unique<GenericStub>(channel);
+    generic_stub_ = std::make_unique<GenericStub>(channel);
     ResetConnectionCounter();
     ResetCallCounter();
   }
@@ -341,7 +341,7 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

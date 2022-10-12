@@ -6,16 +6,19 @@ metadata:
   namespace: ${namespace_name}
   labels:
     app: ${deployment_name}
+    deployment_id: ${deployment_id}
     owner: xds-k8s-interop-test
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: ${deployment_name}
+      deployment_id: ${deployment_id}
   template:
     metadata:
       labels:
         app: ${deployment_name}
+        deployment_id: ${deployment_id}
         owner: xds-k8s-interop-test
     spec:
       % if service_account_name:
@@ -25,6 +28,7 @@ spec:
       - name: ${deployment_name}
         image: ${image_name}
         imagePullPolicy: Always
+        restartPolicy: Never
         args:
           - "--server=${server_target}"
           - "--stats_port=${stats_port}"
@@ -40,6 +44,10 @@ spec:
           - name: GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH
             value: "true"
           - name: GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY
+            value: "true"
+          - name: GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG
+            value: "true"
+          - name: GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION
             value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
@@ -62,8 +70,8 @@ spec:
             % if xds_server_uri:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
-            % if config_scope:
-            - "--config-scope-experimental=${config_scope}"
+            % if config_mesh:
+            - "--config-mesh-experimental=${config_mesh}"
             % endif
           resources:
             limits:

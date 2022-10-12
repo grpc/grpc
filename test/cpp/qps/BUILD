@@ -52,7 +52,6 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
-        "//:grpc++_core_stats",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
@@ -159,10 +158,12 @@ json_run_localhost_batch()
 grpc_cc_test(
     name = "qps_interarrival_test",
     srcs = ["qps_interarrival_test.cc"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":histogram",
         ":interarrival",
+        "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )

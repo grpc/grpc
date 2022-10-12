@@ -41,7 +41,7 @@ class AdminServicesTest : public ::testing::Test {
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
     builder.AddListeningPort(address, InsecureServerCredentials());
-    ::grpc::AddAdminServices(&builder);
+    grpc::AddAdminServices(&builder);
     server_ = builder.BuildAndStart();
     // Create channel
     auto reflection_stub = reflection::v1alpha::ServerReflection::NewStub(
@@ -94,7 +94,7 @@ TEST_F(AdminServicesTest, ValidateRegisteredServices) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

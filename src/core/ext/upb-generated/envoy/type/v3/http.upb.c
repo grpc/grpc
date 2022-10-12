@@ -13,9 +13,11 @@
 
 #include "upb/port_def.inc"
 
-const upb_msglayout_file envoy_type_v3_http_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_type_v3_http_proto_upb_file_layout = {
   NULL,
   NULL,
+  NULL,
+  0,
   0,
   0,
 };

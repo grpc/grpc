@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdlib.h>
+
+#include <algorithm>
+#include <map>
+#include <utility>
+
 #include "src/core/lib/avl/avl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/avl/avl_fuzzer.pb.h"
@@ -23,29 +29,27 @@ namespace grpc_core {
 
 class Fuzzer {
  public:
-  void Run(const avl_fuzzer::Msg& msg) {
-    CheckEqual();
-    for (const auto& action : msg.actions()) {
-      switch (action.action_case()) {
-        case avl_fuzzer::Action::kSet:
-          avl_ = avl_.Add(action.key(), action.set());
-          map_[action.key()] = action.set();
-          break;
-        case avl_fuzzer::Action::kDel:
-          avl_ = avl_.Remove(action.key());
-          map_.erase(action.key());
-          break;
-        case avl_fuzzer::Action::kGet: {
-          auto* p = avl_.Lookup(action.key());
-          auto it = map_.find(action.key());
-          if (it == map_.end() && p != nullptr) abort();
-          if (it != map_.end() && p == nullptr) abort();
-          if (it != map_.end() && it->second != *p) abort();
-        } break;
-        case avl_fuzzer::Action::ACTION_NOT_SET:
-          break;
-      }
-      CheckEqual();
+  Fuzzer() { CheckEqual(); }
+  ~Fuzzer() { CheckEqual(); }
+  void Run(const avl_fuzzer::Action& action) {
+    switch (action.action_case()) {
+      case avl_fuzzer::Action::kSet:
+        avl_ = avl_.Add(action.key(), action.set());
+        map_[action.key()] = action.set();
+        break;
+      case avl_fuzzer::Action::kDel:
+        avl_ = avl_.Remove(action.key());
+        map_.erase(action.key());
+        break;
+      case avl_fuzzer::Action::kGet: {
+        auto* p = avl_.Lookup(action.key());
+        auto it = map_.find(action.key());
+        if (it == map_.end() && p != nullptr) abort();
+        if (it != map_.end() && p == nullptr) abort();
+        if (it != map_.end() && it->second != *p) abort();
+      } break;
+      case avl_fuzzer::Action::ACTION_NOT_SET:
+        break;
     }
   }
 
@@ -65,8 +69,38 @@ class Fuzzer {
   std::map<int, int> map_;
 };
 
+template <typename RepeatedField>
+AVL<int, int> AvlFromProto(const RepeatedField& p) {
+  AVL<int, int> a;
+  for (const auto& kv : p) {
+    a = a.Add(kv.key(), kv.value());
+  }
+  return a;
+}
+
+template <typename RepeatedField>
+std::map<int, int> MapFromProto(const RepeatedField& p) {
+  std::map<int, int> a;
+  for (const auto& kv : p) {
+    a[kv.key()] = kv.value();
+  }
+  return a;
+}
+
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const avl_fuzzer::Msg& msg) {
-  grpc_core::Fuzzer().Run(msg);
+  grpc_core::Fuzzer fuzzer;
+  for (const auto& action : msg.actions()) {
+    grpc_core::Fuzzer().Run(action);
+  }
+
+  for (const auto& cmp : msg.compares()) {
+    auto left_avl = grpc_core::AvlFromProto(cmp.left());
+    auto left_map = grpc_core::MapFromProto(cmp.left());
+    auto right_avl = grpc_core::AvlFromProto(cmp.right());
+    auto right_map = grpc_core::MapFromProto(cmp.right());
+    if ((left_avl == right_avl) != (left_map == right_map)) abort();
+    if ((left_avl < right_avl) != (left_map < right_map)) abort();
+  }
 }

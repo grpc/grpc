@@ -38,7 +38,7 @@ using grpc::testing::EchoResponse;
 namespace grpc {
 namespace testing {
 
-class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
+class ServiceImpl final : public grpc::testing::EchoTestService::Service {
   Status BidiStream(
       ServerContext* /*context*/,
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {

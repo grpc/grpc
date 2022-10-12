@@ -16,13 +16,17 @@
  *
  */
 
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
-#include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 #define PFX_STR                      \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
@@ -58,7 +62,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_byte_buffer* request_payload_recv = nullptr;
   grpc_op* op;
   grpc_op ops[6];
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_metadata_array request_metadata_recv;
   int was_cancelled = 2;
 
@@ -68,8 +72,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
@@ -90,8 +94,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), grpc_core::CqVerifier::AnyStatus());
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -112,16 +116,16 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  cqv.Expect(tag(103), true);
+  cqv.Verify();
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   /* Verify that sending multiple headers doesn't segfault */

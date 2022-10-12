@@ -19,12 +19,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/profiling/timers.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/histogram.h"
@@ -74,7 +78,6 @@ static void init_ping_pong_request(void) {
 }
 
 static void step_ping_pong_request(void) {
-  GPR_TIMER_SCOPE("ping_pong", 1);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   call = grpc_channel_create_call(
       channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
@@ -117,7 +120,6 @@ static void init_ping_pong_stream(void) {
 }
 
 static void step_ping_pong_stream(void) {
-  GPR_TIMER_SCOPE("ping_pong", 1);
   grpc_call_error error;
   error = grpc_call_start_batch(call, stream_step_ops, 2,
                                 reinterpret_cast<void*>(1), nullptr);
@@ -147,6 +149,7 @@ int main(int argc, char** argv) {
   double start, stop;
   unsigned i;
 
+  int fake_argc = 1;
   char* fake_argv[1];
 
   int payload_size = 1;
@@ -157,11 +160,9 @@ int main(int argc, char** argv) {
   const char* scenario_name = "ping-pong-request";
   scenario sc = {nullptr, nullptr, nullptr};
 
-  gpr_timers_set_log_filename("latency_trace.fling_client.txt");
-
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc::testing::TestEnvironment env(1, fake_argv);
+  grpc::testing::TestEnvironment env(&fake_argc, fake_argv);
 
   grpc_init();
 
@@ -194,7 +195,9 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  channel = grpc_insecure_channel_create(target, nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  channel = grpc_channel_create(target, creds, nullptr);
+  grpc_channel_credentials_release(creds);
   cq = grpc_completion_queue_create_for_next(nullptr);
   the_buffer =
       grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));

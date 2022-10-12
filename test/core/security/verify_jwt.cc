@@ -26,6 +26,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 #include "test/core/util/cmdline.h"
 
@@ -101,7 +103,8 @@ int main(int argc, char** argv) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {
+            grpc_pollset_work(sync.pollset, &worker,
+                              grpc_core::Timestamp::InfFuture()))) {
       sync.is_done = true;
     }
     gpr_mu_unlock(sync.mu);

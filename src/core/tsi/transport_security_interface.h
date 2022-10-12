@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <string>
+
 #include "src/core/lib/debug/trace.h"
 
 /* --- tsi result ---  */
@@ -45,6 +47,8 @@ typedef enum {
   TSI_ASYNC = 13,
   TSI_HANDSHAKE_SHUTDOWN = 14,
   TSI_CLOSE_NOTIFY = 15,  // Indicates that the connection should be closed.
+  TSI_DRAIN_BUFFER = 16,  // Indicates that the buffer used to store handshake
+                          // data should be drained.
 } tsi_result;
 
 typedef enum {
@@ -470,6 +474,13 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
    - cb is the callback function defined above. It can be NULL for synchronous
      TSI handshaker implementation.
    - user_data is the argument to callback function passed from the caller.
+   - error, if non-null, will be populated with a human-readable error
+     message whenever the result value is something other than TSI_OK,
+     TSI_ASYNC, or TSI_INCOMPLETE_DATA.  The object pointed to by this
+     argument is owned by the caller and must continue to exist until after the
+     handshake is finished.  Some TSI implementations cache this value,
+     so callers must pass the same value to all calls to tsi_handshaker_next()
+     for a given handshake.
    This method returns TSI_ASYNC if the TSI handshaker implementation is
    asynchronous, and in this case, the callback is guaranteed to run in another
    thread owned by TSI. It returns TSI_OK if the handshake completes or if
@@ -480,11 +491,14 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
    The caller is responsible for destroying the handshaker_result. However,
    the caller should not free bytes_to_send, as the buffer is owned by the
    tsi_handshaker object.  */
-tsi_result tsi_handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
-    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data);
+tsi_result tsi_handshaker_next(tsi_handshaker* self,
+                               const unsigned char* received_bytes,
+                               size_t received_bytes_size,
+                               const unsigned char** bytes_to_send,
+                               size_t* bytes_to_send_size,
+                               tsi_handshaker_result** handshaker_result,
+                               tsi_handshaker_on_next_done_cb cb,
+                               void* user_data, std::string* error = nullptr);
 
 /* This method shuts down a TSI handshake that is in progress.
  *

@@ -16,28 +16,45 @@
  *
  */
 
+#include <inttypes.h>
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -62,12 +79,15 @@ class ServerThread {
     a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
     grpc_channel_args args = {2, a};
     server_ = grpc_server_create(&args, nullptr);
-    ASSERT_TRUE(grpc_server_add_insecure_http2_port(server_, address_));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    ASSERT_TRUE(grpc_server_add_http2_port(server_, address_, server_creds));
+    grpc_server_credentials_release(server_creds);
     cq_ = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
     thread_ =
-        absl::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
+        std::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
     grpc_resource_quota_unref(
         static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
   }
@@ -110,7 +130,7 @@ class Client {
   void Connect() {
     ExecCtx exec_ctx;
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-        GetDNSResolver()->ResolveNameBlocking(server_address_, "80");
+        GetDNSResolver()->LookupHostnameBlocking(server_address_, "80");
     ASSERT_EQ(absl::OkStatus(), addresses_or.status())
         << addresses_or.status().ToString();
     ASSERT_GE(addresses_or->size(), 1UL);
@@ -119,16 +139,15 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    const grpc_channel_args* args = CoreConfiguration::Get()
-                                        .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
-    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
-                            addresses_or->data(), ExecCtx::Get()->Now() + 1000);
-    grpc_channel_args_destroy(args);
-    ASSERT_TRUE(PollUntilDone(
-        &state,
-        grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
-    ASSERT_EQ(GRPC_ERROR_NONE, state.error());
+    auto args = CoreConfiguration::Get()
+                    .channel_args_preconditioning()
+                    .PreconditionChannelArgs(nullptr);
+    grpc_tcp_client_connect(
+        state.closure(), &endpoint_, pollset_set,
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+        addresses_or->data(), Timestamp::Now() + Duration::Seconds(1));
+    ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
+    ASSERT_EQ(absl::OkStatus(), state.error());
     grpc_pollset_set_destroy(pollset_set);
     grpc_endpoint_add_to_pollset(endpoint_, pollset_);
   }
@@ -142,22 +161,21 @@ class Client {
     bool retval = true;
     // Use a deadline of 3 seconds, which is a lot more than we should
     // need for a 1-second timeout, but this helps avoid flakes.
-    grpc_millis deadline = ExecCtx::Get()->Now() + 3000;
+    Timestamp deadline = Timestamp::Now() + Duration::Seconds(3);
     while (true) {
       EventState state;
       grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
-                         /*urgent=*/true);
+                         /*urgent=*/true, /*min_progress_size=*/1);
       if (!PollUntilDone(&state, deadline)) {
         retval = false;
         break;
       }
-      if (state.error() != GRPC_ERROR_NONE) break;
+      if (state.error() != absl::OkStatus()) break;
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
-      grpc_slice_buffer_reset_and_unref_internal(&read_buffer);
+      grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_,
-                           GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
-    grpc_slice_buffer_destroy_internal(&read_buffer);
+    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE("shutdown"));
+    grpc_slice_buffer_destroy(&read_buffer);
     return retval;
   }
 
@@ -178,7 +196,7 @@ class Client {
                         grpc_schedule_on_exec_ctx);
     }
 
-    ~EventState() { GRPC_ERROR_UNREF(error_); }
+    ~EventState() {}
 
     grpc_closure* closure() { return &closure_; }
 
@@ -189,31 +207,31 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s",
-              grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "OnEventDone(): %s", StatusToString(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
-      state->error_ = GRPC_ERROR_REF(error);
+      state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
     }
 
     grpc_closure closure_;
     gpr_atm done_atm_ = 0;
-    grpc_error_handle error_ = GRPC_ERROR_NONE;
+    grpc_error_handle error_;
   };
 
   // Returns true if done, or false if deadline exceeded.
-  bool PollUntilDone(EventState* state, grpc_millis deadline) {
+  bool PollUntilDone(EventState* state, Timestamp deadline) {
     while (true) {
       grpc_pollset_worker* worker = nullptr;
       gpr_mu_lock(mu_);
       GRPC_LOG_IF_ERROR(
           "grpc_pollset_work",
-          grpc_pollset_work(pollset_, &worker, ExecCtx::Get()->Now() + 100));
+          grpc_pollset_work(pollset_, &worker,
+                            Timestamp::Now() + Duration::Milliseconds(100)));
       // Flushes any work scheduled before or during polling.
       ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);
       if (state != nullptr && state->done()) return true;
-      if (ExecCtx::Get()->Now() >= deadline) return false;
+      if (Timestamp::Now() >= deadline) return false;
     }
   }
 
@@ -259,7 +277,7 @@ TEST(SettingsTimeout, Basic) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int result = RUN_ALL_TESTS();
   grpc_shutdown();

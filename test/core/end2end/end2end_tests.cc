@@ -79,14 +79,16 @@ extern void filter_latency(grpc_end2end_test_config config);
 extern void filter_latency_pre_init(void);
 extern void filter_status_code(grpc_end2end_test_config config);
 extern void filter_status_code_pre_init(void);
+extern void filtered_metadata(grpc_end2end_test_config config);
+extern void filtered_metadata_pre_init(void);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
 extern void graceful_server_shutdown_pre_init(void);
+extern void grpc_authz(grpc_end2end_test_config config);
+extern void grpc_authz_pre_init(void);
 extern void high_initial_seqno(grpc_end2end_test_config config);
 extern void high_initial_seqno_pre_init(void);
 extern void hpack_size(grpc_end2end_test_config config);
 extern void hpack_size_pre_init(void);
-extern void idempotent_request(grpc_end2end_test_config config);
-extern void idempotent_request_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
 extern void invoke_large_request_pre_init(void);
 extern void keepalive_timeout(grpc_end2end_test_config config);
@@ -103,8 +105,6 @@ extern void max_message_length(grpc_end2end_test_config config);
 extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
-extern void no_error_on_hotpath(grpc_end2end_test_config config);
-extern void no_error_on_hotpath_pre_init(void);
 extern void no_logging(grpc_end2end_test_config config);
 extern void no_logging_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
@@ -127,6 +127,8 @@ extern void resource_quota_server(grpc_end2end_test_config config);
 extern void resource_quota_server_pre_init(void);
 extern void retry(grpc_end2end_test_config config);
 extern void retry_pre_init(void);
+extern void retry_cancel_after_first_attempt_starts(grpc_end2end_test_config config);
+extern void retry_cancel_after_first_attempt_starts_pre_init(void);
 extern void retry_cancel_during_delay(grpc_end2end_test_config config);
 extern void retry_cancel_during_delay_pre_init(void);
 extern void retry_cancel_with_multiple_send_batches(grpc_end2end_test_config config);
@@ -157,12 +159,16 @@ extern void retry_recv_initial_metadata(grpc_end2end_test_config config);
 extern void retry_recv_initial_metadata_pre_init(void);
 extern void retry_recv_message(grpc_end2end_test_config config);
 extern void retry_recv_message_pre_init(void);
+extern void retry_recv_message_replay(grpc_end2end_test_config config);
+extern void retry_recv_message_replay_pre_init(void);
 extern void retry_recv_trailing_metadata_error(grpc_end2end_test_config config);
 extern void retry_recv_trailing_metadata_error_pre_init(void);
 extern void retry_send_initial_metadata_refs(grpc_end2end_test_config config);
 extern void retry_send_initial_metadata_refs_pre_init(void);
 extern void retry_send_op_fails(grpc_end2end_test_config config);
 extern void retry_send_op_fails_pre_init(void);
+extern void retry_send_recv_batch(grpc_end2end_test_config config);
+extern void retry_send_recv_batch_pre_init(void);
 extern void retry_server_pushback_delay(grpc_end2end_test_config config);
 extern void retry_server_pushback_delay_pre_init(void);
 extern void retry_server_pushback_disabled(grpc_end2end_test_config config);
@@ -177,8 +183,16 @@ extern void retry_throttled(grpc_end2end_test_config config);
 extern void retry_throttled_pre_init(void);
 extern void retry_too_many_attempts(grpc_end2end_test_config config);
 extern void retry_too_many_attempts_pre_init(void);
-extern void sdk_authz(grpc_end2end_test_config config);
-extern void sdk_authz_pre_init(void);
+extern void retry_transparent_goaway(grpc_end2end_test_config config);
+extern void retry_transparent_goaway_pre_init(void);
+extern void retry_transparent_max_concurrent_streams(grpc_end2end_test_config config);
+extern void retry_transparent_max_concurrent_streams_pre_init(void);
+extern void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config);
+extern void retry_transparent_not_sent_on_wire_pre_init(void);
+extern void retry_unref_before_finish(grpc_end2end_test_config config);
+extern void retry_unref_before_finish_pre_init(void);
+extern void retry_unref_before_recv(grpc_end2end_test_config config);
+extern void retry_unref_before_recv_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
 extern void server_streaming(grpc_end2end_test_config config);
@@ -187,8 +201,6 @@ extern void shutdown_finishes_calls(grpc_end2end_test_config config);
 extern void shutdown_finishes_calls_pre_init(void);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
 extern void shutdown_finishes_tags_pre_init(void);
-extern void simple_cacheable_request(grpc_end2end_test_config config);
-extern void simple_cacheable_request_pre_init(void);
 extern void simple_delayed_request(grpc_end2end_test_config config);
 extern void simple_delayed_request_pre_init(void);
 extern void simple_metadata(grpc_end2end_test_config config);
@@ -232,10 +244,11 @@ void grpc_end2end_tests_pre_init(void) {
   filter_init_fails_pre_init();
   filter_latency_pre_init();
   filter_status_code_pre_init();
+  filtered_metadata_pre_init();
   graceful_server_shutdown_pre_init();
+  grpc_authz_pre_init();
   high_initial_seqno_pre_init();
   hpack_size_pre_init();
-  idempotent_request_pre_init();
   invoke_large_request_pre_init();
   keepalive_timeout_pre_init();
   large_metadata_pre_init();
@@ -244,7 +257,6 @@ void grpc_end2end_tests_pre_init(void) {
   max_connection_idle_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
-  no_error_on_hotpath_pre_init();
   no_logging_pre_init();
   no_op_pre_init();
   payload_pre_init();
@@ -256,6 +268,7 @@ void grpc_end2end_tests_pre_init(void) {
   request_with_payload_pre_init();
   resource_quota_server_pre_init();
   retry_pre_init();
+  retry_cancel_after_first_attempt_starts_pre_init();
   retry_cancel_during_delay_pre_init();
   retry_cancel_with_multiple_send_batches_pre_init();
   retry_cancellation_pre_init();
@@ -271,9 +284,11 @@ void grpc_end2end_tests_pre_init(void) {
   retry_per_attempt_recv_timeout_on_last_attempt_pre_init();
   retry_recv_initial_metadata_pre_init();
   retry_recv_message_pre_init();
+  retry_recv_message_replay_pre_init();
   retry_recv_trailing_metadata_error_pre_init();
   retry_send_initial_metadata_refs_pre_init();
   retry_send_op_fails_pre_init();
+  retry_send_recv_batch_pre_init();
   retry_server_pushback_delay_pre_init();
   retry_server_pushback_disabled_pre_init();
   retry_streaming_pre_init();
@@ -281,12 +296,15 @@ void grpc_end2end_tests_pre_init(void) {
   retry_streaming_succeeds_before_replay_finished_pre_init();
   retry_throttled_pre_init();
   retry_too_many_attempts_pre_init();
-  sdk_authz_pre_init();
+  retry_transparent_goaway_pre_init();
+  retry_transparent_max_concurrent_streams_pre_init();
+  retry_transparent_not_sent_on_wire_pre_init();
+  retry_unref_before_finish_pre_init();
+  retry_unref_before_recv_pre_init();
   server_finishes_request_pre_init();
   server_streaming_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
-  simple_cacheable_request_pre_init();
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
@@ -329,10 +347,11 @@ void grpc_end2end_tests(int argc, char **argv,
     filter_init_fails(config);
     filter_latency(config);
     filter_status_code(config);
+    filtered_metadata(config);
     graceful_server_shutdown(config);
+    grpc_authz(config);
     high_initial_seqno(config);
     hpack_size(config);
-    idempotent_request(config);
     invoke_large_request(config);
     keepalive_timeout(config);
     large_metadata(config);
@@ -341,7 +360,6 @@ void grpc_end2end_tests(int argc, char **argv,
     max_connection_idle(config);
     max_message_length(config);
     negative_deadline(config);
-    no_error_on_hotpath(config);
     no_logging(config);
     no_op(config);
     payload(config);
@@ -353,6 +371,7 @@ void grpc_end2end_tests(int argc, char **argv,
     request_with_payload(config);
     resource_quota_server(config);
     retry(config);
+    retry_cancel_after_first_attempt_starts(config);
     retry_cancel_during_delay(config);
     retry_cancel_with_multiple_send_batches(config);
     retry_cancellation(config);
@@ -368,9 +387,11 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_per_attempt_recv_timeout_on_last_attempt(config);
     retry_recv_initial_metadata(config);
     retry_recv_message(config);
+    retry_recv_message_replay(config);
     retry_recv_trailing_metadata_error(config);
     retry_send_initial_metadata_refs(config);
     retry_send_op_fails(config);
+    retry_send_recv_batch(config);
     retry_server_pushback_delay(config);
     retry_server_pushback_disabled(config);
     retry_streaming(config);
@@ -378,12 +399,15 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_streaming_succeeds_before_replay_finished(config);
     retry_throttled(config);
     retry_too_many_attempts(config);
-    sdk_authz(config);
+    retry_transparent_goaway(config);
+    retry_transparent_max_concurrent_streams(config);
+    retry_transparent_not_sent_on_wire(config);
+    retry_unref_before_finish(config);
+    retry_unref_before_recv(config);
     server_finishes_request(config);
     server_streaming(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
-    simple_cacheable_request(config);
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
@@ -495,8 +519,16 @@ void grpc_end2end_tests(int argc, char **argv,
       filter_status_code(config);
       continue;
     }
+    if (0 == strcmp("filtered_metadata", argv[i])) {
+      filtered_metadata(config);
+      continue;
+    }
     if (0 == strcmp("graceful_server_shutdown", argv[i])) {
       graceful_server_shutdown(config);
+      continue;
+    }
+    if (0 == strcmp("grpc_authz", argv[i])) {
+      grpc_authz(config);
       continue;
     }
     if (0 == strcmp("high_initial_seqno", argv[i])) {
@@ -505,10 +537,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("hpack_size", argv[i])) {
       hpack_size(config);
-      continue;
-    }
-    if (0 == strcmp("idempotent_request", argv[i])) {
-      idempotent_request(config);
       continue;
     }
     if (0 == strcmp("invoke_large_request", argv[i])) {
@@ -541,10 +569,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("negative_deadline", argv[i])) {
       negative_deadline(config);
-      continue;
-    }
-    if (0 == strcmp("no_error_on_hotpath", argv[i])) {
-      no_error_on_hotpath(config);
       continue;
     }
     if (0 == strcmp("no_logging", argv[i])) {
@@ -589,6 +613,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry", argv[i])) {
       retry(config);
+      continue;
+    }
+    if (0 == strcmp("retry_cancel_after_first_attempt_starts", argv[i])) {
+      retry_cancel_after_first_attempt_starts(config);
       continue;
     }
     if (0 == strcmp("retry_cancel_during_delay", argv[i])) {
@@ -651,6 +679,10 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_recv_message(config);
       continue;
     }
+    if (0 == strcmp("retry_recv_message_replay", argv[i])) {
+      retry_recv_message_replay(config);
+      continue;
+    }
     if (0 == strcmp("retry_recv_trailing_metadata_error", argv[i])) {
       retry_recv_trailing_metadata_error(config);
       continue;
@@ -661,6 +693,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_send_op_fails", argv[i])) {
       retry_send_op_fails(config);
+      continue;
+    }
+    if (0 == strcmp("retry_send_recv_batch", argv[i])) {
+      retry_send_recv_batch(config);
       continue;
     }
     if (0 == strcmp("retry_server_pushback_delay", argv[i])) {
@@ -691,8 +727,24 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_too_many_attempts(config);
       continue;
     }
-    if (0 == strcmp("sdk_authz", argv[i])) {
-      sdk_authz(config);
+    if (0 == strcmp("retry_transparent_goaway", argv[i])) {
+      retry_transparent_goaway(config);
+      continue;
+    }
+    if (0 == strcmp("retry_transparent_max_concurrent_streams", argv[i])) {
+      retry_transparent_max_concurrent_streams(config);
+      continue;
+    }
+    if (0 == strcmp("retry_transparent_not_sent_on_wire", argv[i])) {
+      retry_transparent_not_sent_on_wire(config);
+      continue;
+    }
+    if (0 == strcmp("retry_unref_before_finish", argv[i])) {
+      retry_unref_before_finish(config);
+      continue;
+    }
+    if (0 == strcmp("retry_unref_before_recv", argv[i])) {
+      retry_unref_before_recv(config);
       continue;
     }
     if (0 == strcmp("server_finishes_request", argv[i])) {
@@ -709,10 +761,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("shutdown_finishes_tags", argv[i])) {
       shutdown_finishes_tags(config);
-      continue;
-    }
-    if (0 == strcmp("simple_cacheable_request", argv[i])) {
-      simple_cacheable_request(config);
       continue;
     }
     if (0 == strcmp("simple_delayed_request", argv[i])) {

@@ -19,131 +19,131 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_cluster_v3_cluster_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_cluster_v3_cluster_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_ClusterCollection_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.ClusterCollection");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_ClusterCollection_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.ClusterCollection");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_TransportSocketMatch_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.TransportSocketMatch");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_TransportSocketMatch_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.TransportSocketMatch");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_CustomClusterType_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.CustomClusterType");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_CustomClusterType_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.CustomClusterType");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_EdsClusterConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.EdsClusterConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_EdsClusterConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.EdsClusterConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_LbSubsetConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.LbSubsetConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_LbSubsetConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.LbSubsetConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetSelector");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetSelector");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_SlowStartConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.SlowStartConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_SlowStartConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.SlowStartConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.RoundRobinLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.RoundRobinLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.LeastRequestLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.LeastRequestLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_RingHashLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.RingHashLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_RingHashLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.RingHashLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_MaglevLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.MaglevLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_MaglevLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.MaglevLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.OriginalDstLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.OriginalDstLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_CommonLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_CommonLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig.ZoneAwareLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig.ZoneAwareLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig.LocalityWeightedLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig.LocalityWeightedLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig.ConsistentHashingLbConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.CommonLbConfig.ConsistentHashingLbConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_RefreshRate_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.RefreshRate");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_RefreshRate_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.RefreshRate");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_PreconnectPolicy_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.PreconnectPolicy");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_PreconnectPolicy_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.PreconnectPolicy");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.TypedExtensionProtocolOptionsEntry");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.Cluster.TypedExtensionProtocolOptionsEntry");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_LoadBalancingPolicy_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.LoadBalancingPolicy");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_LoadBalancingPolicy_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.LoadBalancingPolicy");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_LoadBalancingPolicy_Policy_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.LoadBalancingPolicy.Policy");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_LoadBalancingPolicy_Policy_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.LoadBalancingPolicy.Policy");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_UpstreamBindConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.UpstreamBindConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamBindConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamBindConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_UpstreamConnectionOptions_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.UpstreamConnectionOptions");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptions_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_TrackClusterStats_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.TrackClusterStats");
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_TrackClusterStats_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.TrackClusterStats");
 }
 
 #ifdef __cplusplus

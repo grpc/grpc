@@ -18,8 +18,8 @@
 
 #import "TestHelper.h"
 #import <Cronet/Cronet.h>
-#import <grpcpp/impl/codegen/config.h>
 #import <grpcpp/impl/codegen/string_ref.h>
+#import <grpcpp/support/config.h>
 
 using std::chrono::system_clock;
 using grpc::testing::EchoRequest;

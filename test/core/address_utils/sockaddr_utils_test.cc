@@ -19,13 +19,27 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
+
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/un.h>
+#endif
+
+#include <string>
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
@@ -161,48 +175,117 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
   errno = 0x7EADBEEF;
 
   grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input4, false), "192.0.2.1:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input4, true), "192.0.2.1:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input4), "ipv4:192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input4, false).value(), "192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input4, true).value(), "192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input4).value(), "ipv4:192.0.2.1:12345");
 
   grpc_resolved_address input6 = MakeAddr6(kIPv6, sizeof(kIPv6));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false), "[2001:db8::1]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true), "[2001:db8::1]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
+            "[2001:db8::1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
+            "[2001:db8::1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
+            "ipv6:%5B2001:db8::1%5D:12345");
 
   SetIPv6ScopeId(&input6, 2);
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false), "[2001:db8::1%252]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true), "[2001:db8::1%252]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1%252]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
+            "[2001:db8::1%2]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
+            "[2001:db8::1%2]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
+            "ipv6:%5B2001:db8::1%252%5D:12345");
 
   SetIPv6ScopeId(&input6, 101);
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false),
-            "[2001:db8::1%25101]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true),
-            "[2001:db8::1%25101]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1%25101]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
+            "[2001:db8::1%101]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
+            "[2001:db8::1%101]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
+            "ipv6:%5B2001:db8::1%25101%5D:12345");
 
   grpc_resolved_address input6x = MakeAddr6(kMapped, sizeof(kMapped));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6x, false),
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6x, false).value(),
             "[::ffff:192.0.2.1]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6x, true), "192.0.2.1:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6x), "ipv4:192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6x, true).value(), "192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6x).value(), "ipv4:192.0.2.1:12345");
 
   grpc_resolved_address input6y =
       MakeAddr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6y, false),
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6y, false).value(),
             "[::fffe:c000:263]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6y, true), "[::fffe:c000:263]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6y), "ipv6:[::fffe:c000:263]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6y, true).value(),
+            "[::fffe:c000:263]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6y).value(),
+            "ipv6:%5B::fffe:c000:263%5D:12345");
 
   grpc_resolved_address phony;
   memset(&phony, 0, sizeof(phony));
   grpc_sockaddr* phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
   phony_addr->sa_family = 123;
-  EXPECT_EQ(grpc_sockaddr_to_string(&phony, false), "(sockaddr family=123)");
-  EXPECT_EQ(grpc_sockaddr_to_string(&phony, true), "(sockaddr family=123)");
-  EXPECT_TRUE(grpc_sockaddr_to_uri(&phony).empty());
+  EXPECT_EQ(grpc_sockaddr_to_string(&phony, false).status(),
+            absl::InvalidArgumentError("Unknown sockaddr family: 123"));
+  EXPECT_EQ(grpc_sockaddr_to_string(&phony, true).status(),
+            absl::InvalidArgumentError("Unknown sockaddr family: 123"));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&phony).status(),
+            absl::InvalidArgumentError("Empty address"));
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  grpc_resolved_address inputun;
+  struct sockaddr_un* sock_un = reinterpret_cast<struct sockaddr_un*>(&inputun);
+  ASSERT_EQ(grpc_core::UnixSockaddrPopulate("/some/unix/path", &inputun),
+            absl::OkStatus());
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(), "/some/unix/path");
+
+  std::string max_filepath(sizeof(sock_un->sun_path) - 1, 'x');
+  ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
+            absl::OkStatus());
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(), max_filepath);
+
+  ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
+            absl::OkStatus());
+  sock_un->sun_path[sizeof(sockaddr_un::sun_path) - 1] = 'x';
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).status(),
+            absl::InvalidArgumentError("UDS path is not null-terminated"));
+
+  ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("some_unix_path", &inputun),
+            absl::OkStatus());
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(),
+            absl::StrCat(std::string(1, '\0'), "some_unix_path"));
+
+  std::string max_abspath(sizeof(sock_un->sun_path) - 1, '\0');
+  ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate(max_abspath, &inputun),
+            absl::OkStatus());
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(),
+            absl::StrCat(std::string(1, '\0'), max_abspath));
+
+  ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("", &inputun),
+            absl::OkStatus());
+  inputun.len = sizeof(sock_un->sun_family);
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).status(),
+            absl::InvalidArgumentError("empty UDS abstract path"));
+#endif
 }
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+
+TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
+  grpc_resolved_address addr;
+  ASSERT_TRUE(absl::OkStatus() ==
+              grpc_core::UnixSockaddrPopulate("sample-path", &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix:sample-path");
+
+  ASSERT_TRUE(absl::OkStatus() ==
+              grpc_core::UnixAbstractSockaddrPopulate("no-nulls", &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix-abstract:no-nulls");
+
+  ASSERT_TRUE(absl::OkStatus() ==
+              grpc_core::UnixAbstractSockaddrPopulate(
+                  std::string("path_\0with_null", 15), &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(),
+            "unix-abstract:path_%00with_null");
+}
+
+#endif /* GRPC_HAVE_UNIX_SOCKET */
 
 TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
   grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
@@ -226,16 +309,14 @@ TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
 void VerifySocketAddressMatch(const std::string& ip_address,
                               const std::string& subnet, uint32_t mask_bits,
                               bool success) {
-  grpc_resolved_address addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&addr, ip_address.c_str(), false),
-            GRPC_ERROR_NONE);
   // Setting the port has no effect on the match.
-  grpc_sockaddr_set_port(&addr, 12345);
-  grpc_resolved_address subnet_addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false),
-            GRPC_ERROR_NONE);
-  grpc_sockaddr_mask_bits(&subnet_addr, mask_bits);
-  EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits), success)
+  auto addr = grpc_core::StringToSockaddr(ip_address, /*port=*/12345);
+  ASSERT_TRUE(addr.ok()) << addr.status();
+  auto subnet_addr = grpc_core::StringToSockaddr(subnet, /*port=*/0);
+  ASSERT_TRUE(subnet_addr.ok()) << subnet_addr.status();
+  grpc_sockaddr_mask_bits(&*subnet_addr, mask_bits);
+  EXPECT_EQ(grpc_sockaddr_match_subnet(&*addr, &*subnet_addr, mask_bits),
+            success)
       << "IP=" << ip_address << " Subnet=" << subnet << " Mask=" << mask_bits;
 }
 
@@ -282,7 +363,7 @@ TEST(SockAddrUtilsTest, SockAddrMatchSubnet) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int retval = RUN_ALL_TESTS();
   return retval;

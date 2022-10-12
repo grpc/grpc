@@ -12,55 +12,57 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub grpc_lookup_v1_RouteLookupRequest_submsgs[1] = {
+static const upb_MiniTable_Sub grpc_lookup_v1_RouteLookupRequest_submsgs[1] = {
   {.submsg = &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit},
 };
 
-static const upb_msglayout_field grpc_lookup_v1_RouteLookupRequest__fields[4] = {
-  {3, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(20, 40), 0, 0, 11, _UPB_MODE_MAP | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupRequest__fields[4] = {
+  {3, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(16, 32), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout grpc_lookup_v1_RouteLookupRequest_msginit = {
+const upb_MiniTable grpc_lookup_v1_RouteLookupRequest_msginit = {
   &grpc_lookup_v1_RouteLookupRequest_submsgs[0],
   &grpc_lookup_v1_RouteLookupRequest__fields[0],
-  UPB_SIZE(24, 48), 4, _UPB_MSGEXT_NONE, 0, 255,
+  UPB_SIZE(24, 48), 4, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout_field grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit = {
+const upb_MiniTable grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit = {
   NULL,
   &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_field grpc_lookup_v1_RouteLookupResponse__fields[2] = {
-  {2, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupResponse__fields[2] = {
+  {2, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout grpc_lookup_v1_RouteLookupResponse_msginit = {
+const upb_MiniTable grpc_lookup_v1_RouteLookupResponse_msginit = {
   NULL,
   &grpc_lookup_v1_RouteLookupResponse__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 0, 255,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[3] = {
+static const upb_MiniTable *messages_layout[3] = {
   &grpc_lookup_v1_RouteLookupRequest_msginit,
   &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit,
   &grpc_lookup_v1_RouteLookupResponse_msginit,
 };
 
-const upb_msglayout_file src_proto_grpc_lookup_v1_rls_proto_upb_file_layout = {
+const upb_MiniTable_File src_proto_grpc_lookup_v1_rls_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   3,
+  0,
   0,
 };
 

@@ -18,8 +18,11 @@
 
 #include <string.h>
 
+#include <string>
+
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -45,7 +48,6 @@ grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -55,8 +57,7 @@ void Chttp2InitClientInsecureFullstack(grpc_end2end_test_fixture* f,
   Chttp2InsecureFullstackFixtureData* ffd =
       static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
-                                         client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }
@@ -87,8 +88,8 @@ void Chttp2InitServerInsecureFullstack(grpc_end2end_test_fixture* f,
     grpc_server_credentials_set_auth_metadata_processor(server_creds,
                                                         processor);
   }
-  GPR_ASSERT(grpc_server_add_secure_http2_port(
-      f->server, ffd->localaddr.c_str(), server_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                        server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
@@ -115,7 +116,7 @@ grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {

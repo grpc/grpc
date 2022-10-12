@@ -20,14 +20,13 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
@@ -91,8 +90,33 @@ void grpc_tls_credentials_options_set_certificate_verifier(
   options->set_certificate_verifier(verifier->Ref());
 }
 
+void grpc_tls_credentials_options_set_crl_directory(
+    grpc_tls_credentials_options* options, const char* crl_directory) {
+  GPR_ASSERT(options != nullptr);
+  options->set_crl_directory(crl_directory);
+}
+
 void grpc_tls_credentials_options_set_check_call_host(
     grpc_tls_credentials_options* options, int check_call_host) {
   GPR_ASSERT(options != nullptr);
   options->set_check_call_host(check_call_host);
+}
+
+void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
+    grpc_tls_credentials_options* options, const char* path) {
+  if (!tsi_tls_session_key_logging_supported() || options == nullptr) {
+    return;
+  }
+  GRPC_API_TRACE(
+      "grpc_tls_credentials_options_set_tls_session_key_log_config(options=%p)",
+      1, (options));
+  // Tls session key logging is assumed to be enabled if the specified log
+  // file is non-empty.
+  if (path != nullptr) {
+    gpr_log(GPR_INFO,
+            "Enabling TLS session key logging with keys stored at: %s", path);
+  } else {
+    gpr_log(GPR_INFO, "Disabling TLS session key logging");
+  }
+  options->set_tls_session_key_log_file_path(path != nullptr ? path : "");
 }

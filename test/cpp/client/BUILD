@@ -53,6 +53,7 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -71,6 +72,9 @@ grpc_cc_test(
     name = "destroy_grpclb_channel_with_active_connect_stress_test",
     srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
     external_deps = ["gtest"],
+    tags = [
+        "nomsan",  # 4/22/22 - seems to tickle the RBE compiler badly causing timeouts
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

@@ -18,6 +18,8 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -42,14 +44,14 @@ static void alts_counter_test_input_sanity_check(size_t counter_size,
   /* Invalid counter size. */
   grpc_status_code status =
       alts_counter_create(true, 0, overflow_size, &ctr, &error_details);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
       "counter_size is invalid."));
   gpr_free(error_details);
 
   /* Invalid overflow size. */
   status = alts_counter_create(true, counter_size, 0, &ctr, &error_details);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
       "overflow_size is invalid."));
   gpr_free(error_details);
@@ -57,26 +59,26 @@ static void alts_counter_test_input_sanity_check(size_t counter_size,
   /* alts_counter is nullptr. */
   status = alts_counter_create(true, counter_size, overflow_size, nullptr,
                                &error_details);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
       "crypter_counter is nullptr."));
   gpr_free(error_details);
 
   status = alts_counter_create(true, counter_size, overflow_size, &ctr,
                                &error_details);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
 
   /* Input sanity check on alts_counter_increment(). */
   /* crypter_counter is nullptr. */
   bool is_overflow = false;
   status = alts_counter_increment(nullptr, &is_overflow, &error_details);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
       "crypter_counter is nullptr."));
   gpr_free(error_details);
   /* is_overflow is nullptr. */
   status = alts_counter_increment(ctr, nullptr, &error_details);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_details,
       "is_overflow is nullptr."));
   gpr_free(error_details);
@@ -90,21 +92,21 @@ static void alts_counter_test_overflow_full_range(bool is_client,
   char* error_details = nullptr;
   grpc_status_code status = alts_counter_create(
       is_client, counter_size, overflow_size, &ctr, &error_details);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
   unsigned char* expected =
       static_cast<unsigned char*>(gpr_zalloc(counter_size));
   if (is_client) {
     expected[counter_size - 1] = 0x80;
   }
   /* Do a single iteration to ensure the counter is initialized as expected. */
-  GPR_ASSERT(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
-                                       counter_size) == is_client);
-  GPR_ASSERT(memcmp(alts_counter_get_counter(ctr), expected, counter_size) ==
-             0);
+  ASSERT_EQ(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
+                                      counter_size),
+            is_client);
+  ASSERT_EQ(memcmp(alts_counter_get_counter(ctr), expected, counter_size), 0);
   bool is_overflow = false;
-  GPR_ASSERT(alts_counter_increment(ctr, &is_overflow, &error_details) ==
-             GRPC_STATUS_OK);
-  GPR_ASSERT(!is_overflow);
+  ASSERT_EQ(alts_counter_increment(ctr, &is_overflow, &error_details),
+            GRPC_STATUS_OK);
+  ASSERT_FALSE(is_overflow);
   /**
    * The counter can return 2^{overflow_size * 8} counters. The
    * high-order bit is fixed to the client/server. The last call will yield a
@@ -113,17 +115,19 @@ static void alts_counter_test_overflow_full_range(bool is_client,
   int iterations = 1 << (overflow_size * 8);
   int ind = 1;
   for (ind = 1; ind < iterations - 1; ind++) {
-    GPR_ASSERT(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
-                                         counter_size) == is_client);
-    GPR_ASSERT(alts_counter_increment(ctr, &is_overflow, &error_details) ==
-               GRPC_STATUS_OK);
-    GPR_ASSERT(!is_overflow);
+    ASSERT_EQ(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
+                                        counter_size),
+              is_client);
+    ASSERT_EQ(alts_counter_increment(ctr, &is_overflow, &error_details),
+              GRPC_STATUS_OK);
+    ASSERT_FALSE(is_overflow);
   }
-  GPR_ASSERT(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
-                                       counter_size) == is_client);
-  GPR_ASSERT(alts_counter_increment(ctr, &is_overflow, &error_details) ==
-             GRPC_STATUS_FAILED_PRECONDITION);
-  GPR_ASSERT(is_overflow);
+  ASSERT_EQ(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
+                                      counter_size),
+            is_client);
+  ASSERT_EQ(alts_counter_increment(ctr, &is_overflow, &error_details),
+            GRPC_STATUS_FAILED_PRECONDITION);
+  ASSERT_TRUE(is_overflow);
   gpr_free(expected);
   alts_counter_destroy(ctr);
 }
@@ -136,7 +140,7 @@ static void alts_counter_test_overflow_single_increment(bool is_client,
   char* error_details = nullptr;
   grpc_status_code status = alts_counter_create(
       is_client, counter_size, overflow_size, &ctr, &error_details);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
   unsigned char* expected =
       static_cast<unsigned char*>(gpr_zalloc(counter_size));
   memset(expected, 0xFF, overflow_size);
@@ -146,27 +150,27 @@ static void alts_counter_test_overflow_single_increment(bool is_client,
     expected[counter_size - 1] = 0x80;
   }
   memcpy(ctr->counter, expected, counter_size);
-  GPR_ASSERT(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
-                                       counter_size) == is_client);
-  GPR_ASSERT(memcmp(expected, alts_counter_get_counter(ctr), counter_size) ==
-             0);
+  ASSERT_EQ(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
+                                      counter_size),
+            is_client);
+  ASSERT_EQ(memcmp(expected, alts_counter_get_counter(ctr), counter_size), 0);
   bool is_overflow = false;
-  GPR_ASSERT(alts_counter_increment(ctr, &is_overflow, &error_details) ==
-             GRPC_STATUS_OK);
-  GPR_ASSERT(!is_overflow);
-  GPR_ASSERT(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
-                                       counter_size) == is_client);
+  ASSERT_EQ(alts_counter_increment(ctr, &is_overflow, &error_details),
+            GRPC_STATUS_OK);
+  ASSERT_FALSE(is_overflow);
+  ASSERT_EQ(do_bytes_represent_client(ctr, alts_counter_get_counter(ctr),
+                                      counter_size),
+            is_client);
   expected[0] = static_cast<unsigned char>(expected[0] + 1);
-  GPR_ASSERT(memcmp(expected, alts_counter_get_counter(ctr), counter_size) ==
-             0);
-  GPR_ASSERT(alts_counter_increment(ctr, &is_overflow, &error_details) ==
-             GRPC_STATUS_FAILED_PRECONDITION);
-  GPR_ASSERT(is_overflow);
+  ASSERT_EQ(memcmp(expected, alts_counter_get_counter(ctr), counter_size), 0);
+  ASSERT_EQ(alts_counter_increment(ctr, &is_overflow, &error_details),
+            GRPC_STATUS_FAILED_PRECONDITION);
+  ASSERT_TRUE(is_overflow);
   gpr_free(expected);
   alts_counter_destroy(ctr);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+TEST(AltsCounterTest, MainTest) {
   alts_counter_test_input_sanity_check(kGcmCounterSize, kGcmOverflowSize);
   alts_counter_test_overflow_full_range(true, kSmallCounterSize,
                                         kSmallOverflowSize);
@@ -176,6 +180,9 @@ int main(int /*argc*/, char** /*argv*/) {
                                               kGcmOverflowSize);
   alts_counter_test_overflow_single_increment(false, kGcmCounterSize,
                                               kGcmOverflowSize);
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

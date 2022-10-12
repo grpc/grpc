@@ -1,0 +1,20 @@
+#=================
+# Compile CPython 3.7.13 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && ${'\\'}
+    wget -q https://www.python.org/ftp/python/3.7.13/Python-3.7.13.tgz && ${'\\'}
+    tar xzvf Python-3.7.13.tgz && ${'\\'}
+    cd Python-3.7.13 && ${'\\'}
+    ./configure && ${'\\'}
+    make -j4 && ${'\\'}
+    make install
+
+RUN cd /tmp && ${'\\'}
+    echo "e0d3321026d4a5f3a3890b5d821ad762 Python-3.7.13.tgz" > checksum.md5 && ${'\\'}
+    md5sum -c checksum.md5
+
+RUN python3.7 -m ensurepip && ${'\\'}
+    python3.7 -m pip install coverage

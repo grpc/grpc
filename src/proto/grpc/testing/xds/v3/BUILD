@@ -17,6 +17,10 @@ load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
 
+exports_files([
+    "orca_load_report.proto",
+])
+
 grpc_package(
     name = "xds_v3",
     visibility = "public",
@@ -88,6 +92,8 @@ grpc_proto_library(
         "base_proto",
         "config_source_proto",
         "endpoint_proto",
+        "extension_proto",
+        "outlier_detection_proto",
     ],
 )
 
@@ -168,6 +174,27 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "orca_service_proto",
+    srcs = [
+        "orca_service.proto",
+    ],
+    has_services = True,
+    well_known_protos = True,
+    deps = [
+        "orca_load_report_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "outlier_detection_proto",
+    srcs = [
+        "outlier_detection.proto",
+    ],
+    has_services = True,
+    well_known_protos = True,
+)
+
+grpc_proto_library(
     name = "protocol_proto",
     srcs = [
         "protocol.proto",
@@ -197,6 +224,7 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "base_proto",
+        "extension_proto",
         "percent_proto",
         "range_proto",
         "regex_proto",
@@ -319,11 +347,6 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
-cc_library(
-    name = "expr_lib",
-    deps = ["expr_cc_proto"],
-)
-
 grpc_proto_library(
     name = "rbac_proto",
     srcs = [
@@ -351,6 +374,49 @@ grpc_proto_library(
     deps = [
         "rbac_proto",
     ],
+)
+
+grpc_proto_library(
+    name = "ring_hash_proto",
+    srcs = [
+        "ring_hash.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "round_robin_proto",
+    srcs = [
+        "round_robin.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "wrr_locality_proto",
+    srcs = [
+        "wrr_locality.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "cluster_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "typed_struct_proto",
+    srcs = [
+        "typed_struct.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "udpa_typed_struct_proto",
+    srcs = [
+        "udpa_typed_struct.proto",
+    ],
+    well_known_protos = True,
 )
 
 py_proto_library(

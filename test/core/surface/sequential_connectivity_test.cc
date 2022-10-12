@@ -16,18 +16,24 @@
  *
  */
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <string>
 #include <vector>
+
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/alloc.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -55,9 +61,9 @@ static void server_thread_func(void* args) {
   server_thread_args* a = static_cast<server_thread_args*>(args);
   grpc_event ev = grpc_completion_queue_next(
       a->cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == nullptr);
-  GPR_ASSERT(ev.success == true);
+  ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
+  ASSERT_EQ(ev.tag, nullptr);
+  ASSERT_EQ(ev.success, true);
 }
 
 static grpc_channel* create_test_channel(const char* addr,
@@ -75,9 +81,12 @@ static grpc_channel* create_test_channel(const char* addr,
   }
   grpc_channel_args channel_args = {args.size(), args.data()};
   if (creds != nullptr) {
-    channel = grpc_secure_channel_create(creds, addr, &channel_args, nullptr);
+    channel = grpc_channel_create(addr, creds, &channel_args);
   } else {
-    channel = grpc_insecure_channel_create(addr, &channel_args, nullptr);
+    grpc_channel_credentials* insecure_creds =
+        grpc_insecure_credentials_create();
+    channel = grpc_channel_create(addr, insecure_creds, &channel_args);
+    grpc_channel_credentials_release(insecure_creds);
   }
   return channel;
 }
@@ -115,11 +124,11 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
       grpc_event ev = grpc_completion_queue_next(
           cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
       /* check that the watcher from "watch state" was free'd */
-      GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channels[i]) ==
-                 0);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-      GPR_ASSERT(ev.tag == nullptr);
-      GPR_ASSERT(ev.success == true);
+      ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channels[i]),
+                0);
+      ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
+      ASSERT_EQ(ev.tag, nullptr);
+      ASSERT_EQ(ev.success, true);
     }
   }
 
@@ -148,15 +157,18 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
 }
 
 static void insecure_test_add_port(grpc_server* server, const char* addr) {
-  grpc_server_add_insecure_http2_port(server, addr);
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  grpc_server_add_http2_port(server, addr, server_creds);
+  grpc_server_credentials_release(server_creds);
 }
 
 static void secure_test_add_port(grpc_server* server, const char* addr) {
   grpc_slice cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
   const char* server_cert =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
   const char* server_key =
@@ -166,12 +178,11 @@ static void secure_test_add_port(grpc_server* server, const char* addr) {
       nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);
-  grpc_server_add_secure_http2_port(server, addr, ssl_creds);
+  grpc_server_add_http2_port(server, addr, ssl_creds);
   grpc_server_credentials_release(ssl_creds);
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+TEST(SequentialConnectivityTest, MainTest) {
   grpc_init();
 
   const test_fixture insecure_test = {
@@ -183,8 +194,8 @@ int main(int argc, char** argv) {
   run_test(&insecure_test, /*share_subchannel=*/false);
 
   grpc_slice ca_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("load_file",
+                                grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
   const char* test_root_cert =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
   grpc_channel_credentials* ssl_creds =
@@ -200,4 +211,11 @@ int main(int argc, char** argv) {
   grpc_channel_credentials_release(ssl_creds);
 
   grpc_shutdown();
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

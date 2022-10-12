@@ -68,23 +68,31 @@ trap finish EXIT
 set -o pipefail  # preserve xcodebuild exit code when piping output
 
 if [ -z $PLATFORM ]; then
-DESTINATION='name=iPhone 8'
+DESTINATION='platform=iOS Simulator,name=iPhone 11'
 elif [ $PLATFORM == ios ]; then
-DESTINATION='name=iPhone 8'
+DESTINATION='platform=iOS Simulator,name=iPhone 11'
 elif [ $PLATFORM == macos ]; then
 DESTINATION='platform=macOS'
 elif [ $PLATFORM == tvos ]; then
 DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
 
+XCODEBUILD_FLAGS="
+  IPHONEOS_DEPLOYMENT_TARGET=10
+"
+
 XCODEBUILD_FILTER_OUTPUT_SCRIPT="./xcodebuild_filter_output.sh"
+
+TEST_DEFS="HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+GCC_OPTIMIZATION_LEVEL=s"
 
 time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
-    -destination "$DESTINATION" \
-    HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-    HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
-    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    GCC_OPTIMIZATION_LEVEL=s \
-    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+    -destination "${DESTINATION}" \
+    GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS'" $TEST_DEFS" \
+    test \
+    "${XCODEBUILD_FLAGS}" \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"

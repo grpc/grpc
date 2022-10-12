@@ -14,6 +14,7 @@
 import abc
 import contextlib
 import functools
+import json
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -21,9 +22,9 @@ from absl import flags
 from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2
 from google.protobuf import json_format
-from google.protobuf import text_format
 from google.rpc import code_pb2
 from google.rpc import error_details_pb2
+from google.rpc import status_pb2
 from googleapiclient import discovery
 import googleapiclient.errors
 import googleapiclient.http
@@ -148,8 +149,9 @@ class GcpApiManager:
 
         raise NotImplementedError(f'Network Services {version} not supported')
 
+    @staticmethod
     @functools.lru_cache(None)
-    def secrets(self, version):
+    def secrets(version: str):
         if version == 'v1':
             return secretmanager_v1.SecretManagerServiceClient()
 
@@ -260,34 +262,73 @@ class OperationError(Error):
     https://cloud.google.com/apis/design/design_patterns#long_running_operations
     https://github.com/googleapis/googleapis/blob/master/google/longrunning/operations.proto
     """
+    api_name: str
+    name: str
+    metadata: Any
+    code_name: code_pb2.Code
+    error: status_pb2.Status
 
-    def __init__(self, api_name, operation_response, message=None):
+    def __init__(self, api_name: str, response: dict):
         self.api_name = api_name
-        operation = json_format.ParseDict(
-            operation_response,
-            Operation(),
-            ignore_unknown_fields=True,
-            descriptor_pool=error_details_pb2.DESCRIPTOR.pool)
+
+        # Operation.metadata field is Any specific to the API. It may not be
+        # present in the default descriptor pool, and that's expected.
+        # To avoid json_format.ParseError, handle it separately.
+        self.metadata = response.pop('metadata', {})
+
+        # Must be after removing metadata field.
+        operation: Operation = self._parse_operation_response(response)
         self.name = operation.name or 'unknown'
         self.code_name = code_pb2.Code.Name(operation.error.code)
         self.error = operation.error
-        # Collect error details packed as Any without parsing concrete types.
-        self.error_details = [
-            text_format.MessageToString(any_error, as_one_line=True)
-            for any_error in self.error.details
-        ]
-        if message is None:
-            message = (f'{api_name} operation "{self.name}" failed. Error '
-                       f'code: {self.error.code} ({self.code_name}), '
-                       f'message: {self.error.message}, '
-                       f'details: {self.error_details}')
-        self.message = message
-        super().__init__(message)
+        super().__init__()
+
+    @staticmethod
+    def _parse_operation_response(operation_response: dict) -> Operation:
+        try:
+            return json_format.ParseDict(
+                operation_response,
+                Operation(),
+                ignore_unknown_fields=True,
+                descriptor_pool=error_details_pb2.DESCRIPTOR.pool)
+        except (json_format.Error, TypeError) as e:
+            # Swallow parsing errors if any. Building correct OperationError()
+            # is more important than losing debug information. Details still
+            # can be extracted from the warning.
+            logger.warning(
+                ("Can't parse response while processing OperationError: '%r', "
+                 "error %r"), operation_response, e)
+            return Operation()
+
+    def __str__(self):
+        indent_l1 = ' ' * 2
+        indent_l2 = indent_l1 * 2
+
+        result = (f'{self.api_name} operation "{self.name}" failed.\n'
+                  f'{indent_l1}code: {self.error.code} ({self.code_name})\n'
+                  f'{indent_l1}message: "{self.error.message}"')
+
+        if self.error.details:
+            result += f'\n{indent_l1}details: [\n'
+            for any_error in self.error.details:
+                error_str = json_format.MessageToJson(any_error)
+                for line in error_str.splitlines():
+                    result += indent_l2 + line + '\n'
+            result += f'{indent_l1}]'
+
+        if self.metadata:
+            result += f'\n  metadata: \n'
+            metadata_str = json.dumps(self.metadata, indent=2)
+            for line in metadata_str.splitlines():
+                result += indent_l2 + line + '\n'
+            result = result.rstrip()
+
+        return result
 
 
 class GcpProjectApiResource:
     # TODO(sergiitk): move someplace better
-    _WAIT_FOR_OPERATION_SEC = 60 * 5
+    _WAIT_FOR_OPERATION_SEC = 60 * 10
     _WAIT_FIXED_SEC = 2
     _GCP_API_RETRIES = 5
 
@@ -391,21 +432,22 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
         return False
 
     # TODO(sergiitk): Use ResponseError and TransportError
-    def _execute(self,
-                 request: HttpRequest,
-                 timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
+    def _execute(  # pylint: disable=arguments-differ
+            self,
+            request: HttpRequest,
+            timeout_sec: int = GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
-        self._wait(operation, timeout_sec)
+        logger.debug('Operation %s', operation)
+        self._wait(operation['name'], timeout_sec)
 
     def _wait(self,
-              operation,
-              timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
-        op_name = operation['name']
-        logger.debug('Waiting for %s operation, timeout %s sec: %s',
-                     self.api_name, timeout_sec, op_name)
+              operation_id: str,
+              timeout_sec: int = GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
+        logger.info('Waiting %s sec for %s operation id: %s', timeout_sec,
+                    self.api_name, operation_id)
 
         op_request = self.api.projects().locations().operations().get(
-            name=op_name)
+            name=operation_id)
         operation = self.wait_for_operation(
             operation_request=op_request,
             test_success_fn=lambda result: result['done'],

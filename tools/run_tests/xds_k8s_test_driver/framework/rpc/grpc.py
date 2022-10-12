@@ -13,7 +13,7 @@
 # limitations under the License.
 import logging
 import re
-from typing import ClassVar, Dict, Optional
+from typing import Any, Dict, Optional
 
 from google.protobuf import json_format
 import google.protobuf.message
@@ -26,15 +26,26 @@ Message = google.protobuf.message.Message
 
 
 class GrpcClientHelper:
-    channel: grpc.Channel
     DEFAULT_RPC_DEADLINE_SEC = 90
+    channel: grpc.Channel
+    # This is purely cosmetic to make RPC logs look like method calls.
+    log_service_name: str
+    # This is purely cosmetic to output the RPC target. Normally set to the
+    # hostname:port of the remote service, but it doesn't have to be the
+    # real target. This is done so that when RPC are routed to the proxy
+    # or port forwarding, this still is set to a useful name.
+    log_target: str
 
-    def __init__(self, channel: grpc.Channel, stub_class: ClassVar):
+    def __init__(self,
+                 channel: grpc.Channel,
+                 stub_class: Any,
+                 *,
+                 log_target: Optional[str] = ''):
         self.channel = channel
         self.stub = stub_class(channel)
-        # This is purely cosmetic to make RPC logs look like method calls.
         self.log_service_name = re.sub('Stub$', '',
                                        self.stub.__class__.__name__)
+        self.log_target = log_target or ''
 
     def call_unary_with_deadline(
             self,
@@ -55,8 +66,9 @@ class GrpcClientHelper:
 
     def _log_rpc_request(self, rpc, req, call_kwargs, log_level=logging.DEBUG):
         logger.log(logging.DEBUG if log_level is None else log_level,
-                   'RPC %s.%s(request=%s(%r), %s)', self.log_service_name, rpc,
-                   req.__class__.__name__, json_format.MessageToDict(req),
+                   '[%s] RPC %s.%s(request=%s(%r), %s)', self.log_target,
+                   self.log_service_name, rpc, req.__class__.__name__,
+                   json_format.MessageToDict(req),
                    ', '.join({f'{k}={v}' for k, v in call_kwargs.items()}))
 
 

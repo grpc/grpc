@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Houses py_grpc_gevent_test.
 """
@@ -81,6 +80,6 @@ def py_grpc_gevent_test(
         srcs = [copied_main_filename],
         main = copied_main_filename,
         python_version = "PY3",
-        flaky = True,
+        flaky = False,
         **kwargs
     )

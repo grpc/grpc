@@ -83,6 +83,6 @@ at_least_one_installs "${TESTING_ARCHIVES[@]}"
 
 # TODO(jtattermusch): add a .proto file to the distribtest, generate python
 # code from it and then use the generated code from distribtest.py
-"$PYTHON" -m grpc.tools.protoc --help
+"$PYTHON" -m grpc_tools.protoc --help
 
 "$PYTHON" distribtest.py

@@ -1,99 +1,291 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
 
-#include <stdbool.h>
 #include <string.h>
 
-#include "absl/container/inlined_vector.h"
+#include <algorithm>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
-void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
-                                   const grpc_slice& value) {
-  grpc_mdelem old_mdelem = storage->md;
-  grpc_mdelem new_mdelem = grpc_mdelem_from_slices(
-      grpc_slice_ref_internal(GRPC_MDKEY(old_mdelem)), value);
-  storage->md = new_mdelem;
-  GRPC_MDELEM_UNREF(old_mdelem);
+namespace grpc_core {
+namespace metadata_detail {
+
+void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
+  if (!out_.empty()) out_.append(", ");
+  absl::StrAppend(&out_, absl::CEscape(key), ": ", absl::CEscape(value));
 }
 
-namespace {
+void UnknownMap::Append(absl::string_view key, Slice value) {
+  unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
+}
 
-class CopySink {
- public:
-  explicit CopySink(grpc_metadata_batch* dst) : dst_(dst) {}
+void UnknownMap::Remove(absl::string_view key) {
+  unknown_.SetEnd(std::remove_if(unknown_.begin(), unknown_.end(),
+                                 [key](const std::pair<Slice, Slice>& p) {
+                                   return p.first.as_string_view() == key;
+                                 }));
+}
 
-  void Encode(grpc_mdelem md) {
-    // If the mdelem is not external, take a ref.
-    // Otherwise, create a new copy, holding its own refs to the
-    // underlying slices.
-    if (GRPC_MDELEM_STORAGE(md) != GRPC_MDELEM_STORAGE_EXTERNAL) {
-      md = GRPC_MDELEM_REF(md);
-    } else {
-      md = grpc_mdelem_from_slices(grpc_slice_copy(GRPC_MDKEY(md)),
-                                   grpc_slice_copy(GRPC_MDVALUE(md)));
+absl::optional<absl::string_view> UnknownMap::GetStringValue(
+    absl::string_view key, std::string* backing) const {
+  absl::optional<absl::string_view> out;
+  for (const auto& p : unknown_) {
+    if (p.first.as_string_view() == key) {
+      if (!out.has_value()) {
+        out = p.second.as_string_view();
+      } else {
+        out = *backing = absl::StrCat(*out, ",", p.second.as_string_view());
+      }
     }
-    // Error unused in non-debug builds.
-    grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
-    // The only way that Append() can fail is if
-    // there's a duplicate entry for a callout.  However, that can't be
-    // the case here, because we would not have been allowed to create
-    // a source batch that had that kind of conflict.
-    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
   }
-
-  template <class T, class V>
-  void Encode(T trait, V value) {
-    dst_->Set(trait, value);
-  }
-
-  template <class T>
-  void Encode(T trait, const grpc_core::Slice& value) {
-    dst_->Set(trait, std::move(value.AsOwned()));
-  }
-
- private:
-  grpc_metadata_batch* dst_;
-};
-
-}  // namespace
-
-void grpc_metadata_batch_copy(const grpc_metadata_batch* src,
-                              grpc_metadata_batch* dst) {
-  dst->Clear();
-  CopySink sink(dst);
-  src->Encode(&sink);
-}
-
-grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
-                                          grpc_mdelem md) {
-  grpc_error_handle out = grpc_error_set_str(
-      grpc_error_set_str(src, GRPC_ERROR_STR_KEY,
-                         grpc_core::StringViewFromSlice(GRPC_MDKEY(md))),
-      GRPC_ERROR_STR_VALUE, grpc_core::StringViewFromSlice(GRPC_MDVALUE(md)));
   return out;
 }
+
+}  // namespace metadata_detail
+
+ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto out = kInvalid;
+  auto value_string = value.as_string_view();
+  if (value_string == "application/grpc") {
+    out = kApplicationGrpc;
+  } else if (absl::StartsWith(value_string, "application/grpc;")) {
+    out = kApplicationGrpc;
+  } else if (absl::StartsWith(value_string, "application/grpc+")) {
+    out = kApplicationGrpc;
+  } else if (value_string.empty()) {
+    out = kEmpty;
+  } else {
+    on_error("invalid value", value);
+  }
+  return out;
+}
+
+StaticSlice ContentTypeMetadata::Encode(ValueType x) {
+  switch (x) {
+    case kEmpty:
+      return StaticSlice::FromStaticString("");
+    case kApplicationGrpc:
+      return StaticSlice::FromStaticString("application/grpc");
+    case kInvalid:
+      return StaticSlice::FromStaticString("application/grpc+unknown");
+  }
+  GPR_UNREACHABLE_CODE(
+      return StaticSlice::FromStaticString("unrepresentable value"));
+}
+
+const char* ContentTypeMetadata::DisplayValue(MementoType content_type) {
+  switch (content_type) {
+    case ValueType::kApplicationGrpc:
+      return "application/grpc";
+    case ValueType::kEmpty:
+      return "";
+    default:
+      return "<discarded-invalid-value>";
+  }
+}
+
+GrpcTimeoutMetadata::MementoType GrpcTimeoutMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto timeout = ParseTimeout(value);
+  if (!timeout.has_value()) {
+    on_error("invalid value", value);
+    return Duration::Infinity();
+  }
+  return *timeout;
+}
+
+GrpcTimeoutMetadata::ValueType GrpcTimeoutMetadata::MementoToValue(
+    MementoType timeout) {
+  if (timeout == Duration::Infinity()) {
+    return Timestamp::InfFuture();
+  }
+  return Timestamp::Now() + timeout;
+}
+
+Slice GrpcTimeoutMetadata::Encode(ValueType x) {
+  return Timeout::FromDuration(x - Timestamp::Now()).Encode();
+}
+
+TeMetadata::MementoType TeMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto out = kInvalid;
+  if (value == "trailers") {
+    out = kTrailers;
+  } else {
+    on_error("invalid value", value);
+  }
+  return out;
+}
+
+const char* TeMetadata::DisplayValue(MementoType te) {
+  switch (te) {
+    case ValueType::kTrailers:
+      return "trailers";
+    default:
+      return "<discarded-invalid-value>";
+  }
+}
+
+HttpSchemeMetadata::ValueType HttpSchemeMetadata::Parse(
+    absl::string_view value, MetadataParseErrorFn on_error) {
+  if (value == "http") {
+    return kHttp;
+  } else if (value == "https") {
+    return kHttps;
+  }
+  on_error("invalid value", Slice::FromCopiedBuffer(value));
+  return kInvalid;
+}
+
+StaticSlice HttpSchemeMetadata::Encode(ValueType x) {
+  switch (x) {
+    case kHttp:
+      return StaticSlice::FromStaticString("http");
+    case kHttps:
+      return StaticSlice::FromStaticString("https");
+    default:
+      abort();
+  }
+}
+
+const char* HttpSchemeMetadata::DisplayValue(MementoType content_type) {
+  switch (content_type) {
+    case kHttp:
+      return "http";
+    case kHttps:
+      return "https";
+    default:
+      return "<discarded-invalid-value>";
+  }
+}
+
+HttpMethodMetadata::MementoType HttpMethodMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  auto out = kInvalid;
+  auto value_string = value.as_string_view();
+  if (value_string == "POST") {
+    out = kPost;
+  } else if (value_string == "PUT") {
+    out = kPut;
+  } else if (value_string == "GET") {
+    out = kGet;
+  } else {
+    on_error("invalid value", value);
+  }
+  return out;
+}
+
+StaticSlice HttpMethodMetadata::Encode(ValueType x) {
+  switch (x) {
+    case kPost:
+      return StaticSlice::FromStaticString("POST");
+    case kPut:
+      return StaticSlice::FromStaticString("PUT");
+    case kGet:
+      return StaticSlice::FromStaticString("GET");
+    default:
+      abort();
+  }
+}
+
+const char* HttpMethodMetadata::DisplayValue(MementoType content_type) {
+  switch (content_type) {
+    case kPost:
+      return "POST";
+    case kGet:
+      return "GET";
+    case kPut:
+      return "PUT";
+    default:
+      return "<discarded-invalid-value>";
+  }
+}
+
+CompressionAlgorithmBasedMetadata::MementoType
+CompressionAlgorithmBasedMetadata::ParseMemento(Slice value,
+                                                MetadataParseErrorFn on_error) {
+  auto algorithm = ParseCompressionAlgorithm(value.as_string_view());
+  if (!algorithm.has_value()) {
+    on_error("invalid value", value);
+    return GRPC_COMPRESS_NONE;
+  }
+  return *algorithm;
+}
+
+Duration GrpcRetryPushbackMsMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  int64_t out;
+  if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
+    on_error("not an integer", value);
+    return Duration::NegativeInfinity();
+  }
+  return Duration::Milliseconds(out);
+}
+
+Slice LbCostBinMetadata::Encode(const ValueType& x) {
+  auto slice =
+      MutableSlice::CreateUninitialized(sizeof(double) + x.name.length());
+  memcpy(slice.data(), &x.cost, sizeof(double));
+  memcpy(slice.data() + sizeof(double), x.name.data(), x.name.length());
+  return Slice(std::move(slice));
+}
+
+std::string LbCostBinMetadata::DisplayValue(MementoType x) {
+  return absl::StrCat(x.name, ":", x.cost);
+}
+
+LbCostBinMetadata::MementoType LbCostBinMetadata::ParseMemento(
+    Slice value, MetadataParseErrorFn on_error) {
+  if (value.length() < sizeof(double)) {
+    on_error("too short", value);
+    return {0, ""};
+  }
+  MementoType out;
+  memcpy(&out.cost, value.data(), sizeof(double));
+  out.name =
+      std::string(reinterpret_cast<const char*>(value.data()) + sizeof(double),
+                  value.length() - sizeof(double));
+  return out;
+}
+
+std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
+  switch (x) {
+    case kNotSentOnWire:
+      return "not sent on wire";
+    case kNotSeenByServer:
+      return "not seen by server";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown value");
+}
+
+std::string PeerString::DisplayValue(ValueType x) { return std::string(x); }
+const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
+  return x;
+}
+
+std::string WaitForReady::DisplayValue(ValueType x) {
+  return absl::StrCat(x.value ? "true" : "false",
+                      x.explicitly_set ? " (explicit)" : "");
+}
+
+}  // namespace grpc_core

@@ -27,14 +27,23 @@
   proto_re = re.compile('(.*)\\.proto')
   lib_map = {lib.name: lib for lib in libs}
 
+  third_party_proto_prefixes = {lib.proto_prefix for lib in external_proto_libraries}
+
+  def third_party_proto_import_path(path):
+    """Removes third_party prefix to match ProtoBuf's relative import path."""
+    for prefix in third_party_proto_prefixes:
+      if path.startswith(prefix):
+        return path[len(prefix):]
+    return path
+
   def proto_replace_ext(filename, ext):
       m = proto_re.match(filename)
       if not m:
         return filename
-      return '${_gRPC_PROTO_GENS_DIR}/' + m.group(1) + ext
+      return '${_gRPC_PROTO_GENS_DIR}/' + third_party_proto_import_path(m.group(1)) + ext
 
   def is_absl_lib(lib_name):
-      return lib_name.startswith("absl/");
+      return lib_name.startswith("absl/")
 
   def get_absl_dep(lib_name):
       return lib_map[lib_name].cmake_target
@@ -254,17 +263,17 @@
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
 
-   # Use C99 standard
+   # Use C11 standard
   if (NOT DEFINED CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD 11)
   endif()
 
-  # Add c++11 flags
+  # Add c++14 flags
   if (NOT DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 14)
   else()
-    if (CMAKE_CXX_STANDARD LESS 11)
-      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 11, please specify at least SET(CMAKE_CXX_STANDARD 11)")
+    if (CMAKE_CXX_STANDARD LESS 14)
+      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
     endif()
   endif()
   if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
@@ -299,6 +308,8 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
     # Silences thousands of trucation warnings
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
+    # Tell MSVC to build grpc using utf-8
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -333,7 +344,7 @@
     add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
   endif()
 
-  if(UNIX)
+  if(UNIX AND NOT HAIKU)
     # -pthread does more than -lpthread
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads)
@@ -342,6 +353,9 @@
       set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
     endif()
   endif()
+
+  # configure ccache if requested
+  include(cmake/ccache.cmake)
 
   include(cmake/abseil-cpp.cmake)
   include(cmake/address_sorting.cmake)
@@ -353,17 +367,44 @@
   include(cmake/upb.cmake)
   include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
+  include(cmake/download_archive.cmake)
+
+  % for external_proto_library in external_proto_libraries:
+  % if len(external_proto_library.urls) > 1:
+  # Setup external proto library at ${external_proto_library.destination} with ${len(external_proto_library.urls)} download URLs
+  % else:
+  # Setup external proto library at ${external_proto_library.destination} if it doesn't exist
+  % endif
+  % for download_url in external_proto_library.urls:
+  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination})
+    # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
+    download_archive(
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
+      ${download_url}
+      ${external_proto_library.hash}
+      ${external_proto_library.strip_prefix}
+    )
+  endif()
+  % endfor
+  % endfor
 
   if(WIN32)
     set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
   endif()
 
+  # Create directory for proto source files
+  set(_gRPC_PROTO_SRCS_DIR <%text>${CMAKE_BINARY_DIR}/protos</%text>)
+  file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}</%text>)
   # Create directory for generated .proto files
   set(_gRPC_PROTO_GENS_DIR <%text>${CMAKE_BINARY_DIR}/gens</%text>)
   file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_GENS_DIR}</%text>)
 
   #  protobuf_generate_grpc_cpp
   #  --------------------------
+  #
+  #   This method is no longer used by gRPC's CMake build process. However, it
+  #   is used by many open source dependencies, that we might want to keep
+  #   backward compatibility here.
   #
   #   Add custom commands to process ``.proto`` files to C++ using protoc and
   #   GRPC plugin::
@@ -379,38 +420,88 @@
       return()
     endif()
 
-    set(_protobuf_include_path -I . -I <%text>${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR}</%text>)
     foreach(FIL <%text>${ARGN}</%text>)
-      get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
-      get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
-      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
-      get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
-      set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
-
-      #if cross-compiling, find host plugin
-      if(CMAKE_CROSSCOMPILING)
-        find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
-      else()
-        set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
-      endif()
-
-      add_custom_command(
-        OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
-               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
-               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
-               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
-               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
-        COMMAND <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
-        ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
-             --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
-             --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
-             <%text>${_protobuf_include_path}</%text>
-             <%text>${REL_FIL}</%text>
-        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
-        WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
-        COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
-        VERBATIM)
+      protobuf_generate_grpc_cpp_with_import_path_correction(<%text>${FIL}</%text> <%text>${FIL}</%text>)
     endforeach()
+  endfunction()
+
+  #  protobuf_generate_grpc_cpp_with_import_path_correction
+  #  --------------------------
+  #
+  #   Add custom commands to process ``.proto`` files to C++ using protoc and
+  #   GRPC plugin::
+  #
+  #     protobuf_generate_grpc_cpp_with_import_path_correction <FILE_LOCATION> <IMPORT_PATH>
+  #
+  #   ``FILE_LOCATION``
+  #     The relative path of the ``.proto`` file to the project root
+  #   ``IMPORT_PATH``
+  #     The proto import path that itself expected to be placed in. For
+  #     example, a "bar.proto" file wants to be imported as
+  #     `import "foo/bar.proto"`. Then we should place it under
+  #     "<ProtoBuf_Include_Path>/foo/bar.proto" instead of
+  #     "<ProtoBuf_Include_Path>/third_party/foo/bar.proto". This ensures
+  #     correct symbol being generated and C++ include path being correct.
+  #     More info can be found at https://github.com/grpc/grpc/pull/25272.
+  #
+  function(protobuf_generate_grpc_cpp_with_import_path_correction FILE_LOCATION IMPORT_PATH)
+    if(NOT FILE_LOCATION)
+      message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
+      return()
+    endif()
+
+    # Sets the include path for ProtoBuf files
+    set(_protobuf_include_path -I . -I <%text>${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR}</%text>)
+    # The absolute path of the expected place for the input proto file
+    # For example, health proto has package name grpc.health.v1, it's expected to be:
+    #   <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1/health.proto</%text>
+    get_filename_component(ABS_FIL <%text>${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH}</%text> ABSOLUTE)
+    # Get the name of the file, which used to generate output file names for
+    # this command.
+    # Example: "health" for "health.proto"
+    get_filename_component(FIL_WE <%text>${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH}</%text> NAME_WE)
+    # Get the relative path between the expected place for the proto and the
+    # working directory. In normal cases, it would be equal IMPORT_PATH, but
+    # it's better to be agnostic to all the global folder locations (like the
+    # centralized location <%text>${_gRPC_PROTO_SRCS_DIR})</%text>.
+    # Example: grpc/health/v1/health.proto
+    file(RELATIVE_PATH REL_FIL <%text>${_gRPC_PROTO_SRCS_DIR}</%text> <%text>${ABS_FIL}</%text>)
+    # Get the directory of the relative path.
+    # Example: grpc/health/v1
+    get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
+    # Get the directory and name for output filenames generation.
+    # Example: "grpc/health/v1/health", the file name extension is omitted.
+    set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
+    # Copy the proto file to a centralized location, with the correct import
+    # path. For example, health proto has package name grpc.health.v1, the bash
+    # equivalent would be:
+    #   cp src/proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
+    file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
+    file(COPY <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> DESTINATION <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
+
+    #if cross-compiling, find host plugin
+    if(CMAKE_CROSSCOMPILING)
+      find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
+    else()
+      set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+    endif()
+
+    add_custom_command(
+      OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
+             <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
+             <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
+             <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
+             <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
+      COMMAND <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
+      ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
+           --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
+           --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
+           <%text>${_protobuf_include_path}</%text>
+           <%text>${REL_FIL}</%text>
+      DEPENDS <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
+      WORKING_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}</%text>
+      COMMENT "Running gRPC C++ protocol buffer compiler for <%text>${IMPORT_PATH}</%text>"
+      VERBATIM)
   endfunction()
 
   # These options allow users to enable or disable the building of the various
@@ -452,8 +543,8 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
-  protobuf_generate_grpc_cpp(
-    ${src}
+  protobuf_generate_grpc_cpp_with_import_path_correction(
+    ${src} ${third_party_proto_import_path(src)}
   )
   % endfor
 
@@ -599,7 +690,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if lib.build in ['test', 'private'] and lib.language == 'c++':
+  % if (lib.build in ['test', 'private'] and lib.language == 'c++') or lib.name == 'end2end_tests':
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
@@ -711,6 +802,7 @@
   % endif
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
       RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
+      BUNDLE DESTINATION  <%text>${gRPC_INSTALL_BINDIR}</%text>
       LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
       ARCHIVE DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
     )
@@ -760,7 +852,7 @@
       "<%text>${output_filepath}</%text>"
       @ONLY)
     install(FILES "<%text>${output_filepath}</%text>"
-      DESTINATION "lib/pkgconfig/")
+      DESTINATION "<%text>${gRPC_INSTALL_LIBDIR}/pkgconfig</%text>")
   endfunction()
 
   # gpr .pc file

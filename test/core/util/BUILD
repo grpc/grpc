@@ -30,6 +30,23 @@ grpc_cc_library(
     ],
 )
 
+TEST_UTILS_THAT_USE_GRPC_H_SOURCES = [
+    "port.cc",
+    "port_isolated_runtime_environment.cc",
+    "port_server_client.cc",
+    "reconnect_server.cc",
+    "test_config.cc",
+    "test_tcp_server.cc",
+]
+
+TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
+    "port.h",
+    "reconnect_server.h",
+    "port_server_client.h",
+    "test_config.h",
+    "test_tcp_server.h",
+]
+
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
@@ -37,20 +54,13 @@ grpc_cc_library(
         "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
-        "memory_counters.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
-        "port.cc",
-        "port_isolated_runtime_environment.cc",
-        "port_server_client.cc",
-        "reconnect_server.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
-        "test_config.cc",
-        "test_tcp_server.cc",
         "tracer_util.cc",
     ],
     hdrs = [
@@ -59,67 +69,133 @@ grpc_cc_library(
         "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
-        "memory_counters.h",
         "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
-        "port.h",
-        "port_server_client.h",
-        "reconnect_server.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
         "subprocess.h",
-        "test_config.h",
-        "test_tcp_server.h",
         "tracer_util.h",
     ],
     external_deps = [
-        "absl/debugging:failure_signal_handler",
-        "absl/debugging:symbolize",
+        "absl/status:statusor",
+        "absl/strings",
         "absl/strings:str_format",
+        "absl/types:span",
     ],
     language = "C++",
+    tags = ["nofixdeps"],
     deps = [
-        ":build",
-        ":grpc_suppressions",
-        ":stack_tracer",
+        "//:arena",
+        "//:debug_location",
         "//:gpr",
+        "//:grpc_authorization_base",
         "//:grpc_base",
-        "//:grpc_common",
+        "//:grpc_security_base",
+        "//:grpc_sockaddr",
+        "//:grpc_trace",
+        "//:iomgr_fwd",
+        "//:iomgr_timer",
+        "//:memory_quota",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:resource_quota",
+        "//:slice",
+        "//:slice_refcount",
+        "//:time",
+        "//:useful",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_test_util",
-    srcs = ["tls_utils.cc"],
-    hdrs = ["tls_utils.h"],
+    srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
+    hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/debugging:failure_signal_handler",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
     language = "C++",
     deps = [
-        ":grpc_test_util_base",
+        "build",
+        "stack_tracer",
+        "//:channel_args_preconditioning",
+        "//:config",
+        "//:gpr",
+        "//:gpr_atm",
         "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:grpc_sockaddr",
+        "//:grpc_trace",
+        "//:httpcli",
+        "//:iomgr_fwd",
+        "//:iomgr_port",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:slice",
+        "//:slice_refcount",
+        "//:status_helper",
+        "//:time",
+        "//:tsi_ssl_credentials",
+        "//:uri_parser",
+        "//test/core/event_engine:test_init",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_test_util_unsecure",
-    srcs = [],
-    hdrs = [],
+    srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES,
+    hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
+    external_deps = [
+        "absl/debugging:failure_signal_handler",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
     language = "C++",
     deps = [
-        ":grpc_test_util_base",
+        "build",
+        "stack_tracer",
+        "//:channel_args_preconditioning",
+        "//:config",
+        "//:gpr",
+        "//:gpr_atm",
+        "//:grpc_security_base",
+        "//:grpc_sockaddr",
         "//:grpc_unsecure",
+        "//:httpcli",
+        "//:iomgr_fwd",
+        "//:iomgr_port",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:status_helper",
+        "//:time",
+        "//:uri_parser",
+        "//test/core/event_engine:test_init",
     ],
 )
 
 grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":grpc_test_util",
+        "grpc_test_util",
+        "grpc_test_util_base",
         "//:gpr",
+        "//:useful",
     ],
 )
 
@@ -132,7 +208,10 @@ grpc_cc_library(
         "gtest",
     ],
     linkstatic = True,
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        "nofixdeps",
+    ],
     deps = [
         ":grpc_test_util",
         "//:grpc",
@@ -143,10 +222,14 @@ grpc_cc_library(
 grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    tags = ["nofixdeps"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":grpc_test_util",
+        "grpc_test_util",
+        "grpc_test_util_base",
         "//:gpr",
     ],
 )
@@ -154,11 +237,6 @@ grpc_cc_test(
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
-)
-
-sh_library(
-    name = "run_with_poller_sh",
-    srcs = ["run_with_poller.sh"],
 )
 
 grpc_cc_library(
@@ -175,7 +253,8 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "//:grpc_common",
+        "//:examine_stack",
+        "//:gpr_platform",
     ],
 )
 
@@ -185,16 +264,18 @@ grpc_cc_test(
         "stack_tracer_test.cc",
     ],
     external_deps = [
-        "absl/debugging:symbolize",
+        "absl/strings",
         "gtest",
     ],
     language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":grpc_test_util",
-        ":stack_tracer",
+        "grpc_test_util",
+        "stack_tracer",
+        "//:gpr",
     ],
 )
 
@@ -203,8 +284,32 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:variant",
+    ],
     deps = [
+        "//:config",
+        "//:gpr",
         "//:grpc",
+        "//:grpc_backend_metric_data",
+        "//:grpc_client_channel",
+        "//:json",
+        "//:json_util",
+        "//:lb_policy",
+        "//:lb_policy_factory",
+        "//:lb_policy_registry",
+        "//:orphanable",
+        "//:pollset_set",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:server_address",
+        "//:status_helper",
+        "//:subchannel_interface",
+        "//:time",
+        "//:uri_parser",
     ],
 )
 
@@ -213,14 +318,16 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
+        "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
     ],
     language = "C++",
     deps = [
-        ":grpc_test_util",
+        "grpc_test_util",
         "//:gpr",
         "//:grpc",
+        "//:resolved_address",
+        "//:sockaddr_utils",
     ],
 )
 
@@ -228,4 +335,14 @@ grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
+)
+
+grpc_cc_library(
+    name = "scoped_env_var",
+    testonly = True,
+    hdrs = ["scoped_env_var.h"],
+    deps = [
+        "//:env",
+        "//:gpr_platform",
+    ],
 )

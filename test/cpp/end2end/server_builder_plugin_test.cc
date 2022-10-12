@@ -126,7 +126,7 @@ std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
 // Force AddServerBuilderPlugin() to be called at static initialization time.
 struct StaticTestPluginInitializer {
   StaticTestPluginInitializer() {
-    ::grpc::ServerBuilder::InternalAddPluginFactory(
+    grpc::ServerBuilder::InternalAddPluginFactory(
         &CreateTestServerBuilderPlugin);
   }
 } static_plugin_initializer_test_;
@@ -140,7 +140,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
-    builder_ = absl::make_unique<ServerBuilder>();
+    builder_ = std::make_unique<ServerBuilder>();
   }
 
   void InsertPlugin() {
@@ -261,7 +261,7 @@ INSTANTIATE_TEST_SUITE_P(ServerBuilderPluginTest, ServerBuilderPluginTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

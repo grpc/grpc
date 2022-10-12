@@ -20,14 +20,8 @@
 
 #include "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h"
 
-#include <sstream>
-#include <type_traits>
+#include <algorithm>
 
-#include "absl/strings/str_cat.h"
-
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 
@@ -118,7 +112,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGoogleGrpc(
   if (ParseJsonObjectField(google_grpc, "call_credentials",
                            &call_credentials_array, &error_list_google_grpc)) {
     if (call_credentials_array->size() != 1) {
-      error_list_google_grpc.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list_google_grpc.push_back(GRPC_ERROR_CREATE(
           "field:call_credentials error:Need exactly one entry."));
     } else {
       const Json::Object* call_credentials = nullptr;
@@ -153,7 +147,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGrpcServices(
   }
   if (!ParseJsonObjectFieldAsDuration(grpc_service, "timeout", &timeout_,
                                       &error_list_grpc_services, false)) {
-    timeout_ = 10 * 1000;  // 10sec default
+    timeout_ = Duration::Seconds(10);  // 10sec default
   }
   return error_list_grpc_services;
 }
@@ -166,15 +160,15 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
   if (ParseJsonObjectField(server, "api_type", &api_type, &error_list_server,
                            false)) {
     if (api_type != "GRPC") {
-      error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:api_type error:Only GRPC is supported"));
+      error_list_server.push_back(
+          GRPC_ERROR_CREATE("field:api_type error:Only GRPC is supported"));
     }
   }
   const Json::Array* grpc_services = nullptr;
   if (ParseJsonObjectField(server, "grpc_services", &grpc_services,
                            &error_list_server)) {
     if (grpc_services->size() != 1) {
-      error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list_server.push_back(GRPC_ERROR_CREATE(
           "field:grpc_services error:Need exactly one entry"));
     } else {
       const Json::Object* grpc_service = nullptr;
@@ -198,8 +192,7 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
   auto config =
       MakeRefCounted<GoogleMeshCaCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "error:config type should be OBJECT.");
+    *error = GRPC_ERROR_CREATE("error:config type should be OBJECT.");
     return nullptr;
   }
   std::vector<grpc_error_handle> error_list;
@@ -216,19 +209,19 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
   if (!ParseJsonObjectFieldAsDuration(
           config_json.object_value(), "certificate_lifetime",
           &config->certificate_lifetime_, &error_list, false)) {
-    config->certificate_lifetime_ = 24 * 60 * 60 * 1000;  // 24hrs default
+    config->certificate_lifetime_ = Duration::Hours(24);  // 24hrs default
   }
   if (!ParseJsonObjectFieldAsDuration(
           config_json.object_value(), "renewal_grace_period",
           &config->renewal_grace_period_, &error_list, false)) {
-    config->renewal_grace_period_ = 12 * 60 * 60 * 1000;  // 12hrs default
+    config->renewal_grace_period_ = Duration::Hours(12);  // 12hrs default
   }
   std::string key_type;
   if (ParseJsonObjectField(config_json.object_value(), "key_type", &key_type,
                            &error_list, false)) {
     if (key_type != "RSA") {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:key_type error:Only RSA is supported."));
+      error_list.push_back(
+          GRPC_ERROR_CREATE("field:key_type error:Only RSA is supported."));
     }
   }
   if (!ParseJsonObjectField(config_json.object_value(), "key_size",

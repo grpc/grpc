@@ -79,6 +79,10 @@ ABSL_FLAG(bool, batch, false,
 ABSL_FLAG(double, timeout, -1,
           "Specify timeout in seconds, used to set the deadline for all "
           "RPCs. The default value of -1 means no deadline has been set.");
+ABSL_FLAG(
+    int, max_recv_msg_size, 0,
+    "Specify the max receive message size in bytes for all RPCs. -1 indicates "
+    "unlimited. The default value of 0 means to use the gRPC default.");
 
 namespace grpc {
 namespace testing {
@@ -228,8 +232,9 @@ void ReadResponse(CliCall* call, const std::string& method_name,
 }
 
 std::shared_ptr<grpc::Channel> CreateCliChannel(
-    const std::string& server_address, const CliCredentials& cred) {
-  grpc::ChannelArguments args;
+    const std::string& server_address, const CliCredentials& cred,
+    const grpc::ChannelArguments& extra_args) {
+  grpc::ChannelArguments args(extra_args);
   if (!cred.GetSslTargetNameOverride().empty()) {
     args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
   }
@@ -240,8 +245,7 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
   args.SetInt(GRPC_ARG_MAX_METADATA_SIZE, 10 * 1024 * 1024);
-  return ::grpc::CreateCustomChannel(server_address, cred.GetCredentials(),
-                                     args);
+  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
 }
 
 struct Command {
@@ -364,7 +368,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
 
   std::string server_address(argv[0]);
   std::shared_ptr<grpc::Channel> channel =
-      CreateCliChannel(server_address, cred);
+      CreateCliChannel(server_address, cred, grpc::ChannelArguments());
   grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
   grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
@@ -465,7 +469,7 @@ bool GrpcTool::PrintType(int /*argc*/, const char** argv,
 
   std::string server_address(argv[0]);
   std::shared_ptr<grpc::Channel> channel =
-      CreateCliChannel(server_address, cred);
+      CreateCliChannel(server_address, cred, grpc::ChannelArguments());
   grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
   grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
@@ -505,6 +509,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    --binary_output          ; Output in binary format\n"
       "    --json_input             ; Input in json format\n"
       "    --json_output            ; Output in json format\n"
+      "    --max_recv_msg_size      ; Specify max receive message size in "
+      "bytes. -1 indicates unlimited. The default value of 0 means to use the "
+      "gRPC default.\n"
       "    --timeout                ; Specify timeout (in seconds), used to "
       "set the deadline for RPCs. The default value of -1 means no "
       "deadline has been set.\n" +
@@ -521,12 +528,16 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   cli_args.timeout = absl::GetFlag(FLAGS_timeout);
   bool print_mode = false;
 
+  grpc::ChannelArguments args;
+  if (absl::GetFlag(FLAGS_max_recv_msg_size) != 0) {
+    args.SetMaxReceiveMessageSize(absl::GetFlag(FLAGS_max_recv_msg_size));
+  }
   std::shared_ptr<grpc::Channel> channel =
-      CreateCliChannel(server_address, cred);
+      CreateCliChannel(server_address, cred, args);
 
   if (!absl::GetFlag(FLAGS_binary_input) ||
       !absl::GetFlag(FLAGS_binary_output)) {
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {
@@ -579,6 +590,12 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     } else {
       input_file.open(absl::GetFlag(FLAGS_infile),
                       std::ios::in | std::ios::binary);
+      if (!input_file) {
+        fprintf(stderr, "Failed to open infile %s.\n",
+                absl::GetFlag(FLAGS_infile).c_str());
+        return false;
+      }
+
       input_stream = &input_file;
     }
 
@@ -905,8 +922,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   if (!absl::GetFlag(FLAGS_binary_input) ||
       !absl::GetFlag(FLAGS_binary_output)) {
     std::shared_ptr<grpc::Channel> channel =
-        CreateCliChannel(server_address, cred);
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+        CreateCliChannel(server_address, cred, grpc::ChannelArguments());
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {

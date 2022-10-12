@@ -12,13 +12,12 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-setlocal
+cd /d %~dp0\..\..\..
 
-cd /d %~dp0\..\..\..\src\csharp
+cd src\csharp
 
+@rem remove once Grpc.Tools has been removed from this repository
 dotnet build --configuration %MSBUILD_CONFIG% Grpc.sln || goto :error
-
-endlocal
 
 goto :EOF
 

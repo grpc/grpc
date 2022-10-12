@@ -18,6 +18,7 @@
   "protoc_plugin._split_definitions_test.SplitProtoProtoBeforeGrpcProtocStyleTest",
   "protoc_plugin._split_definitions_test.SplitProtoSingleProtocExecutionProtocStyleTest",
   "protoc_plugin.beta_python_plugin_test.PythonPluginTest",
+  "reflection._reflection_client_test.ReflectionClientTest",
   "reflection._reflection_servicer_test.ReflectionServicerTest",
   "status._grpc_status_test.StatusTest",
   "testing._client_test.ClientTest",

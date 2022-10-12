@@ -22,14 +22,13 @@ let package = Package(
   dependencies: [
     .package(
       name: "abseil",
-      //TODO(yulinliang): Firebase abseil is too old, update the dependency
-      //when abseil repo supports SPM.
       url: "https://github.com/firebase/abseil-cpp-SwiftPM.git",
-      .revision("05d8107f2971a37e6c77245b7c4c6b0a7e97bc99")
+      "0.20220203.0"..<"0.20220204.0"
     ),
-    .package(name: "BoringSSL-GRPC",
+    .package(
+      name: "BoringSSL-GRPC",
       url: "https://github.com/firebase/boringssl-SwiftPM.git",
-      .branch("7bcafa2660bc58715c39637494550d1ed7cd7229")
+      "0.9.0"..<"0.10.0"
     ),
   ],
 
@@ -43,38 +42,20 @@ let package = Package(
       path: ".",
       exclude: [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
-        "src/core/ext/filters/client_channel/xds/xds_channel.cc",
         "src/core/ext/filters/load_reporting/",
         "src/core/ext/transport/cronet/",
-        "src/core/ext/upb-generated/third_party/",
-        "src/core/ext/upb-generated/src/proto/grpc/auth/",
-        "src/core/ext/upbdefs-generated/envoy/config/rbac/",
-        "src/core/ext/upbdefs-generated/google/api/expr/",
-        "src/core/ext/upbdefs-generated/src/",
-        "src/core/ext/upbdefs-generated/third_party/",
-        "src/core/ext/upbdefs-generated/udpa/data/",
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h",
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc",
         "src/core/lib/surface/init_unsecure.cc",
-        "src/core/lib/security/authorization/",
+        "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
         "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
         "third_party/re2/re2/testing/",
         "third_party/re2/re2/fuzzing/",
         "third_party/re2/util/benchmark.cc",
         "third_party/re2/util/test.cc",
         "third_party/re2/util/fuzz.cc",
-        "third_party/upb/upb/sink.c",
-        "third_party/upb/upb/json_decode.c",
-        "third_party/upb/upb/json_encode.c",
-        "third_party/upb/upb/handlers.h",
-        "third_party/upb/upb/sink.h",
-        "third_party/upb/upb/json_encode.h",
-        "third_party/upb/upb/json_decode.h",
-        "third_party/upb/upb/handlers-inl.h",
-        "third_party/upb/upb/handlers.c",
         "third_party/upb/upb/bindings/",
-        "third_party/upb/upb/json/",
-        "third_party/upb/upb/pb/",
+        "third_party/upb/upb/msg_test.cc",
       ],
       sources: [
         "src/core/ext/filters/",
@@ -88,7 +69,6 @@ let package = Package(
         "third_party/re2/re2/",
         "third_party/re2/util/",
         "third_party/upb/upb/",
-        "third_party/upb/third_party/wyhash/wyhash.h",
         "third_party/xxhash/xxhash.h",
       ],
       publicHeadersPath: "spm-core-include",
@@ -101,7 +81,6 @@ let package = Package(
         .headerSearchPath("src/core/ext/upb-generated/"),
         .headerSearchPath("src/core/ext/upbdefs-generated/"),
         .define("GRPC_ARES", to: "0"),
-        .unsafeFlags(["-Wno-module-import-in-extern-c"]),
       ],
       linkerSettings: [
         .linkedFramework("CoreFoundation"),
@@ -139,7 +118,6 @@ let package = Package(
         .headerSearchPath("include/"),
         .headerSearchPath("third_party/upb/"),
         .headerSearchPath("src/core/ext/upb-generated"),
-        .unsafeFlags(["-Wno-module-import-in-extern-c"]),
       ]
     ),
     .testTarget(
@@ -151,5 +129,5 @@ let package = Package(
     ),
   ],
   cLanguageStandard: .gnu11,
-  cxxLanguageStandard: .cxx11
+  cxxLanguageStandard: .cxx14
 )

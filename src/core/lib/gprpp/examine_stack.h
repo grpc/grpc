@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <string>
 
 #include "absl/types/optional.h"

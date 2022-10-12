@@ -20,8 +20,6 @@
 
 #include "src/core/lib/surface/channel_stack_type.h"
 
-#include <grpc/support/log.h>
-
 bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
   switch (type) {
     case GRPC_CLIENT_CHANNEL:
@@ -31,6 +29,8 @@ bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
     case GRPC_CLIENT_LAME_CHANNEL:
       return true;
     case GRPC_CLIENT_DIRECT_CHANNEL:
+      return true;
+    case GRPC_CLIENT_DYNAMIC:
       return true;
     case GRPC_SERVER_CHANNEL:
       return false;
@@ -52,6 +52,8 @@ const char* grpc_channel_stack_type_string(grpc_channel_stack_type type) {
       return "CLIENT_LAME_CHANNEL";
     case GRPC_CLIENT_DIRECT_CHANNEL:
       return "CLIENT_DIRECT_CHANNEL";
+    case GRPC_CLIENT_DYNAMIC:
+      return "CLIENT_DYNAMIC_CHANNEL";
     case GRPC_NUM_CHANNEL_STACK_TYPES:
       break;
   }

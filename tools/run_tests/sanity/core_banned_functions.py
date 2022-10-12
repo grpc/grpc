@@ -29,12 +29,6 @@ BANNED_EXCEPT = {
     'grpc_resource_quota_unref(': [
         'src/core/lib/resource_quota/api.cc', 'src/core/lib/surface/server.cc'
     ],
-    'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer.cc'],
-    'grpc_slice_buffer_reset_and_unref(': [
-        'src/core/lib/slice/slice_buffer.cc'
-    ],
-    'grpc_slice_ref(': ['src/core/lib/slice/slice_api.cc'],
-    'grpc_slice_unref(': ['src/core/lib/slice/slice_api.cc'],
     'grpc_error_create(': [
         'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'
     ],
@@ -52,6 +46,21 @@ BANNED_EXCEPT = {
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_error*': ['src/core/lib/iomgr/error.cc'],
     'grpc_error_string': ['src/core/lib/iomgr/error.cc'],
+    # use grpc_core::CSlice{Ref,Unref} instead inside core
+    # (or prefer grpc_core::Slice!)
+    'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
+    'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
+    # std::random_device needs /dev/random which is not available on all linuxes that we support.
+    # Any usage must be optional and opt-in, so that those platforms can use gRPC without problem.
+    'std::random_device': [
+        'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
+        'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
+    ],
+
+    # Use `std::exchange()` instead.
+    'absl::exchange': [],
+    # Use `std::make_unique()` instead.
+    'absl::make_unique': [],
 }
 
 errors = 0

@@ -41,3 +41,19 @@ py_binary(
         "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
     ],
 )
+
+py_test(
+    name = "xds_interop_client_test",
+    srcs = ["xds_interop_client_test.py"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        ":xds_interop_client",
+        ":xds_interop_server",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+    ],
+)

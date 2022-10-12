@@ -16,15 +16,21 @@
  *
  */
 
+#include <stddef.h>
+
+#include <string>
+
+#include "gtest/gtest.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -42,8 +48,8 @@ static size_t next_tag = 1;
 static void channel_idle_start_watch(grpc_channel* channel,
                                      grpc_completion_queue* cq) {
   gpr_timespec connect_deadline = grpc_timeout_milliseconds_to_deadline(1);
-  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) ==
-             GRPC_CHANNEL_IDLE);
+  ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
+            GRPC_CHANNEL_IDLE);
 
   grpc_channel_watch_connectivity_state(channel, GRPC_CHANNEL_IDLE,
                                         connect_deadline, cq,
@@ -58,10 +64,10 @@ static void channel_idle_poll_for_timeout(grpc_channel* channel,
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   /* expect watch_connectivity_state to end with a timeout */
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.success == false);
-  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) ==
-             GRPC_CHANNEL_IDLE);
+  ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
+  ASSERT_EQ(ev.success, false);
+  ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
+            GRPC_CHANNEL_IDLE);
 }
 
 /* Test and use the "num_external_watchers" call to make sure
@@ -80,7 +86,7 @@ static void run_timeouts_test(const test_fixture* fixture) {
   /* start 1 watcher and then let it time out */
   channel_idle_start_watch(channel, cq);
   channel_idle_poll_for_timeout(channel, cq);
-  GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 0);
+  ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channel), 0);
 
   /* start 3 watchers and then let them all time out */
   for (size_t i = 1; i <= 3; i++) {
@@ -89,7 +95,7 @@ static void run_timeouts_test(const test_fixture* fixture) {
   for (size_t i = 1; i <= 3; i++) {
     channel_idle_poll_for_timeout(channel, cq);
   }
-  GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 0);
+  ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channel), 0);
 
   /* start 3 watchers, see one time out, start another 3, and then see them all
    * time out */
@@ -103,13 +109,14 @@ static void run_timeouts_test(const test_fixture* fixture) {
   for (size_t i = 1; i <= 5; i++) {
     channel_idle_poll_for_timeout(channel, cq);
   }
-  GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 0);
+  ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channel), 0);
 
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                        nullptr)
-                 .type == GRPC_QUEUE_SHUTDOWN);
+  ASSERT_EQ(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       nullptr)
+                .type,
+            GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
@@ -129,12 +136,12 @@ static void run_channel_shutdown_before_timeout_test(
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then shut down the channel before the timer goes off */
-  GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(channel) == 0);
+  ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channel), 0);
 
   /* expecting a 30 second timeout to go off much later than the shutdown. */
   gpr_timespec connect_deadline = grpc_timeout_seconds_to_deadline(30);
-  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) ==
-             GRPC_CHANNEL_IDLE);
+  ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
+            GRPC_CHANNEL_IDLE);
 
   grpc_channel_watch_connectivity_state(channel, GRPC_CHANNEL_IDLE,
                                         connect_deadline, cq,
@@ -143,21 +150,25 @@ static void run_channel_shutdown_before_timeout_test(
 
   grpc_event ev = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
   /* expect success with a state transition to CHANNEL_SHUTDOWN */
-  GPR_ASSERT(ev.success == true);
+  ASSERT_EQ(ev.success, true);
 
   grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                        nullptr)
-                 .type == GRPC_QUEUE_SHUTDOWN);
+  ASSERT_EQ(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       nullptr)
+                .type,
+            GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {
-  return grpc_insecure_channel_create(addr, nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel = grpc_channel_create(addr, creds, nullptr);
+  grpc_channel_credentials_release(creds);
+  return channel;
 }
 
 static const test_fixture insecure_test = {
@@ -167,8 +178,8 @@ static const test_fixture insecure_test = {
 
 static grpc_channel* secure_test_create_channel(const char* addr) {
   grpc_slice ca_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  EXPECT_TRUE(GRPC_LOG_IF_ERROR("load_file",
+                                grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
   const char* test_root_cert =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
   grpc_channel_credentials* ssl_creds =
@@ -180,8 +191,7 @@ static grpc_channel* secure_test_create_channel(const char* addr) {
       {const_cast<char*>("foo.test.google.fr")}};
   grpc_channel_args* new_client_args =
       grpc_channel_args_copy_and_add(nullptr, &ssl_name_override, 1);
-  grpc_channel* channel =
-      grpc_secure_channel_create(ssl_creds, addr, new_client_args, nullptr);
+  grpc_channel* channel = grpc_channel_create(addr, ssl_creds, new_client_args);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(new_client_args);
@@ -195,12 +205,16 @@ static const test_fixture secure_test = {
     secure_test_create_channel,
 };
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-
+TEST(NumExternalConnectivityWatchersTest, MainTest) {
   run_timeouts_test(&insecure_test);
   run_timeouts_test(&secure_test);
 
   run_channel_shutdown_before_timeout_test(&insecure_test);
   run_channel_shutdown_before_timeout_test(&secure_test);
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

@@ -19,23 +19,48 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <deque>
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/codegen/connectivity_state.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -44,7 +69,7 @@ class SubchannelCall;
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   ConnectedSubchannel(
-      grpc_channel_stack* channel_stack, const grpc_channel_args* args,
+      grpc_channel_stack* channel_stack, const ChannelArgs& args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel() override;
 
@@ -54,7 +79,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const { return args_; }
+  const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
@@ -63,7 +88,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
  private:
   grpc_channel_stack* channel_stack_;
-  grpc_channel_args* args_;
+  ChannelArgs args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
@@ -75,9 +100,9 @@ class SubchannelCall {
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
-    grpc_slice path;
+    Slice path;
     gpr_cycle_counter start_time;
-    grpc_millis deadline;
+    Timestamp deadline;
     Arena* arena;
     grpc_call_context_element* context;
     CallCombiner* call_combiner;
@@ -130,7 +155,7 @@ class SubchannelCall {
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ = nullptr;
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
-  grpc_millis deadline_;
+  Timestamp deadline_;
 };
 
 // A subchannel that knows how to connect to exactly one target address. It
@@ -184,14 +209,28 @@ class Subchannel : public DualRefCounted<Subchannel> {
         ABSL_GUARDED_BY(&mu_);
   };
 
+  // A base class for producers of subchannel-specific data.
+  // Implementations will typically add their own methods as needed.
+  class DataProducerInterface : public DualRefCounted<DataProducerInterface> {
+   public:
+    // A unique identifier for this implementation.
+    // Only one producer may be registered under a given type name on a
+    // given subchannel at any given time.
+    // Note that we use the pointer address instead of the string
+    // contents for uniqueness; all instances for a given implementation
+    // are expected to return the same string *instance*, not just the
+    // same string contents.
+    virtual UniqueTypeName type() const = 0;
+  };
+
   // Creates a subchannel.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
-      const grpc_resolved_address& address, const grpc_channel_args* args);
+      const grpc_resolved_address& address, const ChannelArgs& args);
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
-             const grpc_channel_args* args);
+             const ChannelArgs& args);
   ~Subchannel() override;
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
@@ -199,28 +238,17 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // will have an affect when the subchannel creates a new ConnectedSubchannel.
   void ThrottleKeepaliveTime(int new_keepalive_time) ABSL_LOCKS_EXCLUDED(mu_);
 
-  const grpc_channel_args* channel_args() const { return args_; }
+  grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
   channelz::SubchannelNode* channelz_node();
 
-  // Returns the current connectivity state of the subchannel.
-  // If health_check_service_name is non-null, the returned connectivity
-  // state will be based on the state reported by the backend for that
-  // service name.
-  grpc_connectivity_state CheckConnectivityState(
-      const absl::optional<std::string>& health_check_service_name)
-      ABSL_LOCKS_EXCLUDED(mu_);
-
   // Starts watching the subchannel's connectivity state.
-  // The first callback to the watcher will be delivered when the
-  // subchannel's connectivity state becomes a value other than
-  // initial_state, which may happen immediately.
+  // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
   // changes.
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       const absl::optional<std::string>& health_check_service_name,
       RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
       ABSL_LOCKS_EXCLUDED(mu_);
@@ -238,13 +266,32 @@ class Subchannel : public DualRefCounted<Subchannel> {
   }
 
   // Attempt to connect to the backend.  Has no effect if already connected.
-  void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
+  void RequestConnection() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Resets the connection backoff of the subchannel.
   void ResetBackoff() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Tears down any existing connection, and arranges for destruction
   void Orphan() override ABSL_LOCKS_EXCLUDED(mu_);
+
+  // Access to data producer map.
+  // We do not hold refs to the data producer; the implementation is
+  // expected to register itself upon construction and remove itself
+  // upon destruction.
+  //
+  // Looks up the current data producer for type and invokes get_or_add()
+  // with a pointer to that producer in the map.  The get_or_add() function
+  // can modify the pointed-to value to update the map.  This provides a
+  // way to either re-use an existing producer or register a new one in
+  // a non-racy way.
+  void GetOrAddDataProducer(
+      UniqueTypeName type,
+      std::function<void(DataProducerInterface**)> get_or_add)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  // Removes the data producer from the map, if the current producer for
+  // this type is the specified producer.
+  void RemoveDataProducer(DataProducerInterface* data_producer)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
@@ -286,7 +333,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
    public:
     void AddWatcherLocked(
         WeakRefCountedPtr<Subchannel> subchannel,
-        grpc_connectivity_state initial_state,
         const std::string& health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const std::string& health_check_service_name,
@@ -309,7 +355,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
   };
 
   class ConnectedSubchannelStateWatcher;
-
   class AsyncWatcherNotifierLocked;
 
   // Sets the subchannel's connectivity state to \a state.
@@ -318,12 +363,13 @@ class Subchannel : public DualRefCounted<Subchannel> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Methods for connection.
-  void MaybeStartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnRetryAlarm(void* arg, grpc_error_handle error)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  void ContinueConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void OnRetryTimer() ABSL_LOCKS_EXCLUDED(mu_);
+  void OnRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void StartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnConnectingFinished(void* arg, grpc_error_handle error)
       ABSL_LOCKS_EXCLUDED(mu_);
+  void OnConnectingFinishedLocked(grpc_error_handle error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   bool PublishTransportLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // The subchannel pool this subchannel is in.
@@ -334,11 +380,13 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // key_ if overridden by proxy mapper.
   grpc_resolved_address address_for_connect_;
   // Channel args.
-  grpc_channel_args* args_;
+  ChannelArgs args_;
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
+  // Minimum connection timeout.
+  Duration min_connect_timeout_;
 
   // Connection state.
   OrphanablePtr<SubchannelConnector> connector_;
@@ -348,12 +396,15 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Protects the other members.
   Mutex mu_;
 
-  // Active connection, or null.
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);
-  bool connecting_ ABSL_GUARDED_BY(mu_) = false;
-  bool disconnected_ ABSL_GUARDED_BY(mu_) = false;
+  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
 
   // Connectivity state tracking.
+  // Note that the connectivity state implies the state of the
+  // Subchannel object:
+  // - IDLE: no retry timer pending, can start a connection attempt at any time
+  // - CONNECTING: connection attempt in progress
+  // - READY: connection attempt succeeded, connected_subchannel_ created
+  // - TRANSIENT_FAILURE: connection attempt failed, retry timer pending
   grpc_connectivity_state state_ ABSL_GUARDED_BY(mu_) = GRPC_CHANNEL_IDLE;
   absl::Status status_ ABSL_GUARDED_BY(mu_);
   // The list of watchers without a health check service name.
@@ -361,20 +412,22 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
 
+  // Active connection, or null.
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);
+
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
-  grpc_millis next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
-  grpc_millis min_connect_timeout_ms_ ABSL_GUARDED_BY(mu_);
-  bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
+  Timestamp next_attempt_time_ ABSL_GUARDED_BY(mu_);
+  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_
+      ABSL_GUARDED_BY(mu_);
 
-  // Retry alarm.
-  grpc_timer retry_alarm_ ABSL_GUARDED_BY(mu_);
-  grpc_closure on_retry_alarm_ ABSL_GUARDED_BY(mu_);
-  bool have_retry_alarm_ ABSL_GUARDED_BY(mu_) = false;
-  // reset_backoff() was called while alarm was pending.
-  bool retry_immediately_ ABSL_GUARDED_BY(mu_) = false;
   // Keepalive time period (-1 for unset)
   int keepalive_time_ ABSL_GUARDED_BY(mu_) = -1;
+
+  // Data producer map.
+  std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
+      ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

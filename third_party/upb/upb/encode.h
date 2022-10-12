@@ -13,11 +13,11 @@
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -26,7 +26,7 @@
  */
 
 /*
- * upb_encode: parsing into a upb_msg using a upb_msglayout.
+ * upb_Encode: parsing from a upb_Message using a upb_MiniTable.
  */
 
 #ifndef UPB_ENCODE_H_
@@ -48,26 +48,34 @@ enum {
    *
    * If your proto contains maps, the encoder will need to malloc()/free()
    * memory during encode. */
-  UPB_ENCODE_DETERMINISTIC = 1,
+  kUpb_EncodeOption_Deterministic = 1,
 
   /* When set, unknown fields are not printed. */
-  UPB_ENCODE_SKIPUNKNOWN = 2,
+  kUpb_EncodeOption_SkipUnknown = 2,
+
+  /* When set, the encode will fail if any required fields are missing. */
+  kUpb_EncodeOption_CheckRequired = 4,
 };
 
 #define UPB_ENCODE_MAXDEPTH(depth) ((depth) << 16)
 
-char *upb_encode_ex(const void *msg, const upb_msglayout *l, int options,
-                    upb_arena *arena, size_t *size);
+typedef enum {
+  kUpb_EncodeStatus_Ok = 0,
+  kUpb_EncodeStatus_OutOfMemory = 1,       // Arena alloc failed
+  kUpb_EncodeStatus_MaxDepthExceeded = 2,  // Exceeded UPB_ENCODE_MAXDEPTH
 
-UPB_INLINE char *upb_encode(const void *msg, const upb_msglayout *l,
-                            upb_arena *arena, size_t *size) {
-  return upb_encode_ex(msg, l, 0, arena, size);
-}
+  // kUpb_EncodeOption_CheckRequired failed but the parse otherwise succeeded.
+  kUpb_EncodeStatus_MissingRequired = 3,
+} upb_EncodeStatus;
+
+upb_EncodeStatus upb_Encode(const void* msg, const upb_MiniTable* l,
+                            int options, upb_Arena* arena, char** buf,
+                            size_t* size);
 
 #include "upb/port_undef.inc"
 
 #ifdef __cplusplus
-}  /* extern "C" */
+} /* extern "C" */
 #endif
 
-#endif  /* UPB_ENCODE_H_ */
+#endif /* UPB_ENCODE_H_ */

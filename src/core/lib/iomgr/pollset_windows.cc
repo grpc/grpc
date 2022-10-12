@@ -98,7 +98,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
   } else {
     pollset->on_shutdown = closure;
   }
@@ -108,7 +108,7 @@ static void pollset_destroy(grpc_pollset* pollset) {}
 
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker_hdl,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
 
@@ -147,7 +147,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->on_shutdown,
-                                GRPC_ERROR_NONE);
+                                absl::OkStatus());
         pollset->on_shutdown = NULL;
       }
       goto done;
@@ -159,7 +159,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     added_worker = 1;
     while (!worker.kicked) {
       if (gpr_cv_wait(&worker.cv, &grpc_polling_mu,
-                      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
+                      deadline.as_timespec(GPR_CLOCK_REALTIME))) {
         grpc_core::ExecCtx::Get()->InvalidateNow();
         break;
       }
@@ -180,7 +180,7 @@ done:
   }
   gpr_cv_destroy(&worker.cv);
   if (worker_hdl) *worker_hdl = NULL;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle pollset_kick(grpc_pollset* p,
@@ -231,7 +231,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
       gpr_cv_signal(&next_global_worker->cv);
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_pollset_vtable grpc_windows_pollset_vtable = {

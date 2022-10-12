@@ -62,7 +62,7 @@ cd "${dir}/../../.."
 # Clones the API reference GitHub Pages branch
 PAGES_PATH="/tmp/gh-pages"
 rm -rf "${PAGES_PATH}"
-git clone --single-branch https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
+git clone -o upstream --single-branch https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
 
 # Generates Core / C++ / ObjC / PHP documents
 rm -rf "${PAGES_PATH}/core" "${PAGES_PATH}/cpp" "${PAGES_PATH}/objc" "${PAGES_PATH}/php"
@@ -75,16 +75,6 @@ mv doc/ref/c++/html "${PAGES_PATH}/cpp"
 mv doc/ref/core/html "${PAGES_PATH}/core"
 mv doc/ref/objc/html "${PAGES_PATH}/objc"
 mv doc/ref/php/html "${PAGES_PATH}/php"
-
-# Generates C# documents
-rm -rf "${PAGES_PATH}/csharp"
-echo "Generating C# documents in Docker..."
-docker run --rm -it \
-    -v "$(pwd)":/work \
-    -w /work/src/csharp/docfx \
-    --user "$(id -u):$(id -g)" \
-    tsgkadot/docker-docfx:latest docfx
-mv src/csharp/docfx/html "${PAGES_PATH}/csharp"
 
 # Generates Python documents
 rm -rf "${PAGES_PATH}/python"
@@ -101,20 +91,4 @@ echo "================================================================="
 echo "  Successfully generated documents for version ${GRPC_VERSION}."
 echo "================================================================="
 
-# Uploads to GitHub
-if [[ -n "${GITHUB_USER}" ]]; then
-    BRANCH_NAME="doc-${GRPC_VERSION}"
-
-    (cd "${PAGES_PATH}"
-        git remote add "${GITHUB_USER}" "git@github.com:${GITHUB_USER}/grpc.git"
-        git checkout -b "${BRANCH_NAME}"
-        git add --all
-        git commit -m "Auto-update documentation for gRPC ${GRPC_VERSION}"
-        git push --set-upstream "${GITHUB_USER}" "${BRANCH_NAME}"
-    )
-
-    echo "Please check https://github.com/${GITHUB_USER}/grpc/tree/${BRANCH_NAME} for generated documents."
-    echo "Click https://github.com/grpc/grpc/compare/gh-pages...${GITHUB_USER}:${BRANCH_NAME} to create a PR."
-else
-    echo "Please check ${PAGES_PATH} for generated documents."
-fi
+echo "Generated docs are in ${PAGES_PATH}, use the internal release script to create a PR."

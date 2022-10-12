@@ -15,28 +15,30 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_config_listener_v3_ApiListener_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_config_listener_v3_ApiListener_submsgs[1] = {
   {.submsg = &google_protobuf_Any_msginit},
 };
 
-static const upb_msglayout_field envoy_config_listener_v3_ApiListener__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_config_listener_v3_ApiListener__fields[1] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_listener_v3_ApiListener_msginit = {
+const upb_MiniTable envoy_config_listener_v3_ApiListener_msginit = {
   &envoy_config_listener_v3_ApiListener_submsgs[0],
   &envoy_config_listener_v3_ApiListener__fields[0],
-  UPB_SIZE(8, 16), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_config_listener_v3_ApiListener_msginit,
 };
 
-const upb_msglayout_file envoy_config_listener_v3_api_listener_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_config_listener_v3_api_listener_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

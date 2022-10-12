@@ -15,9 +15,5 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../.."
-
-src/csharp/experimental/build_native_ext_for_ios.sh
-
-mkdir -p "${ARTIFACTS_OUT}"
-cp libs/ios/libgrpc_csharp_ext.a libs/ios/libgrpc.a "${ARTIFACTS_OUT}"
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).

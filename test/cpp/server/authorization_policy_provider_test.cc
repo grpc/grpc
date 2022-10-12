@@ -48,7 +48,7 @@ TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsErrorStatus) {
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
-  auto tmp_authz_policy = absl::make_unique<grpc_core::testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<grpc_core::testing::TmpFile>(
       grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
@@ -60,7 +60,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsErrorStatus) {
-  auto tmp_authz_policy = absl::make_unique<grpc_core::testing::TmpFile>(
+  auto tmp_authz_policy = std::make_unique<grpc_core::testing::TmpFile>(
       grpc_core::testing::GetFileContents(INVALID_POLICY_PATH));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
@@ -74,6 +74,6 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsErrorStatus) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

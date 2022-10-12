@@ -19,9 +19,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
@@ -61,18 +72,14 @@ class ExternalAccountCredentials
   // This is a helper struct to pass information between multiple callback based
   // asynchronous calls.
   struct HTTPRequestContext {
-    HTTPRequestContext(grpc_httpcli_context* httpcli_context,
-                       grpc_polling_entity* pollent, grpc_millis deadline)
-        : httpcli_context(httpcli_context),
-          pollent(pollent),
-          deadline(deadline) {}
+    HTTPRequestContext(grpc_polling_entity* pollent, Timestamp deadline)
+        : pollent(pollent), deadline(deadline) {}
     ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
 
     // Contextual parameters passed from
     // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().
-    grpc_httpcli_context* httpcli_context;
     grpc_polling_entity* pollent;
-    grpc_millis deadline;
+    Timestamp deadline;
 
     // Reusable token fetch http response and closure.
     grpc_closure closure;
@@ -92,9 +99,8 @@ class ExternalAccountCredentials
   // This method implements the common token fetch logic and it will be called
   // when grpc_oauth2_token_fetcher_credentials request a new access token.
   void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                    grpc_millis deadline) override;
+                    Timestamp deadline) override;
 
   void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
                                       grpc_error_handle error);
@@ -112,6 +118,7 @@ class ExternalAccountCredentials
   Options options_;
   std::vector<std::string> scopes_;
 
+  OrphanablePtr<HttpRequest> http_request_;
   HTTPRequestContext* ctx_ = nullptr;
   grpc_credentials_metadata_request* metadata_req_ = nullptr;
   grpc_iomgr_cb_func response_cb_ = nullptr;

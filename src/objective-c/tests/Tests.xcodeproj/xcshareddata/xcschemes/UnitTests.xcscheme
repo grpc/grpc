@@ -39,8 +39,6 @@
             </BuildableReference>
          </TestableReference>
       </Testables>
-      <AdditionalOptions>
-      </AdditionalOptions>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Test"
@@ -63,8 +61,23 @@
       </MacroExpansion>
       <EnvironmentVariables>
          <EnvironmentVariable
+            key = "HOST_PORT_LOCAL"
+            value = "localhost:5050"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "HOST_PORT_REMOTE"
+            value = "grpc-test.sandbox.googleapis.com"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
             key = "GRPC_CFSTREAM_RUN_LOOP"
             value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "HOST_PORT_LOCALSSL"
+            value = "localhost:5051"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

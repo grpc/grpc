@@ -29,21 +29,27 @@
  * configurations and assess whether such a change is correct and desirable.
  */
 
+#include <stdarg.h>
 #include <string.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
 #include "test/core/util/test_config.h"
 
@@ -62,7 +68,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
 #define CHECK_STACK(...) check_stack(__FILE__, __LINE__, __VA_ARGS__)
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int errors = 0;
 
@@ -79,15 +85,13 @@ int main(int argc, char** argv) {
                         "authority", "connected", NULL);
   errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_SERVER_CHANNEL,
                         "server", "connected", NULL);
-  errors += CHECK_STACK("chttp2", &minimal_stack_args,
-                        GRPC_CLIENT_DIRECT_CHANNEL, "authority", "http-client",
-                        "message_decompress", "connected", NULL);
-  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
-                        "authority", "http-client", "message_decompress",
-                        "connected", NULL);
   errors +=
-      CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL, "server",
-                  "http-server", "message_decompress", "connected", NULL);
+      CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
+                  "authority", "http-client", "connected", NULL);
+  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
+                        "authority", "http-client", "connected", NULL);
+  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL,
+                        "server", "http-server", "connected", NULL);
   errors += CHECK_STACK(nullptr, &minimal_stack_args, GRPC_CLIENT_CHANNEL,
                         "client-channel", NULL);
 
@@ -126,21 +130,22 @@ static int check_stack(const char* file, int line, const char* transport_name,
                        grpc_channel_args* init_args,
                        unsigned channel_stack_type, ...) {
   // create phony channel stack
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_core::ChannelStackBuilderImpl builder(
+      "test", static_cast<grpc_channel_stack_type>(channel_stack_type));
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
   grpc_transport fake_transport = {&fake_transport_vtable};
-  grpc_channel_stack_builder_set_target(builder, "foo.test.google.fr");
-  grpc_channel_args* channel_args = grpc_channel_args_copy(init_args);
+  grpc_core::ChannelArgs channel_args =
+      grpc_core::ChannelArgs::FromC(init_args);
+  builder.SetTarget("foo.test.google.fr").SetChannelArgs(channel_args);
   if (transport_name != nullptr) {
-    grpc_channel_stack_builder_set_transport(builder, &fake_transport);
+    builder.SetTransport(&fake_transport);
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_channel_stack_builder_set_channel_arguments(builder, channel_args);
     GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
-        builder, (grpc_channel_stack_type)channel_stack_type));
+        &builder));
   }
 
   // build up our expectation list
@@ -157,38 +162,17 @@ static int check_stack(const char* file, int line, const char* transport_name,
 
   // build up our "got" list
   parts.clear();
-  grpc_channel_stack_builder_iterator* it =
-      grpc_channel_stack_builder_create_iterator_at_first(builder);
-  while (grpc_channel_stack_builder_move_next(it)) {
-    const char* name = grpc_channel_stack_builder_iterator_filter_name(it);
+  for (const auto& entry : *builder.mutable_stack()) {
+    const char* name = entry->name;
     if (name == nullptr) continue;
     parts.push_back(name);
   }
   std::string got = absl::StrJoin(parts, ", ");
-  grpc_channel_stack_builder_iterator_destroy(it);
 
   // figure out result, log if there's an error
   int result = 0;
   if (got != expect) {
-    parts.clear();
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      std::string value;
-      switch (channel_args->args[i].type) {
-        case GRPC_ARG_INTEGER: {
-          value = absl::StrCat(channel_args->args[i].value.integer);
-          break;
-        }
-        case GRPC_ARG_STRING:
-          value = channel_args->args[i].value.string;
-          break;
-        case GRPC_ARG_POINTER: {
-          value = absl::StrFormat("%p", channel_args->args[i].value.pointer.p);
-          break;
-        }
-      }
-      parts.push_back(absl::StrCat(channel_args->args[i].key, "=", value));
-    }
-    std::string args_str = absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+    std::string args_str = channel_args.ToString();
 
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,
             "**************************************************");
@@ -201,12 +185,6 @@ static int check_stack(const char* file, int line, const char* transport_name,
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "EXPECTED: %s", expect.c_str());
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "GOT:      %s", got.c_str());
     result = 1;
-  }
-
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_stack_builder_destroy(builder);
-    grpc_channel_args_destroy(channel_args);
   }
 
   return result;

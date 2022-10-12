@@ -15,10 +15,5 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../.."
-
-# ANDROID_ABI is set by the job definition in artifact_targets.py
-src/csharp/experimental/build_native_ext_for_android.sh
-
-mkdir -p "${ARTIFACTS_OUT}"
-cp cmake/build/libgrpc_csharp_ext.so "${ARTIFACTS_OUT}"
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).

@@ -43,8 +43,16 @@ export ZEND_DONT_UNLOAD_MODULES=1
 export USE_ZEND_ALLOC=0
 # Detect whether valgrind is executable
 if [ -x "$(command -v valgrind)" ]; then
-  $(which valgrind) --error-exitcode=10 --leak-check=yes \
-    $VALGRIND_UNDEF_VALUE_ERRORS \
-    $(which php) $extension_dir -d max_execution_time=300 \
-    ../tests/MemoryLeakTest/MemoryLeakTest.php
+  # skip the memory leak test on ARM64
+  # TODO(jtattermusch): reenable the test once https://github.com/grpc/grpc/issues/29098 is fixed.
+  if [ "$(uname -m)" != "aarch64" ]; then
+    $(which valgrind) --error-exitcode=10 --leak-check=yes \
+      -v \
+      --num-callers=30 \
+      --suppressions=../tests/MemoryLeakTest/ignore_leaks.supp \
+      $VALGRIND_UNDEF_VALUE_ERRORS \
+      $(which php) $extension_dir -d max_execution_time=300 \
+      ../tests/MemoryLeakTest/MemoryLeakTest.php
+  fi
 fi
+

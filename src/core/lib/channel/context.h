@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CONTEXT_H
 #define GRPC_CORE_LIB_CHANNEL_CONTEXT_H
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/promise/context.h"
+
 /// Call object context pointers.
 
 /// Call context is represented as an array of \a grpc_call_context_elements.
@@ -48,5 +52,12 @@ struct grpc_call_context_element {
   void* value = nullptr;
   void (*destroy)(void*) = nullptr;
 };
+
+namespace grpc_core {
+// Bind the legacy context array into the new style structure
+// TODO(ctiller): remove as we migrate these contexts to the new system.
+template <>
+struct ContextType<grpc_call_context_element> {};
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */

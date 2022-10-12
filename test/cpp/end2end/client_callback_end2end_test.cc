@@ -37,7 +37,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -113,7 +113,7 @@ class ClientCallbackEnd2endTest
       // Add 20 phony server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+        creators.push_back(std::make_unique<PhonyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -133,8 +133,8 @@ class ClientCallbackEnd2endTest
     switch (GetParam().protocol) {
       case Protocol::TCP:
         if (!GetParam().use_interceptors) {
-          channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
-                                                 channel_creds, args);
+          channel_ = grpc::CreateCustomChannel(server_address_.str(),
+                                               channel_creds, args);
         } else {
           channel_ = CreateCustomChannelWithInterceptors(
               server_address_.str(), channel_creds, args,
@@ -153,7 +153,7 @@ class ClientCallbackEnd2endTest
         assert(false);
     }
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-    generic_stub_ = absl::make_unique<GenericStub>(channel_);
+    generic_stub_ = std::make_unique<GenericStub>(channel_);
     PhonyInterceptor::Reset();
   }
 
@@ -275,7 +275,7 @@ class ClientCallbackEnd2endTest
             : reuses_remaining_(reuses), do_writes_done_(do_writes_done) {
           activate_ = [this, test, method_name, suffix_for_stats, test_str] {
             if (reuses_remaining_ > 0) {
-              cli_ctx_ = absl::make_unique<ClientContext>();
+              cli_ctx_ = std::make_unique<ClientContext>();
               reuses_remaining_--;
               StubOptions options(suffix_for_stats);
               test->generic_stub_->PrepareBidiStreamingCall(
@@ -509,26 +509,26 @@ TEST_P(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
-  ResetStub(absl::make_unique<TestInterceptorFactory>(
+  ResetStub(std::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", nullptr));
   SendRpcsGeneric(10, false, /*suffix_for_stats=*/nullptr);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsWithSuffix) {
-  ResetStub(absl::make_unique<TestInterceptorFactory>(
+  ResetStub(std::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", "TestSuffix"));
   SendRpcsGeneric(10, false, "TestSuffix");
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidi) {
-  ResetStub(absl::make_unique<TestInterceptorFactory>(
+  ResetStub(std::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", nullptr));
   SendGenericEchoAsBidi(10, 1, /*do_writes_done=*/true,
                         /*suffix_for_stats=*/nullptr);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidiWithSuffix) {
-  ResetStub(absl::make_unique<TestInterceptorFactory>(
+  ResetStub(std::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", "TestSuffix"));
   SendGenericEchoAsBidi(10, 1, /*do_writes_done=*/true, "TestSuffix");
 }
@@ -850,7 +850,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
   constexpr char kSuffixForStats[] = "TestSuffixForStats";
   ResetStub(
-      absl::make_unique<TestInterceptorFactory>(kMethodName, kSuffixForStats));
+      std::make_unique<TestInterceptorFactory>(kMethodName, kSuffixForStats));
   class UnaryClient : public grpc::ClientUnaryReactor {
    public:
     UnaryClient(grpc::GenericStub* stub, const std::string& method_name,
@@ -1372,8 +1372,8 @@ TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       (GetParam().protocol == Protocol::TCP)
-          ? ::grpc::CreateCustomChannel(server_address_.str(), channel_creds,
-                                        args)
+          ? grpc::CreateCustomChannel(server_address_.str(), channel_creds,
+                                      args)
           : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
@@ -1524,7 +1524,7 @@ TEST_P(ClientCallbackEnd2endTest,
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   std::vector<TestScenario> scenarios;
@@ -1569,7 +1569,7 @@ INSTANTIATE_TEST_SUITE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

@@ -21,7 +21,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, Iterable, Mapping, Optional, Tuple, Union
+from typing import Any, Iterable, Mapping, Optional, Tuple
 import unittest
 
 from absl import flags
@@ -29,12 +29,11 @@ from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
-import packaging.version
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
 from framework.helpers import retryers
-from framework.rpc import grpc_testing
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Load existing flags
@@ -70,21 +69,18 @@ def _split_camel(s: str, delimiter: str = '-') -> str:
                    for c in s).lstrip(delimiter)
 
 
-def _get_lang(image_name: str) -> str:
-    return re.search(r'/(\w+)-(client|server):', image_name).group(1)
-
-
 class DumpedXdsConfig(dict):
     """A convenience class to check xDS config.
 
     Feel free to add more pre-compute fields.
     """
 
-    def __init__(self, xds_json: JsonType):
+    def __init__(self, xds_json: JsonType):  # pylint: disable=too-many-branches
         super().__init__(xds_json)
         self.json_config = xds_json
         self.lds = None
         self.rds = None
+        self.rds_version = None
         self.cds = []
         self.eds = []
         self.endpoints = []
@@ -96,6 +92,8 @@ class DumpedXdsConfig(dict):
                 elif 'routeConfig' in xds_config:
                     self.rds = xds_config['routeConfig']['dynamicRouteConfigs'][
                         0]['routeConfig']
+                    self.rds_version = xds_config['routeConfig'][
+                        'dynamicRouteConfigs'][0]['versionInfo']
                 elif 'clusterConfig' in xds_config:
                     for cluster in xds_config['clusterConfig'][
                             'dynamicActiveClusters']:
@@ -104,7 +102,8 @@ class DumpedXdsConfig(dict):
                     for endpoint in xds_config['endpointConfig'][
                             'dynamicEndpointConfigs']:
                         self.eds.append(endpoint['endpointConfig'])
-            except Exception as e:
+            # TODO(lidiz) reduce the catch to LookupError
+            except Exception as e:  # pylint: disable=broad-except
                 logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for generic_xds_config in self.get('genericXdsConfigs', []):
@@ -114,12 +113,14 @@ class DumpedXdsConfig(dict):
                 elif re.search(r'\.RouteConfiguration$',
                                generic_xds_config['typeUrl']):
                     self.rds = generic_xds_config["xdsConfig"]
+                    self.rds_version = generic_xds_config["versionInfo"]
                 elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
                     self.cds.append(generic_xds_config["xdsConfig"])
                 elif re.search(r'\.ClusterLoadAssignment$',
                                generic_xds_config['typeUrl']):
                     self.eds.append(generic_xds_config["xdsConfig"])
-            except Exception as e:
+            # TODO(lidiz) reduce the catch to LookupError
+            except Exception as e:  # pylint: disable=broad-except
                 logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for endpoint_config in self.eds:
@@ -132,7 +133,8 @@ class DumpedXdsConfig(dict):
                                            ['socketAddress']['address'],
                                            lb_endpoint['endpoint']['address']
                                            ['socketAddress']['portValue']))
-                    except Exception as e:
+                    # TODO(lidiz) reduce the catch to LookupError
+                    except Exception as e:  # pylint: disable=broad-except
                         logging.debug('Parse endpoint failed with %s: %s',
                                       type(e), e)
 
@@ -200,27 +202,6 @@ class ExpectedResult:
     ratio: float = 1
 
 
-@dataclass
-class TestConfig:
-    """Describes the config for the test suite."""
-    client_lang: str
-    server_lang: str
-    version: str
-
-    def version_ge(self, another: str) -> bool:
-        """Returns a bool for whether the version is >= another one.
-
-        A version is greater than or equal to another version means its version
-        number is greater than or equal to another version's number. Version
-        "master" is always considered latest. E.g., master >= v1.41.x >= v1.40.x
-        >= v1.9.x.
-        """
-        if self.version == 'master':
-            return True
-        return packaging.version.parse(
-            self.version) >= packaging.version.parse(another)
-
-
 class _MetaXdsUrlMapTestCase(type):
     """Tracking test case subclasses."""
 
@@ -266,12 +247,13 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     """
 
     @staticmethod
-    def is_supported(config: TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         """Allow the test case to decide whether it supports the given config.
 
         Returns:
           A bool indicates if the given config is supported.
         """
+        del config
         return True
 
     @staticmethod
@@ -315,7 +297,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             A tuple contains the updated version of given HostRule and
             PathMatcher.
         """
-        pass
 
     @abc.abstractmethod
     def xds_config_validate(self, xds_config: DumpedXdsConfig) -> None:
@@ -328,16 +309,14 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             xds_config: A DumpedXdsConfig instance can be used as a JSON dict,
               but also provides helper fields for commonly checked xDS config.
         """
-        pass
 
     @abc.abstractmethod
-    def rpc_distribution_validate(self, client: XdsTestClient) -> None:
+    def rpc_distribution_validate(self, test_client: XdsTestClient) -> None:
         """Validates the routing behavior, if any is wrong, raise.
 
         Args:
-            client: A XdsTestClient instance for all sorts of end2end testing.
+            test_client: A XdsTestClient instance for all sorts of end2end testing.
         """
-        pass
 
     @classmethod
     def hostname(cls):
@@ -351,24 +330,17 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def setUpClass(cls):
+        logging.info('----- Testing %s -----', cls.__name__)
+        logging.info('Logs timezone: %s', time.localtime().tm_zone)
+
+        # Raises unittest.SkipTest if given client/server/version does not
+        # support current test case.
+        skips.evaluate_test_config(cls.is_supported)
+
         if not cls.started_test_cases:
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
         cls.started_test_cases.add(cls.__name__)
-
-        # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
-        # cannot be used in the built-in test-skipping decorators. See the
-        # official FAQs:
-        # https://abseil.io/docs/python/guides/flags#faqs
-        test_config = TestConfig(
-            client_lang=_get_lang(GcpResourceManager().client_image),
-            server_lang=_get_lang(GcpResourceManager().server_image),
-            version=GcpResourceManager().testing_version)
-        if not cls.is_supported(test_config):
-            cls.skip_reason = f'Unsupported test config: {test_config}'
-            return
-        else:
-            cls.skip_reason = None
 
         # Create the test case's own client runner with it's own namespace,
         # enables concurrent running with other test cases.
@@ -386,23 +358,22 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if cls.skip_reason is None:
-            # Clean up related resources for the client
-            cls.test_client_runner.cleanup(force=True, force_namespace=True)
+        cls.test_client_runner.cleanup(force=True, force_namespace=True)
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished
             GcpResourceManager().cleanup()
 
     def _fetch_and_check_xds_config(self):
+        # TODO(lidiz) find another way to store last seen xDS config
         # Cleanup state for this attempt
-        self._xds_json_config = None
+        self._xds_json_config = None  # pylint: disable=attribute-defined-outside-init
         # Fetch client config
         config = self.test_client.csds.fetch_client_status(
             log_level=logging.INFO)
         self.assertIsNotNone(config)
         # Found client config, test it.
-        self._xds_json_config = json_format.MessageToDict(config)
+        self._xds_json_config = json_format.MessageToDict(config)  # pylint: disable=attribute-defined-outside-init
         # Execute the child class provided validation logic
         self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
@@ -418,9 +389,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             super().run(result)
 
     def test_client_config(self):
-        if self.skip_reason:
-            logging.info('Skipping: %s', self.skip_reason)
-            self.skipTest(self.skip_reason)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
                 seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),
@@ -436,9 +404,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                     self._xds_json_config))
 
     def test_rpc_distribution(self):
-        if self.skip_reason:
-            logging.info('Skipping: %s', self.skip_reason)
-            self.skipTest(self.skip_reason)
         self.rpc_distribution_validate(self.test_client)
 
     @staticmethod
@@ -458,7 +423,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             test_client.get_load_balancer_stats(num_rpcs=num_rpcs))
         logging.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.ip, json.dumps(json_lb_stats, indent=2))
+            test_client.hostname, json.dumps(json_lb_stats, indent=2))
         return RpcDistributionStats(json_lb_stats)
 
     def assertNumEndpoints(self, xds_config: DumpedXdsConfig, k: int) -> None:
@@ -467,20 +432,21 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             f'insufficient endpoints in EDS: want={k} seen={xds_config.endpoints}'
         )
 
-    def assertRpcStatusCode(self, test_client: XdsTestClient, *,
-                            expected: Iterable[ExpectedResult], length: int,
-                            tolerance: float) -> None:
+    def assertRpcStatusCode(  # pylint: disable=too-many-locals
+            self, test_client: XdsTestClient, *,
+            expected: Iterable[ExpectedResult], length: int,
+            tolerance: float) -> None:
         """Assert the distribution of RPC statuses over a period of time."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
-            test_client.ip, before_stats)
+            test_client.hostname, before_stats)
         time.sleep(length)
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
-            test_client.ip, after_stats)
+            test_client.hostname, after_stats)
 
         # Validate the diff
         for expected_result in expected:
@@ -508,6 +474,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             diff_ratio = abs(seen - want) / total
             self.assertLessEqual(
                 diff_ratio, tolerance,
-                'Expect rpc [%s] to return [%s] at %.2f ratio: seen=%d want=%d total=%d diff_ratio=%.4f > %.2f'
-                % (rpc, expected_result.status_code, expected_result.ratio,
-                   seen, want, total, diff_ratio, tolerance))
+                (f'Expect rpc [{rpc}] to return '
+                 f'[{expected_result.status_code}] at '
+                 f'{expected_result.ratio:.2f} ratio: '
+                 f'seen={seen} want={want} total={total} '
+                 f'diff_ratio={diff_ratio:.4f} > {tolerance:.2f}'))

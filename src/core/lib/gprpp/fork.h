@@ -30,17 +30,11 @@
 
 namespace grpc_core {
 
-namespace internal {
-class ExecCtxState;
-class ThreadState;
-}  // namespace internal
-
 class Fork {
  public:
   typedef void (*child_postfork_func)(void);
 
   static void GlobalInit();
-  static void GlobalShutdown();
 
   // Returns true if fork suppport is enabled, false otherwise
   static bool Enabled();
@@ -91,8 +85,6 @@ class Fork {
   static void DoIncExecCtxCount();
   static void DoDecExecCtxCount();
 
-  static internal::ExecCtxState* exec_ctx_state_;
-  static internal::ThreadState* thread_state_;
   static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
   static child_postfork_func reset_child_polling_engine_;

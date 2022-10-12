@@ -17,8 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <initializer_list>
+#include <new>
 #include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/bitset.h"
@@ -31,6 +36,7 @@ namespace table_detail {
 // A tuple-like type that contains manually constructed elements.
 template <typename... Ts>
 struct Elements;
+
 template <typename T, typename... Ts>
 struct Elements<T, Ts...> : Elements<Ts...> {
   union U {
@@ -71,6 +77,7 @@ struct GetElem<I, T, Ts...> {
 // Sets a member constant N to the number of times Needle is in Haystack.
 template <typename Needle, typename... Haystack>
 struct CountIncludedStruct;
+
 template <typename Needle, typename Straw, typename... RestOfHaystack>
 struct CountIncludedStruct<Needle, Straw, RestOfHaystack...> {
   static constexpr size_t N =
@@ -92,6 +99,7 @@ constexpr size_t CountIncluded() {
 // Ignored should be void always, and is used for enable_if_t.
 template <typename Ignored, typename Needle, typename... Haystack>
 struct IndexOfStruct;
+
 template <typename Needle, typename Straw, typename... RestOfHaystack>
 struct IndexOfStruct<absl::enable_if_t<std::is_same<Needle, Straw>::value>,
                      Needle, Straw, RestOfHaystack...> {
@@ -123,6 +131,7 @@ IndexOf() {
 // Implemented as a simple type recursion.
 template <size_t I, typename... Ts>
 struct TypeIndexStruct;
+
 template <typename T, typename... Ts>
 struct TypeIndexStruct<0, T, Ts...> {
   using Type = T;
@@ -209,7 +218,7 @@ class Table {
 
   // Check if this table has index I.
   template <size_t I>
-      absl::enable_if_t < I<sizeof...(Ts), bool> has() const {
+  absl::enable_if_t<(I < sizeof...(Ts)), bool> has() const {
     return present_bits_.is_set(I);
   }
 
@@ -308,8 +317,22 @@ class Table {
     ForEachImpl(std::move(f), absl::make_index_sequence<sizeof...(Ts)>());
   }
 
+  // Iterate through each set field in the table if it exists in Vs, in the
+  // order of Vs.
+  template <typename F, typename... Vs>
+  void ForEachIn(F f) const {
+    ForEachImpl(std::move(f),
+                absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
+  }
+
   // Count the number of set fields in the table
   size_t count() const { return present_bits_.count(); }
+
+  // Check if the table is completely empty
+  bool empty() const { return present_bits_.none(); }
+
+  // Clear all elements in the table.
+  void ClearAll() { ClearAllImpl(absl::make_index_sequence<sizeof...(Ts)>()); }
 
  private:
   // Bit field for which elements of the table are set (true) or un-set (false,
@@ -410,6 +433,11 @@ class Table {
   template <typename F, size_t... I>
   void ForEachImpl(F f, absl::index_sequence<I...>) const {
     table_detail::do_these_things<int>({(CallIf<I>(&f), 1)...});
+  }
+
+  template <size_t... I>
+  void ClearAllImpl(absl::index_sequence<I...>) {
+    table_detail::do_these_things<int>({(clear<I>(), 1)...});
   }
 
   // Bit field indicating which elements are set.

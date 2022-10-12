@@ -20,7 +20,7 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_url_map_testcase
-from framework.rpc import grpc_testing
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Type aliases
@@ -32,6 +32,7 @@ RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
 ExpectedResult = xds_url_map_testcase.ExpectedResult
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -114,10 +115,20 @@ def _wait_until_backlog_cleared(test_client: XdsTestClient,
             # Both backlog of both types of RPCs is clear, success, return.
             return
 
-    raise RuntimeError('failed to clear RPC backlog in %s seconds', timeout)
+    raise RuntimeError('failed to clear RPC backlog in %s seconds' % timeout)
+
+
+def _is_supported(config: skips.TestConfig) -> bool:
+    if config.client_lang == _Lang.NODE:
+        return config.version_gte('v1.4.x')
+    return True
 
 
 class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -145,9 +156,9 @@ class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['abort']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
                                  expected=(ExpectedResult(
                                      rpc_type=RpcTypeUnaryCall,
@@ -159,6 +170,10 @@ class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
 
 class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
     """EMPTY_CALL is not fault injected, so it should succeed."""
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -216,6 +231,10 @@ class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -236,11 +255,10 @@ class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['delay']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(
-            test_client,
-            rpc_types=[RpcTypeUnaryCall],
-            num_rpcs=_NUM_RPCS,
-            app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS,
+                                app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
         _wait_until_backlog_cleared(test_client)
         self.assertRpcStatusCode(
             test_client,
@@ -253,6 +271,10 @@ class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestAlwaysAbort(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -275,9 +297,9 @@ class TestAlwaysAbort(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['abort']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(
             test_client,
             expected=(ExpectedResult(
@@ -289,6 +311,10 @@ class TestAlwaysAbort(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestDelayHalf(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -311,11 +337,10 @@ class TestDelayHalf(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['delay']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(
-            test_client,
-            rpc_types=[RpcTypeUnaryCall],
-            num_rpcs=_NUM_RPCS,
-            app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS,
+                                app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
         _wait_until_backlog_cleared(test_client)
         self.assertRpcStatusCode(
             test_client,
@@ -328,6 +353,10 @@ class TestDelayHalf(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -350,9 +379,9 @@ class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['abort']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(
             test_client,
             expected=(ExpectedResult(

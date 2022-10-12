@@ -33,7 +33,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -43,7 +43,13 @@
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
+#if defined(__APPLE__)
+// Use less # of threads on Mac because its test machines are less powerful
+// to finish the test on time. (context: b/185231823)
 const int kNumThreads = 100;  // Number of threads
+#else
+const int kNumThreads = 300;  // Number of threads
+#endif
 const int kNumAsyncSendThreads = 2;
 const int kNumAsyncReceiveThreads = 50;
 const int kNumAsyncServerThreads = 50;
@@ -52,7 +58,7 @@ const int kNumRpcs = 1000;  // Number of RPCs per thread
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() {}
 
@@ -69,7 +75,7 @@ class CommonStressTest {
   CommonStressTest() : kMaxMessageSize_(8192) {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   virtual ~CommonStressTest() {}
@@ -256,7 +262,7 @@ class CommonStressTestAsyncServer : public BaseClass {
     enum { READY, DONE } state;
   };
   std::vector<Context> contexts_;
-  ::grpc::testing::EchoTestService::AsyncService service_;
+  grpc::testing::EchoTestService::AsyncService service_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   bool shutting_down_;
   grpc::internal::Mutex mu_;
@@ -314,12 +320,15 @@ TYPED_TEST(End2endTest, ThreadStress) {
   std::vector<std::thread> threads;
   gpr_atm errors;
   gpr_atm_rel_store(&errors, static_cast<gpr_atm>(0));
-  threads.reserve(kNumThreads);
-  for (int i = 0; i < kNumThreads; ++i) {
+  int num_threads = kNumThreads / grpc_test_slowdown_factor();
+  // The number of threads should be > 10 to be able to catch errors
+  ASSERT_GT(num_threads, 10);
+  threads.reserve(num_threads);
+  for (int i = 0; i < num_threads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs,
                          this->common_.AllowExhaustion(), &errors);
   }
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < num_threads; ++i) {
     threads[i].join();
   }
   uint64_t error_cnt = static_cast<uint64_t>(gpr_atm_no_barrier_load(&errors));
@@ -434,7 +443,7 @@ TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

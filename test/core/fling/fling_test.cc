@@ -23,13 +23,14 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
 int main(int /*argc*/, const char** argv) {
+  gpr_log_verbosity_init();
   const char* me = argv[0];
   const char* lslash = strrchr(me, '/');
   char root[1024];

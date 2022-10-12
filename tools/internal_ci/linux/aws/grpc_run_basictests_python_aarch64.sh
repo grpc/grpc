@@ -28,10 +28,8 @@ cd grpc
 
 git submodule update --init
 
-# build and test python (currently we only test with python3.6, but that's ok since our aarch64 testing resources are limited)
-tools/run_tests/run_tests.py -l python --compiler python3.6 -c opt --iomgr_platform native -t -x run_tests/python_linux_opt_native/sponge_log.xml --report_suite_name python_linux_opt_native --report_multi_target || FAILED=true
-tools/run_tests/run_tests.py -l python --compiler python3.6 -c opt --iomgr_platform asyncio -t -x run_tests/python_linux_opt_asyncio/sponge_log.xml --report_suite_name python_linux_opt_asyncio --report_multi_target || FAILED=true
-tools/run_tests/run_tests.py -l python --compiler python3.6 -c opt --iomgr_platform gevent -t -x run_tests/python_linux_opt_gevent/sponge_log.xml --report_suite_name python_linux_opt_gevent --report_multi_target || FAILED=true
+# build and test python (currently we only test with python3.7, but that's ok since our aarch64 testing resources are limited)
+tools/run_tests/run_tests.py -l python --compiler python3.7 -c opt -t -x run_tests/python_linux_opt_native/sponge_log.xml --report_suite_name python_linux_opt_native --report_multi_target || FAILED=true
 
 if [ "$FAILED" != "" ]
 then

@@ -18,22 +18,23 @@
 
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 
+#include <algorithm>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 
 namespace grpc_core {
 
 namespace {
-
-size_t g_fault_injection_parser_index;
 
 std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
 ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
@@ -44,7 +45,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
         fault_injection_policy;
     std::vector<grpc_error_handle> sub_error_list;
     if (policies_json_array[i].type() != Json::Type::OBJECT) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      error_list->push_back(GRPC_ERROR_CREATE(absl::StrCat(
           "faultInjectionPolicy index ", i, " is not a JSON object")));
       continue;
     }
@@ -55,7 +56,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
                              &sub_error_list, false)) {
       if (!grpc_status_code_from_string(abort_code_string.c_str(),
                                         &(fault_injection_policy.abort_code))) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        sub_error_list.push_back(GRPC_ERROR_CREATE(
             "field:abortCode error:failed to parse status code"));
       }
     }
@@ -85,7 +86,7 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       if (fault_injection_policy.abort_percentage_denominator != 100 &&
           fault_injection_policy.abort_percentage_denominator != 10000 &&
           fault_injection_policy.abort_percentage_denominator != 1000000) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        sub_error_list.push_back(GRPC_ERROR_CREATE(
             "field:abortPercentageDenominator error:Denominator can only be "
             "one of "
             "100, 10000, 1000000"));
@@ -115,23 +116,21 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       if (fault_injection_policy.delay_percentage_denominator != 100 &&
           fault_injection_policy.delay_percentage_denominator != 10000 &&
           fault_injection_policy.delay_percentage_denominator != 1000000) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        sub_error_list.push_back(GRPC_ERROR_CREATE(
             "field:delayPercentageDenominator error:Denominator can only be "
             "one of "
             "100, 10000, 1000000"));
       }
     }
     // Parse max_faults
-    if (ParseJsonObjectField(json_object, "maxFaults",
-                             &fault_injection_policy.max_faults,
-                             &sub_error_list, false)) {
-      if (fault_injection_policy.max_faults < 0) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxFaults error:should be zero or positive"));
-      }
-    }
+    static_assert(
+        std::is_unsigned<decltype(fault_injection_policy.max_faults)>::value,
+        "maxFaults should be unsigned");
+    ParseJsonObjectField(json_object, "maxFaults",
+                         &fault_injection_policy.max_faults, &sub_error_list,
+                         false);
     if (!sub_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
           absl::StrCat("failed to parse faultInjectionPolicy index ", i),
           &sub_error_list));
     }
@@ -142,13 +141,12 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
 
 }  // namespace
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
-FaultInjectionServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* args, const Json& json, grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
+                                                        const Json& json) {
   // Only parse fault injection policy if the following channel arg is present.
-  if (!grpc_channel_args_find_bool(
-          args, GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, false)) {
+  if (!args.GetBool(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG)
+           .value_or(false)) {
     return nullptr;
   }
   // Parse fault injection policy from given Json
@@ -161,21 +159,28 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
     fault_injection_policies =
         ParseFaultInjectionPolicy(*policies_json_array, &error_list);
   }
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR("Fault injection parser", &error_list);
-  if (*error != GRPC_ERROR_NONE || fault_injection_policies.empty()) {
-    return nullptr;
+  if (!error_list.empty()) {
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_VECTOR("Fault injection parser", &error_list);
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("error parsing fault injection method parameters: ",
+                     StatusToString(error)));
+    return status;
   }
-  return absl::make_unique<FaultInjectionMethodParsedConfig>(
+  if (fault_injection_policies.empty()) return nullptr;
+  return std::make_unique<FaultInjectionMethodParsedConfig>(
       std::move(fault_injection_policies));
 }
 
-void FaultInjectionServiceConfigParser::Register() {
-  g_fault_injection_parser_index = ServiceConfigParser::RegisterParser(
-      absl::make_unique<FaultInjectionServiceConfigParser>());
+void FaultInjectionServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
+      std::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {
-  return g_fault_injection_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
 }  // namespace grpc_core

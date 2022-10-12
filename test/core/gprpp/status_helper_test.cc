@@ -16,13 +16,15 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <stddef.h>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/civil_time.h"
 #include "absl/time/clock.h"
+#include "gmock/gmock.h"
 #include "google/rpc/status.upb.h"
+#include "gtest/gtest.h"
 #include "upb/upb.hpp"
 
 namespace grpc_core {
@@ -84,9 +86,12 @@ TEST(StatusUtilTest, AddAndGetChildren) {
   absl::Status s = absl::CancelledError();
   absl::Status child1 = absl::AbortedError("Message1");
   absl::Status child2 = absl::DeadlineExceededError("Message2");
+  absl::Status child3 = absl::UnimplementedError("");
   StatusAddChild(&s, child1);
   StatusAddChild(&s, child2);
-  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre(child1, child2));
+  StatusAddChild(&s, child3);
+  EXPECT_THAT(StatusGetChildren(s),
+              ::testing::ElementsAre(child1, child2, child3));
 }
 
 TEST(StatusUtilTest, ToAndFromProto) {
@@ -95,12 +100,28 @@ TEST(StatusUtilTest, ToAndFromProto) {
   StatusSetStr(&s, StatusStrProperty::kOsError, "value");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
-  absl::Status s2 = internal::StatusFromProto(msg);
+  size_t len;
+  const char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &len);
+  google_rpc_Status* msg2 = google_rpc_Status_parse(buf, len, arena.ptr());
+  absl::Status s2 = internal::StatusFromProto(msg2);
+  EXPECT_EQ(s, s2);
+}
+
+TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
+  absl::Status s = absl::CancelledError("_\xAB\xCD\xEF_");
+  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
+  StatusSetStr(&s, StatusStrProperty::kOsError, "!\xFF\xCC\xAA!");
+  upb::Arena arena;
+  google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
+  size_t len;
+  const char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &len);
+  google_rpc_Status* msg2 = google_rpc_Status_parse(buf, len, arena.ptr());
+  absl::Status s2 = internal::StatusFromProto(msg2);
   EXPECT_EQ(s, s2);
 }
 
 TEST(StatusUtilTest, OkToString) {
-  absl::Status s = absl::OkStatus();
+  absl::Status s;
   std::string t = StatusToString(s);
   EXPECT_EQ("OK", t);
 }

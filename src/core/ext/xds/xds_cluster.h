@@ -19,21 +19,30 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
+#include "upb/def.h"
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 
 namespace grpc_core {
 
-struct XdsClusterResource {
+struct XdsClusterResource : public XdsResourceType::ResourceData {
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
   ClusterType cluster_type;
   // For cluster type EDS.
@@ -52,9 +61,7 @@ struct XdsClusterResource {
 
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
-  // If set to the empty string, will use the same server we obtained the CDS
-  // data from.
-  absl::optional<std::string> lrs_load_reporting_server_name;
+  absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
 
   // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
   std::string lb_policy;
@@ -65,18 +72,20 @@ struct XdsClusterResource {
   // cluster.
   uint32_t max_concurrent_requests = 1024;
 
+  absl::optional<OutlierDetectionConfig> outlier_detection;
+
   bool operator==(const XdsClusterResource& other) const {
     return cluster_type == other.cluster_type &&
            eds_service_name == other.eds_service_name &&
            dns_hostname == other.dns_hostname &&
            prioritized_cluster_names == other.prioritized_cluster_names &&
            common_tls_context == other.common_tls_context &&
-           lrs_load_reporting_server_name ==
-               other.lrs_load_reporting_server_name &&
+           lrs_load_reporting_server == other.lrs_load_reporting_server &&
            lb_policy == other.lb_policy &&
            min_ring_size == other.min_ring_size &&
            max_ring_size == other.max_ring_size &&
-           max_concurrent_requests == other.max_concurrent_requests;
+           max_concurrent_requests == other.max_concurrent_requests &&
+           outlier_detection == other.outlier_detection;
   }
 
   std::string ToString() const;
@@ -92,13 +101,13 @@ class XdsClusterResourceType
     return "envoy.api.v2.Cluster";
   }
 
-  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
-                                      absl::string_view serialized_resource,
-                                      bool is_v2) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource,
+                      bool is_v2) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
-  void InitUpbSymtab(upb_symtab* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
     envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
     envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(

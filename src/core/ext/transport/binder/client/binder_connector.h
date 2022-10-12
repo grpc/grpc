@@ -35,8 +35,7 @@ namespace grpc_core {
 class BinderClientChannelFactory : public ClientChannelFactory {
  public:
   RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address,
-      const grpc_channel_args* args) override;
+      const grpc_resolved_address& address, const ChannelArgs& args) override;
 };
 
 }  // namespace grpc_core

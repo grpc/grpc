@@ -18,27 +18,32 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <functional>
-#include <set>
+#include <memory>
+#include <string>
 #include <thread>
+#include <vector>
 
-#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -145,7 +150,11 @@ class TestServer {
     server_ = grpc_server_create(nullptr, nullptr);
     address_ = grpc_core::JoinHostPort("[::1]", grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server_, address_.c_str()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(
+        grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     accept_thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
   }
@@ -226,10 +235,7 @@ class TestServer {
 
   static void HandleOneRpc(grpc_call* call, grpc_completion_queue* call_cq) {
     // Send a large enough payload to get us stalled on outgoing flow control
-    std::string send_payload = "";
-    for (int i = 0; i < 4 * 1e6; i++) {
-      send_payload += "a";
-    }
+    std::string send_payload(4 * 1024 * 1024, 'a');
     grpc_slice request_payload_slice =
         grpc_slice_from_copied_string(send_payload.c_str());
     grpc_byte_buffer* request_payload =
@@ -285,7 +291,7 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   const int kNumCalls = 64;
   std::vector<std::thread> threads;
   threads.reserve(kNumCalls);
-  std::unique_ptr<TestServer> test_server = absl::make_unique<TestServer>();
+  std::unique_ptr<TestServer> test_server = std::make_unique<TestServer>();
   const std::string server_address = test_server->address();
   for (int i = 0; i < kNumCalls; i++) {
     threads.push_back(std::thread([server_address]() {
@@ -296,8 +302,10 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
           const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true));
       grpc_channel_args* channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
-      grpc_channel* channel = grpc_insecure_channel_create(
-          std::string("ipv6:" + server_address).c_str(), channel_args, nullptr);
+      grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+      grpc_channel* channel = grpc_channel_create(
+          std::string("ipv6:" + server_address).c_str(), creds, channel_args);
+      grpc_channel_credentials_release(creds);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);
@@ -350,7 +358,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       new TransportTargetWindowEstimatesMocker();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

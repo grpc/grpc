@@ -55,4 +55,4 @@ fi
 # commit so that changes are passed to Docker
 git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule' --allow-empty
 
-tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 8 -j 4 --internal_ci --build_only
+tools/run_tests/run_tests_matrix.py -f linux --exclude basictests_arm64 --inner_jobs 8 -j 4 --internal_ci --build_only

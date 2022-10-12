@@ -16,16 +16,14 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 
-#include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -63,20 +61,16 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_client(f);
-
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  /* f->shutdown_cq is not used in this test */
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void test_early_server_shutdown_finishes_tags(
     grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = begin_test(
       config, "test_early_server_shutdown_finishes_tags", nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_call* s = reinterpret_cast<grpc_call*>(1);
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
@@ -89,17 +83,17 @@ static void test_early_server_shutdown_finishes_tags(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
+  shutdown_client(&f);
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 0);
-  CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), false);
+  cqv.Expect(tag(1000), true);
+  cqv.Verify();
   GPR_ASSERT(s == nullptr);
 
   grpc_server_destroy(f.server);
 
   end_test(&f);
   config.tear_down_data(&f);
-  cq_verifier_destroy(cqv);
 }
 
 void shutdown_finishes_tags(grpc_end2end_test_config config) {

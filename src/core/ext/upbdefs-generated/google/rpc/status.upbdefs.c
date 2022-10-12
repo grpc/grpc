@@ -10,7 +10,7 @@
 #include "google/rpc/status.upbdefs.h"
 #include "google/rpc/status.upb.h"
 
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 static const char descriptor[275] = {'\n', '\027', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'r', 'p', 'c', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', 
 '\022', '\n', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'r', 'p', 'c', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 
 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 't', 'o', '\"', 'f', '\n', '\006', 'S', 't', 'a', 't', 'u', 's', '\022', 
@@ -24,14 +24,14 @@ static const char descriptor[275] = {'\n', '\027', 'g', 'o', 'o', 'g', 'l', 'e',
 's', ';', 's', 't', 'a', 't', 'u', 's', '\370', '\001', '\001', '\242', '\002', '\003', 'R', 'P', 'C', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_any_proto_upbdefinit,
   NULL
 };
 
-upb_def_init google_rpc_status_proto_upbdefinit = {
+_upb_DefPool_Init google_rpc_status_proto_upbdefinit = {
   deps,
   &google_rpc_status_proto_upb_file_layout,
   "google/rpc/status.proto",
-  UPB_STRVIEW_INIT(descriptor, 275)
+  UPB_STRINGVIEW_INIT(descriptor, 275)
 };

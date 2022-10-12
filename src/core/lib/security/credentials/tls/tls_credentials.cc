@@ -20,18 +20,23 @@
 
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
-#include <cstring>
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
-
-#define GRPC_CREDENTIALS_TYPE_TLS "Tls"
+#include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 
 namespace {
 
@@ -70,57 +75,58 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
 
 TlsCredentials::TlsCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_TLS),
-      options_(std::move(options)) {}
+    : options_(std::move(options)) {}
 
 TlsCredentials::~TlsCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target_name, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  const char* overridden_target_name = nullptr;
-  tsi_ssl_session_cache* ssl_session_cache = nullptr;
-  for (size_t i = 0; args != nullptr && i < args->num_args; i++) {
-    grpc_arg* arg = &args->args[i];
-    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
-        arg->type == GRPC_ARG_STRING) {
-      overridden_target_name = arg->value.string;
-    }
-    if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
-        arg->type == GRPC_ARG_POINTER) {
-      ssl_session_cache =
-          static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
-    }
-  }
+    const char* target_name, grpc_core::ChannelArgs* args) {
+  absl::optional<std::string> overridden_target_name =
+      args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
           this->Ref(), options_, std::move(call_creds), target_name,
-          overridden_target_name, ssl_session_cache);
+          overridden_target_name.has_value() ? overridden_target_name->c_str()
+                                             : nullptr,
+          ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr());
   if (sc == nullptr) {
     return nullptr;
   }
-  if (args != nullptr) {
-    grpc_arg new_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
-    *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
-  }
+  *args = args->Set(GRPC_ARG_HTTP2_SCHEME, "https");
   return sc;
+}
+
+grpc_core::UniqueTypeName TlsCredentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Tls");
+  return kFactory.Create();
+}
+
+int TlsCredentials::cmp_impl(const grpc_channel_credentials* other) const {
+  const TlsCredentials* o = static_cast<const TlsCredentials*>(other);
+  if (*options_ == *o->options_) return 0;
+  return grpc_core::QsortCompare(
+      static_cast<const grpc_channel_credentials*>(this), other);
 }
 
 TlsServerCredentials::TlsServerCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_TLS),
-      options_(std::move(options)) {}
+    : options_(std::move(options)) {}
 
 TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 TlsServerCredentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    const grpc_core::ChannelArgs& /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
+}
+
+grpc_core::UniqueTypeName TlsServerCredentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Tls");
+  return kFactory.Create();
 }
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/

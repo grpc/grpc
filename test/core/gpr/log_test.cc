@@ -16,14 +16,12 @@
  *
  */
 
-#include <stdbool.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/global_config.h"
 #include "test/core/util/test_config.h"
 
 static bool log_func_reached = false;
@@ -89,7 +87,7 @@ TEST(LogTest, LogVerbosity) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

@@ -26,23 +26,8 @@
 #include <grpc/event_engine/internal/memory_allocator_impl.h>
 #include <grpc/slice.h>
 
-// forward-declaring an internal struct, not used publicly.
-struct grpc_slice_buffer;
-
 namespace grpc_event_engine {
 namespace experimental {
-
-// TODO(nnoble): needs implementation
-class SliceBuffer {
- public:
-  SliceBuffer() { abort(); }
-  explicit SliceBuffer(grpc_slice_buffer*) { abort(); }
-
-  grpc_slice_buffer* RawSliceBuffer() { return slice_buffer_; }
-
- private:
-  grpc_slice_buffer* slice_buffer_;
-};
 
 // Tracks memory allocated by one system.
 // Is effectively a thin wrapper/smart pointer for a MemoryAllocatorImpl,

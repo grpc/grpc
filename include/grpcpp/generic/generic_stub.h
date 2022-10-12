@@ -53,7 +53,7 @@ class TemplatedGenericStub final {
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
   std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>
   PrepareCall(ClientContext* context, const std::string& method,
-              ::grpc::CompletionQueue* cq) {
+              grpc::CompletionQueue* cq) {
     return CallInternal(channel_.get(), context, method, /*options=*/{}, cq,
                         false, nullptr);
   }
@@ -64,7 +64,7 @@ class TemplatedGenericStub final {
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
   std::unique_ptr<ClientAsyncResponseReader<ResponseType>> PrepareUnaryCall(
       ClientContext* context, const std::string& method,
-      const RequestType& request, ::grpc::CompletionQueue* cq) {
+      const RequestType& request, grpc::CompletionQueue* cq) {
     return std::unique_ptr<ClientAsyncResponseReader<ResponseType>>(
         internal::ClientAsyncResponseReaderHelper::Create<ResponseType>(
             channel_.get(), cq,
@@ -82,7 +82,7 @@ class TemplatedGenericStub final {
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
   std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>> Call(
       ClientContext* context, const std::string& method,
-      ::grpc::CompletionQueue* cq, void* tag) {
+      grpc::CompletionQueue* cq, void* tag) {
     return CallInternal(channel_.get(), context, method, /*options=*/{}, cq,
                         true, tag);
   }
@@ -157,7 +157,7 @@ class TemplatedGenericStub final {
   std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>
   CallInternal(grpc::ChannelInterface* channel, ClientContext* context,
                const std::string& method, StubOptions options,
-               ::grpc::CompletionQueue* cq, bool start, void* tag) {
+               grpc::CompletionQueue* cq, bool start, void* tag) {
     return std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>(
         internal::ClientAsyncReaderWriterFactory<RequestType, ResponseType>::
             Create(channel, cq,

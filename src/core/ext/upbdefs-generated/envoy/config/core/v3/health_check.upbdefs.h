@@ -19,46 +19,51 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_core_v3_health_check_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_health_check_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthStatusSet_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthStatusSet");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_Payload_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck.Payload");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_HttpHealthCheck_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck.HttpHealthCheck");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_Payload_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck.Payload");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_TcpHealthCheck_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck.TcpHealthCheck");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_HttpHealthCheck_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck.HttpHealthCheck");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_RedisHealthCheck_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck.RedisHealthCheck");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_TcpHealthCheck_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck.TcpHealthCheck");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_GrpcHealthCheck_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck.GrpcHealthCheck");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_RedisHealthCheck_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck.RedisHealthCheck");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_CustomHealthCheck_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck.CustomHealthCheck");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_GrpcHealthCheck_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck.GrpcHealthCheck");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_HealthCheck_TlsOptions_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HealthCheck.TlsOptions");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_CustomHealthCheck_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck.CustomHealthCheck");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_TlsOptions_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck.TlsOptions");
 }
 
 #ifdef __cplusplus

@@ -20,21 +20,15 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/api_trace.h"
 
 /* -- Common. -- */
@@ -60,7 +54,8 @@ static void* credentials_pointer_arg_copy(void* p) {
 }
 
 static int credentials_pointer_cmp(void* a, void* b) {
-  return grpc_core::QsortCompare(a, b);
+  return static_cast<const grpc_channel_credentials*>(a)->cmp(
+      static_cast<const grpc_channel_credentials*>(b));
 }
 
 static const grpc_arg_pointer_vtable credentials_pointer_vtable = {

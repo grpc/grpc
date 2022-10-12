@@ -18,16 +18,19 @@
 
 #include <string.h>
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 // The large-metadata headers that we're adding for this test are not
 // actually appended to this in a single string, since the string would
@@ -81,7 +84,7 @@ static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
 int main(int argc, char** argv) {
   int i;
   grpc_init();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   // Test sending more metadata than the server will accept.
   std::vector<std::string> headers;

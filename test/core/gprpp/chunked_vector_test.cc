@@ -14,8 +14,15 @@
 
 #include "src/core/lib/gprpp/chunked_vector.h"
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <memory>
 
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
@@ -147,6 +154,14 @@ TEST(ChunkedVector, Clear) {
   v.Clear();
   EXPECT_EQ(v.size(), 0);
   EXPECT_EQ(v.begin(), v.end());
+}
+
+TEST(ChunkedVector, RemoveIf) {
+  auto arena = MakeScopedArena(kInitialArenaSize, g_memory_allocator);
+  ChunkedVector<int, kChunkSize> v(arena.get());
+  v.EmplaceBack(1);
+  v.SetEnd(std::remove_if(v.begin(), v.end(), [](int i) { return i == 1; }));
+  EXPECT_EQ(v.size(), 0);
 }
 
 }  // namespace testing

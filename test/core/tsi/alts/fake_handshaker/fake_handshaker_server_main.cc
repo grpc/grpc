@@ -44,7 +44,7 @@ static void RunFakeHandshakerServer(const std::string& server_address) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
   GPR_ASSERT(absl::GetFlag(FLAGS_handshaker_port) != 0);

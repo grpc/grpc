@@ -19,6 +19,8 @@
 #ifndef TEST_QPS_CLIENT_H
 #define TEST_QPS_CLIENT_H
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <condition_variable>
@@ -37,8 +39,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/core/lib/gpr/env.h"
-#include "src/cpp/util/core_stats.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "test/cpp/qps/histogram.h"
@@ -71,6 +72,9 @@ class ClientRequestCreator<SimpleRequest> {
   ClientRequestCreator(SimpleRequest* req,
                        const PayloadConfig& payload_config) {
     if (payload_config.has_bytebuf_params()) {
+      gpr_log(GPR_ERROR,
+              "Invalid PayloadConfig, config cannot have bytebuf_params: %s",
+              payload_config.DebugString().c_str());
       GPR_ASSERT(false);  // not appropriate for this specialization
     } else if (payload_config.has_simple_params()) {
       req->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
@@ -81,6 +85,9 @@ class ClientRequestCreator<SimpleRequest> {
       std::unique_ptr<char[]> body(new char[size]);
       req->mutable_payload()->set_body(body.get(), size);
     } else if (payload_config.has_complex_params()) {
+      gpr_log(GPR_ERROR,
+              "Invalid PayloadConfig, cannot have complex_params: %s",
+              payload_config.DebugString().c_str());
       GPR_ASSERT(false);  // not appropriate for this specialization
     } else {
       // default should be simple proto without payloads
@@ -104,6 +111,8 @@ class ClientRequestCreator<ByteBuffer> {
       Slice slice(buf.get(), req_sz);
       *req = ByteBuffer(&slice, 1);
     } else {
+      gpr_log(GPR_ERROR, "Invalid PayloadConfig, missing bytebug_params: %s",
+              payload_config.DebugString().c_str());
       GPR_ASSERT(false);  // not appropriate for this specialization
     }
   }
@@ -198,9 +207,6 @@ class Client {
       }
     }
 
-    grpc_stats_data core_stats;
-    grpc_stats_collect(&core_stats);
-
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
     for (StatusHistogram::const_iterator it = statuses.begin();
@@ -213,7 +219,6 @@ class Client {
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
     stats.set_cq_poll_count(poll_count);
-    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 
@@ -362,8 +367,8 @@ class Client {
         // Closed-loop doesn't use random dist at all
         break;
       case LoadParams::kPoisson:
-        random_dist = absl::make_unique<ExpDist>(load.poisson().offered_load() /
-                                                 num_threads);
+        random_dist = std::make_unique<ExpDist>(load.poisson().offered_load() /
+                                                num_threads);
         break;
       default:
         GPR_ASSERT(false);
@@ -449,16 +454,15 @@ class ClientImpl : public Client {
     /* Allow optionally overriding connect_deadline in order
      * to deal with benchmark environments in which the server
      * can take a long time to become ready. */
-    char* channel_connect_timeout_str =
-        gpr_getenv("QPS_WORKER_CHANNEL_CONNECT_TIMEOUT");
-    if (channel_connect_timeout_str != nullptr &&
-        strcmp(channel_connect_timeout_str, "") != 0) {
-      connect_deadline_seconds = atoi(channel_connect_timeout_str);
+    auto channel_connect_timeout_str =
+        grpc_core::GetEnv("QPS_WORKER_CHANNEL_CONNECT_TIMEOUT");
+    if (channel_connect_timeout_str.has_value() &&
+        !channel_connect_timeout_str->empty()) {
+      connect_deadline_seconds = atoi(channel_connect_timeout_str->c_str());
     }
     gpr_log(GPR_INFO,
             "Waiting for up to %d seconds for all channels to connect",
             connect_deadline_seconds);
-    gpr_free(channel_connect_timeout_str);
     gpr_timespec connect_deadline = gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
         gpr_time_from_seconds(connect_deadline_seconds, GPR_TIMESPAN));

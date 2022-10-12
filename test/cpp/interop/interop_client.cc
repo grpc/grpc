@@ -904,71 +904,6 @@ bool InteropClient::DoSpecialStatusMessage() {
   return true;
 }
 
-bool InteropClient::DoCacheableUnary() {
-  gpr_log(GPR_DEBUG, "Sending RPC with cacheable response");
-
-  // Create request with current timestamp
-  gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
-  std::string timestamp =
-      std::to_string(static_cast<long long unsigned>(ts.tv_nsec));
-  SimpleRequest request;
-  request.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
-
-  // Request 1
-  ClientContext context1;
-  SimpleResponse response1;
-  context1.set_cacheable(true);
-  // Add fake user IP since some proxy's (GFE) won't cache requests from
-  // localhost.
-  context1.AddMetadata("x-user-ip", "1.2.3.4");
-  Status s1 =
-      serviceStub_.Get()->CacheableUnaryCall(&context1, request, &response1);
-  if (!AssertStatusOk(s1, context1.debug_error_string())) {
-    return false;
-  }
-  gpr_log(GPR_DEBUG, "response 1 payload: %s",
-          response1.payload().body().c_str());
-
-  // Request 2
-  ClientContext context2;
-  SimpleResponse response2;
-  context2.set_cacheable(true);
-  context2.AddMetadata("x-user-ip", "1.2.3.4");
-  Status s2 =
-      serviceStub_.Get()->CacheableUnaryCall(&context2, request, &response2);
-  if (!AssertStatusOk(s2, context2.debug_error_string())) {
-    return false;
-  }
-  gpr_log(GPR_DEBUG, "response 2 payload: %s",
-          response2.payload().body().c_str());
-
-  // Check that the body is same for both requests. It will be the same if the
-  // second response is a cached copy of the first response
-  GPR_ASSERT(response2.payload().body() == response1.payload().body());
-
-  // Request 3
-  // Modify the request body so it will not get a cache hit
-  ts = gpr_now(GPR_CLOCK_PRECISE);
-  timestamp = std::to_string(static_cast<long long unsigned>(ts.tv_nsec));
-  SimpleRequest request1;
-  request1.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
-  ClientContext context3;
-  SimpleResponse response3;
-  context3.set_cacheable(true);
-  context3.AddMetadata("x-user-ip", "1.2.3.4");
-  Status s3 =
-      serviceStub_.Get()->CacheableUnaryCall(&context3, request1, &response3);
-  if (!AssertStatusOk(s3, context3.debug_error_string())) {
-    return false;
-  }
-  gpr_log(GPR_DEBUG, "response 3 payload: %s",
-          response3.payload().body().c_str());
-
-  // Check that the response is different from the previous response.
-  GPR_ASSERT(response3.payload().body() != response1.payload().body());
-  return true;
-}
-
 bool InteropClient::DoPickFirstUnary() {
   const int rpcCount = 100;
   SimpleRequest request;
@@ -1085,7 +1020,7 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
-std::tuple<bool, int32_t, std::string>
+std::tuple<bool, int32_t, std::string, std::string>
 InteropClient::PerformOneSoakTestIteration(
     const bool reset_channel,
     const int32_t max_acceptable_per_iteration_latency_ms) {
@@ -1107,14 +1042,16 @@ InteropClient::PerformOneSoakTestIteration(
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(now, start));
   if (!s.ok()) {
-    return std::make_tuple(false, elapsed_ms, context.debug_error_string());
+    return std::make_tuple(false, elapsed_ms, context.debug_error_string(),
+                           context.peer());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
     std::string debug_string = absl::StrFormat(
         "%d ms exceeds max acceptable latency: %d ms, peer: %s", elapsed_ms,
         max_acceptable_per_iteration_latency_ms, context.peer());
-    return std::make_tuple(false, elapsed_ms, std::move(debug_string));
+    return std::make_tuple(false, elapsed_ms, std::move(debug_string),
+                           context.peer());
   } else {
-    return std::make_tuple(true, elapsed_ms, "");
+    return std::make_tuple(true, elapsed_ms, "", context.peer());
   }
 }
 
@@ -1122,8 +1059,9 @@ void InteropClient::PerformSoakTest(
     const bool reset_channel_per_iteration, const int32_t soak_iterations,
     const int32_t max_failures,
     const int32_t max_acceptable_per_iteration_latency_ms,
+    const int32_t min_time_ms_between_rpcs,
     const int32_t overall_timeout_seconds) {
-  std::vector<std::tuple<bool, int32_t, std::string>> results;
+  std::vector<std::tuple<bool, int32_t, std::string, std::string>> results;
   grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
       1 /* resolution */,
       500 * 1e3 /* largest bucket; 500 seconds is unlikely */);
@@ -1131,29 +1069,33 @@ void InteropClient::PerformSoakTest(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_seconds(overall_timeout_seconds, GPR_TIMESPAN));
   int32_t iterations_ran = 0;
+  int total_failures = 0;
   for (int i = 0;
        i < soak_iterations &&
        gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) < 0;
        ++i) {
+    gpr_timespec earliest_next_start = gpr_time_add(
+        gpr_now(GPR_CLOCK_MONOTONIC),
+        gpr_time_from_millis(min_time_ms_between_rpcs, GPR_TIMESPAN));
     auto result = PerformOneSoakTestIteration(
         reset_channel_per_iteration, max_acceptable_per_iteration_latency_ms);
+    bool success = std::get<0>(result);
+    int32_t elapsed_ms = std::get<1>(result);
+    std::string debug_string = std::get<2>(result);
+    std::string peer = std::get<3>(result);
     results.push_back(result);
-    grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
-    iterations_ran++;
-  }
-  int total_failures = 0;
-  for (size_t i = 0; i < results.size(); i++) {
-    bool success = std::get<0>(results[i]);
-    int32_t elapsed_ms = std::get<1>(results[i]);
-    std::string debug_string = std::get<2>(results[i]);
     if (!success) {
-      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d failed: %s", i,
-              elapsed_ms, debug_string.c_str());
+      gpr_log(GPR_DEBUG,
+              "soak iteration: %d elapsed_ms: %d peer: %s failed: %s", i,
+              elapsed_ms, peer.c_str(), debug_string.c_str());
       total_failures++;
     } else {
-      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d succeeded", i,
-              elapsed_ms);
+      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d peer: %s succeeded",
+              i, elapsed_ms, peer.c_str());
     }
+    grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
+    iterations_ran++;
+    gpr_sleep_until(earliest_next_start);
   }
   double latency_ms_median =
       grpc_histogram_percentile(latencies_ms_histogram, 50);
@@ -1207,12 +1149,12 @@ void InteropClient::PerformSoakTest(
 bool InteropClient::DoRpcSoakTest(
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t overall_timeout_seconds) {
+    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(false /* reset channel per iteration */, soak_iterations,
                   max_failures, max_acceptable_per_iteration_latency_ms,
-                  overall_timeout_seconds);
+                  soak_min_time_ms_between_rpcs, overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "rpc_soak test done.");
   return true;
 }
@@ -1220,13 +1162,13 @@ bool InteropClient::DoRpcSoakTest(
 bool InteropClient::DoChannelSoakTest(
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t overall_timeout_seconds) {
+    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(true /* reset channel per iteration */, soak_iterations,
                   max_failures, max_acceptable_per_iteration_latency_ms,
-                  overall_timeout_seconds);
+                  soak_min_time_ms_between_rpcs, overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
 }

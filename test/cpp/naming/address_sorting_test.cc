@@ -32,11 +32,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -45,6 +42,9 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
@@ -111,8 +111,10 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
     grpc_resolved_address dest_addr_as_resolved_addr;
     memcpy(&dest_addr_as_resolved_addr.addr, dest_addr, dest_addr->len);
     dest_addr_as_resolved_addr.len = dest_addr->len;
-    std::string ip_addr_str = grpc_sockaddr_to_string(
-        &dest_addr_as_resolved_addr, false /* normalize */);
+    std::string ip_addr_str =
+        grpc_sockaddr_to_string(&dest_addr_as_resolved_addr,
+                                false /* normalize */)
+            .value();
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
       gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map",
@@ -169,7 +171,8 @@ grpc_core::ServerAddressList BuildLbAddrInputs(
     const std::vector<TestAddress>& test_addrs) {
   grpc_core::ServerAddressList addresses;
   for (const auto& addr : test_addrs) {
-    addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr), nullptr);
+    addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr),
+                           grpc_core::ChannelArgs());
   }
   return addresses;
 }
@@ -179,7 +182,8 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
     std::string ip_addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */);
+        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */)
+            .value();
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
   }
 }
@@ -354,14 +358,8 @@ TEST_F(AddressSortingTest,
        TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
-#if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.2]:0";
-#else
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::2]:0";
-#endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
@@ -373,10 +371,24 @@ TEST_F(AddressSortingTest,
       {"[::1]:443", AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs, {
-                                    "[::1]:443",
-                                    v4_compat_dest,
-                                });
+  ASSERT_EQ(lb_addrs.size(), 2);
+  EXPECT_EQ(
+      grpc_sockaddr_to_string(&lb_addrs[0].address(), false /* normalize */)
+          .value(),
+      "[::1]:443");
+  // We've observed some inet_ntop implementations have special representations
+  // of IPv4-compatible IPv6 addresses, and others represent them as normal
+  // IPv6 addresses. For the purposes of this test, we don't care which
+  // representation is used.
+  std::vector<std::string> acceptable_addresses = {
+      "[::0.0.0.2]:443",
+      "[::2]:443",
+  };
+  EXPECT_THAT(
+      acceptable_addresses,
+      ::testing::Contains(
+          grpc_sockaddr_to_string(&lb_addrs[1].address(), false /* normalize */)
+              .value()));
 }
 
 TEST_F(AddressSortingTest,
@@ -721,14 +733,8 @@ TEST_F(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
 TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
-#if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.3]:0";
-#else
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::3]:0";
-#endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
@@ -740,13 +746,26 @@ TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
       {v4_compat_dest, AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          // The sort should be stable since
-                          // v4-compatible has same precedence as site-local.
-                          "[fec0::2000]:443",
-                          v4_compat_dest,
-                      });
+  ASSERT_EQ(lb_addrs.size(), 2);
+  // The sort should be stable since
+  // v4-compatible has same precedence as site-local.
+  EXPECT_EQ(
+      grpc_sockaddr_to_string(&lb_addrs[0].address(), false /* normalize */)
+          .value(),
+      "[fec0::2000]:443");
+  // We've observed some inet_ntop implementations have special representations
+  // of IPv4-compatible IPv6 addresses, and others represent them as normal
+  // IPv6 addresses. For the purposes of this test, we don't care which
+  // representation is used.
+  std::vector<std::string> acceptable_addresses = {
+      "[::0.0.0.2]:443",
+      "[::2]:443",
+  };
+  EXPECT_THAT(
+      acceptable_addresses,
+      ::testing::Contains(
+          grpc_sockaddr_to_string(&lb_addrs[1].address(), false /* normalize */)
+              .value()));
 }
 
 /* TestPrefersIpv6Loopback tests the actual "address probing" code
@@ -829,7 +848,7 @@ int main(int argc, char** argv) {
   } else if (strcmp("ares", resolver.get()) != 0) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver.get());
   }
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   // Test sequential and nested inits and shutdowns.

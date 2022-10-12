@@ -18,7 +18,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import "../TestBase.h"
+#import "../Common/TestBase.h"
 
 @interface StressTests : TestBase
 

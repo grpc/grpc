@@ -19,14 +19,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc_security.h>
-
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
 struct grpc_tls_identity_pairs {
@@ -170,9 +176,9 @@ struct grpc_tls_certificate_distributor
     // The contents of the identity key-certificate pairs.
     grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     // The root cert reloading error propagated by the caller.
-    grpc_error_handle root_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle root_cert_error;
     // The identity cert reloading error propagated by the caller.
-    grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle identity_cert_error;
     // The set of watchers watching root certificates.
     // This is mainly used for quickly looking up the affected watchers while
     // performing a credential reloading.
@@ -182,16 +188,9 @@ struct grpc_tls_certificate_distributor
     // credential reloading.
     std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
 
-    ~CertificateInfo() {
-      GRPC_ERROR_UNREF(root_cert_error);
-      GRPC_ERROR_UNREF(identity_cert_error);
-    }
-    void SetRootError(grpc_error_handle error) {
-      GRPC_ERROR_UNREF(root_cert_error);
-      root_cert_error = error;
-    }
+    ~CertificateInfo() {}
+    void SetRootError(grpc_error_handle error) { root_cert_error = error; }
     void SetIdentityError(grpc_error_handle error) {
-      GRPC_ERROR_UNREF(identity_cert_error);
       identity_cert_error = error;
     }
   };

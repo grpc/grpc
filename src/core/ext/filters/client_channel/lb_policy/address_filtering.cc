@@ -18,10 +18,13 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <utility>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include "src/core/lib/channel/channel_args.h"
 
 #define GRPC_ARG_HIERARCHICAL_PATH "grpc.internal.address.hierarchical_path"
 
@@ -37,7 +40,7 @@ class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
       : path_(std::move(path)) {}
 
   std::unique_ptr<AttributeInterface> Copy() const override {
-    return absl::make_unique<HierarchicalPathAttribute>(path_);
+    return std::make_unique<HierarchicalPathAttribute>(path_);
   }
 
   int Cmp(const AttributeInterface* other) const override {
@@ -66,7 +69,7 @@ class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
 
 std::unique_ptr<ServerAddress::AttributeInterface>
 MakeHierarchicalPathAttribute(std::vector<std::string> path) {
-  return absl::make_unique<HierarchicalPathAttribute>(std::move(path));
+  return std::make_unique<HierarchicalPathAttribute>(std::move(path));
 }
 
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
@@ -85,7 +88,7 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     ++it;
     if (it != path.end()) {
       std::vector<std::string> remaining_path(it, path.end());
-      new_attribute = absl::make_unique<HierarchicalPathAttribute>(
+      new_attribute = std::make_unique<HierarchicalPathAttribute>(
           std::move(remaining_path));
     }
     target_list.emplace_back(address.WithAttribute(

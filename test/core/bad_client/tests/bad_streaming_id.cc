@@ -16,14 +16,14 @@
  *
  */
 
-#include <string>
-
 #include <gtest/gtest.h>
 
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
+#include "test/core/util/test_config.h"
 
 #define HEADER_FRAME_ID_1                                                  \
   "\x00\x00\xc9\x01\x05\x00\x00\x00\x01" /* headers: generated from        \
@@ -124,7 +124,7 @@ TEST(BadStreamingId, ClosedStreamId) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int retval = RUN_ALL_TESTS();

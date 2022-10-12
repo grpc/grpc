@@ -21,10 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
+#include <stddef.h>
 
-#include "src/core/lib/iomgr/pollset.h"
+#include <grpc/impl/codegen/gpr_types.h>
+
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/json/json.h"
 
 /* --- Constants. --- */
@@ -82,7 +84,7 @@ struct grpc_jwt_verifier_email_domain_key_url_mapping {
 };
 /* Globals to control the verifier. Not thread-safe. */
 extern gpr_timespec grpc_jwt_verifier_clock_skew;
-extern grpc_millis grpc_jwt_verifier_max_delay;
+extern grpc_core::Duration grpc_jwt_verifier_max_delay;
 
 /* The verifier can be created with some custom mappings to help with key
    discovery in the case where the issuer is an email address.

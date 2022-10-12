@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -45,10 +46,9 @@ static bool g_active;
 namespace grpc {
 namespace testing {
 static grpc_completion_queue* g_cq;
-static grpc_event_engine_vtable g_vtable;
 
 static void pollset_shutdown(grpc_pollset* /*ps*/, grpc_closure* closure) {
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
 }
 
 static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
@@ -60,7 +60,7 @@ static void pollset_destroy(grpc_pollset* ps) { gpr_mu_destroy(&ps->mu); }
 
 static grpc_error_handle pollset_kick(grpc_pollset* /*p*/,
                                       grpc_pollset_worker* /*worker*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Callback when the tag is dequeued from the completion queue. Does nothing */
@@ -72,10 +72,10 @@ static void cq_done_cb(void* /*done_arg*/, grpc_cq_completion* cq_completion) {
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
 static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
-                                      grpc_millis deadline) {
-  if (deadline == 0) {
+                                      grpc_core::Timestamp deadline) {
+  if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
     gpr_log(GPR_DEBUG, "no-op");
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   gpr_mu_unlock(&ps->mu);
@@ -83,41 +83,38 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
   void* tag = reinterpret_cast<void*>(10);  // Some random number
   GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
-      g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
+      g_cq, tag, absl::OkStatus(), cq_done_cb, nullptr,
       static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&ps->mu);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-static const grpc_event_engine_vtable* init_engine_vtable(bool) {
-  memset(&g_vtable, 0, sizeof(g_vtable));
+static grpc_event_engine_vtable make_engine_vtable(const char* name) {
+  grpc_event_engine_vtable vtable;
+  memset(&vtable, 0, sizeof(vtable));
 
-  g_vtable.pollset_size = sizeof(grpc_pollset);
-  g_vtable.pollset_init = pollset_init;
-  g_vtable.pollset_shutdown = pollset_shutdown;
-  g_vtable.pollset_destroy = pollset_destroy;
-  g_vtable.pollset_work = pollset_work;
-  g_vtable.pollset_kick = pollset_kick;
-  g_vtable.is_any_background_poller_thread = [] { return false; };
-  g_vtable.add_closure_to_background_poller = [](grpc_closure* /*closure*/,
-                                                 grpc_error_handle /*error*/) {
+  vtable.pollset_size = sizeof(grpc_pollset);
+  vtable.pollset_init = pollset_init;
+  vtable.pollset_shutdown = pollset_shutdown;
+  vtable.pollset_destroy = pollset_destroy;
+  vtable.pollset_work = pollset_work;
+  vtable.pollset_kick = pollset_kick;
+  vtable.is_any_background_poller_thread = [] { return false; };
+  vtable.add_closure_to_background_poller = [](grpc_closure* /*closure*/,
+                                               grpc_error_handle /*error*/) {
     return false;
   };
-  g_vtable.shutdown_background_closure = [] {};
-  g_vtable.shutdown_engine = [] {};
+  vtable.shutdown_background_closure = [] {};
+  vtable.shutdown_engine = [] {};
+  vtable.check_engine_available = [](bool) { return true; };
+  vtable.init_engine = [] {};
+  vtable.name = name;
 
-  return &g_vtable;
+  return vtable;
 }
 
 static void setup() {
-  // This test should only ever be run with a non or any polling engine
-  // Override the polling engine for the non-polling engine
-  // and add a custom polling engine
-  grpc_register_event_engine_factory("none", init_engine_vtable, false);
-  grpc_register_event_engine_factory("bm_cq_multiple_threads",
-                                     init_engine_vtable, true);
-
   grpc_init();
   GPR_ASSERT(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
              strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") ==
@@ -177,17 +174,12 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   }
   gpr_mu_unlock(&g_mu);
 
-  // Use a TrackCounters object to monitor the gRPC performance statistics
-  // (optionally including low-level counters) before and after the test
-  TrackCounters track_counters;
-
   for (auto _ : state) {
     GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
                GRPC_OP_COMPLETE);
   }
 
   state.SetItemsProcessed(state.iterations());
-  track_counters.Finish(state);
 
   gpr_mu_lock(&g_mu);
   g_threads_active--;
@@ -208,6 +200,13 @@ static void BM_Cq_Throughput(benchmark::State& state) {
 
 BENCHMARK(BM_Cq_Throughput)->ThreadRange(1, 16)->UseRealTime();
 
+namespace {
+const grpc_event_engine_vtable g_none_vtable =
+    grpc::testing::make_engine_vtable("none");
+const grpc_event_engine_vtable g_bm_vtable =
+    grpc::testing::make_engine_vtable("bm_cq_multiple_threads");
+}  // namespace
+
 }  // namespace testing
 }  // namespace grpc
 
@@ -218,11 +217,16 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  // This test should only ever be run with a non or any polling engine
+  // Override the polling engine for the non-polling engine
+  // and add a custom polling engine
+  grpc_register_event_engine_factory(&grpc::testing::g_none_vtable, false);
+  grpc_register_event_engine_factory(&grpc::testing::g_bm_vtable, true);
+  grpc::testing::TestEnvironment env(&argc, argv);
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

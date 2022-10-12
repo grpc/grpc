@@ -185,6 +185,13 @@
   INSTALL ?= install
   RM ?= rm -f
   PKG_CONFIG ?= pkg-config
+  RANLIB ?= ranlib
+  ifeq ($(SYSTEM),Darwin)
+  APPLE_RANLIB = $(shell [[ "`$(RANLIB) -V 2>/dev/null`" == "Apple Inc."* ]]; echo $$?)
+  ifeq ($(APPLE_RANLIB),0)
+  RANLIBFLAGS = -no_warning_for_no_symbols
+  endif
+  endif
 
   ifndef VALID_CONFIG_$(CONFIG)
   $(error Invalid CONFIG value '$(CONFIG)')
@@ -196,7 +203,7 @@
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
   endif
 
-  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++14 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
   HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
   ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
   W_NO_CXX14_COMPAT=-Wno-c++14-compat
@@ -221,8 +228,8 @@
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
 
-  CFLAGS += -std=c99 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
-  CXXFLAGS += -std=c++11
+  CFLAGS += -std=c11 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
+  CXXFLAGS += -std=c++14
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
   LDFLAGS += -framework CoreFoundation
@@ -290,7 +297,6 @@
   # Also set PROTOBUF_CONFIG_OPTS to indicate cross-compilation to protobuf (e.g.,
   #  PROTOBUF_CONFIG_OPTS="--host=arm-linux --with-protoc=/usr/local/bin/protoc" )
   # Set HAS_PKG_CONFIG=false
-  # To build tests, go to third_party/gflags and follow its ccmake instructions
   # Make sure that you enable building shared libraries and set your prefix to
   # something useful like /usr/local/cross
   # You will also need to set GRPC_CROSS_LDOPTS and GRPC_CROSS_AROPTS to hold
@@ -401,7 +407,7 @@
 
   # Setup c-ares dependency
 
-  ifeq ($(wildcard third_party/cares/cares/ares.h),)
+  ifeq ($(wildcard third_party/cares/cares/include/ares.h),)
   HAS_EMBEDDED_CARES = false
   else
   HAS_EMBEDDED_CARES = true
@@ -419,7 +425,7 @@
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
-  CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
   endif
 
   # Setup address_sorting dependency
@@ -751,18 +757,6 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
-  ifeq ($(CONFIG),stapprof)
-  src/core/profiling/stap_timers.c: $(GENDIR)/src/core/profiling/stap_probes.h
-  ifeq ($(HAS_SYSTEMTAP),true)
-  $(GENDIR)/src/core/profiling/stap_probes.h: src/core/profiling/stap_probes.d
-  	$(E) "[DTRACE]  Compiling $<"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(DTRACE) -C -h -s $< -o $@
-  else
-  $(GENDIR)/src/core/profiling/stap_probes.h: systemtap_dep_error stop
-  endif
-  endif
-
   $(OBJDIR)/$(CONFIG)/%.o : %.c
   	$(E) "[C]       Compiling $<"
   	$(Q) mkdir -p `dirname $@`
@@ -941,7 +935,7 @@
   % endif
 
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
 
   <%

@@ -30,11 +30,16 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@rules_proto//proto:defs.bzl", "ProtoInfo")  # copybara:strip_for_google3
 
 # Generic support code #########################################################
 
-_is_bazel = True  # copybara:replace_for_google3 _is_bazel = False
+# begin:github_only
+_is_google3 = False
+# end:github_only
+
+# begin:google_only
+# _is_google3 = True
+# end:google_only
 
 def _get_real_short_path(file):
     # For some reason, files from other archives have short paths that look like:
@@ -97,7 +102,7 @@ def _cc_library_func(ctx, name, hdrs, srcs, copts, dep_ccinfos):
 
     blaze_only_args = {}
 
-    if not _is_bazel:
+    if _is_google3:
         blaze_only_args["grep_includes"] = ctx.file._grep_includes
 
     (compilation_context, compilation_outputs) = cc_common.compile(
@@ -205,6 +210,7 @@ def _compile_upb_protos(ctx, generator, proto_info, proto_sources):
                     ] +
                     [_get_real_short_path(file) for file in proto_sources],
         progress_message = "Generating upb protos for :" + ctx.label.name,
+        mnemonic = "GenUpbProtos",
     )
     return GeneratedSrcsInfo(srcs = srcs, hdrs = hdrs)
 
@@ -269,11 +275,11 @@ def _upb_proto_reflection_library_aspect_impl(target, ctx):
     return _upb_proto_aspect_impl(target, ctx, "upbdefs", _UpbDefsWrappedCcInfo, _WrappedDefsGeneratedSrcsInfo)
 
 def _maybe_add(d):
-    if not _is_bazel:
+    if _is_google3:
         d["_grep_includes"] = attr.label(
             allow_single_file = True,
-            cfg = "host",
-            default = "//tools/cpp:grep-includes",
+            cfg = "exec",
+            default = "@bazel_tools//tools/cpp:grep-includes",
         )
     return d
 
@@ -286,12 +292,12 @@ _upb_proto_library_aspect = aspect(
         ),
         "_gen_upb": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "//upbc:protoc-gen-upb",
         ),
         "_protoc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "@com_google_protobuf//:protoc",
         ),
         "_cc_toolchain": attr.label(
@@ -299,7 +305,6 @@ _upb_proto_library_aspect = aspect(
         ),
         "_upb": attr.label_list(default = [
             "//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-            "//:upb",
         ]),
         "_fasttable_enabled": attr.label(default = "//:fasttable_enabled"),
     }),
@@ -335,12 +340,12 @@ _upb_proto_reflection_library_aspect = aspect(
         ),
         "_gen_upbdefs": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "//upbc:protoc-gen-upbdefs",
         ),
         "_protoc": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = "@com_google_protobuf//:protoc",
         ),
         "_cc_toolchain": attr.label(
@@ -348,9 +353,7 @@ _upb_proto_reflection_library_aspect = aspect(
         ),
         "_upbdefs": attr.label_list(
             default = [
-                "//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-                "//:upb",
-                "//:reflection",
+                "//:generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             ],
         ),
     }),

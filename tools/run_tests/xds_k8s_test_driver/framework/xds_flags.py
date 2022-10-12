@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import socket
+
 from absl import flags
 
 from framework.helpers import highlighter
@@ -36,10 +39,6 @@ RESOURCE_SUFFIX = flags.DEFINE_string(
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
-CONFIG_SCOPE = flags.DEFINE_string(
-    "config_scope",
-    default=None,
-    help="Scope specified in mesh if using AppNet APIs")
 COMPUTE_API_VERSION = flags.DEFINE_string(
     "compute_api_version",
     default='v1',
@@ -120,8 +119,46 @@ CLIENT_PORT = flags.DEFINE_integer(
 # Testing metadata
 TESTING_VERSION = flags.DEFINE_string(
     "testing_version",
-    default="master",
+    default=None,
     help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
+
+FORCE_CLEANUP = flags.DEFINE_bool(
+    "force_cleanup",
+    default=False,
+    help="Force resource cleanup, even if not created by this test run")
+
+COLLECT_APP_LOGS = flags.DEFINE_bool(
+    'collect_app_logs',
+    default=False,
+    help=('Collect the logs of the xDS Test Client and Server\n'
+          f'into the test_app_logs/ directory under the log directory.\n'
+          'See --log_dir description for configuring the log directory.'))
+
+# Needed to configure urllib3 socket timeout, which is infinity by default.
+SOCKET_DEFAULT_TIMEOUT = flags.DEFINE_float(
+    "socket_default_timeout",
+    default=60,
+    lower_bound=0,
+    help=("Set the default timeout in seconds on blocking socket operations.\n"
+          "If zero is given, the new sockets have no timeout. "))
+
+
+def set_socket_default_timeout_from_flag() -> None:
+    """A helper to configure default socket timeout from a flag.
+
+    This is known to affect the following pip packages:
+      - google-api-python-client: has the default timeout set to 60:
+        https://googleapis.github.io/google-api-python-client/docs/epy/googleapiclient.http-module.html#build_http
+      - kubernetes: falls back to urllib3 timeout, which is infinity by default:
+        https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Timeout
+
+    NOTE: Must be called _after_ the flags were parsed by absl, but before
+          the before KubernetesApiManager or GcpApiManager initialized.
+    """
+    timeout: float = SOCKET_DEFAULT_TIMEOUT.value
+    # None is inf timeout, which is represented by 0 in the flag.
+    socket.setdefaulttimeout(None if timeout == 0 else timeout)
+
 
 flags.adopt_module_key_flags(highlighter)
 

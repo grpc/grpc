@@ -19,26 +19,26 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_endpoint_v3_endpoint_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_endpoint_v3_endpoint_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.ClusterLoadAssignment");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.ClusterLoadAssignment");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy.DropOverload");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy.DropOverload");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.ClusterLoadAssignment.NamedEndpointsEntry");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.ClusterLoadAssignment.NamedEndpointsEntry");
 }
 
 #ifdef __cplusplus

@@ -35,7 +35,7 @@ namespace {
 class ServerSetupTransportHelper {
  public:
   ServerSetupTransportHelper()
-      : wire_reader_(absl::make_unique<WireReaderImpl>(
+      : wire_reader_(std::make_unique<WireReaderImpl>(
             /*transport_stream_receiver=*/nullptr, /*is_client=*/false,
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
@@ -112,26 +112,20 @@ grpc_channel* grpc_binder_channel_create_for_testing(
     grpc_server* server, const grpc_channel_args* args, void* /*reserved*/) {
   grpc_core::ExecCtx exec_ctx;
 
-  grpc_arg default_authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>("test.authority"));
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args);
-  grpc_channel_args* client_args =
-      grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
+  auto server_args = grpc_core::CoreConfiguration::Get()
+                         .channel_args_preconditioning()
+                         .PreconditionChannelArgs(args);
+  auto client_args =
+      server_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
 
   grpc_transport *client_transport, *server_transport;
   std::tie(client_transport, server_transport) =
       grpc_binder::end2end_testing::CreateClientServerBindersPairForTesting();
   grpc_error_handle error = grpc_core::Server::FromC(server)->SetupTransport(
-      server_transport, nullptr, args, nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_channel* channel =
-      grpc_channel_create("binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          client_transport, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_channel_args_destroy(args);
-  grpc_channel_args_destroy(client_args);
-  return channel;
+      server_transport, nullptr, server_args, nullptr);
+  GPR_ASSERT(error.ok());
+  auto channel = grpc_core::Channel::Create(
+      "binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
+  GPR_ASSERT(channel.ok());
+  return channel->release()->c_ptr();
 }

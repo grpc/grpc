@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 licenses(["notice"])
@@ -32,9 +32,58 @@ grpc_proto_fuzzer(
     ],
 )
 
+grpc_proto_fuzzer(
+    name = "flow_control_fuzzer",
+    srcs = ["flow_control_fuzzer.cc"],
+    corpus = "flow_control_fuzzer_corpus",
+    language = "C++",
+    proto = "flow_control_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:chttp2_flow_control",
+        "//:gpr",
+    ],
+)
+
+grpc_fuzzer(
+    name = "decode_huff_fuzzer",
+    srcs = ["decode_huff_fuzzer.cc"],
+    corpus = "decode_huff_corpus",
+    external_deps = [
+        "absl/types:optional",
+        "absl/strings",
+    ],
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:decode_huff",
+        "//:huffsyms",
+    ],
+)
+
+grpc_fuzzer(
+    name = "encode_decode_huff_fuzzer",
+    srcs = ["encode_decode_huff_fuzzer.cc"],
+    corpus = "encode_decode_huff_corpus",
+    external_deps = [
+        "absl/types:optional",
+        "absl/strings",
+    ],
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:decode_huff",
+        "//:grpc",
+        "//:huffsyms",
+    ],
+)
+
 grpc_cc_test(
     name = "alpn_test",
     srcs = ["alpn_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -46,7 +95,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -58,7 +109,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -74,21 +127,36 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "flow_control_test",
-    size = "large",
     srcs = ["flow_control_test.cc"],
     external_deps = [
         "gtest",
     ],
+    language = "C++",
+    tags = ["flow_control_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:chttp2_flow_control",
+        "//:resource_quota",
+    ],
+)
+
+grpc_cc_test(
+    name = "graceful_shutdown_test",
+    srcs = ["graceful_shutdown_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -101,12 +169,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    tags = ["hpack_test"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -115,11 +187,14 @@ grpc_cc_test(
     srcs = ["hpack_parser_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["hpack_test"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -128,22 +203,41 @@ grpc_cc_test(
     srcs = ["hpack_parser_table_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["hpack_test"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "stream_map_test",
     srcs = ["stream_map_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "streams_not_seen_test",
+    srcs = ["streams_not_seen_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -153,12 +247,12 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/148399919)
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -167,6 +261,8 @@ grpc_cc_test(
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
+    shard_count = 7,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -181,7 +277,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -205,7 +303,10 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    tags = [
+        "flow_control_test",
+        "no_windows",
+    ],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         "//:gpr",
         "//:grpc",
@@ -214,27 +315,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "popularity_count_test",
-    srcs = ["popularity_count_test.cc"],
+    name = "stream_leak_with_queued_flow_control_update_test",
+    srcs = ["stream_leak_with_queued_flow_control_update_test.cc"],
     external_deps = [
         "gtest",
     ],
+    language = "C++",
     deps = [
-        "//:gpr_platform",
-        "//:popularity_count",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "hpack_encoder_index_test",
-    srcs = ["hpack_encoder_index_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr_platform",
-        "//:hpack_encoder_index",
-        "//test/core/util:grpc_suppressions",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )

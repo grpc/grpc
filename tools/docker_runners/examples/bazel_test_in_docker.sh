@@ -21,9 +21,11 @@ cd "$(dirname "$0")/../../.."
 # TODO(jtattermusch): make sure bazel cache is persisted between runs
 
 # Note that the port server must be running so that the bazel tests can pass.
+# (Run "tools/run_tests/start_port_server.py" first)
 
 # use the default docker image used for bazel builds
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
-# TODO(jtattermusch): interestingly, the bazel build fails when "--privileged" docker arg is used (it probably has to do with sandboxing)
-export DOCKER_EXTRA_ARGS="--privileged=false"
+# Using host network allows using port server running on the host machine (and not just in the docker container)
+# TODO(jtattermusch): interestingly, the bazel build fails when "--privileged=true" docker arg is used (it probably has to do with sandboxing)
+export DOCKER_EXTRA_ARGS="--network=host"
 tools/docker_runners/run_in_docker.sh bazel test //test/...

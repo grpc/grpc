@@ -137,7 +137,10 @@ def get_bazel_bin_root_path(elink):
 
 def get_external_link(file):
     EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
-                      ('@com_google_googleapis//', '')]
+                      ('@com_google_googleapis//', ''),
+                      ('@com_github_cncf_udpa//', ''),
+                      ('@com_envoyproxy_protoc_gen_validate//', ''),
+                      ('@envoy_api//', ''), ('@opencensus_proto//', '')]
     for external_link in EXTERNAL_LINKS:
         if file.startswith(external_link[0]):
             return external_link

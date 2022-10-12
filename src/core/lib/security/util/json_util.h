@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 

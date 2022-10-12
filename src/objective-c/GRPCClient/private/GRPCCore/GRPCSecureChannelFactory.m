@@ -86,17 +86,18 @@
 
   grpc_channel_credentials *creds = NULL;
   if (privateKey.length == 0 && certChain.length == 0) {
-    creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
+    creds = grpc_ssl_credentials_create((const char *)rootsASCII.bytes, NULL, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
     NSData *privateKeyASCII = [self nullTerminatedDataWithString:privateKey];
     NSData *certChainASCII = [self nullTerminatedDataWithString:certChain];
-    key_cert_pair.private_key = privateKeyASCII.bytes;
-    key_cert_pair.cert_chain = certChainASCII.bytes;
+    key_cert_pair.private_key = (const char *)privateKeyASCII.bytes;
+    key_cert_pair.cert_chain = (const char *)certChainASCII.bytes;
     if (key_cert_pair.private_key == NULL || key_cert_pair.cert_chain == NULL) {
-      creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
+      creds = grpc_ssl_credentials_create((const char *)rootsASCII.bytes, NULL, NULL, NULL);
     } else {
-      creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL, NULL);
+      creds =
+          grpc_ssl_credentials_create((const char *)rootsASCII.bytes, &key_cert_pair, NULL, NULL);
     }
   }
 
@@ -113,7 +114,7 @@
   }
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
-      grpc_secure_channel_create(_channelCreds, host.UTF8String, coreChannelArgs, NULL);
+      grpc_channel_create(host.UTF8String, _channelCreds, coreChannelArgs);
   GRPCFreeChannelArgs(coreChannelArgs);
   return unmanagedChannel;
 }

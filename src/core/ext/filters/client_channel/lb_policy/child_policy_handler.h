@@ -16,29 +16,35 @@
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_CHILD_POLICY_HANDLER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_CHILD_POLICY_HANDLER_H
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
 
 // A class that makes it easy to gracefully switch child policies.
 //
 // Callers should instantiate this instead of using
-// LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy().  Once
-// instantiated, this object will automatically take care of
-// constructing the child policy as needed upon receiving an update.
+// CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy().
+// Once instantiated, this object will automatically take care of constructing
+// the child policy as needed upon receiving an update.
 class ChildPolicyHandler : public LoadBalancingPolicy {
  public:
   ChildPolicyHandler(Args args, TraceFlag* tracer)
       : LoadBalancingPolicy(std::move(args)), tracer_(tracer) {}
 
-  const char* name() const override { return "child_policy_handler"; }
+  absl::string_view name() const override { return "child_policy_handler"; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -52,7 +58,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   // May be overridden by subclasses to avoid recursion when an LB
   // policy factory returns a ChildPolicyHandler.
   virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const char* name, LoadBalancingPolicy::Args args) const;
+      absl::string_view name, LoadBalancingPolicy::Args args) const;
 
  private:
   class Helper;
@@ -60,7 +66,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicy(
-      const char* child_policy_name, const grpc_channel_args& args);
+      absl::string_view child_policy_name, const ChannelArgs& args);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;

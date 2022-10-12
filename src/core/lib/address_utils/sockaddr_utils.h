@@ -21,11 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <string>
 
-#include <grpc/event_engine/event_engine.h>
+#include "absl/status/statusor.h"
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
    ::ffff:0.0.0.0/96 range, or false otherwise.
@@ -62,19 +64,15 @@ int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
 
 // Converts a sockaddr into a newly-allocated human-readable string.
 //
-// Currently, only the AF_INET and AF_INET6 families are recognized.
+// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
 // If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
 // displayed as plain IPv4.
-std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
-                                    bool normalize) GRPC_MUST_USE_RESULT;
-
-// Newer form of grpc_string_to_sockaddr which returns an error instead of
-// crashing if \a addr is not IPv6/IPv6
-grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
-                                          const char* addr, int port);
+absl::StatusOr<std::string> grpc_sockaddr_to_string(
+    const grpc_resolved_address* addr, bool normalize) GRPC_MUST_USE_RESULT;
 
 /* Returns the URI string corresponding to \a addr */
-std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
+absl::StatusOr<std::string> grpc_sockaddr_to_uri(
+    const grpc_resolved_address* addr);
 
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
@@ -98,13 +96,5 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
 bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
                                 const grpc_resolved_address* subnet_address,
                                 uint32_t mask_bits);
-
-namespace grpc_event_engine {
-namespace experimental {
-
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H */

@@ -75,7 +75,7 @@ absl::Status ReadableParcelForFuzzing::ReadBinder(
   if (values_.empty() || !values_.front().has_binder()) {
     return absl::InternalError("error");
   }
-  *binder = absl::make_unique<BinderForFuzzing>();
+  *binder = std::make_unique<BinderForFuzzing>();
   values_.pop();
   consumed_data_size_ += sizeof(void*);
   return absl::OkStatus();
@@ -114,7 +114,7 @@ void FuzzingLoop(
   {
     // Send SETUP_TRANSPORT request.
     std::unique_ptr<grpc_binder::ReadableParcel> parcel =
-        absl::make_unique<ReadableParcelForFuzzing>(
+        std::make_unique<ReadableParcelForFuzzing>(
             incoming_parcels.setup_transport_transaction().parcel());
     callback(static_cast<transaction_code_t>(
                  grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT),
@@ -125,7 +125,7 @@ void FuzzingLoop(
   for (const auto& tx_iter : incoming_parcels.transactions()) {
     transaction_code_t tx_code = tx_iter.code();
     std::unique_ptr<grpc_binder::ReadableParcel> parcel =
-        absl::make_unique<ReadableParcelForFuzzing>(tx_iter.parcel());
+        std::make_unique<ReadableParcelForFuzzing>(tx_iter.parcel());
     callback(tx_code, parcel.get(),
              /*uid=*/tx_iter.uid())
         .IgnoreError();
@@ -133,11 +133,11 @@ void FuzzingLoop(
   wire_reader_ref = nullptr;
 }
 
-TranasctionReceiverForFuzzing::TranasctionReceiverForFuzzing(
+TransactionReceiverForFuzzing::TransactionReceiverForFuzzing(
     binder_transport_fuzzer::IncomingParcels incoming_parcels,
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) {
-  gpr_log(GPR_INFO, "Construct TranasctionReceiverForFuzzing");
+  gpr_log(GPR_INFO, "Construct TransactionReceiverForFuzzing");
   CreateFuzzingThread(FuzzingLoop, std::move(incoming_parcels),
                       std::move(wire_reader_ref), std::move(cb));
 }
@@ -145,7 +145,7 @@ TranasctionReceiverForFuzzing::TranasctionReceiverForFuzzing(
 std::unique_ptr<TransactionReceiver> BinderForFuzzing::ConstructTxReceiver(
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) const {
-  auto tx_receiver = absl::make_unique<TranasctionReceiverForFuzzing>(
+  auto tx_receiver = std::make_unique<TransactionReceiverForFuzzing>(
       incoming_parcels_, wire_reader_ref, cb);
   return tx_receiver;
 }

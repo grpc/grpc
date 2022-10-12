@@ -23,17 +23,6 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-set +ex
-[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-set -e  # rvm commands are very verbose
-rvm --default use ruby-2.4.1
-set -ex
-
-tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 12 || FAILED="true"
-
-tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+echo "The grpc_build_artifacts -> grpc_build_packages -> grpc_distribtests build flow has been deprecated."
+echo "To build the packages for a grpc release, use the grpc_build_all_packages job."
+echo "(which relies on the per-language distribtests jobs to build and test the packages)."

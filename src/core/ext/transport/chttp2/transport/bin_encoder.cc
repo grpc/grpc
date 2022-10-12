@@ -20,6 +20,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
@@ -97,7 +98,7 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
   const uint8_t* in;
   uint8_t* out;
   grpc_slice output;
-  uint32_t temp = 0;
+  uint64_t temp = 0;
   uint32_t temp_length = 0;
 
   nbits = 0;

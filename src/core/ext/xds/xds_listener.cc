@@ -18,10 +18,17 @@
 
 #include "src/core/ext/xds/xds_listener.h"
 
+#include <stdint.h>
+
+#include <set>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -30,16 +37,30 @@
 #include "envoy/config/listener/v3/listener.upb.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
+#include "envoy/config/route/v3/route.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
-#include "upb/upb.hpp"
 
+#include <grpc/support/log.h>
+
+#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -62,7 +83,7 @@ bool XdsListenerResource::DownstreamTlsContext::Empty() const {
 //
 
 std::string XdsListenerResource::HttpConnectionManager::ToString() const {
-  absl::InlinedVector<std::string, 4> contents;
+  std::vector<std::string> contents;
   contents.push_back(absl::StrFormat(
       "route_config_name=%s",
       !route_config_name.empty() ? route_config_name.c_str() : "<inlined>"));
@@ -107,8 +128,10 @@ std::string XdsListenerResource::FilterChainData::ToString() const {
 //
 
 std::string XdsListenerResource::FilterChainMap::CidrRange::ToString() const {
+  auto addr_str = grpc_sockaddr_to_string(&address, false);
   return absl::StrCat(
-      "{address_prefix=", grpc_sockaddr_to_string(&address, false),
+      "{address_prefix=",
+      addr_str.ok() ? addr_str.value() : addr_str.status().ToString(),
       ", prefix_len=", prefix_len, "}");
 }
 
@@ -136,7 +159,7 @@ struct FilterChain {
 };
 
 std::string FilterChain::FilterChainMatch::ToString() const {
-  absl::InlinedVector<std::string, 8> contents;
+  std::vector<std::string> contents;
   if (destination_port != 0) {
     contents.push_back(absl::StrCat("destination_port=", destination_port));
   }
@@ -225,7 +248,7 @@ std::string XdsListenerResource::FilterChainMap::ToString() const {
 //
 
 std::string XdsListenerResource::ToString() const {
-  absl::InlinedVector<std::string, 4> contents;
+  std::vector<std::string> contents;
   if (type == ListenerType::kTcpListener) {
     contents.push_back(absl::StrCat("address=", address));
     contents.push_back(
@@ -248,41 +271,41 @@ std::string XdsListenerResource::ToString() const {
 namespace {
 
 void MaybeLogHttpConnectionManager(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
             context.symtab);
     char buf[10240];
-    upb_text_encode(http_connection_manager_config, msg_type, nullptr, 0, buf,
-                    sizeof(buf));
+    upb_TextEncode(http_connection_manager_config, msg_type, nullptr, 0, buf,
+                   sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] HttpConnectionManager: %s",
             context.client, buf);
   }
 }
 
-grpc_error_handle HttpConnectionManagerParse(
-    bool is_client, const XdsEncodingContext& context,
+absl::StatusOr<XdsListenerResource::HttpConnectionManager>
+HttpConnectionManagerParse(
+    bool is_client, const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_proto,
-    bool is_v2,
-    XdsListenerResource::HttpConnectionManager* http_connection_manager) {
+    bool is_v2) {
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
+  std::vector<std::string> errors;
+  XdsListenerResource::HttpConnectionManager http_connection_manager;
   // NACK a non-zero `xff_num_trusted_hops` and a `non-empty
   // original_ip_detection_extensions` as mentioned in
   // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md
   if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_xff_num_trusted_hops(
           http_connection_manager_proto) != 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "'xff_num_trusted_hops' must be zero");
+    errors.emplace_back("'xff_num_trusted_hops' must be zero");
   }
   if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_original_ip_detection_extensions(
           http_connection_manager_proto)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "'original_ip_detection_extensions' must be empty");
+    errors.emplace_back("'original_ip_detection_extensions' must be empty");
   }
   // Obtain max_stream_duration from Http Protocol Options.
   const envoy_config_core_v3_HttpProtocolOptions* options =
@@ -292,8 +315,13 @@ grpc_error_handle HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
-      http_connection_manager->http_max_stream_duration =
-          Duration::Parse(duration);
+      ValidationErrors validation_errors;
+      http_connection_manager.http_max_stream_duration =
+          ParseDuration(duration, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status("max_stream_duration").message());
+      }
     }
   }
   // Parse filters.
@@ -309,12 +337,12 @@ grpc_error_handle HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
               http_filter));
       if (name.empty()) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("empty filter name at index ", i));
+        errors.emplace_back(absl::StrCat("empty filter name at index ", i));
+        continue;
       }
       if (names_seen.find(name) != names_seen.end()) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("duplicate HTTP filter name: ", name));
+        errors.emplace_back(absl::StrCat("duplicate HTTP filter name: ", name));
+        continue;
       }
       names_seen.insert(name);
       const bool is_optional =
@@ -324,56 +352,64 @@ grpc_error_handle HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
               http_filter);
       if (any == nullptr) {
-        if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("no filter config specified for filter name ", name));
+        if (!is_optional) {
+          errors.emplace_back(absl::StrCat(
+              "no filter config specified for filter name ", name));
+        }
+        continue;
       }
-      absl::string_view filter_type;
-      grpc_error_handle error =
-          ExtractHttpFilterTypeName(context, any, &filter_type);
-      if (error != GRPC_ERROR_NONE) return error;
+      auto filter_type = ExtractExtensionTypeName(context, any);
+      if (!filter_type.ok()) {
+        errors.emplace_back(absl::StrCat("filter name ", name, ": ",
+                                         filter_type.status().message()));
+        continue;
+      }
       const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(filter_type);
+          XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
       if (filter_impl == nullptr) {
-        if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("no filter registered for config type ", filter_type));
+        if (!is_optional) {
+          errors.emplace_back(absl::StrCat(
+              "no filter registered for config type ", filter_type->type));
+        }
+        continue;
       }
       if ((is_client && !filter_impl->IsSupportedOnClients()) ||
           (!is_client && !filter_impl->IsSupportedOnServers())) {
-        if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrFormat("Filter %s is not supported on %s", filter_type,
-                            is_client ? "clients" : "servers"));
+        if (!is_optional) {
+          errors.emplace_back(absl::StrFormat(
+              "Filter %s is not supported on %s", filter_type->type,
+              is_client ? "clients" : "servers"));
+        }
+        continue;
       }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
                                             context.arena);
       if (!filter_config.ok()) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-            "filter config for type ", filter_type,
+        errors.emplace_back(absl::StrCat(
+            "filter config for type ", filter_type->type,
             " failed to parse: ", StatusToString(filter_config.status())));
+        continue;
       }
-      http_connection_manager->http_filters.emplace_back(
+      http_connection_manager.http_filters.emplace_back(
           XdsListenerResource::HttpConnectionManager::HttpFilter{
               std::string(name), std::move(*filter_config)});
     }
-    if (http_connection_manager->http_filters.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Expected at least one HTTP filter");
+    if (http_connection_manager.http_filters.empty()) {
+      errors.emplace_back("Expected at least one HTTP filter");
     }
     // Make sure that the last filter is terminal and non-last filters are
     // non-terminal. Note that this check is being performed in a separate loop
     // to take care of the case where there are two terminal filters in the list
     // out of which only one gets added in the final list.
-    for (const auto& http_filter : http_connection_manager->http_filters) {
+    for (const auto& http_filter : http_connection_manager.http_filters) {
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(
               http_filter.config.config_proto_type_name);
-      if (&http_filter != &http_connection_manager->http_filters.back()) {
+      if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          errors.emplace_back(
               absl::StrCat("terminal filter for config type ",
                            http_filter.config.config_proto_type_name,
                            " must be the last filter in the chain"));
@@ -381,7 +417,7 @@ grpc_error_handle HttpConnectionManagerParse(
       } else {
         // The last filter must be terminal.
         if (!filter_impl->IsTerminalFilter()) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          errors.emplace_back(
               absl::StrCat("non-terminal filter for config type ",
                            http_filter.config.config_proto_type_name,
                            " is the last filter in the chain"));
@@ -393,7 +429,7 @@ grpc_error_handle HttpConnectionManagerParse(
     // router filter without actually looking at the config.  This ensures
     // that the right thing happens in the xds resolver without having
     // to expose whether the resource we received was v2 or v3.
-    http_connection_manager->http_filters.emplace_back(
+    http_connection_manager.http_filters.emplace_back(
         XdsListenerResource::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
@@ -407,275 +443,311 @@ grpc_error_handle HttpConnectionManagerParse(
       const envoy_config_route_v3_RouteConfiguration* route_config =
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
               http_connection_manager_proto);
-      XdsRouteConfigResource rds_update;
-      grpc_error_handle error =
-          XdsRouteConfigResource::Parse(context, route_config, &rds_update);
-      if (error != GRPC_ERROR_NONE) return error;
-      http_connection_manager->rds_update = std::move(rds_update);
-      return GRPC_ERROR_NONE;
+      auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
+      if (!rds_update.ok()) {
+        errors.emplace_back(rds_update.status().message());
+      } else {
+        http_connection_manager.rds_update = std::move(*rds_update);
+      }
+    } else {
+      // Validate that RDS must be used to get the route_config dynamically.
+      const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+              http_connection_manager_proto);
+      if (rds == nullptr) {
+        return GRPC_ERROR_CREATE(
+            "HttpConnectionManager neither has inlined route_config nor RDS.");
+      }
+      // Check that the ConfigSource specifies ADS.
+      const envoy_config_core_v3_ConfigSource* config_source =
+          envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
+              rds);
+      if (config_source == nullptr) {
+        errors.emplace_back(
+            "HttpConnectionManager missing config_source for RDS.");
+      } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
+                 !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
+        errors.emplace_back(
+            "HttpConnectionManager ConfigSource for RDS does not specify ADS "
+            "or SELF.");
+      } else {
+        // Get the route_config_name.
+        http_connection_manager.route_config_name = UpbStringToStdString(
+            envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+                rds));
+      }
     }
-    // Validate that RDS must be used to get the route_config dynamically.
-    const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
-            http_connection_manager_proto);
-    if (rds == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager neither has inlined route_config nor RDS.");
-    }
-    // Check that the ConfigSource specifies ADS.
-    const envoy_config_core_v3_ConfigSource* config_source =
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
-            rds);
-    if (config_source == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager missing config_source for RDS.");
-    }
-    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
-    }
-    // Get the route_config_name.
-    http_connection_manager->route_config_name = UpbStringToStdString(
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-            rds));
   }
-  return GRPC_ERROR_NONE;
+  // Return result.
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Errors parsing HttpConnectionManager config: [",
+                     absl::StrJoin(errors, "; "), "]"));
+  }
+  return http_connection_manager;
 }
 
-grpc_error_handle LdsResourceParseClient(
-    const XdsEncodingContext& context,
-    const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2,
-    XdsListenerResource* lds_update) {
-  lds_update->type = XdsListenerResource::ListenerType::kHttpApiListener;
-  const upb_strview encoded_api_listener = google_protobuf_Any_value(
+absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2) {
+  const upb_StringView encoded_api_listener = google_protobuf_Any_value(
       envoy_config_listener_v3_ApiListener_api_listener(api_listener));
   const auto* http_connection_manager =
       envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
           encoded_api_listener.data, encoded_api_listener.size, context.arena);
   if (http_connection_manager == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    return absl::InvalidArgumentError(
         "Could not parse HttpConnectionManager config from ApiListener");
   }
-  return HttpConnectionManagerParse(true /* is_client */, context,
-                                    http_connection_manager, is_v2,
-                                    &lds_update->http_connection_manager);
+  auto hcm = HttpConnectionManagerParse(true /* is_client */, context,
+                                        http_connection_manager, is_v2);
+  if (!hcm.ok()) return hcm.status();
+  XdsListenerResource lds_update;
+  lds_update.type = XdsListenerResource::ListenerType::kHttpApiListener;
+  lds_update.http_connection_manager = std::move(*hcm);
+  return lds_update;
 }
 
-grpc_error_handle DownstreamTlsContextParse(
-    const XdsEncodingContext& context,
-    const envoy_config_core_v3_TransportSocket* transport_socket,
-    XdsListenerResource::DownstreamTlsContext* downstream_tls_context) {
-  absl::string_view name = UpbStringToAbsl(
-      envoy_config_core_v3_TransportSocket_name(transport_socket));
-  if (name != "envoy.transport_sockets.tls") {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("Unrecognized transport socket: ", name));
-  }
-  auto* typed_config =
+absl::StatusOr<XdsListenerResource::DownstreamTlsContext>
+DownstreamTlsContextParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_core_v3_TransportSocket* transport_socket) {
+  const auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-  std::vector<grpc_error_handle> errors;
-  if (typed_config != nullptr) {
-    const upb_strview encoded_downstream_tls_context =
-        google_protobuf_Any_value(typed_config);
-    auto* downstream_tls_context_proto =
-        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
-            encoded_downstream_tls_context.data,
-            encoded_downstream_tls_context.size, context.arena);
-    if (downstream_tls_context_proto == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Can't decode downstream tls context.");
-    }
-    auto* common_tls_context =
-        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
-            downstream_tls_context_proto);
-    if (common_tls_context != nullptr) {
-      grpc_error_handle error =
-          CommonTlsContext::Parse(context, common_tls_context,
-                                  &downstream_tls_context->common_tls_context);
-      if (error != GRPC_ERROR_NONE) errors.push_back(error);
-    }
-    auto* require_client_certificate =
-        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
-            downstream_tls_context_proto);
-    if (require_client_certificate != nullptr) {
-      downstream_tls_context->require_client_certificate =
-          google_protobuf_BoolValue_value(require_client_certificate);
-    }
-    auto* require_sni =
-        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
-            downstream_tls_context_proto);
-    if (require_sni != nullptr &&
-        google_protobuf_BoolValue_value(require_sni)) {
-      errors.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("require_sni: unsupported"));
-    }
-    if (envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_ocsp_staple_policy(
-            downstream_tls_context_proto) !=
-        envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "ocsp_staple_policy: Only LENIENT_STAPLING supported"));
+  if (typed_config == nullptr) {
+    return absl::InvalidArgumentError("transport socket typed config unset");
+  }
+  absl::string_view type_url = absl::StripPrefix(
+      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+      "type.googleapis.com/");
+  if (type_url !=
+      "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext") {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Unrecognized transport socket type: ", type_url));
+  }
+  const upb_StringView encoded_downstream_tls_context =
+      google_protobuf_Any_value(typed_config);
+  const auto* downstream_tls_context_proto =
+      envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
+          encoded_downstream_tls_context.data,
+          encoded_downstream_tls_context.size, context.arena);
+  if (downstream_tls_context_proto == nullptr) {
+    return absl::InvalidArgumentError("Can't decode downstream tls context.");
+  }
+  std::vector<std::string> errors;
+  XdsListenerResource::DownstreamTlsContext downstream_tls_context;
+  auto* common_tls_context =
+      envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
+          downstream_tls_context_proto);
+  if (common_tls_context != nullptr) {
+    ValidationErrors validation_errors;
+    downstream_tls_context.common_tls_context = CommonTlsContext::Parse(
+        context, common_tls_context, &validation_errors);
+    if (!validation_errors.ok()) {
+      errors.emplace_back(
+          validation_errors.status("errors in common_tls_context").message());
     }
   }
-  if (downstream_tls_context->common_tls_context
+  auto* require_client_certificate =
+      envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
+          downstream_tls_context_proto);
+  if (require_client_certificate != nullptr) {
+    downstream_tls_context.require_client_certificate =
+        google_protobuf_BoolValue_value(require_client_certificate);
+  }
+  auto* require_sni =
+      envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
+          downstream_tls_context_proto);
+  if (require_sni != nullptr && google_protobuf_BoolValue_value(require_sni)) {
+    errors.emplace_back("require_sni: unsupported");
+  }
+  if (envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_ocsp_staple_policy(
+          downstream_tls_context_proto) !=
+      envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
+    errors.emplace_back("ocsp_staple_policy: Only LENIENT_STAPLING supported");
+  }
+  if (downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.instance_name.empty()) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.emplace_back(
         "TLS configuration provided but no "
-        "tls_certificate_provider_instance found."));
+        "tls_certificate_provider_instance found.");
   }
-  if (downstream_tls_context->require_client_certificate &&
-      downstream_tls_context->common_tls_context.certificate_validation_context
+  if (downstream_tls_context.require_client_certificate &&
+      downstream_tls_context.common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name.empty()) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.emplace_back(
         "TLS configuration requires client certificates but no certificate "
-        "provider instance specified for validation."));
+        "provider instance specified for validation.");
   }
-  if (!downstream_tls_context->common_tls_context.certificate_validation_context
+  if (!downstream_tls_context.common_tls_context.certificate_validation_context
            .match_subject_alt_names.empty()) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "match_subject_alt_names not supported on servers"));
+    errors.emplace_back("match_subject_alt_names not supported on servers");
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing DownstreamTlsContext",
-                                       &errors);
+  // Return result.
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Errors parsing DownstreamTlsContext: [",
+                     absl::StrJoin(errors, "; "), "]"));
+  }
+  return downstream_tls_context;
 }
 
-grpc_error_handle CidrRangeParse(
-    const envoy_config_core_v3_CidrRange* cidr_range_proto,
-    XdsListenerResource::FilterChainMap::CidrRange* cidr_range) {
+absl::StatusOr<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
+    const envoy_config_core_v3_CidrRange* cidr_range_proto) {
+  XdsListenerResource::FilterChainMap::CidrRange cidr_range;
   std::string address_prefix = UpbStringToStdString(
       envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto));
-  grpc_error_handle error =
-      grpc_string_to_sockaddr(&cidr_range->address, address_prefix.c_str(), 0);
-  if (error != GRPC_ERROR_NONE) return error;
-  cidr_range->prefix_len = 0;
+  auto address = StringToSockaddr(address_prefix, /*port=*/0);
+  if (!address.ok()) return address.status();
+  cidr_range.address = *address;
+  cidr_range.prefix_len = 0;
   auto* prefix_len_proto =
       envoy_config_core_v3_CidrRange_prefix_len(cidr_range_proto);
   if (prefix_len_proto != nullptr) {
-    cidr_range->prefix_len = std::min(
+    cidr_range.prefix_len = std::min(
         google_protobuf_UInt32Value_value(prefix_len_proto),
-        (reinterpret_cast<const grpc_sockaddr*>(cidr_range->address.addr))
+        (reinterpret_cast<const grpc_sockaddr*>(cidr_range.address.addr))
                     ->sa_family == GRPC_AF_INET
             ? uint32_t(32)
             : uint32_t(128));
   }
   // Normalize the network address by masking it with prefix_len
-  grpc_sockaddr_mask_bits(&cidr_range->address, cidr_range->prefix_len);
-  return GRPC_ERROR_NONE;
+  grpc_sockaddr_mask_bits(&cidr_range.address, cidr_range.prefix_len);
+  return cidr_range;
 }
 
-grpc_error_handle FilterChainMatchParse(
-    const envoy_config_listener_v3_FilterChainMatch* filter_chain_match_proto,
-    FilterChain::FilterChainMatch* filter_chain_match) {
+absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
+    const envoy_config_listener_v3_FilterChainMatch* filter_chain_match_proto) {
+  std::vector<std::string> errors;
+  FilterChain::FilterChainMatch filter_chain_match;
   auto* destination_port =
       envoy_config_listener_v3_FilterChainMatch_destination_port(
           filter_chain_match_proto);
   if (destination_port != nullptr) {
-    filter_chain_match->destination_port =
+    filter_chain_match.destination_port =
         google_protobuf_UInt32Value_value(destination_port);
   }
   size_t size = 0;
   auto* prefix_ranges = envoy_config_listener_v3_FilterChainMatch_prefix_ranges(
       filter_chain_match_proto, &size);
-  filter_chain_match->prefix_ranges.reserve(size);
+  filter_chain_match.prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    XdsListenerResource::FilterChainMap::CidrRange cidr_range;
-    grpc_error_handle error = CidrRangeParse(prefix_ranges[i], &cidr_range);
-    if (error != GRPC_ERROR_NONE) return error;
-    filter_chain_match->prefix_ranges.push_back(cidr_range);
+    auto cidr_range = CidrRangeParse(prefix_ranges[i]);
+    if (!cidr_range.ok()) {
+      errors.emplace_back(absl::StrCat("prefix range ", i, ": ",
+                                       cidr_range.status().message()));
+      continue;
+    }
+    filter_chain_match.prefix_ranges.push_back(*cidr_range);
   }
-  filter_chain_match->source_type =
+  filter_chain_match.source_type =
       static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
           envoy_config_listener_v3_FilterChainMatch_source_type(
               filter_chain_match_proto));
   auto* source_prefix_ranges =
       envoy_config_listener_v3_FilterChainMatch_source_prefix_ranges(
           filter_chain_match_proto, &size);
-  filter_chain_match->source_prefix_ranges.reserve(size);
+  filter_chain_match.source_prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    XdsListenerResource::FilterChainMap::CidrRange cidr_range;
-    grpc_error_handle error =
-        CidrRangeParse(source_prefix_ranges[i], &cidr_range);
-    if (error != GRPC_ERROR_NONE) return error;
-    filter_chain_match->source_prefix_ranges.push_back(cidr_range);
+    auto cidr_range = CidrRangeParse(source_prefix_ranges[i]);
+    if (!cidr_range.ok()) {
+      errors.emplace_back(absl::StrCat("source prefix range ", i, ": ",
+                                       cidr_range.status().message()));
+      continue;
+    }
+    filter_chain_match.source_prefix_ranges.push_back(*cidr_range);
   }
   auto* source_ports = envoy_config_listener_v3_FilterChainMatch_source_ports(
       filter_chain_match_proto, &size);
-  filter_chain_match->source_ports.reserve(size);
+  filter_chain_match.source_ports.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match->source_ports.push_back(source_ports[i]);
+    filter_chain_match.source_ports.push_back(source_ports[i]);
   }
   auto* server_names = envoy_config_listener_v3_FilterChainMatch_server_names(
       filter_chain_match_proto, &size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match->server_names.push_back(
+    filter_chain_match.server_names.push_back(
         UpbStringToStdString(server_names[i]));
   }
-  filter_chain_match->transport_protocol = UpbStringToStdString(
+  filter_chain_match.transport_protocol = UpbStringToStdString(
       envoy_config_listener_v3_FilterChainMatch_transport_protocol(
           filter_chain_match_proto));
   auto* application_protocols =
       envoy_config_listener_v3_FilterChainMatch_application_protocols(
           filter_chain_match_proto, &size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match->application_protocols.push_back(
+    filter_chain_match.application_protocols.push_back(
         UpbStringToStdString(application_protocols[i]));
   }
-  return GRPC_ERROR_NONE;
+  // Return result.
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("errors parsing filter chain match: [",
+                     absl::StrJoin(errors, "; "), "]"));
+  }
+  return filter_chain_match;
 }
 
-grpc_error_handle FilterChainParse(
-    const XdsEncodingContext& context,
-    const envoy_config_listener_v3_FilterChain* filter_chain_proto, bool is_v2,
-    FilterChain* filter_chain) {
-  std::vector<grpc_error_handle> errors;
+absl::StatusOr<FilterChain> FilterChainParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_listener_v3_FilterChain* filter_chain_proto,
+    bool is_v2) {
+  FilterChain filter_chain;
+  std::vector<std::string> errors;
   auto* filter_chain_match =
       envoy_config_listener_v3_FilterChain_filter_chain_match(
           filter_chain_proto);
   if (filter_chain_match != nullptr) {
-    grpc_error_handle error = FilterChainMatchParse(
-        filter_chain_match, &filter_chain->filter_chain_match);
-    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    auto match = FilterChainMatchParse(filter_chain_match);
+    if (!match.ok()) {
+      errors.emplace_back(match.status().message());
+    } else {
+      filter_chain.filter_chain_match = std::move(*match);
+    }
   }
-  filter_chain->filter_chain_data =
+  filter_chain.filter_chain_data =
       std::make_shared<XdsListenerResource::FilterChainData>();
   // Parse the filters list. Currently we only support HttpConnectionManager.
   size_t size = 0;
   auto* filters =
       envoy_config_listener_v3_FilterChain_filters(filter_chain_proto, &size);
   if (size != 1) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.push_back(
         "FilterChain should have exactly one filter: HttpConnectionManager; no "
-        "other filter is supported at the moment"));
+        "other filter is supported at the moment");
   } else {
     auto* typed_config =
         envoy_config_listener_v3_Filter_typed_config(filters[0]);
     if (typed_config == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No typed_config found in filter."));
+      errors.emplace_back("No typed_config found in filter.");
     } else {
-      absl::string_view type_url =
-          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
+      absl::string_view type_url = absl::StripPrefix(
+          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+          "type.googleapis.com/");
       if (type_url !=
-          "type.googleapis.com/"
           "envoy.extensions.filters.network.http_connection_manager.v3."
           "HttpConnectionManager") {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("Unsupported filter type ", type_url)));
+        errors.emplace_back(absl::StrCat("Unsupported filter type ", type_url));
       } else {
-        const upb_strview encoded_http_connection_manager =
+        const upb_StringView encoded_http_connection_manager =
             google_protobuf_Any_value(typed_config);
         const auto* http_connection_manager =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
                 encoded_http_connection_manager.data,
                 encoded_http_connection_manager.size, context.arena);
         if (http_connection_manager == nullptr) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          errors.emplace_back(
               "Could not parse HttpConnectionManager config from filter "
-              "typed_config"));
+              "typed_config");
         } else {
-          grpc_error_handle error = HttpConnectionManagerParse(
-              false /* is_client */, context, http_connection_manager, is_v2,
-              &filter_chain->filter_chain_data->http_connection_manager);
-          if (error != GRPC_ERROR_NONE) errors.push_back(error);
+          auto hcm = HttpConnectionManagerParse(
+              /*is_client=*/false, context, http_connection_manager, is_v2);
+          if (!hcm.ok()) {
+            errors.emplace_back(hcm.status().message());
+          } else {
+            filter_chain.filter_chain_data->http_connection_manager =
+                std::move(*hcm);
+          }
         }
       }
     }
@@ -683,36 +755,42 @@ grpc_error_handle FilterChainParse(
   auto* transport_socket =
       envoy_config_listener_v3_FilterChain_transport_socket(filter_chain_proto);
   if (transport_socket != nullptr) {
-    grpc_error_handle error = DownstreamTlsContextParse(
-        context, transport_socket,
-        &filter_chain->filter_chain_data->downstream_tls_context);
-    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    auto downstream_context =
+        DownstreamTlsContextParse(context, transport_socket);
+    if (!downstream_context.ok()) {
+      errors.emplace_back(downstream_context.status().message());
+    } else {
+      filter_chain.filter_chain_data->downstream_tls_context =
+          std::move(*downstream_context);
+    }
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing FilterChain", &errors);
+  // Return result.
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Errors parsing FilterChain: [", absl::StrJoin(errors, "; "), "]"));
+  }
+  return filter_chain;
 }
 
-grpc_error_handle AddressParse(
-    const envoy_config_core_v3_Address* address_proto, std::string* address) {
+absl::StatusOr<std::string> AddressParse(
+    const envoy_config_core_v3_Address* address_proto) {
   const auto* socket_address =
       envoy_config_core_v3_Address_socket_address(address_proto);
   if (socket_address == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Address does not have socket_address");
+    return absl::InvalidArgumentError("Address does not have socket_address");
   }
   if (envoy_config_core_v3_SocketAddress_protocol(socket_address) !=
       envoy_config_core_v3_SocketAddress_TCP) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "SocketAddress protocol is not TCP");
+    return absl::InvalidArgumentError("SocketAddress protocol is not TCP");
   }
   uint32_t port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
   if (port > 65535) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port");
+    return absl::InvalidArgumentError("Invalid port");
   }
-  *address = JoinHostPort(
+  return JoinHostPort(
       UpbStringToAbsl(
           envoy_config_core_v3_SocketAddress_address(socket_address)),
       port);
-  return GRPC_ERROR_NONE;
 }
 
 // An intermediate map for filter chains that we create to validate the list of
@@ -731,37 +809,36 @@ struct InternalFilterChainMap {
   DestinationIpMap destination_ip_map;
 };
 
-grpc_error_handle AddFilterChainDataForSourcePort(
-    const FilterChain& filter_chain,
-    XdsListenerResource::FilterChainMap::SourcePortsMap* ports_map,
-    uint32_t port) {
+absl::Status AddFilterChainDataForSourcePort(
+    const FilterChain& filter_chain, uint32_t port,
+    XdsListenerResource::FilterChainMap::SourcePortsMap* ports_map) {
   auto insert_result = ports_map->emplace(
       port, XdsListenerResource::FilterChainMap::FilterChainDataSharedPtr{
                 filter_chain.filter_chain_data});
   if (!insert_result.second) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+    return absl::InvalidArgumentError(absl::StrCat(
         "Duplicate matching rules detected when adding filter chain: ",
         filter_chain.filter_chain_match.ToString()));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle AddFilterChainDataForSourcePorts(
+absl::Status AddFilterChainDataForSourcePorts(
     const FilterChain& filter_chain,
     XdsListenerResource::FilterChainMap::SourcePortsMap* ports_map) {
   if (filter_chain.filter_chain_match.source_ports.empty()) {
-    return AddFilterChainDataForSourcePort(filter_chain, ports_map, 0);
+    return AddFilterChainDataForSourcePort(filter_chain, 0, ports_map);
   } else {
     for (uint32_t port : filter_chain.filter_chain_match.source_ports) {
-      grpc_error_handle error =
-          AddFilterChainDataForSourcePort(filter_chain, ports_map, port);
-      if (error != GRPC_ERROR_NONE) return error;
+      absl::Status status =
+          AddFilterChainDataForSourcePort(filter_chain, port, ports_map);
+      if (!status.ok()) return status;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle AddFilterChainDataForSourceIpRange(
+absl::Status AddFilterChainDataForSourceIpRange(
     const FilterChain& filter_chain,
     InternalFilterChainMap::SourceIpMap* source_ip_map) {
   if (filter_chain.filter_chain_match.source_prefix_ranges.empty()) {
@@ -772,22 +849,23 @@ grpc_error_handle AddFilterChainDataForSourceIpRange(
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.source_prefix_ranges) {
+      auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
+      if (!addr_str.ok()) return addr_str.status();
       auto insert_result = source_ip_map->emplace(
-          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
-                       "/", prefix_range.prefix_len),
+          absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           XdsListenerResource::FilterChainMap::SourceIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      grpc_error_handle error = AddFilterChainDataForSourcePorts(
+      absl::Status status = AddFilterChainDataForSourcePorts(
           filter_chain, &insert_result.first->second.ports_map);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!status.ok()) return status;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle AddFilterChainDataForSourceType(
+absl::Status AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   GPR_ASSERT(static_cast<unsigned int>(
@@ -797,31 +875,31 @@ grpc_error_handle AddFilterChainDataForSourceType(
                         filter_chain.filter_chain_match.source_type)]);
 }
 
-grpc_error_handle AddFilterChainDataForApplicationProtocols(
+absl::Status AddFilterChainDataForApplicationProtocols(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   // Only allow filter chains that do not mention application protocols
   if (!filter_chain.filter_chain_match.application_protocols.empty()) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   return AddFilterChainDataForSourceType(filter_chain, destination_ip);
 }
 
-grpc_error_handle AddFilterChainDataForTransportProtocol(
+absl::Status AddFilterChainDataForTransportProtocol(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   const std::string& transport_protocol =
       filter_chain.filter_chain_match.transport_protocol;
   // Only allow filter chains with no transport protocol or "raw_buffer"
   if (!transport_protocol.empty() && transport_protocol != "raw_buffer") {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   // If for this configuration, we've already seen filter chains that mention
   // the transport protocol as "raw_buffer", we will never match filter chains
   // that do not mention it.
   if (destination_ip->transport_protocol_raw_buffer_provided &&
       transport_protocol.empty()) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   if (!transport_protocol.empty() &&
       !destination_ip->transport_protocol_raw_buffer_provided) {
@@ -835,17 +913,17 @@ grpc_error_handle AddFilterChainDataForTransportProtocol(
                                                    destination_ip);
 }
 
-grpc_error_handle AddFilterChainDataForServerNames(
+absl::Status AddFilterChainDataForServerNames(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   // Don't continue adding filter chains with server names mentioned
   if (!filter_chain.filter_chain_match.server_names.empty()) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   return AddFilterChainDataForTransportProtocol(filter_chain, destination_ip);
 }
 
-grpc_error_handle AddFilterChainDataForDestinationIpRange(
+absl::Status AddFilterChainDataForDestinationIpRange(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIpMap* destination_ip_map) {
   if (filter_chain.filter_chain_match.prefix_ranges.empty()) {
@@ -856,19 +934,20 @@ grpc_error_handle AddFilterChainDataForDestinationIpRange(
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.prefix_ranges) {
+      auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
+      if (!addr_str.ok()) return addr_str.status();
       auto insert_result = destination_ip_map->emplace(
-          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
-                       "/", prefix_range.prefix_len),
+          absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           InternalFilterChainMap::DestinationIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      grpc_error_handle error = AddFilterChainDataForServerNames(
+      absl::Status status = AddFilterChainDataForServerNames(
           filter_chain, &insert_result.first->second);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!status.ok()) return status;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 XdsListenerResource::FilterChainMap BuildFromInternalFilterChainMap(
@@ -890,36 +969,33 @@ XdsListenerResource::FilterChainMap BuildFromInternalFilterChainMap(
   return filter_chain_map;
 }
 
-grpc_error_handle BuildFilterChainMap(
-    const std::vector<FilterChain>& filter_chains,
-    XdsListenerResource::FilterChainMap* filter_chain_map) {
+absl::StatusOr<XdsListenerResource::FilterChainMap> BuildFilterChainMap(
+    const std::vector<FilterChain>& filter_chains) {
   InternalFilterChainMap internal_filter_chain_map;
   for (const auto& filter_chain : filter_chains) {
     // Discard filter chain entries that specify destination port
     if (filter_chain.filter_chain_match.destination_port != 0) continue;
-    grpc_error_handle error = AddFilterChainDataForDestinationIpRange(
+    absl::Status status = AddFilterChainDataForDestinationIpRange(
         filter_chain, &internal_filter_chain_map.destination_ip_map);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (!status.ok()) return status;
   }
-  *filter_chain_map =
-      BuildFromInternalFilterChainMap(&internal_filter_chain_map);
-  return GRPC_ERROR_NONE;
+  return BuildFromInternalFilterChainMap(&internal_filter_chain_map);
 }
 
-grpc_error_handle LdsResourceParseServer(
-    const XdsEncodingContext& context,
-    const envoy_config_listener_v3_Listener* listener, bool is_v2,
-    XdsListenerResource* lds_update) {
-  lds_update->type = XdsListenerResource::ListenerType::kTcpListener;
-  grpc_error_handle error =
-      AddressParse(envoy_config_listener_v3_Listener_address(listener),
-                   &lds_update->address);
-  if (error != GRPC_ERROR_NONE) return error;
+absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_listener_v3_Listener* listener, bool is_v2) {
+  XdsListenerResource lds_update;
+  lds_update.type = XdsListenerResource::ListenerType::kTcpListener;
+  auto address =
+      AddressParse(envoy_config_listener_v3_Listener_address(listener));
+  if (!address.ok()) return address.status();
+  lds_update.address = std::move(*address);
   const auto* use_original_dst =
       envoy_config_listener_v3_Listener_use_original_dst(listener);
   if (use_original_dst != nullptr) {
     if (google_protobuf_BoolValue_value(use_original_dst)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return absl::InvalidArgumentError(
           "Field \'use_original_dst\' is not supported.");
     }
   }
@@ -929,107 +1005,103 @@ grpc_error_handle LdsResourceParseServer(
   std::vector<FilterChain> parsed_filter_chains;
   parsed_filter_chains.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    FilterChain filter_chain;
-    error = FilterChainParse(context, filter_chains[i], is_v2, &filter_chain);
-    if (error != GRPC_ERROR_NONE) return error;
-    parsed_filter_chains.push_back(std::move(filter_chain));
+    auto filter_chain = FilterChainParse(context, filter_chains[i], is_v2);
+    if (!filter_chain.ok()) return filter_chain.status();
+    parsed_filter_chains.push_back(std::move(*filter_chain));
   }
-  error =
-      BuildFilterChainMap(parsed_filter_chains, &lds_update->filter_chain_map);
-  if (error != GRPC_ERROR_NONE) return error;
+  auto filter_chain_map = BuildFilterChainMap(parsed_filter_chains);
+  if (!filter_chain_map.ok()) return filter_chain_map.status();
+  lds_update.filter_chain_map = std::move(*filter_chain_map);
   auto* default_filter_chain =
       envoy_config_listener_v3_Listener_default_filter_chain(listener);
   if (default_filter_chain != nullptr) {
-    FilterChain filter_chain;
-    error =
-        FilterChainParse(context, default_filter_chain, is_v2, &filter_chain);
-    if (error != GRPC_ERROR_NONE) return error;
-    if (filter_chain.filter_chain_data != nullptr) {
-      lds_update->default_filter_chain =
-          std::move(*filter_chain.filter_chain_data);
+    auto filter_chain = FilterChainParse(context, default_filter_chain, is_v2);
+    if (!filter_chain.ok()) return filter_chain.status();
+    if (filter_chain->filter_chain_data != nullptr) {
+      lds_update.default_filter_chain =
+          std::move(*filter_chain->filter_chain_data);
     }
   }
   if (size == 0 && default_filter_chain == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No filter chain provided.");
+    return absl::InvalidArgumentError("No filter chain provided.");
   }
-  return GRPC_ERROR_NONE;
+  return lds_update;
 }
 
-grpc_error_handle LdsResourceParse(
-    const XdsEncodingContext& context,
-    const envoy_config_listener_v3_Listener* listener, bool is_v2,
-    XdsListenerResource* lds_update) {
+absl::StatusOr<XdsListenerResource> LdsResourceParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_listener_v3_Listener* listener, bool is_v2) {
   // Check whether it's a client or server listener.
   const envoy_config_listener_v3_ApiListener* api_listener =
       envoy_config_listener_v3_Listener_api_listener(listener);
   const envoy_config_core_v3_Address* address =
       envoy_config_listener_v3_Listener_address(listener);
-  if (api_listener != nullptr && address != nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Listener has both address and ApiListener");
-  }
+  // TODO(roth): Re-enable the following check once
+  // github.com/istio/istio/issues/38914 is resolved.
+  // if (api_listener != nullptr && address != nullptr) {
+  //   return absl::InvalidArgumentError(
+  //       "Listener has both address and ApiListener");
+  // }
   if (api_listener == nullptr && address == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    return absl::InvalidArgumentError(
         "Listener has neither address nor ApiListener");
   }
-  // Validate Listener fields.
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  // If api_listener is present, it's for a client; otherwise, it's
+  // for a server.
   if (api_listener != nullptr) {
-    error = LdsResourceParseClient(context, api_listener, is_v2, lds_update);
-  } else {
-    error = LdsResourceParseServer(context, listener, is_v2, lds_update);
+    return LdsResourceParseClient(context, api_listener, is_v2);
   }
-  return error;
+  return LdsResourceParseServer(context, listener, is_v2);
 }
 
-void MaybeLogListener(const XdsEncodingContext& context,
+void MaybeLogListener(const XdsResourceType::DecodeContext& context,
                       const envoy_config_listener_v3_Listener* listener) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_config_listener_v3_Listener_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(listener, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(listener, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] Listener: %s", context.client, buf);
   }
 }
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
-    const XdsEncodingContext& context, absl::string_view serialized_resource,
-    bool is_v2) const {
+XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool is_v2) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Listener resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse Listener resource.");
+    return result;
   }
   MaybeLogListener(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
-  auto listener_data = absl::make_unique<ResourceDataSubclass>();
-  grpc_error_handle error =
-      LdsResourceParse(context, resource, is_v2, &listener_data->resource);
-  if (error != GRPC_ERROR_NONE) {
-    std::string error_str = grpc_error_std_string(error);
-    GRPC_ERROR_UNREF(error);
+  auto listener = LdsResourceParse(context, resource, is_v2);
+  if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
-              context.client, result.name.c_str(), error_str.c_str());
+              context.client, result.name->c_str(),
+              listener.status().ToString().c_str());
     }
-    result.resource = absl::InvalidArgumentError(error_str);
+    result.resource = listener.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
-              context.client, result.name.c_str(),
-              listener_data->resource.ToString().c_str());
+              context.client, result.name->c_str(),
+              listener->ToString().c_str());
     }
-    result.resource = std::move(listener_data);
+    result.resource =
+        std::make_unique<XdsListenerResource>(std::move(*listener));
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core

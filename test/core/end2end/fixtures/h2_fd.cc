@@ -16,6 +16,9 @@
  *
  */
 
+#include "absl/status/status.h"
+
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -26,6 +29,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -46,8 +50,8 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
@@ -60,7 +64,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   memset(&f, 0, sizeof(f));
   f.fixture_data = fixture_data;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   create_sockets(fixture_data->fd_pair);
 
@@ -73,8 +76,10 @@ static void chttp2_init_client_socketpair(
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
 
   GPR_ASSERT(!f->client);
-  f->client = grpc_insecure_channel_create_from_fd(
-      "fixture_client", sfd->fd_pair[0], client_args);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  f->client = grpc_channel_create_from_fd("fixture_client", sfd->fd_pair[0],
+                                          creds, client_args);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }
 
@@ -87,8 +92,9 @@ static void chttp2_init_server_socketpair(
   GPR_ASSERT(f->server);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-
-  grpc_server_add_insecure_channel_from_fd(f->server, nullptr, sfd->fd_pair[1]);
+  grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
+  grpc_server_add_channel_from_fd(f->server, sfd->fd_pair[1], creds);
+  grpc_server_credentials_release(creds);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
@@ -105,7 +111,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char** argv) {
   size_t i;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

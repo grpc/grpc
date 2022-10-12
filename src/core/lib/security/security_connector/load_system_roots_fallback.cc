@@ -18,11 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#if !defined(GPR_LINUX) && !defined(GPR_ANDROID) && !defined(GPR_FREEBSD) && \
+    !defined(GPR_APPLE)
+
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
-
-#if !defined(GPR_LINUX) && !defined(GPR_ANDROID)
 
 namespace grpc_core {
 
@@ -30,4 +32,4 @@ grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
 
 }  // namespace grpc_core
 
-#endif /* !(GPR_LINUX || GPR_ANDROID) */
+#endif /* !(GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE) */

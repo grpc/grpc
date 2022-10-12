@@ -16,7 +16,20 @@
  *
  */
 
+#include <stdint.h>
+
+#include <algorithm>
+#include <memory>
+#include <string>
+
+#include "absl/status/statusor.h"
+
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -31,17 +44,15 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -61,14 +72,14 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-      grpc_core::GetDNSResolver()->ResolveNameBlocking(hostname, "80");
+      grpc_core::GetDNSResolver()->LookupHostnameBlocking(hostname, "80");
   if (!addresses_or.ok()) {
     GRPC_LOG_IF_ERROR(hostname,
                       absl_status_to_grpc_error(addresses_or.status()));
     return;
   }
   for (const auto& addr : *addresses_or) {
-    gpr_log(GPR_INFO, "%s: %s", label, grpc_sockaddr_to_uri(&addr).c_str());
+    gpr_log(GPR_INFO, "%s: %s", label, grpc_sockaddr_to_uri(&addr)->c_str());
   }
 }
 
@@ -77,10 +88,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_channel* client;
   grpc_server* server;
   grpc_completion_queue* cq;
-  grpc_completion_queue* shutdown_cq;
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv;
   gpr_timespec deadline;
   int got_port;
   grpc_op ops[6];
@@ -112,15 +121,18 @@ void test_connect(const char* server_host, const char* client_host, int port,
   cq = grpc_completion_queue_create_for_next(nullptr);
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
-  GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
-                  server, server_hostport.c_str())) > 0);
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  GPR_ASSERT((got_port = grpc_server_add_http2_port(
+                  server, server_hostport.c_str(), server_creds)) > 0);
+  grpc_server_credentials_release(server_creds);
   if (port == 0) {
     port = got_port;
   } else {
     GPR_ASSERT(port == got_port);
   }
   grpc_server_start(server);
-  cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
   /* Create client. */
   std::string client_hostport;
@@ -137,8 +149,9 @@ void test_connect(const char* server_host, const char* client_host, int port,
   } else {
     client_hostport = grpc_core::JoinHostPort(client_host, port);
   }
-  client =
-      grpc_insecure_channel_create(client_hostport.c_str(), nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  client = grpc_channel_create(client_hostport.c_str(), creds, nullptr);
+  grpc_channel_credentials_release(creds);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport.c_str(), client_hostport.c_str(),
@@ -194,8 +207,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     error = grpc_server_request_call(server, &s, &call_details,
                                      &request_metadata_recv, cq, cq, tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(101), true);
+    cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -218,9 +231,9 @@ void test_connect(const char* server_host, const char* client_host, int port,
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(102), true);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
 
     peer = grpc_call_get_peer(c);
     gpr_log(GPR_DEBUG, "got peer: '%s'", peer);
@@ -236,8 +249,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     grpc_call_unref(s);
   } else {
     /* Check for a failed connection. */
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
 
     gpr_log(GPR_INFO, "status: %d (expected: %d)", status,
             GRPC_STATUS_UNAVAILABLE);
@@ -246,20 +259,18 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
   grpc_call_unref(c);
 
-  cq_verifier_destroy(cqv);
-
   /* Destroy client. */
   grpc_channel_destroy(client);
 
   /* Destroy server. */
-  shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-  grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(server, cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
+
   grpc_server_destroy(server);
-  grpc_completion_queue_destroy(shutdown_cq);
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
@@ -277,7 +288,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
 int external_dns_works(const char* host) {
   auto addresses_or =
-      grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80");
+      grpc_core::GetDNSResolver()->LookupHostnameBlocking(host, "80");
   if (!addresses_or.ok()) {
     return 0;
   }
@@ -288,7 +299,8 @@ int external_dns_works(const char* host) {
     // "dualstack_socket_test" due to loopback4.unittest.grpc.io resolving to
     // [64:ff9b::7f00:1]. (Working as expected for DNS64, but it prevents the
     // dualstack_socket_test from functioning correctly). See b/201064791.
-    if (grpc_sockaddr_to_uri(&addr) == "ipv6:[64:ff9b::7f00:1]:80") {
+    if (grpc_sockaddr_to_uri(&addr).value() ==
+        "ipv6:%5B64:ff9b::7f00:1%5D:80") {
       gpr_log(
           GPR_INFO,
           "Detected DNS64 server response. Tests that depend on "
@@ -303,7 +315,7 @@ int external_dns_works(const char* host) {
 int main(int argc, char** argv) {
   int do_ipv6 = 1;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   if (!grpc_ipv6_loopback_available()) {

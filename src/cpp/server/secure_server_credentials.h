@@ -19,11 +19,17 @@
 #ifndef GRPC_INTERNAL_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 #define GRPC_INTERNAL_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 
-#include <memory>
+#include <stddef.h>
 
+#include <memory>
+#include <string>
+
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/server_credentials.h>
-#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/support/config.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 

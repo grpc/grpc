@@ -19,31 +19,31 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_UpstreamLocalityStats_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.UpstreamLocalityStats");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_UpstreamLocalityStats_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.UpstreamLocalityStats");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_UpstreamEndpointStats_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.UpstreamEndpointStats");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_UpstreamEndpointStats_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.UpstreamEndpointStats");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_EndpointLoadMetricStats_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.EndpointLoadMetricStats");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_EndpointLoadMetricStats_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.EndpointLoadMetricStats");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_ClusterStats_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.ClusterStats");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterStats_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.ClusterStats");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_ClusterStats_DroppedRequests_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.ClusterStats.DroppedRequests");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterStats_DroppedRequests_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.ClusterStats.DroppedRequests");
 }
 
 #ifdef __cplusplus

@@ -21,20 +21,40 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
 
 typedef struct grpc_call_create_args {
-  grpc_channel* channel;
+  grpc_core::RefCountedPtr<grpc_core::Channel> channel;
   grpc_core::Server* server;
 
   grpc_call* parent;
@@ -49,8 +69,47 @@ typedef struct grpc_call_create_args {
   absl::optional<grpc_core::Slice> path;
   absl::optional<grpc_core::Slice> authority;
 
-  grpc_millis send_deadline;
+  grpc_core::Timestamp send_deadline;
 } grpc_call_create_args;
+
+namespace grpc_core {
+class PromiseBasedCall;
+
+// TODO(ctiller): move more call things into this type
+class CallContext {
+ public:
+  explicit CallContext(PromiseBasedCall* call) : call_(call) {}
+
+  // Run some action in the call activity context. This is needed to adapt some
+  // legacy systems to promises, and will likely disappear once that conversion
+  // is complete.
+  void RunInContext(absl::AnyInvocable<void()> fn);
+
+  // TODO(ctiller): remove this once transport APIs are promise based
+  void IncrementRefCount(const char* reason = "call_context");
+
+  // TODO(ctiller): remove this once transport APIs are promise based
+  void Unref(const char* reason = "call_context");
+
+  grpc_call_stats* call_stats() { return &call_stats_; }
+  gpr_atm* peer_string_atm_ptr();
+  grpc_polling_entity* polling_entity() { return &pollent_; }
+
+ private:
+  friend class PromiseBasedCall;
+  // Call final info.
+  grpc_call_stats call_stats_;
+  // Pollset stuff, can't wait to remove.
+  // TODO(ctiller): bring forth EventEngine.
+  grpc_polling_entity pollent_;
+  // TODO(ctiller): remove this once transport APIs are promise based and we
+  // don't need refcounting here.
+  PromiseBasedCall* const call_;
+};
+
+template <>
+struct ContextType<CallContext> {};
+}  // namespace grpc_core
 
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
@@ -59,20 +118,6 @@ grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** call);
 
 void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
-
-#ifndef NDEBUG
-void grpc_call_internal_ref(grpc_call* call, const char* reason);
-void grpc_call_internal_unref(grpc_call* call, const char* reason);
-#define GRPC_CALL_INTERNAL_REF(call, reason) \
-  grpc_call_internal_ref(call, reason)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason) \
-  grpc_call_internal_unref(call, reason)
-#else
-void grpc_call_internal_ref(grpc_call* call);
-void grpc_call_internal_unref(grpc_call* call);
-#define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason) grpc_call_internal_unref(call)
-#endif
 
 grpc_core::Arena* grpc_call_get_arena(grpc_call* call);
 
@@ -124,6 +169,9 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 /* TODO(markdroth): This is currently available only to the C++ API.
                     Move to surface API if requested by other languages. */
 bool grpc_call_is_trailers_only(const grpc_call* call);
+
+// Returns the authority for the call, as seen on the server side.
+absl::string_view grpc_call_server_authority(const grpc_call* call);
 
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;

@@ -15,230 +15,234 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_CheckedExpr_submsgs[4] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_CheckedExpr_submsgs[4] = {
   {.submsg = &google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_msginit},
   {.submsg = &google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_msginit},
   {.submsg = &google_api_expr_v1alpha1_Expr_msginit},
   {.submsg = &google_api_expr_v1alpha1_SourceInfo_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_CheckedExpr__fields[4] = {
-  {2, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_MAP | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(16, 32), 0, 1, 11, _UPB_MODE_MAP | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(4, 8), 1, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(8, 16), 2, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_CheckedExpr__fields[4] = {
+  {2, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(12, 24), UPB_SIZE(1, 1), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(16, 32), UPB_SIZE(2, 2), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_CheckedExpr_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_CheckedExpr_msginit = {
   &google_api_expr_v1alpha1_CheckedExpr_submsgs[0],
   &google_api_expr_v1alpha1_CheckedExpr__fields[0],
-  UPB_SIZE(24, 40), 4, _UPB_MSGEXT_NONE, 0, 255,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_submsgs[1] = {
   {.submsg = &google_api_expr_v1alpha1_Reference_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_msginit = {
   &google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_submsgs[0],
   &google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_submsgs[1] = {
   {.submsg = &google_api_expr_v1alpha1_Type_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_msginit = {
   &google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_submsgs[0],
   &google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Type_submsgs[6] = {
-  {.submsg = &google_api_expr_v1alpha1_Type_msginit},
-  {.submsg = &google_api_expr_v1alpha1_Type_AbstractType_msginit},
-  {.submsg = &google_api_expr_v1alpha1_Type_FunctionType_msginit},
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_submsgs[7] = {
+  {.submsg = &google_protobuf_Empty_msginit},
   {.submsg = &google_api_expr_v1alpha1_Type_ListType_msginit},
   {.submsg = &google_api_expr_v1alpha1_Type_MapType_msginit},
+  {.submsg = &google_api_expr_v1alpha1_Type_FunctionType_msginit},
+  {.submsg = &google_api_expr_v1alpha1_Type_msginit},
   {.submsg = &google_protobuf_Empty_msginit},
+  {.submsg = &google_api_expr_v1alpha1_Type_AbstractType_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Type__fields[13] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 5, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 4, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {8, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {9, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {10, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {11, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {12, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 5, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {14, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Type__fields[13] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 5, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {14, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 6, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Type_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Type_msginit = {
   &google_api_expr_v1alpha1_Type_submsgs[0],
   &google_api_expr_v1alpha1_Type__fields[0],
-  UPB_SIZE(16, 32), 13, _UPB_MSGEXT_NONE, 12, 255,
+  UPB_SIZE(16, 24), 13, kUpb_ExtMode_NonExtendable, 12, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Type_ListType_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_ListType_submsgs[1] = {
   {.submsg = &google_api_expr_v1alpha1_Type_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Type_ListType__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_ListType__fields[1] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Type_ListType_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Type_ListType_msginit = {
   &google_api_expr_v1alpha1_Type_ListType_submsgs[0],
   &google_api_expr_v1alpha1_Type_ListType__fields[0],
-  UPB_SIZE(8, 16), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Type_MapType_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_MapType_submsgs[2] = {
+  {.submsg = &google_api_expr_v1alpha1_Type_msginit},
   {.submsg = &google_api_expr_v1alpha1_Type_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Type_MapType__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_MapType__fields[2] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Type_MapType_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Type_MapType_msginit = {
   &google_api_expr_v1alpha1_Type_MapType_submsgs[0],
   &google_api_expr_v1alpha1_Type_MapType__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Type_FunctionType_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_FunctionType_submsgs[2] = {
+  {.submsg = &google_api_expr_v1alpha1_Type_msginit},
   {.submsg = &google_api_expr_v1alpha1_Type_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Type_FunctionType__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_FunctionType__fields[2] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Type_FunctionType_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Type_FunctionType_msginit = {
   &google_api_expr_v1alpha1_Type_FunctionType_submsgs[0],
   &google_api_expr_v1alpha1_Type_FunctionType__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Type_AbstractType_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_AbstractType_submsgs[1] = {
   {.submsg = &google_api_expr_v1alpha1_Type_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Type_AbstractType__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_AbstractType__fields[2] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Type_AbstractType_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Type_AbstractType_msginit = {
   &google_api_expr_v1alpha1_Type_AbstractType_submsgs[0],
   &google_api_expr_v1alpha1_Type_AbstractType__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Decl_submsgs[2] = {
-  {.submsg = &google_api_expr_v1alpha1_Decl_FunctionDecl_msginit},
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_submsgs[2] = {
   {.submsg = &google_api_expr_v1alpha1_Decl_IdentDecl_msginit},
+  {.submsg = &google_api_expr_v1alpha1_Decl_FunctionDecl_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Decl__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl__fields[3] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Decl_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Decl_msginit = {
   &google_api_expr_v1alpha1_Decl_submsgs[0],
   &google_api_expr_v1alpha1_Decl__fields[0],
-  UPB_SIZE(16, 32), 3, _UPB_MSGEXT_NONE, 3, 255,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Decl_IdentDecl_submsgs[2] = {
-  {.submsg = &google_api_expr_v1alpha1_Constant_msginit},
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_IdentDecl_submsgs[2] = {
   {.submsg = &google_api_expr_v1alpha1_Type_msginit},
+  {.submsg = &google_api_expr_v1alpha1_Constant_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Decl_IdentDecl__fields[3] = {
-  {1, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 32), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl_IdentDecl__fields[3] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Decl_IdentDecl_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Decl_IdentDecl_msginit = {
   &google_api_expr_v1alpha1_Decl_IdentDecl_submsgs[0],
   &google_api_expr_v1alpha1_Decl_IdentDecl__fields[0],
-  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 3, 255,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Decl_FunctionDecl_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_FunctionDecl_submsgs[1] = {
   {.submsg = &google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Decl_FunctionDecl__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl_FunctionDecl__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Decl_FunctionDecl_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Decl_FunctionDecl_msginit = {
   &google_api_expr_v1alpha1_Decl_FunctionDecl_submsgs[0],
   &google_api_expr_v1alpha1_Decl_FunctionDecl__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_submsgs[2] = {
+  {.submsg = &google_api_expr_v1alpha1_Type_msginit},
   {.submsg = &google_api_expr_v1alpha1_Type_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Decl_FunctionDecl_Overload__fields[6] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(24, 48), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(28, 56), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(20, 40), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl_FunctionDecl_Overload__fields[6] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 32), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 40), UPB_SIZE(1, 1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 48), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_msginit = {
   &google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_submsgs[0],
   &google_api_expr_v1alpha1_Decl_FunctionDecl_Overload__fields[0],
-  UPB_SIZE(32, 64), 6, _UPB_MSGEXT_NONE, 6, 255,
+  UPB_SIZE(32, 64), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_msglayout_sub google_api_expr_v1alpha1_Reference_submsgs[1] = {
+static const upb_MiniTable_Sub google_api_expr_v1alpha1_Reference_submsgs[1] = {
   {.submsg = &google_api_expr_v1alpha1_Constant_msginit},
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_Reference__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(16, 32), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_api_expr_v1alpha1_Reference__fields[3] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 32), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_expr_v1alpha1_Reference_msginit = {
+const upb_MiniTable google_api_expr_v1alpha1_Reference_msginit = {
   &google_api_expr_v1alpha1_Reference_submsgs[0],
   &google_api_expr_v1alpha1_Reference__fields[0],
-  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[13] = {
+static const upb_MiniTable *messages_layout[13] = {
   &google_api_expr_v1alpha1_CheckedExpr_msginit,
   &google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_msginit,
   &google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_msginit,
@@ -254,10 +258,12 @@ static const upb_msglayout *messages_layout[13] = {
   &google_api_expr_v1alpha1_Reference_msginit,
 };
 
-const upb_msglayout_file google_api_expr_v1alpha1_checked_proto_upb_file_layout = {
+const upb_MiniTable_File google_api_expr_v1alpha1_checked_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   13,
+  0,
   0,
 };
 

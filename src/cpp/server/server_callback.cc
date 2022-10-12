@@ -15,9 +15,12 @@
  *
  */
 
-#include <grpcpp/impl/codegen/server_callback.h>
+#include "absl/status/status.h"
+
+#include <grpcpp/support/server_callback.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 
@@ -46,7 +49,7 @@ void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
       }
     };
     ClosureWithArg* arg = new ClosureWithArg(this);
-    grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
+    grpc_core::Executor::Run(&arg->closure, absl::OkStatus());
   }
 }
 
@@ -76,7 +79,7 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
       }
     };
     ClosureWithArg* arg = new ClosureWithArg(this, reactor);
-    grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
+    grpc_core::Executor::Run(&arg->closure, absl::OkStatus());
   }
 }
 

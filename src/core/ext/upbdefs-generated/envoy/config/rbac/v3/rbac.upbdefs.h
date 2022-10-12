@@ -19,46 +19,51 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_rbac_v3_rbac_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_rbac_v3_rbac_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_RBAC_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.RBAC");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.RBAC");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_RBAC_PoliciesEntry_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.RBAC.PoliciesEntry");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_PoliciesEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.RBAC.PoliciesEntry");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_Policy_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.Policy");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Policy_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Policy");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_Permission_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.Permission");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Permission_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Permission");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_Permission_Set_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.Permission.Set");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Permission_Set_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Permission.Set");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_Principal_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.Principal");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Principal_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Principal");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_Principal_Set_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.Principal.Set");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Principal_Set_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Principal.Set");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_rbac_v3_Principal_Authenticated_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.rbac.v3.Principal.Authenticated");
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Principal_Authenticated_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Principal.Authenticated");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Action_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Action");
 }
 
 #ifdef __cplusplus

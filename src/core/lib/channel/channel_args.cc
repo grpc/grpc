@@ -21,22 +21,252 @@
 #include "src/core/lib/channel/channel_args.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
+#include <map>
 #include <vector>
 
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/match.h"
+
+namespace grpc_core {
+
+ChannelArgs::Pointer::Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
+    : p_(p), vtable_(vtable == nullptr ? EmptyVTable() : vtable) {}
+
+ChannelArgs::Pointer::Pointer(const Pointer& other)
+    : p_(other.vtable_->copy(other.p_)), vtable_(other.vtable_) {}
+
+ChannelArgs::Pointer::Pointer(Pointer&& other) noexcept
+    : p_(other.p_), vtable_(other.vtable_) {
+  other.p_ = nullptr;
+  other.vtable_ = EmptyVTable();
+}
+
+const grpc_arg_pointer_vtable* ChannelArgs::Pointer::EmptyVTable() {
+  static const grpc_arg_pointer_vtable vtable = {
+      // copy
+      [](void* p) { return p; },
+      // destroy
+      [](void*) {},
+      // cmp
+      [](void* p1, void* p2) -> int { return QsortCompare(p1, p2); },
+  };
+  return &vtable;
+}
+
+ChannelArgs::ChannelArgs() = default;
+ChannelArgs::~ChannelArgs() = default;
+ChannelArgs::ChannelArgs(const ChannelArgs& other) = default;
+ChannelArgs& ChannelArgs::operator=(const ChannelArgs& other) = default;
+ChannelArgs::ChannelArgs(ChannelArgs&& other) noexcept = default;
+ChannelArgs& ChannelArgs::operator=(ChannelArgs&& other) noexcept = default;
+
+const ChannelArgs::Value* ChannelArgs::Get(absl::string_view name) const {
+  return args_.Lookup(name);
+}
+
+bool ChannelArgs::Contains(absl::string_view name) const {
+  return Get(name) != nullptr;
+}
+
+bool ChannelArgs::operator<(const ChannelArgs& other) const {
+  return args_ < other.args_;
+}
+
+bool ChannelArgs::operator==(const ChannelArgs& other) const {
+  return args_ == other.args_;
+}
+
+bool ChannelArgs::operator!=(const ChannelArgs& other) const {
+  return !(*this == other);
+}
+
+bool ChannelArgs::WantMinimalStack() const {
+  return GetBool(GRPC_ARG_MINIMAL_STACK).value_or(false);
+}
+
+ChannelArgs::ChannelArgs(AVL<std::string, Value> args)
+    : args_(std::move(args)) {}
+
+ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
+  switch (arg.type) {
+    case GRPC_ARG_INTEGER:
+      return Set(arg.key, arg.value.integer);
+    case GRPC_ARG_STRING:
+      if (arg.value.string != nullptr) return Set(arg.key, arg.value.string);
+      return Set(arg.key, "");
+    case GRPC_ARG_POINTER:
+      return Set(arg.key,
+                 Pointer(arg.value.pointer.vtable->copy(arg.value.pointer.p),
+                         arg.value.pointer.vtable));
+  }
+  GPR_UNREACHABLE_CODE(return ChannelArgs());
+}
+
+ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
+  ChannelArgs result;
+  if (args != nullptr) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      result = result.Set(args->args[i]);
+    }
+  }
+  return result;
+}
+
+ChannelArgs::CPtr ChannelArgs::ToC() const {
+  std::vector<grpc_arg> c_args;
+  args_.ForEach([&c_args](const std::string& key, const Value& value) {
+    char* name = const_cast<char*>(key.c_str());
+    c_args.push_back(Match(
+        value,
+        [name](int i) { return grpc_channel_arg_integer_create(name, i); },
+        [name](const std::string& s) {
+          return grpc_channel_arg_string_create(name,
+                                                const_cast<char*>(s.c_str()));
+        },
+        [name](const Pointer& p) {
+          return grpc_channel_arg_pointer_create(name, p.c_pointer(),
+                                                 p.c_vtable());
+        }));
+  });
+  return CPtr(static_cast<const grpc_channel_args*>(
+      grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size())));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view name, Pointer value) const {
+  return Set(name, Value(std::move(value)));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view name, int value) const {
+  return Set(name, Value(value));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
+  return ChannelArgs(args_.Add(std::string(key), std::move(value)));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key,
+                             absl::string_view value) const {
+  return Set(key, std::string(value));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key, const char* value) const {
+  return Set(key, std::string(value));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key, std::string value) const {
+  return Set(key, Value(std::move(value)));
+}
+
+ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
+  return ChannelArgs(args_.Remove(key));
+}
+
+absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return absl::nullopt;
+  if (!absl::holds_alternative<int>(*v)) return absl::nullopt;
+  return absl::get<int>(*v);
+}
+
+absl::optional<Duration> ChannelArgs::GetDurationFromIntMillis(
+    absl::string_view name) const {
+  auto ms = GetInt(name);
+  if (!ms.has_value()) return absl::nullopt;
+  if (*ms == INT_MAX) return Duration::Infinity();
+  if (*ms == INT_MIN) return Duration::NegativeInfinity();
+  return Duration::Milliseconds(*ms);
+}
+
+absl::optional<absl::string_view> ChannelArgs::GetString(
+    absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return absl::nullopt;
+  if (!absl::holds_alternative<std::string>(*v)) return absl::nullopt;
+  return absl::get<std::string>(*v);
+}
+
+absl::optional<std::string> ChannelArgs::GetOwnedString(
+    absl::string_view name) const {
+  absl::optional<absl::string_view> v = GetString(name);
+  if (!v.has_value()) return absl::nullopt;
+  return std::string(*v);
+}
+
+void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return nullptr;
+  if (!absl::holds_alternative<Pointer>(*v)) return nullptr;
+  return absl::get<Pointer>(*v).c_pointer();
+}
+
+absl::optional<bool> ChannelArgs::GetBool(absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return absl::nullopt;
+  auto* i = absl::get_if<int>(v);
+  if (i == nullptr) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
+            std::string(name).c_str());
+    return absl::nullopt;
+  }
+  switch (*i) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    default:
+      gpr_log(GPR_ERROR, "%s treated as bool but set to %d (assuming true)",
+              std::string(name).c_str(), *i);
+      return true;
+  }
+}
+
+std::string ChannelArgs::ToString() const {
+  std::vector<std::string> arg_strings;
+  args_.ForEach([&arg_strings](const std::string& key, const Value& value) {
+    std::string value_str;
+    if (auto* i = absl::get_if<int>(&value)) {
+      value_str = std::to_string(*i);
+    } else if (auto* s = absl::get_if<std::string>(&value)) {
+      value_str = *s;
+    } else if (auto* p = absl::get_if<Pointer>(&value)) {
+      value_str = absl::StrFormat("%p", p->c_pointer());
+    }
+    arg_strings.push_back(absl::StrCat(key, "=", value_str));
+  });
+  return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
+}
+
+ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
+  args_.ForEach([&other](const std::string& key, const Value& value) {
+    other.args_ = other.args_.Add(key, value);
+  });
+  return other;
+}
+
+void ChannelArgs::ChannelArgsDeleter::operator()(
+    const grpc_channel_args* p) const {
+  grpc_channel_args_destroy(p);
+}
+
+std::ostream& operator<<(std::ostream& out, const ChannelArgs& args) {
+  return out << args.ToString();
+}
+
+}  // namespace grpc_core
 
 static grpc_arg copy_arg(const grpc_arg* src) {
   grpc_arg dst;
@@ -156,16 +386,9 @@ static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
     case GRPC_ARG_INTEGER:
       return grpc_core::QsortCompare(a->value.integer, b->value.integer);
     case GRPC_ARG_POINTER:
-      c = grpc_core::QsortCompare(a->value.pointer.p, b->value.pointer.p);
-      if (c != 0) {
-        c = grpc_core::QsortCompare(a->value.pointer.vtable,
-                                    b->value.pointer.vtable);
-        if (c == 0) {
-          c = a->value.pointer.vtable->cmp(a->value.pointer.p,
-                                           b->value.pointer.p);
-        }
-      }
-      return c;
+      return grpc_core::channel_args_detail::PointerCompare(
+          a->value.pointer.p, a->value.pointer.vtable, b->value.pointer.p,
+          b->value.pointer.vtable);
   }
   GPR_UNREACHABLE_CODE(return 0);
 }
@@ -345,44 +568,47 @@ grpc_arg grpc_channel_arg_pointer_create(
 }
 
 std::string grpc_channel_args_string(const grpc_channel_args* args) {
-  if (args == nullptr) return "";
-  std::vector<std::string> arg_strings;
-  for (size_t i = 0; i < args->num_args; ++i) {
-    const grpc_arg& arg = args->args[i];
-    std::string arg_string;
-    switch (arg.type) {
-      case GRPC_ARG_INTEGER:
-        arg_string = absl::StrFormat("%s=%d", arg.key, arg.value.integer);
-        break;
-      case GRPC_ARG_STRING:
-        arg_string = absl::StrFormat("%s=%s", arg.key, arg.value.string);
-        break;
-      case GRPC_ARG_POINTER:
-        arg_string = absl::StrFormat("%s=%p", arg.key, arg.value.pointer.p);
-        break;
-      default:
-        arg_string = "arg with unknown type";
-    }
-    arg_strings.push_back(arg_string);
-  }
-  return absl::StrJoin(arg_strings, ", ");
+  return grpc_core::ChannelArgs::FromC(args).ToString();
 }
 
 namespace grpc_core {
-const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
-  if (src == nullptr) return nullptr;
-  // Create result.
-  grpc_channel_args* dst =
-      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  dst->args =
-      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * src->num_args));
-  dst->num_args = 0;
-  for (size_t i = 0; i < src->num_args; ++i) {
-    if (absl::StartsWith(src->args[i].key, "grpc.internal.")) continue;
-    dst->args[dst->num_args++] = copy_arg(&src->args[i]);
+ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src) {
+  if (src == nullptr) return ChannelArgs();
+  ChannelArgs output;
+  std::map<absl::string_view, std::vector<absl::string_view>>
+      concatenated_values;
+  for (size_t i = 0; i < src->num_args; i++) {
+    absl::string_view key = src->args[i].key;
+    // User-agent strings were traditionally multi-valued and concatenated.
+    // We preserve this behavior for backwards compatibility.
+    if (key == GRPC_ARG_PRIMARY_USER_AGENT_STRING ||
+        key == GRPC_ARG_SECONDARY_USER_AGENT_STRING) {
+      if (src->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
+                std::string(key).c_str());
+      } else {
+        concatenated_values[key].push_back(src->args[i].value.string);
+      }
+      continue;
+    } else if (absl::StartsWith(key, "grpc.internal.")) {
+      continue;
+    }
+    if (!output.Contains(key)) {
+      output = output.Set(src->args[i]);
+    } else {
+      // Traditional grpc_channel_args_find behavior was to pick the first
+      // value.
+      // For compatibility with existing users, we will do the same here.
+    }
   }
-  return dst;
+  // Concatenate the concatenated values.
+  for (const auto& concatenated_value : concatenated_values) {
+    output = output.Set(concatenated_value.first,
+                        absl::StrJoin(concatenated_value.second, " "));
+  }
+  return output;
 }
+
 }  // namespace grpc_core
 
 namespace {

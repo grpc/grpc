@@ -51,12 +51,18 @@ some configuration as environment variables that can be set.
     resolver's resolved address sorter
   - cds_lb - traces cds LB policy
   - channel - traces operations on the C core channel stack
-  - client_channel_call - traces client channel call batch activity
-  - client_channel_routing - traces client channel call routing, including
+  - channel_stack - traces the set of filters in a channel stack upon
+    construction
+  - client_channel - traces client channel control plane activity, including
     resolver and load balancing policy interaction
+  - client_channel_call - traces client channel call activity related to name
+    resolution
+  - client_channel_lb_call - traces client channel call activity related
+    to load balancing picking
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
+  - dns_resolver - traces state in the native DNS resolver
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
@@ -79,7 +85,7 @@ some configuration as environment variables that can be set.
   - rls_lb - traces the RLS load balancing policy
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
-  - sdk_authz - traces sdk authorization
+  - grpc_authz_api - traces gRPC authorization
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - subchannel - traces the connectivity state of subchannel
@@ -103,8 +109,6 @@ some configuration as environment variables that can be set.
   - call_combiner - traces call combiner state
   - closure - tracks closure creation, scheduling, and completion
   - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
-    Also traces epoll fd create()/close() calls in epollex polling engine
-    traces epoll-fd creation/close calls for epollex polling engine
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
   - polling_api - traces the api calls to polling engine
@@ -162,11 +166,6 @@ some configuration as environment variables that can be set.
   there is no active polling thread. They help reconnect disconnected client
   channels (mostly due to idleness), so that the next RPC on this channel won't
   fail. Set to 0 to turn off the backup polls.
-
-* GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
-  if set, flow control will be effectively disabled. Max out all values and
-  assume the remote peer does the same. Thus we can ignore any flow control
-  bookkeeping, error checking, and decision making
 
 * grpc_cfstream
   set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP

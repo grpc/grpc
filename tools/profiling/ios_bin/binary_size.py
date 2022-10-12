@@ -30,9 +30,9 @@ sys.path.append(
 import check_on_pr
 
 # Only show diff 1KB or greater
-diff_threshold = 1000
+_DIFF_THRESHOLD = 1000
 
-size_labels = ('Core', 'ObjC', 'BoringSSL', 'Protobuf', 'Total')
+_SIZE_LABELS = ('Core', 'ObjC', 'BoringSSL', 'Protobuf', 'Total')
 
 argp = argparse.ArgumentParser(
     description='Binary size diff of gRPC Objective-C sample')
@@ -58,19 +58,22 @@ def get_size(where, frameworks):
     build_dir = 'src/objective-c/examples/Sample/Build/Build-%s/' % where
     if not frameworks:
         link_map_filename = 'Build/Intermediates.noindex/Sample.build/Release-iphoneos/Sample.build/Sample-LinkMap-normal-arm64.txt'
+        # IMPORTANT: order needs to match labels in _SIZE_LABELS
         return parse_link_map(build_dir + link_map_filename)
     else:
         framework_dir = 'Build/Products/Release-iphoneos/Sample.app/Frameworks/'
-        boringssl_size = dir_size(build_dir + framework_dir +
-                                  'openssl.framework')
         core_size = dir_size(build_dir + framework_dir + 'grpc.framework')
         objc_size = dir_size(build_dir + framework_dir + 'GRPCClient.framework') + \
                     dir_size(build_dir + framework_dir + 'RxLibrary.framework') + \
                     dir_size(build_dir + framework_dir + 'ProtoRPC.framework')
+        boringssl_size = dir_size(build_dir + framework_dir +
+                                  'openssl.framework')
         protobuf_size = dir_size(build_dir + framework_dir +
                                  'Protobuf.framework')
+        # a.k.a. "Total"
         app_size = dir_size(build_dir +
                             'Build/Products/Release-iphoneos/Sample.app')
+        # IMPORTANT: order needs to match labels in _SIZE_LABELS
         return core_size, objc_size, boringssl_size, protobuf_size, app_size
 
 
@@ -85,6 +88,34 @@ def build(where, frameworks):
         cwd='src/objective-c/tests')
     os.rename('src/objective-c/examples/Sample/Build/Build',
               'src/objective-c/examples/Sample/Build/Build-%s' % where)
+
+
+def _render_row(new, label, old):
+    """Render row in 3-column output format."""
+    try:
+        formatted_new = '{:,}'.format(int(new))
+    except:
+        formatted_new = new
+    try:
+        formatted_old = '{:,}'.format(int(old))
+    except:
+        formatted_old = old
+    return '{:>15}{:>15}{:>15}\n'.format(formatted_new, label, formatted_old)
+
+
+def _diff_sign(new, old, diff_threshold=None):
+    """Generate diff sign based on values"""
+    diff_sign = ' '
+    if diff_threshold is not None and abs(new_size[i] -
+                                          old_size[i]) >= diff_threshold:
+        diff_sign += '!'
+    if new > old:
+        diff_sign += '(>)'
+    elif new < old:
+        diff_sign += '(<)'
+    else:
+        diff_sign += '(=)'
+    return diff_sign
 
 
 text = 'Objective-C binary sizes\n'
@@ -108,42 +139,38 @@ for frameworks in [False, True]:
             subprocess.check_call(['git', 'checkout', where_am_i])
             subprocess.check_call(['git', 'submodule', 'update', '--force'])
 
-    text += ('***************FRAMEWORKS****************\n'
-             if frameworks else '*****************STATIC******************\n')
-    row_format = "{:>10}{:>15}{:>15}" + '\n'
-    text += row_format.format('New size', '', 'Old size')
+    text += ('********************FRAMEWORKS****************\n' if frameworks
+             else '**********************STATIC******************\n')
+    text += _render_row('New size', '', 'Old size')
     if old_size == None:
-        for i in range(0, len(size_labels)):
-            text += ('\n' if i == len(size_labels) -
-                     1 else '') + row_format.format('{:,}'.format(new_size[i]),
-                                                    size_labels[i], '')
+        for i in range(0, len(_SIZE_LABELS)):
+            if i == len(_SIZE_LABELS) - 1:
+                # skip line before rendering "Total"
+                text += '\n'
+            text += _render_row(new_size[i], _SIZE_LABELS[i], '')
     else:
         has_diff = False
-        for i in range(0, len(size_labels) - 1):
-            if abs(new_size[i] - old_size[i]) < diff_threshold:
-                continue
-            if new_size[i] > old_size[i]:
-                diff_sign = ' (>)'
-            else:
-                diff_sign = ' (<)'
-            has_diff = True
-            text += row_format.format('{:,}'.format(new_size[i]),
-                                      size_labels[i] + diff_sign,
-                                      '{:,}'.format(old_size[i]))
-        i = len(size_labels) - 1
-        if new_size[i] > old_size[i]:
-            diff_sign = ' (>)'
-        elif new_size[i] < old_size[i]:
-            diff_sign = ' (<)'
-        else:
-            diff_sign = ' (=)'
-        text += ('\n' if has_diff else '') + row_format.format(
-            '{:,}'.format(new_size[i]), size_labels[i] + diff_sign,
-            '{:,}'.format(old_size[i]))
+        # go through all labels but "Total"
+        for i in range(0, len(_SIZE_LABELS) - 1):
+            if abs(new_size[i] - old_size[i]) >= _DIFF_THRESHOLD:
+                has_diff = True
+            diff_sign = _diff_sign(new_size[i],
+                                   old_size[i],
+                                   diff_threshold=_DIFF_THRESHOLD)
+            text += _render_row(new_size[i], _SIZE_LABELS[i] + diff_sign,
+                                old_size[i])
+
+        # render the "Total"
+        i = len(_SIZE_LABELS) - 1
+        diff_sign = _diff_sign(new_size[i], old_size[i])
+        # skip line before rendering "Total"
+        text += '\n'
+        text += _render_row(new_size[i], _SIZE_LABELS[i] + diff_sign,
+                            old_size[i])
         if not has_diff:
             text += '\n No significant differences in binary sizes\n'
     text += '\n'
 
 print(text)
 
-check_on_pr.check_on_pr('Binary Size', '```\n%s\n```' % text)
+check_on_pr.check_on_pr('ObjC Binary Size', '```\n%s\n```' % text)

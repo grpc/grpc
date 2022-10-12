@@ -37,6 +37,7 @@
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
@@ -69,12 +70,10 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // State for a given xDS resource type.
   struct ResponseState {
     enum State {
-      NOT_SENT,  // No response sent yet.
-      SENT,      // Response was sent, but no ACK/NACK received.
-      ACKED,     // ACK received.
-      NACKED,    // NACK received; error_message will contain the error.
+      ACKED,   // ACK received.
+      NACKED,  // NACK received; error_message will contain the error.
     };
-    State state = NOT_SENT;
+    State state = ACKED;
     std::string error_message;
   };
 
@@ -93,6 +92,16 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service*
   v3_rpc_service() {
     return &v3_rpc_service_;
+  }
+
+  void set_wrap_resources(bool wrap_resources) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    wrap_resources_ = wrap_resources;
+  }
+
+  void set_inject_bad_resources_for_resource_type(const std::string& type_url) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    inject_bad_resources_for_resource_type_ = type_url;
   }
 
   // Sets a resource to a particular value, overwriting any previous value.
@@ -143,15 +152,28 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     resource_type_min_versions_[type_url] = version;
   }
 
-  // Get the latest response state for each resource type.
-  ResponseState GetResponseState(const std::string& type_url) {
+  // Get the list of response state for each resource type.
+  absl::optional<ResponseState> GetResponseState(const std::string& type_url) {
     grpc_core::MutexLock lock(&ads_mu_);
-    return resource_type_response_state_[type_url];
+    if (resource_type_response_state_[type_url].empty()) {
+      return absl::nullopt;
+    }
+    auto response = resource_type_response_state_[type_url].front();
+    resource_type_response_state_[type_url].pop_front();
+    return response;
   }
-  ResponseState lds_response_state() { return GetResponseState(kLdsTypeUrl); }
-  ResponseState rds_response_state() { return GetResponseState(kRdsTypeUrl); }
-  ResponseState cds_response_state() { return GetResponseState(kCdsTypeUrl); }
-  ResponseState eds_response_state() { return GetResponseState(kEdsTypeUrl); }
+  absl::optional<ResponseState> lds_response_state() {
+    return GetResponseState(kLdsTypeUrl);
+  }
+  absl::optional<ResponseState> rds_response_state() {
+    return GetResponseState(kRdsTypeUrl);
+  }
+  absl::optional<ResponseState> cds_response_state() {
+    return GetResponseState(kCdsTypeUrl);
+  }
+  absl::optional<ResponseState> eds_response_state() {
+    return GetResponseState(kEdsTypeUrl);
+  }
 
   // Starts the service.
   void Start();
@@ -163,6 +185,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   std::set<std::string> clients() {
     grpc_core::MutexLock lock(&clients_mu_);
     return clients_;
+  }
+
+  void ForceADSFailure(Status status) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    forced_ads_failure_ = std::move(status);
   }
 
  private:
@@ -222,6 +249,17 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     Status StreamAggregatedResources(ServerContext* context,
                                      Stream* stream) override {
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+      {
+        grpc_core::MutexLock lock(&parent_->ads_mu_);
+        if (parent_->forced_ads_failure_.has_value()) {
+          gpr_log(GPR_INFO,
+                  "ADS[%p]: StreamAggregatedResources forcing early failure "
+                  "with status code: %d, message: %s",
+                  this, parent_->forced_ads_failure_.value().error_code(),
+                  parent_->forced_ads_failure_.value().error_message().c_str());
+          return parent_->forced_ads_failure_.value();
+        }
+      }
       parent_->AddClient(context->peer());
       if (is_v2_) {
         parent_->seen_v2_client_ = true;
@@ -387,34 +425,50 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       } else {
         int client_nonce;
         GPR_ASSERT(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
+        // Check for ACK or NACK.
+        ResponseState response_state;
+        if (!request.has_error_detail()) {
+          response_state.state = ResponseState::ACKED;
+          gpr_log(GPR_INFO, "ADS[%p]: client ACKed resource_type=%s version=%s",
+                  this, request.type_url().c_str(),
+                  request.version_info().c_str());
+        } else {
+          response_state.state = ResponseState::NACKED;
+          EXPECT_EQ(request.error_detail().code(),
+                    GRPC_STATUS_INVALID_ARGUMENT);
+          response_state.error_message = request.error_detail().message();
+          gpr_log(GPR_INFO,
+                  "ADS[%p]: client NACKed resource_type=%s version=%s: %s",
+                  this, request.type_url().c_str(),
+                  request.version_info().c_str(),
+                  response_state.error_message.c_str());
+        }
+        parent_->resource_type_response_state_[v3_resource_type].emplace_back(
+            std::move(response_state));
         // Ignore requests with stale nonces.
         if (client_nonce < sent_state->nonce) return;
-        // Check for ACK or NACK.
-        auto it = parent_->resource_type_response_state_.find(v3_resource_type);
-        if (it != parent_->resource_type_response_state_.end()) {
-          if (!request.has_error_detail()) {
-            it->second.state = ResponseState::ACKED;
-            it->second.error_message.clear();
-            gpr_log(GPR_INFO,
-                    "ADS[%p]: client ACKed resource_type=%s version=%s", this,
-                    request.type_url().c_str(), request.version_info().c_str());
-          } else {
-            it->second.state = ResponseState::NACKED;
-            EXPECT_EQ(request.error_detail().code(),
-                      GRPC_STATUS_INVALID_ARGUMENT);
-            it->second.error_message = request.error_detail().message();
-            gpr_log(GPR_INFO,
-                    "ADS[%p]: client NACKed resource_type=%s version=%s: %s",
-                    this, request.type_url().c_str(),
-                    request.version_info().c_str(),
-                    it->second.error_message.c_str());
-          }
-        }
       }
       // Ignore resource types as requested by tests.
       if (parent_->resource_types_to_ignore_.find(v3_resource_type) !=
           parent_->resource_types_to_ignore_.end()) {
         return;
+      }
+      // Inject bad resources if needed.
+      if (parent_->inject_bad_resources_for_resource_type_ ==
+          v3_resource_type) {
+        response->emplace();
+        // Unparseable Resource wrapper.
+        auto* resource = (*response)->add_resources();
+        resource->set_type_url(
+            "type.googleapis.com/envoy.service.discovery.v3.Resource");
+        resource->set_value(std::string("\0", 1));
+        // Unparseable resource within Resource wrapper.
+        envoy::service::discovery::v3::Resource resource_wrapper;
+        resource_wrapper.set_name("foo");
+        resource = resource_wrapper.mutable_resource();
+        resource->set_type_url(v3_resource_type);
+        resource->set_value(std::string("\0", 1));
+        (*response)->add_resources()->PackFrom(resource_wrapper);
       }
       // Look at all the resource names in the request.
       auto& subscription_name_map = (*subscription_map)[v3_resource_type];
@@ -444,6 +498,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
             resource->CopyFrom(resource_state.resource.value());
             if (is_v2_) {
               resource->set_type_url(request.type_url());
+            }
+            if (parent_->wrap_resources_) {
+              envoy::service::discovery::v3::Resource resource_wrapper;
+              *resource_wrapper.mutable_resource() = std::move(*resource);
+              resource->PackFrom(resource_wrapper);
             }
           }
         } else {
@@ -511,9 +570,10 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       while (stream->Read(&request)) {
         if (!seen_first_request) {
           EXPECT_TRUE(request.has_node());
-          ASSERT_FALSE(request.node().client_features().empty());
-          EXPECT_EQ(request.node().client_features(0),
-                    "envoy.lb.does_not_support_overprovisioning");
+          EXPECT_THAT(request.node().client_features(),
+                      ::testing::UnorderedElementsAre(
+                          "envoy.lb.does_not_support_overprovisioning",
+                          "xds.config.resource-in-sotw"));
           CheckBuildVersion(request);
           seen_first_request = true;
         }
@@ -536,11 +596,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         SentState* sent_state, DiscoveryResponse* response)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
       NoopMutexLock mu(parent_->ads_mu_);
-      auto& response_state =
-          parent_->resource_type_response_state_[resource_type];
-      if (response_state.state == ResponseState::NOT_SENT) {
-        response_state.state = ResponseState::SENT;
-      }
       response->set_type_url(is_v2_ ? v2_resource_type : resource_type);
       response->set_version_info(std::to_string(version));
       response->set_nonce(std::to_string(++sent_state->nonce));
@@ -643,7 +698,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
   bool ads_done_ ABSL_GUARDED_BY(ads_mu_) = false;
-  std::map<std::string /* type_url */, ResponseState>
+  std::map<std::string /* type_url */, std::deque<ResponseState>>
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
       ABSL_GUARDED_BY(ads_mu_);
@@ -655,6 +710,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
+  absl::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
+  bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
+  std::string inject_bad_resources_for_resource_type_ ABSL_GUARDED_BY(ads_mu_);
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);
@@ -703,6 +761,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     template <class ClusterStats>
     explicit ClientStats(const ClusterStats& cluster_stats)
         : cluster_name_(cluster_stats.cluster_name()),
+          eds_service_name_(cluster_stats.cluster_service_name()),
           total_dropped_requests_(cluster_stats.total_dropped_requests()) {
       for (const auto& input_locality_stats :
            cluster_stats.upstream_locality_stats()) {
@@ -717,6 +776,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     }
 
     const std::string& cluster_name() const { return cluster_name_; }
+    const std::string& eds_service_name() const { return eds_service_name_; }
 
     const std::map<std::string, LocalityStats>& locality_stats() const {
       return locality_stats_;
@@ -735,6 +795,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 
    private:
     std::string cluster_name_;
+    std::string eds_service_name_;
     std::map<std::string, LocalityStats> locality_stats_;
     uint64_t total_dropped_requests_ = 0;
     std::map<std::string, uint64_t> dropped_requests_;
@@ -815,7 +876,8 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
           }
         }
         response.mutable_load_reporting_interval()->set_seconds(
-            parent_->client_load_reporting_interval_seconds_);
+            parent_->client_load_reporting_interval_seconds_ *
+            grpc_test_slowdown_factor());
         stream->Write(response);
         CountedService<typename RpcApi::Service>::IncreaseResponseCount();
         // Wait for report.

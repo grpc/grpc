@@ -20,10 +20,12 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
+#include "test/core/util/test_config.h"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
@@ -57,7 +59,7 @@ TEST(UnknownFrameType, Test) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int retval = RUN_ALL_TESTS();

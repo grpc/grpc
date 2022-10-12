@@ -50,9 +50,4 @@ int grpc_is_unix_socket(const grpc_resolved_address* /* addr */) {
 void grpc_unlink_if_unix_domain_socket(
     const grpc_resolved_address* /* addr */) {}
 
-std::string grpc_sockaddr_to_uri_unix_if_possible(
-    const grpc_resolved_address* /* addr */) {
-  return "";
-}
-
 #endif

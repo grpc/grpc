@@ -15,15 +15,5 @@
 
 set -ex
 
-if [ "$CONFIG" != "gcov" ] ; then exit ; fi
-
-# change to gRPC repo root
-cd "$(dirname "$0")/../../.."
-
-# Generate the csharp extension coverage report
-gcov objs/gcov/src/csharp/ext/*.o
-lcov --base-directory . --directory . -c -o coverage.info
-lcov -e coverage.info '**/src/csharp/ext/*' -o coverage.info
-genhtml -o reports/csharp_ext_coverage --num-spaces 2 \
-  -t 'gRPC C# native extension test coverage' coverage.info \
-  --rc genhtml_hi_limit=95 --rc genhtml_med_limit=80 --no-prefix
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).

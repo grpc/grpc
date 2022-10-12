@@ -66,7 +66,7 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_destroy)(grpc_pollset* pollset);
   grpc_error_handle (*pollset_work)(grpc_pollset* pollset,
                                     grpc_pollset_worker** worker,
-                                    grpc_millis deadline);
+                                    grpc_core::Timestamp deadline);
   grpc_error_handle (*pollset_kick)(grpc_pollset* pollset,
                                     grpc_pollset_worker* specific_worker);
   void (*pollset_add_fd)(grpc_pollset* pollset, struct grpc_fd* fd);
@@ -85,6 +85,9 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_del_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
   bool (*is_any_background_poller_thread)(void);
+  const char* name;
+  bool (*check_engine_available)(bool explicit_request);
+  void (*init_engine)();
   void (*shutdown_background_closure)(void);
   void (*shutdown_engine)(void);
   bool (*add_closure_to_background_poller)(grpc_closure* closure,
@@ -92,9 +95,8 @@ typedef struct grpc_event_engine_vtable {
 } grpc_event_engine_vtable;
 
 /* register a new event engine factory */
-void grpc_register_event_engine_factory(
-    const char* name, const grpc_event_engine_vtable* (*factory)(bool),
-    bool add_at_head);
+void grpc_register_event_engine_factory(const grpc_event_engine_vtable* vtable,
+                                        bool add_at_head);
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);

@@ -21,6 +21,7 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_k8s_testcase
+from framework.helpers import skips
 
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
@@ -28,6 +29,7 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
+_Lang = skips.Lang
 
 # The client generates QPS even when it is still loading information from xDS.
 # Once it finally connects there will be an outpouring of the bufferred RPCs and
@@ -44,6 +46,18 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         'UNARY_CALL': 'EMPTY_CALL',
         'EMPTY_CALL': 'UNARY_CALL',
     }
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        # Per "Authorization (RBAC)" in
+        # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
+        if config.client_lang in _Lang.CPP | _Lang.PYTHON:
+            return config.version_gte('v1.47.x')
+        elif config.client_lang in _Lang.GO | _Lang.JAVA:
+            return config.version_gte('v1.42.x')
+        elif config.client_lang == _Lang.NODE:
+            return False
+        return True
 
     def setUp(self):
         super().setUp()
@@ -185,10 +199,13 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             metadata = ((rpc_type, "test", test_metadata_val),)
         test_client.update_config.configure(rpc_types=[rpc_type],
                                             metadata=metadata)
+        # b/228743575 Python has as race. Give us time to fix it.
+        stray_rpc_limit = 1 if self.lang_spec.client_lang == _Lang.PYTHON else 0
         self.assertRpcStatusCodes(test_client,
                                   status_code=status_code,
                                   duration=_SAMPLE_DURATION,
-                                  method=rpc_type)
+                                  method=rpc_type,
+                                  stray_rpc_limit=stray_rpc_limit)
 
     def test_plaintext_allow(self) -> None:
         self.setupTrafficDirectorGrpc()

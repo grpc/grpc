@@ -20,8 +20,7 @@ There are multiple polling engine implementations depending on the OS and the OS
 
 - Linux:
 
-  - **`epollex`** (default but requires kernel version >= 4.5),
-  - `epoll1` (If `epollex` is not available and glibc version >= 2.9)
+  - `epoll1` (If glibc version >= 2.9)
   - `poll` (If kernel does not have epoll support)
 - Mac: **`poll`** (default)
 - Windows: (no name)
@@ -64,7 +63,7 @@ The following are the **Opaque** structures exposed by Polling Engine interface 
     > **NOTE**: There is no `grpc_pollset_remove_fd`. This is because calling `grpc_fd_orphan()` will effectively remove the fd from all the pollsets it’s a part of
 
 - **grpc_pollset_work**
-  - Signature: `grpc_pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker, grpc_millis deadline)`
+  - Signature: `grpc_pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker, grpc_core::Timestamp deadline)`
     > **NOTE**: `grpc_pollset_work()` requires the pollset mutex to be locked before calling it. Shortly after calling `grpc_pollset_work()`, the function populates the `*worker` pointer (among other things) and releases the mutex. Once `grpc_pollset_work()` returns, the `*worker` pointer is **invalid** and should not be used anymore. See the code in `completion_queue.cc` to see how this is used.
   - Poll the fds in the pollset for events AND return when ANY of the following is true:
     - Deadline expired
@@ -120,33 +119,12 @@ Code at `src/core/lib/iomgr/ev_epoll1_posix.cc`
 - See [`begin_worker()`](https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/ev_epoll1_linux.cc#L729) function to see how a designated poller is chosen. Similarly [`end_worker()`](https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/ev_epoll1_linux.cc#L916) function is called by the worker that was just out of `epoll_wait()` and will have to choose a new designated poller)
 
 
-### epollex
-
-![image](../images/grpc-epollex.png)
-
-Code at `src/core/lib/iomgr/ev_epollex_posix.cc`
-
-- FDs are added to multiple epollsets with EPOLLEXCLUSIVE flag. This prevents multiple worker threads from waking up from polling whenever the fd is readable/writable
-
-- A few observations:
-
-  - If multiple pollsets are pointing to the same `Pollable`, then the `pollable` MUST be either empty or of type `PO_FD` (i.e single-fd)
-  - A multi-pollable has one-and-only-one incoming link from a pollset
-  - The same FD can be in multiple `Pollable`s (even if one of the `Pollable`s is of type PO_FD)
-  - There cannot be two `Pollable`s of type PO_FD for the same fd
-
-- Why do we need `Pollable` of type PO_FD and PO_EMPTY ?
-  - The main reason is the Sync client API
-    - We create one new completion queue per call. If we didn’t have PO_EMPTY and PO_FD type pollables, then every call on a given channel will effectively have to create a `Pollable` and hence an epollset. This is because every completion queue automatically creates a pollset and the channel fd will have to be put in that pollset. This clearly requires an epollset to put that fd. Creating an epollset per call (even if we delete the epollset once the call is completed) would mean a lot of sys calls to create/delete epoll fds. This is clearly not a good idea.
-    - With these new types of `Pollable`s, all pollsets (corresponding to the new per-call completion queue) will initially point to PO_EMPTY global epollset. Then once the channel fd is added to the pollset, the pollset will point to the `Pollable` of type PO_FD containing just that fd (i.e it will reuse the existing `Pollable`). This way, the epoll fd creation/deletion churn is avoided.
-
-
 ### Other polling engine implementations (poll and windows polling engine)
 - **poll** polling engine: gRPC's `poll` polling engine is quite complicated. It uses the `poll()` function to do the polling (and hence it is for platforms like osx where epoll is not available)
   - The implementation is further complicated by the fact that poll() is level triggered (just keep this in mind in case you wonder why the code at `src/core/lib/iomgr/ev_poll_posix.cc` is written a certain/seemingly complicated way :))
 
 - **Polling engine on Windows**: Windows polling engine looks nothing like other polling engines
-  - Unlike the grpc polling engines for Unix systems (epollex, epoll1 and poll) Windows endpoint implementation and polling engine implementations are very closely tied together
+  - Unlike the grpc polling engines for Unix systems (epoll1 and poll) Windows endpoint implementation and polling engine implementations are very closely tied together
   - Windows endpoint read/write API implementations use the Windows IO API which require specifying an [I/O completion port](https://docs.microsoft.com/en-us/windows/desktop/fileio/i-o-completion-ports)
-  - In Windows polling engine’s grpc_pollset_work() implementation, ONE of the threads is chosen to wait on the I/O completion port while other threads wait on a condition variable (much like the turnstile polling in epollex/epoll1)
+  - In Windows polling engine’s grpc_pollset_work() implementation, ONE of the threads is chosen to wait on the I/O completion port while other threads wait on a condition variable (much like the turnstile polling in epoll1)
 

@@ -82,16 +82,16 @@ struct ConnectionMetrics {
   absl::optional<uint64_t> sndbuf_limited_usec;
 };
 
-struct Timestamp {
+struct BufferTimestamp {
   gpr_timespec time;
   ConnectionMetrics metrics; /* Metrics collected with this timestamp */
 };
 
 struct Timestamps {
-  Timestamp sendmsg_time;
-  Timestamp scheduled_time;
-  Timestamp sent_time;
-  Timestamp acked_time;
+  BufferTimestamp sendmsg_time;
+  BufferTimestamp scheduled_time;
+  BufferTimestamp sent_time;
+  BufferTimestamp acked_time;
 
   uint32_t byte_offset; /* byte offset relative to the start of the RPC */
 
@@ -147,9 +147,7 @@ class TracedBuffer {
  public:
   /* Phony shutdown function */
   static void Shutdown(TracedBuffer** /*head*/, void* /*remaining*/,
-                       grpc_error_handle shutdown_err) {
-    GRPC_ERROR_UNREF(shutdown_err);
-  }
+                       grpc_error_handle /*shutdown_err*/) {}
 };
 #endif /* GRPC_LINUX_ERRQUEUE */
 

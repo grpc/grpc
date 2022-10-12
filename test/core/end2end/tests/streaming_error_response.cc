@@ -19,16 +19,19 @@
 /** \file Verify that status ordering rules are obeyed.
     \ref doc/status_ordering.md */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -63,11 +66,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -85,7 +89,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Client sends a request with payload, potentially requesting status early. The
@@ -105,7 +108,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   grpc_end2end_test_fixture f =
       begin_test(config, "streaming_error_response", nullptr, nullptr,
                  request_status_early);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -160,8 +163,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -186,14 +189,14 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     GPR_ASSERT(GRPC_CALL_OK == error);
   }
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  cqv.Expect(tag(102), true);
   if (!request_status_early) {
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+    cqv.Expect(tag(1), true);
   }
   if (recv_message_separately) {
-    CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
+    cqv.Expect(tag(4), true);
   }
-  cq_verify(cqv);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -208,7 +211,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   // before the write completes, it would fail, otherwise it would succeed.
   // Since this behavior is dependent on the transport implementation, we allow
   // any success status with this op.
-  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(103));
+  cqv.Expect(tag(103), grpc_core::CqVerifier::AnyStatus());
 
   if (!request_status_early) {
     memset(ops, 0, sizeof(ops));
@@ -220,8 +223,10 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
                                   nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(2), true);
+    cqv.Verify();
+
+    GPR_ASSERT(response_payload2_recv != nullptr);
   }
 
   // Cancel the call so that the client sets up an error status.
@@ -235,11 +240,11 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
+  cqv.Expect(tag(104), true);
   if (request_status_early) {
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+    cqv.Expect(tag(1), true);
   }
-  cq_verify(cqv);
+  cqv.Verify();
 
   if (!request_status_early) {
     memset(ops, 0, sizeof(ops));
@@ -253,8 +258,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
                                   nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(3), true);
+    cqv.Verify();
 
     GPR_ASSERT(response_payload1_recv != nullptr);
     GPR_ASSERT(response_payload2_recv != nullptr);
@@ -271,8 +276,6 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(response_payload1);
   grpc_byte_buffer_destroy(response_payload2);

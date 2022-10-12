@@ -18,10 +18,10 @@
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/util/test_config.h"
@@ -52,7 +52,8 @@ TEST(ServerConfigSelectorProviderTest, CopyChannelArgs) {
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   EXPECT_EQ(server_config_selector_provider,
-            ServerConfigSelectorProvider::GetFromChannelArgs(*args));
+            grpc_core::ChannelArgs::FromC(args)
+                .GetObject<ServerConfigSelectorProvider>());
   grpc_channel_args_destroy(args);
 }
 
@@ -63,8 +64,10 @@ TEST(ServerConfigSelectorProviderTest, ChannelArgsCompare) {
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   grpc_channel_args* new_args = grpc_channel_args_copy(args);
-  EXPECT_EQ(ServerConfigSelectorProvider::GetFromChannelArgs(*new_args),
-            ServerConfigSelectorProvider::GetFromChannelArgs(*args));
+  EXPECT_EQ(grpc_core::ChannelArgs::FromC(new_args)
+                .GetObject<ServerConfigSelectorProvider>(),
+            grpc_core::ChannelArgs::FromC(args)
+                .GetObject<ServerConfigSelectorProvider>());
   grpc_channel_args_destroy(args);
   grpc_channel_args_destroy(new_args);
 }
@@ -75,7 +78,7 @@ TEST(ServerConfigSelectorProviderTest, ChannelArgsCompare) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

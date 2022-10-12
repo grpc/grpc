@@ -19,21 +19,21 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_type_v3_range_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_range_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_type_v3_Int64Range_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_v3_range_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.v3.Int64Range");
+UPB_INLINE const upb_MessageDef *envoy_type_v3_Int64Range_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_v3_range_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.v3.Int64Range");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_v3_Int32Range_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_v3_range_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.v3.Int32Range");
+UPB_INLINE const upb_MessageDef *envoy_type_v3_Int32Range_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_v3_range_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.v3.Int32Range");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_v3_DoubleRange_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_v3_range_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.v3.DoubleRange");
+UPB_INLINE const upb_MessageDef *envoy_type_v3_DoubleRange_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_v3_range_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.v3.DoubleRange");
 }
 
 #ifdef __cplusplus

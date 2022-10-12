@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/usr/bin/env bash
-#
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
-
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
-cd /var/local/git/grpc
+set -ex
 
 echo $ANDROID_HOME
 echo $ANDROID_NDK_HOME
@@ -32,7 +23,11 @@ echo $ANDROID_NDK_HOME
 # CPU are specified because gRPC does not build with 32bit NDK (which has socklen_t
 # defined as int due to an accident).
 # The python option is for disabling python2 enforcement when packing APK
-bazel build --define=use_strict_warning=true \
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_binder_example_app
+bazel_binder_example_app/bazel_wrapper \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  build \
+  --define=use_strict_warning=true \
   --fat_apk_cpu=x86_64,arm64-v8a \
   --extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app \
@@ -40,5 +35,9 @@ bazel build --define=use_strict_warning=true \
 
 # Make sure the Java code that will be invoked by binder transport
 # implementation builds
-bazel build --define=use_strict_warning=true \
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_binder_connection_helper
+bazel_binder_connection_helper/bazel_wrapper \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  build \
+  --define=use_strict_warning=true \
   @binder_transport_android_helper//io/grpc/binder/cpp:connection_helper

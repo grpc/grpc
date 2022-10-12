@@ -15,20 +15,22 @@
 
 #include "upb/port_def.inc"
 
-const upb_msglayout envoy_service_discovery_v3_AdsDummy_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_AdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_service_discovery_v3_AdsDummy_msginit,
 };
 
-const upb_msglayout_file envoy_service_discovery_v3_ads_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_service_discovery_v3_ads_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

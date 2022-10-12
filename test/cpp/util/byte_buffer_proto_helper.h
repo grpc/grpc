@@ -27,13 +27,12 @@
 namespace grpc {
 namespace testing {
 
-bool ParseFromByteBuffer(ByteBuffer* buffer,
-                         ::grpc::protobuf::Message* message);
+bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message);
 
 std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    ::grpc::protobuf::Message* message);
+    grpc::protobuf::Message* message);
 
-bool SerializeToByteBufferInPlace(::grpc::protobuf::Message* message,
+bool SerializeToByteBufferInPlace(grpc::protobuf::Message* message,
                                   ByteBuffer* buffer);
 
 }  // namespace testing

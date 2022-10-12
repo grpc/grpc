@@ -32,9 +32,9 @@ class EvaluateArgsTest : public ::testing::Test {
 
 TEST_F(EvaluateArgsTest, EmptyMetadata) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetPath(), nullptr);
-  EXPECT_EQ(args.GetMethod(), nullptr);
-  EXPECT_EQ(args.GetHost(), nullptr);
+  EXPECT_THAT(args.GetPath(), ::testing::IsEmpty());
+  EXPECT_THAT(args.GetMethod(), ::testing::IsEmpty());
+  EXPECT_THAT(args.GetAuthority(), ::testing::IsEmpty());
   EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
@@ -44,10 +44,10 @@ TEST_F(EvaluateArgsTest, GetPathSuccess) {
   EXPECT_EQ(args.GetPath(), "/expected/path");
 }
 
-TEST_F(EvaluateArgsTest, GetHostSuccess) {
-  util_.AddPairToMetadata("host", "host123");
+TEST_F(EvaluateArgsTest, GetAuthoritySuccess) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetHost(), "host123");
+  EXPECT_EQ(args.GetAuthority(), "test.google.com");
 }
 
 TEST_F(EvaluateArgsTest, GetMethodSuccess) {
@@ -66,12 +66,22 @@ TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
   EXPECT_EQ(value.value(), "value123");
 }
 
+TEST_F(EvaluateArgsTest, GetHeaderValueAliasesHost) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      args.GetHeaderValue("host", &concatenated_value);
+  ASSERT_TRUE(value.has_value());
+  EXPECT_EQ(value.value(), "test.google.com");
+}
+
 TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
   util_.SetLocalEndpoint("ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   grpc_resolved_address local_address = args.GetLocalAddress();
-  EXPECT_EQ(grpc_sockaddr_to_uri(&local_address),
-            "ipv6:[2001:db8:85a3::8a2e:370:7334]:456");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&local_address).value(),
+            "ipv6:%5B2001:db8:85a3::8a2e:370:7334%5D:456");
   EXPECT_EQ(args.GetLocalAddressString(),
             "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
   EXPECT_EQ(args.GetLocalPort(), 456);
@@ -81,7 +91,8 @@ TEST_F(EvaluateArgsTest, TestPeerAddressAndPort) {
   util_.SetPeerEndpoint("ipv4:255.255.255.255:123");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   grpc_resolved_address peer_address = args.GetPeerAddress();
-  EXPECT_EQ(grpc_sockaddr_to_uri(&peer_address), "ipv4:255.255.255.255:123");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&peer_address).value(),
+            "ipv4:255.255.255.255:123");
   EXPECT_EQ(args.GetPeerAddressString(), "255.255.255.255");
   EXPECT_EQ(args.GetPeerPort(), 123);
 }
@@ -171,7 +182,7 @@ TEST_F(EvaluateArgsTest, GetSubjectFailDuplicateProperty) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

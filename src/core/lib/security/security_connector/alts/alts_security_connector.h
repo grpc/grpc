@@ -18,14 +18,17 @@
 
 #ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_ALTS_ALTS_SECURITY_CONNECTOR_H
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_ALTS_ALTS_SECURITY_CONNECTOR_H
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #define GRPC_ALTS_TRANSPORT_SECURITY_TYPE "alts"
-#define GRPC_ALTS_URL_SCHEME "https"
 
 /**
  * This method creates an ALTS channel security connector.

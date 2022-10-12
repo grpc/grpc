@@ -16,21 +16,25 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <string>
 
-#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -39,6 +43,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
+  gpr_log(GPR_INFO, "%s", std::string(100, '*').c_str());
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
@@ -63,11 +68,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -85,7 +91,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void check_peer(char* peer_name) {
@@ -100,7 +105,7 @@ static void simple_request_body(grpc_end2end_test_config config,
                                 grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -113,14 +118,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
   char* peer;
-  grpc_stats_data* before =
-      static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
-  grpc_stats_data* after =
-      static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
 
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
-  grpc_stats_collect(before);
-#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
+  auto before = grpc_core::global_stats().Collect();
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -170,8 +169,8 @@ static void simple_request_body(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -208,9 +207,9 @@ static void simple_request_body(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -223,7 +222,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_message"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
@@ -236,27 +234,19 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_call_unref(c);
   grpc_call_unref(s);
 
-  cq_verifier_destroy(cqv);
-
-  int expected_calls = 1;
+  uint64_t expected_calls = 1;
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
 
-  grpc_stats_collect(after);
+  auto after = grpc_core::global_stats().Collect();
 
-  gpr_log(GPR_DEBUG, "%s", grpc_stats_data_as_json(after).c_str());
+  gpr_log(GPR_DEBUG, "%s", grpc_core::StatsAsJson(after.get()).c_str());
 
-  GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] -
-                 before->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] ==
+  GPR_ASSERT(after->client_calls_created - before->client_calls_created ==
              expected_calls);
-  GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] -
-                 before->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] ==
+  GPR_ASSERT(after->server_calls_created - before->server_calls_created ==
              expected_calls);
-#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
-  gpr_free(before);
-  gpr_free(after);
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config) {

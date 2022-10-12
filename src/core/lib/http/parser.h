@@ -21,6 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <grpc/slice.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -38,8 +41,18 @@ typedef struct grpc_http_header {
 typedef enum {
   GRPC_HTTP_FIRST_LINE,
   GRPC_HTTP_HEADERS,
-  GRPC_HTTP_BODY
+  GRPC_HTTP_BODY,
+  GRPC_HTTP_TRAILERS,
+  GRPC_HTTP_END,
 } grpc_http_parser_state;
+
+typedef enum {
+  GRPC_HTTP_CHUNKED_PLAIN,
+  GRPC_HTTP_CHUNKED_LENGTH,
+  GRPC_HTTP_CHUNKED_IGNORE_ALL_UNTIL_LF,
+  GRPC_HTTP_CHUNKED_BODY,
+  GRPC_HTTP_CHUNKED_CONSUME_LF,
+} grpc_http_parser_chunked_state;
 
 typedef enum {
   GRPC_HTTP_HTTP10,
@@ -56,7 +69,7 @@ typedef enum {
 typedef struct grpc_http_request {
   /* Method of the request (e.g. GET, POST) */
   char* method;
-  /* The path of the resource to fetch */
+  /* The path of the resource to fetch (only used for parsed requests) */
   char* path;
   /* HTTP version to use */
   grpc_http_version version;
@@ -77,6 +90,9 @@ typedef struct grpc_http_response {
   grpc_http_header* hdrs = nullptr;
   /* Body: length and contents; contents are NOT null-terminated */
   size_t body_length = 0;
+  /* State of the chunked parser. Only valid for the response. */
+  grpc_http_parser_chunked_state chunked_state = GRPC_HTTP_CHUNKED_PLAIN;
+  size_t chunk_length = 0;
   char* body = nullptr;
 } grpc_http_response;
 

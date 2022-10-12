@@ -99,7 +99,7 @@ class GenericEnd2endTest : public ::testing::Test {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
-    generic_stub_ = absl::make_unique<GenericStub>(channel);
+    generic_stub_ = std::make_unique<GenericStub>(channel);
   }
 
   void server_ok(int i) { verify_ok(srv_cq_.get(), i, true); }
@@ -229,7 +229,7 @@ class GenericEnd2endTest : public ::testing::Test {
         switch (event) {
           case Event::kCallReceived:
             reader_writer.Finish(
-                ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "go away"),
+                grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "go away"),
                 reinterpret_cast<void*>(Event::kResponseSent));
             break;
 
@@ -425,7 +425,7 @@ TEST_F(GenericEnd2endTest, ShortDeadline) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

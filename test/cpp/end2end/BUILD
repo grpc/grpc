@@ -28,9 +28,11 @@ grpc_cc_library(
     hdrs = ["test_service_impl.h"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     deps = [
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -57,6 +59,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "connection_attempt_injector",
+    testonly = True,
+    srcs = ["connection_attempt_injector.cc"],
+    hdrs = ["connection_attempt_injector.h"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
     name = "interceptors_util",
     testonly = True,
     srcs = ["interceptors_util.cc"],
@@ -67,6 +79,21 @@ grpc_cc_library(
     deps = [
         "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "rls_server",
+    testonly = True,
+    srcs = ["rls_server.cc"],
+    hdrs = ["rls_server.h"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":counted_service",
+        "//src/proto/grpc/lookup/v1:rls_proto",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -125,7 +152,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/161828686)
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
@@ -463,10 +489,13 @@ grpc_cc_test(
     flaky = True,  # TODO(b/151315347)
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
+        ":connection_attempt_injector",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpcpp_orca_interceptor",
+        "//:grpcpp_orca_service",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -484,9 +513,11 @@ grpc_cc_test(
         "gtest",
         "absl/types:optional",
     ],
+    flaky = True,
     tags = ["no_test_ios"],
     deps = [
         ":counted_service",
+        ":rls_server",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -853,8 +884,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "sdk_authz_end2end_test",
-    srcs = ["sdk_authz_end2end_test.cc"],
+    name = "grpc_authz_end2end_test",
+    srcs = ["grpc_authz_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
@@ -866,6 +904,45 @@ grpc_cc_test(
         "//:grpc++_authorization_provider",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "tls_key_export_test",
+    srcs = ["tls_key_export_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "orca_service_end2end_test",
+    srcs = ["orca_service_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//:grpcpp_orca_service",
+        "//src/proto/grpc/testing/xds/v3:orca_service_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

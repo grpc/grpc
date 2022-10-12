@@ -22,12 +22,13 @@
 #include <limits>
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -81,14 +82,14 @@ class ObservableState {
   }
 
   Poll<absl::optional<T>> PollGet(ObservableVersion* version_seen) {
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     if (!Started()) return Pending();
     *version_seen = version_;
     return value_;
   }
 
   Poll<absl::optional<T>> PollNext(ObservableVersion* version_seen) {
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     if (!NextValueReady(version_seen)) return Pending();
     return value_;
   }
@@ -96,7 +97,7 @@ class ObservableState {
   Poll<absl::optional<T>> PollWatch(ObservableVersion* version_seen) {
     if (*version_seen == kTombstoneVersion) return Pending();
 
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     if (!NextValueReady(version_seen)) return Pending();
     // Watch needs to be woken up if the value changes even if it's ready now.
     waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
@@ -131,7 +132,7 @@ class ObservableState {
     return true;
   }
 
-  absl::Mutex mu_;
+  Mutex mu_;
   WaitSet waiters_ ABSL_GUARDED_BY(mu_);
   ObservableVersion version_ ABSL_GUARDED_BY(mu_) = 1;
   absl::optional<T> value_ ABSL_GUARDED_BY(mu_);
@@ -172,8 +173,8 @@ class ObservableNext {
 template <typename T, typename F>
 class ObservableWatch final : private WatchCommitter {
  private:
-  using Promise = PromiseLike<decltype(
-      std::declval<F>()(std::declval<T>(), std::declval<WatchCommitter*>()))>;
+  using Promise = PromiseLike<decltype(std::declval<F>()(
+      std::declval<T>(), std::declval<WatchCommitter*>()))>;
   using Result = typename Promise::Result;
 
  public:

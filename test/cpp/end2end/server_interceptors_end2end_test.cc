@@ -48,8 +48,6 @@ namespace {
 class LoggingInterceptor : public experimental::Interceptor {
  public:
   explicit LoggingInterceptor(experimental::ServerRpcInfo* info) {
-    info_ = info;
-
     // Check the method name and compare to the type
     const char* method = info->method();
     experimental::ServerRpcInfo::Type type = info->type();
@@ -133,9 +131,6 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     methods->Proceed();
   }
-
- private:
-  experimental::ServerRpcInfo* info_;
 };
 
 class LoggingInterceptorFactory
@@ -254,8 +249,8 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
             new LoggingInterceptorFactory()));
     // Add 20 phony interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
-      creators.push_back(absl::make_unique<NullInterceptorFactory>());
+      creators.push_back(std::make_unique<PhonyInterceptorFactory>());
+      creators.push_back(std::make_unique<NullInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -298,7 +293,7 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+      creators.push_back(std::make_unique<PhonyInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -354,7 +349,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -403,7 +398,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
@@ -426,7 +421,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -485,7 +480,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
@@ -506,7 +501,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto srv_cq = builder.AddCompletionQueue();
@@ -591,7 +586,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   void* ignored_tag;
   bool ignored_ok;
   while (cli_cq.Next(&ignored_tag, &ignored_ok)) {
@@ -611,7 +606,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -640,7 +635,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
@@ -664,7 +659,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto server = builder.BuildAndStart();
@@ -688,7 +683,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   grpc_recycle_unused_port(port);
 }
 
@@ -697,7 +692,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

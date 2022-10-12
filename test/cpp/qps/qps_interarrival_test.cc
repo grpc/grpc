@@ -52,7 +52,7 @@ static void RunTest(RandomDistInterface&& r, int threads,
 using grpc::testing::ExpDist;
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
   RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));

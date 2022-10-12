@@ -10,11 +10,11 @@
 #include "envoy/type/matcher/v3/struct.upbdefs.h"
 #include "envoy/type/matcher/v3/struct.upb.h"
 
-extern upb_def_init envoy_type_matcher_v3_value_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[576] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 's', 
+extern _upb_DefPool_Init envoy_type_matcher_v3_value_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[649] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 's', 
 't', 'r', 'u', 'c', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 
 'a', 't', 'c', 'h', 'e', 'r', '.', 'v', '3', '\032', '!', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 
 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'v', 'a', 'l', 'u', 'e', '.', 'p', 'r', 'o', 't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', 
@@ -34,13 +34,15 @@ static const char descriptor[576] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', '
 't', 'r', 'u', 'c', 't', 'M', 'a', 't', 'c', 'h', 'e', 'r', '.', 'P', 'a', 't', 'h', 'S', 'e', 'g', 'm', 'e', 'n', 't', 'B', 
 '\016', '\n', '\007', 's', 'e', 'g', 'm', 'e', 'n', 't', '\022', '\003', '\370', 'B', '\001', ':', '\'', '\232', '\305', '\210', '\036', '\"', '\n', ' ', 'e', 
 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 'h', 'e', 'r', '.', 'S', 't', 'r', 'u', 'c', 't', 'M', 
-'a', 't', 'c', 'h', 'e', 'r', 'B', '<', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 
-'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 'h', 'e', 'r', '.', 'v', '3', 'B', '\013', 'S', 't', 'r', 
-'u', 'c', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', 
-'3', 
+'a', 't', 'c', 'h', 'e', 'r', 'B', '\204', '\001', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 
+'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 'h', 'e', 'r', '.', 'v', '3', 'B', '\013', 'S', 't', 
+'r', 'u', 'c', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'F', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 
+'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 
+'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', ';', 'm', 
+'a', 't', 'c', 'h', 'e', 'r', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[5] = {
+static _upb_DefPool_Init *deps[5] = {
   &envoy_type_matcher_v3_value_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
@@ -48,9 +50,9 @@ static upb_def_init *deps[5] = {
   NULL
 };
 
-upb_def_init envoy_type_matcher_v3_struct_proto_upbdefinit = {
+_upb_DefPool_Init envoy_type_matcher_v3_struct_proto_upbdefinit = {
   deps,
   &envoy_type_matcher_v3_struct_proto_upb_file_layout,
   "envoy/type/matcher/v3/struct.proto",
-  UPB_STRVIEW_INIT(descriptor, 576)
+  UPB_STRINGVIEW_INIT(descriptor, 649)
 };

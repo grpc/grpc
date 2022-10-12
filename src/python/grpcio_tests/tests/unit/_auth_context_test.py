@@ -20,7 +20,6 @@ import unittest
 import grpc
 from grpc import _channel
 from grpc.experimental import session_cache
-import six
 
 from tests.unit import resources
 from tests.unit import test_common
@@ -78,7 +77,11 @@ class AuthContextTest(unittest.TestCase):
         auth_data = pickle.loads(response)
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
-        self.assertDictEqual({}, auth_data[_AUTH_CTX])
+        self.assertDictEqual(
+            {
+                'security_level': [b'TSI_SECURITY_NONE'],
+                'transport_security_type': [b'insecure'],
+            }, auth_data[_AUTH_CTX])
 
     def testSecureNoCert(self):
         handler = grpc.method_handlers_generic_handler('test', {
@@ -138,7 +141,7 @@ class AuthContextTest(unittest.TestCase):
 
         auth_data = pickle.loads(response)
         auth_ctx = auth_data[_AUTH_CTX]
-        six.assertCountEqual(self, _CLIENT_IDS, auth_data[_ID])
+        self.assertCountEqual(_CLIENT_IDS, auth_data[_ID])
         self.assertEqual('x509_subject_alternative_name', auth_data[_ID_KEY])
         self.assertSequenceEqual([b'ssl'], auth_ctx['transport_security_type'])
         self.assertSequenceEqual([b'*.test.google.com'],

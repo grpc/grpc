@@ -28,12 +28,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
-
-#include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {

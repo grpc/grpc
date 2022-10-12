@@ -20,12 +20,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
-#include <cassert>
-#include <cinttypes>
+#include <cstdint>
 
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"

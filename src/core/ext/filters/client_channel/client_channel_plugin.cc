@@ -18,55 +18,24 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <limits.h>
-#include <stdbool.h>
-#include <string.h>
-
-#include <grpc/support/alloc.h>
-
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
-#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
-#include "src/core/ext/filters/client_channel/http_proxy.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
-#include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-
-void grpc_client_channel_init(void) {
-  grpc_core::internal::ClientChannelServiceConfigParser::Register();
-  grpc_core::internal::RetryServiceConfigParser::Register();
-  grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
-  grpc_core::ResolverRegistry::Builder::InitRegistry();
-  grpc_core::internal::ServerRetryThrottleMap::Init();
-  grpc_core::ProxyMapperRegistry::Init();
-  grpc_core::RegisterHttpProxyMapper();
-  grpc_core::GlobalSubchannelPool::Init();
-  grpc_client_channel_global_init_backup_polling();
-}
-
-void grpc_client_channel_shutdown(void) {
-  grpc_core::GlobalSubchannelPool::Shutdown();
-  grpc_core::ProxyMapperRegistry::Shutdown();
-  grpc_core::internal::ServerRetryThrottleMap::Shutdown();
-  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
-  grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
-}
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
 
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
-  RegisterHttpConnectHandshaker(builder);
+  internal::ClientChannelServiceConfigParser::Register(builder);
+  internal::RetryServiceConfigParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        return grpc_channel_stack_builder_append_filter(
-            builder, &ClientChannel::kFilterVtable, nullptr, nullptr);
+      [](ChannelStackBuilder* builder) {
+        builder->AppendFilter(&ClientChannel::kFilterVtable);
+        return true;
       });
 }
 

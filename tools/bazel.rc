@@ -2,6 +2,7 @@
 
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
+build --cxxopt='-std=c++14'
 build --action_env=GRPC_BAZEL_RUNTIME=1
 build --define=use_fast_cpp_protos=true
 
@@ -10,6 +11,10 @@ build:opt --copt=-Wframe-larger-than=16384
 
 build:dbg --compilation_mode=dbg
 build:dbg --copt=-Werror=return-stack-address
+
+# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
+# https://github.com/bazelbuild/bazel/issues/9190
+build:macos --dynamic_mode=off
 
 build:windows_opt --compilation_mode=opt
 build:windows_dbg --compilation_mode=dbg
@@ -57,6 +62,7 @@ build:asan_macos --copt=-fno-omit-frame-pointer
 build:asan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan_macos --linkopt=-fsanitize=address
 build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
+build:asan_macos --dynamic_mode=off
 
 build:msan --strip=never
 build:msan --copt=-fsanitize=memory
@@ -79,6 +85,16 @@ build:tsan --linkopt=-fsanitize=thread
 build:tsan --test_env=TSAN_OPTIONS=report_atomic_races=0
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
+build:tsan_macos --strip=never
+build:tsan_macos --copt=-fsanitize=thread
+build:tsan_macos --copt=-fno-omit-frame-pointer
+build:tsan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
+build:tsan_macos --copt=-DGRPC_TSAN
+build:tsan_macos --linkopt=-fsanitize=thread
+build:tsan_macos --test_env=TSAN_OPTIONS=report_atomic_races=0
+build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+build:tsan_macos --dynamic_mode=off
+
 build:ubsan --strip=never
 build:ubsan --copt=-fsanitize=undefined
 build:ubsan --copt=-fsanitize-link-c++-runtime
@@ -99,30 +115,9 @@ build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppre
 # build:ubsan --linkopt=-lubsan
 # build:ubsan --linkopt=--rtlib=compiler-rt
 
-build:basicprof --strip=never
-build:basicprof --copt=-DNDEBUG
-build:basicprof --copt=-O2
-build:basicprof --copt=-DGRPC_BASIC_PROFILER
-build:basicprof --copt=-DGRPC_TIMERS_RDTSC
-
 build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"
 
 build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
-
-# "counters" config is based on a legacy config provided by the Makefile (see definition in build_handwritten.yaml).
-# It is only used in microbenchmarks.
-# TODO(jtattermusch): get rid of the "counters" config when possible
-build:counters --compilation_mode=opt
-build:counters --copt=-Wframe-larger-than=16384
-build:counters --copt=-DGPR_LOW_LEVEL_COUNTERS
-
-# "mutrace" config is based on a legacy config provided by the Makefile (see definition in build_handwritten.yaml).
-# It is only used in microbenchmarks (see tools/run_tests/run_microbenchmark.py)
-# TODO(jtattermusch): get rid of the "mutrace" config when possible
-build:mutrace --copt=-O3
-build:mutrace --copt=-fno-omit-frame-pointer
-build:mutrace --copt=-DNDEBUG
-build:mutrace --linkopt=-rdynamic
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb --features=-layering_check

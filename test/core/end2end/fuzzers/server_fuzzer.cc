@@ -16,13 +16,27 @@
  *
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
@@ -35,7 +49,6 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
@@ -52,17 +65,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
-    const grpc_channel_args* channel_args =
-        grpc_core::CoreConfiguration::Get()
-            .channel_args_preconditioning()
-            .PreconditionChannelArgs(nullptr);
+    grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
+                                              .channel_args_preconditioning()
+                                              .PreconditionChannelArgs(nullptr);
     grpc_transport* transport =
         grpc_create_chttp2_transport(channel_args, mock_endpoint, false);
     grpc_resource_quota_unref(resource_quota);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport", grpc_core::Server::FromC(server)->SetupTransport(
                               transport, nullptr, channel_args, nullptr)));
-    grpc_channel_args_destroy(channel_args);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_call* call1 = nullptr;
@@ -102,7 +113,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
-    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 5000;
+    grpc_core::Timestamp deadline =
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(5);
     for (int i = 0; i <= requested_calls; i++) {
       // A single grpc_completion_queue_next might not be sufficient for getting
       // the tag from shutdown, because we might potentially get blocked by
@@ -118,7 +130,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_OP_COMPLETE &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
@@ -128,7 +140,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_QUEUE_SHUTDOWN &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_server_destroy(server);

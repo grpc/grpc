@@ -19,7 +19,7 @@
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 
 bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
-    grpc_gcp_HandshakerResp* resp, upb_arena* arena, uint32_t max_major,
+    grpc_gcp_HandshakerResp* resp, upb_Arena* arena, uint32_t max_major,
     uint32_t max_minor, uint32_t min_major, uint32_t min_minor) {
   if (resp == nullptr) {
     gpr_log(GPR_ERROR,
@@ -42,9 +42,9 @@ bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
 }
 
 grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
-                                                       upb_arena* arena) {
+                                                       upb_Arena* arena) {
   size_t buf_size = GPR_SLICE_LENGTH(slice);
-  void* buf = upb_arena_malloc(arena, buf_size);
+  void* buf = upb_Arena_Malloc(arena, buf_size);
   memcpy(buf, reinterpret_cast<const char*>(GPR_SLICE_START_PTR(slice)),
          buf_size);
   grpc_gcp_HandshakerReq* resp = grpc_gcp_HandshakerReq_parse(
@@ -67,13 +67,13 @@ static bool handshaker_identity_equals(const grpc_gcp_Identity* l_id,
   }
 
   if (grpc_gcp_Identity_has_service_account(l_id)) {
-    if (!upb_strview_eql(grpc_gcp_Identity_service_account(l_id),
-                         grpc_gcp_Identity_service_account(r_id))) {
+    if (!upb_StringView_IsEqual(grpc_gcp_Identity_service_account(l_id),
+                                grpc_gcp_Identity_service_account(r_id))) {
       return false;
     }
   } else if (grpc_gcp_Identity_has_hostname(l_id)) {
-    if (!upb_strview_eql(grpc_gcp_Identity_hostname(l_id),
-                         grpc_gcp_Identity_hostname(r_id))) {
+    if (!upb_StringView_IsEqual(grpc_gcp_Identity_hostname(l_id),
+                                grpc_gcp_Identity_hostname(r_id))) {
       return false;
     }
   }
@@ -104,8 +104,8 @@ static bool handshaker_rpc_versions_equals(
 /* Check equality of a pair of ALTS handshake responses. */
 bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
                                      const grpc_gcp_HandshakerResp* r_resp) {
-  return upb_strview_eql(grpc_gcp_HandshakerResp_out_frames(l_resp),
-                         grpc_gcp_HandshakerResp_out_frames(r_resp)) &&
+  return upb_StringView_IsEqual(grpc_gcp_HandshakerResp_out_frames(l_resp),
+                                grpc_gcp_HandshakerResp_out_frames(r_resp)) &&
          (grpc_gcp_HandshakerResp_bytes_consumed(l_resp) ==
           grpc_gcp_HandshakerResp_bytes_consumed(l_resp)) &&
          grpc_gcp_handshaker_resp_result_equals(
@@ -126,13 +126,14 @@ bool grpc_gcp_handshaker_resp_result_equals(
              (l_result == nullptr && r_result != nullptr)) {
     return false;
   }
-  return upb_strview_eql(
+  return upb_StringView_IsEqual(
              grpc_gcp_HandshakerResult_application_protocol(l_result),
              grpc_gcp_HandshakerResult_application_protocol(r_result)) &&
-         upb_strview_eql(grpc_gcp_HandshakerResult_record_protocol(l_result),
-                         grpc_gcp_HandshakerResult_record_protocol(r_result)) &&
-         upb_strview_eql(grpc_gcp_HandshakerResult_key_data(l_result),
-                         grpc_gcp_HandshakerResult_key_data(r_result)) &&
+         upb_StringView_IsEqual(
+             grpc_gcp_HandshakerResult_record_protocol(l_result),
+             grpc_gcp_HandshakerResult_record_protocol(r_result)) &&
+         upb_StringView_IsEqual(grpc_gcp_HandshakerResult_key_data(l_result),
+                                grpc_gcp_HandshakerResult_key_data(r_result)) &&
          handshaker_identity_equals(
              grpc_gcp_HandshakerResult_peer_identity(l_result),
              grpc_gcp_HandshakerResult_peer_identity(r_result)) &&
@@ -158,6 +159,6 @@ bool grpc_gcp_handshaker_resp_status_equals(
   }
   return (grpc_gcp_HandshakerStatus_code(l_status) ==
           grpc_gcp_HandshakerStatus_code(r_status)) &&
-         upb_strview_eql(grpc_gcp_HandshakerStatus_details(l_status),
-                         grpc_gcp_HandshakerStatus_details(r_status));
+         upb_StringView_IsEqual(grpc_gcp_HandshakerStatus_details(l_status),
+                                grpc_gcp_HandshakerStatus_details(r_status));
 }

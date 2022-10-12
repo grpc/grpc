@@ -19,15 +19,20 @@
 #include <inttypes.h>
 #include <unistd.h>
 
+#include <atomic>
+#include <string>
+
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/time.h>
 
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/test_config.h"
 
-static int unique = 1;
+static std::atomic<int> unique{1};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
     const grpc_channel_args* /*client_args*/,
@@ -65,7 +70,7 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {

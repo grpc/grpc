@@ -174,7 +174,7 @@ class CallbackUnaryClient final : public CallbackClient {
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_[vector_idx]->alarm_ == nullptr) {
-        ctx_[vector_idx]->alarm_ = absl::make_unique<Alarm>();
+        ctx_[vector_idx]->alarm_ = std::make_unique<Alarm>();
       }
       ctx_[vector_idx]->alarm_->Set(next_issue_time,
                                     [this, t, vector_idx](bool /*ok*/) {
@@ -186,7 +186,6 @@ class CallbackUnaryClient final : public CallbackClient {
   }
 
   void IssueUnaryCallbackRpc(Thread* t, size_t vector_idx) {
-    GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
     ctx_[vector_idx]->stub_->async()->UnaryCall(
         (&ctx_[vector_idx]->context_), &request_, &ctx_[vector_idx]->response_,
@@ -204,7 +203,7 @@ class CallbackUnaryClient final : public CallbackClient {
             NotifyMainThreadOfThreadCompletion();
           } else {
             // Reallocate ctx for next RPC
-            ctx_[vector_idx] = absl::make_unique<CallbackClientRpcContext>(
+            ctx_[vector_idx] = std::make_unique<CallbackClientRpcContext>(
                 ctx_[vector_idx]->stub_);
             // Schedule a new RPC
             ScheduleRpc(t, vector_idx);
@@ -310,7 +309,7 @@ class CallbackStreamingPingPongReactor final
       client_->NotifyMainThreadOfThreadCompletion();
       return;
     }
-    ctx_ = absl::make_unique<CallbackClientRpcContext>(ctx_->stub_);
+    ctx_ = std::make_unique<CallbackClientRpcContext>(ctx_->stub_);
     ScheduleRpc();
   }
 
@@ -320,7 +319,7 @@ class CallbackStreamingPingPongReactor final
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_->alarm_ == nullptr) {
-        ctx_->alarm_ = absl::make_unique<Alarm>();
+        ctx_->alarm_ = std::make_unique<Alarm>();
       }
       ctx_->alarm_->Set(next_issue_time,
                         [this](bool /*ok*/) { StartNewRpc(); });

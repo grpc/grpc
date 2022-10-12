@@ -13,24 +13,26 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_field envoy_config_core_v3_ProxyProtocolConfig__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolConfig__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_core_v3_ProxyProtocolConfig_msginit = {
+const upb_MiniTable envoy_config_core_v3_ProxyProtocolConfig_msginit = {
   NULL,
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_config_core_v3_ProxyProtocolConfig_msginit,
 };
 
-const upb_msglayout_file envoy_config_core_v3_proxy_protocol_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_config_core_v3_proxy_protocol_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

@@ -27,6 +27,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/cpp/server/load_reporter/constants.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -477,7 +478,7 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

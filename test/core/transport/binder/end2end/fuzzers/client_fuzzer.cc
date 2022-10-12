@@ -36,7 +36,6 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args*) {}
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
@@ -46,7 +45,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_transport* client_transport = grpc_create_binder_transport_client(
-        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+        std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
             input.incoming_parcels()),
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
@@ -55,13 +54,14 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         const_cast<char*>("test-authority"));
     grpc_channel_args* args =
         grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
-                                                .channel_args_preconditioning()
-                                                .PreconditionChannelArgs(args);
-    grpc_channel* channel = grpc_channel_create("test-target", channel_args,
-                                                GRPC_CLIENT_DIRECT_CHANNEL,
-                                                client_transport, nullptr);
-    grpc_channel_args_destroy(channel_args);
+    auto channel_args = grpc_core::CoreConfiguration::Get()
+                            .channel_args_preconditioning()
+                            .PreconditionChannelArgs(args);
+    auto channel =
+        grpc_core::Channel::Create("test-target", channel_args,
+                                   GRPC_CLIENT_DIRECT_CHANNEL, client_transport)
+            ->release()
+            ->c_ptr();
     grpc_channel_args_destroy(args);
     grpc_slice host = grpc_slice_from_static_string("localhost");
     grpc_call* call = grpc_channel_create_call(

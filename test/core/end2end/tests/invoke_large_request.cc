@@ -16,21 +16,26 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <string>
-
-#include "absl/strings/str_format.h"
+#include <vector>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
+#include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -59,11 +64,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -81,42 +87,35 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static grpc_slice large_slice(void) {
-  grpc_slice slice = grpc_slice_malloc(1000000);
+static grpc_slice make_slice(int message_size) {
+  GPR_ASSERT(message_size > 0);
+  grpc_slice slice = grpc_slice_malloc(message_size);
   memset(GRPC_SLICE_START_PTR(slice), 'x', GRPC_SLICE_LENGTH(slice));
   return slice;
 }
 
 static void test_invoke_large_request(grpc_end2end_test_config config,
-                                      int max_frame_size, int lookahead_bytes) {
-  std::string name = absl::StrFormat(
-      "test_invoke_large_request:max_frame_size=%d:lookahead_bytes=%d",
-      max_frame_size, lookahead_bytes);
-
-  grpc_arg args[2];
+                                      int message_size) {
+  grpc_arg args[1];
   args[0].type = GRPC_ARG_INTEGER;
-  args[0].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_FRAME_SIZE);
-  args[0].value.integer = max_frame_size;
-  args[1].type = GRPC_ARG_INTEGER;
-  args[1].key = const_cast<char*>(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
-  args[1].value.integer = lookahead_bytes;
+  args[0].key = const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+  args[0].value.integer = message_size;
   grpc_channel_args channel_args = {GPR_ARRAY_SIZE(args), args};
 
-  grpc_end2end_test_fixture f =
-      begin_test(config, name.c_str(), &channel_args, &channel_args);
+  grpc_end2end_test_fixture f = begin_test(config, "test_invoke_large_request",
+                                           &channel_args, &channel_args);
 
-  grpc_slice request_payload_slice = large_slice();
-  grpc_slice response_payload_slice = large_slice();
+  grpc_slice request_payload_slice = make_slice(message_size);
+  grpc_slice response_payload_slice = make_slice(message_size);
   grpc_call* c;
   grpc_call* s;
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -130,7 +129,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = n_seconds_from_now(30);
+  gpr_timespec deadline = n_seconds_from_now(300);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
@@ -182,8 +181,8 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify(grpc_core::Duration::Seconds(60));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -201,8 +200,8 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Verify(grpc_core::Duration::Seconds(60));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -228,9 +227,9 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(103), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify(grpc_core::Duration::Seconds(60));
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -246,8 +245,6 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   grpc_call_unref(c);
   grpc_call_unref(s);
 
-  cq_verifier_destroy(cqv);
-
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
@@ -260,26 +257,18 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
 }
 
 void invoke_large_request(grpc_end2end_test_config config) {
-  test_invoke_large_request(config, 16384, 65536);
-  test_invoke_large_request(config, 32768, 65536);
-
-  test_invoke_large_request(config, 1000000 - 1, 65536);
-  test_invoke_large_request(config, 1000000, 65536);
-  test_invoke_large_request(config, 1000000 + 1, 65536);
-  test_invoke_large_request(config, 1000000 + 2, 65536);
-  test_invoke_large_request(config, 1000000 + 3, 65536);
-  test_invoke_large_request(config, 1000000 + 4, 65536);
-  test_invoke_large_request(config, 1000000 + 5, 65536);
-  test_invoke_large_request(config, 1000000 + 6, 65536);
-
-  test_invoke_large_request(config, 1000000 - 1, 2000000);
-  test_invoke_large_request(config, 1000000, 2000000);
-  test_invoke_large_request(config, 1000000 + 1, 2000000);
-  test_invoke_large_request(config, 1000000 + 2, 2000000);
-  test_invoke_large_request(config, 1000000 + 3, 2000000);
-  test_invoke_large_request(config, 1000000 + 4, 2000000);
-  test_invoke_large_request(config, 1000000 + 5, 2000000);
-  test_invoke_large_request(config, 1000000 + 6, 2000000);
+  grpc_core::EventLog event_log;
+  {
+    grpc_core::ExecCtx exec_ctx;
+    event_log.BeginCollection();
+  }
+  test_invoke_large_request(config, 10 * 1024 * 1024);
+  std::vector<std::string> events;
+  grpc_core::ExecCtx exec_ctx;
+  gpr_log(
+      GPR_ERROR, "event_log:\n%s",
+      event_log.EndCollectionAndReportCsv({"logging", "tcp-write-outstanding"})
+          .c_str());
 }
 
 void invoke_large_request_pre_init(void) {}

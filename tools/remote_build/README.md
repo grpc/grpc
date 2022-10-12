@@ -24,13 +24,13 @@ IMPORTANT: The OS from which you run the bazel command needs to always match you
 For `opt` or `dbg` run this command:
 ```
 # manual run of bazel tests remotely on Foundry
-bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=opt //test/...
+bazel --bazelrc=tools/remote_build/linux.bazelrc test --config=opt //test/...
 ```
 
 This also works for sanitizer runs (`asan`, `msan`, `tsan`, `ubsan`):
 ```
 # manual run of bazel tests remotely on Foundry with given sanitizer
-bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
+bazel --bazelrc=tools/remote_build/linux.bazelrc test --config=asan //test/...
 ```
 
 ### Windows

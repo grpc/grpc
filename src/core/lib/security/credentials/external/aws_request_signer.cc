@@ -17,14 +17,23 @@
 
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -79,7 +88,7 @@ AwsRequestSigner::AwsRequestSigner(
   auto date_it = additional_headers_.find("date");
   if (amz_date_it != additional_headers_.end() &&
       date_it != additional_headers_.end()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    *error = GRPC_ERROR_CREATE(
         "Only one of {date, x-amz-date} can be specified, not both.");
     return;
   }
@@ -90,7 +99,7 @@ AwsRequestSigner::AwsRequestSigner(
     std::string err_str;
     if (!absl::ParseTime(kDateFormat, date_it->second, &request_date,
                          &err_str)) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(err_str.c_str());
+      *error = GRPC_ERROR_CREATE(err_str.c_str());
       return;
     }
     static_request_date_ =
@@ -98,7 +107,7 @@ AwsRequestSigner::AwsRequestSigner(
   }
   absl::StatusOr<URI> tmp_url = URI::Parse(url);
   if (!tmp_url.ok()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Aws request url.");
+    *error = GRPC_ERROR_CREATE("Invalid Aws request url.");
     return;
   }
   url_ = tmp_url.value();

@@ -28,7 +28,7 @@ class ServerInitializer;
 
 namespace reflection {
 
-class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
+class ProtoServerReflectionPlugin : public grpc::ServerBuilderPlugin {
  public:
   ProtoServerReflectionPlugin();
   ::std::string name() override;

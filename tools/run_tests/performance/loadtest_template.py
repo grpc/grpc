@@ -26,6 +26,7 @@
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
 
 import argparse
+import os
 import sys
 from typing import Any, Dict, Iterable, List, Mapping, Type
 
@@ -142,8 +143,8 @@ def loadtest_template(
         del driver['name']
     if inject_driver_image:
         if 'run' not in driver:
-            driver['run'] = {}
-        driver['run']['image'] = '${driver_image}'
+            driver['run'] = [{'name': 'main'}]
+        driver['run'][0]['image'] = '${driver_image}'
     if inject_driver_pool:
         driver['pool'] = '${driver_pool}'
 

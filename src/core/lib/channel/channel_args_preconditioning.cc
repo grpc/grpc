@@ -16,7 +16,8 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 
-#include <grpc/support/alloc.h>
+#include <algorithm>
+#include <utility>
 
 namespace grpc_core {
 
@@ -25,23 +26,18 @@ void ChannelArgsPreconditioning::Builder::RegisterStage(Stage stage) {
 }
 
 ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
-  // TODO(ctiller): should probably make this registered too.
-  stages_.emplace_back(RemoveGrpcInternalArgs);
-
   ChannelArgsPreconditioning preconditioning;
   preconditioning.stages_ = std::move(stages_);
   return preconditioning;
 }
 
-const grpc_channel_args* ChannelArgsPreconditioning::PreconditionChannelArgs(
+ChannelArgs ChannelArgsPreconditioning::PreconditionChannelArgs(
     const grpc_channel_args* args) const {
-  const grpc_channel_args* owned_args = nullptr;
+  ChannelArgs channel_args = ChannelArgsBuiltinPrecondition(args);
   for (auto& stage : stages_) {
-    args = stage(args);
-    grpc_channel_args_destroy(owned_args);
-    owned_args = args;
+    channel_args = stage(std::move(channel_args));
   }
-  return args;
+  return channel_args;
 }
 
 }  // namespace grpc_core

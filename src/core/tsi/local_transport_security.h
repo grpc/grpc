@@ -32,9 +32,6 @@
 /**
  * This method creates a local TSI handshaker instance.
  *
- * - is_client: boolean value indicating if the handshaker is used at the client
- *   (is_client = true) or server (is_client = false) side. The parameter is
- *   added for future extension.
  * - self: address of local TSI handshaker instance to be returned from the
  *   method.
  *
@@ -45,6 +42,6 @@
  * does not fit with an insecure connector, we would need to add a separate
  * handshaker for insecure connectors.
  */
-tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self);
+tsi_result tsi_local_handshaker_create(tsi_handshaker** self);
 
 #endif /* GRPC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H */

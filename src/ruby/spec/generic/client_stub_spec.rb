@@ -498,31 +498,10 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
                            /Header values must be of type string or array/)
       end
 
-      def run_server_streamer_against_client_with_unmarshal_error(
-        expected_input, replys)
-        wakey_thread do |notifier|
-          c = expect_server_to_be_invoked(notifier)
-          expect(c.remote_read).to eq(expected_input)
-          begin
-            replys.each { |r| c.remote_send(r) }
-          rescue GRPC::Core::CallError
-            # An attempt to write to the client might fail. This is ok
-            # because the client call is expected to fail when
-            # unmarshalling the first response, and to cancel the call,
-            # and there is a race as for when the server-side call will
-            # start to fail.
-            p 'remote_send failed (allowed because call expected to cancel)'
-          ensure
-            c.send_status(OK, 'OK', true)
-            close_active_server_call(c)
-          end
-        end
-      end
-
       it 'the call terminates when there is an unmarshalling error' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
-        th = run_server_streamer_against_client_with_unmarshal_error(
+        th = run_server_streamer_handle_client_cancellation(
           @sent_msg, @replys)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
 
@@ -597,7 +576,8 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       it 'raises GRPC::Cancelled after the call has been cancelled' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
-        th = run_server_streamer(@sent_msg, @replys, @pass)
+        th = run_server_streamer_handle_client_cancellation(
+          @sent_msg, @replys)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         resp = get_responses(stub, run_start_call_first: false)
         expect(resp.next).to eq('reply_1')
@@ -1034,6 +1014,26 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true,
                     metadata: server_trailing_md)
       close_active_server_call(c)
+    end
+  end
+
+  def run_server_streamer_handle_client_cancellation(
+    expected_input, replys)
+    wakey_thread do |notifier|
+      c = expect_server_to_be_invoked(notifier)
+      expect(c.remote_read).to eq(expected_input)
+      begin
+        replys.each { |r| c.remote_send(r) }
+      rescue GRPC::Core::CallError
+        # An attempt to write to the client might fail. This is ok
+        # because the client call is expected to cancel the call,
+        # and there is a race as for when the server-side call will
+        # start to fail.
+        p 'remote_send failed (allowed because call expected to cancel)'
+      ensure
+        c.send_status(OK, 'OK', true)
+        close_active_server_call(c)
+      end
     end
   end
 

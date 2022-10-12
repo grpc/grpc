@@ -22,7 +22,6 @@ import unittest
 import grpc
 from grpc.framework.foundation import logging_pool
 
-from tests.unit import test_common
 from tests.unit._rpc_test_helpers import BaseRPCTest
 from tests.unit._rpc_test_helpers import Callback
 from tests.unit._rpc_test_helpers import TIMEOUT_SHORT
@@ -37,8 +36,6 @@ from tests.unit._rpc_test_helpers import unary_unary_multi_callable
 from tests.unit.framework.common import test_constants
 
 
-@unittest.skipIf(test_common.running_under_gevent(),
-                 "This test is nondeterministic under gevent.")
 class RPCPart1Test(BaseRPCTest, unittest.TestCase):
 
     def testExpiredStreamRequestBlockingUnaryResponse(self):
@@ -117,10 +114,8 @@ class RPCPart1Test(BaseRPCTest, unittest.TestCase):
         # sanity checks on to make sure returned string contains default members
         # of the error
         debug_error_string = exception_context.exception.debug_error_string()
-        self.assertIn('created', debug_error_string)
-        self.assertIn('description', debug_error_string)
-        self.assertIn('file', debug_error_string)
-        self.assertIn('file_line', debug_error_string)
+        self.assertIn('grpc_status', debug_error_string)
+        self.assertIn('grpc_message', debug_error_string)
 
     def testFailedUnaryRequestFutureUnaryResponse(self):
         request = b'\x37\x17'
@@ -238,4 +233,4 @@ class RPCPart1Test(BaseRPCTest, unittest.TestCase):
 
 if __name__ == '__main__':
     logging.basicConfig()
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)

@@ -24,49 +24,66 @@ struct envoy_config_trace_v3_Tracing;
 struct envoy_config_trace_v3_Tracing_Http;
 typedef struct envoy_config_trace_v3_Tracing envoy_config_trace_v3_Tracing;
 typedef struct envoy_config_trace_v3_Tracing_Http envoy_config_trace_v3_Tracing_Http;
-extern const upb_msglayout envoy_config_trace_v3_Tracing_msginit;
-extern const upb_msglayout envoy_config_trace_v3_Tracing_Http_msginit;
+extern const upb_MiniTable envoy_config_trace_v3_Tracing_msginit;
+extern const upb_MiniTable envoy_config_trace_v3_Tracing_Http_msginit;
 struct google_protobuf_Any;
-extern const upb_msglayout google_protobuf_Any_msginit;
+extern const upb_MiniTable google_protobuf_Any_msginit;
+
 
 
 /* envoy.config.trace.v3.Tracing */
 
-UPB_INLINE envoy_config_trace_v3_Tracing *envoy_config_trace_v3_Tracing_new(upb_arena *arena) {
-  return (envoy_config_trace_v3_Tracing *)_upb_msg_new(&envoy_config_trace_v3_Tracing_msginit, arena);
+UPB_INLINE envoy_config_trace_v3_Tracing* envoy_config_trace_v3_Tracing_new(upb_Arena* arena) {
+  return (envoy_config_trace_v3_Tracing*)_upb_Message_New(&envoy_config_trace_v3_Tracing_msginit, arena);
 }
-UPB_INLINE envoy_config_trace_v3_Tracing *envoy_config_trace_v3_Tracing_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_config_trace_v3_Tracing *ret = envoy_config_trace_v3_Tracing_new(arena);
+UPB_INLINE envoy_config_trace_v3_Tracing* envoy_config_trace_v3_Tracing_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_trace_v3_Tracing* ret = envoy_config_trace_v3_Tracing_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_config_trace_v3_Tracing *envoy_config_trace_v3_Tracing_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_config_trace_v3_Tracing *ret = envoy_config_trace_v3_Tracing_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_config_trace_v3_Tracing_serialize(const envoy_config_trace_v3_Tracing *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_config_trace_v3_Tracing_msginit, arena, len);
+UPB_INLINE envoy_config_trace_v3_Tracing* envoy_config_trace_v3_Tracing_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_trace_v3_Tracing* ret = envoy_config_trace_v3_Tracing_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
 }
-
-UPB_INLINE bool envoy_config_trace_v3_Tracing_has_http(const envoy_config_trace_v3_Tracing *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_http(const envoy_config_trace_v3_Tracing *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const envoy_config_trace_v3_Tracing_Http*); }
+UPB_INLINE char* envoy_config_trace_v3_Tracing_serialize(const envoy_config_trace_v3_Tracing* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_Tracing_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_trace_v3_Tracing_serialize_ex(const envoy_config_trace_v3_Tracing* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_Tracing_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE bool envoy_config_trace_v3_Tracing_has_http(const envoy_config_trace_v3_Tracing* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_trace_v3_Tracing_clear_http(const envoy_config_trace_v3_Tracing* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
+UPB_INLINE const envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_http(const envoy_config_trace_v3_Tracing* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const envoy_config_trace_v3_Tracing_Http*);
+}
 
 UPB_INLINE void envoy_config_trace_v3_Tracing_set_http(envoy_config_trace_v3_Tracing *msg, envoy_config_trace_v3_Tracing_Http* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), envoy_config_trace_v3_Tracing_Http*) = value;
 }
-UPB_INLINE struct envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_mutable_http(envoy_config_trace_v3_Tracing *msg, upb_arena *arena) {
+UPB_INLINE struct envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_mutable_http(envoy_config_trace_v3_Tracing* msg, upb_Arena* arena) {
   struct envoy_config_trace_v3_Tracing_Http* sub = (struct envoy_config_trace_v3_Tracing_Http*)envoy_config_trace_v3_Tracing_http(msg);
   if (sub == NULL) {
-    sub = (struct envoy_config_trace_v3_Tracing_Http*)_upb_msg_new(&envoy_config_trace_v3_Tracing_Http_msginit, arena);
+    sub = (struct envoy_config_trace_v3_Tracing_Http*)_upb_Message_New(&envoy_config_trace_v3_Tracing_Http_msginit, arena);
     if (!sub) return NULL;
     envoy_config_trace_v3_Tracing_set_http(msg, sub);
   }
@@ -75,57 +92,79 @@ UPB_INLINE struct envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Trac
 
 /* envoy.config.trace.v3.Tracing.Http */
 
-UPB_INLINE envoy_config_trace_v3_Tracing_Http *envoy_config_trace_v3_Tracing_Http_new(upb_arena *arena) {
-  return (envoy_config_trace_v3_Tracing_Http *)_upb_msg_new(&envoy_config_trace_v3_Tracing_Http_msginit, arena);
+UPB_INLINE envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_Http_new(upb_Arena* arena) {
+  return (envoy_config_trace_v3_Tracing_Http*)_upb_Message_New(&envoy_config_trace_v3_Tracing_Http_msginit, arena);
 }
-UPB_INLINE envoy_config_trace_v3_Tracing_Http *envoy_config_trace_v3_Tracing_Http_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_config_trace_v3_Tracing_Http *ret = envoy_config_trace_v3_Tracing_Http_new(arena);
+UPB_INLINE envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_Http_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_trace_v3_Tracing_Http* ret = envoy_config_trace_v3_Tracing_Http_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_config_trace_v3_Tracing_Http *envoy_config_trace_v3_Tracing_Http_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_config_trace_v3_Tracing_Http *ret = envoy_config_trace_v3_Tracing_Http_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_config_trace_v3_Tracing_Http_serialize(const envoy_config_trace_v3_Tracing_Http *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_config_trace_v3_Tracing_Http_msginit, arena, len);
+UPB_INLINE envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_Http_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_trace_v3_Tracing_Http* ret = envoy_config_trace_v3_Tracing_Http_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
 }
-
+UPB_INLINE char* envoy_config_trace_v3_Tracing_Http_serialize(const envoy_config_trace_v3_Tracing_Http* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_Tracing_Http_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_trace_v3_Tracing_Http_serialize_ex(const envoy_config_trace_v3_Tracing_Http* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_Tracing_Http_msginit, options, arena, &ptr, len);
+  return ptr;
+}
 typedef enum {
   envoy_config_trace_v3_Tracing_Http_config_type_typed_config = 3,
   envoy_config_trace_v3_Tracing_Http_config_type_NOT_SET = 0
 } envoy_config_trace_v3_Tracing_Http_config_type_oneofcases;
-UPB_INLINE envoy_config_trace_v3_Tracing_Http_config_type_oneofcases envoy_config_trace_v3_Tracing_Http_config_type_case(const envoy_config_trace_v3_Tracing_Http* msg) { return (envoy_config_trace_v3_Tracing_Http_config_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
+UPB_INLINE envoy_config_trace_v3_Tracing_Http_config_type_oneofcases envoy_config_trace_v3_Tracing_Http_config_type_case(const envoy_config_trace_v3_Tracing_Http* msg) {
+  return (envoy_config_trace_v3_Tracing_Http_config_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE void envoy_config_trace_v3_Tracing_Http_clear_name(const envoy_config_trace_v3_Tracing_Http* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_config_trace_v3_Tracing_Http_name(const envoy_config_trace_v3_Tracing_Http* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+}
+UPB_INLINE bool envoy_config_trace_v3_Tracing_Http_has_typed_config(const envoy_config_trace_v3_Tracing_Http* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 3;
+}
+UPB_INLINE void envoy_config_trace_v3_Tracing_Http_clear_typed_config(const envoy_config_trace_v3_Tracing_Http* msg) {
+  UPB_WRITE_ONEOF(msg, struct google_protobuf_Any*, UPB_SIZE(12, 24), 0, UPB_SIZE(0, 0), envoy_config_trace_v3_Tracing_Http_config_type_NOT_SET);
+}
+UPB_INLINE const struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_typed_config(const envoy_config_trace_v3_Tracing_Http* msg) {
+  return UPB_READ_ONEOF(msg, const struct google_protobuf_Any*, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 3, NULL);
+}
 
-UPB_INLINE upb_strview envoy_config_trace_v3_Tracing_Http_name(const envoy_config_trace_v3_Tracing_Http *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool envoy_config_trace_v3_Tracing_Http_has_typed_config(const envoy_config_trace_v3_Tracing_Http *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
-UPB_INLINE const struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_typed_config(const envoy_config_trace_v3_Tracing_Http *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Any*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
-
-UPB_INLINE void envoy_config_trace_v3_Tracing_Http_set_name(envoy_config_trace_v3_Tracing_Http *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+UPB_INLINE void envoy_config_trace_v3_Tracing_Http_set_name(envoy_config_trace_v3_Tracing_Http *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 UPB_INLINE void envoy_config_trace_v3_Tracing_Http_set_typed_config(envoy_config_trace_v3_Tracing_Http *msg, struct google_protobuf_Any* value) {
-  UPB_WRITE_ONEOF(msg, struct google_protobuf_Any*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 3);
+  UPB_WRITE_ONEOF(msg, struct google_protobuf_Any*, UPB_SIZE(12, 24), value, UPB_SIZE(0, 0), 3);
 }
-UPB_INLINE struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_mutable_typed_config(envoy_config_trace_v3_Tracing_Http *msg, upb_arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_mutable_typed_config(envoy_config_trace_v3_Tracing_Http* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_trace_v3_Tracing_Http_typed_config(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
+    sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
     if (!sub) return NULL;
     envoy_config_trace_v3_Tracing_Http_set_typed_config(msg, sub);
   }
   return sub;
 }
 
-extern const upb_msglayout_file envoy_config_trace_v3_http_tracer_proto_upb_file_layout;
+extern const upb_MiniTable_File envoy_config_trace_v3_http_tracer_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

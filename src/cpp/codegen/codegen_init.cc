@@ -17,7 +17,7 @@
  */
 
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 
 /// Null-initializes the global gRPC variables for the codegen library. These
 /// stay null in the absence of grpc++ library. In this case, no gRPC

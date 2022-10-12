@@ -17,7 +17,7 @@
  */
 
 #import <XCTest/XCTest.h>
-#import "../TestBase.h"
+#import "../Common/TestBase.h"
 
 /**
  * This is an abstract class that needs to be subclassed. See |+host|.

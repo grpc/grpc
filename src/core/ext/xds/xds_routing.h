@@ -21,15 +21,19 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <map>
+#include <string>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/log.h>
+#include "absl/types/optional.h"
 
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -78,22 +82,21 @@ class XdsRouting {
       std::string* concatenated_value);
 
   struct GeneratePerHttpFilterConfigsResult {
-    // Map of field name to list of elements for that field
+    // Map of service config field name to list of elements for that field.
     std::map<std::string, std::vector<std::string>> per_filter_configs;
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    // Guaranteed to be nullptr if error is GRPC_ERROR_NONE
-    grpc_channel_args* args = nullptr;
+    ChannelArgs args;
   };
 
   // Generates a map of per_filter_configs. \a args is consumed.
-  static GeneratePerHttpFilterConfigsResult GeneratePerHTTPFilterConfigs(
+  static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
+  GeneratePerHTTPFilterConfigs(
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
       const XdsRouteConfigResource::VirtualHost& vhost,
       const XdsRouteConfigResource::Route& route,
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
-      grpc_channel_args* args);
+      const ChannelArgs& args);
 };
 
 }  // namespace grpc_core

@@ -15,50 +15,52 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub xds_core_v3_ResourceLocator_submsgs[2] = {
+static const upb_MiniTable_Sub xds_core_v3_ResourceLocator_submsgs[2] = {
   {.submsg = &xds_core_v3_ContextParams_msginit},
   {.submsg = &xds_core_v3_ResourceLocator_Directive_msginit},
 };
 
-static const upb_msglayout_field xds_core_v3_ResourceLocator__fields[6] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(32, 64), UPB_SIZE(-37, -73), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(28, 56), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field xds_core_v3_ResourceLocator__fields[6] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 40), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(36, 64), UPB_SIZE(-5, -5), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(32, 56), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout xds_core_v3_ResourceLocator_msginit = {
+const upb_MiniTable xds_core_v3_ResourceLocator_msginit = {
   &xds_core_v3_ResourceLocator_submsgs[0],
   &xds_core_v3_ResourceLocator__fields[0],
-  UPB_SIZE(40, 80), 6, _UPB_MSGEXT_NONE, 6, 255,
+  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_msglayout_sub xds_core_v3_ResourceLocator_Directive_submsgs[1] = {
+static const upb_MiniTable_Sub xds_core_v3_ResourceLocator_Directive_submsgs[1] = {
   {.submsg = &xds_core_v3_ResourceLocator_msginit},
 };
 
-static const upb_msglayout_field xds_core_v3_ResourceLocator_Directive__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field xds_core_v3_ResourceLocator_Directive__fields[2] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout xds_core_v3_ResourceLocator_Directive_msginit = {
+const upb_MiniTable xds_core_v3_ResourceLocator_Directive_msginit = {
   &xds_core_v3_ResourceLocator_Directive_submsgs[0],
   &xds_core_v3_ResourceLocator_Directive__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[2] = {
+static const upb_MiniTable *messages_layout[2] = {
   &xds_core_v3_ResourceLocator_msginit,
   &xds_core_v3_ResourceLocator_Directive_msginit,
 };
 
-const upb_msglayout_file xds_core_v3_resource_locator_proto_upb_file_layout = {
+const upb_MiniTable_File xds_core_v3_resource_locator_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   2,
+  0,
   0,
 };
 

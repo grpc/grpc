@@ -6,16 +6,19 @@ metadata:
   namespace: ${namespace_name}
   labels:
     app: ${deployment_name}
+    deployment_id: ${deployment_id}
     owner: xds-k8s-interop-test
 spec:
   replicas: ${replica_count}
   selector:
     matchLabels:
       app: ${deployment_name}
+      deployment_id: ${deployment_id}
   template:
     metadata:
       labels:
         app: ${deployment_name}
+        deployment_id: ${deployment_id}
         owner: xds-k8s-interop-test
     spec:
       % if service_account_name:
@@ -25,6 +28,7 @@ spec:
       - name: ${deployment_name}
         image: ${image_name}
         imagePullPolicy: Always
+        restartPolicy: Never
         args:
           - "--port=${test_port}"
         ports:
@@ -55,8 +59,7 @@ spec:
             % if xds_server_uri:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
-            - "--include-v3-features-experimental"
-            - "--node-metadata-experimental=app=${namespace_name}-${deployment_name}"
+            - "--node-metadata=app=${namespace_name}-${deployment_name}"
           resources:
             limits:
               cpu: 100m

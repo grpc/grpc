@@ -19,13 +19,26 @@
 #ifndef GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
 #define GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
 
+#include <stddef.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "absl/strings/str_cat.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
-#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
 // TODO(yashykt): We shouldn't be including "src/core" headers.
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -37,6 +50,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
   ~SecureChannelCredentials() override {
+    grpc_core::ExecCtx exec_ctx;
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
@@ -50,7 +64,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
       const std::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
-          ::grpc::experimental::ClientInterceptorFactoryInterface>>
+          grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
   grpc_channel_credentials* const c_creds_;
 };
@@ -59,6 +73,7 @@ class SecureCallCredentials final : public CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
   ~SecureCallCredentials() override {
+    grpc_core::ExecCtx exec_ctx;
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }

@@ -19,11 +19,11 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init google_rpc_status_proto_upbdefinit;
+extern _upb_DefPool_Init google_rpc_status_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *google_rpc_Status_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_rpc_status_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.rpc.Status");
+UPB_INLINE const upb_MessageDef *google_rpc_Status_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_rpc_status_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.rpc.Status");
 }
 
 #ifdef __cplusplus

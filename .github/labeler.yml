@@ -1,10 +1,18 @@
 lang/core:
+- src/abseil-cpp/**
+- src/boringssl/**
+- src/c-ares/**
 - src/core/**
+- src/proto/**
+- src/re2/**
+- src/upb/**
+- src/zlib/**
 - include/grpc/**
 - test/core/**
 - tools/codegen/core/**
 
 lang/c++:
+- examples/cpp/**
 - src/cpp/**
 - include/grpc++/**
 - include/grpcpp/**
@@ -12,4 +20,26 @@ lang/c++:
 
 area/infra:
 - .github/**
+
+lang/node:
+- examples/node/**
+
+lang/ObjC:
+- examples/objective-c/**
+- src/objective-c/**
+
+lang/php:
+- examples/php/**
+- src/php/**
+
+lang/python:
+- examples/python/**
+- src/python/**
+
+lang/ruby:
+- examples/ruby/**
+- src/ruby/**
+
+"lang/C#":
+- src/csharp/**
 

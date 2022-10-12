@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import collections
-from typing import List, Optional
+from typing import List
 
 from absl import flags
 from absl import logging
@@ -22,8 +22,7 @@ from google.protobuf import json_format
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
-from framework.infrastructure import k8s
-from framework.test_app import server_app
+from framework.helpers import skips
 
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
@@ -37,6 +36,13 @@ _NUM_CLIENTS = 3
 
 
 class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        # Subsetting is an experimental feature where most work is done on the
+        # server-side. We limit it to only run on master branch to save
+        # resources.
+        return config.version_gte('master')
 
     def test_subsetting_basic(self) -> None:
         with self.subTest('00_create_health_check'):
@@ -54,9 +60,9 @@ class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('04_create_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
 
+        test_servers: List[_XdsTestServer]
         with self.subTest('05_start_test_servers'):
-            self.test_servers: List[_XdsTestServer] = self.startTestServers(
-                replica_count=_NUM_BACKENDS)
+            test_servers = self.startTestServers(replica_count=_NUM_BACKENDS)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
@@ -68,7 +74,7 @@ class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 self.client_runner.cleanup(force=True)
                 # Create a test client
                 test_client: _XdsTestClient = self.startTestClient(
-                    self.test_servers[0])
+                    test_servers[0])
                 # Validate the number of received endpoints
                 config = test_client.csds.fetch_client_status(
                     log_level=logging.INFO)

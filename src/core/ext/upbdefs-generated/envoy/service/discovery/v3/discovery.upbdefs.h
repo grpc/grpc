@@ -19,41 +19,76 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_service_discovery_v3_discovery_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_service_discovery_v3_discovery_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.DiscoveryRequest");
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceLocator_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.ResourceLocator");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.DiscoveryResponse");
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.ResourceLocator.DynamicParametersEntry");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_DeltaDiscoveryRequest_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.DeltaDiscoveryRequest");
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceName_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.ResourceName");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.DeltaDiscoveryRequest.InitialResourceVersionsEntry");
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DiscoveryRequest");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_DeltaDiscoveryResponse_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.DeltaDiscoveryResponse");
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DiscoveryResponse");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_Resource_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.Resource");
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DeltaDiscoveryRequest_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DeltaDiscoveryRequest");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_Resource_CacheControl_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.Resource.CacheControl");
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DeltaDiscoveryRequest.InitialResourceVersionsEntry");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DeltaDiscoveryResponse_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DeltaDiscoveryResponse");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DynamicParameterConstraints_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DynamicParameterConstraints");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DynamicParameterConstraints.SingleConstraint");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint_Exists_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DynamicParameterConstraints.SingleConstraint.Exists");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DynamicParameterConstraints_ConstraintList_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.DynamicParameterConstraints.ConstraintList");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_Resource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.Resource");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_Resource_CacheControl_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.Resource.CacheControl");
 }
 
 #ifdef __cplusplus

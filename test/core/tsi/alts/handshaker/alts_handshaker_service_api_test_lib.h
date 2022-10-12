@@ -31,12 +31,12 @@
 
 /* This method sets peer_rpc_versions for ALTS handshaker response. */
 bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
-    grpc_gcp_HandshakerResp* resp, upb_arena* arena, uint32_t max_major,
+    grpc_gcp_HandshakerResp* resp, upb_Arena* arena, uint32_t max_major,
     uint32_t max_minor, uint32_t min_major, uint32_t min_minor);
 
 /* This method de-serializes ALTS handshaker request. */
 grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
-                                                       upb_arena* arena);
+                                                       upb_Arena* arena);
 
 /* This method checks equality of two ALTS handshaker responses. */
 bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,

@@ -52,7 +52,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -101,10 +100,9 @@ void StartCall(TestCall* test_call) {
   grpc_call_error error = grpc_call_start_batch(
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(test_call->cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(test_call->cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
 }
 
 void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
@@ -123,10 +121,9 @@ void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
 }
 
@@ -144,10 +141,9 @@ void ReceiveMessage(grpc_call* call, grpc_completion_queue* cq) {
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
 }
 
@@ -216,7 +212,11 @@ class TestServer {
     address_ =
         grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server_, address_.c_str()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(
+        grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
   }
@@ -303,7 +303,8 @@ grpc_core::Resolver::Result BuildResolverResponse(
     }
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
-    result.addresses->emplace_back(address.addr, address.len, nullptr);
+    result.addresses->emplace_back(address.addr, address.len,
+                                   grpc_core::ChannelArgs());
   }
   return result;
 }
@@ -315,7 +316,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
   /* 64 is a somewhat arbitary number, the important thing is that it
    * exceeds the value of MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL (16), which
    * is enough to repro a bug at time of writing. */
-  const int kNumCalls = 64;
+  const int kNumCalls = 32;
   size_t ping_pong_round = 0;
   size_t ping_pongs_done = 0;
   grpc_core::Mutex ping_pong_round_mu;
@@ -333,7 +334,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
   // hit test timeouts because of that.
   test_servers.reserve(kNumCalls);
   for (int i = 0; i < kNumCalls; i++) {
-    test_servers.push_back(absl::make_unique<TestServer>());
+    test_servers.push_back(std::make_unique<TestServer>());
   }
   for (int i = 0; i < kNumCalls; i++) {
     auto test_server = test_servers[i].get();
@@ -362,8 +363,10 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           fake_resolver_response_generator.get()));
       grpc_channel_args* channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
-      grpc_channel* channel = grpc_insecure_channel_create(
-          "fake:///test.server.com", channel_args, nullptr);
+      grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+      grpc_channel* channel =
+          grpc_channel_create("fake:///test.server.com", creds, channel_args);
+      grpc_channel_credentials_release(creds);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);
@@ -371,7 +374,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
           grpc_slice_from_static_string("/foo"), nullptr,
           gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      auto test_call = absl::make_unique<TestCall>(channel, call, cq);
+      auto test_call = std::make_unique<TestCall>(channel, call, cq);
       // Start a call, and ensure that round_robin load balancing is configured
       StartCall(test_call.get());
       // Make sure the test is doing what it's meant to be doing
@@ -438,7 +441,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

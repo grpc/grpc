@@ -19,21 +19,16 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_route_v3_route_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_route_v3_route_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_route_v3_RouteConfiguration_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RouteConfiguration");
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteConfiguration_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteConfiguration");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_route_v3_ClusterSpecifierPlugin_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.ClusterSpecifierPlugin");
-}
-
-UPB_INLINE const upb_msgdef *envoy_config_route_v3_Vhds_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.Vhds");
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_Vhds_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.Vhds");
 }
 
 #ifdef __cplusplus

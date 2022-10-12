@@ -14,8 +14,17 @@
 
 #include "src/core/lib/promise/activity.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <stdlib.h>
+
+#include <atomic>
+#include <chrono>
+#include <functional>
+#include <thread>
+#include <tuple>
+#include <vector>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"
@@ -38,7 +47,7 @@ class Barrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       if (cleared_) {
         return Result{};
       } else {
@@ -56,7 +65,7 @@ class Barrier {
   }
 
  private:
-  absl::Mutex mu_;
+  Mutex mu_;
   WaitSet wait_set_ ABSL_GUARDED_BY(mu_);
   bool cleared_ ABSL_GUARDED_BY(mu_) = false;
 };
@@ -69,7 +78,7 @@ class SingleBarrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       if (cleared_) {
         return Result{};
       } else {
@@ -88,7 +97,7 @@ class SingleBarrier {
   }
 
  private:
-  absl::Mutex mu_;
+  Mutex mu_;
   Waker waker_ ABSL_GUARDED_BY(mu_);
   bool cleared_ ABSL_GUARDED_BY(mu_) = false;
 };
@@ -116,18 +125,6 @@ TEST(ActivityTest, DropImmediately) {
       [] { return []() -> Poll<absl::Status> { return Pending(); }; },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-}
-
-TEST(ActivityTest, Cancel) {
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto activity = MakeActivity(
-      [] { return []() -> Poll<absl::Status> { return Pending(); }; },
-      NoWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  EXPECT_CALL(on_done, Call(absl::CancelledError()));
-  activity->Cancel();
-  Mock::VerifyAndClearExpectations(&on_done);
-  activity.reset();
 }
 
 template <typename B>
@@ -326,6 +323,77 @@ TEST(ActivityTest, CanCancelDuringSuccessfulExecution) {
 TEST(WakerTest, CanWakeupEmptyWaker) {
   // Empty wakers should not do anything upon wakeup.
   Waker().Wakeup();
+}
+
+TEST(AtomicWakerTest, CanWakeupEmptyWaker) {
+  // Empty wakers should not do anything upon wakeup.
+  AtomicWaker waker;
+  EXPECT_FALSE(waker.Armed());
+  waker.Wakeup();
+}
+
+class TestWakeable final : public Wakeable {
+ public:
+  TestWakeable(std::atomic<int>* wakeups, std::atomic<int>* drops)
+      : wakeups_(wakeups), drops_(drops) {}
+  void Wakeup() override {
+    wakeups_->fetch_add(1, std::memory_order_relaxed);
+    delete this;
+  }
+  void Drop() override {
+    drops_->fetch_add(1, std::memory_order_relaxed);
+    delete this;
+  }
+  std::string ActivityDebugTag() const override { return "TestWakeable"; }
+
+ private:
+  std::atomic<int>* const wakeups_;
+  std::atomic<int>* const drops_;
+};
+
+TEST(AtomicWakerTest, ThreadStress) {
+  std::vector<std::thread> threads;
+  std::atomic<bool> done{false};
+  std::atomic<int> wakeups{0};
+  std::atomic<int> drops{0};
+  std::atomic<int> armed{0};
+  std::atomic<int> not_armed{0};
+  AtomicWaker waker;
+
+  threads.reserve(15);
+  for (int i = 0; i < 5; i++) {
+    threads.emplace_back([&] {
+      while (!done.load(std::memory_order_relaxed)) {
+        waker.Wakeup();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
+  }
+  for (int i = 0; i < 5; i++) {
+    threads.emplace_back([&] {
+      while (!done.load(std::memory_order_relaxed)) {
+        waker.Set(Waker(new TestWakeable(&wakeups, &drops)));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
+  }
+  for (int i = 0; i < 5; i++) {
+    threads.emplace_back([&] {
+      while (!done.load(std::memory_order_relaxed)) {
+        (waker.Armed() ? &armed : &not_armed)
+            ->fetch_add(1, std::memory_order_relaxed);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
+  }
+
+  do {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  } while (wakeups.load(std::memory_order_relaxed) == 0 ||
+           armed.load(std::memory_order_relaxed) == 0 ||
+           not_armed.load(std::memory_order_relaxed) == 0);
+  done.store(true, std::memory_order_relaxed);
+  for (auto& t : threads) t.join();
 }
 
 }  // namespace grpc_core

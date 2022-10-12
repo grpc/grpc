@@ -145,12 +145,8 @@
                            callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0,
            @"Neither host nor path can be nil.");
-  NSAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
   NSAssert(responseHandler != nil, @"Response handler required.");
   if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
-    return nil;
-  }
-  if (requestOptions.safety > GRPCCallSafetyCacheableRequest) {
     return nil;
   }
   if (responseHandler == nil) {

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/ext/filters/client_idle/idle_filter_state.h"
-
-#include <stdio.h>
+#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 
 #include <chrono>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -58,7 +58,7 @@ TEST(IdleFilterStateTest, StressTest) {
   int idle_polls = 0;
   int thread_jumps = 0;
   std::vector<std::thread> threads;
-  for (int idx = 0; idx < 100; idx++) {
+  for (int idx = 0; idx < 10; idx++) {
     std::thread t([&] {
       int ctr = 0;
       auto increase = [&] {

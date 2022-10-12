@@ -4,7 +4,6 @@ This directory contains examples for all the C-based gRPC implementations. Each
 language subdirectory contains a Hello World example and more:
 
 * [Android](android)
-* [C#](csharp)
 * [C++](cpp)
 * [Node.js](node)
 * [Objective-C](objective-c/helloworld)

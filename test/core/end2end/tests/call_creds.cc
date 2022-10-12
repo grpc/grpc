@@ -16,19 +16,21 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static const char iam_token[] = "token";
 static const char iam_selector[] = "selector";
@@ -86,11 +88,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -108,7 +111,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
@@ -142,7 +144,6 @@ static void request_response_with_payload_and_call_creds(
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_end2end_test_fixture f;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -156,11 +157,11 @@ static void request_response_with_payload_and_call_creds(
   grpc_slice details;
   int was_cancelled = 2;
   grpc_call_credentials* creds = nullptr;
-  grpc_auth_context* s_auth_context = nullptr;
-  grpc_auth_context* c_auth_context = nullptr;
+  grpc_auth_context* server_auth_context = nullptr;
+  grpc_auth_context* client_auth_context = nullptr;
 
   f = begin_test(config, test_name, use_secure_call_creds, 0);
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -171,8 +172,7 @@ static void request_response_with_payload_and_call_creds(
     creds =
         grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
   } else {
-    creds =
-        grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+    creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   }
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -185,8 +185,8 @@ static void request_response_with_payload_and_call_creds(
         creds = grpc_google_iam_credentials_create(
             overridden_iam_token, overridden_iam_selector, nullptr);
       } else {
-        creds = grpc_md_only_test_credentials_create(
-            overridden_fake_md_key, overridden_fake_md_value, false);
+        creds = grpc_md_only_test_credentials_create(overridden_fake_md_key,
+                                                     overridden_fake_md_value);
       }
       GPR_ASSERT(creds != nullptr);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -245,25 +245,25 @@ static void request_response_with_payload_and_call_creds(
   if (mode == FAIL) {
     // Expect the call to fail since the channel credentials did not satisfy the
     // minimum security level requirements.
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
     GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
   } else {
     error =
         grpc_server_request_call(f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-    cq_verify(cqv);
-    s_auth_context = grpc_call_auth_context(s);
-    GPR_ASSERT(s_auth_context != nullptr);
-    print_auth_context(0, s_auth_context);
-    grpc_auth_context_release(s_auth_context);
+    cqv.Expect(tag(101), true);
+    cqv.Verify();
+    server_auth_context = grpc_call_auth_context(s);
+    GPR_ASSERT(server_auth_context != nullptr);
+    print_auth_context(0, server_auth_context);
+    grpc_auth_context_release(server_auth_context);
 
-    c_auth_context = grpc_call_auth_context(c);
-    GPR_ASSERT(c_auth_context != nullptr);
-    print_auth_context(1, c_auth_context);
-    grpc_auth_context_release(c_auth_context);
+    client_auth_context = grpc_call_auth_context(c);
+    GPR_ASSERT(client_auth_context != nullptr);
+    print_auth_context(1, client_auth_context);
+    grpc_auth_context_release(client_auth_context);
 
     /* Cannot set creds on the server call object. */
     GPR_ASSERT(grpc_call_set_credentials(s, nullptr) != GRPC_CALL_OK);
@@ -284,8 +284,8 @@ static void request_response_with_payload_and_call_creds(
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(102), true);
+    cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -311,9 +311,9 @@ static void request_response_with_payload_and_call_creds(
                                   tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(103), true);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
 
     GPR_ASSERT(status == GRPC_STATUS_OK);
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -383,8 +383,6 @@ static void request_response_with_payload_and_call_creds(
 
   grpc_call_unref(c);
 
-  cq_verifier_destroy(cqv);
-
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
@@ -429,7 +427,6 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_call* c;
   grpc_end2end_test_fixture f;
   gpr_timespec deadline = five_seconds_from_now();
-  cq_verifier* cqv;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -446,15 +443,14 @@ static void test_request_with_server_rejecting_client_creds(
 
   f = begin_test(config, "test_request_with_server_rejecting_client_creds",
                  false, 1);
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
 
-  creds =
-      grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+  creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   grpc_call_credentials_release(creds);
@@ -501,8 +497,8 @@ static void test_request_with_server_rejecting_client_creds(
                                 nullptr);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
 
@@ -517,7 +513,6 @@ static void test_request_with_server_rejecting_client_creds(
 
   grpc_call_unref(c);
 
-  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }

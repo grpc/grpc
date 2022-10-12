@@ -18,7 +18,12 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
-#include <grpc/grpc.h>
+#include <stddef.h>
+
+#include <utility>
+
+#include "gtest/gtest.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -62,8 +67,8 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
   gpr_free(raw2encoded_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(raw_slice == encoded2raw_permissive_slice);
-  GPR_ASSERT(encoded_slice == raw2encoded_slice);
+  ASSERT_EQ(raw_slice, encoded2raw_permissive_slice);
+  ASSERT_EQ(encoded_slice, raw2encoded_slice);
 }
 
 static void test_nonconformant_vector(const char* encoded,
@@ -93,12 +98,10 @@ static void test_nonconformant_vector(const char* encoded,
           encoded2raw_permissive_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(permissive_unencoded_slice == encoded2raw_permissive_slice);
+  ASSERT_EQ(permissive_unencoded_slice, encoded2raw_permissive_slice);
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
+TEST(PercentEncodingTest, MainTest) {
   TEST_VECTOR(
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~",
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~",
@@ -117,6 +120,11 @@ int main(int argc, char** argv) {
   TEST_NONCONFORMANT_VECTOR("%A", "%A");
   TEST_NONCONFORMANT_VECTOR("%AG", "%AG");
   TEST_NONCONFORMANT_VECTOR("\0", "\0");
-  grpc_shutdown();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

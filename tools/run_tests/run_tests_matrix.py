@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -182,7 +182,7 @@ def _generate_jobs(languages,
 def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
     # sanity tests
-    test_jobs += _generate_jobs(languages=['sanity'],
+    test_jobs += _generate_jobs(languages=['sanity', 'clang-tidy', 'iwyu'],
                                 configs=['dbg'],
                                 platforms=['linux'],
                                 labels=['basictests'],
@@ -201,7 +201,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # C# tests on .NET desktop/mono
+    # C# tests (both on .NET desktop/mono and .NET core)
     test_jobs += _generate_jobs(languages=['csharp'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos', 'windows'],
@@ -209,13 +209,14 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
-    # C# tests on .NET core
+
+    # ARM64 Linux C# tests
     test_jobs += _generate_jobs(languages=['csharp'],
                                 configs=['dbg', 'opt'],
-                                platforms=['linux', 'macos', 'windows'],
-                                arch='default',
-                                compiler='coreclr',
-                                labels=['basictests', 'multilang'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                labels=['basictests_arm64'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
@@ -223,8 +224,20 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                iomgr_platforms=['native', 'gevent', 'asyncio'],
+                                iomgr_platforms=['native'],
                                 labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
+    # ARM64 Linux Python tests
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                iomgr_platforms=['native'],
+                                labels=['basictests_arm64'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
@@ -244,6 +257,17 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
+    # ARM64 Linux Ruby and PHP tests
+    test_jobs += _generate_jobs(languages=['ruby', 'php7'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                labels=['basictests_arm64'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
@@ -276,8 +300,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11',
-            'gcc_musl', 'clang4', 'clang12'
+            'gcc7', 'gcc10.2_openssl102', 'gcc12', 'gcc_musl', 'clang6',
+            'clang13'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -295,6 +319,17 @@ def _create_portability_test_jobs(extra_args=[],
                                 platforms=['windows'],
                                 arch='x64',
                                 compiler='default',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
+
+    # portability C on Windows with the "Visual Studio" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
+    test_jobs += _generate_jobs(languages=['c'],
+                                configs=['dbg'],
+                                platforms=['windows'],
+                                arch='default',
+                                compiler='cmake_vs2017',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
@@ -317,19 +352,9 @@ def _create_portability_test_jobs(extra_args=[],
                                 configs=['dbg'],
                                 platforms=['windows'],
                                 arch='x64',
-                                compiler='cmake_vs2017',
+                                compiler='cmake_ninja_vs2017',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
-    # C and C++ with the c-ares DNS resolver on Linux
-    test_jobs += _generate_jobs(languages=['c', 'c++'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args,
-                                extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
                                 inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 

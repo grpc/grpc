@@ -19,14 +19,26 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
 #include <vector>
 
+#include <grpc/slice.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -40,7 +52,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       grpc_polling_entity* pollent;
       grpc_slice path;
       gpr_cycle_counter start_time;
-      grpc_millis deadline;
+      Timestamp deadline;
       Arena* arena;
       grpc_call_context_element* context;
       CallCombiner* call_combiner;
@@ -80,18 +92,15 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
   };
 
   static RefCountedPtr<DynamicFilters> Create(
-      const grpc_channel_args* args,
-      std::vector<const grpc_channel_filter*> filters);
+      const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters);
 
-  explicit DynamicFilters(grpc_channel_stack* channel_stack)
-      : channel_stack_(channel_stack) {}
-
-  ~DynamicFilters() override;
+  explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)
+      : channel_stack_(std::move(channel_stack)) {}
 
   RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
 
  private:
-  grpc_channel_stack* channel_stack_;
+  RefCountedPtr<grpc_channel_stack> channel_stack_;
 };
 
 }  // namespace grpc_core

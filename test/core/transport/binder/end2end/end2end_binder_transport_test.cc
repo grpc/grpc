@@ -41,7 +41,7 @@ class End2EndBinderTransportTest
   End2EndBinderTransportTest() {
     end2end_testing::g_transaction_processor =
         new end2end_testing::TransactionProcessor(GetParam());
-    service_ = absl::make_unique<grpc::testing::TestServiceImpl>();
+    service_ = std::make_unique<grpc::testing::TestServiceImpl>();
     grpc::ServerBuilder builder;
     builder.RegisterService(service_.get());
     server_ = builder.BuildAndStart();
@@ -70,12 +70,14 @@ class End2EndBinderTransportTest
  protected:
   std::unique_ptr<grpc::testing::TestServiceImpl> service_;
   std::unique_ptr<grpc::Server> server_;
+
+ private:
+  grpc_core::ExecCtx exec_ctx;
 };
 
 }  // namespace
 
 TEST_P(End2EndBinderTransportTest, SetupTransport) {
-  grpc_core::ExecCtx exec_ctx;
   grpc_transport *client_transport, *server_transport;
   std::tie(client_transport, server_transport) =
       end2end_testing::CreateClientServerBindersPairForTesting();
@@ -555,6 +557,6 @@ INSTANTIATE_TEST_SUITE_P(
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

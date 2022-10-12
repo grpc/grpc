@@ -21,14 +21,14 @@
 
 #include <stddef.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {
 
-// A fire and forget class used by DNSResolver::Request implementations to
-// schedule DNS  resolution callbacks on the ExecCtx, which is frequently
-// necessary to avoid lock inversion related problems.
+// A fire and forget class to schedule DNS resolution callbacks on the ExecCtx,
+// which is frequently necessary to avoid lock inversion related problems.
 class DNSCallbackExecCtxScheduler {
  public:
   DNSCallbackExecCtxScheduler(
@@ -37,7 +37,7 @@ class DNSCallbackExecCtxScheduler {
       absl::StatusOr<std::vector<grpc_resolved_address>> param)
       : on_done_(std::move(on_done)), param_(std::move(param)) {
     GRPC_CLOSURE_INIT(&closure_, RunCallback, this, grpc_schedule_on_exec_ctx);
-    ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
   }
 
  private:

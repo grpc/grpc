@@ -19,7 +19,12 @@
 #ifndef PASSTHRU_ENDPOINT_H
 #define PASSTHRU_ENDPOINT_H
 
+#include <stdint.h>
+
+#include <vector>
+
 #include <grpc/support/atm.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 

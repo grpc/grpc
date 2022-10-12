@@ -17,11 +17,23 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <list>
+#include <stdlib.h>
 
-#include <gtest/gtest.h>
+#include <memory>
 
+#include "absl/strings/string_view.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/mock_authorization_endpoint.h"
 
 namespace grpc_core {
@@ -33,12 +45,11 @@ class EvaluateArgsTestUtil {
   ~EvaluateArgsTestUtil() { delete channel_args_; }
 
   void AddPairToMetadata(const char* key, const char* value) {
-    metadata_.Append(
-        key, Slice(grpc_slice_intern(grpc_slice_from_static_string(value))),
-        [](absl::string_view, const Slice&) {
-          // We should never ever see an error here.
-          abort();
-        });
+    metadata_.Append(key, Slice::FromStaticString(value),
+                     [](absl::string_view, const Slice&) {
+                       // We should never ever see an error here.
+                       abort();
+                     });
   }
 
   void SetLocalEndpoint(absl::string_view local_uri) {

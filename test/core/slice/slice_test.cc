@@ -23,13 +23,16 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <random>
+#include <string>
+#include <vector>
 
-#include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -57,7 +60,7 @@ TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
       GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
     }
     /* And finally we must succeed in destroying the slice */
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
   }
 }
 
@@ -70,7 +73,7 @@ TEST(GrpcSliceTest, SliceNewReturnsSomethingSensible) {
   EXPECT_NE(slice.refcount, nullptr);
   EXPECT_EQ(slice.data.refcounted.bytes, &x);
   EXPECT_EQ(slice.data.refcounted.length, 1);
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
 }
 
 /* destroy function that sets a mark to indicate it was called. */
@@ -90,7 +93,7 @@ TEST(GrpcSliceTest, SliceNewWithUserData) {
   EXPECT_EQ(GRPC_SLICE_START_PTR(slice)[1], 1);
 
   /* unref should cause destroy function to run. */
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
   EXPECT_EQ(marker, 1);
 }
 
@@ -117,15 +120,15 @@ TEST(GrpcSliceTest, SliceNewWithLenReturnsSomethingSensible) {
      make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
      not called until the last unref operation */
   for (i = 0; i < num_refs; i++) {
-    grpc_slice_ref_internal(slice);
+    grpc_slice_ref(slice);
   }
   for (i = 0; i < num_refs; i++) {
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
   }
   EXPECT_EQ(do_nothing_with_len_1_calls, 0); /* Shouldn't be called yet */
 
   /* last unref */
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
   EXPECT_EQ(do_nothing_with_len_1_calls, 1);
 }
 
@@ -154,10 +157,10 @@ TEST_P(GrpcSliceSizedTest, SliceSubWorks) {
       for (k = 0; k < j - i; k++) {
         EXPECT_EQ(GRPC_SLICE_START_PTR(sub)[k], (uint8_t)(i + k));
       }
-      grpc_slice_unref_internal(sub);
+      grpc_slice_unref(sub);
     }
   }
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
 }
 
 static void check_head_tail(grpc_slice slice, grpc_slice head,
@@ -189,14 +192,14 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
   /* Ensure that for all subsets length is correct and that we start on the
      correct byte. Additionally check that no copies were made. */
   for (i = 0; i < length; i++) {
-    tail = grpc_slice_ref_internal(slice);
+    tail = grpc_slice_ref(slice);
     head = grpc_slice_split_head(&tail, i);
     check_head_tail(slice, head, tail);
-    grpc_slice_unref_internal(tail);
-    grpc_slice_unref_internal(head);
+    grpc_slice_unref(tail);
+    grpc_slice_unref(head);
   }
 
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
 }
 
 TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
@@ -218,14 +221,14 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   /* Ensure that for all subsets length is correct and that we start on the
      correct byte. Additionally check that no copies were made. */
   for (i = 0; i < length; i++) {
-    head = grpc_slice_ref_internal(slice);
+    head = grpc_slice_ref(slice);
     tail = grpc_slice_split_tail(&head, i);
     check_head_tail(slice, head, tail);
-    grpc_slice_unref_internal(tail);
-    grpc_slice_unref_internal(head);
+    grpc_slice_unref(tail);
+    grpc_slice_unref(head);
   }
 
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
 }
 
 INSTANTIATE_TEST_SUITE_P(GrpcSliceSizedTest, GrpcSliceSizedTest,
@@ -248,7 +251,7 @@ TEST(GrpcSliceTest, SliceFromCopiedString) {
   EXPECT_EQ(strlen(text), GRPC_SLICE_LENGTH(slice));
   EXPECT_EQ(
       0, memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
 }
 
 TEST(GrpcSliceTest, MovedStringSlice) {
@@ -259,7 +262,7 @@ TEST(GrpcSliceTest, MovedStringSlice) {
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
   EXPECT_EQ(GRPC_SLICE_LENGTH(small), strlen(kSmallStr));
   EXPECT_NE(GRPC_SLICE_START_PTR(small), reinterpret_cast<uint8_t*>(small_ptr));
-  grpc_slice_unref_internal(small);
+  grpc_slice_unref(small);
 
   // Large string should be move the reference.
   constexpr char kSLargeStr[] = "hello123456789123456789123456789";
@@ -268,7 +271,7 @@ TEST(GrpcSliceTest, MovedStringSlice) {
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
   EXPECT_EQ(GRPC_SLICE_LENGTH(large), strlen(kSLargeStr));
   EXPECT_EQ(GRPC_SLICE_START_PTR(large), reinterpret_cast<uint8_t*>(large_ptr));
-  grpc_slice_unref_internal(large);
+  grpc_slice_unref(large);
 
   // Moved buffer must respect the provided length not the actual length of the
   // string.
@@ -277,7 +280,7 @@ TEST(GrpcSliceTest, MovedStringSlice) {
                                        strlen(kSmallStr));
   EXPECT_EQ(GRPC_SLICE_LENGTH(small), strlen(kSmallStr));
   EXPECT_NE(GRPC_SLICE_START_PTR(small), reinterpret_cast<uint8_t*>(large_ptr));
-  grpc_slice_unref_internal(small);
+  grpc_slice_unref(small);
 }
 
 TEST(GrpcSliceTest, StringViewFromSlice) {
@@ -357,9 +360,8 @@ size_t SumSlice(const Slice& slice) {
 }
 
 TEST(SliceTest, ExternalAsOwned) {
-  auto external_string = absl::make_unique<std::string>(RandomString(1024));
-  Slice slice(ExternallyManagedSlice(external_string->data(),
-                                     external_string->length()));
+  auto external_string = std::make_unique<std::string>(RandomString(1024));
+  Slice slice = Slice::FromExternalString(*external_string);
   const auto initial_sum = SumSlice(slice);
   Slice owned = slice.AsOwned();
   EXPECT_EQ(initial_sum, SumSlice(owned));
@@ -367,7 +369,7 @@ TEST(SliceTest, ExternalAsOwned) {
   // In ASAN (where we can be sure that it'll crash), go ahead and read the
   // bytes we just deleted.
   if (BuiltUnderAsan()) {
-    ASSERT_DEATH({ SumSlice(slice); }, "");
+    ASSERT_DEATH({ gpr_log(GPR_DEBUG, "%" PRIdPTR, SumSlice(slice)); }, "");
   }
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }
@@ -375,9 +377,7 @@ TEST(SliceTest, ExternalAsOwned) {
 TEST(SliceTest, ExternalTakeOwned) {
   std::unique_ptr<std::string> external_string(
       new std::string(RandomString(1024)));
-  SumSlice(Slice(ExternallyManagedSlice(external_string->data(),
-                                        external_string->length()))
-               .TakeOwned());
+  SumSlice(Slice::FromExternalString(*external_string).TakeOwned());
 }
 
 TEST(SliceTest, StaticSlice) {

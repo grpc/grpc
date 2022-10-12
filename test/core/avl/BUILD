@@ -24,10 +24,10 @@ grpc_cc_test(
     srcs = ["avl_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:avl",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -38,6 +38,7 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "avl_fuzzer.proto",
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:avl",

@@ -19,21 +19,21 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *udpa_annotations_MigrateAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &udpa_annotations_migrate_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "udpa.annotations.MigrateAnnotation");
+UPB_INLINE const upb_MessageDef *udpa_annotations_MigrateAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &udpa_annotations_migrate_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "udpa.annotations.MigrateAnnotation");
 }
 
-UPB_INLINE const upb_msgdef *udpa_annotations_FieldMigrateAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &udpa_annotations_migrate_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "udpa.annotations.FieldMigrateAnnotation");
+UPB_INLINE const upb_MessageDef *udpa_annotations_FieldMigrateAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &udpa_annotations_migrate_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "udpa.annotations.FieldMigrateAnnotation");
 }
 
-UPB_INLINE const upb_msgdef *udpa_annotations_FileMigrateAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &udpa_annotations_migrate_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "udpa.annotations.FileMigrateAnnotation");
+UPB_INLINE const upb_MessageDef *udpa_annotations_FileMigrateAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &udpa_annotations_migrate_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "udpa.annotations.FileMigrateAnnotation");
 }
 
 #ifdef __cplusplus

@@ -16,7 +16,11 @@
  *
  */
 
+#include <gtest/gtest.h>
+
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "test/core/util/test_config.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER
@@ -39,14 +43,15 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 
@@ -136,7 +141,7 @@ static void server_weak_ref_set(server_weak_ref* weak_ref,
 }
 
 static void test_addr_init_str(test_addr* addr) {
-  std::string str = grpc_sockaddr_to_string(&addr->addr, false);
+  std::string str = grpc_sockaddr_to_string(&addr->addr, false).value();
   size_t str_len = std::min(str.size(), sizeof(addr->str) - 1);
   memcpy(addr->str, str.c_str(), str_len);
   addr->str[str_len] = '\0';
@@ -145,8 +150,7 @@ static void test_addr_init_str(test_addr* addr) {
 static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
                        grpc_pollset* /*pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(tcp);
 
   on_connect_result temp_result;
@@ -156,7 +160,7 @@ static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
   gpr_mu_lock(g_mu);
   g_result = temp_result;
   g_nconnects++;
-  GPR_ASSERT(
+  ASSERT_TRUE(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
@@ -164,22 +168,30 @@ static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
 static void test_no_op(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr);
+  ASSERT_EQ(
+      absl::OkStatus(),
+      grpc_tcp_server_create(
+          nullptr,
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+          &s));
   grpc_tcp_server_unref(s);
 }
 
 static void test_no_op_with_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr);
+  ASSERT_EQ(
+      absl::OkStatus(),
+      grpc_tcp_server_create(
+          nullptr,
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+          &s));
   LOG_TEST("test_no_op_with_start");
   std::vector<grpc_pollset*> empty_pollset;
   grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
@@ -192,20 +204,24 @@ static void test_no_op_with_port(void) {
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr);
+  ASSERT_EQ(
+      absl::OkStatus(),
+      grpc_tcp_server_create(
+          nullptr,
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+          &s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   int port = -1;
-  GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
-                 GRPC_ERROR_NONE &&
-             port > 0);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &port),
+            absl::OkStatus());
+  ASSERT_GT(port, 0);
 
   grpc_tcp_server_unref(s);
 }
@@ -216,20 +232,24 @@ static void test_no_op_with_port_and_start(void) {
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr);
+  ASSERT_EQ(
+      absl::OkStatus(),
+      grpc_tcp_server_create(
+          nullptr,
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+          &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port = -1;
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
-                 GRPC_ERROR_NONE &&
-             port > 0);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &port),
+            absl::OkStatus());
+  ASSERT_GT(port, 0);
 
   std::vector<grpc_pollset*> empty_pollset;
   grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
@@ -239,8 +259,8 @@ static void test_no_op_with_port_and_start(void) {
 
 static grpc_error_handle tcp_connect(const test_addr* remote,
                                      on_connect_result* result) {
-  grpc_millis deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(10));
   int clifd;
   int nconnects_before;
   const struct sockaddr* remote_addr =
@@ -264,11 +284,11 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   }
   gpr_log(GPR_DEBUG, "wait");
   while (g_nconnects == nconnects_before &&
-         deadline > grpc_core::ExecCtx::Get()->Now()) {
+         deadline > grpc_core::Timestamp::Now()) {
     grpc_pollset_worker* worker = nullptr;
     grpc_error_handle err;
     if ((err = grpc_pollset_work(g_pollset, &worker, deadline)) !=
-        GRPC_ERROR_NONE) {
+        absl::OkStatus()) {
       gpr_mu_unlock(g_mu);
       close(clifd);
       return err;
@@ -281,7 +301,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   if (g_nconnects != nconnects_before + 1) {
     gpr_mu_unlock(g_mu);
     close(clifd);
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Didn't connect");
+    return GRPC_ERROR_CREATE("Didn't connect");
   }
   close(clifd);
   *result = g_result;
@@ -290,7 +310,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   gpr_log(GPR_INFO, "Result (%d, %d) fd %d", result->port_index,
           result->fd_index, result->server_fd);
   grpc_tcp_server_unref(result->server);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Tests a tcp server on "::" listeners with multiple ports. If channel_args is
@@ -316,13 +336,15 @@ static void test_connect(size_t num_connects,
   int svr1_port;
   grpc_tcp_server* s;
   const unsigned num_ports = 2;
-  const grpc_channel_args* new_channel_args =
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(channel_args);
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(nullptr, new_channel_args, &s));
-  grpc_channel_args_destroy(new_channel_args);
+  auto new_channel_args = grpc_core::CoreConfiguration::Get()
+                              .channel_args_preconditioning()
+                              .PreconditionChannelArgs(channel_args);
+  ASSERT_EQ(absl::OkStatus(),
+            grpc_tcp_server_create(
+                nullptr,
+                grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                    new_channel_args),
+                &s));
   unsigned port_num;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);
@@ -339,34 +361,34 @@ static void test_connect(size_t num_connects,
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   resolved_addr1.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   addr->ss_family = addr1->ss_family = AF_INET;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "grpc_tcp_server_add_port",
       grpc_tcp_server_add_port(s, &resolved_addr, &svr_port)));
   gpr_log(GPR_INFO, "Allocated port %d", svr_port);
-  GPR_ASSERT(svr_port > 0);
+  ASSERT_GT(svr_port, 0);
   /* Cannot use wildcard (port==0), because add_port() will try to reuse the
      same port as a previous add_port(). */
   svr1_port = grpc_pick_unused_port_or_die();
-  GPR_ASSERT(svr1_port > 0);
+  ASSERT_GT(svr1_port, 0);
   gpr_log(GPR_INFO, "Picked unused port %d", svr1_port);
   grpc_sockaddr_set_port(&resolved_addr1, svr1_port);
-  GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr1, &port) ==
-                 GRPC_ERROR_NONE &&
-             port == svr1_port);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr1, &port),
+            absl::OkStatus());
+  ASSERT_EQ(port, svr1_port);
 
   /* Bad port_index. */
-  GPR_ASSERT(grpc_tcp_server_port_fd_count(s, 2) == 0);
-  GPR_ASSERT(grpc_tcp_server_port_fd(s, 2, 0) < 0);
+  ASSERT_EQ(grpc_tcp_server_port_fd_count(s, 2), 0);
+  ASSERT_LT(grpc_tcp_server_port_fd(s, 2, 0), 0);
 
   /* Bad fd_index. */
-  GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 100) < 0);
-  GPR_ASSERT(grpc_tcp_server_port_fd(s, 1, 100) < 0);
+  ASSERT_LT(grpc_tcp_server_port_fd(s, 0, 100), 0);
+  ASSERT_LT(grpc_tcp_server_port_fd(s, 1, 100), 0);
 
   /* Got at least one fd per port. */
   svr_fd_count = grpc_tcp_server_port_fd_count(s, 0);
-  GPR_ASSERT(svr_fd_count >= 1);
+  ASSERT_GE(svr_fd_count, 1);
   svr1_fd_count = grpc_tcp_server_port_fd_count(s, 1);
-  GPR_ASSERT(svr1_fd_count >= 1);
+  ASSERT_GE(svr1_fd_count, 1);
 
   std::vector<grpc_pollset*> test_pollset;
   test_pollset.push_back(g_pollset);
@@ -386,21 +408,20 @@ static void test_connect(size_t num_connects,
                   dst.str);
           continue;
         }
-        GPR_ASSERT(grpc_sockaddr_set_port(&dst.addr, ports[port_num]));
+        ASSERT_TRUE(grpc_sockaddr_set_port(&dst.addr, ports[port_num]));
         test_addr_init_str(&dst);
         ++num_tested;
         on_connect_result_init(&result);
-        if ((err = tcp_connect(&dst, &result)) == GRPC_ERROR_NONE &&
+        if ((err = tcp_connect(&dst, &result)) == absl::OkStatus() &&
             result.server_fd >= 0 && result.server == s) {
           continue;
         }
         gpr_log(GPR_ERROR, "Failed to connect to %s: %s", dst.str,
-                grpc_error_std_string(err).c_str());
-        GPR_ASSERT(test_dst_addrs);
+                grpc_core::StatusToString(err).c_str());
+        ASSERT_TRUE(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
-        GRPC_ERROR_UNREF(err);
       }
-      GPR_ASSERT(num_tested > 0);
+      ASSERT_GT(num_tested, 0);
     }
   } else {
     for (port_num = 0; port_num < num_ports; ++port_num) {
@@ -410,46 +431,47 @@ static void test_connect(size_t num_connects,
         int fd = grpc_tcp_server_port_fd(s, port_num, fd_num);
         size_t connect_num;
         test_addr dst;
-        GPR_ASSERT(fd >= 0);
+        ASSERT_GE(fd, 0);
         dst.addr.len = static_cast<socklen_t>(sizeof(dst.addr.addr));
-        GPR_ASSERT(getsockname(fd, (struct sockaddr*)dst.addr.addr,
-                               (socklen_t*)&dst.addr.len) == 0);
-        GPR_ASSERT(dst.addr.len <= sizeof(dst.addr.addr));
+        ASSERT_EQ(getsockname(fd, (struct sockaddr*)dst.addr.addr,
+                              (socklen_t*)&dst.addr.len),
+                  0);
+        ASSERT_LE(dst.addr.len, sizeof(dst.addr.addr));
         test_addr_init_str(&dst);
         gpr_log(GPR_INFO, "(%d, %d) fd %d family %s listening on %s", port_num,
                 fd_num, fd, sock_family_name(addr->ss_family), dst.str);
         for (connect_num = 0; connect_num < num_connects; ++connect_num) {
           on_connect_result result;
           on_connect_result_init(&result);
-          GPR_ASSERT(
+          ASSERT_TRUE(
               GRPC_LOG_IF_ERROR("tcp_connect", tcp_connect(&dst, &result)));
-          GPR_ASSERT(result.server_fd == fd);
-          GPR_ASSERT(result.port_index == port_num);
-          GPR_ASSERT(result.fd_index == fd_num);
-          GPR_ASSERT(result.server == s);
-          GPR_ASSERT(
-              grpc_tcp_server_port_fd(s, result.port_index, result.fd_index) ==
+          ASSERT_EQ(result.server_fd, fd);
+          ASSERT_EQ(result.port_index, port_num);
+          ASSERT_EQ(result.fd_index, fd_num);
+          ASSERT_EQ(result.server, s);
+          ASSERT_EQ(
+              grpc_tcp_server_port_fd(s, result.port_index, result.fd_index),
               result.server_fd);
         }
       }
     }
   }
   /* Weak ref to server valid until final unref. */
-  GPR_ASSERT(weak_ref.server != nullptr);
-  GPR_ASSERT(grpc_tcp_server_port_fd(s, 0, 0) >= 0);
+  ASSERT_NE(weak_ref.server, nullptr);
+  ASSERT_GE(grpc_tcp_server_port_fd(s, 0, 0), 0);
 
   grpc_tcp_server_unref(s);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Weak ref lost. */
-  GPR_ASSERT(weak_ref.server == nullptr);
+  ASSERT_EQ(weak_ref.server, nullptr);
 }
 
 static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
-int main(int argc, char** argv) {
+TEST(TcpServerPosixTest, MainTest) {
   grpc_closure destroyed;
   grpc_arg chan_args[1];
   chan_args[0].type = GRPC_ARG_INTEGER;
@@ -460,7 +482,6 @@ int main(int argc, char** argv) {
   struct ifaddrs* ifa_it;
   // Zalloc dst_addrs to avoid oversized frames.
   test_addrs* dst_addrs = grpc_core::Zalloc<test_addrs>();
-  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   // wait a few seconds to make sure IPv6 link-local addresses can be bound
   // if we are running under docker container that has just started.
@@ -478,8 +499,7 @@ int main(int argc, char** argv) {
     test_no_op_with_port_and_start();
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-      gpr_log(GPR_ERROR, "getifaddrs: %s", strerror(errno));
-      return EXIT_FAILURE;
+      FAIL() << "getifaddrs: " << grpc_core::StrError(errno);
     }
     dst_addrs->naddrs = 0;
     for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;
@@ -497,7 +517,7 @@ int main(int argc, char** argv) {
       }
       memcpy(dst_addrs->addrs[dst_addrs->naddrs].addr.addr, ifa_it->ifa_addr,
              dst_addrs->addrs[dst_addrs->naddrs].addr.len);
-      GPR_ASSERT(
+      ASSERT_TRUE(
           grpc_sockaddr_set_port(&dst_addrs->addrs[dst_addrs->naddrs].addr, 0));
       test_addr_init_str(&dst_addrs->addrs[dst_addrs->naddrs]);
       ++dst_addrs->naddrs;
@@ -525,11 +545,12 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   gpr_free(dst_addrs);
   gpr_free(g_pollset);
-  return EXIT_SUCCESS;
 }
 
-#else /* GRPC_POSIX_SOCKET_SERVER */
-
-int main(int argc, char** argv) { return 1; }
-
 #endif /* GRPC_POSIX_SOCKET_SERVER */
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

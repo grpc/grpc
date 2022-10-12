@@ -20,12 +20,15 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 
+#include <stddef.h>
+
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 grpc_slice grpc_chttp2_window_update_create(
@@ -57,12 +60,12 @@ grpc_slice grpc_chttp2_window_update_create(
 grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
   if (flags || length != 4) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return GRPC_ERROR_CREATE(absl::StrFormat(
         "invalid window update: length=%d, flags=%02x", length, flags));
   }
   parser->byte = 0;
   parser->amount = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_window_update_parser_parse(
@@ -88,20 +91,16 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     // top bit is reserved and must be ignored.
     uint32_t received_update = p->amount & 0x7fffffffu;
     if (received_update == 0) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return GRPC_ERROR_CREATE(
           absl::StrCat("invalid window update bytes: ", p->amount));
     }
     GPR_ASSERT(is_last);
 
     if (t->incoming_stream_id != 0) {
       if (s != nullptr) {
-        s->flow_control->RecvUpdate(received_update);
-        if (grpc_core::chttp2::
-                g_test_only_transport_flow_control_window_check &&
-            s->flow_control->remote_window_delta() >
-                grpc_core::chttp2::kMaxWindowDelta) {
-          GPR_ASSERT(false);
-        }
+        grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext(
+            &s->flow_control)
+            .RecvUpdate(received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
@@ -109,15 +108,15 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
         }
       }
     } else {
-      bool was_zero = t->flow_control->remote_window() <= 0;
-      t->flow_control->RecvUpdate(received_update);
-      bool is_zero = t->flow_control->remote_window() <= 0;
-      if (was_zero && !is_zero) {
+      grpc_core::chttp2::TransportFlowControl::OutgoingUpdateContext upd(
+          &t->flow_control);
+      upd.RecvUpdate(received_update);
+      if (upd.Finish() == grpc_core::chttp2::StallEdge::kUnstalled) {
         grpc_chttp2_initiate_write(
             t, GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED);
       }
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

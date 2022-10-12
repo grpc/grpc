@@ -19,11 +19,11 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *google_protobuf_Any_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_protobuf_any_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.protobuf.Any");
+UPB_INLINE const upb_MessageDef *google_protobuf_Any_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_any_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.Any");
 }
 
 #ifdef __cplusplus

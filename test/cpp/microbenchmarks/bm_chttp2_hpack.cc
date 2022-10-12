@@ -31,11 +31,11 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
@@ -45,7 +45,7 @@ static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
     grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
         "test"));
 
-static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
+static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
   uint8_t* p = GRPC_SLICE_START_PTR(s);
   for (auto b : bytes) {
@@ -59,25 +59,22 @@ static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
 //
 
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_core::HPackCompressor c;
     grpc_core::ExecCtx::Get()->Flush();
   }
-
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderInitDestroy);
 
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp saved_now = grpc_core::Timestamp::Now();
 
   auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
-  b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
+  b.Set(grpc_core::GrpcTimeoutMetadata(),
+        saved_now + grpc_core::Duration::Seconds(30));
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
@@ -94,26 +91,15 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             &stats,
         },
         b, &outbuf);
-    grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+    grpc_slice_buffer_reset_and_unref(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_slice_buffer_destroy_internal(&outbuf);
-
-  std::ostringstream label;
-  label << "framing_bytes/iter:"
-        << (static_cast<double>(stats.framing_bytes) /
-            static_cast<double>(state.iterations()))
-        << " header_bytes/iter:"
-        << (static_cast<double>(stats.header_bytes) /
-            static_cast<double>(state.iterations()));
-  track_counters.AddLabel(label.str());
-  track_counters.Finish(state);
+  grpc_slice_buffer_destroy(&outbuf);
 }
 BENCHMARK(BM_HpackEncoderEncodeDeadline);
 
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
@@ -145,20 +131,10 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
         gpr_free(s);
       }
     }
-    grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+    grpc_slice_buffer_reset_and_unref(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_slice_buffer_destroy_internal(&outbuf);
-
-  std::ostringstream label;
-  label << "framing_bytes/iter:"
-        << (static_cast<double>(stats.framing_bytes) /
-            static_cast<double>(state.iterations()))
-        << " header_bytes/iter:"
-        << (static_cast<double>(stats.header_bytes) /
-            static_cast<double>(state.iterations()));
-  track_counters.AddLabel(label.str());
-  track_counters.Finish(state);
+  grpc_slice_buffer_destroy(&outbuf);
 }
 
 namespace hpack_encoder_fixtures {
@@ -179,83 +155,35 @@ class SingleStaticElem {
   }
 };
 
-class SingleInternedElem {
+static void CrashOnAppendError(absl::string_view, const grpc_core::Slice&) {
+  abort();
+}
+
+class SingleNonBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            grpc_slice_intern(grpc_slice_from_static_string("abc")),
-            grpc_slice_intern(grpc_slice_from_static_string("def"))))));
+    b->Append("abc", grpc_core::Slice::FromStaticString("def"),
+              CrashOnAppendError);
   }
 };
 
 template <int kLength, bool kTrueBinary>
-class SingleInternedBinaryElem {
+class SingleBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = kTrueBinary;
   static void Prepare(grpc_metadata_batch* b) {
-    grpc_slice bytes = MakeBytes();
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            grpc_slice_intern(grpc_slice_from_static_string("abc-bin")),
-            grpc_slice_intern(bytes)))));
-    grpc_slice_unref(bytes);
+    b->Append("abc-bin", MakeBytes(), CrashOnAppendError);
   }
 
  private:
-  static grpc_slice MakeBytes() {
+  static grpc_core::Slice MakeBytes() {
     std::vector<char> v;
     v.reserve(kLength);
     for (int i = 0; i < kLength; i++) {
       v.push_back(static_cast<char>(rand()));
     }
-    return grpc_slice_from_copied_buffer(v.data(), v.size());
-  }
-};
-
-class SingleInternedKeyElem {
- public:
-  static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     grpc_slice_intern(grpc_slice_from_static_string("abc")),
-                     grpc_slice_from_static_string("def")))));
-  }
-};
-
-class SingleNonInternedElem {
- public:
-  static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("addmd", b->Append(grpc_mdelem_from_slices(
-                                       grpc_slice_from_static_string("abc"),
-                                       grpc_slice_from_static_string("def")))));
-  }
-};
-
-template <int kLength, bool kTrueBinary>
-class SingleNonInternedBinaryElem {
- public:
-  static constexpr bool kEnableTrueBinary = kTrueBinary;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     grpc_slice_from_static_string("abc-bin"), MakeBytes()))));
-  }
-
- private:
-  static grpc_slice MakeBytes() {
-    std::vector<char> v;
-    v.reserve(kLength);
-    for (int i = 0; i < kLength; i++) {
-      v.push_back(static_cast<char>(rand()));
-    }
-    return grpc_slice_from_copied_buffer(v.data(), v.size());
+    return grpc_core::Slice::FromCopiedBuffer(v);
   }
 };
 
@@ -357,74 +285,20 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, EmptyBatch)->Args({0, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, EmptyBatch)->Args({1, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleStaticElem)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedKeyElem)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonBinaryElem)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedElem)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<1, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<1, false>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<3, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<3, false>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<10, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<10, false>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<31, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<31, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<100, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<1, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<3, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<10, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<31, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<100, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedElem)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<1, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<3, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<10, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<31, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<100, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<1, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<3, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<10, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<31, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<100, true>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<100, false>)
     ->Args({0, 16384});
 // test with a tiny frame size, to highlight continuation costs
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedElem)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonBinaryElem)
     ->Args({0, 1});
 
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
@@ -447,20 +321,16 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 //
 
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     { grpc_core::HPackParser(); }
     grpc_core::ExecCtx::Get()->Flush();
   }
-
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
-  TrackCounters track_counters;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::ExecCtx exec_ctx;
@@ -477,7 +347,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   auto parse_vec = [&p](const std::vector<grpc_slice>& slices) {
     for (size_t i = 0; i < slices.size(); ++i) {
       auto error = p.Parse(slices[i], i == slices.size() - 1);
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      GPR_ASSERT(error.ok());
     }
   };
   parse_vec(init_slices);
@@ -503,8 +373,6 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   arena->Destroy();
-
-  track_counters.Finish(state);
 }
 
 namespace hpack_parser_fixtures {
@@ -543,13 +411,13 @@ class FromEncoderFixture {
           b, &outbuf);
       if (i == iteration) {
         for (size_t s = 0; s < outbuf.count; s++) {
-          out.push_back(grpc_slice_ref_internal(outbuf.slices[s]));
+          out.push_back(grpc_slice_ref(outbuf.slices[s]));
         }
         done = true;
       }
-      grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+      grpc_slice_buffer_reset_and_unref(&outbuf);
       grpc_core::ExecCtx::Get()->Flush();
-      grpc_slice_buffer_destroy_internal(&outbuf);
+      grpc_slice_buffer_destroy(&outbuf);
       i++;
     }
     // Remove the HTTP header.
@@ -783,10 +651,10 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

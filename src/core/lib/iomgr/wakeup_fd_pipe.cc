@@ -28,6 +28,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
@@ -36,17 +37,18 @@ static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
-    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
+    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno,
+            grpc_core::StrError(errno).c_str());
     return GRPC_OS_ERROR(errno, "pipe");
   }
   grpc_error_handle err;
   err = grpc_set_socket_nonblocking(pipefd[0], 1);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!err.ok()) return err;
   err = grpc_set_socket_nonblocking(pipefd[1], 1);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!err.ok()) return err;
   fd_info->read_fd = pipefd[0];
   fd_info->write_fd = pipefd[1];
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle pipe_consume(grpc_wakeup_fd* fd_info) {
@@ -56,10 +58,10 @@ static grpc_error_handle pipe_consume(grpc_wakeup_fd* fd_info) {
   for (;;) {
     r = read(fd_info->read_fd, buf, sizeof(buf));
     if (r > 0) continue;
-    if (r == 0) return GRPC_ERROR_NONE;
+    if (r == 0) return absl::OkStatus();
     switch (errno) {
       case EAGAIN:
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       case EINTR:
         continue;
       default:
@@ -72,7 +74,7 @@ static grpc_error_handle pipe_wakeup(grpc_wakeup_fd* fd_info) {
   char c = 0;
   while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR) {
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void pipe_destroy(grpc_wakeup_fd* fd_info) {
@@ -84,7 +86,7 @@ static int pipe_check_availability(void) {
   grpc_wakeup_fd fd;
   fd.read_fd = fd.write_fd = -1;
 
-  if (pipe_init(&fd) == GRPC_ERROR_NONE) {
+  if (pipe_init(&fd) == absl::OkStatus()) {
     pipe_destroy(&fd);
     return 1;
   } else {

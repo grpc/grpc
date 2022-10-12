@@ -57,7 +57,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -95,8 +94,8 @@ grpc_channel* create_secure_channel_for_test(
   }
   grpc_channel_args* channel_args =
       grpc_channel_args_copy_and_add(nullptr, new_args.data(), new_args.size());
-  grpc_channel* channel = grpc_secure_channel_create(channel_creds, server_addr,
-                                                     channel_args, nullptr);
+  grpc_channel* channel =
+      grpc_channel_create(server_addr, channel_creds, channel_args);
   grpc_channel_args_destroy(channel_args);
   grpc_channel_credentials_release(channel_creds);
   return channel;
@@ -153,13 +152,13 @@ class TestServer {
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server_, server_addr_.c_str(),
-                                                 server_creds));
+    GPR_ASSERT(grpc_server_add_http2_port(server_, server_addr_.c_str(),
+                                          server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
             server_addr_.c_str());
-    server_thd_ = absl::make_unique<std::thread>(PollUntilShutdown, this);
+    server_thd_ = std::make_unique<std::thread>(PollUntilShutdown, this);
   }
 
   ~TestServer() {
@@ -212,7 +211,7 @@ class ConnectLoopRunner {
         loops_(loops),
         expected_connectivity_states_(expected_connectivity_states),
         reconnect_backoff_ms_(reconnect_backoff_ms) {
-    thd_ = absl::make_unique<std::thread>(ConnectLoop, this);
+    thd_ = std::make_unique<std::thread>(ConnectLoop, this);
   }
 
   ~ConnectLoopRunner() { thd_->join(); }
@@ -226,8 +225,6 @@ class ConnectLoopRunner {
           self->server_address_.get(), self->fake_handshake_server_addr_.get(),
           self->reconnect_backoff_ms_);
       // Connect, forcing an ALTS handshake
-      gpr_timespec connect_deadline =
-          grpc_timeout_seconds_to_deadline(self->per_connect_deadline_seconds_);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(channel, 1);
       ASSERT_EQ(state, GRPC_CHANNEL_IDLE);
@@ -241,7 +238,10 @@ class ConnectLoopRunner {
         grpc_channel_watch_connectivity_state(
             channel, state, gpr_inf_future(GPR_CLOCK_REALTIME), cq, nullptr);
         grpc_event ev =
-            grpc_completion_queue_next(cq, connect_deadline, nullptr);
+            grpc_completion_queue_next(cq,
+                                       grpc_timeout_seconds_to_deadline(
+                                           self->per_connect_deadline_seconds_),
+                                       nullptr);
         ASSERT_EQ(ev.type, GRPC_OP_COMPLETE)
             << "connect_loop runner:" << std::hex << self
             << " got ev.type:" << ev.type << " i:" << i;
@@ -290,7 +290,7 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   {
     ConnectLoopRunner runner(
         test_server.address(), fake_handshake_server.address(),
-        5 /* per connect deadline seconds */, 10 /* loops */,
+        10 /* per connect deadline seconds */, 10 /* loops */,
         GRPC_CHANNEL_READY /* expected connectivity states */,
         0 /* reconnect_backoff_ms unset */);
   }
@@ -310,7 +310,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
     gpr_log(GPR_DEBUG,
             "start performing concurrent expected-to-succeed connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
           15 /* per connect deadline seconds */, 5 /* loops */,
           GRPC_CHANNEL_READY /* expected connectivity states */,
@@ -355,7 +355,7 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
           10 /* per connect deadline seconds */, 3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
@@ -394,7 +394,7 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
           20 /* per connect deadline seconds */, 2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
@@ -433,7 +433,7 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
-      connect_loop_runners.push_back(absl::make_unique<ConnectLoopRunner>(
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
           10 /* per connect deadline seconds */, 2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
@@ -454,7 +454,7 @@ TEST(AltsConcurrentConnectivityTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

@@ -147,12 +147,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
       case GRPCCallSafetyDefault:
         callFlags[hostAndPath] = @0;
         break;
-      case GRPCCallSafetyIdempotentRequest:
-        callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-        break;
-      case GRPCCallSafetyCacheableRequest:
-        callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-        break;
       default:
         break;
     }
@@ -185,13 +179,10 @@ static NSString *const kBearerPrefix = @"Bearer ";
                    writeDone:(void (^)(void))writeDone {
   // Purposely using pointer rather than length (host.length == 0) for backwards compatibility.
   NSAssert(host != nil && path != nil, @"Neither host nor path can be nil.");
-  NSAssert(safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
+  NSAssert(safety <= GRPCCallSafetyDefault, @"Invalid call safety value.");
   NSAssert(requestsWriter.state == GRXWriterStateNotStarted,
            @"The requests writer can't be already started.");
   if (!host || !path) {
-    return nil;
-  }
-  if (safety > GRPCCallSafetyCacheableRequest) {
     return nil;
   }
   if (requestsWriter.state != GRXWriterStateNotStarted) {
@@ -363,17 +354,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
 - (void)sendHeaders {
   // TODO (mxyan): Remove after deprecated methods are removed
   uint32_t callSafetyFlags = 0;
-  switch (_callSafety) {
-    case GRPCCallSafetyDefault:
-      callSafetyFlags = 0;
-      break;
-    case GRPCCallSafetyIdempotentRequest:
-      callSafetyFlags = GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-      break;
-    case GRPCCallSafetyCacheableRequest:
-      callSafetyFlags = GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-      break;
-  }
 
   NSMutableDictionary *headers = [_requestHeaders mutableCopy];
   NSString *fetchedOauth2AccessToken;
@@ -602,14 +582,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
       }
       if (_timeout > 0) {
         callOptions.timeout = _timeout;
-      }
-      uint32_t callFlags = [GRPCCall callFlagsForHost:_host path:_path];
-      if (callFlags != 0) {
-        if (callFlags == GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
-          _callSafety = GRPCCallSafetyIdempotentRequest;
-        } else if (callFlags == GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
-          _callSafety = GRPCCallSafetyCacheableRequest;
-        }
       }
 
       id<GRPCAuthorizationProtocol> tokenProvider = self.tokenProvider;

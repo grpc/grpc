@@ -1068,10 +1068,10 @@ cdef class AioServer:
             except asyncio.TimeoutError:
                 if self._crash_exception is not None:
                     raise self._crash_exception
-                return False
+                return True
         if self._crash_exception is not None:
             raise self._crash_exception
-        return True
+        return False
 
     def __dealloc__(self):
         """Deallocation of Core objects are ensured by Python layer."""

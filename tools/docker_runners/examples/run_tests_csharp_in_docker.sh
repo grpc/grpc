@@ -19,5 +19,5 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 # use the docker image used as the default for C# by run_tests.py
-export DOCKERFILE_DIR=tools/dockerfile/test/csharp_buster_x64
+export DOCKERFILE_DIR=tools/dockerfile/test/csharp_debian11_x64
 tools/docker_runners/run_in_docker.sh tools/run_tests/run_tests.py -l csharp -c dbg --compiler coreclr

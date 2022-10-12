@@ -17,19 +17,12 @@
 #include "src/core/lib/gprpp/stat.h"
 
 #include <stdio.h>
-#include <string.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -67,7 +60,7 @@ TEST(STAT, GetTimestampOnFailure) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

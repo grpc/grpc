@@ -24,6 +24,7 @@
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/compiler/command_line_interface.h>
 #include <google/protobuf/compiler/importer.h>
+#include <google/protobuf/compiler/python/pyi_generator.h>
 #include <google/protobuf/compiler/python/python_generator.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
@@ -48,6 +49,11 @@ int protoc_main(int argc, char* argv[]) {
   google::protobuf::compiler::python::Generator py_generator;
   cli.RegisterGenerator("--python_out", &py_generator,
                         "Generate Python source file.");
+
+  // pyi files for type checking
+  google::protobuf::compiler::python::PyiGenerator pyi_generator;
+  cli.RegisterGenerator("--pyi_out", &pyi_generator,
+                        "Generate Python pyi stub.");
 
   // gRPC Python
   grpc_python_generator::GeneratorConfiguration grpc_py_config;

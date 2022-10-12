@@ -18,22 +18,17 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <string>
+#include <utility>
 
-#include <gtest/gtest.h>
-
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -120,12 +115,14 @@ TEST(HpackParserTableTest, ManyAdditions) {
   ExecCtx exec_ctx;
 
   for (i = 0; i < 100000; i++) {
-    grpc_mdelem elem;
     std::string key = absl::StrCat("K.", i);
     std::string value = absl::StrCat("VALUE.", i);
-    elem = grpc_mdelem_from_slices(grpc_slice_from_cpp_string(key),
-                                   grpc_slice_from_cpp_string(value));
-    ASSERT_EQ(tbl.Add(HPackTable::Memento(elem)), GRPC_ERROR_NONE);
+    auto key_slice = Slice::FromCopiedString(key);
+    auto value_slice = Slice::FromCopiedString(value);
+    auto memento =
+        HPackTable::Memento(std::move(key_slice), std::move(value_slice));
+    auto add_err = tbl.Add(std::move(memento));
+    ASSERT_EQ(add_err, absl::OkStatus());
     AssertIndex(&tbl, 1 + hpack_constants::kLastStaticEntry, key.c_str(),
                 value.c_str());
     if (i) {
@@ -141,7 +138,7 @@ TEST(HpackParserTableTest, ManyAdditions) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int r = RUN_ALL_TESTS();
   grpc_shutdown();

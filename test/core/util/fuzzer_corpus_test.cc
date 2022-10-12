@@ -17,26 +17,32 @@
  */
 
 #include <dirent.h>
-#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 extern bool squelch;
-extern bool leak_check;
 
 ABSL_FLAG(std::string, file, "", "Use this file as test data");
 ABSL_FLAG(std::string, directory, "", "Use this directory as test data");
@@ -48,11 +54,9 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   // down before calling LLVMFuzzerTestOneInput(), because most
   // implementations of that function will initialize and shutdown gRPC
   // internally.
-  grpc_init();
   gpr_log(GPR_INFO, "Example file: %s", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
-  leak_check = false;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(GetParam().c_str(), 0, &buffer)));
   size_t length = GRPC_SLICE_LENGTH(buffer);
@@ -61,7 +65,6 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
     memcpy(data, GPR_SLICE_START_PTR(buffer), length);
   }
   grpc_slice_unref(buffer);
-  grpc_shutdown();
   LLVMFuzzerTestOneInput(static_cast<uint8_t*>(data), length);
   gpr_free(data);
 }
@@ -81,12 +84,13 @@ class ExampleGenerator
         examples_.push_back(absl::GetFlag(FLAGS_file));
       }
       if (!absl::GetFlag(FLAGS_directory).empty()) {
-        char* test_srcdir = gpr_getenv("TEST_SRCDIR");
-        gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);
+        auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
+        gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"",
+                test_srcdir.has_value() ? test_srcdir->c_str() : "(null)");
         std::string directory = absl::GetFlag(FLAGS_directory);
-        if (test_srcdir != nullptr) {
+        if (test_srcdir.has_value()) {
           directory =
-              test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
+              *test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
         }
         gpr_log(GPR_DEBUG, "Using corpus directory: %s", directory.c_str());
         DIR* dp;
@@ -105,12 +109,14 @@ class ExampleGenerator
           perror("Couldn't open the directory");
           abort();
         }
-        gpr_free(test_srcdir);
       }
     }
     // Make sure we don't succeed without doing anything, which caused
     // us to be blind to our fuzzers not running for 9 months.
     GPR_ASSERT(!examples_.empty());
+    // Get a consistent ordering of examples so problems don't just show up on
+    // CI
+    std::sort(examples_.begin(), examples_.end());
   }
 
   mutable std::vector<std::string> examples_;
@@ -160,7 +166,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::internal::ParamGenerator<std::string>(new ExampleGenerator));
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   ::testing::InitGoogleTest(&argc, argv);
 

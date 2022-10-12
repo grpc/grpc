@@ -14,8 +14,10 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
+#include <algorithm>
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -23,16 +25,16 @@ namespace grpc_core {
 
 // Allow substitution of config builder - in real code this would iterate
 // through all plugins
-namespace testing {
+namespace {
 using ConfigBuilderFunction = std::function<void(CoreConfiguration::Builder*)>;
-static ConfigBuilderFunction g_mock_builder;
-}  // namespace testing
+ConfigBuilderFunction g_mock_builder;
+}  // namespace
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
-  ::grpc_core::testing::g_mock_builder(builder);
+  g_mock_builder(builder);
 }
 
-namespace testing {
+namespace {
 // Helper for testing - clear out any state, rebuild configuration with fn being
 // the initializer
 void InitConfigWithBuilder(ConfigBuilderFunction fn) {
@@ -53,8 +55,8 @@ TEST(ConfigTest, ThreadedInit) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
   };
   std::vector<std::thread> threads;
-  threads.reserve(64);
-  for (int i = 0; i < 64; i++) {
+  threads.reserve(10);
+  for (int i = 0; i < 10; i++) {
     threads.push_back(std::thread([]() { CoreConfiguration::Get(); }));
   }
   for (auto& t : threads) {
@@ -63,7 +65,7 @@ TEST(ConfigTest, ThreadedInit) {
   g_mock_builder = nullptr;
   CoreConfiguration::Get();
 }
-}  // namespace testing
+}  // namespace
 
 }  // namespace grpc_core
 

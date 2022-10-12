@@ -18,12 +18,14 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 
+#include <memory>
+#include <new>
 #include <set>
+#include <type_traits>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
-#include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -187,7 +189,7 @@ TEST(RefCountedNonPolymorphicWithTracing, Basic) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

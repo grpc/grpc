@@ -16,24 +16,22 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -66,11 +64,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -88,7 +87,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Tests that we can continue to send/recv messages on a streaming call
@@ -147,7 +145,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_streaming_after_commit", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -192,16 +190,16 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(3), true);
+  cqv.Verify();
 
   // Server gets a call with received initial metadata.
   error =
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -221,8 +219,8 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Verify();
 
   // Server sends initial metadata and a message.
   memset(ops, 0, sizeof(ops));
@@ -236,10 +234,10 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
+  cqv.Expect(tag(103), true);
   // Client receives initial metadata and a message.
-  CQ_EXPECT_COMPLETION(cqv, tag(2), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(2), true);
+  cqv.Verify();
 
   // Client sends a second message and a close.
   memset(ops, 0, sizeof(ops));
@@ -252,8 +250,8 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(4), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(4), true);
+  cqv.Verify();
 
   // Server receives a second message.
   memset(ops, 0, sizeof(ops));
@@ -264,8 +262,8 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(104), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(104), true);
+  cqv.Verify();
 
   // Server receives a close, sends a second message, and sends status.
   memset(ops, 0, sizeof(ops));
@@ -286,8 +284,8 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(105),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(105), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(105), true);
+  cqv.Verify();
 
   // Client receives a second message.
   memset(ops, 0, sizeof(ops));
@@ -298,8 +296,8 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(5),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(5), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(5), true);
+  cqv.Verify();
 
   // Client receives status.
   memset(ops, 0, sizeof(ops));
@@ -312,13 +310,12 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
@@ -343,8 +340,6 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(response2_payload_recv);
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

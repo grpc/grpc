@@ -27,6 +27,19 @@ cd $(dirname $0)/../..
 git_root=$(pwd)
 cd -
 
+# Check that docker is installed and sudoless docker works.
+docker run -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
+    (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
+
+# Some of the images we build are for arm64 architecture and the easiest
+# way of allowing them to build locally on x64 machine is to use
+# qemu binfmt-misc hook that automatically runs arm64 binaries under
+# an emulator.
+# Perform a check that "qemu-user-static" with binfmt-misc hook
+# is installed, to give an early warning (otherwise building arm64 images won't work)
+docker run -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+    (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
+
 DOCKERHUB_ORGANIZATION=grpctesting
 
 for DOCKERFILE_DIR in tools/dockerfile/test/* tools/dockerfile/grpc_artifact_* tools/dockerfile/interoptest/* tools/dockerfile/distribtest/* third_party/rake-compiler-dock/*/
@@ -37,7 +50,12 @@ do
   # cmd in the dockerfile in not ok as contents of the added file will not be
   # reflected in the SHA).
   DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
-  DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+
+  if [ ! -e "$DOCKERFILE_DIR/Dockerfile" ]; then
+    continue
+  else
+    DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+  fi
 
   # skip the image if it already exists in the repo 
   curl --silent -f -lSL https://registry.hub.docker.com/v2/repositories/${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}/tags/${DOCKER_IMAGE_TAG} > /dev/null \

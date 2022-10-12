@@ -27,6 +27,7 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
@@ -127,7 +128,7 @@ static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusEnabled);
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::benchmark::Initialize(&argc, argv);
   if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
   ::benchmark::RunSpecifiedBenchmarks();

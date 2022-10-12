@@ -16,6 +16,10 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 
+#include <algorithm>
+#include <map>
+#include <utility>
+
 namespace grpc_core {
 
 GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
@@ -23,7 +27,7 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
   for (auto& sub_policy : policy.policies) {
     Policy policy;
     policy.name = sub_policy.first;
-    policy.matcher = absl::make_unique<PolicyAuthorizationMatcher>(
+    policy.matcher = std::make_unique<PolicyAuthorizationMatcher>(
         std::move(sub_policy.second));
     policies_.push_back(std::move(policy));
   }

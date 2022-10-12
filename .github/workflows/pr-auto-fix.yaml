@@ -1,7 +1,13 @@
 name: PR AutoFix
 on: [push]
+permissions: {}
 jobs:
   PRAutoFix:
+    permissions:
+      actions: write # to cancel/stop running workflows (styfle/cancel-workflow-action)
+      contents: write # to create branch (peter-evans/create-pull-request)
+      pull-requests: write # to create a PR (peter-evans/create-pull-request)
+
     runs-on: ubuntu-latest
     steps:
       # Cache bazel build
@@ -10,15 +16,25 @@ jobs:
         id: current-time
         with:
           format: YYYYWW
+      - name: Get current time
+        uses: srfrnk/current-time@master
+        id: current-time-with-day
+        with:
+          format: YYYYWWd
       - name: Cache bazel
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: bazel-cache
         with:
           path: ~/.cache/bazel
-          # formattedTime here is like 202132 - the year concatenated with the week
-          # as this changes every week, we cycle to a new cache once per week.
-          key: ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
+          # formattedTime here is like 2021323 - the year concatenated with the week then
+          # the day of that week.
+          # As this changes every day, we cycle to a new cache once per day, with lookup 
+          # across the week (and then the year).
+          key: ${{ runner.os }}-${{ steps.current-time-with-day.outputs.formattedTime }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
+            ${{ runner.os }}-
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs
@@ -49,19 +65,23 @@ jobs:
         run: test "${{ steps.check.outputs.result }}" = "stay"
       # Setup to run sanity suite
       - name: Install Python Interpreter
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install Python Packages
         run: |
-          python -m pip install --upgrade pip
           pip install pyyaml mako virtualenv
-          sudo apt-get install python-dev
+          sudo apt-get update
+          sudo apt-get install python3-dev
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: True
-          fetch-depth: 0
+      - name: Get the upstream code
+        run: |
+          cd ${{ github.workspace }}
+          git remote add upstream https://github.com/grpc/grpc
+          git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 upstream master
       # Run the things!
       - name: clang-tidy fixes
         run: ${{ github.workspace }}/tools/distrib/clang_tidy_code.sh --fix --only-changed || true

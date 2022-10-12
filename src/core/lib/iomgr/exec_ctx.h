@@ -23,21 +23,17 @@
 
 #include <limits>
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
-
-typedef int64_t grpc_millis;
-
-#define GRPC_MILLIS_INF_FUTURE INT64_MAX
-#define GRPC_MILLIS_INF_PAST INT64_MIN
 
 /** A combiner represents a list of work to be executed later.
     Forward declared here to avoid a circular dependency with combiner.h. */
@@ -56,12 +52,6 @@ typedef struct grpc_combiner grpc_combiner;
 /* This application callback exec ctx was initialized by an internal thread, and
    should not be counted by fork handlers */
 #define GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 1
-
-gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
-grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts);
-grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts);
-grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles);
-grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles);
 
 namespace grpc_core {
 class Combiner;
@@ -185,43 +175,17 @@ class ExecCtx {
     }
   }
 
-  /** Returns the stored current time relative to start if valid,
-   *  otherwise refreshes the stored time, sets it valid and returns the new
-   *  value.
-   */
-  grpc_millis Now();
-
-  /** Invalidates the stored time value. A new time value will be set on calling
-   *  Now().
-   */
-  void InvalidateNow() { now_is_valid_ = false; }
-
-  /** To be used only by shutdown code in iomgr */
+  Timestamp Now() { return Timestamp::Now(); }
+  void InvalidateNow() { time_cache_.InvalidateCache(); }
   void SetNowIomgrShutdown() {
-    now_ = GRPC_MILLIS_INF_FUTURE;
-    now_is_valid_ = true;
+    // We get to do a test only set now on this path just because iomgr
+    // is getting removed and no point adding more interfaces for it.
+    time_cache_.TestOnlySetNow(Timestamp::InfFuture());
   }
-
-  /** To be used only for testing.
-   *  Sets the now value.
-   */
-  void TestOnlySetNow(grpc_millis new_val) {
-    now_ = new_val;
-    now_is_valid_ = true;
-  }
-
-  static void TestOnlyGlobalInit(gpr_timespec new_val);
-
-  /** Global initialization for ExecCtx. Called by iomgr. */
-  static void GlobalInit(void);
-
-  /** Global shutdown for ExecCtx. Called by iomgr. */
-  static void GlobalShutdown(void) {}
+  void TestOnlySetNow(Timestamp now) { time_cache_.TestOnlySetNow(now); }
 
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
-
-  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error);
@@ -237,6 +201,7 @@ class ExecCtx {
 
  private:
   /** Set exec_ctx_ to exec_ctx. */
+  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
@@ -244,10 +209,8 @@ class ExecCtx {
 
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
-  bool now_is_valid_ = false;
-  grpc_millis now_ = 0;
-
-  static GPR_THREAD_LOCAL(ExecCtx*) exec_ctx_;
+  ScopedTimeCache time_cache_;
+  static thread_local ExecCtx* exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();
 };
 
@@ -356,20 +319,15 @@ class ApplicationCallbackExecCtx {
     ctx->tail_ = functor;
   }
 
-  /** Global initialization for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalInit(void) {}
-
-  /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalShutdown(void) {}
-
   static bool Available() { return Get() != nullptr; }
 
  private:
   uintptr_t flags_{0u};
   grpc_completion_queue_functor* head_{nullptr};
   grpc_completion_queue_functor* tail_{nullptr};
-  static GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*) callback_exec_ctx_;
+  static thread_local ApplicationCallbackExecCtx* callback_exec_ctx_;
 };
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

@@ -27,31 +27,66 @@ load(
     "//bazel:build_defs.bzl",
     "UPB_DEFAULT_CPPOPTS",
 )
+load(
+    "//bazel:upb_proto_library.bzl",
+    "upb_proto_library",
+    "upb_proto_reflection_library",
+)
 
 licenses(["notice"])
 
+proto_library(
+    name = "code_generator_request",
+    srcs = ["code_generator_request.proto"],
+    visibility = ["//:friends"],
+    deps = ["@com_google_protobuf//:compiler_plugin_proto"],
+)
+
+upb_proto_library(
+    name = "code_generator_request_upb_proto",
+    visibility = ["//:friends"],
+    deps = [":code_generator_request"],
+)
+
+upb_proto_reflection_library(
+    name = "code_generator_request_upb_proto_reflection",
+    visibility = ["//:friends"],
+    deps = [":code_generator_request"],
+)
+
+upb_proto_library(
+    name = "plugin_upb_proto",
+    visibility = ["//:friends"],
+    deps = ["@com_google_protobuf//:compiler_plugin_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "plugin_upb_proto_reflection",
+    visibility = ["//:friends"],
+    deps = ["@com_google_protobuf//:compiler_plugin_proto"],
+)
+
 cc_library(
     name = "common",
-    hdrs = ["common.h"],
     srcs = ["common.cc"],
+    hdrs = ["common.h"],
     copts = UPB_DEFAULT_CPPOPTS,
     deps = [
-        "@com_google_protobuf//:protobuf",
         "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
 cc_binary(
     name = "protoc-gen-upb",
-    srcs = [
-        "protoc-gen-upb.cc",
-        "message_layout.cc",
-        "message_layout.h",
-    ],
+    srcs = ["protoc-gen-upb.cc"],
     copts = UPB_DEFAULT_CPPOPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":common",
+        "//:mini_table",
+        "//:port",
+        "//:upb",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
@@ -75,5 +110,31 @@ cc_binary(
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:protoc_lib",
+    ],
+)
+
+cc_binary(
+    name = "protoc-gen-upbdev",
+    srcs = [
+        "code_generator_request.c",
+        "code_generator_request.h",
+        "protoc-gen-upbdev.cc",
+        "subprocess.cc",
+        "subprocess.h",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":code_generator_request_upb_proto",
+        ":code_generator_request_upb_proto_reflection",
+        ":plugin_upb_proto",
+        ":plugin_upb_proto_reflection",
+        "//:json",
+        "//:mini_descriptor",
+        "//:mini_table",
+        "//:port",
+        "//:reflection",
+        "//:upb",
+        "@com_google_absl//absl/strings",
     ],
 )

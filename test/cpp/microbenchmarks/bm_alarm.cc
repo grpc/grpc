@@ -33,7 +33,6 @@ namespace grpc {
 namespace testing {
 
 static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
-  TrackCounters track_counters;
   CompletionQueue cq;
   Alarm alarm;
   void* output_tag;
@@ -43,7 +42,6 @@ static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
     alarm.Set(&cq, deadline, nullptr);
     cq.Next(&output_tag, &ok);
   }
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_Alarm_Tag_Immediate);
 
@@ -57,10 +55,10 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

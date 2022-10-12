@@ -18,6 +18,7 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Type aliases
@@ -28,6 +29,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -47,7 +49,17 @@ _TEST_METADATA = (
 )
 
 
+def _is_supported(config: skips.TestConfig) -> bool:
+    if config.client_lang == _Lang.NODE:
+        return config.version_gte('v1.3.x')
+    return True
+
+
 class TestExactMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -92,6 +104,10 @@ class TestExactMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -121,16 +137,21 @@ class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
             [0]['prefixMatch'], _TEST_METADATA_VALUE_UNARY[:2])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   metadata=_TEST_METADATA,
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=(RpcTypeUnaryCall,),
+            metadata=_TEST_METADATA,
+            num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)
 
 
 class TestSuffixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -174,6 +195,10 @@ class TestSuffixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestPresentMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -203,16 +228,21 @@ class TestPresentMatch(xds_url_map_testcase.XdsUrlMapTestCase):
             [0]['presentMatch'], True)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   metadata=_TEST_METADATA,
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=(RpcTypeUnaryCall,),
+            metadata=_TEST_METADATA,
+            num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)
 
 
 class TestInvertMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -259,6 +289,10 @@ class TestInvertMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestRangeMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -309,6 +343,10 @@ class TestRangeMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(

@@ -19,21 +19,21 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init google_api_http_proto_upbdefinit;
+extern _upb_DefPool_Init google_api_http_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *google_api_Http_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_api_http_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.api.Http");
+UPB_INLINE const upb_MessageDef *google_api_Http_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_api_http_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.api.Http");
 }
 
-UPB_INLINE const upb_msgdef *google_api_HttpRule_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_api_http_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.api.HttpRule");
+UPB_INLINE const upb_MessageDef *google_api_HttpRule_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_api_http_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.api.HttpRule");
 }
 
-UPB_INLINE const upb_msgdef *google_api_CustomHttpPattern_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_api_http_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.api.CustomHttpPattern");
+UPB_INLINE const upb_MessageDef *google_api_CustomHttpPattern_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_api_http_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.api.CustomHttpPattern");
 }
 
 #ifdef __cplusplus

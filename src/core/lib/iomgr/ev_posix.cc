@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -32,7 +34,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
-#include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
@@ -75,44 +76,7 @@ grpc_poll_function_type grpc_poll_function = aix_poll;
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static const grpc_event_engine_vtable* g_event_engine = nullptr;
-static const char* g_poll_strategy_name = nullptr;
-
-typedef const grpc_event_engine_vtable* (*event_engine_factory_fn)(
-    bool explicit_request);
-
-struct event_engine_factory {
-  const char* name;
-  event_engine_factory_fn factory;
-};
-namespace {
-
-grpc_poll_function_type real_poll_function;
-
-int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
-  if (timeout == 0) {
-    return real_poll_function(fds, nfds, 0);
-  } else {
-    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
-    GPR_ASSERT(false);
-    return -1;
-  }
-}
-
-const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
-  if (!explicit_request) {
-    return nullptr;
-  }
-  // return the simplest engine as a phony but also override the poller
-  auto ret = grpc_init_poll_posix(explicit_request);
-  real_poll_function = grpc_poll_function;
-  grpc_poll_function = phony_poll;
-
-  return ret;
-}
-}  // namespace
-
-#define ENGINE_HEAD_CUSTOM "head_custom"
-#define ENGINE_TAIL_CUSTOM "tail_custom"
+static gpr_once g_choose_engine = GPR_ONCE_INIT;
 
 // The global array of event-engine factories. Each entry is a pair with a name
 // and an event-engine generator function (nullptr if there is no generator
@@ -125,13 +89,18 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
 // specific poller that is requested by name in the GRPC_POLL_STRATEGY
 // environment variable if that variable is set (which should be a
 // comma-separated list of one or more event engine names)
-static event_engine_factory g_factories[] = {
-    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
-    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
-    {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
-    {"poll", grpc_init_poll_posix},       {"none", init_non_polling},
-    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
+static const grpc_event_engine_vtable* g_vtables[] = {
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    &grpc_ev_epoll1_posix,
+    &grpc_ev_poll_posix,
+    &grpc_ev_none_posix,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
@@ -164,84 +133,73 @@ static bool is(const char* want, const char* have) {
 }
 
 static void try_engine(const char* engine) {
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
-    if (g_factories[i].factory != nullptr && is(engine, g_factories[i].name)) {
-      if ((g_event_engine = g_factories[i].factory(
-               0 == strcmp(engine, g_factories[i].name)))) {
-        g_poll_strategy_name = g_factories[i].name;
-        gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
-        return;
-      }
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_vtables); i++) {
+    if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
+        g_vtables[i]->check_engine_available(
+            0 == strcmp(engine, g_vtables[i]->name))) {
+      g_event_engine = g_vtables[i];
+      gpr_log(GPR_DEBUG, "Using polling engine: %s", g_event_engine->name);
+      return;
     }
   }
 }
 
 /* Call this before calling grpc_event_engine_init() */
-void grpc_register_event_engine_factory(const char* name,
-                                        event_engine_factory_fn factory,
+void grpc_register_event_engine_factory(const grpc_event_engine_vtable* vtable,
                                         bool add_at_head) {
-  const char* custom_match =
-      add_at_head ? ENGINE_HEAD_CUSTOM : ENGINE_TAIL_CUSTOM;
+  const grpc_event_engine_vtable** first_null = nullptr;
+  const grpc_event_engine_vtable** last_null = nullptr;
 
   // Overwrite an existing registration if already registered
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
-    if (0 == strcmp(name, g_factories[i].name)) {
-      g_factories[i].factory = factory;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_vtables); i++) {
+    if (g_vtables[i] == nullptr) {
+      if (first_null == nullptr) first_null = &g_vtables[i];
+      last_null = &g_vtables[i];
+    } else if (0 == strcmp(g_vtables[i]->name, vtable->name)) {
+      g_vtables[i] = vtable;
       return;
     }
   }
 
-  // Otherwise fill in an available custom slot
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
-    if (0 == strcmp(g_factories[i].name, custom_match)) {
-      g_factories[i].name = name;
-      g_factories[i].factory = factory;
-      return;
-    }
-  }
-
-  // Otherwise fail
-  GPR_ASSERT(false);
+  *(add_at_head ? first_null : last_null) = vtable;
 }
 
 /*If grpc_event_engine_init() has been called, returns the poll_strategy_name.
  * Otherwise, returns nullptr. */
-const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
+const char* grpc_get_poll_strategy_name() { return g_event_engine->name; }
 
 void grpc_event_engine_init(void) {
-  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  gpr_once_init(&g_choose_engine, []() {
+    grpc_core::UniquePtr<char> value =
+        GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
 
-  char** strings = nullptr;
-  size_t nstrings = 0;
-  split(value.get(), &strings, &nstrings);
+    char** strings = nullptr;
+    size_t nstrings = 0;
+    split(value.get(), &strings, &nstrings);
 
-  for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
-    try_engine(strings[i]);
-  }
+    for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
+      try_engine(strings[i]);
+    }
 
-  for (size_t i = 0; i < nstrings; i++) {
-    gpr_free(strings[i]);
-  }
-  gpr_free(strings);
+    for (size_t i = 0; i < nstrings; i++) {
+      gpr_free(strings[i]);
+    }
+    gpr_free(strings);
 
-  if (g_event_engine == nullptr) {
-    gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
-            value.get());
-    abort();
-  }
+    if (g_event_engine == nullptr) {
+      gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
+              value.get());
+      abort();
+    }
+  });
+  g_event_engine->init_engine();
 }
 
-void grpc_event_engine_shutdown(void) {
-  g_event_engine->shutdown_engine();
-  g_event_engine = nullptr;
-}
+void grpc_event_engine_shutdown(void) { g_event_engine->shutdown_engine(); }
 
 bool grpc_event_engine_can_track_errors(void) {
   /* Only track errors if platform supports errqueue. */
-  if (grpc_core::kernel_supports_errqueue()) {
-    return g_event_engine->can_track_err;
-  }
-  return false;
+  return grpc_core::KernelSupportsErrqueue() && g_event_engine->can_track_err;
 }
 
 bool grpc_event_engine_run_in_background(void) {
@@ -316,13 +274,13 @@ static void pollset_destroy(grpc_pollset* pollset) {
 
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset,
-                         deadline);
+                         deadline.milliseconds_after_process_epoch());
   grpc_error_handle err =
       g_event_engine->pollset_work(pollset, worker, deadline);
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") end", pollset,
-                         deadline);
+                         deadline.milliseconds_after_process_epoch());
   return err;
 }
 

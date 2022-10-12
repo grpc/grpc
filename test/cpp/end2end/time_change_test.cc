@@ -122,7 +122,9 @@ TEST(TimespecTest, GprTimeSubNegativeNs) {
 // Add negative milliseconds to gpr_timespec
 TEST(TimespecTest, GrpcNegativeMillisToTimespec) {
   // -1500 milliseconds converts to timespec (-2 secs, 5 * 10^8 nsec)
-  gpr_timespec ts = grpc_millis_to_timespec(-1500, GPR_CLOCK_MONOTONIC);
+  gpr_timespec ts =
+      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(-1500)
+          .as_timespec(GPR_CLOCK_MONOTONIC);
   GPR_ASSERT(ts.tv_sec = -2);
   GPR_ASSERT(ts.tv_nsec = 5e8);
   GPR_ASSERT(ts.clock_type == GPR_CLOCK_MONOTONIC);
@@ -137,7 +139,7 @@ class TimeChangeTest : public ::testing::Test {
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     server_address_ = addr_stream.str();
-    server_ = absl::make_unique<SubProcess>(std::vector<std::string>({
+    server_ = std::make_unique<SubProcess>(std::vector<std::string>({
         g_root + "/client_crash_test_server",
         "--address=" + server_address_,
     }));
@@ -364,7 +366,7 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   gpr_now_impl = now_impl;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto ret = RUN_ALL_TESTS();
   return ret;

@@ -14,22 +14,24 @@
 
 #include "upb/port_def.inc"
 
-extern const upb_msglayout google_api_HttpRule_msginit;
-extern const upb_msglayout google_protobuf_MethodOptions_msginit;
-const upb_msglayout_ext google_api_http_ext = {
-  {72295728, 0, 0, 0, 11, _UPB_MODE_SCALAR | _UPB_MODE_IS_EXTENSION | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+extern const upb_MiniTable google_api_HttpRule_msginit;
+extern const upb_MiniTable google_protobuf_MethodOptions_msginit;
+const upb_MiniTable_Extension google_api_http_ext = {
+  {72295728, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   &google_protobuf_MethodOptions_msginit,
   {.submsg = &google_api_HttpRule_msginit},
 
 };
 
-static const upb_msglayout_ext *extensions_layout[1] = {
+static const upb_MiniTable_Extension *extensions_layout[1] = {
   &google_api_http_ext,
 };
 
-const upb_msglayout_file google_api_annotations_proto_upb_file_layout = {
+const upb_MiniTable_File google_api_annotations_proto_upb_file_layout = {
+  NULL,
   NULL,
   extensions_layout,
+  0,
   0,
   1,
 };

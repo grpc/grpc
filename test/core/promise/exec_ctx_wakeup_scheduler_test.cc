@@ -14,9 +14,15 @@
 
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 
-#include <gtest/gtest.h>
+#include <stdlib.h>
+
+#include <memory>
+
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -59,8 +65,5 @@ TEST(ExecCtxWakeupSchedulerTest, Works) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::ExecCtx::GlobalInit();
-  int r = RUN_ALL_TESTS();
-  grpc_core::ExecCtx::GlobalShutdown();
-  return r;
+  return RUN_ALL_TESTS();
 }

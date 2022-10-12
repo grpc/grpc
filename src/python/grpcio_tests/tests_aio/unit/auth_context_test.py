@@ -20,7 +20,6 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc.experimental import session_cache
-import six
 
 from tests.unit import resources
 from tests_aio.unit._test_base import AioTestBase
@@ -79,7 +78,11 @@ class TestAuthContext(AioTestBase):
         auth_data = pickle.loads(response)
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
-        self.assertDictEqual({}, auth_data[_AUTH_CTX])
+        self.assertDictEqual(
+            {
+                'security_level': [b'TSI_SECURITY_NONE'],
+                'transport_security_type': [b'insecure'],
+            }, auth_data[_AUTH_CTX])
 
     async def test_secure_no_cert(self):
         handler = grpc.method_handlers_generic_handler('test', {

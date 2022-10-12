@@ -21,12 +21,34 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <string>
+#include <utility>
+
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/sync.h>
 
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // Constants.
@@ -58,49 +80,67 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
 /// Destructs the object.
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 
+// -- Credentials Metadata Request. --
+
+struct grpc_credentials_metadata_request {
+  explicit grpc_credentials_metadata_request(
+      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
+      : creds(std::move(creds)) {}
+  ~grpc_credentials_metadata_request() {
+    grpc_http_response_destroy(&response);
+  }
+
+  grpc_core::RefCountedPtr<grpc_call_credentials> creds;
+  grpc_http_response response;
+};
+
+struct grpc_oauth2_pending_get_request_metadata
+    : public grpc_core::RefCounted<grpc_oauth2_pending_get_request_metadata> {
+  std::atomic<bool> done{false};
+  grpc_core::Waker waker;
+  grpc_polling_entity* pollent;
+  grpc_core::ClientMetadataHandle md;
+  struct grpc_oauth2_pending_get_request_metadata* next;
+  absl::StatusOr<grpc_core::ClientMetadataHandle> result;
+};
+
 // -- Oauth2 Token Fetcher credentials --
 //
 //  This object is a base for credentials that need to acquire an oauth2 token
 //  from an http service.
-
-struct grpc_oauth2_pending_get_request_metadata {
-  grpc_credentials_mdelem_array* md_array;
-  grpc_closure* on_request_metadata;
-  grpc_polling_entity* pollent;
-  struct grpc_oauth2_pending_get_request_metadata* next;
-};
 
 class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
  public:
   grpc_oauth2_token_fetcher_credentials();
   ~grpc_oauth2_token_fetcher_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
                         grpc_error_handle error);
   std::string debug_string() override;
 
+  grpc_core::UniqueTypeName type() const override;
+
  protected:
   virtual void fetch_oauth2(grpc_credentials_metadata_request* req,
-                            grpc_httpcli_context* httpcli_context,
                             grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                            grpc_millis deadline) = 0;
+                            grpc_core::Timestamp deadline) = 0;
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   gpr_mu mu_;
-  grpc_mdelem access_token_md_ = GRPC_MDNULL;
+  absl::optional<grpc_core::Slice> access_token_value_;
   gpr_timespec token_expiration_;
   bool token_fetch_pending_ = false;
   grpc_oauth2_pending_get_request_metadata* pending_requests_ = nullptr;
-  grpc_httpcli_context httpcli_context_;
   grpc_polling_entity pollent_;
 };
 
@@ -118,36 +158,42 @@ class grpc_google_refresh_token_credentials final
 
   std::string debug_string() override;
 
+  grpc_core::UniqueTypeName type() const override;
+
  protected:
   void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                    grpc_millis deadline) override;
+                    grpc_core::Timestamp deadline) override;
 
  private:
   grpc_auth_refresh_token refresh_token_;
   grpc_closure http_post_cb_closure_;
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
 };
 
 // Access token credentials.
 class grpc_access_token_credentials final : public grpc_call_credentials {
  public:
   explicit grpc_access_token_credentials(const char* access_token);
-  ~grpc_access_token_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
 
   std::string debug_string() override;
 
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+
  private:
-  grpc_mdelem access_token_md_;
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
+  const grpc_core::Slice access_token_value_;
 };
 
 // Private constructor for refresh token credentials from an already parsed
@@ -159,8 +205,9 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 // Exposed for testing only.
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_millis* token_lifetime);
+    const struct grpc_http_response* response,
+    absl::optional<grpc_core::Slice>* token_value,
+    grpc_core::Duration* token_lifetime);
 
 namespace grpc_core {
 // Exposed for testing only. This function validates the options, ensuring that

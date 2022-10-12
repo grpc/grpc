@@ -16,44 +16,79 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/memory/memory.h"
+#include "src/core/ext/xds/xds_route_config.h"
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "envoy/config/core/v3/base.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
-#include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "re2/re2.h"
+#include "upb/def.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
-#include "upb/upb.hpp"
+
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_api.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_routing.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
 // TODO(yashykt): Remove once RBAC is no longer experimental
 bool XdsRbacEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_RBAC");
+  auto value = GetEnv("GRPC_XDS_EXPERIMENTAL_RBAC");
+  if (!value.has_value()) return false;
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+// TODO(donnadionne): Remove once RLS is no longer experimental
+bool XdsRlsEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
 
@@ -107,7 +142,7 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
       regex_substitution(other.regex_substitution) {
   if (other.regex != nullptr) {
     regex =
-        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+        std::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
 }
 
@@ -118,7 +153,7 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
   header_name = other.header_name;
   if (other.regex != nullptr) {
     regex =
-        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+        std::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
   regex_substitution = other.regex_substitution;
   return *this;
@@ -212,12 +247,23 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   if (retry_policy.has_value()) {
     contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
-  if (!cluster_name.empty()) {
-    contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
-  }
-  for (const ClusterWeight& cluster_weight : weighted_clusters) {
-    contents.push_back(cluster_weight.ToString());
-  }
+  Match(
+      action,
+      [&contents](const ClusterName& cluster_name) {
+        contents.push_back(
+            absl::StrFormat("Cluster name: %s", cluster_name.cluster_name));
+      },
+      [&contents](const std::vector<ClusterWeight>& weighted_clusters) {
+        for (const ClusterWeight& cluster_weight : weighted_clusters) {
+          contents.push_back(cluster_weight.ToString());
+        }
+      },
+      [&contents](
+          const ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
+        contents.push_back(absl::StrFormat(
+            "Cluster specifier plugin name: %s",
+            cluster_specifier_plugin_name.cluster_specifier_plugin_name));
+      });
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
   }
@@ -258,38 +304,95 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 //
 
 std::string XdsRouteConfigResource::ToString() const {
-  std::vector<std::string> vhosts;
+  std::vector<std::string> parts;
   for (const VirtualHost& vhost : virtual_hosts) {
-    vhosts.push_back(
+    parts.push_back(
         absl::StrCat("vhost={\n"
                      "  domains=[",
                      absl::StrJoin(vhost.domains, ", "),
                      "]\n"
                      "  routes=[\n"));
     for (const XdsRouteConfigResource::Route& route : vhost.routes) {
-      vhosts.push_back("    {\n");
-      vhosts.push_back(route.ToString());
-      vhosts.push_back("\n    }\n");
+      parts.push_back("    {\n");
+      parts.push_back(route.ToString());
+      parts.push_back("\n    }\n");
     }
-    vhosts.push_back("  ]\n");
-    vhosts.push_back("  typed_per_filter_config={\n");
+    parts.push_back("  ]\n");
+    parts.push_back("  typed_per_filter_config={\n");
     for (const auto& p : vhost.typed_per_filter_config) {
       const std::string& name = p.first;
       const auto& config = p.second;
-      vhosts.push_back(
-          absl::StrCat("    ", name, "=", config.ToString(), "\n"));
+      parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
     }
-    vhosts.push_back("  }\n");
-    vhosts.push_back("]\n");
+    parts.push_back("  }\n");
+    parts.push_back("]\n");
   }
-  return absl::StrJoin(vhosts, "");
+  parts.push_back("cluster_specifier_plugins={\n");
+  for (const auto& it : cluster_specifier_plugin_map) {
+    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
+  }
+  parts.push_back("}");
+  return absl::StrJoin(parts, "");
 }
 
 namespace {
 
-grpc_error_handle RoutePathMatchParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    XdsRouteConfigResource::Route* route, bool* ignore_route) {
+absl::StatusOr<XdsRouteConfigResource::ClusterSpecifierPluginMap>
+ClusterSpecifierPluginParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_route_v3_RouteConfiguration* route_config) {
+  XdsRouteConfigResource::ClusterSpecifierPluginMap
+      cluster_specifier_plugin_map;
+  size_t num_cluster_specifier_plugins;
+  const envoy_config_route_v3_ClusterSpecifierPlugin* const*
+      cluster_specifier_plugin =
+          envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
+              route_config, &num_cluster_specifier_plugins);
+  for (size_t i = 0; i < num_cluster_specifier_plugins; ++i) {
+    const envoy_config_core_v3_TypedExtensionConfig* extension =
+        envoy_config_route_v3_ClusterSpecifierPlugin_extension(
+            cluster_specifier_plugin[i]);
+    std::string name = UpbStringToStdString(
+        envoy_config_core_v3_TypedExtensionConfig_name(extension));
+    if (cluster_specifier_plugin_map.find(name) !=
+        cluster_specifier_plugin_map.end()) {
+      return absl::InvalidArgumentError(absl::StrCat(
+          "Duplicated definition of cluster_specifier_plugin ", name));
+    }
+    const google_protobuf_Any* any =
+        envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
+    if (any == nullptr) {
+      return absl::InvalidArgumentError(
+          "Could not obtrain TypedExtensionConfig for plugin config.");
+    }
+    auto plugin_type = ExtractExtensionTypeName(context, any);
+    if (!plugin_type.ok()) return plugin_type.status();
+    bool is_optional = envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(
+        cluster_specifier_plugin[i]);
+    const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
+        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type->type);
+    std::string lb_policy_config;
+    if (cluster_specifier_plugin_impl == nullptr) {
+      if (!is_optional) {
+        return absl::InvalidArgumentError(absl::StrCat(
+            "Unknown ClusterSpecifierPlugin type ", plugin_type->type));
+      }
+      // Optional plugin, leave lb_policy_config empty.
+    } else {
+      auto config =
+          cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
+              google_protobuf_Any_value(any), context.arena, context.symtab);
+      if (!config.ok()) return config.status();
+      lb_policy_config = std::move(*config);
+    }
+    cluster_specifier_plugin_map[std::move(name)] = std::move(lb_policy_config);
+  }
+  return cluster_specifier_plugin_map;
+}
+
+absl::Status RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
+                                 XdsRouteConfigResource::Route* route,
+                                 bool* ignore_route) {
   auto* case_sensitive_ptr =
       envoy_config_route_v3_RouteMatch_case_sensitive(match);
   bool case_sensitive = true;
@@ -308,18 +411,18 @@ grpc_error_handle RoutePathMatchParse(
         // Prefix which does not start with a / will never match anything, so
         // ignore this route.
         *ignore_route = true;
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       }
       std::vector<absl::string_view> prefix_elements =
           absl::StrSplit(prefix.substr(1), absl::MaxSplits('/', 2));
       if (prefix_elements.size() > 2) {
         // Prefix cannot have more than 2 slashes.
         *ignore_route = true;
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       } else if (prefix_elements.size() == 2 && prefix_elements[0].empty()) {
         // Prefix contains empty string between the 2 slashes
         *ignore_route = true;
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       }
     }
     type = StringMatcher::Type::kPrefix;
@@ -330,13 +433,13 @@ grpc_error_handle RoutePathMatchParse(
     if (path.empty()) {
       // Path that is empty will never match anything, so ignore this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
     if (path[0] != '/') {
       // Path which does not start with a / will never match anything, so
       // ignore this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
     std::vector<absl::string_view> path_elements =
         absl::StrSplit(path.substr(1), absl::MaxSplits('/', 2));
@@ -344,17 +447,17 @@ grpc_error_handle RoutePathMatchParse(
       // Path not in the required format of /service/method will never match
       // anything, so ignore this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     } else if (path_elements[0].empty()) {
       // Path contains empty service name will never match anything, so ignore
       // this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     } else if (path_elements[1].empty()) {
       // Path contains empty method name will never match anything, so ignore
       // this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
     type = StringMatcher::Type::kExact;
     match_string = std::string(path);
@@ -366,20 +469,20 @@ grpc_error_handle RoutePathMatchParse(
     match_string = UpbStringToStdString(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
   } else {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    return absl::InvalidArgumentError(
         "Invalid route path specifier specified.");
   }
   absl::StatusOr<StringMatcher> string_matcher =
       StringMatcher::Create(type, match_string, case_sensitive);
   if (!string_matcher.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return absl::InvalidArgumentError(
         absl::StrCat("path matcher: ", string_matcher.status().message()));
   }
   route->matchers.path_matcher = std::move(string_matcher.value());
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle RouteHeaderMatchersParse(
+absl::Status RouteHeaderMatchersParse(
     const envoy_config_route_v3_RouteMatch* match,
     XdsRouteConfigResource::Route* route) {
   size_t size;
@@ -428,7 +531,7 @@ grpc_error_handle RouteHeaderMatchersParse(
       match_string = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_contains_match(header));
     } else {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return absl::InvalidArgumentError(
           "Invalid route header matcher specified.");
     }
     bool invert_match =
@@ -437,16 +540,16 @@ grpc_error_handle RouteHeaderMatchersParse(
         HeaderMatcher::Create(name, type, match_string, range_start, range_end,
                               present_match, invert_match);
     if (!header_matcher.ok()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return absl::InvalidArgumentError(
           absl::StrCat("header matcher: ", header_matcher.status().message()));
     }
     route->matchers.header_matchers.emplace_back(
         std::move(header_matcher.value()));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle RouteRuntimeFractionParse(
+absl::Status RouteRuntimeFractionParse(
     const envoy_config_route_v3_RouteMatch* match,
     XdsRouteConfigResource::Route* route) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
@@ -471,46 +574,46 @@ grpc_error_handle RouteRuntimeFractionParse(
         case envoy_type_v3_FractionalPercent_MILLION:
           break;
         default:
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Unknown denominator type");
+          return absl::InvalidArgumentError("Unknown denominator type");
       }
       route->matchers.fraction_per_million = numerator;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 template <typename ParentType, typename EntryType>
-grpc_error_handle ParseTypedPerFilterConfig(
-    const XdsEncodingContext& context, const ParentType* parent,
+absl::StatusOr<XdsRouteConfigResource::TypedPerFilterConfig>
+ParseTypedPerFilterConfig(
+    const XdsResourceType::DecodeContext& context, const ParentType* parent,
     const EntryType* (*entry_func)(const ParentType*, size_t*),
-    upb_strview (*key_func)(const EntryType*),
-    const google_protobuf_Any* (*value_func)(const EntryType*),
-    XdsRouteConfigResource::TypedPerFilterConfig* typed_per_filter_config) {
-  size_t filter_it = UPB_MAP_BEGIN;
+    upb_StringView (*key_func)(const EntryType*),
+    const google_protobuf_Any* (*value_func)(const EntryType*)) {
+  XdsRouteConfigResource::TypedPerFilterConfig typed_per_filter_config;
+  size_t filter_it = kUpb_Map_Begin;
   while (true) {
     const auto* filter_entry = entry_func(parent, &filter_it);
     if (filter_entry == nullptr) break;
     absl::string_view key = UpbStringToAbsl(key_func(filter_entry));
     if (key.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("empty filter name in map");
+      return absl::InvalidArgumentError("empty filter name in map");
     }
     const google_protobuf_Any* any = value_func(filter_entry);
     GPR_ASSERT(any != nullptr);
     absl::string_view filter_type =
         UpbStringToAbsl(google_protobuf_Any_type_url(any));
     if (filter_type.empty()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return absl::InvalidArgumentError(
           absl::StrCat("no filter config specified for filter name ", key));
     }
     bool is_optional = false;
     if (filter_type ==
         "type.googleapis.com/envoy.config.route.v3.FilterConfig") {
-      upb_strview any_value = google_protobuf_Any_value(any);
+      upb_StringView any_value = google_protobuf_Any_value(any);
       const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
           any_value.data, any_value.size, context.arena);
       if (filter_config == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        return absl::InvalidArgumentError(
             absl::StrCat("could not parse FilterConfig wrapper for ", key));
       }
       is_optional =
@@ -518,38 +621,37 @@ grpc_error_handle ParseTypedPerFilterConfig(
       any = envoy_config_route_v3_FilterConfig_config(filter_config);
       if (any == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        return absl::InvalidArgumentError(
             absl::StrCat("no filter config specified for filter name ", key));
       }
     }
-    grpc_error_handle error =
-        ExtractHttpFilterTypeName(context, any, &filter_type);
-    if (error != GRPC_ERROR_NONE) return error;
+    auto type = ExtractExtensionTypeName(context, any);
+    if (!type.ok()) return type.status();
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(filter_type);
+        XdsHttpFilterRegistry::GetFilterForType(type->type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("no filter registered for config type ", filter_type));
+      return absl::InvalidArgumentError(
+          absl::StrCat("no filter registered for config type ", type->type));
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "filter config for type ", filter_type,
-          " failed to parse: ", StatusToString(filter_config.status())));
+      return absl::InvalidArgumentError(
+          absl::StrCat("filter config for type ", type->type,
+                       " failed to parse: ", filter_config.status().message()));
     }
-    (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
+    typed_per_filter_config[std::string(key)] = std::move(*filter_config);
   }
-  return GRPC_ERROR_NONE;
+  return typed_per_filter_config;
 }
 
-grpc_error_handle RetryPolicyParse(
-    const XdsEncodingContext& context,
+absl::Status RetryPolicyParse(
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
     absl::optional<XdsRouteConfigResource::RetryPolicy>* retry) {
-  std::vector<grpc_error_handle> errors;
+  std::vector<std::string> errors;
   XdsRouteConfigResource::RetryPolicy retry_to_return;
   auto retry_on = UpbStringToStdString(
       envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
@@ -577,8 +679,8 @@ grpc_error_handle RetryPolicyParse(
   if (num_retries != nullptr) {
     uint32_t num_retries_value = google_protobuf_UInt32Value_value(num_retries);
     if (num_retries_value == 0) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction RetryPolicy num_retries set to invalid value 0."));
+      errors.emplace_back(
+          "RouteAction RetryPolicy num_retries set to invalid value 0.");
     } else {
       retry_to_return.num_retries = num_retries_value;
     }
@@ -591,59 +693,68 @@ grpc_error_handle RetryPolicyParse(
     const google_protobuf_Duration* base_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
     if (base_interval == nullptr) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction RetryPolicy RetryBackoff missing base interval."));
+      errors.emplace_back(
+          "RouteAction RetryPolicy RetryBackoff missing base interval.");
     } else {
+      ValidationErrors validation_errors;
       retry_to_return.retry_back_off.base_interval =
-          Duration::Parse(base_interval);
+          ParseDuration(base_interval, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status("base_interval").message());
+      }
     }
     const google_protobuf_Duration* max_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
     Duration max;
     if (max_interval != nullptr) {
-      max = Duration::Parse(max_interval);
-    } else {
-      // if max interval is not set, it is 10x the base, if the value in nanos
-      // can yield another second, adjust the value in seconds accordingly.
-      max.seconds = retry_to_return.retry_back_off.base_interval.seconds * 10;
-      max.nanos = retry_to_return.retry_back_off.base_interval.nanos * 10;
-      if (max.nanos > 1000000000) {
-        max.seconds += max.nanos / 1000000000;
-        max.nanos = max.nanos % 1000000000;
+      ValidationErrors validation_errors;
+      max = ParseDuration(max_interval, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(validation_errors.status("max_interval").message());
       }
+    } else {
+      // if max interval is not set, it is 10x the base.
+      max = 10 * retry_to_return.retry_back_off.base_interval;
     }
     retry_to_return.retry_back_off.max_interval = max;
   } else {
-    retry_to_return.retry_back_off.base_interval.seconds = 0;
-    retry_to_return.retry_back_off.base_interval.nanos = 25000000;
-    retry_to_return.retry_back_off.max_interval.seconds = 0;
-    retry_to_return.retry_back_off.max_interval.nanos = 250000000;
+    retry_to_return.retry_back_off.base_interval = Duration::Milliseconds(25);
+    retry_to_return.retry_back_off.max_interval = Duration::Milliseconds(250);
   }
-  if (errors.empty()) {
-    *retry = retry_to_return;
-    return GRPC_ERROR_NONE;
-  } else {
-    return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing retry policy",
-                                         &errors);
+  // Return result.
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Errors parsing retry policy: [", absl::StrJoin(errors, "; "), "]"));
   }
+  *retry = retry_to_return;
+  return absl::OkStatus();
 }
 
-grpc_error_handle RouteActionParse(
-    const XdsEncodingContext& context,
+absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_Route* route_msg,
-    XdsRouteConfigResource::Route::RouteAction* route, bool* ignore_route) {
+    const std::map<std::string /*cluster_specifier_plugin_name*/,
+                   std::string /*LB policy config*/>&
+        cluster_specifier_plugin_map,
+    bool* ignore_route) {
+  XdsRouteConfigResource::Route::RouteAction route;
   const envoy_config_route_v3_RouteAction* route_action =
       envoy_config_route_v3_Route_route(route_msg);
   // Get the cluster or weighted_clusters in the RouteAction.
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action)) {
-    route->cluster_name = UpbStringToStdString(
+    std::string cluster_name = UpbStringToStdString(
         envoy_config_route_v3_RouteAction_cluster(route_action));
-    if (route->cluster_name.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    if (cluster_name.empty()) {
+      return absl::InvalidArgumentError(
           "RouteAction cluster contains empty cluster name.");
     }
+    route.action = XdsRouteConfigResource::Route::RouteAction::ClusterName{
+        std::move(cluster_name)};
   } else if (envoy_config_route_v3_RouteAction_has_weighted_clusters(
                  route_action)) {
+    std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
+        action_weighted_clusters;
     const envoy_config_route_v3_WeightedCluster* weighted_cluster =
         envoy_config_route_v3_RouteAction_weighted_clusters(route_action);
     uint32_t total_weight = 100;
@@ -665,7 +776,7 @@ grpc_error_handle RouteActionParse(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_name(
               cluster_weight));
       if (cluster.name.empty()) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        return absl::InvalidArgumentError(
             "RouteAction weighted_cluster cluster contains empty cluster "
             "name.");
       }
@@ -673,35 +784,60 @@ grpc_error_handle RouteActionParse(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_weight(
               cluster_weight);
       if (weight == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        return absl::InvalidArgumentError(
             "RouteAction weighted_cluster cluster missing weight");
       }
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
-      if (context.use_v3) {
-        grpc_error_handle error = ParseTypedPerFilterConfig<
+      if (context.server.ShouldUseV3()) {
+        auto typed_per_filter_config = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
             context, cluster_weight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
-            &cluster.typed_per_filter_config);
-        if (error != GRPC_ERROR_NONE) return error;
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value);
+        if (!typed_per_filter_config.ok()) {
+          return typed_per_filter_config.status();
+        }
+        cluster.typed_per_filter_config = std::move(*typed_per_filter_config);
       }
-      route->weighted_clusters.emplace_back(std::move(cluster));
+      action_weighted_clusters.emplace_back(std::move(cluster));
     }
     if (total_weight != sum_of_weights) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return absl::InvalidArgumentError(
           "RouteAction weighted_cluster has incorrect total weight");
     }
-    if (route->weighted_clusters.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    if (action_weighted_clusters.empty()) {
+      return absl::InvalidArgumentError(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
+    route.action = std::move(action_weighted_clusters);
+  } else if (XdsRlsEnabled() &&
+             envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
+                 route_action)) {
+    std::string plugin_name = UpbStringToStdString(
+        envoy_config_route_v3_RouteAction_cluster_specifier_plugin(
+            route_action));
+    if (plugin_name.empty()) {
+      return absl::InvalidArgumentError(
+          "RouteAction cluster contains empty cluster specifier plugin name.");
+    }
+    auto it = cluster_specifier_plugin_map.find(plugin_name);
+    if (it == cluster_specifier_plugin_map.end()) {
+      return absl::InvalidArgumentError(
+          absl::StrCat("RouteAction cluster contains cluster specifier plugin "
+                       "name not configured: ",
+                       plugin_name));
+    }
+    if (it->second.empty()) *ignore_route = true;
+    route.action =
+        XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName{
+            std::move(plugin_name)};
   } else {
-    // No cluster or weighted_clusters found in RouteAction, ignore this route.
+    // No cluster or weighted_clusters or plugin found in RouteAction, ignore
+    // this route.
     *ignore_route = true;
   }
   if (!*ignore_route) {
@@ -718,7 +854,11 @@ grpc_error_handle RouteActionParse(
                 max_stream_duration);
       }
       if (duration != nullptr) {
-        route->max_stream_duration = Duration::Parse(duration);
+        ValidationErrors validation_errors;
+        route.max_stream_duration = ParseDuration(duration, &validation_errors);
+        if (!validation_errors.ok()) {
+          return validation_errors.status("max_stream_duration");
+        }
       }
     }
   }
@@ -759,7 +899,7 @@ grpc_error_handle RouteActionParse(
           continue;
         }
         RE2::Options options;
-        policy.regex = absl::make_unique<RE2>(
+        policy.regex = std::make_unique<RE2>(
             UpbStringToStdString(
                 envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
             options);
@@ -796,61 +936,73 @@ grpc_error_handle RouteActionParse(
               "RouteAction HashPolicy contains unsupported policy specifier.");
       continue;
     }
-    route->hash_policies.emplace_back(std::move(policy));
+    route.hash_policies.emplace_back(std::move(policy));
   }
   // Get retry policy
   const envoy_config_route_v3_RetryPolicy* retry_policy =
       envoy_config_route_v3_RouteAction_retry_policy(route_action);
   if (retry_policy != nullptr) {
     absl::optional<XdsRouteConfigResource::RetryPolicy> retry;
-    grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
-    if (error != GRPC_ERROR_NONE) return error;
-    route->retry_policy = retry;
+    absl::Status status = RetryPolicyParse(context, retry_policy, &retry);
+    if (!status.ok()) return status;
+    route.retry_policy = retry;
   }
-  return GRPC_ERROR_NONE;
+  return route;
 }
 
 }  // namespace
 
-grpc_error_handle XdsRouteConfigResource::Parse(
-    const XdsEncodingContext& context,
-    const envoy_config_route_v3_RouteConfiguration* route_config,
-    XdsRouteConfigResource* rds_update) {
+absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_route_v3_RouteConfiguration* route_config) {
+  XdsRouteConfigResource rds_update;
+  // Get the cluster spcifier plugins
+  if (XdsRlsEnabled()) {
+    auto cluster_specifier_plugin_map =
+        ClusterSpecifierPluginParse(context, route_config);
+    if (!cluster_specifier_plugin_map.ok()) {
+      return cluster_specifier_plugin_map.status();
+    }
+    rds_update.cluster_specifier_plugin_map =
+        std::move(*cluster_specifier_plugin_map);
+  }
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
       envoy_config_route_v3_RouteConfiguration_virtual_hosts(
           route_config, &num_virtual_hosts);
   for (size_t i = 0; i < num_virtual_hosts; ++i) {
-    rds_update->virtual_hosts.emplace_back();
+    rds_update.virtual_hosts.emplace_back();
     XdsRouteConfigResource::VirtualHost& vhost =
-        rds_update->virtual_hosts.back();
+        rds_update.virtual_hosts.back();
     // Parse domains.
     size_t domain_size;
-    upb_strview const* domains = envoy_config_route_v3_VirtualHost_domains(
+    upb_StringView const* domains = envoy_config_route_v3_VirtualHost_domains(
         virtual_hosts[i], &domain_size);
     for (size_t j = 0; j < domain_size; ++j) {
       std::string domain_pattern = UpbStringToStdString(domains[j]);
       if (!XdsRouting::IsValidDomainPattern(domain_pattern)) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        return absl::InvalidArgumentError(
             absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
       }
       vhost.domains.emplace_back(std::move(domain_pattern));
     }
     if (vhost.domains.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
+      return absl::InvalidArgumentError("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    if (context.use_v3) {
-      grpc_error_handle error = ParseTypedPerFilterConfig<
+    if (context.server.ShouldUseV3()) {
+      auto typed_per_filter_config = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
           context, virtual_hosts[i],
           envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
-          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value,
-          &vhost.typed_per_filter_config);
-      if (error != GRPC_ERROR_NONE) return error;
+          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value);
+      if (!typed_per_filter_config.ok()) {
+        return typed_per_filter_config.status();
+      }
+      vhost.typed_per_filter_config = std::move(*typed_per_filter_config);
     }
     // Parse retry policy.
     absl::optional<XdsRouteConfigResource::RetryPolicy>
@@ -858,24 +1010,29 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
-      grpc_error_handle error =
+      absl::Status status =
           RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!status.ok()) return status;
     }
     // Parse routes.
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
         envoy_config_route_v3_VirtualHost_routes(virtual_hosts[i], &num_routes);
     if (num_routes < 1) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No route found in the virtual host.");
+      return absl::InvalidArgumentError("No route found in the virtual host.");
+    }
+    // Build a set of cluster_specifier_plugin configured to make sure each is
+    // actually referenced by a route action.
+    std::set<absl::string_view> cluster_specifier_plugins;
+    for (auto& plugin : rds_update.cluster_specifier_plugin_map) {
+      cluster_specifier_plugins.emplace(plugin.first);
     }
     // Loop over the whole list of routes
     for (size_t j = 0; j < num_routes; ++j) {
       const envoy_config_route_v3_RouteMatch* match =
           envoy_config_route_v3_Route_match(routes[j]);
       if (match == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Match can't be null.");
+        return absl::InvalidArgumentError("Match can't be null.");
       }
       size_t query_parameters_size;
       static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
@@ -885,49 +1042,63 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       }
       XdsRouteConfigResource::Route route;
       bool ignore_route = false;
-      grpc_error_handle error =
-          RoutePathMatchParse(match, &route, &ignore_route);
-      if (error != GRPC_ERROR_NONE) return error;
+      absl::Status status = RoutePathMatchParse(match, &route, &ignore_route);
+      if (!status.ok()) return status;
       if (ignore_route) continue;
-      error = RouteHeaderMatchersParse(match, &route);
-      if (error != GRPC_ERROR_NONE) return error;
-      error = RouteRuntimeFractionParse(match, &route);
-      if (error != GRPC_ERROR_NONE) return error;
+      status = RouteHeaderMatchersParse(match, &route);
+      if (!status.ok()) return status;
+      status = RouteRuntimeFractionParse(match, &route);
+      if (!status.ok()) return status;
       if (envoy_config_route_v3_Route_has_route(routes[j])) {
         route.action.emplace<XdsRouteConfigResource::Route::RouteAction>();
-        auto& route_action =
-            absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
-        error =
-            RouteActionParse(context, routes[j], &route_action, &ignore_route);
-        if (error != GRPC_ERROR_NONE) return error;
+        auto route_action = RouteActionParse(
+            context, routes[j], rds_update.cluster_specifier_plugin_map,
+            &ignore_route);
+        if (!route_action.ok()) return route_action.status();
         if (ignore_route) continue;
-        if (route_action.retry_policy == absl::nullopt &&
+        if (route_action->retry_policy == absl::nullopt &&
             retry_policy != nullptr) {
-          route_action.retry_policy = virtual_host_retry_policy;
+          route_action->retry_policy = virtual_host_retry_policy;
         }
+        // Mark off plugins used in route action.
+        auto* cluster_specifier_action =
+            absl::get_if<XdsRouteConfigResource::Route::RouteAction::
+                             ClusterSpecifierPluginName>(&route_action->action);
+        if (cluster_specifier_action != nullptr) {
+          cluster_specifier_plugins.erase(
+              cluster_specifier_action->cluster_specifier_plugin_name);
+        }
+        route.action = std::move(*route_action);
       } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                      routes[j])) {
         route.action
             .emplace<XdsRouteConfigResource::Route::NonForwardingAction>();
       }
-      if (context.use_v3) {
-        grpc_error_handle error = ParseTypedPerFilterConfig<
+      if (context.server.ShouldUseV3()) {
+        auto typed_per_filter_config = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
             context, routes[j],
             envoy_config_route_v3_Route_typed_per_filter_config_next,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
-            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value,
-            &route.typed_per_filter_config);
-        if (error != GRPC_ERROR_NONE) return error;
+            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value);
+        if (!typed_per_filter_config.ok()) {
+          return typed_per_filter_config.status();
+        }
+        route.typed_per_filter_config = std::move(*typed_per_filter_config);
       }
       vhost.routes.emplace_back(std::move(route));
     }
     if (vhost.routes.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
+      return absl::InvalidArgumentError("No valid routes specified.");
+    }
+    // For plugins not used in route action, delete from the update to prevent
+    // further use.
+    for (auto& unused_plugin : cluster_specifier_plugins) {
+      rds_update.cluster_specifier_plugin_map.erase(std::string(unused_plugin));
     }
   }
-  return GRPC_ERROR_NONE;
+  return rds_update;
 }
 
 //
@@ -937,14 +1108,14 @@ grpc_error_handle XdsRouteConfigResource::Parse(
 namespace {
 
 void MaybeLogRouteConfiguration(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", context.client,
             buf);
   }
@@ -952,42 +1123,40 @@ void MaybeLogRouteConfiguration(
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult>
-XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
-                                   absl::string_view serialized_resource,
-                                   bool /*is_v2*/) const {
+XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool /*is_v2*/) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError(
-        "Can't parse RouteConfiguration resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse RouteConfiguration resource.");
+    return result;
   }
   MaybeLogRouteConfiguration(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_route_v3_RouteConfiguration_name(resource));
-  auto route_config_data = absl::make_unique<ResourceDataSubclass>();
-  grpc_error_handle error = XdsRouteConfigResource::Parse(
-      context, resource, &route_config_data->resource);
-  if (error != GRPC_ERROR_NONE) {
-    std::string error_str = grpc_error_std_string(error);
-    GRPC_ERROR_UNREF(error);
+  auto rds_update = XdsRouteConfigResource::Parse(context, resource);
+  if (!rds_update.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
-              context.client, result.name.c_str(), error_str.c_str());
+              context.client, result.name->c_str(),
+              rds_update.status().ToString().c_str());
     }
-    result.resource = absl::InvalidArgumentError(error_str);
+    result.resource = rds_update.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed RouteConfiguration %s: %s",
-              context.client, result.name.c_str(),
-              route_config_data->resource.ToString().c_str());
+              context.client, result.name->c_str(),
+              rds_update->ToString().c_str());
     }
-    result.resource = std::move(route_config_data);
+    result.resource =
+        std::make_unique<XdsRouteConfigResource>(std::move(*rds_update));
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core

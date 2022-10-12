@@ -39,7 +39,7 @@ Java_io_grpc_binder_cpp_GrpcBinderConnection_notifyConnected__Ljava_lang_String_
   grpc_binder::ndk_util::SpAIBinder aibinder =
       grpc_binder::FromJavaBinder(jni_env, ibinder);
   gpr_log(GPR_INFO, "%s got aibinder = %p", __func__, aibinder.get());
-  auto b = absl::make_unique<grpc_binder::BinderAndroid>(aibinder);
+  auto b = std::make_unique<grpc_binder::BinderAndroid>(aibinder);
   GPR_ASSERT(b != nullptr);
   grpc_binder::GetEndpointBinderPool()->AddEndpointBinder(conn_id,
                                                           std::move(b));
@@ -53,7 +53,7 @@ Java_io_grpc_binder_cpp_GrpcBinderConnection_notifyConnected__Ljava_lang_String_
 
 namespace grpc_binder {
 
-void EndpointBinderPool ::GetEndpointBinder(
+void EndpointBinderPool::GetEndpointBinder(
     std::string conn_id,
     std::function<void(std::unique_ptr<grpc_binder::Binder>)> cb) {
   gpr_log(GPR_INFO, "EndpointBinder requested. conn_id = %s", conn_id.c_str());

@@ -18,16 +18,12 @@
 
 #include "src/core/lib/transport/pid_controller.h"
 
-#include <float.h>
 #include <math.h>
 
-#include <gtest/gtest.h>
+#include <ostream>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "gtest/gtest.h"
 
-#include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -86,7 +82,7 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

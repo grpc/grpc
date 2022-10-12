@@ -17,33 +17,68 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <assert.h>
-#include <stddef.h>
 #include <stdint.h>
 
-#include <new>
-#include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/promise_factory.h"
+#include <grpc/support/log.h>
+
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 
+namespace pipe_detail {
+template <typename T>
+class Center;
+}
+
 template <typename T>
 struct Pipe;
+
+// Result of Pipe::Next - represents a received value.
+// If has_value() is false, the pipe was closed by the time we polled for the
+// next value. No value was received, nor will there ever be.
+// This type is movable but not copyable.
+// Once the final move is destroyed the pipe will ack the read and unblock the
+// send.
 template <typename T>
-class PipeSender;
-template <typename T>
-class PipeReceiver;
+class NextResult final {
+ public:
+  explicit NextResult(pipe_detail::Center<T>* center) : center_(center) {}
+  ~NextResult();
+  NextResult(const NextResult&) = delete;
+  NextResult& operator=(const NextResult&) = delete;
+  NextResult(NextResult&& other) noexcept
+      : center_(std::exchange(other.center_, nullptr)) {}
+  NextResult& operator=(NextResult&& other) noexcept {
+    center_ = std::exchange(other.center_, nullptr);
+    return *this;
+  }
+
+  using value_type = T;
+
+  void reset();
+  bool has_value() const;
+  const T& value() const {
+    GPR_ASSERT(has_value());
+    return **this;
+  }
+  T& value() {
+    GPR_ASSERT(has_value());
+    return **this;
+  }
+  const T& operator*() const;
+  T& operator*();
+
+ private:
+  pipe_detail::Center<T>* center_;
+};
 
 namespace pipe_detail {
 
@@ -52,38 +87,152 @@ class Push;
 template <typename T>
 class Next;
 
-template <class T>
-class Promise {
- public:
-  virtual Poll<bool> Step(T* output) = 0;
-  virtual void Stop() = 0;
-
- protected:
-  inline virtual ~Promise() = default;
-};
-
-struct alignas(alignof(void*)) Scratch {
-  uint8_t scratch[32];
-};
-
+// Center sits between a sender and a receiver to provide a one-deep buffer of
+// Ts
 template <typename T>
-class FilterInterface {
+class Center {
  public:
-  FilterInterface() = default;
-  FilterInterface(const FilterInterface&) = delete;
-  FilterInterface& operator=(const FilterInterface&) = delete;
-  virtual Promise<T>* Step(T* p, Scratch* scratch_space) = 0;
-  virtual void UpdateReceiver(PipeReceiver<T>* receiver) = 0;
+  // Initialize with one send ref (held by PipeSender) and one recv ref (held by
+  // PipeReceiver)
+  Center() {
+    send_refs_ = 1;
+    recv_refs_ = 1;
+    value_state_ = ValueState::kEmpty;
+  }
 
- protected:
-  inline virtual ~FilterInterface() {}
-  static void SetReceiverIndex(PipeReceiver<T>* receiver, int idx,
-                               FilterInterface* p);
-  char AllocIndex(PipeReceiver<T>* receiver);
+  // Add one ref to the send side of this object, and return this.
+  Center* RefSend() {
+    send_refs_++;
+    GPR_ASSERT(send_refs_ != 0);
+    return this;
+  }
+
+  // Add one ref to the recv side of this object, and return this.
+  Center* RefRecv() {
+    recv_refs_++;
+    GPR_ASSERT(recv_refs_ != 0);
+    return this;
+  }
+
+  // Drop a send side ref
+  // If no send refs remain, wake due to send closure
+  // If no refs remain, destroy this object
+  void UnrefSend() {
+    GPR_DEBUG_ASSERT(send_refs_ > 0);
+    send_refs_--;
+    if (0 == send_refs_) {
+      on_full_.Wake();
+      on_empty_.Wake();
+      if (0 == recv_refs_) {
+        this->~Center();
+      }
+    }
+  }
+
+  // Drop a recv side ref
+  // If no recv refs remain, wake due to recv closure
+  // If no refs remain, destroy this object
+  void UnrefRecv() {
+    GPR_DEBUG_ASSERT(recv_refs_ > 0);
+    recv_refs_--;
+    if (0 == recv_refs_) {
+      on_full_.Wake();
+      on_empty_.Wake();
+      if (0 == send_refs_) {
+        this->~Center();
+      } else if (value_state_ == ValueState::kReady) {
+        ResetValue();
+      }
+    }
+  }
+
+  // Try to push *value into the pipe.
+  // Return Pending if there is no space.
+  // Return true if the value was pushed.
+  // Return false if the recv end is closed.
+  Poll<bool> Push(T* value) {
+    GPR_DEBUG_ASSERT(send_refs_ != 0);
+    if (recv_refs_ == 0) return false;
+    if (value_state_ != ValueState::kEmpty) return on_empty_.pending();
+    value_state_ = ValueState::kReady;
+    value_ = std::move(*value);
+    on_full_.Wake();
+    return true;
+  }
+
+  Poll<bool> PollAck() {
+    GPR_DEBUG_ASSERT(send_refs_ != 0);
+    if (recv_refs_ == 0) return value_state_ == ValueState::kAcked;
+    if (value_state_ != ValueState::kAcked) return on_empty_.pending();
+    value_state_ = ValueState::kEmpty;
+    return true;
+  }
+
+  // Try to receive a value from the pipe.
+  // Return Pending if there is no value.
+  // Return the value if one was retrieved.
+  // Return nullopt if the send end is closed and no value had been pushed.
+  Poll<NextResult<T>> Next() {
+    GPR_DEBUG_ASSERT(recv_refs_ != 0);
+    if (value_state_ != ValueState::kReady) {
+      if (send_refs_ == 0) return NextResult<T>(nullptr);
+      return on_full_.pending();
+    }
+    return NextResult<T>(RefRecv());
+  }
+
+  void AckNext() {
+    GPR_DEBUG_ASSERT(value_state_ == ValueState::kReady);
+    value_state_ = ValueState::kAcked;
+    on_empty_.Wake();
+    UnrefRecv();
+  }
+
+  T& value() { return value_; }
+  const T& value() const { return value_; }
+
+ private:
+  void ResetValue() {
+    // Fancy dance to move out of value in the off chance that we reclaim some
+    // memory earlier.
+    [](T) {}(std::move(value_));
+    value_state_ = ValueState::kEmpty;
+  }
+  // State of value_.
+  enum class ValueState : uint8_t {
+    // No value is set, it's possible to send.
+    kEmpty,
+    // Value has been pushed but not acked, it's possible to receive.
+    kReady,
+    // Value has been received and acked, we can unblock senders and transition
+    // to empty.
+    kAcked,
+  };
+  static const char* ValueStateName(ValueState state) {
+    switch (state) {
+      case ValueState::kEmpty:
+        return "kEmpty";
+      case ValueState::kReady:
+        return "kReady";
+      case ValueState::kAcked:
+        return "kAcked";
+    }
+    GPR_UNREACHABLE_CODE(return "unknown");
+  }
+  T value_;
+  // Number of sending objects.
+  // 0 => send is closed.
+  // 1 ref each for PipeSender and Push.
+  uint8_t send_refs_ : 2;
+  // Number of receiving objects.
+  // 0 => recv is closed.
+  // 1 ref each for PipeReceiver, Next, and NextResult.
+  uint8_t recv_refs_ : 2;
+  // Current state of the value.
+  ValueState value_state_ : 2;
+  IntraActivityWaiter on_empty_;
+  IntraActivityWaiter on_full_;
 };
-
-template <typename T, typename F>
-class Filter;
 
 }  // namespace pipe_detail
 
@@ -91,128 +240,61 @@ class Filter;
 template <typename T>
 class PipeSender {
  public:
+  using PushType = pipe_detail::Push<T>;
+
   PipeSender(const PipeSender&) = delete;
   PipeSender& operator=(const PipeSender&) = delete;
 
-  PipeSender(PipeSender&& other) noexcept
-      : receiver_(other.receiver_), push_(other.push_) {
-    if (receiver_ != nullptr) {
-      receiver_->sender_ = this;
-      other.receiver_ = nullptr;
-    }
-    if (push_ != nullptr) {
-      push_->sender_ = this;
-      other.push_ = nullptr;
-    }
+  PipeSender(PipeSender&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
   }
   PipeSender& operator=(PipeSender&& other) noexcept {
-    if (receiver_ != nullptr) {
-      receiver_->sender_ = nullptr;
-    }
-    if (push_ != nullptr) {
-      push_->sender_ = nullptr;
-    }
-    receiver_ = other.receiver_;
-    if (receiver_ != nullptr) {
-      receiver_->sender_ = this;
-      other.receiver_ = nullptr;
-    }
-    if (push_ != nullptr) {
-      push_->sender_ = this;
-      other.push_ = nullptr;
-    }
+    if (center_ != nullptr) center_->UnrefSend();
+    center_ = other.center_;
+    other.center_ = nullptr;
     return *this;
   }
 
   ~PipeSender() {
-    if (receiver_ != nullptr) {
-      receiver_->MarkClosed();
-    }
-    if (push_ != nullptr) {
-      push_->sender_ = nullptr;
-    }
+    if (center_ != nullptr) center_->UnrefSend();
+  }
+
+  void Close() {
+    if (auto* center = std::exchange(center_, nullptr)) center->UnrefSend();
   }
 
   // Send a single message along the pipe.
   // Returns a promise that will resolve to a bool - true if the message was
   // sent, false if it could never be sent. Blocks the promise until the
   // receiver is either closed or able to receive another message.
-  pipe_detail::Push<T> Push(T value);
-
-  // Attach a promise factory based filter to this pipe.
-  // The overall promise returned from this will be active until the pipe is
-  // closed. If this promise is cancelled before the pipe is closed, the pipe
-  // will close. The filter will be run _after_ any other registered filters.
-  template <typename F>
-  pipe_detail::Filter<T, F> Filter(F f);
+  PushType Push(T value);
 
  private:
   friend struct Pipe<T>;
-  friend class PipeReceiver<T>;
-  friend class pipe_detail::Next<T>;
-  friend class pipe_detail::Push<T>;
-  explicit PipeSender(PipeReceiver<T>* receiver) : receiver_(receiver) {}
-  PipeReceiver<T>* receiver_;
-  pipe_detail::Push<T>* push_ = nullptr;
+  explicit PipeSender(pipe_detail::Center<T>* center) : center_(center) {}
+  pipe_detail::Center<T>* center_;
 };
 
 // Receive end of a Pipe.
 template <typename T>
 class PipeReceiver {
  public:
+  using NextType = pipe_detail::Next<T>;
+
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
 
-  PipeReceiver(PipeReceiver&& other) noexcept
-      : sender_(other.sender_),
-        next_(other.next_),
-        filters_(std::move(other.filters_)),
-        pending_(std::move(other.pending_)),
-        waiting_to_send_(std::move(other.waiting_to_send_)),
-        waiting_to_receive_(other.waiting_to_receive_) {
-    if (sender_ != nullptr) {
-      sender_->receiver_ = this;
-      other.sender_ = nullptr;
-    }
-    if (next_ != nullptr) {
-      next_->receiver_ = this;
-      other.next_ = nullptr;
-    }
-    for (auto filter : filters_) {
-      filter->UpdateReceiver(this);
-    }
+  PipeReceiver(PipeReceiver&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
   }
   PipeReceiver& operator=(PipeReceiver&& other) noexcept {
-    if (sender_ != nullptr) {
-      sender_->receiver_ = nullptr;
-    }
-    if (next_ != nullptr) {
-      next_->receiver_ = nullptr;
-    }
-    sender_ = other.sender_;
-    next_ = other.next_;
-    filters_ = std::move(other.filters_);
-    for (auto filter : filters_) {
-      filter->UpdateReceiver(this);
-    }
-    pending_ = std::move(other.pending_);
-    waiting_to_send_ = std::move(other.waiting_to_send_);
-    waiting_to_receive_ = std::move(other.waiting_to_receive_);
-    if (sender_ != nullptr) {
-      sender_->receiver_ = this;
-      other.sender_ = nullptr;
-    }
-    if (next_ != nullptr) {
-      next_->receiver_ = this;
-      other.next_ = nullptr;
-    }
+    if (center_ != nullptr) center_->UnrefRecv();
+    center_ = other.center_;
+    other.center_ = nullptr;
     return *this;
   }
   ~PipeReceiver() {
-    MarkClosed();
-    if (next_ != nullptr) {
-      next_->receiver_ = nullptr;
-    }
+    if (center_ != nullptr) center_->UnrefRecv();
   }
 
   // Receive a single message from the pipe.
@@ -220,46 +302,12 @@ class PipeReceiver {
   // message was received, or no value if the other end of the pipe was closed.
   // Blocks the promise until the receiver is either closed or a message is
   // available.
-  pipe_detail::Next<T> Next();
-
-  // Attach a promise factory based filter to this pipe.
-  // The overall promise returned from this will be active until the pipe is
-  // closed. If this promise is cancelled before the pipe is closed, the pipe
-  // will close. The filter will be run _after_ any other registered filters.
-  template <typename F>
-  pipe_detail::Filter<T, F> Filter(F f);
+  NextType Next();
 
  private:
   friend struct Pipe<T>;
-  friend class PipeSender<T>;
-  friend class pipe_detail::Next<T>;
-  friend class pipe_detail::Push<T>;
-  friend class pipe_detail::FilterInterface<T>;
-  explicit PipeReceiver(PipeSender<T>* sender) : sender_(sender) {}
-  PipeSender<T>* sender_;
-  pipe_detail::Next<T>* next_ = nullptr;
-  absl::InlinedVector<pipe_detail::FilterInterface<T>*, 12> filters_;
-  absl::optional<T> pending_;
-  IntraActivityWaiter waiting_to_send_;
-  IntraActivityWaiter waiting_to_receive_;
-
-  void MarkClosed() {
-    if (sender_ == nullptr) {
-      return;
-    }
-
-    sender_->receiver_ = nullptr;
-
-    waiting_to_receive_.Wake();
-    waiting_to_send_.Wake();
-    sender_ = nullptr;
-
-    for (auto* filter : filters_) {
-      if (filter != nullptr) {
-        filter->UpdateReceiver(nullptr);
-      }
-    }
-  }
+  explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
+  pipe_detail::Center<T>* center_;
 };
 
 namespace pipe_detail {
@@ -271,56 +319,41 @@ class Push {
   Push(const Push&) = delete;
   Push& operator=(const Push&) = delete;
   Push(Push&& other) noexcept
-      : sender_(other.sender_), push_(std::move(other.push_)) {
-    if (sender_ != nullptr) {
-      sender_->push_ = this;
-      other.sender_ = nullptr;
-    }
+      : center_(other.center_), push_(std::move(other.push_)) {
+    other.center_ = nullptr;
   }
   Push& operator=(Push&& other) noexcept {
-    if (sender_ != nullptr) {
-      sender_->push_ = nullptr;
-    }
-    sender_ = other.sender_;
+    if (center_ != nullptr) center_->UnrefSend();
+    center_ = other.center_;
+    other.center_ = nullptr;
     push_ = std::move(other.push_);
-    if (sender_ != nullptr) {
-      sender_->push_ = this;
-      other.sender_ = nullptr;
-    }
     return *this;
   }
 
   ~Push() {
-    if (sender_ != nullptr) {
-      assert(sender_->push_ == this);
-      sender_->push_ = nullptr;
-    }
+    if (center_ != nullptr) center_->UnrefSend();
   }
 
   Poll<bool> operator()() {
-    auto* receiver = sender_->receiver_;
-    if (receiver == nullptr) {
-      return false;
+    if (push_.has_value()) {
+      auto r = center_->Push(&*push_);
+      if (auto* ok = absl::get_if<bool>(&r)) {
+        push_.reset();
+        if (!*ok) return false;
+      } else {
+        return Pending{};
+      }
     }
-    if (receiver->pending_.has_value()) {
-      return receiver->waiting_to_send_.pending();
-    }
-    receiver->pending_ = std::move(push_);
-    receiver->waiting_to_receive_.Wake();
-    sender_->push_ = nullptr;
-    sender_ = nullptr;
-    return true;
+    GPR_DEBUG_ASSERT(!push_.has_value());
+    return center_->PollAck();
   }
 
  private:
   friend class PipeSender<T>;
-  Push(PipeSender<T>* sender, T push)
-      : sender_(sender), push_(std::move(push)) {
-    assert(sender_->push_ == nullptr);
-    sender_->push_ = this;
-  }
-  PipeSender<T>* sender_;
-  T push_;
+  explicit Push(pipe_detail::Center<T>* center, T push)
+      : center_(center), push_(std::move(push)) {}
+  Center<T>* center_;
+  absl::optional<T> push_;
 };
 
 // Implementation of PipeReceiver::Next promise.
@@ -329,262 +362,88 @@ class Next {
  public:
   Next(const Next&) = delete;
   Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept
-      : receiver_(other.receiver_),
-        next_filter_(other.next_filter_),
-        current_promise_(nullptr) {
-    assert(other.current_promise_ == nullptr);
-    if (receiver_ != nullptr) {
-      receiver_->next_ = this;
-      other.receiver_ = nullptr;
-    }
+  Next(Next&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
   }
   Next& operator=(Next&& other) noexcept {
-    assert(current_promise_ == nullptr);
-    assert(other.current_promise_ == nullptr);
-    if (receiver_ != nullptr) {
-      receiver_->next_ = nullptr;
-    }
-    receiver_ = other.receiver_;
-    next_filter_ = other.next_filter_;
-    if (receiver_ != nullptr) {
-      receiver_->next_ = this;
-      other.receiver_ = nullptr;
-    }
+    if (center_ != nullptr) center_->UnrefRecv();
+    center_ = other.center_;
+    other.center_ = nullptr;
     return *this;
   }
 
   ~Next() {
-    if (receiver_ != nullptr) {
-      assert(receiver_->next_ == this);
-      receiver_->next_ = nullptr;
-    }
-    if (current_promise_ != nullptr) {
-      current_promise_->Stop();
-    }
+    if (center_ != nullptr) center_->UnrefRecv();
   }
 
-  Poll<absl::optional<T>> operator()() {
-    if (receiver_->pending_.has_value()) {
-      auto* pending = &*receiver_->pending_;
-      if (current_promise_ != nullptr) {
-        auto r = current_promise_->Step(pending);
-        if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
-          current_promise_->Stop();
-          current_promise_ = nullptr;
-          if (!*p) {
-            receiver_->MarkClosed();
-            return absl::optional<T>();
-          }
-        } else {
-          return Pending();
-        }
-      }
-      while (true) {
-        if (next_filter_ >= receiver_->filters_.size()) {
-          auto result = absl::optional<T>(std::move(*pending));
-          receiver_->pending_.reset();
-          receiver_->waiting_to_send_.Wake();
-          receiver_->next_ = nullptr;
-          receiver_ = nullptr;
-          return result;
-        }
-        auto* filter = receiver_->filters_[next_filter_];
-        current_promise_ = filter ? filter->Step(pending, &scratch_) : nullptr;
-        next_filter_++;
-        if (current_promise_ ==
-            reinterpret_cast<Promise<T>*>(uintptr_t(false))) {
-          current_promise_ = nullptr;
-          receiver_->MarkClosed();
-          return absl::optional<T>();
-        } else if (current_promise_ ==
-                   reinterpret_cast<Promise<T>*>(uintptr_t(true))) {
-          current_promise_ = nullptr;
-        } else {
-          return Pending();
-        }
-      }
+  Poll<NextResult<T>> operator()() {
+    auto r = center_->Next();
+    if (!absl::holds_alternative<Pending>(r)) {
+      std::exchange(center_, nullptr)->UnrefRecv();
     }
-    if (receiver_->sender_ == nullptr) {
-      return absl::optional<T>();
-    }
-    return receiver_->waiting_to_receive_.pending();
+    return r;
   }
 
  private:
   friend class PipeReceiver<T>;
-  explicit Next(PipeReceiver<T>* receiver) : receiver_(receiver) {
-    assert(receiver_->next_ == nullptr);
-    receiver_->next_ = this;
-  }
-  PipeReceiver<T>* receiver_;
-  size_t next_filter_ = 0;
-  Promise<T>* current_promise_ = nullptr;
-  Scratch scratch_;
+  explicit Next(pipe_detail::Center<T>* center) : center_(center) {}
+  Center<T>* center_;
 };
-
-template <typename T, typename F>
-class Filter final : private FilterInterface<T> {
- public:
-  Filter(PipeReceiver<T>* receiver, F f)
-      : active_{receiver, promise_detail::PromiseFactory<T, F>(std::move(f))},
-        index_(this->AllocIndex(receiver)){};
-  explicit Filter(absl::Status already_finished)
-      : done_(std::move(already_finished)) {}
-  ~Filter() {
-    if (index_ != kTombstoneIndex) {
-      this->SetReceiverIndex(active_.receiver, index_, nullptr);
-      active_.~Active();
-    } else {
-      done_.~Status();
-    }
-  }
-  Filter(Filter&& other) noexcept : index_(other.index_) {
-    if (index_ != kTombstoneIndex) {
-      new (&active_) Active(std::move(other.active_));
-      other.active_.~Active();
-      new (&other.done_) absl::Status(absl::OkStatus());
-      other.index_ = kTombstoneIndex;
-      this->SetReceiverIndex(active_.receiver, index_, this);
-    } else {
-      new (&done_) absl::Status(std::move(other.done_));
-    }
-  }
-
-  Filter(const Filter&) = delete;
-  Filter& operator=(const Filter&) = delete;
-
-  Poll<absl::Status> operator()() {
-    if (index_ == kTombstoneIndex) {
-      return std::move(done_);
-    }
-    return Pending();
-  }
-
- private:
-  static constexpr char kTombstoneIndex = -1;
-  struct Active {
-    GPR_NO_UNIQUE_ADDRESS PipeReceiver<T>* receiver;
-    GPR_NO_UNIQUE_ADDRESS promise_detail::PromiseFactory<T, F> factory;
-  };
-  union {
-    GPR_NO_UNIQUE_ADDRESS Active active_;
-    GPR_NO_UNIQUE_ADDRESS absl::Status done_;
-  };
-  GPR_NO_UNIQUE_ADDRESS char index_;
-
-  class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
-    using PF = typename promise_detail::PromiseFactory<T, F>::Promise;
-
-   public:
-    PromiseImpl(PF f, Filter* filter) : f_(std::move(f)), filter_(filter) {}
-
-    Poll<bool> Step(T* output) final {
-      auto r = f_();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
-        if (p->ok()) {
-          *output = std::move(**p);
-          return true;
-        } else {
-          filter_->SetReceiverIndex(filter_->active_.receiver, filter_->index_,
-                                    nullptr);
-          filter_->active_.~Active();
-          filter_->index_ = kTombstoneIndex;
-          new (&filter_->done_) absl::Status(std::move(p->status()));
-          Activity::WakeupCurrent();
-          return false;
-        }
-      } else {
-        return Pending();
-      }
-    }
-
-    void Stop() final { this->~PromiseImpl(); }
-
-   private:
-    PF f_;
-    Filter* filter_;
-  };
-
-  Promise<T>* Step(T* p, Scratch* scratch) final {
-    if (index_ != kTombstoneIndex) {
-      PromiseImpl promise(active_.factory.Repeated(std::move(*p)), this);
-      auto r = promise.Step(p);
-      if (auto* result = absl::get_if<kPollReadyIdx>(&r)) {
-        return reinterpret_cast<Promise<T>*>(uintptr_t(*result));
-      }
-      static_assert(sizeof(promise) <= sizeof(Scratch),
-                    "scratch size too small");
-      static_assert(alignof(decltype(promise)) <= alignof(Scratch),
-                    "bad alignment");
-      return new (scratch) decltype(promise)(std::move(promise));
-    } else {
-      return nullptr;
-    }
-  }
-
-  void UpdateReceiver(PipeReceiver<T>* receiver) final {
-    if (index_ != kTombstoneIndex) {
-      if (receiver == nullptr) {
-        active_.~Active();
-        index_ = kTombstoneIndex;
-        new (&done_) absl::Status(absl::OkStatus());
-      } else {
-        active_.receiver = receiver;
-      }
-      Activity::WakeupCurrent();
-    }
-  }
-};
-
-template <typename T>
-void FilterInterface<T>::SetReceiverIndex(PipeReceiver<T>* receiver, int idx,
-                                          FilterInterface* p) {
-  receiver->filters_[idx] = p;
-}
-
-template <typename T>
-char FilterInterface<T>::AllocIndex(PipeReceiver<T>* receiver) {
-  auto r = receiver->filters_.size();
-  receiver->filters_.push_back(this);
-  return r;
-}
 
 }  // namespace pipe_detail
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
-  return pipe_detail::Push<T>(this, std::move(value));
+  return pipe_detail::Push<T>(center_->RefSend(), std::move(value));
 }
 
 template <typename T>
 pipe_detail::Next<T> PipeReceiver<T>::Next() {
-  return pipe_detail::Next<T>(this);
+  return pipe_detail::Next<T>(center_->RefRecv());
 }
 
 template <typename T>
-template <typename F>
-pipe_detail::Filter<T, F> PipeSender<T>::Filter(F f) {
-  if (receiver_) {
-    return pipe_detail::Filter<T, F>(receiver_, std::move(f));
-  } else {
-    return pipe_detail::Filter<T, F>(absl::OkStatus());
-  }
+bool NextResult<T>::has_value() const {
+  return center_ != nullptr;
 }
 
 template <typename T>
-template <typename F>
-pipe_detail::Filter<T, F> PipeReceiver<T>::Filter(F f) {
-  return pipe_detail::Filter<T, F>(this, std::move(f));
+T& NextResult<T>::operator*() {
+  return center_->value();
+}
+
+template <typename T>
+const T& NextResult<T>::operator*() const {
+  return center_->value();
+}
+
+template <typename T>
+NextResult<T>::~NextResult() {
+  if (center_ != nullptr) center_->AckNext();
+}
+
+template <typename T>
+void NextResult<T>::reset() {
+  if (auto* p = std::exchange(center_, nullptr)) p->AckNext();
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from
 // one end to the other.
 // It is only safe to use a Pipe within the context of a single Activity.
 // No synchronization is performed internally.
+// The primary Pipe data structure is allocated from an arena, so the activity
+// must have an arena as part of its context.
+// By performing that allocation we can ensure stable pointer to shared data
+// allowing PipeSender/PipeReceiver/Push/Next to be relatively simple in their
+// implementation.
+// This type has been optimized with the expectation that there are relatively
+// few pipes per activity. If this assumption does not hold then a design
+// allowing inline filtering of pipe contents (instead of connecting pipes with
+// polling code) would likely be more appropriate.
 template <typename T>
 struct Pipe {
-  Pipe() : sender(&receiver), receiver(&sender) {}
+  Pipe() : Pipe(GetContext<Arena>()) {}
+  explicit Pipe(Arena* arena) : Pipe(arena->New<pipe_detail::Center<T>>()) {}
   Pipe(const Pipe&) = delete;
   Pipe& operator=(const Pipe&) = delete;
   Pipe(Pipe&&) noexcept = default;
@@ -592,6 +451,10 @@ struct Pipe {
 
   PipeSender<T> sender;
   PipeReceiver<T> receiver;
+
+ private:
+  explicit Pipe(pipe_detail::Center<T>* center)
+      : sender(center), receiver(center) {}
 };
 
 }  // namespace grpc_core

@@ -18,18 +18,16 @@
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <string>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/compression/args_utils.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
@@ -57,7 +55,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
   memset(&f, 0, sizeof(f));
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -73,8 +70,10 @@ void chttp2_init_client_fullstack_compression(
   ffd->client_args_compression =
       grpc_channel_args_set_channel_default_compression_algorithm(
           client_args, GRPC_COMPRESS_GZIP);
-  f->client = grpc_insecure_channel_create(
-      ffd->localaddr.c_str(), ffd->client_args_compression, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds,
+                                  ffd->client_args_compression);
+  grpc_channel_credentials_release(creds);
 }
 
 void chttp2_init_server_fullstack_compression(
@@ -93,8 +92,11 @@ void chttp2_init_server_fullstack_compression(
   }
   f->server = grpc_server_create(ffd->server_args_compression, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(
-      grpc_server_add_insecure_http2_port(f->server, ffd->localaddr.c_str()));
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                        server_creds));
+  grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
 
@@ -120,7 +122,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char** argv) {
   size_t i;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

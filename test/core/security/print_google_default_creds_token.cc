@@ -37,15 +37,15 @@ typedef struct {
   grpc_polling_entity pops;
   bool is_done;
 
-  grpc_credentials_mdelem_array md_array;
+  grpc_core::CredentialsMetadataArray md_array;
   grpc_closure on_request_metadata;
 } synchronizer;
 
 static void on_metadata_response(void* arg, grpc_error_handle error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
-  if (error != GRPC_ERROR_NONE) {
+  if (!error.ok()) {
     fprintf(stderr, "Fetching token failed: %s\n",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     fflush(stderr);
   } else {
     char* token;
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   grpc_auth_metadata_context context;
   gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
   grpc_pollset* pollset = nullptr;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   gpr_cmdline_add_string(cl, "service_url",
                          "Service URL for the token request.", &service_url);
   gpr_cmdline_parse(cl, argc, argv);
@@ -96,14 +96,13 @@ int main(int argc, char** argv) {
   GRPC_CLOSURE_INIT(&sync.on_request_metadata, on_metadata_response, &sync,
                     grpc_schedule_on_exec_ctx);
 
-  error = GRPC_ERROR_NONE;
+  error = absl::OkStatus();
   if (reinterpret_cast<grpc_composite_channel_credentials*>(creds)
           ->mutable_call_creds()
           ->get_request_metadata(&sync.pops, context, &sync.md_array,
                                  &sync.on_request_metadata, &error)) {
     // Synchronous response.  Invoke callback directly.
     on_metadata_response(&sync, error);
-    GRPC_ERROR_UNREF(error);
   }
 
   gpr_mu_lock(sync.mu);
@@ -112,7 +111,7 @@ int main(int argc, char** argv) {
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,
-                              GRPC_MILLIS_INF_FUTURE)))
+                              grpc_core::Timestamp::InfFuture())))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();

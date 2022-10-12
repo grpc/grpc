@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "upb/msg_internal.h"
 #include "envoy/admin/v3/config_dump.upb.h"
+#include "envoy/admin/v3/config_dump_shared.upb.h"
 #include "envoy/config/bootstrap/v3/bootstrap.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/timestamp.upb.h"
@@ -17,420 +18,106 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_admin_v3_ConfigDump_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_admin_v3_ConfigDump_submsgs[1] = {
   {.submsg = &google_protobuf_Any_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_ConfigDump__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_ConfigDump__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_ConfigDump_msginit = {
+const upb_MiniTable envoy_admin_v3_ConfigDump_msginit = {
   &envoy_admin_v3_ConfigDump_submsgs[0],
   &envoy_admin_v3_ConfigDump__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_UpdateFailureState_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_UpdateFailureState__fields[4] = {
-  {1, UPB_SIZE(20, 40), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(24, 48), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_UpdateFailureState_msginit = {
-  &envoy_admin_v3_UpdateFailureState_submsgs[0],
-  &envoy_admin_v3_UpdateFailureState__fields[0],
-  UPB_SIZE(32, 64), 4, _UPB_MSGEXT_NONE, 4, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_BootstrapConfigDump_submsgs[2] = {
+static const upb_MiniTable_Sub envoy_admin_v3_BootstrapConfigDump_submsgs[2] = {
   {.submsg = &envoy_config_bootstrap_v3_Bootstrap_msginit},
   {.submsg = &google_protobuf_Timestamp_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_BootstrapConfigDump__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_BootstrapConfigDump__fields[2] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_BootstrapConfigDump_msginit = {
+const upb_MiniTable envoy_admin_v3_BootstrapConfigDump_msginit = {
   &envoy_admin_v3_BootstrapConfigDump_submsgs[0],
   &envoy_admin_v3_BootstrapConfigDump__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_ListenersConfigDump_submsgs[2] = {
-  {.submsg = &envoy_admin_v3_ListenersConfigDump_DynamicListener_msginit},
-  {.submsg = &envoy_admin_v3_ListenersConfigDump_StaticListener_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ListenersConfigDump__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ListenersConfigDump_msginit = {
-  &envoy_admin_v3_ListenersConfigDump_submsgs[0],
-  &envoy_admin_v3_ListenersConfigDump__fields[0],
-  UPB_SIZE(16, 32), 3, _UPB_MSGEXT_NONE, 3, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ListenersConfigDump_StaticListener_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ListenersConfigDump_StaticListener__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ListenersConfigDump_StaticListener_msginit = {
-  &envoy_admin_v3_ListenersConfigDump_StaticListener_submsgs[0],
-  &envoy_admin_v3_ListenersConfigDump_StaticListener__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ListenersConfigDump_DynamicListenerState_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ListenersConfigDump_DynamicListenerState__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(16, 32), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit = {
-  &envoy_admin_v3_ListenersConfigDump_DynamicListenerState_submsgs[0],
-  &envoy_admin_v3_ListenersConfigDump_DynamicListenerState__fields[0],
-  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 3, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ListenersConfigDump_DynamicListener_submsgs[2] = {
-  {.submsg = &envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit},
-  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ListenersConfigDump_DynamicListener__fields[6] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 24), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(20, 32), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(24, 40), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(28, 48), 4, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ListenersConfigDump_DynamicListener_msginit = {
-  &envoy_admin_v3_ListenersConfigDump_DynamicListener_submsgs[0],
-  &envoy_admin_v3_ListenersConfigDump_DynamicListener__fields[0],
-  UPB_SIZE(32, 64), 6, _UPB_MSGEXT_NONE, 6, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ClustersConfigDump_submsgs[2] = {
-  {.submsg = &envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit},
-  {.submsg = &envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ClustersConfigDump__fields[4] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(16, 32), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ClustersConfigDump_msginit = {
-  &envoy_admin_v3_ClustersConfigDump_submsgs[0],
-  &envoy_admin_v3_ClustersConfigDump__fields[0],
-  UPB_SIZE(24, 48), 4, _UPB_MSGEXT_NONE, 4, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ClustersConfigDump_StaticCluster_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ClustersConfigDump_StaticCluster__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit = {
-  &envoy_admin_v3_ClustersConfigDump_StaticCluster_submsgs[0],
-  &envoy_admin_v3_ClustersConfigDump_StaticCluster__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ClustersConfigDump_DynamicCluster_submsgs[3] = {
-  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ClustersConfigDump_DynamicCluster__fields[5] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(20, 32), 2, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(24, 40), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit = {
-  &envoy_admin_v3_ClustersConfigDump_DynamicCluster_submsgs[0],
-  &envoy_admin_v3_ClustersConfigDump_DynamicCluster__fields[0],
-  UPB_SIZE(32, 48), 5, _UPB_MSGEXT_NONE, 5, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_RoutesConfigDump_submsgs[2] = {
-  {.submsg = &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit},
-  {.submsg = &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_RoutesConfigDump__fields[2] = {
-  {2, UPB_SIZE(0, 0), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 8), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_RoutesConfigDump_msginit = {
-  &envoy_admin_v3_RoutesConfigDump_submsgs[0],
-  &envoy_admin_v3_RoutesConfigDump__fields[0],
-  UPB_SIZE(8, 16), 2, _UPB_MSGEXT_NONE, 0, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_RoutesConfigDump_StaticRouteConfig__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit = {
-  &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_submsgs[0],
-  &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_submsgs[3] = {
-  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig__fields[5] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(20, 32), 2, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(24, 40), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit = {
-  &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_submsgs[0],
-  &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig__fields[0],
-  UPB_SIZE(32, 48), 5, _UPB_MSGEXT_NONE, 5, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ScopedRoutesConfigDump_submsgs[2] = {
-  {.submsg = &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit},
-  {.submsg = &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ScopedRoutesConfigDump__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ScopedRoutesConfigDump_msginit = {
-  &envoy_admin_v3_ScopedRoutesConfigDump_submsgs[0],
-  &envoy_admin_v3_ScopedRoutesConfigDump__fields[0],
-  UPB_SIZE(8, 16), 2, _UPB_MSGEXT_NONE, 2, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 32), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit = {
-  &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_submsgs[0],
-  &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs__fields[0],
-  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 3, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_submsgs[3] = {
-  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs__fields[6] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(32, 56), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(24, 40), 1, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(28, 48), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit = {
-  &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_submsgs[0],
-  &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs__fields[0],
-  UPB_SIZE(40, 64), 6, _UPB_MSGEXT_NONE, 6, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_SecretsConfigDump_submsgs[2] = {
-  {.submsg = &envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit},
+static const upb_MiniTable_Sub envoy_admin_v3_SecretsConfigDump_submsgs[3] = {
   {.submsg = &envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit},
+  {.submsg = &envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit},
+  {.submsg = &envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_SecretsConfigDump__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(8, 16), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_SecretsConfigDump__fields[3] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(0, 0), 2, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_SecretsConfigDump_msginit = {
+const upb_MiniTable envoy_admin_v3_SecretsConfigDump_msginit = {
   &envoy_admin_v3_SecretsConfigDump_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump__fields[0],
-  UPB_SIZE(16, 24), 3, _UPB_MSGEXT_NONE, 3, 255,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[3] = {
-  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
-  {.submsg = &google_protobuf_Any_msginit},
+static const upb_MiniTable_Sub envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[3] = {
   {.submsg = &google_protobuf_Timestamp_msginit},
+  {.submsg = &google_protobuf_Any_msginit},
+  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_SecretsConfigDump_DynamicSecret__fields[6] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(24, 40), 1, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(28, 48), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(32, 56), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_SecretsConfigDump_DynamicSecret__fields[6] = {
+  {1, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(24, 40), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(28, 48), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(32, 56), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit = {
+const upb_MiniTable envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit = {
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret__fields[0],
-  UPB_SIZE(40, 64), 6, _UPB_MSGEXT_NONE, 6, 255,
+  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
+static const upb_MiniTable_Sub envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[2] = {
   {.submsg = &google_protobuf_Timestamp_msginit},
+  {.submsg = &google_protobuf_Any_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_SecretsConfigDump_StaticSecret__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(16, 32), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_SecretsConfigDump_StaticSecret__fields[3] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 32), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit = {
+const upb_MiniTable envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit = {
   &envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_StaticSecret__fields[0],
-  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 3, 255,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_EndpointsConfigDump_submsgs[2] = {
-  {.submsg = &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit},
-  {.submsg = &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_EndpointsConfigDump__fields[2] = {
-  {2, UPB_SIZE(0, 0), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 8), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_EndpointsConfigDump_msginit = {
-  &envoy_admin_v3_EndpointsConfigDump_submsgs[0],
-  &envoy_admin_v3_EndpointsConfigDump__fields[0],
-  UPB_SIZE(8, 16), 2, _UPB_MSGEXT_NONE, 0, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_submsgs[2] = {
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit = {
-  &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_submsgs[0],
-  &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
-};
-
-static const upb_msglayout_sub envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_submsgs[3] = {
-  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
-  {.submsg = &google_protobuf_Any_msginit},
-  {.submsg = &google_protobuf_Timestamp_msginit},
-};
-
-static const upb_msglayout_field envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig__fields[5] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(20, 32), 2, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(24, 40), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit = {
-  &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_submsgs[0],
-  &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig__fields[0],
-  UPB_SIZE(32, 48), 5, _UPB_MSGEXT_NONE, 5, 255,
-};
-
-static const upb_msglayout *messages_layout[22] = {
+static const upb_MiniTable *messages_layout[5] = {
   &envoy_admin_v3_ConfigDump_msginit,
-  &envoy_admin_v3_UpdateFailureState_msginit,
   &envoy_admin_v3_BootstrapConfigDump_msginit,
-  &envoy_admin_v3_ListenersConfigDump_msginit,
-  &envoy_admin_v3_ListenersConfigDump_StaticListener_msginit,
-  &envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit,
-  &envoy_admin_v3_ListenersConfigDump_DynamicListener_msginit,
-  &envoy_admin_v3_ClustersConfigDump_msginit,
-  &envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit,
-  &envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit,
-  &envoy_admin_v3_RoutesConfigDump_msginit,
-  &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit,
-  &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit,
-  &envoy_admin_v3_ScopedRoutesConfigDump_msginit,
-  &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit,
-  &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit,
   &envoy_admin_v3_SecretsConfigDump_msginit,
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit,
   &envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit,
-  &envoy_admin_v3_EndpointsConfigDump_msginit,
-  &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit,
-  &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit,
 };
 
-const upb_msglayout_file envoy_admin_v3_config_dump_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_admin_v3_config_dump_proto_upb_file_layout = {
   messages_layout,
   NULL,
-  22,
+  NULL,
+  5,
+  0,
   0,
 };
 

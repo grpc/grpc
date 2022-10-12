@@ -65,13 +65,12 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
   args->handshake_buffer =
       static_cast<unsigned char*>(gpr_zalloc(args->handshake_buffer_size));
   args->is_client = is_client;
-  args->error = GRPC_ERROR_NONE;
+  args->error = absl::OkStatus();
   return args;
 }
 
 static void handshaker_args_destroy(handshaker_args* args) {
   gpr_free(args->handshake_buffer);
-  GRPC_ERROR_UNREF(args->error);
   delete args;
 }
 
@@ -297,7 +296,7 @@ grpc_error_handle on_handshake_next_done(
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
@@ -306,8 +305,8 @@ grpc_error_handle on_handshake_next_done(
   }
   if (result != TSI_OK) {
     notification_signal(fixture);
-    return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
+    return grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Handshake failed"),
+                                     result);
   }
   /* Update handshaker result. */
   if (handshaker_result != nullptr) {
@@ -375,7 +374,7 @@ static void do_handshaker_next(handshaker_args* args) {
     if (result != TSI_ASYNC) {
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
-      if (args->error != GRPC_ERROR_NONE) {
+      if (!args->error.ok()) {
         return;
       }
     }
@@ -395,11 +394,11 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     client_args->transferred_data = false;
     server_args->transferred_data = false;
     do_handshaker_next(client_args);
-    if (client_args->error != GRPC_ERROR_NONE) {
+    if (!client_args->error.ok()) {
       break;
     }
     do_handshaker_next(server_args);
-    if (server_args->error != GRPC_ERROR_NONE) {
+    if (!server_args->error.ok()) {
       break;
     }
     GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);
@@ -605,6 +604,7 @@ static void tsi_test_channel_destroy(tsi_test_channel* channel) {
 }
 
 void tsi_test_fixture_init(tsi_test_fixture* fixture) {
+  memset(fixture, 0, sizeof(tsi_test_fixture));
   fixture->config = tsi_test_frame_protector_config_create(
       true, true, true, true, true, true, true);
   fixture->handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;

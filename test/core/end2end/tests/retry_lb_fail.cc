@@ -14,92 +14,33 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <atomic>
+
+#include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
+#include "test/core/util/test_lb_policies.h"
 
-namespace grpc_core {
 namespace {
-
-const char* kFailPolicyName = "fail_lb";
 
 std::atomic<int> g_num_lb_picks;
 
-class FailPolicy : public LoadBalancingPolicy {
- public:
-  explicit FailPolicy(Args args) : LoadBalancingPolicy(std::move(args)) {}
-
-  const char* name() const override { return kFailPolicyName; }
-
-  void UpdateLocked(UpdateArgs) override {
-    absl::Status status = absl::AbortedError("LB pick failed");
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<FailPicker>(status));
-  }
-
-  void ResetBackoffLocked() override {}
-  void ShutdownLocked() override {}
-
- private:
-  class FailPicker : public SubchannelPicker {
-   public:
-    explicit FailPicker(absl::Status status) : status_(status) {}
-
-    PickResult Pick(PickArgs /*args*/) override {
-      g_num_lb_picks.fetch_add(1);
-      return PickResult::Fail(status_);
-    }
-
-   private:
-    absl::Status status_;
-  };
-};
-
-class FailLbConfig : public LoadBalancingPolicy::Config {
- public:
-  const char* name() const override { return kFailPolicyName; }
-};
-
-class FailPolicyFactory : public LoadBalancingPolicyFactory {
- public:
-  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<FailPolicy>(std::move(args));
-  }
-
-  const char* name() const override { return kFailPolicyName; }
-
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
-    return MakeRefCounted<FailLbConfig>();
-  }
-};
-
-void RegisterFailPolicy() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<FailPolicyFactory>());
-}
-
 }  // namespace
-}  // namespace grpc_core
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -132,11 +73,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -154,7 +96,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Tests that we retry properly when the LB policy fails the call before
@@ -177,7 +118,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
   grpc_call_error error;
   grpc_slice details;
 
-  grpc_core::g_num_lb_picks.store(0, std::memory_order_relaxed);
+  g_num_lb_picks.store(0, std::memory_order_relaxed);
 
   grpc_arg args[] = {
       grpc_channel_arg_integer_create(
@@ -198,7 +139,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
               "      \"initialBackoff\": \"1s\",\n"
               "      \"maxBackoff\": \"120s\",\n"
               "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "      \"retryableStatusCodes\": [ \"UNAVAILABLE\" ]\n"
               "    }\n"
               "  } ]\n"
               "}")),
@@ -207,7 +148,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_lb_fail", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -227,8 +168,8 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), false);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), false);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -241,10 +182,10 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(2), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(2), true);
+  cqv.Verify();
 
-  GPR_ASSERT(status == GRPC_STATUS_ABORTED);
+  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "LB pick failed"));
 
   grpc_slice_unref(details);
@@ -255,9 +196,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
 
   grpc_call_unref(c);
 
-  cq_verifier_destroy(cqv);
-
-  int num_picks = grpc_core::g_num_lb_picks.load(std::memory_order_relaxed);
+  int num_picks = g_num_lb_picks.load(std::memory_order_relaxed);
   gpr_log(GPR_INFO, "NUM LB PICKS: %d", num_picks);
   GPR_ASSERT(num_picks == 2);
 
@@ -270,4 +209,10 @@ void retry_lb_fail(grpc_end2end_test_config config) {
   test_retry_lb_fail(config);
 }
 
-void retry_lb_fail_pre_init(void) { grpc_core::RegisterFailPolicy(); }
+void retry_lb_fail_pre_init(void) {
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::RegisterFailLoadBalancingPolicy(
+            builder, absl::UnavailableError("LB pick failed"), &g_num_lb_picks);
+      });
+}

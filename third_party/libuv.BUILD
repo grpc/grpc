@@ -324,3 +324,68 @@ cc_library(
         "//visibility:public",
     ],
 )
+
+cc_library(
+    name = "libuv_test",
+    srcs = [
+       "test/test-timer.c",
+       "test/test-timer-again.c",
+       "test/test-timer-from-check.c",
+       "test/test-getaddrinfo.c",
+       "test/test-gethostname.c",
+       "test/test-getnameinfo.c",
+       "test/test-getsockname.c",
+    ],
+    hdrs = [
+        "test/runner.h",
+        "test/runner-unix.h",
+        "test/task.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":libuv"
+    ],
+    copts = [
+        "-D_LARGEFILE_SOURCE",
+        "-D_FILE_OFFSET_BITS=64",
+        "-D_GNU_SOURCE",
+        "-pthread",
+        "--std=gnu89",
+        "-pedantic",
+        "-Wno-error",
+        "-Wno-strict-aliasing",
+        "-Wstrict-aliasing",
+        "-O2",
+        "-Wno-implicit-function-declaration",
+        "-Wno-unused-function",
+        "-Wno-unused-variable",
+    ] + select({
+        ":apple": [],
+        ":windows": [
+            "-DWIN32_LEAN_AND_MEAN",
+            "-D_WIN32_WINNT=0x0600",
+        ],
+        "//conditions:default": [
+            "-Wno-tree-vrp",
+            "-Wno-omit-frame-pointer",
+            "-D_DARWIN_USE_64_BIT_INODE=1",
+            "-D_DARWIN_UNLIMITED_SELECT=1",
+        ],
+    }),
+    linkopts = select({
+        ":windows": [
+            "-Xcrosstool-compilation-mode=$(COMPILATION_MODE)",
+            "-Wl,Iphlpapi.lib",
+            "-Wl,Psapi.lib",
+            "-Wl,User32.lib",
+            "-Wl,Userenv.lib",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = [
+        "//visibility:public",
+    ],
+)
