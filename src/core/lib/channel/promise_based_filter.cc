@@ -309,22 +309,23 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
             base_->LogTag().c_str(), StateString(state_),
             status.ToString().c_str());
   }
-  if (!status.ok()) abort();
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
     case State::kGotBatchNoPipe:
     case State::kPushedToPipe:
-    case State::kCancelled:
     case State::kGotBatch:
     case State::kBatchCompleted:
       abort();
       break;
+    case State::kCancelled:
+      break;
     case State::kForwardedBatch:
+      completed_status_ = status;
       state_ = State::kBatchCompleted;
+      base_->WakeInsideCombiner(&flusher);
       break;
   }
-  base_->WakeInsideCombiner(&flusher);
 }
 
 void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
@@ -369,6 +370,11 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
       }
     } break;
     case State::kBatchCompleted:
+      if (completed_status_.ok()) {
+        state_ = State::kIdle;
+      } else {
+        state_ = State::kCancelled;
+      }
       state_ = State::kIdle;
       next_result_.reset();
       GPR_ASSERT(!absl::holds_alternative<Pending>((*push_)()));

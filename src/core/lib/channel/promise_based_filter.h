@@ -295,6 +295,7 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
         MakeMemberClosure<SendMessage, &SendMessage::OnComplete>(this);
+    absl::Status completed_status_;
   };
 
   class ReceiveMessage {
