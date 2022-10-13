@@ -2881,15 +2881,13 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
+        "experiments",
         "gpr",
         "grpc_trace",
-<<<<<<< HEAD
+        "init_internally",
         "iomgr_port",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_default",
-=======
-        "init_internally",
->>>>>>> master
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
     ],

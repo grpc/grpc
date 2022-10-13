@@ -21,6 +21,9 @@ EXPERIMENTS = {
         "core_end2end_tests": [
             "new_hpack_huffman_decoder",
         ],
+        "event_engine_client_test": [
+            "posix_event_engine_enable_polling",
+        ],
         "hpack_test": [
             "new_hpack_huffman_decoder",
         ],
