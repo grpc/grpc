@@ -31,15 +31,6 @@ def grpc_python_deps():
             urls = ["https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz"],
         )
 
-    if "futures" not in native.existing_rules():
-        http_archive(
-            name = "futures",
-            build_file = "@com_github_grpc_grpc//third_party:futures.BUILD",
-            strip_prefix = "futures-3.3.0",
-            sha256 = "7e033af76a5e35f58e56da7a91e687706faf4e7bdfb2cbc3f2cca6b9bcda9794",
-            urls = ["https://files.pythonhosted.org/packages/47/04/5fc6c74ad114032cd2c544c575bffc17582295e9cd6a851d6026ab4b2c00/futures-3.3.0.tar.gz"],
-        )
-
     if "io_bazel_rules_python" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_python",

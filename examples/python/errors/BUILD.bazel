@@ -36,10 +36,7 @@ py_library(
         "//src/python/grpcio_status/grpc_status:grpc_status",
         "//examples/protos:helloworld_py_pb2",
         "//examples/protos:helloworld_py_pb2_grpc",
-    ] + select({
-        "//conditions:default": [requirement("futures")],
-        "//:python3": [],
-    }),
+    ],
 )
 
 py_test(

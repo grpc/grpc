@@ -58,10 +58,7 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         ":prime_proto_pb2",
         ":prime_proto_pb2_grpc",
-    ] + select({
-        "//conditions:default": ["@futures//:futures"],
-        "//:python3": [],
-    }),
+    ],
 )
 
 py_test(
