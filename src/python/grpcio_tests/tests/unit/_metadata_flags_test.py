@@ -14,6 +14,7 @@
 """Tests metadata flags feature by testing wait-for-ready semantics"""
 
 import logging
+import queue
 import socket
 import threading
 import time
@@ -21,7 +22,6 @@ import unittest
 import weakref
 
 import grpc
-from six.moves import queue
 
 from tests.unit import test_common
 import tests.unit.framework.common
