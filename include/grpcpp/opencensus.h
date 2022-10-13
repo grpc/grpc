@@ -19,7 +19,10 @@
 #ifndef GRPCPP_OPENCENSUS_H
 #define GRPCPP_OPENCENSUS_H
 
+#include "opencensus/stats/view_descriptor.h"
+#include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
 
 namespace grpc {
 class ServerContext;
@@ -143,6 +146,42 @@ const ::opencensus::stats::ViewDescriptor& ServerServerLatencyHour();
 const ::opencensus::stats::ViewDescriptor& ServerStartedCountHour();
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsHour();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
+
+// Thread compatible.
+class CensusContext {
+ public:
+  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()), tags_({}) {}
+
+  explicit CensusContext(absl::string_view name,
+                         const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpan(name)), tags_(tags) {}
+
+  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent,
+                const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpan(name, parent)),
+        tags_(tags) {}
+
+  CensusContext(absl::string_view name,
+                const ::opencensus::trace::SpanContext& parent_ctxt)
+      : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
+            name, parent_ctxt)),
+        tags_({}) {}
+
+  void AddSpanAttribute(absl::string_view key,
+                        opencensus::trace::AttributeValueRef attribute) {
+    span_.AddAttribute(key, attribute);
+  }
+
+  const ::opencensus::trace::Span& Span() const { return span_; }
+  const ::opencensus::tags::TagMap& tags() const { return tags_; }
+
+  ::opencensus::trace::SpanContext Context() const { return Span().context(); }
+  void EndSpan() { Span().End(); }
+
+ private:
+  ::opencensus::trace::Span span_;
+  ::opencensus::tags::TagMap tags_;
+};
 
 }  // namespace grpc
 
