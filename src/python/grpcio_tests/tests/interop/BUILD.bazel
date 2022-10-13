@@ -61,10 +61,7 @@ py_library(
         requirement("chardet"),
         requirement("certifi"),
         requirement("idna"),
-    ] + select({
-        "//conditions:default": [requirement("enum34")],
-        "//:python3": [],
-    }),
+    ],
 )
 
 py_library(

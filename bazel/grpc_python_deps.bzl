@@ -19,15 +19,6 @@ load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_confi
 # buildifier: disable=unnamed-macro
 def grpc_python_deps():
     """Loads dependencies for gRPC Python."""
-    if "enum34" not in native.existing_rules():
-        http_archive(
-            name = "enum34",
-            build_file = "@com_github_grpc_grpc//third_party:enum34.BUILD",
-            strip_prefix = "enum34-1.1.6",
-            sha256 = "8ad8c4783bf61ded74527bffb48ed9b54166685e4230386a9ed9b1279e2df5b1",
-            urls = ["https://files.pythonhosted.org/packages/bf/3e/31d502c25302814a7c2f1d3959d2a3b3f78e509002ba91aea64993936876/enum34-1.1.6.tar.gz"],
-        )
-
     if "futures" not in native.existing_rules():
         http_archive(
             name = "futures",
