@@ -35,11 +35,11 @@ except ImportError:
 
 try:
     # pylint: disable=ungrouped-imports
-    import enum34
-    sys.stderr.write("enum34_found")
+    import futures
+    sys.stderr.write("futures_found")
     sys.stderr.flush()
 except ImportError:
-    sys.stderr.write("no_enum34_found")
+    sys.stderr.write("no_futures_found")
     sys.stderr.flush()
 
 ############################## Future Interface  ###############################

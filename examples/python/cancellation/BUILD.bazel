@@ -65,10 +65,7 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         ":hash_name_py_pb2",
         ":search",
-    ] + select({
-        "//conditions:default": ["@futures//:futures"],
-        "//:python3": [],
-    }),
+    ],
 )
 
 py_test(

@@ -45,9 +45,6 @@ INSTALL_REQUIRES = (
     'oauth2client>=1.4.7', 'protobuf>=4.21.6', 'google-auth>=1.17.2',
     'requests>=2.14.2')
 
-if not PY3:
-    INSTALL_REQUIRES += ('futures>=2.2.0')
-
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
     'preprocess': commands.GatherProto,
