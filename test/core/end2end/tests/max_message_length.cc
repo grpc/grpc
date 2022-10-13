@@ -43,7 +43,10 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "\n\n\nRunning test: %s/%s client_args=%s server_args=%s",
+          test_name, config.name,
+          grpc_core::ChannelArgs::FromC(client_args).ToString().c_str(),
+          grpc_core::ChannelArgs::FromC(server_args).ToString().c_str());
   // We intentionally do not pass the client and server args to
   // create_fixture(), since we don't want the limit enforced on the
   // proxy, only on the backend server.
