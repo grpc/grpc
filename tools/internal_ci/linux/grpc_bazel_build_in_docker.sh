@@ -20,6 +20,9 @@
 
 set -ex
 
+echo 'xuanwn trying to remove six'
+python3 -m pip uninstall -y six
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_build_with_strict_warnings
 bazel_build_with_strict_warnings/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
