@@ -30,39 +30,26 @@
 
 namespace grpc_core {
 
-extern const char* kXdsHttpFaultFilterConfigName;
-
 class XdsHttpFaultFilter : public XdsHttpFilterImpl {
  public:
-  // Overrides the PopulateSymtab method
+  absl::string_view ConfigProtoName() const override;
+  absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-
-  // Overrides the GenerateFilterConfig method
   absl::optional<FilterConfig> GenerateFilterConfig(
       XdsExtension extension, upb_Arena* arena,
       ValidationErrors* errors) const override;
-
-  // Overrides the GenerateFilterConfigOverride method
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
       XdsExtension extension, upb_Arena* arena,
       ValidationErrors* errors) const override;
-
-  // Overrides the channel_filter method
   const grpc_channel_filter* channel_filter() const override;
-
-  // Overrides the ModifyChannelArgs method
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
-
-  // Overrides the GenerateServiceConfig method
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const override;
-
   bool IsSupportedOnClients() const override { return true; }
-
   bool IsSupportedOnServers() const override { return false; }
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H

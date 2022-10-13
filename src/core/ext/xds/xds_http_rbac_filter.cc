@@ -54,12 +54,6 @@
 
 namespace grpc_core {
 
-const char* kXdsHttpRbacFilterConfigName =
-    "envoy.extensions.filters.http.rbac.v3.RBAC";
-
-const char* kXdsHttpRbacFilterConfigOverrideName =
-    "envoy.extensions.filters.http.rbac.v3.RBACPerRoute";
-
 namespace {
 
 Json ParseRegexMatcherToJson(
@@ -428,6 +422,14 @@ Json ParseHttpRbacToJson(
 
 }  // namespace
 
+absl::string_view XdsHttpRbacFilter::ConfigProtoName() const {
+  return "envoy.extensions.filters.http.rbac.v3.RBAC";
+}
+
+absl::string_view XdsHttpRbacFilter::OverrideConfigProtoName() const {
+  return "envoy.extensions.filters.http.rbac.v3.RBACPerRoute";
+}
+
 void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
@@ -449,8 +451,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(XdsExtension extension,
     errors->AddError("could not parse HTTP RBAC filter config");
     return absl::nullopt;
   }
-  return FilterConfig{kXdsHttpRbacFilterConfigName,
-                      ParseHttpRbacToJson(rbac, errors)};
+  return FilterConfig{ConfigProtoName(), ParseHttpRbacToJson(rbac, errors)};
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
@@ -479,8 +480,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
     ValidationErrors::ScopedField field(errors, ".rbac");
     rbac_json = ParseHttpRbacToJson(rbac, errors);
   }
-  return FilterConfig{kXdsHttpRbacFilterConfigOverrideName,
-                      std::move(rbac_json)};
+  return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {

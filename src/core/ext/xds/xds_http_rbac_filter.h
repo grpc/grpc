@@ -30,31 +30,23 @@
 
 namespace grpc_core {
 
-extern const char* kXdsHttpRbacFilterConfigName;
-extern const char* kXdsHttpRbacFilterConfigOverrideName;
-
 class XdsHttpRbacFilter : public XdsHttpFilterImpl {
  public:
+  absl::string_view ConfigProtoName() const override;
+  absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-
   absl::optional<FilterConfig> GenerateFilterConfig(
       XdsExtension extension, upb_Arena* arena,
       ValidationErrors* errors) const override;
-
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
       XdsExtension extension, upb_Arena* arena,
       ValidationErrors* errors) const override;
-
   const grpc_channel_filter* channel_filter() const override;
-
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
-
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const override;
-
   bool IsSupportedOnClients() const override { return false; }
-
   bool IsSupportedOnServers() const override { return true; }
 };
 

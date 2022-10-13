@@ -462,7 +462,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     // to expose whether the resource we received was v2 or v3.
     http_connection_manager.http_filters.emplace_back(
         XdsListenerResource::HttpConnectionManager::HttpFilter{
-            "router", {kXdsHttpRouterFilterConfigName, Json()}});
+            "router", {XdsHttpRouterFilter::StaticConfigName(), Json()}});
   }
   // Found inlined route_config. Parse it to find the cluster_name.
   if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(

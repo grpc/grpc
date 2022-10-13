@@ -50,9 +50,6 @@
 
 namespace grpc_core {
 
-const char* kXdsHttpFaultFilterConfigName =
-    "envoy.extensions.filters.http.fault.v3.HTTPFault";
-
 namespace {
 
 uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
@@ -75,6 +72,14 @@ uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
 }
 
 }  // namespace
+
+absl::string_view XdsHttpFaultFilter::ConfigProtoName() const {
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
+}
+
+absl::string_view XdsHttpFaultFilter::OverrideConfigProtoName() const {
+  return "";
+}
 
 void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
@@ -190,7 +195,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
     fault_injection_policy_json["maxFaults"] =
         google_protobuf_UInt32Value_value(max_fault_wrapper);
   }
-  return FilterConfig{kXdsHttpFaultFilterConfigName,
+  return FilterConfig{ConfigProtoName(),
                       std::move(fault_injection_policy_json)};
 }
 
