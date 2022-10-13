@@ -191,17 +191,23 @@ class BaseCallData : public Activity, private Wakeable {
     ~Flusher();
 
     void Resume(grpc_transport_stream_op_batch* batch) {
+      gpr_log(GPR_DEBUG, "FLUSHER:Resume %s",
+              grpc_transport_stream_op_batch_string(batch).c_str());
       GPR_ASSERT(!call_->is_last());
       release_.push_back(batch);
     }
 
     void Cancel(grpc_transport_stream_op_batch* batch,
                 grpc_error_handle error) {
+      gpr_log(GPR_DEBUG, "FLUSHER:Cancel %s",
+              grpc_transport_stream_op_batch_string(batch).c_str());
       grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
                                                                &call_closures_);
     }
 
     void Complete(grpc_transport_stream_op_batch* batch) {
+      gpr_log(GPR_DEBUG, "FLUSHER:Complete %s",
+              grpc_transport_stream_op_batch_string(batch).c_str());
       call_closures_.Add(batch->on_complete, absl::OkStatus(),
                          "Flusher::Complete");
     }
