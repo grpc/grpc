@@ -32,7 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -91,7 +90,6 @@ namespace posix_engine {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::Slice;

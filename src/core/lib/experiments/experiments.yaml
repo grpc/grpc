@@ -87,8 +87,8 @@
 - name: periodic_resource_quota_reclamation
   description:
     Periodically return memory to the resource quota
-  default: false
-  expiry: 2023/01/01
+  default: true
+  expiry: 2023/04/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test, promise_test, hpack_test]
 - name: unconstrained_max_quota_buffer_size
@@ -127,3 +127,10 @@
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
+- name: posix_event_engine_enable_polling
+  description:
+    If set, enables polling on the default posix event engine.
+  default: debug
+  expiry: 2023/01/01
+  owner: vigneshbabu@google.com
+  test_tags: ["event_engine_client_test"]

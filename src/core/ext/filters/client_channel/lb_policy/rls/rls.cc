@@ -72,6 +72,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -1421,7 +1422,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
           gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
-                  cache->lb_policy_, grpc_error_std_string(error).c_str());
+                  cache->lb_policy_, StatusToString(error).c_str());
         }
         if (error == absl::CancelledError()) return;
         MutexLock lock(&lb_policy->mu_);
@@ -1767,7 +1768,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
             "[rlslb %p] rls_request=%p %s, error=%s, status={%d, %s} RLS call "
             "response received",
             lb_policy_.get(), this, key_.ToString().c_str(),
-            grpc_error_std_string(error).c_str(), status_recv_,
+            StatusToString(error).c_str(), status_recv_,
             status_message.c_str());
   }
   // Parse response.
@@ -2423,7 +2424,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
     auto service_config = MakeRefCounted<ServiceConfigImpl>(
         ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
     if (!child_error.ok()) {
-      errors->AddError(grpc_error_std_string(child_error));
+      errors->AddError(StatusToString(child_error));
     }
   }
   // Validate childPolicyConfigTargetFieldName.

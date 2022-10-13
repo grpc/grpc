@@ -178,7 +178,7 @@ MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
 
 // Matches with grpc_error having error message containing |msg|.
 MATCHER_P(GrpcErrorMessageContains, msg, "") {
-  return absl::StrContains(grpc_error_std_string(arg), msg);
+  return absl::StrContains(grpc_core::StatusToString(arg), msg);
 }
 
 namespace {

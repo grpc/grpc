@@ -40,7 +40,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -951,27 +950,18 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
             discovery_config.lrs_load_reporting_server->ToJson();
       }
-      Json locality_picking_policy;
-      if (XdsOutlierDetectionEnabled()) {
-        Json::Object outlier_detection_config;
-        if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
-          outlier_detection_config =
-              discovery_entry.config().outlier_detection_lb_config.value();
-        }
-        outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
-            {"xds_cluster_impl_experimental",
-             std::move(xds_cluster_impl_config)},
-        }};
-        locality_picking_policy = Json::Array{Json::Object{
-            {"outlier_detection_experimental",
-             std::move(outlier_detection_config)},
-        }};
-      } else {
-        locality_picking_policy = Json::Array{Json::Object{
-            {"xds_cluster_impl_experimental",
-             std::move(xds_cluster_impl_config)},
-        }};
+      Json::Object outlier_detection_config;
+      if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
+        outlier_detection_config =
+            discovery_entry.config().outlier_detection_lb_config.value();
       }
+      outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
+          {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
+      }};
+      Json locality_picking_policy = Json::Array{Json::Object{
+          {"outlier_detection_experimental",
+           std::move(outlier_detection_config)},
+      }};
       // Add priority entry, with the appropriate child name.
       std::string child_name = discovery_entry.GetChildPolicyName(priority);
       priority_priorities.emplace_back(child_name);
@@ -1089,8 +1079,7 @@ XdsClusterResolverLbConfig::DiscoveryMechanism::JsonLoader(const JsonArgs&) {
           .OptionalField("max_concurrent_requests",
                          &DiscoveryMechanism::max_concurrent_requests)
           .OptionalField("outlierDetection",
-                         &DiscoveryMechanism::outlier_detection_lb_config,
-                         "outlier_detection")
+                         &DiscoveryMechanism::outlier_detection_lb_config)
           .Finish();
   return loader;
 }
@@ -1216,15 +1205,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
     }
-    class XdsJsonArgs : public JsonArgs {
-     public:
-      bool IsEnabled(absl::string_view key) const override {
-        if (key == "outlier_detection") return XdsOutlierDetectionEnabled();
-        return true;
-      }
-    };
     return LoadRefCountedFromJson<XdsClusterResolverLbConfig>(
-        json, XdsJsonArgs(),
+        json, JsonArgs(),
         "errors validating xds_cluster_resolver LB policy config");
   }
 
