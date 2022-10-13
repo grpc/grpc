@@ -186,6 +186,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
+        "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",

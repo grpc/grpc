@@ -44,12 +44,14 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::listener::v3::Listener;
+using envoy::extensions::filters::http::router::v3::Router;
 using envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager;
 using envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 
@@ -152,8 +154,7 @@ TEST_F(ApiListenerTest, MinimumValidConfig) {
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();
   filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
+  filter->mutable_typed_config()->PackFrom(Router());
   auto* rds = hcm.mutable_rds();
   rds->set_route_config_name("rds_name");
   rds->mutable_config_source()->mutable_self();
@@ -188,8 +189,7 @@ TEST_F(ApiListenerTest, SetsMaxStreamDuration) {
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();
   filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
+  filter->mutable_typed_config()->PackFrom(Router());
   auto* rds = hcm.mutable_rds();
   rds->set_route_config_name("rds_name");
   rds->mutable_config_source()->mutable_self();
@@ -287,8 +287,7 @@ TEST_F(ApiListenerTest, UnsupportedFieldsSet) {
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();
   filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
+  filter->mutable_typed_config()->PackFrom(Router());
   auto* rds = hcm.mutable_rds();
   rds->set_route_config_name("rds_name");
   rds->mutable_config_source()->mutable_self();
@@ -321,8 +320,7 @@ TEST_F(ApiListenerTest, InvalidMaxStreamDuration) {
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();
   filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
+  filter->mutable_typed_config()->PackFrom(Router());
   auto* rds = hcm.mutable_rds();
   rds->set_route_config_name("rds_name");
   rds->mutable_config_source()->mutable_self();
@@ -352,8 +350,7 @@ TEST_F(ApiListenerTest, EmptyHttpFilterName) {
   listener.set_name("foo");
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();
-  filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
+  filter->mutable_typed_config()->PackFrom(Router());
   auto* rds = hcm.mutable_rds();
   rds->set_route_config_name("rds_name");
   rds->mutable_config_source()->mutable_self();
@@ -380,8 +377,7 @@ TEST_F(ApiListenerTest, DuplicateHttpFilterName) {
   HttpConnectionManager hcm;
   auto* filter = hcm.add_http_filters();
   filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
+  filter->mutable_typed_config()->PackFrom(Router());
   *hcm.add_http_filters() = hcm.http_filters(0);  // Copy filter.
   auto* rds = hcm.mutable_rds();
   rds->set_route_config_name("rds_name");
@@ -454,6 +450,38 @@ TEST_F(ApiListenerTest, HttpFilterTypeNotSupported) {
             ".HttpConnectionManager].http_filters[0].typed_config.value["
             "envoy.config.listener.v3.Listener] "
             "error:unsupported filter type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(ApiListenerTest, HttpFilterNotSupportedOnClient) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("rbac");
+  filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::rbac::v3::RBAC());
+  filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].http_filters[0].typed_config.value["
+            "envoy.extensions.filters.http.rbac.v3.RBAC] "
+            "error:filter is not supported on clients]")
       << decode_result.resource.status();
 }
 
