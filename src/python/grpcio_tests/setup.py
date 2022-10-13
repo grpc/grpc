@@ -46,7 +46,7 @@ INSTALL_REQUIRES = (
     'google-auth>=1.17.2', 'requests>=2.14.2')
 
 if not PY3:
-    INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
+    INSTALL_REQUIRES += ('futures>=2.2.0')
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!

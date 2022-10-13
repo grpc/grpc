@@ -33,6 +33,15 @@ try:
 except ImportError:
     __version__ = "dev0"
 
+try:
+    # pylint: disable=ungrouped-imports
+    import enum34
+    sys.stderr.write("enum34_found")
+    sys.stderr.flush()
+except ImportError:
+    sys.stderr.write("no_enum34_found")
+    sys.stderr.flush()
+
 ############################## Future Interface  ###############################
 
 

@@ -111,8 +111,5 @@ py_library(
         "//src/python/grpcio/grpc/experimental",
         "//src/python/grpcio/grpc/framework",
         "@six//:six",
-    ] + select({
-        "//conditions:default": ["@enum34//:enum34"],
-        "//:python3": [],
-    }),
+    ],
 )

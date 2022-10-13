@@ -29,10 +29,7 @@ py_library(
         "//src/python/grpcio/grpc/framework/foundation",
         "//src/python/grpcio/grpc/framework/common",
         "@six//:six",
-    ] + select({
-        "//conditions:default": ["@enum34//:enum34"],
-        "//:python3": [],
-    }),
+    ],
 )
 
 py_library(
