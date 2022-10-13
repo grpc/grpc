@@ -14,8 +14,6 @@
 
 #include "src/core/lib/promise/try_concurrently.h"
 
-#include <utility>
-
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

@@ -20,12 +20,14 @@
 #include <string>
 
 #include "absl/base/attributes.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
 
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -390,7 +392,8 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
       state_ = State::kPushedToPipe;
       message_.payload()->Swap(batch_->payload->send_message.send_message);
       message_.mutable_flags() = batch_->payload->send_message.flags;
-      push_ = pipe_.sender.Push(MessageHandle(&message_, false));
+      push_ = pipe_.sender.Push(
+          MessageHandle(&message_, Arena::PooledDeleter(nullptr)));
       next_ = receiver_->Next();
       ABSL_FALLTHROUGH_INTENDED;
     case State::kPushedToPipe: {
@@ -597,7 +600,8 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
         state_ = State::kPushedToPipe;
         message_.payload()->Swap(&**intercepted_slice_buffer_);
         message_.mutable_flags() = *intercepted_flags_;
-        push_ = sender_->Push(MessageHandle(&message_, false));
+        push_ = sender_->Push(
+            MessageHandle(&message_, Arena::PooledDeleter(nullptr)));
         next_ = pipe_.receiver.Next();
       } else {
         sender_->Close();

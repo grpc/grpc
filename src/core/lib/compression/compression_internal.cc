@@ -21,11 +21,13 @@
 #include "src/core/lib/compression/compression_internal.h"
 
 #include <stdlib.h>
-#include <string.h>
+
+#include <string>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_split.h"
+#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 

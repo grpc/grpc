@@ -19,10 +19,13 @@
 
 #include <cstdint>
 #include <tuple>
+#include <type_traits>
+#include <utility>
+
+#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/status.h"
@@ -61,7 +64,7 @@ struct RunTheThings<kIdx, kDoneBit, T, Ts...> {
         if (IsStatusOk(*status)) {
           done_bits |= (1 << kDoneBit);
         } else {
-          return Result(std::move(*status));
+          return StatusCast<Result>(std::move(*status));
         }
       }
     }

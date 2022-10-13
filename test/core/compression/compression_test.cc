@@ -22,14 +22,10 @@
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 TEST(CompressionTest, CompressionAlgorithmParse) {

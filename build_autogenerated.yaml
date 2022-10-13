@@ -967,7 +967,6 @@ libs:
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -1658,7 +1657,6 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_fragments.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -2137,7 +2135,6 @@ libs:
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -2462,7 +2459,6 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_fragments.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -4464,16 +4460,6 @@ targets:
   - test/core/promise/test_context.h
   src:
   - test/core/channel/call_finalization_test.cc
-  deps:
-  - grpc_test_util
-- name: call_fragments_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/promise/test_context.h
-  src:
-  - test/core/transport/call_fragments_test.cc
   deps:
   - grpc_test_util
 - name: cancel_ares_query_test
@@ -10440,7 +10426,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gprpp/bitset.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h

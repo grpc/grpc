@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <string>
+
 #include "absl/strings/match.h"
 
 #include <grpc/byte_buffer.h>

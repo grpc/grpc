@@ -28,8 +28,6 @@
 #include <stdlib.h>
 
 #include <atomic>
-#include <cstdint>
-#include <cstdlib>
 #include <memory>
 #include <new>
 #include <string>
@@ -38,6 +36,8 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -60,10 +60,10 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -248,14 +248,15 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* batch_;
   };
 
-  static FragmentHandle<grpc_metadata_batch> WrapMetadata(
+  static Arena::PoolPtr<grpc_metadata_batch> WrapMetadata(
       grpc_metadata_batch* p) {
-    return FragmentHandle<grpc_metadata_batch>(p, false);
+    return Arena::PoolPtr<grpc_metadata_batch>(p,
+                                               Arena::PooledDeleter(nullptr));
   }
 
   static grpc_metadata_batch* UnwrapMetadata(
-      FragmentHandle<grpc_metadata_batch> p) {
-    return p.Unwrap();
+      Arena::PoolPtr<grpc_metadata_batch> p) {
+    return p.release();
   }
 
   class SendMessage {
