@@ -264,6 +264,15 @@ num_opted_out_cc_libraries = 0
 parsing_path = None
 
 
+# Convert the source or header target to a relative path.
+def _get_filename(name, parsing_path):
+    filename = '%s%s' % (
+        (parsing_path + '/' if
+         (parsing_path and not name.startswith('//')) else ''), name)
+    filename = filename.replace('//:', '')
+    return filename.replace('//src/core:', 'src/core/')
+
+
 def grpc_cc_library(name,
                     hdrs=[],
                     public_hdrs=[],
@@ -297,21 +306,13 @@ def grpc_cc_library(name,
                               proto.replace('.proto', '.pb.h'))
         skip_headers[name].add(proto_hdr)
 
-    # Convert the source or header target to a relative path.
-    def get_filename(name, parsing_path):
-        filename = '%s%s' % (
-            (parsing_path + '/' if
-             (parsing_path and not name.startswith('//')) else ''), name)
-        filename = filename.replace('//:', '')
-        return filename.replace('//src/core:', 'src/core/')
-
     for hdr in hdrs + public_hdrs:
-        vendors[get_filename(hdr, parsing_path)].append(name)
+        vendors[_get_filename(hdr, parsing_path)].append(name)
     inc = set()
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        for line in open(get_filename(src, parsing_path)):
+        for line in open(_get_filename(src, parsing_path)):
             m = re.search(r'^#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
@@ -507,9 +508,7 @@ class Choices:
             choices = new_choices
 
         best = None
-
-        def final_scorer(x):
-            return (total_avoidness(x), scorer(x), total_score(x))
+        final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
 
         for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):

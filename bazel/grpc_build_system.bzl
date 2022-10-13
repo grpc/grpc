@@ -92,6 +92,7 @@ def _update_visibility(visibility):
         "cli": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
+        "event_engine_common": PRIVATE,
         "grpclb": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
         "grpc_resolver_fake": PRIVATE,

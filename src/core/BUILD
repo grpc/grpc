@@ -20,13 +20,19 @@ load(
 licenses(["reciprocal"])
 
 package(
-    default_visibility = ["//visibility:public"],
+    default_visibility = ["//:__subpackages__"],
     features = [
         "layering_check",
     ],
 )
 
-exports_files(glob(["**"]))
+# This is needed as a transitionary mechanism to build the src/core targets in
+# the top-level BUILD file that have not yet been moved here. Should go away
+# once the transition is complete.
+exports_files(
+    glob(["**"]),
+    visibility = ["//:__subpackages__"],
+)
 
 grpc_cc_library(
     name = "channel_fwd",
@@ -54,6 +60,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/utility",
     ],
+    visibility = ["@grpc:event_engine_common"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
