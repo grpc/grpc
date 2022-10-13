@@ -190,6 +190,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:grpc_cli_utils",
     ],
 )
 

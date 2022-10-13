@@ -3906,7 +3906,6 @@ grpc_cc_library(
     hdrs = ["src/core/lib/load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
     deps = [
-        "channel_args",
         "gpr_platform",
         "grpc_public_hdrs",
         "iomgr_fwd",
@@ -5426,6 +5425,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -7123,6 +7123,7 @@ grpc_cc_library(
         "http2_settings",
         "httpcli",
         "huffsyms",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_timer",
         "memory_quota",
