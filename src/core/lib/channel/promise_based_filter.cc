@@ -1124,11 +1124,14 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     }
   }
 
+  bool wake = false;
   if (send_message() != nullptr && batch->send_message) {
     send_message()->StartOp(batch);
+    wake = true;
   }
   if (receive_message() != nullptr && batch->recv_message) {
     receive_message()->StartOp(batch);
+    wake = true;
   }
 
   // send_initial_metadata: seeing this triggers the start of the promise part
@@ -1152,6 +1155,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       send_initial_metadata_batch_ = batch;
       // And kick start the promise.
       StartPromise(&flusher);
+      wake = false;
     }
   } else if (batch->recv_trailing_metadata) {
     // recv_trailing_metadata *without* send_initial_metadata: hook it so we
@@ -1165,6 +1169,10 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     }
   } else if (!cancelled_error_.ok()) {
     batch.CancelWith(cancelled_error_, &flusher);
+  }
+
+  if (wake) {
+    PollContext(this, &flusher).Run();
   }
 
   if (batch.is_captured()) {
