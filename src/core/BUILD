@@ -60,7 +60,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/utility",
     ],
-    visibility = ["@grpc:event_engine_common"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
