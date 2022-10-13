@@ -218,7 +218,7 @@ docker run \
 
 echo 'xuanwn insider docker'
 echo 'xuanwn trying to remove six'
-python3 -m pip uninstall six
+python3 -m pip uninstall -y six
 
 # Copy reports stored by the container (if any)
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
