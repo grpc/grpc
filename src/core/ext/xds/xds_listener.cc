@@ -464,46 +464,41 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         XdsListenerResource::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
-  // Guarding parsing of RouteConfig on the server side with the environmental
-  // variable since that's the first feature on the server side that will be
-  // using this.
-  if (is_client || XdsRbacEnabled()) {
-    // Found inlined route_config. Parse it to find the cluster_name.
-    if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
-            http_connection_manager_proto)) {
-      const envoy_config_route_v3_RouteConfiguration* route_config =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
-              http_connection_manager_proto);
-      auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
-      if (!rds_update.ok()) {
-        ValidationErrors::ScopedField field(errors, ".route_config");
-        errors->AddError(rds_update.status().message());
-      } else {
-        http_connection_manager.route_config = std::move(*rds_update);
-      }
+  // Found inlined route_config. Parse it to find the cluster_name.
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
+          http_connection_manager_proto)) {
+    const envoy_config_route_v3_RouteConfiguration* route_config =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
+            http_connection_manager_proto);
+    auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
+    if (!rds_update.ok()) {
+      ValidationErrors::ScopedField field(errors, ".route_config");
+      errors->AddError(rds_update.status().message());
     } else {
-      // Validate that RDS must be used to get the route_config dynamically.
-      const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
-              http_connection_manager_proto);
-      if (rds == nullptr) {
-        errors->AddError("neither route_config nor rds fields are present");
-      } else {
-        // Get the route_config_name.
-        http_connection_manager.route_config = UpbStringToStdString(
-            envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-                rds));
-        // Check that the ConfigSource specifies ADS.
-        const envoy_config_core_v3_ConfigSource* config_source =
-            envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
-                rds);
-        ValidationErrors::ScopedField field(errors, ".rds.config_source");
-        if (config_source == nullptr) {
-          errors->AddError("field not present");
-        } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
-                   !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
-          errors->AddError("ConfigSource does not specify ADS or SELF");
-        }
+      http_connection_manager.route_config = std::move(*rds_update);
+    }
+  } else {
+    // Validate that RDS must be used to get the route_config dynamically.
+    const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+            http_connection_manager_proto);
+    if (rds == nullptr) {
+      errors->AddError("neither route_config nor rds fields are present");
+    } else {
+      // Get the route_config_name.
+      http_connection_manager.route_config = UpbStringToStdString(
+          envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+              rds));
+      // Check that the ConfigSource specifies ADS.
+      const envoy_config_core_v3_ConfigSource* config_source =
+          envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
+              rds);
+      ValidationErrors::ScopedField field(errors, ".rds.config_source");
+      if (config_source == nullptr) {
+        errors->AddError("field not present");
+      } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
+                 !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
+        errors->AddError("ConfigSource does not specify ADS or SELF");
       }
     }
   }

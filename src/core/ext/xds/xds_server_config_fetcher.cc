@@ -571,12 +571,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
             filter_chain_match_manager_->default_filter_chain())) {
     pending_filter_chain_match_manager_ =
         std::move(new_filter_chain_match_manager);
-    if (XdsRbacEnabled()) {
-      pending_filter_chain_match_manager_->StartRdsWatch(Ref());
-    } else {
-      PendingFilterChainMatchManagerReadyLocked(
-          pending_filter_chain_match_manager_.get());
-    }
+    pending_filter_chain_match_manager_->StartRdsWatch(Ref());
   }
 }
 
@@ -1056,54 +1051,52 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider;
   RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier;
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider;
-  // Add config selector filter
-  if (XdsRbacEnabled()) {
-    std::vector<const grpc_channel_filter*> filters;
-    // Iterate the list of HTTP filters in reverse since in Core, received data
-    // flows *up* the stack.
-    for (const auto& http_filter :
-         filter_chain->http_connection_manager.http_filters) {
-      // Find filter.  This is guaranteed to succeed, because it's checked
-      // at config validation time in the XdsApi code.
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(
-              http_filter.config.config_proto_type_name);
-      GPR_ASSERT(filter_impl != nullptr);
-      // Some filters like the router filter are no-op filters and do not have
-      // an implementation.
-      if (filter_impl->channel_filter() != nullptr) {
-        filters.push_back(filter_impl->channel_filter());
-      }
+  // Add config selector filter.
+  std::vector<const grpc_channel_filter*> filters;
+  // Iterate the list of HTTP filters in reverse since in Core, received data
+  // flows *up* the stack.
+  for (const auto& http_filter :
+       filter_chain->http_connection_manager.http_filters) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time in the XdsApi code.
+    const XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(
+            http_filter.config.config_proto_type_name);
+    GPR_ASSERT(filter_impl != nullptr);
+    // Some filters like the router filter are no-op filters and do not have
+    // an implementation.
+    if (filter_impl->channel_filter() != nullptr) {
+      filters.push_back(filter_impl->channel_filter());
     }
-    filters.push_back(&kServerConfigSelectorFilter);
-    channel_stack_modifier =
-        MakeRefCounted<XdsChannelStackModifier>(std::move(filters));
-    Match(
-        filter_chain->http_connection_manager.route_config,
-        // RDS resource name
-        [&](const std::string& rds_name) {
-          absl::StatusOr<XdsRouteConfigResource> initial_resource;
-          {
-            MutexLock lock(&mu_);
-            initial_resource = rds_map_[rds_name].rds_update.value();
-          }
-          server_config_selector_provider =
-              MakeRefCounted<DynamicXdsServerConfigSelectorProvider>(
-                  xds_client_->Ref(DEBUG_LOCATION,
-                                   "DynamicXdsServerConfigSelectorProvider"),
-                  rds_name, std::move(initial_resource),
-                  filter_chain->http_connection_manager.http_filters);
-        },
-        // inline RouteConfig
-        [&](const XdsRouteConfigResource& route_config) {
-          server_config_selector_provider =
-              MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
-                  route_config,
-                  filter_chain->http_connection_manager.http_filters);
-        });
-    args = args.SetObject(server_config_selector_provider)
-               .SetObject(channel_stack_modifier);
   }
+  filters.push_back(&kServerConfigSelectorFilter);
+  channel_stack_modifier =
+      MakeRefCounted<XdsChannelStackModifier>(std::move(filters));
+  Match(
+      filter_chain->http_connection_manager.route_config,
+      // RDS resource name
+      [&](const std::string& rds_name) {
+        absl::StatusOr<XdsRouteConfigResource> initial_resource;
+        {
+          MutexLock lock(&mu_);
+          initial_resource = rds_map_[rds_name].rds_update.value();
+        }
+        server_config_selector_provider =
+            MakeRefCounted<DynamicXdsServerConfigSelectorProvider>(
+                xds_client_->Ref(DEBUG_LOCATION,
+                                 "DynamicXdsServerConfigSelectorProvider"),
+                rds_name, std::move(initial_resource),
+                filter_chain->http_connection_manager.http_filters);
+      },
+      // inline RouteConfig
+      [&](const XdsRouteConfigResource& route_config) {
+        server_config_selector_provider =
+            MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
+                route_config,
+                filter_chain->http_connection_manager.http_filters);
+      });
+  args = args.SetObject(server_config_selector_provider)
+             .SetObject(channel_stack_modifier);
   // Add XdsCertificateProvider if credentials are xDS.
   auto* server_creds = args.GetObject<grpc_server_credentials>();
   if (server_creds != nullptr &&
