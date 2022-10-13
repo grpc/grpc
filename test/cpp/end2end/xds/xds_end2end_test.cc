@@ -105,7 +105,6 @@
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -131,8 +130,6 @@ using ::envoy::type::matcher::v3::StringMatcher;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
-
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
