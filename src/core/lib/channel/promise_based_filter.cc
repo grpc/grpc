@@ -1408,6 +1408,12 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
+  if (grpc_trace_channel.enabled()) {
+    gpr_log(GPR_DEBUG,
+            "%s ClientCallData.RecvTrailingMetadataReady error=%s md=%s",
+            LogTag().c_str(), error.ToString().c_str(),
+            recv_trailing_metadata_->DebugString().c_str());
+  }
   // If we were cancelled prior to receiving this callback, we should simply
   // forward the callback up with the same error.
   if (recv_trailing_state_ == RecvTrailingState::kCancelled) {

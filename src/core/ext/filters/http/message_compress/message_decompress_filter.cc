@@ -85,8 +85,11 @@ MessageDecompressFilter::MessageDecompressFilter(const ChannelArgs& args)
 absl::StatusOr<MessageHandle> DecompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm,
     int max_recv_message_length) {
+  gpr_log(GPR_ERROR, "DecompressMessage: %d %d",
+          (int)message->payload()->Length(), max_recv_message_length);
   if (max_recv_message_length > 0 &&
       message->payload()->Length() > max_recv_message_length) {
+    gpr_log(GPR_ERROR, "RETURN ERROR");
     return absl::ResourceExhaustedError(
         absl::StrFormat("Received message larger than max (%u vs. %d)",
                         message->payload()->Length(), max_recv_message_length));
@@ -120,6 +123,7 @@ auto MessageDecompressFilter::DecompressLoop(
        max_recv_message_length < 0)) {
     max_recv_message_length = limits->limits().max_recv_size;
   }
+  gpr_log(GPR_ERROR, "MAX_RECV_MESSAGE_LENGTH:%d", max_recv_message_length);
   return ForEach(std::move(*compressed),
                  [decompressed, algorithm,
                   max_recv_message_length](MessageHandle message) {
