@@ -299,18 +299,28 @@ void MaybeLogHttpConnectionManager(
   }
 }
 
-absl::optional<XdsListenerResource::HttpConnectionManager>
-HttpConnectionManagerParse(
+XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     bool is_client, const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_hcm_config, bool is_v2,
-    ValidationErrors* errors) {
+    XdsExtension extension, bool is_v2, ValidationErrors* errors) {
+  if (extension.type !=
+      "envoy.extensions.filters.network.http_connection_manager.v3"
+      ".HttpConnectionManager") {
+    errors->AddError("unsupported filter type");
+    return {};
+  }
+  auto* serialized_hcm_config =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_hcm_config == nullptr) {
+    errors->AddError("could not parse HttpConnectionManager config");
+    return {};
+  }
   const auto* http_connection_manager_proto =
       envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
-          serialized_hcm_config.data(), serialized_hcm_config.size(),
+          serialized_hcm_config->data(), serialized_hcm_config->size(),
           context.arena);
   if (http_connection_manager_proto == nullptr) {
     errors->AddError("could not parse HttpConnectionManager config");
-    return absl::nullopt;
+    return {};
   }
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
   XdsListenerResource::HttpConnectionManager http_connection_manager;
@@ -352,6 +362,7 @@ HttpConnectionManagerParse(
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
             http_connection_manager_proto, &num_filters);
     std::set<absl::string_view> names_seen;
+    const size_t original_error_size = errors->size();
     for (size_t i = 0; i < num_filters; ++i) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
       const auto* http_filter = http_filters[i];
@@ -382,10 +393,7 @@ HttpConnectionManagerParse(
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
                 http_filter);
         if (typed_config == nullptr) {
-          if (!is_optional) {
-            errors->AddError(absl::StrCat(
-                "no filter config specified for filter name ", name));
-          }
+          if (!is_optional) errors->AddError("field not present");
           continue;
         }
         auto extension = ExtractXdsExtension(context, typed_config, errors);
@@ -395,10 +403,7 @@ HttpConnectionManagerParse(
               XdsHttpFilterRegistry::GetFilterForType(extension->type);
         }
         if (filter_impl == nullptr) {
-          if (!is_optional) {
-            errors->AddError(absl::StrCat(
-                "no filter registered for config type ", extension->type));
-          }
+          if (!is_optional) errors->AddError("unsupported filter type");
           continue;
         }
         if ((is_client && !filter_impl->IsSupportedOnClients()) ||
@@ -420,7 +425,8 @@ HttpConnectionManagerParse(
         }
       }
     }
-    if (http_connection_manager.http_filters.empty()) {
+    if (errors->size() == original_error_size &&
+        http_connection_manager.http_filters.empty()) {
       errors->AddError("expected at least one HTTP filter");
     }
     // Make sure that the last filter is terminal and non-last filters are
@@ -507,6 +513,7 @@ HttpConnectionManagerParse(
 absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2) {
+  XdsListenerResource lds_update;
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, "api_listener.api_listener");
   auto* api_listener_field =
@@ -514,21 +521,15 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
   if (api_listener_field == nullptr) {
     errors.AddError("field not present");
   } else {
-    ValidationErrors::ScopedField field(
-        &errors, ".value[HttpConnectionManager]");
-    absl::string_view serialized_hcm_config =
-        UpbStringToAbsl(google_protobuf_Any_value(api_listener_field));
-    auto hcm = HttpConnectionManagerParse(true /* is_client */, context,
-                                          serialized_hcm_config, is_v2,
-                                          &errors);
-    if (errors.ok()) {
-      GPR_ASSERT(hcm.has_value());
-      XdsListenerResource lds_update;
-      lds_update.listener = std::move(*hcm);
-      return lds_update;
+    auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
+    if (extension.has_value()) {
+      lds_update.listener = HttpConnectionManagerParse(
+          true /* is_client */, context, std::move(*extension), is_v2,
+          &errors);
     }
   }
-  return errors.status("errors validating ApiListener");
+  if (!errors.ok()) return errors.status("errors validating ApiListener");
+  return std::move(lds_update);
 }
 
 XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
@@ -753,42 +754,15 @@ absl::optional<FilterChain> FilterChainParse(
     }
     // entries in filters list
     for (size_t i = 0; i < size; ++i) {
-      // typed_config
       ValidationErrors::ScopedField field(
           errors, absl::StrCat("[", i, "].typed_config"));
       auto* typed_config =
           envoy_config_listener_v3_Filter_typed_config(filters[i]);
-      if (typed_config == nullptr) {
-        errors->AddError("field not present");
-        continue;
-      }
-      // type_url
-      {
-        ValidationErrors::ScopedField field(errors, ".type_url");
-        absl::string_view type_url = absl::StripPrefix(
-            UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
-            "type.googleapis.com/");
-        if (type_url !=
-            "envoy.extensions.filters.network.http_connection_manager.v3."
-            "HttpConnectionManager") {
-          errors->AddError(
-              absl::StrCat("Unsupported filter type ", type_url));
-          continue;
-        }
-      }
-      // HCM config
-      {
-        ValidationErrors::ScopedField field(
-            errors, ".value[HttpConnectionManager]");
-        absl::string_view encoded_http_connection_manager =
-            UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-        auto hcm = HttpConnectionManagerParse(
-            /*is_client=*/false, context, encoded_http_connection_manager,
-            is_v2, errors);
-        if (hcm.has_value()) {
-          filter_chain.filter_chain_data->http_connection_manager =
-              std::move(*hcm);
-        }
+      auto extension = ExtractXdsExtension(context, typed_config, errors);
+      if (extension.has_value()) {
+        filter_chain.filter_chain_data->http_connection_manager =
+            HttpConnectionManagerParse(/*is_client=*/false, context,
+                                       std::move(*extension), is_v2, errors);
       }
     }
   }
