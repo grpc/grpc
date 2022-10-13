@@ -111,8 +111,8 @@ bool GenerateDocCommentBody(grpc::protobuf::io::Printer* printer,
 }
 
 void GenerateObsoleteAttributeIfObsolete(grpc::protobuf::io::Printer* printer,
-                                           const MethodDescriptor* method) {
-  if(method->options().deprecated()) {
+                                         const MethodDescriptor* method) {
+  if (method->options().deprecated()) {
     printer->Print("[global::System.Obsolete]\n");
   }
 }
@@ -691,13 +691,13 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
-    if(method->options().deprecated()) {
+    if (method->options().deprecated()) {
       out->Print("\n#pragma warning disable CS0612");
     }
     out->Print("\n.AddMethod($methodfield$, serviceImpl.$methodname$)",
                "methodfield", GetMethodFieldName(method), "methodname",
                method->name());
-    if(method->options().deprecated()) {
+    if (method->options().deprecated()) {
       out->Print("\n#pragma warning restore CS0612");
     }
   }
@@ -737,7 +737,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
 
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
-    if(method->options().deprecated()) {
+    if (method->options().deprecated()) {
       out->Print("#pragma warning disable CS0612\n");
     }
     out->Print(
@@ -749,7 +749,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "outputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()), "methodname",
         method->name());
-    if(method->options().deprecated()) {
+    if (method->options().deprecated()) {
       out->Print("#pragma warning restore CS0612\n");
     }
   }
