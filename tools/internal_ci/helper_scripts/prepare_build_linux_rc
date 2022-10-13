@@ -39,8 +39,6 @@ fi
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting
 
-echo 'xuanwn prepare_build_linux_rc'
-
 git submodule update --init
 
 # check whether /tmpfs is mounted correctly

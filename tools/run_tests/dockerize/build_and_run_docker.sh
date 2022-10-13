@@ -196,8 +196,6 @@ fi
 # Run tests inside docker
 DOCKER_EXIT_CODE=0
 
-echo 'xuanwn build_and_run_docker.sh'
-
 docker run \
   "${DOCKER_TTY_ARGS[@]}" \
   "${DOCKER_RUN_SCRIPT_ARGS[@]}" \
@@ -215,8 +213,6 @@ docker run \
   "${DOCKER_EXTRA_ARGS_FROM_ENV[@]}" \
   "${DOCKER_IMAGE_NAME}" \
   "${DOCKER_CMD_AND_ARGS[@]}" || DOCKER_EXIT_CODE=$?
-
-echo 'xuanwn finished docker tests'
 
 # Copy reports stored by the container (if any)
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
