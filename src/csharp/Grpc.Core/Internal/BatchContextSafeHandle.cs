@@ -89,16 +89,76 @@ namespace Grpc.Core.Internal
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
-            UIntPtr detailsLength;
-            IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
-            string details = MarshalUtils.PtrToStringUTF8(detailsPtr, (int)detailsLength.ToUInt32());
-            string debugErrorString = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_error_string(this));
-            var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details, debugErrorString != null ? new CoreErrorDetailException(debugErrorString) : null);
+            StatusCode statusCode = StatusCode.Unknown;
+            int detailsLengthInt = -123;
+            IntPtr detailsPtr = IntPtr.Zero;
 
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
-            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
+            try
+            {
+                statusCode = Native.grpcsharp_batch_context_recv_status_on_client_status(this);
 
-            return new ClientSideStatus(status, metadata);
+                UIntPtr detailsLength;
+                detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
+                detailsLengthInt = (int)detailsLength.ToUInt32();
+
+                string details = MarshalUtils.PtrToStringUTF8(detailsPtr, (int)detailsLength.ToUInt32());
+                string debugErrorString = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_error_string(this));
+                var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details, debugErrorString != null ? new CoreErrorDetailException(debugErrorString) : null);
+
+                IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
+                var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
+
+#if FORTESTING
+                // FOR TESTING
+                {
+                    long detailsPtrLong = detailsPtr.ToInt64();
+                    String detailsHex = PtrToHexString(detailsPtr, detailsLengthInt);
+                    Logger.Debug($"statusCode={statusCode}, detailsLength={detailsLengthInt}, ptr={detailsPtrLong}, ptr size={IntPtr.Size}" +
+                                $"hex={detailsHex}");
+                }
+#endif
+
+                return new ClientSideStatus(status, metadata);
+            }
+            catch (Exception ex)
+            {
+                long detailsPtrLong = detailsPtr.ToInt64();
+                String detailsHex = PtrToHexString(detailsPtr, detailsLengthInt);
+
+                throw new Exception($"GetReceivedStatusOnClient failed with " +
+                    $"statusCode={statusCode}, detailsLength={detailsLengthInt}, ptr={detailsPtrLong}, ptr size={IntPtr.Size}" +
+                    $"hex={detailsHex}\nException: {ex}");
+            }
+        }
+
+        private static unsafe string PtrToHexString(IntPtr ptr, int length)
+        {
+            if (ptr == IntPtr.Zero)
+            {
+                return "<pointer is zero>";
+            }
+
+            if (length <= 0)
+            {
+                return $"<length {length}>";
+            }
+
+            StringBuilder sb = new StringBuilder();
+
+            if (length > 1024)
+            {
+                sb.Append("<truncated> ");
+                length = 1024;
+            }
+
+            byte* bytes = (byte*)ptr.ToPointer();
+            for (int i=0; i<length; i++)
+            {
+                byte b = bytes[i];
+                sb.AppendFormat("{0:x2} ", b);
+            }
+
+            return sb.ToString();
         }
 
         public IBufferReader GetReceivedMessageReader()
