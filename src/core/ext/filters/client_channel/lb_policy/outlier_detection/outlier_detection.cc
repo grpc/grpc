@@ -46,9 +46,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -70,15 +68,6 @@
 namespace grpc_core {
 
 TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
-
-// TODO(donnadionne): Remove once outlier detection is no longer experimental
-bool XdsOutlierDetectionEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 namespace {
 
@@ -1150,10 +1139,8 @@ void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
 //
 
 void RegisterOutlierDetectionLbPolicy(CoreConfiguration::Builder* builder) {
-  if (XdsOutlierDetectionEnabled()) {
-    builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-        std::make_unique<OutlierDetectionLbFactory>());
-  }
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<OutlierDetectionLbFactory>());
 }
 
 }  // namespace grpc_core

@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 
@@ -150,9 +151,8 @@ RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   grpc_error_handle error =
       ParseRetryThrottling(it->second, &max_milli_tokens, &milli_token_ratio);
   if (!error.ok()) {
-    absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("error parsing retry global parameters: ",
-                     grpc_error_std_string(error)));
+    absl::Status status = absl::InvalidArgumentError(absl::StrCat(
+        "error parsing retry global parameters: ", StatusToString(error)));
     return status;
   }
   return std::make_unique<RetryGlobalConfig>(max_milli_tokens,
@@ -307,9 +307,8 @@ RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
       args, it->second, &max_attempts, &initial_backoff, &max_backoff,
       &backoff_multiplier, &retryable_status_codes, &per_attempt_recv_timeout);
   if (!error.ok()) {
-    absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("error parsing retry method parameters: ",
-                     grpc_error_std_string(error)));
+    absl::Status status = absl::InvalidArgumentError(absl::StrCat(
+        "error parsing retry method parameters: ", StatusToString(error)));
     return status;
   }
   return std::make_unique<RetryMethodConfig>(

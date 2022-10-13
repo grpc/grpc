@@ -37,6 +37,7 @@
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/surface/init_internally.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -77,7 +78,10 @@ class PosixEnginePollerManager
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class PosixEventEngine final : public EventEngine {
+// TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
+// event engine is shut down before we shut down iomgr.
+class PosixEventEngine final : public EventEngine,
+                               public grpc_core::KeepsGrpcInitialized {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:

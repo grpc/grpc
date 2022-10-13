@@ -40,6 +40,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -380,7 +381,7 @@ void TlsChannelSecurityConnector::cancel_check_peer(
   if (!error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsChannelSecurityConnector::cancel_check_peer error: %s",
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
     return;
   }
   auto* verifier = options_->certificate_verifier();
@@ -457,12 +458,12 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
   if (!root_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting root_cert_error: %s",
-            grpc_error_std_string(root_cert_error).c_str());
+            StatusToString(root_cert_error).c_str());
   }
   if (!identity_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting identity_cert_error: %s",
-            grpc_error_std_string(identity_cert_error).c_str());
+            StatusToString(identity_cert_error).c_str());
   }
 }
 
@@ -665,7 +666,7 @@ void TlsServerSecurityConnector::cancel_check_peer(
   if (!error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsServerSecurityConnector::cancel_check_peer error: %s",
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
     return;
   }
   auto* verifier = options_->certificate_verifier();
@@ -732,12 +733,12 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
   if (!root_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting root_cert_error: %s",
-            grpc_error_std_string(root_cert_error).c_str());
+            StatusToString(root_cert_error).c_str());
   }
   if (!identity_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting identity_cert_error: %s",
-            grpc_error_std_string(identity_cert_error).c_str());
+            StatusToString(identity_cert_error).c_str());
   }
 }
 
