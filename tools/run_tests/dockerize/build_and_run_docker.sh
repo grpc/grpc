@@ -196,6 +196,8 @@ fi
 # Run tests inside docker
 DOCKER_EXIT_CODE=0
 
+echo 'xuanwn build_and_run_docker.sh'
+
 docker run \
   "${DOCKER_TTY_ARGS[@]}" \
   "${DOCKER_RUN_SCRIPT_ARGS[@]}" \
