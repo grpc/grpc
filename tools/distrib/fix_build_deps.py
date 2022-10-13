@@ -509,7 +509,6 @@ class Choices:
 
         best = None
         final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
-
         for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
