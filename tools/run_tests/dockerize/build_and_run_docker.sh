@@ -216,6 +216,10 @@ docker run \
   "${DOCKER_IMAGE_NAME}" \
   "${DOCKER_CMD_AND_ARGS[@]}" || DOCKER_EXIT_CODE=$?
 
+echo 'xuanwn insider docker'
+echo 'xuanwn trying to remove six'
+python3 -m pip uninstall six
+
 # Copy reports stored by the container (if any)
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
