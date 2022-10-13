@@ -169,6 +169,9 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 
     stub_ = EchoTestService::NewStub(grpc::CreateChannel(
         server_address_, grpc::InsecureChannelCredentials()));
+
+    // Clear out any previous spans
+    ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   }
 
   void ResetStub(std::shared_ptr<Channel> channel) {
@@ -659,7 +662,9 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
             ::testing::ElementsAre(client_method_name_),
             ::testing::Property(
                 &Distribution::mean,
-                ::testing::AllOf(::testing::Ge(50), ::testing::Le(300))))));
+                ::testing::AllOf(
+                    ::testing::Ge(50),
+                    ::testing::Le(500 * grpc_test_slowdown_factor()))))));
   }
 }
 
