@@ -167,7 +167,10 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:grpc_cli_utils",
     ],
 )
 
