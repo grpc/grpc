@@ -15,6 +15,9 @@
 
 set -ex
 
+echo 'xuanwn trying to remove six'
+python3 -m pip uninstall -y six
+
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/..."
 BAZEL_FLAGS="--test_output=errors"
