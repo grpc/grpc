@@ -61,15 +61,28 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
 BaseCallData::~BaseCallData() {
-  if (send_message_ != nullptr) {
-    send_message_->~SendMessage();
-  }
-  if (receive_message_ != nullptr) {
-    receive_message_->~ReceiveMessage();
-  }
-  if (server_initial_metadata_latch_ != nullptr) {
-    server_initial_metadata_latch_->~Latch();
-  }
+  class DummyActivitySoWeCanDestroyOutsideOfAScope final : public Activity {
+   public:
+    void Orphan() override {}
+    void ForceImmediateRepoll() override {}
+    Waker MakeOwningWaker() override { abort(); }
+    Waker MakeNonOwningWaker() override { abort(); }
+    void Run(absl::FunctionRef<void()> f) {
+      ScopedActivity activity(this);
+      f();
+    }
+  };
+  DummyActivitySoWeCanDestroyOutsideOfAScope().Run([this] {
+    if (send_message_ != nullptr) {
+      send_message_->~SendMessage();
+    }
+    if (receive_message_ != nullptr) {
+      receive_message_->~ReceiveMessage();
+    }
+    if (server_initial_metadata_latch_ != nullptr) {
+      server_initial_metadata_latch_->~Latch();
+    }
+  });
 }
 
 // We don't form ActivityPtr's to this type, and consequently don't need
