@@ -16,8 +16,6 @@ import json
 import pkgutil
 import unittest
 
-import six
-
 import tests
 
 
@@ -38,8 +36,7 @@ class SanityTest(unittest.TestCase):
         })
 
         tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, 'tests.json')
-        tests_json = json.loads(
-            tests_json_string.decode() if six.PY3 else tests_json_string)
+        tests_json = tests_json_string.decode()
 
         self.assertSequenceEqual(tests_json, test_suite_names)
 

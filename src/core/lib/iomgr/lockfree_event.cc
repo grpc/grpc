@@ -168,7 +168,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG,
               "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
-              &state_, curr, grpc_error_std_string(shutdown_error).c_str());
+              &state_, curr, StatusToString(shutdown_error).c_str());
     }
     switch (curr) {
       case kClosureReady:

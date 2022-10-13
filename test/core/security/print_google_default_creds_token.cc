@@ -45,7 +45,7 @@ static void on_metadata_response(void* arg, grpc_error_handle error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
   if (!error.ok()) {
     fprintf(stderr, "Fetching token failed: %s\n",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     fflush(stderr);
   } else {
     char* token;
