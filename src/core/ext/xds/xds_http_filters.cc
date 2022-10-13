@@ -80,14 +80,15 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
 }  // namespace
 
 XdsHttpFilterRegistry::XdsHttpFilterRegistry() {
+  // TODO(roth): Restructure this such that filters have a method that
+  // returns the proto message names under which they should be registered.
   RegisterFilter(std::make_unique<XdsHttpRouterFilter>(),
                  {kXdsHttpRouterFilterConfigName});
   RegisterFilter(std::make_unique<XdsHttpFaultFilter>(),
                  {kXdsHttpFaultFilterConfigName});
-  RegisterFilter(std::make_unique<XdsHttpRbacFilter>(),
-                 {kXdsHttpRbacFilterConfigName});
-  RegisterFilter(std::make_unique<XdsHttpRbacFilter>(),
-                 {kXdsHttpRbacFilterConfigOverrideName});
+  RegisterFilter(
+      std::make_unique<XdsHttpRbacFilter>(),
+      {kXdsHttpRbacFilterConfigName, kXdsHttpRbacFilterConfigOverrideName});
 }
 
 void XdsHttpFilterRegistry::RegisterFilter(
