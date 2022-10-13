@@ -55,8 +55,8 @@ PosixEnginePollerManager::PosixEnginePollerManager(
 
 PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
     : poller_(poller),
-      executor_(nullptr),
-      poller_state_(PollerState::kExternal) {
+      poller_state_(PollerState::kExternal),
+      executor_(nullptr) {
   GPR_DEBUG_ASSERT(poller_ != nullptr);
 }
 
@@ -81,7 +81,10 @@ void PosixEnginePollerManager::TriggerShutdown() {
     poller_ = nullptr;
     return;
   }
-  poller_->Kick();
+
+  if (poller_ != nullptr) {
+    poller_->Kick();
+  }
 }
 
 PosixEnginePollerManager::~PosixEnginePollerManager() {

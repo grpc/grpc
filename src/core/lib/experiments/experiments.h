@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
@@ -29,14 +30,24 @@ inline bool IsTcpReadChunksEnabled() { return IsExperimentEnabled(1); }
 inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(2); }
 inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(3); }
 inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(4); }
-inline bool IsMemoryPressureControllerEnabled() { return IsExperimentEnabled(5); }
-inline bool IsPeriodicResourceQuotaReclamationEnabled() { return IsExperimentEnabled(6); }
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return IsExperimentEnabled(7); }
+inline bool IsMemoryPressureControllerEnabled() {
+  return IsExperimentEnabled(5);
+}
+inline bool IsPeriodicResourceQuotaReclamationEnabled() {
+  return IsExperimentEnabled(6);
+}
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
+  return IsExperimentEnabled(7);
+}
 inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(8); }
 inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(9); }
 inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(10); }
-inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(11); }
-inline bool IsPosixEventEngineEnablePollingEnabled() { return IsExperimentEnabled(12); }
+inline bool IsPromiseBasedClientCallEnabled() {
+  return IsExperimentEnabled(11);
+}
+inline bool IsPosixEventEngineEnablePollingEnabled() {
+  return IsExperimentEnabled(12);
+}
 
 struct ExperimentMetadata {
   const char* name;
