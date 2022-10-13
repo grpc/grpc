@@ -259,7 +259,7 @@ class AdsServiceImpl
       // request or an update; regardless whether a response was actually
       // sent out.
       bool did_work = false;
-      // Look for new requests and and decide what to handle.
+      // Look for new requests and decide what to handle.
       absl::optional<DiscoveryResponse> response;
       {
         grpc_core::MutexLock lock(&ads_mu_);
