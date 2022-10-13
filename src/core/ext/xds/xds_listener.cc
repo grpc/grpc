@@ -355,36 +355,42 @@ HttpConnectionManagerParse(
       }
       continue;
     }
-    auto filter_type = ExtractExtensionTypeName(context, any);
-    if (!filter_type.ok()) {
-      errors.emplace_back(absl::StrCat("filter name ", name, ": ",
-                                       filter_type.status().message()));
+    ValidationErrors validation_errors;
+    ValidationErrors::ScopedField field(
+        &validation_errors,
+        absl::StrCat(".http_filters[", i, "].typed_config"));
+    auto extension = ExtractXdsExtension(context, any, &validation_errors);
+    if (!validation_errors.ok()) {
+      errors.emplace_back(
+          validation_errors.status(absl::StrCat("filter name ", name))
+              .message());
       continue;
     }
+    GPR_ASSERT(extension.has_value());
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
+        XdsHttpFilterRegistry::GetFilterForType(extension->type);
     if (filter_impl == nullptr) {
       if (!is_optional) {
         errors.emplace_back(absl::StrCat(
-            "no filter registered for config type ", filter_type->type));
+            "no filter registered for config type ", extension->type));
       }
       continue;
     }
     if ((is_client && !filter_impl->IsSupportedOnClients()) ||
         (!is_client && !filter_impl->IsSupportedOnServers())) {
       if (!is_optional) {
-        errors.emplace_back(absl::StrFormat("Filter %s is not supported on %s",
-                                            filter_type->type,
-                                            is_client ? "clients" : "servers"));
+        errors.emplace_back(absl::StrFormat(
+            "Filter %s is not supported on %s", extension->type,
+            is_client ? "clients" : "servers"));
       }
       continue;
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
+        filter_impl->GenerateFilterConfig(std::move(*extension),
                                           context.arena);
     if (!filter_config.ok()) {
       errors.emplace_back(absl::StrCat(
-          "filter config for type ", filter_type->type,
+          "filter config for type ", extension->type,
           " failed to parse: ", StatusToString(filter_config.status())));
       continue;
     }
