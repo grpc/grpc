@@ -379,15 +379,14 @@ HttpConnectionManagerParse(
     if ((is_client && !filter_impl->IsSupportedOnClients()) ||
         (!is_client && !filter_impl->IsSupportedOnServers())) {
       if (!is_optional) {
-        errors.emplace_back(absl::StrFormat(
-            "Filter %s is not supported on %s", extension->type,
-            is_client ? "clients" : "servers"));
+        errors.emplace_back(absl::StrFormat("Filter %s is not supported on %s",
+                                            extension->type,
+                                            is_client ? "clients" : "servers"));
       }
       continue;
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfig(std::move(*extension),
-                                          context.arena);
+        filter_impl->GenerateFilterConfig(std::move(*extension), context.arena);
     if (!filter_config.ok()) {
       errors.emplace_back(absl::StrCat(
           "filter config for type ", extension->type,
