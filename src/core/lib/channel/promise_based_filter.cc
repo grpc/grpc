@@ -796,8 +796,7 @@ class ClientCallData::PollContext {
                   }).c_str());
         }
         if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
-          auto* md = UnwrapMetadata(std::move(*r));
-          bool destroy_md = true;
+          auto md = std::move(*r);
           if (self_->send_message() != nullptr) {
             self_->send_message()->Done(*md, flusher_);
           }
@@ -805,10 +804,8 @@ class ClientCallData::PollContext {
             self_->receive_message()->Done(*md, flusher_);
           }
           if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
-            if (self_->recv_trailing_metadata_ != md) {
+            if (self_->recv_trailing_metadata_ != md.get()) {
               *self_->recv_trailing_metadata_ = std::move(*md);
-            } else {
-              destroy_md = false;
             }
             self_->recv_trailing_state_ = RecvTrailingState::kResponded;
             flusher_->AddClosure(
@@ -900,10 +897,8 @@ class ClientCallData::PollContext {
               b->payload->cancel_stream.cancel_error = error;
               b.ResumeWith(flusher_);
             }
+            self_->cancelling_metadata_ = std::move(md);
             self_->recv_trailing_state_ = RecvTrailingState::kCancelled;
-          }
-          if (destroy_md) {
-            md->~grpc_metadata_batch();
           }
           self_->promise_ = ArenaPromise<ServerMetadataHandle>();
           scoped_activity_.Destroy();
@@ -1421,6 +1416,9 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   // If we were cancelled prior to receiving this callback, we should simply
   // forward the callback up with the same error.
   if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
+    if (cancelling_metadata_.get() != nullptr) {
+      *recv_trailing_metadata_ = std::move(*cancelling_metadata_);
+    }
     if (grpc_closure* call_closure =
             std::exchange(original_recv_trailing_metadata_ready_, nullptr)) {
       flusher.AddClosure(call_closure, error, "propagate failure");

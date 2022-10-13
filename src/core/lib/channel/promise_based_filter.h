@@ -481,6 +481,9 @@ class ClientCallData : public BaseCallData {
   CapturedBatch send_initial_metadata_batch_;
   // Pointer to where trailing metadata will be stored.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  // Trailing metadata as returned by the promise, if we hadn't received
+  // trailing metadata from below yet (so we can substitute it in).
+  ServerMetadataHandle cancelling_metadata_;
   // State tracking recv initial metadata for filters that care about it.
   RecvInitialMetadata* recv_initial_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.
