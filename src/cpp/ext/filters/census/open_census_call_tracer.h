@@ -30,6 +30,7 @@
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -41,7 +42,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/ext/filters/census/context.h"
 
 // TODO(yashykt): This might not be the right place for this channel arg, but we
 // don't have a better place for this right now.

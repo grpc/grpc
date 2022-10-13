@@ -25,8 +25,6 @@
 
 #include <grpcpp/opencensus.h>
 
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
-
 namespace grpc {
 
 using ::opencensus::stats::Aggregation;

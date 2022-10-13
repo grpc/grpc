@@ -26,8 +26,6 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "opencensus/tags/tag_map.h"
-#include "opencensus/trace/attribute_value_ref.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 

@@ -25,6 +25,7 @@
 #include <atomic>
 
 #include "absl/base/attributes.h"
+#include "absl/strings/string_view.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
 
@@ -35,7 +36,6 @@
 #include "src/cpp/common/channel_filter.h"
 #include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
-#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/server_filter.h"
 

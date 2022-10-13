@@ -22,7 +22,7 @@
 
 #include "opencensus/stats/stats.h"
 
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include <grpcpp/opencensus.h>
 
 namespace grpc {
 
