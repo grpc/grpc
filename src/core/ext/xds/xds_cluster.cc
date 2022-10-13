@@ -47,8 +47,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_lb_policy_registry.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -57,6 +58,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {
 
