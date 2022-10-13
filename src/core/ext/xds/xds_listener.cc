@@ -359,6 +359,9 @@ HttpConnectionManagerParse(
         continue;
       }
       ValidationErrors validation_errors;
+      ValidationErrors::ScopedField field(
+          &validation_errors,
+          absl::StrCat(".http_filters[", i, "].typed_config"));
       auto extension = ExtractXdsExtension(context, any, &validation_errors);
       if (!validation_errors.ok()) {
         errors.emplace_back(
@@ -388,7 +391,7 @@ HttpConnectionManagerParse(
       // TODO(roth): Use extension->value here instead of
       // google_protobuf_Any_value(any).
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-          filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
+          filter_impl->GenerateFilterConfig(std::move(*extension),
                                             context.arena);
       if (!filter_config.ok()) {
         errors.emplace_back(absl::StrCat(

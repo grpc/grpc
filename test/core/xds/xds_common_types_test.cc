@@ -16,11 +16,13 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
@@ -46,7 +48,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/proto/grpc/testing/xds/v3/regex.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
@@ -75,7 +76,6 @@ class XdsCommonTypesTest : public ::testing::Test {
                         upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
-    grpc_error_handle error = GRPC_ERROR_NONE;
     auto bootstrap = GrpcXdsBootstrap::Create(
         "{\n"
         "  \"xds_servers\": [\n"
@@ -673,6 +673,18 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
             "}");
 }
 
+TEST_F(ExtractXdsExtensionTest, FieldMissing) {
+  ValidationErrors errors;
+  ValidationErrors::ScopedField field(&errors, "any");
+  auto extension = ExtractXdsExtension(decode_context_, nullptr, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: [field:any error:field not present]")
+      << status;
+}
+
 TEST_F(ExtractXdsExtensionTest, TypeUrlMissing) {
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   ValidationErrors errors;
@@ -791,8 +803,9 @@ TEST_F(ExtractXdsExtensionTest, TypedStructParseFailure) {
   google_protobuf_Any_set_type_url(
       any_proto, StdStringToUpbString(absl::string_view(
                      "type.googleapis.com/xds.type.v3.TypedStruct")));
+  std::string serialized_type_struct("\0", 1);
   google_protobuf_Any_set_value(any_proto,
-                                StdStringToUpbString(std::string("\0", 1)));
+                                StdStringToUpbString(serialized_type_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());

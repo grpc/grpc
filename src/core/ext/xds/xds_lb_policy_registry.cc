@@ -27,20 +27,20 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/arena.h"
-#include "upb/json_encode.h"
-#include "upb/status.h"
-#include "upb/upb.hpp"
-#include "xds/type/v3/typed_struct.upb.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {

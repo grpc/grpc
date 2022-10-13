@@ -367,6 +367,9 @@ ClusterSpecifierPluginParse(
           "Could not obtrain TypedExtensionConfig for plugin config.");
     }
     ValidationErrors validation_errors;
+    ValidationErrors::ScopedField field(
+        &validation_errors, absl::StrCat(".cluster_specifier_plugins[", i,
+                                         "].extension.typed_config"));
     auto extension = ExtractXdsExtension(context, any, &validation_errors);
     if (!validation_errors.ok()) {
       return validation_errors.status("could not determine extension type");
@@ -388,7 +391,7 @@ ClusterSpecifierPluginParse(
       // google_protobuf_Any_value(any).
       auto config =
           cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
-              google_protobuf_Any_value(any), context.arena, context.symtab);
+              std::move(*extension), context.arena, context.symtab);
       if (!config.ok()) return config.status();
       lb_policy_config = std::move(*config);
     }
@@ -633,6 +636,8 @@ ParseTypedPerFilterConfig(
       }
     }
     ValidationErrors errors;
+    ValidationErrors::ScopedField field(
+        &errors, absl::StrCat(".typed_per_filter_config[", key, "]"));
     auto extension = ExtractXdsExtension(context, any, &errors);
     if (!errors.ok()) {
       return errors.status("could not determine extension type");
@@ -648,8 +653,8 @@ ParseTypedPerFilterConfig(
     // TODO(roth): Use extension->serialized_value here instead of
     // google_protobuf_Any_value(any).
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            google_protobuf_Any_value(any), context.arena);
+        filter_impl->GenerateFilterConfigOverride(std::move(*extension),
+                                                  context.arena);
     if (!filter_config.ok()) {
       return absl::InvalidArgumentError(
           absl::StrCat("filter config for type ", extension->type,

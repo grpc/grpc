@@ -55,7 +55,7 @@ GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
 SECONDARY_ZONE = 'us-west1-b'
 
-PSM_SECURITY_PREFIX = 'xds-k8s-security'  # Prefix for gke resources to delete.
+PSM_SECURITY_PREFIX = 'psm-interop'  # Prefix for gke resources to delete.
 URL_MAP_TEST_PREFIX = 'interop-psm-url-map'  # Prefix for url-map test resources to delete.
 
 KEEP_PERIOD_HOURS = flags.DEFINE_integer(

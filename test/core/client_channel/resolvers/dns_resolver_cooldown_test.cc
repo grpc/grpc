@@ -42,6 +42,8 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -297,7 +299,7 @@ struct OnResolutionCallbackArg {
 };
 
 // Set to true by the last callback in the resolution chain.
-static bool g_all_callbacks_invoked;
+static grpc_core::NoDestruct<grpc_core::Notification> g_all_callbacks_invoked;
 
 // It's interesting to run a few rounds of this test because as
 // we run more rounds, the base starting time
@@ -314,7 +316,7 @@ static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
                     grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
   delete cb_arg;
-  g_all_callbacks_invoked = true;
+  g_all_callbacks_invoked->Notify();
 }
 
 static void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
@@ -416,7 +418,7 @@ TEST(DnsResolverCooldownTest, MainTest) {
   test_cooldown();
 
   grpc_shutdown();
-  ASSERT_TRUE(g_all_callbacks_invoked);
+  g_all_callbacks_invoked->WaitForNotification();
 }
 
 int main(int argc, char** argv) {

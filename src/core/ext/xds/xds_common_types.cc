@@ -38,8 +38,10 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/arena.h"
 #include "upb/json_encode.h"
-#include "upb/upb.h"
+#include "upb/status.h"
+#include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
@@ -443,6 +445,10 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 absl::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors) {
+  if (any == nullptr) {
+    errors->AddError("field not present");
+    return absl::nullopt;
+  }
   XdsExtension extension;
   auto strip_type_prefix = [&]() {
     ValidationErrors::ScopedField field(errors, ".type_url");
@@ -453,8 +459,9 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     size_t pos = extension.type.rfind('/');
     if (pos == absl::string_view::npos || pos == extension.type.size() - 1) {
       errors->AddError(absl::StrCat("invalid value \"", extension.type, "\""));
+    } else {
+      extension.type = extension.type.substr(pos + 1);
     }
-    extension.type = extension.type.substr(pos + 1);
   };
   extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
   strip_type_prefix();
@@ -488,7 +495,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
   } else {
     extension.value = any_value;
   }
-  return extension;
+  return std::move(extension);
 }
 
 }  // namespace grpc_core

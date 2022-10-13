@@ -44,22 +44,24 @@ EXPERIMENTS = {
             "tcp_rcv_lowat",
             "tcp_read_chunks",
         ],
-        "hpack_test": [
-            "periodic_resource_quota_reclamation",
-        ],
         "lame_client_test": [
             "promise_based_client_call",
+        ],
+        "resource_quota_test": [
+            "memory_pressure_controller",
+            "unconstrained_max_quota_buffer_size",
+        ],
+    },
+    "on": {
+        "hpack_test": [
+            "periodic_resource_quota_reclamation",
         ],
         "promise_test": [
             "periodic_resource_quota_reclamation",
         ],
         "resource_quota_test": [
-            "memory_pressure_controller",
             "periodic_resource_quota_reclamation",
-            "unconstrained_max_quota_buffer_size",
         ],
-    },
-    "on": {
     },
     "opt": {
     },

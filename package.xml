@@ -936,6 +936,8 @@
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/event_log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/event_log.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/histogram_view.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/histogram_view.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.cc" role="src" />
