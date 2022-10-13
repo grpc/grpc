@@ -342,6 +342,7 @@ class BaseCallData : public Activity, private Wakeable {
     uint32_t* intercepted_flags_;
     absl::optional<PipeSender<MessageHandle>::PushType> push_;
     absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    absl::Status completed_status_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
         MakeMemberClosure<ReceiveMessage, &ReceiveMessage::OnComplete>(this);

@@ -158,8 +158,9 @@ ClientMessageDecompressFilter::MakeCallPromise(
           Seq(server_initial_metadata->Wait(),
               [this, receiver, sender](ServerMetadata** server_initial_metadata)
                   -> ArenaPromise<absl::Status> {
-                if (server_initial_metadata == nullptr)
+                if (*server_initial_metadata == nullptr) {
                   return ImmediateOkStatus();
+                }
                 const auto algorithm = (*server_initial_metadata)
                                            ->get(GrpcEncodingMetadata())
                                            .value_or(GRPC_COMPRESS_NONE);

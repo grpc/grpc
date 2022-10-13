@@ -548,7 +548,6 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
             base_->LogTag().c_str(), StateString(state_),
             status.ToString().c_str());
   }
-  if (!status.ok()) abort();
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
@@ -566,6 +565,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kCancelled:
       return;
   }
+  completed_status_ = status;
   Flusher flusher(base_);
   ScopedContext ctx(base_);
   base_->WakeInsideCombiner(&flusher);
@@ -581,6 +581,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
+    case State::kForwardedBatch:
+    case State::kForwardedBatchNoPipe:
       state_ = State::kCancelled;
       break;
     case State::kPushedToPipe: {
@@ -599,8 +601,6 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
     case State::kPulledFromPipe:
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
-    case State::kForwardedBatch:
-    case State::kForwardedBatchNoPipe:
       abort();
     case State::kCancelled:
       break;
@@ -621,7 +621,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kBatchCompletedNoPipe:
       break;
     case State::kBatchCompleted:
-      if (intercepted_slice_buffer_->has_value()) {
+      if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
         state_ = State::kPushedToPipe;
         message_.payload()->Swap(&**intercepted_slice_buffer_);
         message_.mutable_flags() = *intercepted_flags_;
@@ -632,7 +632,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
         sender_->Close();
         state_ = State::kCancelled;
         flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
-                            absl::OkStatus(), "recv_message");
+                            completed_status_, "recv_message");
         break;
       }
       GPR_ASSERT(state_ == State::kPushedToPipe);
