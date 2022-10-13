@@ -171,7 +171,7 @@ class ErrorBuilder {
   ErrorBuilder& Add(absl::Status child);
   ErrorBuilder& Add(std::vector<absl::Status> children);
 
-  absl::Status build();
+  absl::Status Build();
 
  private:
   absl::Status status_;

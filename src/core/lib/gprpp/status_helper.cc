@@ -385,7 +385,7 @@ ErrorBuilder& ErrorBuilder::Add(std::vector<absl::Status> children) {
   return *this;
 }
 
-absl::Status ErrorBuilder::build() { return std::move(status_); }
+absl::Status ErrorBuilder::Build() { return std::move(status_); }
 
 namespace internal {
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
