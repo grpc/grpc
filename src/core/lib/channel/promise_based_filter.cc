@@ -21,7 +21,6 @@
 
 #include "absl/base/attributes.h"
 #include "absl/types/variant.h"
-#include "promise_based_filter.h"
 
 #include <grpc/status.h>
 
