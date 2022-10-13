@@ -205,7 +205,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
     scheduler_ =
         absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>();
     EXPECT_NE(scheduler_, nullptr);
-    poller_ = GetDefaultPoller(scheduler_.get());
+    poller_ = MakeDefaultPoller(scheduler_.get());
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());

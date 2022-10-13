@@ -40,7 +40,7 @@ bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
 
 }  // namespace
 
-PosixEventPoller* GetDefaultPoller(Scheduler* scheduler) {
+PosixEventPoller* MakeDefaultPoller(Scheduler* scheduler) {
   static const char* poll_strategy =
       GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy).release();
   PosixEventPoller* poller = nullptr;
@@ -48,15 +48,15 @@ PosixEventPoller* GetDefaultPoller(Scheduler* scheduler) {
   for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
        it++) {
     if (PollStrategyMatches(*it, "epoll1")) {
-      poller = GetEpoll1Poller(scheduler);
+      poller = MakeEpoll1Poller(scheduler);
     }
     if (poller == nullptr && PollStrategyMatches(*it, "poll")) {
       // If epoll1 fails and if poll strategy matches "poll", use Poll poller
-      poller = GetPollPoller(scheduler, /*use_phony_poll=*/false);
+      poller = MakePollPoller(scheduler, /*use_phony_poll=*/false);
     } else if (poller == nullptr && PollStrategyMatches(*it, "none")) {
       // If epoll1 fails and if poll strategy matches "none", use phony poll
       // poller.
-      poller = GetPollPoller(scheduler, /*use_phony_poll=*/true);
+      poller = MakePollPoller(scheduler, /*use_phony_poll=*/true);
     }
   }
   return poller;
@@ -64,7 +64,9 @@ PosixEventPoller* GetDefaultPoller(Scheduler* scheduler) {
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-PosixEventPoller* GetDefaultPoller(Scheduler* /*scheduler*/) { return nullptr; }
+PosixEventPoller* MakeDefaultPoller(Scheduler* /*scheduler*/) {
+  return nullptr;
+}
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 

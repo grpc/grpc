@@ -41,28 +41,44 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+// A helper class to manager lifetime of the poller associated with the
+// posix event engine.
+class PosixEnginePollerManager
+    : public grpc_event_engine::posix_engine::Scheduler {
+ public:
+  explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
+  explicit PosixEnginePollerManager(
+      grpc_event_engine::posix_engine::PosixEventPoller* poller);
+  grpc_event_engine::posix_engine::PosixEventPoller* Poller() {
+    return poller_;
+  }
+
+  ThreadPool* Executor() { return executor_.get(); }
+
+  void Run(experimental::EventEngine::Closure* closure) override;
+  void Run(absl::AnyInvocable<void()>) override;
+
+  bool IsShuttingDown() {
+    return poller_state_.load(std::memory_order_acquire) ==
+           PollerState::kShuttingDown;
+  }
+  void TriggerShutdown();
+
+  ~PosixEnginePollerManager() override;
+
+ private:
+  enum class PollerState { kExternal, kOk, kShuttingDown };
+  grpc_event_engine::posix_engine::PosixEventPoller* poller_ = nullptr;
+  std::atomic<PollerState> poller_state_{PollerState::kOk};
+  std::shared_ptr<ThreadPool> executor_;
+};
+#endif  // GRPC_POSIX_SOCKET_TCP
+
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class PosixEventEngine final
-    : public EventEngine,
-      public grpc_event_engine::posix_engine::Scheduler {
+class PosixEventEngine final : public EventEngine {
  public:
-  class PosixEndpoint : public EventEngine::Endpoint {
-   public:
-    ~PosixEndpoint() override;
-    void Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs* args) override;
-    void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* args) override;
-    const ResolvedAddress& GetPeerAddress() const override;
-    const ResolvedAddress& GetLocalAddress() const override;
-  };
-  class PosixListener : public EventEngine::Listener {
-   public:
-    ~PosixListener() override;
-    absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
-    absl::Status Start() override;
-  };
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
     ~PosixDNSResolver() override;
@@ -132,21 +148,20 @@ class PosixEventEngine final
   struct ClosureData;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
-#ifdef GRPC_POSIX_SOCKET_TCP
-  void PollerWorkInternal();
 
-  enum class PollerState{kExternal, kOk, kShuttingDown};
-  grpc_event_engine::posix_engine::PosixEventPoller* poller_ = nullptr;
-  std::atomic<int> shutdown_ref_{1};
-  std::atomic<PollerState> poller_state_{PollerState::kOk};
-  grpc_core::CondVar poller_wait_;
+#ifdef GRPC_POSIX_SOCKET_TCP
+  static void PollerWorkInternal(
+      std::shared_ptr<PosixEnginePollerManager> poller_manager);
 #endif  // GRPC_POSIX_SOCKET_TCP
 
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
   posix_engine::TimerManager timer_manager_;
-  ThreadPool executor_;
+  std::shared_ptr<ThreadPool> executor_;
+#ifdef GRPC_POSIX_SOCKET_TCP
+  std::shared_ptr<PosixEnginePollerManager> poller_manager_;
+#endif  // GRPC_POSIX_SOCKET_TCP
 };
 
 }  // namespace experimental

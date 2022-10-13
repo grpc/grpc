@@ -121,7 +121,7 @@ class Epoll1Poller : public PosixEventPoller {
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
-Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler);
+Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

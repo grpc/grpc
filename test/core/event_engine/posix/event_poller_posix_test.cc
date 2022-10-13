@@ -386,7 +386,7 @@ class EventPollerTest : public ::testing::Test {
         std::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
             engine_.get());
     EXPECT_NE(scheduler_, nullptr);
-    g_event_poller = GetDefaultPoller(scheduler_.get());
+    g_event_poller = MakeDefaultPoller(scheduler_.get());
     engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
     EXPECT_NE(engine_, nullptr);
     scheduler_->ChangeCurrentEventEngine(engine_.get());
