@@ -70,6 +70,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -682,32 +683,25 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     for (const auto& source_type : destination_ip.source_types_array) {
       for (const auto& source_ip : source_type) {
         for (const auto& source_port_pair : source_ip.ports_map) {
-          if (!source_port_pair.second.data->http_connection_manager
-                   .route_config_name.empty()) {
-            resource_names.insert(
-                source_port_pair.second.data->http_connection_manager
-                    .route_config_name);
-          }
-          filter_chain_data_set.insert(source_port_pair.second.data.get());
+          auto* filter_chain_data = source_port_pair.second.data.get();
+          const auto* rds_name = absl::get_if<std::string>(
+              &filter_chain_data->http_connection_manager.route_config);
+          if (rds_name != nullptr) resource_names.insert(*rds_name);
+          filter_chain_data_set.insert(filter_chain_data);
         }
       }
     }
   }
   if (default_filter_chain_.has_value()) {
-    if (!default_filter_chain_->http_connection_manager.route_config_name
-             .empty()) {
-      resource_names.insert(
-          default_filter_chain_->http_connection_manager.route_config_name);
-    }
-    std::reverse(
-        default_filter_chain_->http_connection_manager.http_filters.begin(),
-        default_filter_chain_->http_connection_manager.http_filters.end());
+    auto& hcm = default_filter_chain_->http_connection_manager;
+    const auto* rds_name = absl::get_if<std::string>(&hcm.route_config);
+    if (rds_name != nullptr) resource_names.insert(*rds_name);
+    std::reverse(hcm.http_filters.begin(), hcm.http_filters.end());
   }
   // Reverse the lists of HTTP filters in all the filter chains
   for (auto* filter_chain_data : filter_chain_data_set) {
-    std::reverse(
-        filter_chain_data->http_connection_manager.http_filters.begin(),
-        filter_chain_data->http_connection_manager.http_filters.end());
+    auto& hcm = filter_chain_data->http_connection_manager;
+    std::reverse(hcm.http_filters.begin(), hcm.http_filters.end());
   }
   // Start watching on referenced RDS resources
   struct WatcherToStart {
@@ -1084,27 +1078,29 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     filters.push_back(&kServerConfigSelectorFilter);
     channel_stack_modifier =
         MakeRefCounted<XdsChannelStackModifier>(std::move(filters));
-    if (filter_chain->http_connection_manager.rds_update.has_value()) {
-      server_config_selector_provider =
-          MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
-              filter_chain->http_connection_manager.rds_update.value(),
-              filter_chain->http_connection_manager.http_filters);
-    } else {
-      absl::StatusOr<XdsRouteConfigResource> initial_resource;
-      {
-        MutexLock lock(&mu_);
-        initial_resource =
-            rds_map_[filter_chain->http_connection_manager.route_config_name]
-                .rds_update.value();
-      }
-      server_config_selector_provider =
-          MakeRefCounted<DynamicXdsServerConfigSelectorProvider>(
-              xds_client_->Ref(DEBUG_LOCATION,
-                               "DynamicXdsServerConfigSelectorProvider"),
-              filter_chain->http_connection_manager.route_config_name,
-              std::move(initial_resource),
-              filter_chain->http_connection_manager.http_filters);
-    }
+    Match(
+        filter_chain->http_connection_manager.route_config,
+        // RDS resource name
+        [&](const std::string& rds_name) {
+          absl::StatusOr<XdsRouteConfigResource> initial_resource;
+          {
+            MutexLock lock(&mu_);
+            initial_resource = rds_map_[rds_name].rds_update.value();
+          }
+          server_config_selector_provider =
+              MakeRefCounted<DynamicXdsServerConfigSelectorProvider>(
+                  xds_client_->Ref(DEBUG_LOCATION,
+                                   "DynamicXdsServerConfigSelectorProvider"),
+                  rds_name, std::move(initial_resource),
+                  filter_chain->http_connection_manager.http_filters);
+        },
+        // inline RouteConfig
+        [&](const XdsRouteConfigResource& route_config) {
+          server_config_selector_provider =
+              MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
+                  route_config,
+                  filter_chain->http_connection_manager.http_filters);
+        });
     args = args.SetObject(server_config_selector_provider)
                .SetObject(channel_stack_modifier);
   }

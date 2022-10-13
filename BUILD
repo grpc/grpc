@@ -4919,6 +4919,7 @@ grpc_cc_library(
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "iomgr_fwd",
+        "match",
         "ref_counted_ptr",
         "resolved_address",
         "slice_refcount",

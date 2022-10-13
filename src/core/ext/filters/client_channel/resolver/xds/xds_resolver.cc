@@ -888,33 +888,34 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
   }
   if (xds_client_ == nullptr) return;
-  auto hcm = std::move(
+  current_listener_ = std::move(
       absl::get<XdsListenerResource::HttpConnectionManager>(listener.listener));
-  if (hcm.route_config_name != route_config_name_) {
-    if (route_config_watcher_ != nullptr) {
-      XdsRouteConfigResourceType::CancelWatch(
-          xds_client_.get(), route_config_name_, route_config_watcher_,
-          /*delay_unsubscription=*/!hcm.route_config_name.empty());
-      route_config_watcher_ = nullptr;
-    }
-    route_config_name_ = std::move(hcm.route_config_name);
-    if (!route_config_name_.empty()) {
-      current_virtual_host_.routes.clear();
-      auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
-      route_config_watcher_ = watcher.get();
-      XdsRouteConfigResourceType::StartWatch(
-          xds_client_.get(), route_config_name_, std::move(watcher));
-    }
-  }
-  current_listener_ = std::move(hcm);
-  if (route_config_name_.empty()) {
-    GPR_ASSERT(current_listener_.rds_update.has_value());
-    OnRouteConfigUpdate(std::move(*current_listener_.rds_update));
-  } else {
-    // HCM may contain newer filter config. We need to propagate the update as
-    // config selector to the channel
-    GenerateResult();
-  }
+  MatchMutable(
+      &current_listener_.route_config,
+      // RDS resource name
+      [&](std::string* rds_name) {
+        if (route_config_watcher_ != nullptr) {
+          XdsRouteConfigResourceType::CancelWatch(
+              xds_client_.get(), route_config_name_, route_config_watcher_,
+              /*delay_unsubscription=*/!rds_name->empty());
+          route_config_watcher_ = nullptr;
+        }
+        route_config_name_ = std::move(*rds_name);
+        if (!route_config_name_.empty()) {
+          current_virtual_host_.routes.clear();
+          auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
+          route_config_watcher_ = watcher.get();
+          XdsRouteConfigResourceType::StartWatch(
+              xds_client_.get(), route_config_name_, std::move(watcher));
+        }
+        // HCM may contain newer filter config. We need to propagate the
+        // update as config selector to the channel.
+        GenerateResult();
+      },
+      // inlined RouteConfig
+      [&](XdsRouteConfigResource* route_config) {
+        OnRouteConfigUpdate(std::move(*route_config));
+      });
 }
 
 namespace {

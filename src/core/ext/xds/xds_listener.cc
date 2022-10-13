@@ -71,15 +71,16 @@ namespace grpc_core {
 
 std::string XdsListenerResource::HttpConnectionManager::ToString() const {
   std::vector<std::string> contents;
-  contents.push_back(absl::StrFormat(
-      "route_config_name=%s",
-      !route_config_name.empty() ? route_config_name.c_str() : "<inlined>"));
-  contents.push_back(absl::StrFormat("http_max_stream_duration=%s",
-                                     http_max_stream_duration.ToString()));
-  if (rds_update.has_value()) {
-    contents.push_back(
-        absl::StrFormat("rds_update=%s", rds_update->ToString()));
-  }
+  contents.push_back(
+      Match(route_config,
+            [](const std::string& rds_name) {
+              return absl::StrCat("rds_name=", rds_name);
+            },
+            [](const XdsRouteConfigResource& route_config) {
+              return absl::StrCat("route_config=", route_config.ToString());
+            }));
+  contents.push_back(absl::StrCat("http_max_stream_duration=",
+                                  http_max_stream_duration.ToString()));
   if (!http_filters.empty()) {
     std::vector<std::string> filter_strings;
     for (const auto& http_filter : http_filters) {
@@ -472,7 +473,7 @@ HttpConnectionManagerParse(
         ValidationErrors::ScopedField field(errors, ".route_config");
         errors->AddError(rds_update.status().message());
       } else {
-        http_connection_manager.rds_update = std::move(*rds_update);
+        http_connection_manager.route_config = std::move(*rds_update);
       }
     } else {
       // Validate that RDS must be used to get the route_config dynamically.
@@ -483,7 +484,7 @@ HttpConnectionManagerParse(
         errors->AddError("neither route_config nor rds fields are present");
       } else {
         // Get the route_config_name.
-        http_connection_manager.route_config_name = UpbStringToStdString(
+        http_connection_manager.route_config = UpbStringToStdString(
             envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
                 rds));
         // Check that the ConfigSource specifies ADS.

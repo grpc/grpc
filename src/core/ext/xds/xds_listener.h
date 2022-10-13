@@ -48,12 +48,8 @@ namespace grpc_core {
 
 struct XdsListenerResource : public XdsResourceType::ResourceData {
   struct HttpConnectionManager {
-// FIXME: use absl::variant<>
-    // The name to use in the RDS request.
-    std::string route_config_name;
-    // The RouteConfiguration to use for this listener.
-    // Present only if it is inlined in the LDS response.
-    absl::optional<XdsRouteConfigResource> rds_update;
+    // The RDS resource name or inline RouteConfiguration.
+    absl::variant<std::string, XdsRouteConfigResource> route_config;
 
     // Storing the Http Connection Manager Common Http Protocol Option
     // max_stream_duration
@@ -72,9 +68,8 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     std::vector<HttpFilter> http_filters;
 
     bool operator==(const HttpConnectionManager& other) const {
-      return route_config_name == other.route_config_name &&
+      return route_config == other.route_config &&
              http_max_stream_duration == other.http_max_stream_duration &&
-             rds_update == other.rds_update &&
              http_filters == other.http_filters;
     }
 
