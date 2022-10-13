@@ -193,9 +193,6 @@ class CallCombinerClosureList {
 
   size_t size() const { return closures_.size(); }
 
-  auto begin() const { return closures_.begin(); }
-  auto end() const { return closures_.end(); }
-
  private:
   struct CallCombinerClosure {
     grpc_closure* closure;
