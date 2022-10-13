@@ -46,36 +46,18 @@
 
 namespace grpc_core {
 
-// TODO(roth): When we can use absl::variant<>, consider using that
-// here, to enforce the fact that only one of the two fields can be set.
 struct XdsListenerResource : public XdsResourceType::ResourceData {
-  struct DownstreamTlsContext {
-    CommonTlsContext common_tls_context;
-    bool require_client_certificate = false;
-
-    bool operator==(const DownstreamTlsContext& other) const {
-      return common_tls_context == other.common_tls_context &&
-             require_client_certificate == other.require_client_certificate;
-    }
-
-    std::string ToString() const;
-    bool Empty() const;
-  };
-
-  enum class ListenerType {
-    kTcpListener = 0,
-    kHttpApiListener,
-  } type;
-
   struct HttpConnectionManager {
+// FIXME: use absl::variant<>
     // The name to use in the RDS request.
     std::string route_config_name;
-    // Storing the Http Connection Manager Common Http Protocol Option
-    // max_stream_duration
-    Duration http_max_stream_duration;
     // The RouteConfiguration to use for this listener.
     // Present only if it is inlined in the LDS response.
     absl::optional<XdsRouteConfigResource> rds_update;
+
+    // Storing the Http Connection Manager Common Http Protocol Option
+    // max_stream_duration
+    Duration http_max_stream_duration;
 
     struct HttpFilter {
       std::string name;
@@ -99,12 +81,18 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     std::string ToString() const;
   };
 
-  // Populated for type=kHttpApiListener.
-  HttpConnectionManager http_connection_manager;
+  struct DownstreamTlsContext {
+    CommonTlsContext common_tls_context;
+    bool require_client_certificate = false;
 
-  // Populated for type=kTcpListener.
-  // host:port listening_address set when type is kTcpListener
-  std::string address;
+    bool operator==(const DownstreamTlsContext& other) const {
+      return common_tls_context == other.common_tls_context &&
+             require_client_certificate == other.require_client_certificate;
+    }
+
+    std::string ToString() const;
+    bool Empty() const;
+  };
 
   struct FilterChainData {
     DownstreamTlsContext downstream_tls_context;
@@ -185,15 +173,26 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     }
 
     std::string ToString() const;
-  } filter_chain_map;
+  };
 
-  absl::optional<FilterChainData> default_filter_chain;
+  struct TcpListener {
+    std::string address;  // host:port listening address
+    FilterChainMap filter_chain_map;
+    absl::optional<FilterChainData> default_filter_chain;
+
+    bool operator==(const TcpListener& other) const {
+      return address == other.address &&
+             filter_chain_map == other.filter_chain_map &&
+             default_filter_chain == other.default_filter_chain;
+    }
+
+    std::string ToString() const;
+  };
+
+  absl::variant<HttpConnectionManager, TcpListener> listener;
 
   bool operator==(const XdsListenerResource& other) const {
-    return http_connection_manager == other.http_connection_manager &&
-           address == other.address &&
-           filter_chain_map == other.filter_chain_map &&
-           default_filter_chain == other.default_filter_chain;
+    return listener == other.listener;
   }
 
   std::string ToString() const;

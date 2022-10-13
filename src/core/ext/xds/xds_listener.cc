@@ -56,6 +56,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
@@ -63,20 +64,6 @@
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
-
-//
-// XdsListenerResource::DownstreamTlsContext
-//
-
-std::string XdsListenerResource::DownstreamTlsContext::ToString() const {
-  return absl::StrFormat("common_tls_context=%s, require_client_certificate=%s",
-                         common_tls_context.ToString(),
-                         require_client_certificate ? "true" : "false");
-}
-
-bool XdsListenerResource::DownstreamTlsContext::Empty() const {
-  return common_tls_context.Empty();
-}
 
 //
 // XdsListenerResource::HttpConnectionManager
@@ -105,12 +92,26 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
 }
 
 //
-// XdsListenerResource::HttpFilter
+// XdsListenerResource::HttpConnectionManager::HttpFilter
 //
 
 std::string XdsListenerResource::HttpConnectionManager::HttpFilter::ToString()
     const {
   return absl::StrCat("{name=", name, ", config=", config.ToString(), "}");
+}
+
+//
+// XdsListenerResource::DownstreamTlsContext
+//
+
+std::string XdsListenerResource::DownstreamTlsContext::ToString() const {
+  return absl::StrFormat("common_tls_context=%s, require_client_certificate=%s",
+                         common_tls_context.ToString(),
+                         require_client_certificate ? "true" : "false");
+}
+
+bool XdsListenerResource::DownstreamTlsContext::Empty() const {
+  return common_tls_context.Empty();
 }
 
 //
@@ -244,24 +245,34 @@ std::string XdsListenerResource::FilterChainMap::ToString() const {
 }
 
 //
+// XdsListenerResource::TcpListener
+//
+
+std::string XdsListenerResource::TcpListener::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(absl::StrCat("address=", address));
+  contents.push_back(
+      absl::StrCat("filter_chain_map=", filter_chain_map.ToString()));
+  if (default_filter_chain.has_value()) {
+    contents.push_back(absl::StrCat("default_filter_chain=",
+                                    default_filter_chain->ToString()));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+//
 // XdsListenerResource
 //
 
 std::string XdsListenerResource::ToString() const {
-  std::vector<std::string> contents;
-  if (type == ListenerType::kTcpListener) {
-    contents.push_back(absl::StrCat("address=", address));
-    contents.push_back(
-        absl::StrCat("filter_chain_map=", filter_chain_map.ToString()));
-    if (default_filter_chain.has_value()) {
-      contents.push_back(absl::StrCat("default_filter_chain=",
-                                      default_filter_chain->ToString()));
-    }
-  } else if (type == ListenerType::kHttpApiListener) {
-    contents.push_back(absl::StrFormat("http_connection_manager=%s",
-                                       http_connection_manager.ToString()));
-  }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+  return Match(
+      listener,
+      [](const HttpConnectionManager& hcm) {
+        return absl::StrCat("{http_connection_manager=", hcm.ToString(), "}");
+      },
+      [](const TcpListener& tcp) {
+        return absl::StrCat("{tcp_listener=", tcp.ToString(), "}");
+      });
 }
 
 //
@@ -512,8 +523,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     if (errors.ok()) {
       GPR_ASSERT(hcm.has_value());
       XdsListenerResource lds_update;
-      lds_update.type = XdsListenerResource::ListenerType::kHttpApiListener;
-      lds_update.http_connection_manager = std::move(*hcm);
+      lds_update.listener = std::move(*hcm);
       return lds_update;
     }
   }
@@ -1026,14 +1036,13 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener, bool is_v2) {
   ValidationErrors errors;
-  XdsListenerResource lds_update;
-  lds_update.type = XdsListenerResource::ListenerType::kTcpListener;
+  XdsListenerResource::TcpListener tcp_listener;
   // address
   {
     ValidationErrors::ScopedField field(&errors, "address");
     auto address = AddressParse(
         envoy_config_listener_v3_Listener_address(listener), &errors);
-    if (address.has_value()) lds_update.address = std::move(*address);
+    if (address.has_value()) tcp_listener.address = std::move(*address);
   }
   // use_original_dst
   {
@@ -1063,7 +1072,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     }
     auto filter_chain_map = BuildFilterChainMap(parsed_filter_chains, &errors);
     if (filter_chain_map.has_value()) {
-      lds_update.filter_chain_map = std::move(*filter_chain_map);
+      tcp_listener.filter_chain_map = std::move(*filter_chain_map);
     }
   }
   // default_filter_chain
@@ -1075,7 +1084,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
         FilterChainParse(context, default_filter_chain, is_v2, &errors);
     if (filter_chain.has_value() &&
         filter_chain->filter_chain_data != nullptr) {
-      lds_update.default_filter_chain =
+      tcp_listener.default_filter_chain =
           std::move(*filter_chain->filter_chain_data);
     }
   }
@@ -1085,6 +1094,8 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
   }
   // Return result.
   if (!errors.ok()) return errors.status("errors validating server Listener");
+  XdsListenerResource lds_update;
+  lds_update.listener = std::move(tcp_listener);
   return lds_update;
 }
 

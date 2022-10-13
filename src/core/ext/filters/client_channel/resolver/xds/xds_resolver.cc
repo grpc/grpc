@@ -377,7 +377,7 @@ class XdsResolver : public Resolver {
   // This will not contain the RouteConfiguration, even if it comes with the
   // LDS response; instead, the relevant VirtualHost from the
   // RouteConfiguration will be saved in current_virtual_host_.
-  XdsListenerResource current_listener_;
+  XdsListenerResource::HttpConnectionManager current_listener_;
 
   std::string route_config_name_;
   RouteConfigWatcher* route_config_watcher_ = nullptr;
@@ -468,8 +468,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       // one.
       if (!route_action->max_stream_duration.has_value()) {
         route_action->max_stream_duration =
-            resolver_->current_listener_.http_connection_manager
-                .http_max_stream_duration;
+            resolver_->current_listener_.http_max_stream_duration;
       }
       Match(
           route_action->action,
@@ -524,8 +523,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     }
   }
   // Populate filter list.
-  for (const auto& http_filter :
-       resolver_->current_listener_.http_connection_manager.http_filters) {
+  for (const auto& http_filter : resolver_->current_listener_.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
@@ -602,7 +600,7 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
   }
   // Handle xDS HTTP filters.
   auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
-      resolver_->current_listener_.http_connection_manager.http_filters,
+      resolver_->current_listener_.http_filters,
       resolver_->current_virtual_host_, route, cluster_weight,
       resolver_->args_);
   if (!result.ok()) return result.status();
@@ -889,20 +887,17 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
   }
-  if (xds_client_ == nullptr) {
-    return;
-  }
-  if (listener.http_connection_manager.route_config_name !=
-      route_config_name_) {
+  if (xds_client_ == nullptr) return;
+  auto hcm = std::move(
+      absl::get<XdsListenerResource::HttpConnectionManager>(listener.listener));
+  if (hcm.route_config_name != route_config_name_) {
     if (route_config_watcher_ != nullptr) {
       XdsRouteConfigResourceType::CancelWatch(
           xds_client_.get(), route_config_name_, route_config_watcher_,
-          /*delay_unsubscription=*/
-          !listener.http_connection_manager.route_config_name.empty());
+          /*delay_unsubscription=*/!hcm.route_config_name.empty());
       route_config_watcher_ = nullptr;
     }
-    route_config_name_ =
-        std::move(listener.http_connection_manager.route_config_name);
+    route_config_name_ = std::move(hcm.route_config_name);
     if (!route_config_name_.empty()) {
       current_virtual_host_.routes.clear();
       auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
@@ -911,12 +906,10 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
           xds_client_.get(), route_config_name_, std::move(watcher));
     }
   }
-  current_listener_ = std::move(listener);
+  current_listener_ = std::move(hcm);
   if (route_config_name_.empty()) {
-    GPR_ASSERT(
-        current_listener_.http_connection_manager.rds_update.has_value());
-    OnRouteConfigUpdate(
-        std::move(*current_listener_.http_connection_manager.rds_update));
+    GPR_ASSERT(current_listener_.rds_update.has_value());
+    OnRouteConfigUpdate(std::move(*current_listener_.rds_update));
   } else {
     // HCM may contain newer filter config. We need to propagate the update as
     // config selector to the channel

@@ -550,7 +550,9 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
             this, xds_client_.get(), listener.ToString().c_str());
   }
-  if (listener.address != listening_address_) {
+  auto& tcp_listener =
+      absl::get<XdsListenerResource::TcpListener>(listener.listener);
+  if (tcp_listener.address != listening_address_) {
     MutexLock lock(&mu_);
     OnFatalError(absl::FailedPreconditionError(
         "Address in LDS update does not match listening address"));
@@ -558,8 +560,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
   }
   auto new_filter_chain_match_manager = MakeRefCounted<FilterChainMatchManager>(
       xds_client_->Ref(DEBUG_LOCATION, "FilterChainMatchManager"),
-      std::move(listener.filter_chain_map),
-      std::move(listener.default_filter_chain));
+      std::move(tcp_listener.filter_chain_map),
+      std::move(tcp_listener.default_filter_chain));
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ == nullptr ||
       !(new_filter_chain_match_manager->filter_chain_map() ==
