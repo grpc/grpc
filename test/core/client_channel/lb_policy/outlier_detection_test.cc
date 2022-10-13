@@ -15,10 +15,12 @@
 //
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -32,7 +34,10 @@
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
