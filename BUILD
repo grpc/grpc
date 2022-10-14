@@ -150,7 +150,7 @@ g_stands_for = "galley"  # @unused
 
 core_version = "28.0.0"  # @unused
 
-version = "1.50.0"  # @unused
+version = "1.50.1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
