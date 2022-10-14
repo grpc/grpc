@@ -270,7 +270,7 @@ tvos_unit_test(
 grpc_sh_test(
     name = "tvtests_build_test",
     srcs = [
-        "tvtests_build_test.sh"
+        "tvtests_build_test.sh",
     ],
     data = [
         ":TvTests",
