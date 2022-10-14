@@ -137,7 +137,7 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
                    FilterOutgoingMetadata(md.get());
                    return md;
                  }))
-      .HelperPush(Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
+      .Push(Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
         FilterOutgoingMetadata(*md);
         (*md)->Set(HttpStatusMetadata(), 200);
         (*md)->Set(ContentTypeMetadata(),

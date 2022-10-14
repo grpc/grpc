@@ -22,6 +22,7 @@
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/variant.h"
 
 #include <grpc/status.h>
@@ -379,8 +380,6 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
       abort();
       break;
     case State::kPushedToPipe:
-      GPR_ASSERT(metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK) !=
-                 GRPC_STATUS_OK);
       push_.reset();
       next_.reset();
       state_ = State::kCancelled;
@@ -1046,10 +1045,18 @@ const char* ClientCallData::StateString(RecvTrailingState state) {
 }
 
 std::string ClientCallData::DebugString() const {
+  std::vector<absl::string_view> captured;
+  if (send_initial_metadata_batch_.is_captured()) {
+    captured.push_back("send_initial_metadata");
+  }
+  if (send_message() != nullptr && send_message()->HaveCapturedBatch()) {
+    captured.push_back("send_message");
+  }
   return absl::StrCat(
       "has_promise=", promise_.has_value() ? "true" : "false",
       " sent_initial_state=", StateString(send_initial_state_),
-      " recv_trailing_state=", StateString(recv_trailing_state_),
+      " recv_trailing_state=", StateString(recv_trailing_state_), " captured={",
+      absl::StrJoin(captured, ","), "}",
       server_initial_metadata_latch() == nullptr
           ? ""
           : absl::StrCat(" recv_initial_metadata=",
@@ -1934,10 +1941,18 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
 }
 
 std::string ServerCallData::DebugString() const {
+  std::vector<absl::string_view> captured;
+  if (send_message() != nullptr && send_message()->HaveCapturedBatch()) {
+    captured.push_back("send_message");
+  }
+  if (send_trailing_metadata_batch_.is_captured()) {
+    captured.push_back("send_trailing_metadata");
+  }
   return absl::StrCat(
       "have_promise=", promise_.has_value() ? "true" : "false",
       " recv_initial_state=", StateString(recv_initial_state_),
-      " send_trailing_state=", StateString(send_trailing_state_),
+      " send_trailing_state=", StateString(send_trailing_state_), " captured={",
+      absl::StrJoin(captured, ","), "}",
       send_initial_metadata_ == nullptr
           ? ""
           : absl::StrCat(

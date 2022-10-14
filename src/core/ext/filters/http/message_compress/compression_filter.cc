@@ -67,7 +67,8 @@ const grpc_channel_filter ClientCompressionFilter::kFilter =
                                kFilterExaminesOutboundMessages>("compression");
 const grpc_channel_filter ServerCompressionFilter::kFilter =
     MakePromiseBasedFilter<ServerCompressionFilter, FilterEndpoint::kServer,
-                           kFilterExaminesInboundMessages |
+                           kFilterExaminesServerInitialMetadata |
+                               kFilterExaminesInboundMessages |
                                kFilterExaminesOutboundMessages>("compression");
 
 absl::StatusOr<ClientCompressionFilter> ClientCompressionFilter::Create(
@@ -112,9 +113,8 @@ MessageHandle CompressionFilter::CompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm) const {
   gpr_log(GPR_ERROR, "CompressMessage: len=%d alg=%d flags=%d",
           (int)message->payload()->Length(), algorithm, message->flags());
-  GPR_ASSERT(algorithm != GRPC_COMPRESS_NONE);
   uint32_t& flags = message->mutable_flags();
-  if (!enable_compression_ ||
+  if (algorithm == GRPC_COMPRESS_NONE || !enable_compression_ ||
       (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS))) {
     return message;
   }
@@ -254,21 +254,21 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
   auto* compress_receiver =
       std::exchange(call_args.outgoing_messages, &compress_pipe->receiver);
   return TryConcurrently(next_promise_factory(std::move(call_args)))
-      .HelperPull(Seq(
-          server_initial_metadata->Wait(),
-          [this, decompress_receiver,
-           decompress_sender](ServerMetadata** server_initial_metadata)
-              -> ArenaPromise<absl::Status> {
-            if (*server_initial_metadata == nullptr) {
-              return ImmediateOkStatus();
-            }
-            const auto decompress_algorithm = (*server_initial_metadata)
-                                                  ->get(GrpcEncodingMetadata())
-                                                  .value_or(GRPC_COMPRESS_NONE);
-            return DecompressLoop(decompress_algorithm, decompress_receiver,
-                                  decompress_sender);
-          }))
-      .HelperPush(
+      .Pull(Seq(server_initial_metadata->Wait(),
+                [this, decompress_receiver,
+                 decompress_sender](ServerMetadata** server_initial_metadata)
+                    -> ArenaPromise<absl::Status> {
+                  if (*server_initial_metadata == nullptr) {
+                    return ImmediateOkStatus();
+                  }
+                  const auto decompress_algorithm =
+                      (*server_initial_metadata)
+                          ->get(GrpcEncodingMetadata())
+                          .value_or(GRPC_COMPRESS_NONE);
+                  return DecompressLoop(decompress_algorithm,
+                                        decompress_receiver, decompress_sender);
+                }))
+      .Push(
           CompressLoop(compress_algorithm, compress_receiver, compress_sender));
 }
 
@@ -289,26 +289,25 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
   auto* write_latch =
       std::exchange(call_args.server_initial_metadata, read_latch);
   return TryConcurrently(next_promise_factory(std::move(call_args)))
-      .HelperPull(DecompressLoop(decompress_algorithm, decompress_receiver,
-                                 decompress_sender))
-      .HelperPush(
-          Seq(read_latch->Wait(), [write_latch, this, compress_receiver,
-                                   compress_sender](ServerMetadata** md) {
-            // Find the compression algorithm.
-            const auto compress_algorithm =
-                (*md)
-                    ->Take(GrpcInternalEncodingRequest())
-                    .value_or(default_compression_algorithm());
-            // Convey supported compression algorithms.
-            (*md)->Set(GrpcAcceptEncodingMetadata(),
-                       enabled_compression_algorithms());
-            if (compress_algorithm != GRPC_COMPRESS_NONE) {
-              (*md)->Set(GrpcEncodingMetadata(), compress_algorithm);
-            }
-            write_latch->Set(*md);
-            return CompressLoop(compress_algorithm, compress_receiver,
-                                compress_sender);
-          }));
+      .Pull(DecompressLoop(decompress_algorithm, decompress_receiver,
+                           decompress_sender))
+      .Push(Seq(read_latch->Wait(), [write_latch, this, compress_receiver,
+                                     compress_sender](ServerMetadata** md) {
+        // Find the compression algorithm.
+        const auto compress_algorithm =
+            (*md)
+                ->Take(GrpcInternalEncodingRequest())
+                .value_or(default_compression_algorithm());
+        // Convey supported compression algorithms.
+        (*md)->Set(GrpcAcceptEncodingMetadata(),
+                   enabled_compression_algorithms());
+        if (compress_algorithm != GRPC_COMPRESS_NONE) {
+          (*md)->Set(GrpcEncodingMetadata(), compress_algorithm);
+        }
+        write_latch->Set(*md);
+        return CompressLoop(compress_algorithm, compress_receiver,
+                            compress_sender);
+      }));
 }
 
 }  // namespace grpc_core

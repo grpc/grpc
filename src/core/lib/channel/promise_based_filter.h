@@ -269,6 +269,7 @@ class BaseCallData : public Activity, private Wakeable {
     void GotPipe(PipeReceiver<MessageHandle>* receiver);
     void WakeInsideCombiner(Flusher* flusher);
     void Done(const ServerMetadata& metadata, Flusher* flusher);
+    bool HaveCapturedBatch() const { return batch_.is_captured(); }
 
    private:
     enum class State : uint8_t {

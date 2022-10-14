@@ -197,8 +197,8 @@ class TryConcurrently<Main, List<PreMain...>, List<PostMain...>> {
   }
 
   template <typename P>
-  TryConcurrently<Main, List<PreMain..., Helper<P>>, List<PostMain...>>
-  HelperPush(P p) {
+  TryConcurrently<Main, List<PreMain..., Helper<P>>, List<PostMain...>> Push(
+      P p) {
     GPR_DEBUG_ASSERT(done_bits_ == 0);
     return TryConcurrently<Main, List<PreMain..., Helper<P>>,
                            List<PostMain...>>(
@@ -209,8 +209,8 @@ class TryConcurrently<Main, List<PreMain...>, List<PostMain...>> {
   }
 
   template <typename P>
-  TryConcurrently<Main, List<PreMain...>, List<PostMain..., Helper<P>>>
-  HelperPull(P p) {
+  TryConcurrently<Main, List<PreMain...>, List<PostMain..., Helper<P>>> Pull(
+      P p) {
     GPR_DEBUG_ASSERT(done_bits_ == 0);
     return TryConcurrently<Main, List<PreMain...>,
                            List<PostMain..., Helper<P>>>(
