@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">24.0.0</span>
+   &#160;<span id="projectnumber">28.0.0</span>
    </div>
   </td>
  </tr>
@@ -329,6 +329,8 @@ Macros</h2></td></tr>
 <tr class="separator:gab8c0bd8e6b96d1cf787bb24823e7c761"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaaaf4ebe91111ede7ee09a2bc790caa21"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaaaf4ebe91111ede7ee09a2bc790caa21">GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.grpclb_fallback_timeout_ms&quot;</td></tr>
 <tr class="separator:gaaaf4ebe91111ede7ee09a2bc790caa21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga87358852b0249cfab0e128c68810366f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga87358852b0249cfab0e128c68810366f">GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS</a>&#160;&#160;&#160;&quot;grpc.experimental.grpclb_channel_args&quot;</td></tr>
+<tr class="separator:ga87358852b0249cfab0e128c68810366f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga3ab27425a4afa2866ae2876ae0b735e3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga3ab27425a4afa2866ae2876ae0b735e3">GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.priority_failover_timeout_ms&quot;</td></tr>
 <tr class="separator:ga3ab27425a4afa2866ae2876ae0b735e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
@@ -408,9 +410,6 @@ Macros</h2></td></tr>
 <tr class="memitem:afa71c451716eca6c8d38fb71d66c0bbb"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a>&#160;&#160;&#160;(0x00000080u)</td></tr>
 <tr class="memdesc:afa71c451716eca6c8d38fb71d66c0bbb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application.  <a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">More...</a><br /></td></tr>
 <tr class="separator:afa71c451716eca6c8d38fb71d66c0bbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1175f30479912922d006387536d2c46c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a>&#160;&#160;&#160;(0x00000100u)</td></tr>
-<tr class="memdesc:a1175f30479912922d006387536d2c46c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal that the initial metadata should be corked.  <a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">More...</a><br /></td></tr>
-<tr class="separator:a1175f30479912922d006387536d2c46c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca7fa3c1b87589e5829f508ee3fc1f84"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#aca7fa3c1b87589e5829f508ee3fc1f84">GRPC_INITIAL_METADATA_USED_MASK</a></td></tr>
 <tr class="memdesc:aca7fa3c1b87589e5829f508ee3fc1f84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mask of all valid flags.  <a href="grpc__types_8h.html#aca7fa3c1b87589e5829f508ee3fc1f84">More...</a><br /></td></tr>
 <tr class="separator:aca7fa3c1b87589e5829f508ee3fc1f84"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -596,22 +595,6 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
-<a id="a1175f30479912922d006387536d2c46c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1175f30479912922d006387536d2c46c">&#9670;&nbsp;</a></span>GRPC_INITIAL_METADATA_CORKED</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GRPC_INITIAL_METADATA_CORKED&#160;&#160;&#160;(0x00000100u)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Signal that the initial metadata should be corked. </p>
-
-</div>
-</div>
 <a id="aca7fa3c1b87589e5829f508ee3fc1f84"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aca7fa3c1b87589e5829f508ee3fc1f84">&#9670;&nbsp;</a></span>GRPC_INITIAL_METADATA_USED_MASK</h2>
 
@@ -623,9 +606,8 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  (<a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a> |                 \</div>
-<div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY | <a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a> | \</div>
-<div class="line">   GRPC_WRITE_THROUGH)</div>
+<b>Value:</b><div class="fragment"><div class="line">  (<a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a> | \</div>
+<div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY | <a class="code" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</div>
 </div><!-- fragment -->
 <p>Mask of all valid flags. </p>
 
@@ -1206,11 +1188,11 @@ Enumerations</h2></td></tr>
 </div>
 </div>
 </div><!-- contents -->
-<div class="ttc" id="agrpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:525</div></div>
-<div class="ttc" id="agrpc__types_8h_html_a1175f30479912922d006387536d2c46c"><div class="ttname"><a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CORKED</div><div class="ttdoc">Signal that the initial metadata should be corked.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:527</div></div>
+<div class="ttc" id="agrpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:532</div></div>
+<div class="ttc" id="agrpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:521</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

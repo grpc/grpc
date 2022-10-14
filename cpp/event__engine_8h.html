@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -77,12 +77,13 @@ $(function() {
 <div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
 <code>#include &lt;functional&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
+<code>#include &quot;absl/functional/any_invocable.h&quot;</code><br />
 <code>#include &quot;absl/status/status.h&quot;</code><br />
 <code>#include &quot;absl/status/statusor.h&quot;</code><br />
-<code>#include &quot;absl/time/time.h&quot;</code><br />
 <code>#include &lt;<a class="el" href="endpoint__config_8h_source.html">grpc/event_engine/endpoint_config.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="memory__allocator_8h_source.html">grpc/event_engine/memory_allocator.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="port_8h_source.html">grpc/event_engine/port.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="event__engine_2slice__buffer_8h_source.html">grpc/event_engine/slice_buffer.h</a>&gt;</code><br />
 </div>
 <p><a href="event__engine_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -106,6 +107,12 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">grpc_event_engine::experimental::EventEngine::Endpoint</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">One end of a connection between a gRPC client and server.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Read API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Write API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html">grpc_event_engine::experimental::EventEngine::Listener</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Listens for incoming connection requests from gRPC clients and initiates request processing once connections are established.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -114,6 +121,9 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Task handle for DNS Resolution requests.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">grpc_event_engine::experimental::EventEngine::DNSResolver::ResolverOptions</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional configuration for DNSResolvers.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_s_r_v_record.html">grpc_event_engine::experimental::EventEngine::DNSResolver::SRVRecord</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">DNS SRV record type.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_s_r_v_record.html#details">More...</a><br /></td></tr>
@@ -128,9 +138,9 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a20069bd62de0e53ee087b3bd5e8f3ebd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a20069bd62de0e53ee087b3bd5e8f3ebd">grpc_event_engine::experimental::SetDefaultEventEngineFactory</a> (const std::function&lt; std::unique_ptr&lt; EventEngine &gt;()&gt; *factory)</td></tr>
-<tr class="memdesc:a20069bd62de0e53ee087b3bd5e8f3ebd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a20069bd62de0e53ee087b3bd5e8f3ebd">More...</a><br /></td></tr>
-<tr class="separator:a20069bd62de0e53ee087b3bd5e8f3ebd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3dfbf75b97bfbb167883cda8553d5702"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a3dfbf75b97bfbb167883cda8553d5702">grpc_event_engine::experimental::SetDefaultEventEngineFactory</a> (absl::AnyInvocable&lt; std::unique_ptr&lt; EventEngine &gt;()&gt; factory)</td></tr>
+<tr class="memdesc:a3dfbf75b97bfbb167883cda8553d5702"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a3dfbf75b97bfbb167883cda8553d5702">More...</a><br /></td></tr>
+<tr class="separator:a3dfbf75b97bfbb167883cda8553d5702"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; EventEngine &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">grpc_event_engine::experimental::CreateEventEngine</a> ()</td></tr>
 <tr class="memdesc:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> using the default factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">More...</a><br /></td></tr>
 <tr class="separator:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -138,7 +148,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:45 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -286,15 +286,28 @@ $(function() {
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;      request_map_ ABSL_GUARDED_BY(mu_);</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;};</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160; </div>
-<div class="line"><a name="l00217"></a><span class="lineno"><a class="line" href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html">  217</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html">HostNameCertificateVerifier</a> : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1experimental_1_1_certificate_verifier.html">CertificateVerifier</a> {</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;  <a class="code" href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html#ade3b26ed39412e2e0bc4d241b52bd3bf">HostNameCertificateVerifier</a>();</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;};</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160; </div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;}  <span class="comment">// namespace experimental</span></div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160; </div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SECURITY_TLS_CERTIFICATE_VERIFIER_H</span></div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="comment">// A CertificateVerifier that doesn&#39;t perform any additional checks other than</span></div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="comment">// certificate verification, if specified.</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="comment">// Note: using this solely without any other authentication mechanisms on the</span></div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;<span class="comment">// peer identity will leave your applications to the MITM(Man-In-The-Middle)</span></div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="comment">// attacks. Users should avoid doing so in production environments.</span></div>
+<div class="line"><a name="l00222"></a><span class="lineno"><a class="line" href="classgrpc_1_1experimental_1_1_no_op_certificate_verifier.html">  222</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1experimental_1_1_no_op_certificate_verifier.html">NoOpCertificateVerifier</a> : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1experimental_1_1_certificate_verifier.html">CertificateVerifier</a> {</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;  <a class="code" href="classgrpc_1_1experimental_1_1_no_op_certificate_verifier.html#a98498f87d3c6f9a29942fcb2a9e9c870">NoOpCertificateVerifier</a>();</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;};</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; </div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment">// A CertificateVerifier that will perform hostname verification, to see if the</span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;<span class="comment">// target name set from the client side matches the identity information</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="comment">// specified on the server&#39;s certificate.</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno"><a class="line" href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html">  230</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html">HostNameCertificateVerifier</a> : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1experimental_1_1_certificate_verifier.html">CertificateVerifier</a> {</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;  <a class="code" href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html#ade3b26ed39412e2e0bc4d241b52bd3bf">HostNameCertificateVerifier</a>();</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;};</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160; </div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;}  <span class="comment">// namespace experimental</span></div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SECURITY_TLS_CERTIFICATE_VERIFIER_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1string__ref_html"><div class="ttname"><a href="classgrpc_1_1string__ref.html">grpc::string_ref</a></div><div class="ttdoc">This class is a non owning reference to a string.</div><div class="ttdef"><b>Definition:</b> string_ref.h:43</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_host_name_certificate_verifier_html_ade3b26ed39412e2e0bc4d241b52bd3bf"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html#ade3b26ed39412e2e0bc4d241b52bd3bf">grpc::experimental::HostNameCertificateVerifier::HostNameCertificateVerifier</a></div><div class="ttdeci">HostNameCertificateVerifier()</div></div>
@@ -310,7 +323,8 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_certificate_verifier_html_a7312acadecd716e3a0c7c4bbcb3e84d1"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_certificate_verifier.html#a7312acadecd716e3a0c7c4bbcb3e84d1">grpc::experimental::CertificateVerifier::Cancel</a></div><div class="ttdeci">void Cancel(TlsCustomVerificationCheckRequest *request)</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_tls_custom_verification_check_request_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_tls_custom_verification_check_request.html">grpc::experimental::TlsCustomVerificationCheckRequest</a></div><div class="ttdef"><b>Definition:</b> tls_certificate_verifier.h:55</div></div>
 <div class="ttc" id="agrpc_2status_8h_html"><div class="ttname"><a href="grpc_2status_8h.html">status.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn't, why?</div><div class="ttdef"><b>Definition:</b> status.h:33</div></div>
+<div class="ttc" id="aclassgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn't, why?</div><div class="ttdef"><b>Definition:</b> status.h:35</div></div>
+<div class="ttc" id="aclassgrpc_1_1experimental_1_1_no_op_certificate_verifier_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_no_op_certificate_verifier.html">grpc::experimental::NoOpCertificateVerifier</a></div><div class="ttdef"><b>Definition:</b> tls_certificate_verifier.h:222</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_external_certificate_verifier_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_external_certificate_verifier.html">grpc::experimental::ExternalCertificateVerifier</a></div><div class="ttdef"><b>Definition:</b> tls_certificate_verifier.h:135</div></div>
 <div class="ttc" id="astructgrpc__tls__certificate__verifier__external_html"><div class="ttname"><a href="structgrpc__tls__certificate__verifier__external.html">grpc_tls_certificate_verifier_external</a></div><div class="ttdoc">EXPERIMENTAL API - Subject to change.</div><div class="ttdef"><b>Definition:</b> grpc_security.h:963</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_tls_custom_verification_check_request_html_a6b2fa23b836091ce72d6f3474ff79a78"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_tls_custom_verification_check_request.html#a6b2fa23b836091ce72d6f3474ff79a78">grpc::experimental::TlsCustomVerificationCheckRequest::email_names</a></div><div class="ttdeci">std::vector&lt; grpc::string_ref &gt; email_names() const</div></div>
@@ -334,9 +348,10 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_tls_custom_verification_check_request_html_ab7e55b53c51a3ac3f2a63ac20599a519"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_tls_custom_verification_check_request.html#ab7e55b53c51a3ac3f2a63ac20599a519">grpc::experimental::TlsCustomVerificationCheckRequest::peer_cert</a></div><div class="ttdeci">grpc::string_ref peer_cert() const</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_tls_custom_verification_check_request_html_a12209dde5499614655bf317402e5d564"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_tls_custom_verification_check_request.html#a12209dde5499614655bf317402e5d564">grpc::experimental::TlsCustomVerificationCheckRequest::target_name</a></div><div class="ttdeci">grpc::string_ref target_name() const</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_certificate_verifier_html_a9631cd85f3d9663562ab619414da6218"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_certificate_verifier.html#a9631cd85f3d9663562ab619414da6218">grpc::experimental::CertificateVerifier::CertificateVerifier</a></div><div class="ttdeci">CertificateVerifier(grpc_tls_certificate_verifier *v)</div></div>
+<div class="ttc" id="aclassgrpc_1_1experimental_1_1_no_op_certificate_verifier_html_a98498f87d3c6f9a29942fcb2a9e9c870"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_no_op_certificate_verifier.html#a98498f87d3c6f9a29942fcb2a9e9c870">grpc::experimental::NoOpCertificateVerifier::NoOpCertificateVerifier</a></div><div class="ttdeci">NoOpCertificateVerifier()</div></div>
 <div class="ttc" id="astructgrpc__tls__custom__verification__check__request_html"><div class="ttname"><a href="structgrpc__tls__custom__verification__check__request.html">grpc_tls_custom_verification_check_request</a></div><div class="ttdoc">EXPERIMENTAL API - Subject to change.</div><div class="ttdef"><b>Definition:</b> grpc_security.h:907</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_mutex_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_mutex.html">grpc::internal::Mutex</a></div><div class="ttdef"><b>Definition:</b> sync.h:59</div></div>
-<div class="ttc" id="aclassgrpc_1_1experimental_1_1_host_name_certificate_verifier_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html">grpc::experimental::HostNameCertificateVerifier</a></div><div class="ttdef"><b>Definition:</b> tls_certificate_verifier.h:217</div></div>
+<div class="ttc" id="aclassgrpc_1_1experimental_1_1_host_name_certificate_verifier_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_host_name_certificate_verifier.html">grpc::experimental::HostNameCertificateVerifier</a></div><div class="ttdef"><b>Definition:</b> tls_certificate_verifier.h:230</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_tls_custom_verification_check_request_html_a229d24a192c9e23ce2bef7f8f1c4f0fa"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_tls_custom_verification_check_request.html#a229d24a192c9e23ce2bef7f8f1c4f0fa">grpc::experimental::TlsCustomVerificationCheckRequest::uri_names</a></div><div class="ttdeci">std::vector&lt; grpc::string_ref &gt; uri_names() const</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_external_certificate_verifier_html_aa8776fc87f8fbe4bee331e520ba04620"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_external_certificate_verifier.html#aa8776fc87f8fbe4bee331e520ba04620">grpc::experimental::ExternalCertificateVerifier::Verify</a></div><div class="ttdeci">virtual bool Verify(TlsCustomVerificationCheckRequest *request, std::function&lt; void(grpc::Status)&gt; callback, grpc::Status *sync_status)=0</div></div>
 <div class="ttc" id="agrpcpp_2support_2string__ref_8h_html"><div class="ttname"><a href="grpcpp_2support_2string__ref_8h.html">string_ref.h</a></div></div>
@@ -344,7 +359,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_external_certificate_verifier_html_a15aceea4e2ba7944e502cfc3d0d51618"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_external_certificate_verifier.html#a15aceea4e2ba7944e502cfc3d0d51618">grpc::experimental::ExternalCertificateVerifier::~ExternalCertificateVerifier</a></div><div class="ttdeci">virtual ~ExternalCertificateVerifier()</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:45 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

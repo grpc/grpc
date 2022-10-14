@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -598,19 +598,22 @@ timeout_on_sleeping_server</h2>
 <li>Call completed with status DEADLINE_EXCEEDED.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md136"></a>
-concurrent_large_unary</h2>
-<p>Status: TODO</p>
-<p>Client performs 1000 large_unary tests in parallel on the same channel.</p>
-<h2><a class="anchor" id="autotoc_md137"></a>
-Flow control. Pushback at client for large messages (TODO: fix name)</h2>
-<p>Status: TODO</p>
-<p>This test verifies that a client sending faster than a server can drain sees pushback (i.e., attempts to send succeed only after appropriate delays).</p>
-<h3><a class="anchor" id="autotoc_md138"></a>
-rpc_soak</h3>
+rpc_soak</h2>
 <p>The client performs many large_unary RPCs in sequence over the same channel. The client records the latency and status of each RPC in some data structure. If the test ever consumes <code>soak_overall_timeout_seconds</code> seconds and still hasn't completed <code>soak_iterations</code> RPCs, then the test should discontinue sending RPCs as soon as possible. After performing all RPCs, the test should examine previously recorded RPC latency and status results in a second pass and fail if either:</p>
 <p>a) not all <code>soak_iterations</code> RPCs were completed</p>
 <p>b) the sum of RPCs that either completed with a non-OK status or exceeded <code>max_acceptable_per_rpc_latency_ms</code> exceeds <code>soak_max_failures</code></p>
 <p>Implementations should use a timer with sub-millisecond precision to measure latency. Also, implementations should avoid setting RPC deadlines and should instead wait for each RPC to complete. Doing so provides more data for debugging in case of failure. For example, if RPC deadlines are set to <code>soak_per_iteration_max_acceptable_latency_ms</code> and one of the RPCs hits that deadline, it's not clear if the RPC was late by a millisecond or a minute.</p>
+<p>In order to make it easy to analyze results, implementations should log the results of each iteration (i.e. RPC) in a format the matches the following regexes:</p>
+<ul>
+<li>Upon success:<ul>
+<li><code>soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded</code></li>
+</ul>
+</li>
+<li>Upon failure:<ul>
+<li><code>soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:</code></li>
+</ul>
+</li>
+</ul>
 <p>This test must be configurable via a few different command line flags:</p>
 <ul>
 <li><code>soak_iterations</code>: Controls the number of RPCs to perform. This should default to 10.</li>
@@ -623,31 +626,71 @@ rpc_soak</h3>
 <ul>
 <li>Implementations should log the number of milliseconds that each RPC takes. Additionally, implementations should use a histogram of RPC latencies to log interesting latency percentiles at the end of the test (e.g. median, 90th, and max latency percentiles).</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md139"></a>
-channel_soak</h3>
+<h2><a class="anchor" id="autotoc_md137"></a>
+channel_soak</h2>
 <p>Similar to rpc_soak, but this time each RPC is performed on a new channel. The channel is created just before each RPC and is destroyed just after.</p>
 <p>This test is configured with the same command line flags that the rpc_soak test is configured with, with only one semantic difference: when measuring an RPCs latency to see if it exceeds <code>soak_per_iteration_max_acceptable_latency_ms</code> or not, the creation of the channel should be included in that latency measurement, but the teardown of that channel should <b>not</b> be included in that latency measurement (channel teardown semantics differ widely between languages). This latency measurement should also be the value that is logged and recorded in the latency histogram.</p>
+<h2><a class="anchor" id="autotoc_md138"></a>
+orca_per_rpc</h2>
+<p>The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive per-query metric reports from the backend.</p>
+<p>The client will register the custom LB policy named <code>test_backend_metrics_load_balancer</code>, which using ORCA APIs already installed a per-query report listener. The interop-testing client will run with a service config to select the load balancing config (using argument <code>--service_config_json</code>), so that it effectively uses this newly registered custom LB policy. A load report reference can be passed from the call to the LB policy through, e.g. CallOptions, to receive metric reports. The LB policy will fill in the reference with the latest load report from the report listener. This way, together with server behaviors we can verify the expected metric reports are received.</p>
+<p>Server features:</p><ul>
+<li><a href="#unarycall">UnaryCall</a></li>
+<li><a href="#backend-metrics-report">Backend Metrics Report</a></li>
+</ul>
+<p>Procedures:</p><ul>
+<li>The client sends a unary request: ``` { orca_per_rpc_report:{ cpu_utilization: 0.8210 memory_utilization: 0.5847 request_cost: { cost: 3456.32 } utilization: { util: 0.30499 } } } ```</li>
+</ul>
+<p>The call carries a reference to receive the load report, e.g. using CallOptions. The reference is passed to the custom LB policy as part of the <code>OrcaPerRequestReportListener</code> API.</p>
+<p>Client asserts:</p><ul>
+<li>The call is successful.</li>
+<li>The per-query load report reference contains a metrics report that is identical to the metrics data sent in the request shown above.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md139"></a>
+orca_oob</h2>
+<p>The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive out-of-band metric reports from the backend.</p>
+<p>The client will register the custom LB policy named <code>test_backend_metrics_load_balancer</code>. It has similar and additional functions as described in the <a href="#orca_per_rpc">orca_per_rpc</a> test. We use ORCA APIs to install an out-of-band report listener (configure load report interval to be 1s) in the LB policy. The interop-testing client will run with a service config to select the load balancing config(using argument <code>--service_config_json</code>), so that it effectively uses this newly registered custom LB policy. A load report reference can be passed from the call to the LB policy through, e.g. CallOptions, to receive metric reports. The test framework will fill in the reference with the latest load report from the report listener. This way, together with server behaviors we can verify the expected metric reports are received.</p>
+<p>Server features:</p><ul>
+<li><a href="#unarycall">UnaryCall</a></li>
+<li><a href="#fullduplexcall">FullDuplexCall</a></li>
+<li><a href="#backend-metrics-report">Backend Metrics Report</a></li>
+</ul>
+<p>Procedures:</p><ol type="1">
+<li>Client starts a full duplex call and sends: ``` { orca_oob_report:{ cpu_utilization: 0.8210 memory_utilization: 0.5847 utilization: { util: 0.30499 } } response_parameters:{ size: 1 } } ```</li>
+<li>After getting a response, client waits up to 5 seconds to receive a OOB load report that matches the requested load report in step 1. To wait for load report, client may inject a callback to the custom LB policy, or poll the result by doing empty unary call that carries a reference, e.g. using CallOptions, that will be filled in by the custom LB policy as part of the <code>OrcaOobReportListener</code> API.</li>
+<li>Then client sends: ``` { orca_oob_report:{ cpu_utilization: 0.29309 memory_utilization: 0.2 utilization: { util: 100.2039 } } response_parameters:{ size: 1 } } ```</li>
+<li>After getting a response, client waits up to 5 seconds to receive a OOB load report that matches the requested load report in step 3. Similar to step 2.</li>
+<li>Client half closes the stream, and asserts the streaming call is successful.</li>
+</ol>
 <h2><a class="anchor" id="autotoc_md140"></a>
 Experimental Tests</h2>
 <p>These tests are not yet standardized, and are not yet implemented in all languages. Therefore they are not part of our interop matrix.</p>
 <h3><a class="anchor" id="autotoc_md141"></a>
 long_lived_channel</h3>
 <p>The client performs a number of large_unary RPCs over a single long-lived channel with a fixed but configurable interval between each RPC.</p>
-<h2><a class="anchor" id="autotoc_md142"></a>
-TODO Tests</h2>
+<h3><a class="anchor" id="autotoc_md142"></a>
+concurrent_large_unary</h3>
+<p>Status: TODO</p>
+<p>Client performs 1000 large_unary tests in parallel on the same channel.</p>
 <h3><a class="anchor" id="autotoc_md143"></a>
+Flow control. Pushback at client for large messages (TODO: fix name)</h3>
+<p>Status: TODO</p>
+<p>This test verifies that a client sending faster than a server can drain sees pushback (i.e., attempts to send succeed only after appropriate delays).</p>
+<h2><a class="anchor" id="autotoc_md144"></a>
+TODO Tests</h2>
+<h3><a class="anchor" id="autotoc_md145"></a>
 High priority:</h3>
 <p>Propagation of status code and message (yangg)</p>
 <p>Multiple thousand simultaneous calls on same Channel (ctiller)</p>
 <p>Metadata: client headers, server headers + trailers, binary+ascii</p>
-<h3><a class="anchor" id="autotoc_md144"></a>
+<h3><a class="anchor" id="autotoc_md146"></a>
 Normal priority:</h3>
 <p>Cancel before start (ctiller)</p>
 <p>Cancel after sent first message (ctiller)</p>
 <p>Cancel after received headers (ctiller)</p>
 <p>Timeout but completed before expire (zhaoq)</p>
 <p>Multiple thousand simultaneous calls timeout on same Channel (ctiller)</p>
-<h3><a class="anchor" id="autotoc_md145"></a>
+<h3><a class="anchor" id="autotoc_md147"></a>
 Lower priority:</h3>
 <p>Flow control. Pushback at client for large messages (abhishek)</p>
 <p>Flow control. Pushback at server for large messages (abhishek)</p>
@@ -656,16 +699,16 @@ Lower priority:</h3>
 <p>Multiple thousand simultaneous calls on different Channels (ctiller)</p>
 <p>Failed TLS hostname verification (ejona?)</p>
 <p>Large amount of headers to cause CONTINUATIONs; 63K of 'X's, all in one header.</p>
-<h3><a class="anchor" id="autotoc_md146"></a>
+<h3><a class="anchor" id="autotoc_md148"></a>
 To priorize:</h3>
 <p>Start streaming RPC but don't send any requests, server responds</p>
-<h2><a class="anchor" id="autotoc_md147"></a>
+<h2><a class="anchor" id="autotoc_md149"></a>
 Postponed Tests</h2>
 <p>Resilience to buggy servers: These tests would verify that a client application isn't affected negatively by the responses put on the wire by a buggy server (e.g. the client library won't make the application crash).</p>
 <p>Reconnect after transport failure</p>
 <p>Reconnect backoff</p>
 <p>Fuzz testing</p>
-<h1><a class="anchor" id="autotoc_md148"></a>
+<h1><a class="anchor" id="autotoc_md150"></a>
 Server</h1>
 <p>Servers implement various named features for clients to test with. Server features are orthogonal. If a server implements a feature, it is always available for clients. Names are simple descriptions for developer communication and tracking.</p>
 <p>Servers should accept these arguments:</p>
@@ -680,59 +723,65 @@ Server</h1>
 </li>
 </ul>
 <p>Servers must support TLS with ALPN. They should use <a href="https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem">server1.pem</a> for their certificate.</p>
-<h2><a class="anchor" id="autotoc_md149"></a>
+<h2><a class="anchor" id="autotoc_md151"></a>
 EmptyCall</h2>
 <p>Server implements EmptyCall which immediately returns the empty message.</p>
-<h2><a class="anchor" id="autotoc_md150"></a>
+<h2><a class="anchor" id="autotoc_md152"></a>
 UnaryCall</h2>
 <p>Server implements UnaryCall which immediately returns a SimpleResponse with a payload body of size <code>SimpleRequest.response_size</code> bytes and type as appropriate for the <code>SimpleRequest.response_type</code>. If the server does not support the <code>response_type</code>, then it should fail the RPC with <code>INVALID_ARGUMENT</code>.</p>
-<h2><a class="anchor" id="autotoc_md151"></a>
+<h2><a class="anchor" id="autotoc_md153"></a>
 CacheableUnaryCall</h2>
 <p>Server gets the default SimpleRequest proto as the request. The content of the request is ignored. It returns the SimpleResponse proto with the payload set to current timestamp. The timestamp is an integer representing current time with nanosecond resolution. This integer is formatted as ASCII decimal in the response. The format is not really important as long as the response payload is different for each request. In addition it adds</p><ol type="1">
 <li>cache control headers such that the response can be cached by proxies in the response path. Server should be behind a caching proxy for this test to pass. Currently we set the max-age to 60 seconds.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md152"></a>
+<h2><a class="anchor" id="autotoc_md154"></a>
 CompressedResponse</h2>
 <p>When the client sets <code>response_compressed</code> to true, the server's response is sent back compressed. Note that <code>response_compressed</code> is present on both <code>SimpleRequest</code> (unary) and <code>StreamingOutputCallRequest</code> (streaming).</p>
-<h2><a class="anchor" id="autotoc_md153"></a>
+<h2><a class="anchor" id="autotoc_md155"></a>
 CompressedRequest</h2>
 <p>When the client sets <code>expect_compressed</code> to true, the server expects the client request to be compressed. If it's not, it fails the RPC with <code>INVALID_ARGUMENT</code>. Note that <code>response_compressed</code> is present on both <code>SimpleRequest</code> (unary) and <code>StreamingOutputCallRequest</code> (streaming).</p>
-<h2><a class="anchor" id="autotoc_md154"></a>
+<h2><a class="anchor" id="autotoc_md156"></a>
 StreamingInputCall</h2>
 <p>Server implements StreamingInputCall which upon half close immediately returns a StreamingInputCallResponse where aggregated_payload_size is the sum of all request payload bodies received.</p>
-<h2><a class="anchor" id="autotoc_md155"></a>
+<h2><a class="anchor" id="autotoc_md157"></a>
 StreamingOutputCall</h2>
 <p>Server implements StreamingOutputCall by replying, in order, with one StreamingOutputCallResponse for each ResponseParameters in StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a payload body of size ResponseParameters.size bytes, as specified by its respective ResponseParameters. After sending all responses, it closes with OK.</p>
-<h2><a class="anchor" id="autotoc_md156"></a>
+<h2><a class="anchor" id="autotoc_md158"></a>
 FullDuplexCall</h2>
 <p>Server implements FullDuplexCall by replying, in order, with one StreamingOutputCallResponse for each ResponseParameters in each StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a payload body of size ResponseParameters.size bytes, as specified by its respective ResponseParameters. After receiving half close and sending all responses, it closes with OK.</p>
-<h2><a class="anchor" id="autotoc_md157"></a>
+<h2><a class="anchor" id="autotoc_md159"></a>
 Echo Status</h2>
 <p>When the client sends a response_status in the request payload, the server closes the stream with the status code and message contained within said response_status. The server will not process any further messages on the stream sent by the client. This can be used by clients to verify correct handling of different status codes and associated status messages end-to-end.</p>
-<h2><a class="anchor" id="autotoc_md158"></a>
+<h2><a class="anchor" id="autotoc_md160"></a>
 Echo Metadata</h2>
 <p>When the client sends metadata with the key <code>"x-grpc-test-echo-initial"</code> with its request, the server sends back exactly this key and the corresponding value back to the client as part of initial metadata. When the client sends metadata with the key <code>"x-grpc-test-echo-trailing-bin"</code> with its request, the server sends back exactly this key and the corresponding value back to the client as trailing metadata.</p>
-<h2><a class="anchor" id="autotoc_md159"></a>
+<h2><a class="anchor" id="autotoc_md161"></a>
 Observe ResponseParameters.interval_us</h2>
 <p>In StreamingOutputCall and FullDuplexCall, server delays sending a StreamingOutputCallResponse by the ResponseParameters' <code>interval_us</code> for that particular response, relative to the last response sent. That is, <code>interval_us</code> acts like a sleep <em>before</em> sending the response and accumulates from one response to the next.</p>
 <p>Interaction with flow control is unspecified.</p>
-<h2><a class="anchor" id="autotoc_md160"></a>
+<h2><a class="anchor" id="autotoc_md162"></a>
 Echo Auth Information</h2>
 <p>Status: Pending</p>
-<h3><a class="anchor" id="autotoc_md161"></a>
+<h3><a class="anchor" id="autotoc_md163"></a>
 Echo Authenticated Username</h3>
 <p>If a SimpleRequest has fill_username=true and that request was successfully authenticated, then the SimpleResponse should have username filled with the canonical form of the authenticated source. The canonical form is dependent on the authentication method, but is likely to be a base 10 integer identifier or an email address.</p>
-<h3><a class="anchor" id="autotoc_md162"></a>
+<h3><a class="anchor" id="autotoc_md164"></a>
 Echo OAuth scope</h3>
 <p>If a SimpleRequest has <code>fill_oauth_scope=true</code> and that request was successfully authenticated via OAuth, then the SimpleResponse should have oauth_scope filled with the scope of the method being invoked.</p>
 <p>Although a general server-side feature, most test servers won't implement this feature. The TLS server <code>grpc-test.sandbox.googleapis.com:443</code> supports this feature. It requires at least the OAuth scope <code><a href="https://www.googleapis.com/auth/xapi.zoo">https://www.googleapis.com/auth/xapi.zoo</a></code> for authentication to succeed.</p>
 <p>Discussion:</p>
-<p>Ideally, this would be communicated via metadata and not in the request/response, but we want to use this test in code paths that don't yet fully communicate metadata. </p>
+<p>Ideally, this would be communicated via metadata and not in the request/response, but we want to use this test in code paths that don't yet fully communicate metadata.</p>
+<h2><a class="anchor" id="autotoc_md165"></a>
+Backend metrics report</h2>
+<p>Server reports backend metrics data in both per-query and out-of-band cases, echoing metrics data from the unary or fullDuplex call.</p>
+<p>Using ORCA APIs we install the per-query metrics reporting server interceptor, so that it can attach metrics per RPC. We also register the <code>OpenRCAService</code> implementation to the server, so that it can report metrics periodically. The minimum report interval in the ORCA service is set to 1 sec.</p>
+<p>If <code>SimpleRequest.orca_per_rpc_report</code> is set in unary call, the server will add the metric data from <code>orca_per_rpc_report</code> to the RPC using the language's CallMetricRecorder.</p>
+<p>If <code>SimpleRequest.orca_oob_report</code> is set in fullDuplexCall call, the server will first clear all the previous metrics data, and then add utilization metrics from <code>orca_oob_report</code> to the <code>OpenRCAService</code>. The server implementation should use a lock or similar mechanism to allow only one client to control the server's out-of-band reports until the end of the RPC. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:36 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:25:11 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -94,12 +94,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a8d4e15dda8aa8ecbde4af7efbdd064f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">If this method returns true, the <em>Process</em> function will be scheduled in a different thread from the one processing the call.  <a href="classgrpc_1_1_auth_metadata_processor.html#a8d4e15dda8aa8ecbde4af7efbdd064f3">More...</a><br /></td></tr>
 <tr class="separator:a8d4e15dda8aa8ecbde4af7efbdd064f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa98ff82634d4b3de2b7a7e2622c12a3c"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_metadata_processor.html#aa98ff82634d4b3de2b7a7e2622c12a3c">Process</a> (const <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">InputMetadata</a> &amp;auth_metadata, <a class="el" href="classgrpc_1_1_auth_context.html">grpc::AuthContext</a> *context, <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a7146a5de3f081b257b3e468b83feac4f">OutputMetadata</a> *consumed_auth_metadata, <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a7146a5de3f081b257b3e468b83feac4f">OutputMetadata</a> *response_metadata)=0</td></tr>
-<tr class="memdesc:aa98ff82634d4b3de2b7a7e2622c12a3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">context is read/write: it contains the properties of the channel peer and it is the job of the Process method to augment it with properties derived from the passed-in auth_metadata.  <a href="classgrpc_1_1_auth_metadata_processor.html#aa98ff82634d4b3de2b7a7e2622c12a3c">More...</a><br /></td></tr>
+<tr class="memdesc:aa98ff82634d4b3de2b7a7e2622c12a3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Processes a Call associated with a connection.  <a href="classgrpc_1_1_auth_metadata_processor.html#aa98ff82634d4b3de2b7a7e2622c12a3c">More...</a><br /></td></tr>
 <tr class="separator:aa98ff82634d4b3de2b7a7e2622c12a3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Interface allowing custom server-side authorization based on credentials encoded in metadata. </p>
-<p>Objects of this type can be passed to <em><a class="el" href="classgrpc_1_1_server_credentials.html#aac2d5861ec4c0534c3eaa7b36f5cc6fa" title="This method is not thread-safe and has to be called before the server is started.">ServerCredentials::SetAuthMetadataProcessor()</a></em>. </p>
+<p>Objects of this type can be passed to <em><a class="el" href="classgrpc_1_1_server_credentials.html#aac2d5861ec4c0534c3eaa7b36f5cc6fa" title="This method is not thread-safe and has to be called before the server is started.">ServerCredentials::SetAuthMetadataProcessor()</a></em>. Please also check out <em><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html" title="Interface for an interceptor.">grpc::experimental::Interceptor</a></em> for another way to do customized operations on the information provided by a specific call. </p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="a0c5846f57c862880f0f6db29577bb9e5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0c5846f57c862880f0f6db29577bb9e5">&#9670;&nbsp;</a></span>InputMetadata</h2>
@@ -229,8 +229,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>context is read/write: it contains the properties of the channel peer and it is the job of the Process method to augment it with properties derived from the passed-in auth_metadata. </p>
-<p>consumed_auth_metadata needs to be filled with metadata that has been consumed by the processor and will be removed from the call. response_metadata is the metadata that will be sent as part of the response. If the return value is not <a class="el" href="classgrpc_1_1_status.html#acbac12f241ad08f449aa1b9086ec7acc" title="An OK pre-defined instance.">Status::OK</a>, the rpc call will be aborted with the error code and error message sent back to the client. </p>
+<p>Processes a Call associated with a connection. </p>
+<p>auth_metadata: the authentication metadata associated with the particular call context: contains the connection-level info, e.g. the peer identity. This parameter is readable and writable. Note that since the information is shared for all calls associated with the connection, if the implementation updates the info in a specific call, all the subsequent calls will see the updates. A typical usage of context is to use |auth_metadata| to infer the peer identity, and augment it with properties. consumed_auth_metadata: contains the metadata that the implementation wants to remove from the current call, so that the server application is no longer able to see it anymore. A typical usage would be to do token authentication in the first call, and then remove the token information for all subsequent calls. response_metadata(CURRENTLY NOT SUPPORTED): the metadata that will be sent as part of the response. return: if the return value is not <a class="el" href="classgrpc_1_1_status.html#acbac12f241ad08f449aa1b9086ec7acc" title="An OK pre-defined instance.">Status::OK</a>, the rpc call will be aborted with the error code and error message sent back to the client. </p>
 
 </div>
 </div>
@@ -240,7 +240,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:45 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['san_5fnames_1140',['san_names',['../structgrpc__tls__custom__verification__check__request_1_1peer__info_1_1san__names.html',1,'grpc_tls_custom_verification_check_request::peer_info']]],
-  ['slicebuffer_1141',['SliceBuffer',['../classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html',1,'grpc_event_engine::experimental']]],
-  ['srvrecord_1142',['SRVRecord',['../structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_s_r_v_record.html',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]]
+  ['readargs_1198',['ReadArgs',['../structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]],
+  ['reservation_1199',['Reservation',['../classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html',1,'grpc_event_engine::experimental::MemoryAllocator']]],
+  ['resolvedaddress_1200',['ResolvedAddress',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html',1,'grpc_event_engine::experimental::EventEngine']]],
+  ['resolveroptions_1201',['ResolverOptions',['../structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]]
 ];

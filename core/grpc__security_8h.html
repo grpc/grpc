@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">24.0.0</span>
+   &#160;<span id="projectnumber">28.0.0</span>
    </div>
   </td>
  </tr>
@@ -385,6 +385,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a129d8fd8e77cde679368f6ae03f990d4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_tls_certificate_verifier</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">grpc_tls_certificate_verifier_external_create</a> (<a class="el" href="structgrpc__tls__certificate__verifier__external.html">grpc_tls_certificate_verifier_external</a> *external_verifier)</td></tr>
 <tr class="memdesc:a129d8fd8e77cde679368f6ae03f990d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">More...</a><br /></td></tr>
 <tr class="separator:a129d8fd8e77cde679368f6ae03f990d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91c9dca2867decd1478590e7f5c380a4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_tls_certificate_verifier</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a91c9dca2867decd1478590e7f5c380a4">grpc_tls_certificate_verifier_no_op_create</a> ()</td></tr>
+<tr class="memdesc:a91c9dca2867decd1478590e7f5c380a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a91c9dca2867decd1478590e7f5c380a4">More...</a><br /></td></tr>
+<tr class="separator:a91c9dca2867decd1478590e7f5c380a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a576605b5b21536662c29d135ee19e07b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_tls_certificate_verifier</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a576605b5b21536662c29d135ee19e07b">grpc_tls_certificate_verifier_host_name_create</a> ()</td></tr>
 <tr class="memdesc:a576605b5b21536662c29d135ee19e07b"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a576605b5b21536662c29d135ee19e07b">More...</a><br /></td></tr>
 <tr class="separator:a576605b5b21536662c29d135ee19e07b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1060,7 +1063,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>&ndash; The following auth context methods should only be called by a server metadata </p>
-<h2><a class="anchor" id="autotoc_md312"></a>
+<h2><a class="anchor" id="autotoc_md309"></a>
 processor to set properties extracted from auth metadata.</h2>
 <p>Add a property. </p>
 
@@ -2571,6 +2574,26 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="a91c9dca2867decd1478590e7f5c380a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a91c9dca2867decd1478590e7f5c380a4">&#9670;&nbsp;</a></span>grpc_tls_certificate_verifier_no_op_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_tls_certificate_verifier</a>* grpc_tls_certificate_verifier_no_op_create </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>Factory function for an internal verifier that won't perform any post-handshake verification. Note: using this solely without any other authentication mechanisms on the peer identity will leave your applications to the MITM(Man-In-The-Middle) attacks. Users should avoid doing so in production environments. </p>
+
+</div>
+</div>
 <a id="a08134898a71be96ee8dec28202cb35c8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a08134898a71be96ee8dec28202cb35c8">&#9670;&nbsp;</a></span>grpc_tls_certificate_verifier_release()</h2>
 
@@ -3161,7 +3184,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">24.0.0</span>
+   &#160;<span id="projectnumber">28.0.0</span>
    </div>
   </td>
  </tr>
@@ -104,11 +104,11 @@ Channel State API</h1>
 <p>Note that a notification is delivered every time there is a transition from any state to any <em>other</em> state. On the other hand the rules for legal state transition, require a transition from CONNECTING to TRANSIENT_FAILURE and back to CONNECTING for every recoverable failure, even if the corresponding exponential backoff requires no wait before retry. The combined effect is that the application may receive state change notifications that appear spurious. e.g., an application waiting for state changes on a channel that is CONNECTING may receive a state change notification but find the channel in the same CONNECTING state on polling for current state because the channel may have spent infinitesimally small amount of time in the TRANSIENT_FAILURE state. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
-<div class="ttc" id="aconnectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel.</div><div class="ttdef"><b>Definition:</b> connectivity_state.h:29</div></div>
-<div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> gpr_types.h:49</div></div>
+<div class="ttc" id="aconnectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel.</div><div class="ttdef"><b>Definition:</b> connectivity_state.h:30</div></div>
+<div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> gpr_types.h:50</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
