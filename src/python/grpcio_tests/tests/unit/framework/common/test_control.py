@@ -17,8 +17,6 @@ import abc
 import contextlib
 import threading
 
-import six
-
 
 class Defect(Exception):
     """Simulates a programming defect raised into in a system under test.
@@ -28,7 +26,7 @@ class Defect(Exception):
   """
 
 
-class Control(six.with_metaclass(abc.ABCMeta)):
+class Control(abc.ABC):
     """An object that accepts program control from a system under test.
 
   Systems under test passed a Control should call its control() method

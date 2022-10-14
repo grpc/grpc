@@ -18,11 +18,11 @@ import json
 import logging
 import multiprocessing
 import os
+import queue
 import threading
 import time
 
 import grpc
-from six.moves import queue
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2

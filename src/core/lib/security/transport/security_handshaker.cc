@@ -46,6 +46,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -202,7 +203,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
     error = GRPC_ERROR_CREATE("Handshaker shutdown");
   }
   gpr_log(GPR_DEBUG, "Security handshake failed: %s",
-          grpc_error_std_string(error).c_str());
+          StatusToString(error).c_str());
   if (!is_shutdown_) {
     tsi_handshaker_shutdown(handshaker_);
     // TODO(ctiller): It is currently necessary to shutdown endpoints

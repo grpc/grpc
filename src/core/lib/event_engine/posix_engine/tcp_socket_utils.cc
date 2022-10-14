@@ -47,7 +47,6 @@
 #include <atomic>
 #include <cstring>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 

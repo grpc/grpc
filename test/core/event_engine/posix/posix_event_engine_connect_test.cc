@@ -32,11 +32,13 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -219,6 +221,10 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  if (!grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+    return 0;
+  }
   return RUN_ALL_TESTS();
 }
