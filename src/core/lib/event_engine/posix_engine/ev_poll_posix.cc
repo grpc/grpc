@@ -836,7 +836,7 @@ void PollPoller::Shutdown() {
   Unref();
 }
 
-PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
+PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
     return new PollPoller(scheduler, use_phony_poll);
@@ -878,7 +878,8 @@ void PollPoller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-PollPoller* GetPollPoller(Scheduler* /*scheduler*/, bool /* use_phony_poll */) {
+PollPoller* MakePollPoller(Scheduler* /*scheduler*/,
+                           bool /* use_phony_poll */) {
   return nullptr;
 }
 

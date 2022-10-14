@@ -29,7 +29,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -38,9 +38,12 @@
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #endif
@@ -51,7 +54,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-using grpc_event_engine::posix_engine::CreatePosixEndpoint;
 using grpc_event_engine::posix_engine::EventHandle;
 using grpc_event_engine::posix_engine::PosixEngineClosure;
 using grpc_event_engine::posix_engine::PosixEngineListener;
@@ -271,13 +273,13 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<ThreadPool> executor)
-    : poller_(grpc_event_engine::posix_engine::GetDefaultPoller(this)),
+    : poller_(grpc_event_engine::posix_engine::MakeDefaultPoller(this)),
       executor_(std::move(executor)) {}
 
 PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
     : poller_(poller),
-      executor_(nullptr),
-      poller_state_(PollerState::kExternal) {
+      poller_state_(PollerState::kExternal),
+      executor_(nullptr) {
   GPR_DEBUG_ASSERT(poller_ != nullptr);
 }
 
@@ -302,7 +304,10 @@ void PosixEnginePollerManager::TriggerShutdown() {
     poller_ = nullptr;
     return;
   }
-  poller_->Kick();
+
+  if (poller_ != nullptr) {
+    poller_->Kick();
+  }
 }
 
 PosixEnginePollerManager::~PosixEnginePollerManager() {
@@ -323,11 +328,13 @@ PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(std::make_shared<ThreadPool>()) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-  poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
-  if (poller_manager_->Poller() != nullptr) {
-    executor_->Run([poller_manager = poller_manager_]() {
-      PollerWorkInternal(poller_manager);
-    });
+  if (grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+    poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
+    if (poller_manager_->Poller() != nullptr) {
+      executor_->Run([poller_manager = poller_manager_]() {
+        PollerWorkInternal(poller_manager);
+      });
+    }
   }
 #endif
 }
@@ -400,7 +407,9 @@ PosixEventEngine::~PosixEventEngine() {
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
 #ifdef GRPC_POSIX_SOCKET_TCP
-  poller_manager_->TriggerShutdown();
+  if (poller_manager_ != nullptr) {
+    poller_manager_->TriggerShutdown();
+  }
 #endif  // GRPC_POSIX_SOCKET_TCP
 }
 
@@ -518,7 +527,12 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-  GPR_ASSERT(poller_manager_->Poller() != nullptr);
+  if (!grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+    GPR_ASSERT(
+        false &&
+        "EventEngine::Connect is not supported because polling is not enabled");
+  }
+  GPR_ASSERT(poller_manager_ != nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult> socket =
       PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr);

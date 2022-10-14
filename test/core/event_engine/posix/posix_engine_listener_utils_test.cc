@@ -66,7 +66,7 @@ class TestListenerSocketsContainer : public ListenerSocketsContainer {
     }
     return absl::NotFoundError("Socket not found!");
   }
-
+  
   int Size() { return static_cast<int>(sockets_.size()); }
 
   std::list<ListenerSocket>::const_iterator begin() { return sockets_.begin(); }

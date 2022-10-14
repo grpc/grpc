@@ -174,9 +174,12 @@ int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr);
 // address.
 bool SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port);
 
+// Unlink the path pointed to by the given address if it refers to UDS path.
 void UnlinkIfUnixDomainSocket(
     const EventEngine::ResolvedAddress& resolved_addr);
 
+// Returns -1 if the given address is not a wildcard ipv6 or ipv6 address.
+// Otherwise returns the port number associated with the address.
 int SockaddrIsWildcard(const EventEngine::ResolvedAddress& addr);
 
 // Converts a EventEngine::ResolvedAddress into a newly-allocated

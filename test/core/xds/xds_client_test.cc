@@ -582,7 +582,7 @@ class XdsClientTest : public ::testing::Test {
   // Gets the latest request sent to the fake xDS server.
   absl::optional<DiscoveryRequest> WaitForRequest(
       FakeXdsTransportFactory::FakeStreamingCall* stream,
-      absl::Duration timeout = absl::Seconds(1),
+      absl::Duration timeout = absl::Seconds(3),
       SourceLocation location = SourceLocation()) {
     auto message =
         stream->WaitForMessageFromClient(timeout * grpc_test_slowdown_factor());

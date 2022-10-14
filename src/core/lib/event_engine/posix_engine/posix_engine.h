@@ -30,9 +30,6 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/support/cpu.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -40,9 +37,9 @@
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/surface/init_internally.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -93,6 +90,8 @@ class AsyncConnect {
   bool connect_cancelled_ = false;
 };
 
+// A helper class to manager lifetime of the poller associated with the
+// posix event engine.
 class PosixEnginePollerManager
     : public grpc_event_engine::posix_engine::Scheduler {
  public:
@@ -126,7 +125,10 @@ class PosixEnginePollerManager
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class PosixEventEngine final : public EventEngine {
+// TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
+// event engine is shut down before we shut down iomgr.
+class PosixEventEngine final : public EventEngine,
+                               public grpc_core::KeepsGrpcInitialized {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
@@ -220,6 +222,7 @@ class PosixEventEngine final : public EventEngine {
 
   std::vector<ConnectionShard> connection_shards_;
   std::atomic<int64_t> last_connection_id_{1};
+
 #endif  // GRPC_POSIX_SOCKET_TCP
 
   grpc_core::Mutex mu_;
