@@ -88,6 +88,8 @@ MessageCompressFilter::MessageCompressFilter(const ChannelArgs& args)
 namespace {
 MessageHandle CompressMessage(MessageHandle message,
                               grpc_compression_algorithm algorithm) {
+  gpr_log(GPR_ERROR, "CompressMessage: len=%d alg=%d flags=%d",
+          (int)message->payload()->Length(), algorithm, message->flags());
   GPR_ASSERT(algorithm != GRPC_COMPRESS_NONE);
   uint32_t& flags = message->mutable_flags();
   if (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS)) {

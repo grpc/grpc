@@ -86,8 +86,9 @@ MessageDecompressFilter::MessageDecompressFilter(const ChannelArgs& args)
 absl::StatusOr<MessageHandle> DecompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm,
     int max_recv_message_length) {
-  gpr_log(GPR_ERROR, "DecompressMessage: %d %d",
-          (int)message->payload()->Length(), max_recv_message_length);
+  gpr_log(GPR_ERROR, "DecompressMessage: len=%d max=%d alg=%d",
+          (int)message->payload()->Length(), max_recv_message_length,
+          algorithm);
   if (max_recv_message_length > 0 &&
       message->payload()->Length() > max_recv_message_length) {
     gpr_log(GPR_ERROR, "RETURN ERROR");
