@@ -270,6 +270,7 @@ class BaseCallData : public Activity, private Wakeable {
     void WakeInsideCombiner(Flusher* flusher);
     void Done(const ServerMetadata& metadata, Flusher* flusher);
     bool HaveCapturedBatch() const { return batch_.is_captured(); }
+    bool IsIdle() const;
 
    private:
     enum class State : uint8_t {
@@ -534,6 +535,10 @@ class ServerCallData : public BaseCallData {
   enum class SendTrailingState {
     // Start state: no op seen
     kInitial,
+    // We saw the op, but it was with a send message op (or one was in progress)
+    // - so we'll wait for that to complete before processing the trailing
+    // metadata.
+    kQueuedBehindSendMessage,
     // We saw the op, and are waiting for the promise to complete
     // to forward it.
     kQueued,

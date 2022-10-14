@@ -24,6 +24,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/variant.h"
+#include "promise_based_filter.h"
 
 #include <grpc/status.h>
 
@@ -39,6 +40,20 @@ extern grpc_core::TraceFlag grpc_trace_channel;
 
 namespace grpc_core {
 namespace promise_filter_detail {
+
+namespace {
+class FakeActivity final : public Activity {
+ public:
+  void Orphan() override {}
+  void ForceImmediateRepoll() override {}
+  Waker MakeOwningWaker() override { abort(); }
+  Waker MakeNonOwningWaker() override { abort(); }
+  void Run(absl::FunctionRef<void()> f) {
+    ScopedActivity activity(this);
+    f();
+  }
+};
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
@@ -64,18 +79,7 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
 BaseCallData::~BaseCallData() {
-  class DummyActivitySoWeCanDestroyOutsideOfAScope final : public Activity {
-   public:
-    void Orphan() override {}
-    void ForceImmediateRepoll() override {}
-    Waker MakeOwningWaker() override { abort(); }
-    Waker MakeNonOwningWaker() override { abort(); }
-    void Run(absl::FunctionRef<void()> f) {
-      ScopedActivity activity(this);
-      f();
-    }
-  };
-  DummyActivitySoWeCanDestroyOutsideOfAScope().Run([this] {
+  FakeActivity().Run([this] {
     if (send_message_ != nullptr) {
       send_message_->~SendMessage();
     }
@@ -314,6 +318,7 @@ void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
   switch (state_) {
     case State::kInitial:
       state_ = State::kIdle;
+      Activity::current()->ForceImmediateRepoll();
       break;
     case State::kGotBatchNoPipe:
       state_ = State::kGotBatch;
@@ -329,6 +334,21 @@ void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
       return;
   }
   receiver_ = receiver;
+}
+
+bool BaseCallData::SendMessage::IsIdle() const {
+  switch (state_) {
+    case State::kInitial:
+    case State::kIdle:
+    case State::kForwardedBatch:
+    case State::kCancelled:
+      return true;
+    case State::kGotBatchNoPipe:
+    case State::kGotBatch:
+    case State::kBatchCompleted:
+    case State::kPushedToPipe:
+      return false;
+  }
 }
 
 void BaseCallData::SendMessage::OnComplete(absl::Status status) {
@@ -448,6 +468,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
       if (absl::holds_alternative<Pending>((*push_)())) break;
       if (completed_status_.ok()) {
         state_ = State::kIdle;
+        Activity::current()->ForceImmediateRepoll();
       } else {
         state_ = State::kCancelled;
       }
@@ -1626,6 +1647,8 @@ const char* ServerCallData::StateString(SendTrailingState state) {
       return "INITIAL";
     case SendTrailingState::kForwarded:
       return "FORWARDED";
+    case SendTrailingState::kQueuedBehindSendMessage:
+      return "QUEUED_BEHIND_SEND_MESSAGE";
     case SendTrailingState::kQueued:
       return "QUEUED";
     case SendTrailingState::kCancelled:
@@ -1758,10 +1781,15 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     switch (send_trailing_state_) {
       case SendTrailingState::kInitial:
         send_trailing_metadata_batch_ = batch;
-        send_trailing_state_ = SendTrailingState::kQueued;
-        wake = true;
+        if (send_message() != nullptr && !send_message()->IsIdle()) {
+          send_trailing_state_ = SendTrailingState::kQueuedBehindSendMessage;
+        } else {
+          send_trailing_state_ = SendTrailingState::kQueued;
+          wake = true;
+        }
         break;
       case SendTrailingState::kQueued:
+      case SendTrailingState::kQueuedBehindSendMessage:
       case SendTrailingState::kForwarded:
         abort();  // unreachable
         break;
@@ -1863,6 +1891,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
 Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
   switch (send_trailing_state_) {
     case SendTrailingState::kInitial:
+    case SendTrailingState::kQueuedBehindSendMessage:
       return Pending{};
     case SendTrailingState::kQueued:
       return WrapMetadata(send_trailing_metadata_batch_->payload
@@ -1924,13 +1953,15 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
-  promise_ = filter->MakeCallPromise(
-      CallArgs{WrapMetadata(recv_initial_metadata_),
-               server_initial_metadata_latch(), outgoing_messages_pipe(),
-               incoming_messages_pipe()},
-      [this](CallArgs call_args) {
-        return MakeNextPromise(std::move(call_args));
-      });
+  FakeActivity().Run([this, filter] {
+    promise_ = filter->MakeCallPromise(
+        CallArgs{WrapMetadata(recv_initial_metadata_),
+                 server_initial_metadata_latch(), outgoing_messages_pipe(),
+                 incoming_messages_pipe()},
+        [this](CallArgs call_args) {
+          return MakeNextPromise(std::move(call_args));
+        });
+  });
   // Poll once.
   WakeInsideCombiner(&flusher);
   if (auto* closure =
@@ -1979,6 +2010,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   poll_ctx.ClearRepoll();
   if (send_message() != nullptr) {
     send_message()->WakeInsideCombiner(flusher);
+    if (send_trailing_state_ == SendTrailingState::kQueuedBehindSendMessage &&
+        send_message()->IsIdle()) {
+      send_trailing_state_ = SendTrailingState::kQueued;
+    }
   }
   if (receive_message() != nullptr) {
     receive_message()->WakeInsideCombiner(flusher);
@@ -2018,6 +2053,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         receive_message()->Done(*md, flusher);
       }
       switch (send_trailing_state_) {
+        case SendTrailingState::kQueuedBehindSendMessage:
         case SendTrailingState::kQueued: {
           if (send_trailing_metadata_batch_->payload->send_trailing_metadata
                   .send_trailing_metadata != md) {
