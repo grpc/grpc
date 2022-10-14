@@ -26,6 +26,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -63,7 +64,7 @@ class CompressionFilter : public ChannelFilter {
  protected:
   explicit CompressionFilter(const ChannelArgs& args);
 
-  auto CompressLoop(grpc_compression_algorithm algorithm,
+  auto CompressLoop(grpc_metadata_batch* md,
                     PipeReceiver<MessageHandle>* uncompressed,
                     PipeSender<MessageHandle>* compressed) const;
   auto DecompressLoop(grpc_compression_algorithm algorithm,
