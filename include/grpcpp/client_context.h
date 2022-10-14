@@ -40,8 +40,8 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
+#include <grpcpp/create_auth_context.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/rpc_method.h>

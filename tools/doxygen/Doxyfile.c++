@@ -945,6 +945,7 @@ include/grpcpp/alarm.h \
 include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
+include/grpcpp/create_auth_context.h \
 include/grpcpp/create_channel.h \
 include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
