@@ -1369,7 +1369,6 @@ add_library(end2end_tests
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/fixtures/proxy.cc
   test/core/end2end/tests/authority_not_supported.cc
-  test/core/end2end/tests/bad_hostname.cc
   test/core/end2end/tests/bad_ping.cc
   test/core/end2end/tests/binary_metadata.cc
   test/core/end2end/tests/call_creds.cc

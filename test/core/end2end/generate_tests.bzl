@@ -204,7 +204,6 @@ def _test_options(
 
 # maps test names to options
 END2END_TESTS = {
-    "bad_hostname": _test_options(needs_names = True),
     "bad_ping": _test_options(needs_fullstack = True, proxyable = False),
     "binary_metadata": _test_options(),
     "resource_quota_server": _test_options(

@@ -32,7 +32,6 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
 /* Test feature flags. */
 #define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
-#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
 // Feature mask supports call credentials with a minimum security level of
 // GRPC_PRIVACY_AND_INTEGRITY.
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4

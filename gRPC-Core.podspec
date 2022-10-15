@@ -2600,7 +2600,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/fixtures/proxy.cc',
                       'test/core/end2end/fixtures/proxy.h',
                       'test/core/end2end/tests/authority_not_supported.cc',
-                      'test/core/end2end/tests/bad_hostname.cc',
                       'test/core/end2end/tests/bad_ping.cc',
                       'test/core/end2end/tests/binary_metadata.cc',
                       'test/core/end2end/tests/call_creds.cc',
