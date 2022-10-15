@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "absl/types/optional.h"
-#include "message_compress/compression_filter.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 

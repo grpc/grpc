@@ -4390,7 +4390,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
