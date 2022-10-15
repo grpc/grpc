@@ -238,8 +238,8 @@ inline grpc_channel_credentials* create_tls_channel_credentials(
 inline grpc_server_credentials* create_tls_server_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
-  options->set_min_tls_version(ffd->tls_version);
-  options->set_max_tls_version(ffd->tls_version);
+  grpc_tls_credentials_options_set_min_tls_version(options, ffd->tls_version);
+  grpc_tls_credentials_options_set_max_tls_version(options, ffd->tls_version);
   // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->server_provider);
