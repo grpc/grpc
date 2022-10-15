@@ -53,6 +53,18 @@ class FakeActivity final : public Activity {
     f();
   }
 };
+
+absl::Status StatusFromMetadata(const ServerMetadata& md) {
+  auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+  if (status_code == GRPC_STATUS_OK) {
+    return absl::OkStatus();
+  }
+  const auto* message = md.get_pointer(GrpcMessageMetadata());
+  return grpc_error_set_int(
+      absl::Status(static_cast<absl::StatusCode>(status_code),
+                   message == nullptr ? "" : message->as_string_view()),
+      StatusIntProperty::kRpcStatus, status_code);
+}
 }  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -608,14 +620,10 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
     case State::kPushedToPipe: {
       auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK);
       GPR_ASSERT(status_code != GRPC_STATUS_OK);
-      const Slice* message = md.get_pointer(GrpcMessageMetadata());
       push_.reset();
       next_.reset();
-      flusher->AddClosure(
-          intercepted_on_complete_,
-          absl::Status(static_cast<absl::StatusCode>(status_code),
-                       message == nullptr ? "" : message->as_string_view()),
-          "recv_message_done");
+      flusher->AddClosure(intercepted_on_complete_, StatusFromMetadata(md),
+                          "recv_message_done");
       state_ = State::kCancelled;
     } break;
     case State::kPulledFromPipe:
@@ -887,14 +895,8 @@ class ClientCallData::PollContext {
               }
             }
           } else {
-            GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
-                       GRPC_STATUS_OK);
-            auto* message = md->get_pointer(GrpcMessageMetadata());
-            absl::Status error(
-                static_cast<absl::StatusCode>(
-                    *md->get_pointer(GrpcStatusMetadata())),
-                message == nullptr ? "" : message->as_string_view());
-            self_->cancelled_error_ = error;
+            self_->cancelled_error_ = StatusFromMetadata(*md);
+            GPR_ASSERT(!self_->cancelled_error_.ok());
             if (self_->recv_initial_metadata_ != nullptr) {
               switch (self_->recv_initial_metadata_->state) {
                 case RecvInitialMetadata::kInitial:
@@ -920,18 +922,19 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      error,
+                      self_->cancelled_error_,
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
             if (self_->send_initial_state_ == SendInitialState::kQueued) {
               self_->send_initial_state_ = SendInitialState::kCancelled;
-              self_->send_initial_metadata_batch_.CancelWith(error, flusher_);
+              self_->send_initial_metadata_batch_.CancelWith(
+                  self_->cancelled_error_, flusher_);
             } else {
               GPR_ASSERT(
                   self_->recv_trailing_state_ == RecvTrailingState::kInitial ||
                   self_->recv_trailing_state_ == RecvTrailingState::kForwarded);
-              self_->call_combiner()->Cancel(error);
+              self_->call_combiner()->Cancel(self_->cancelled_error_);
               CapturedBatch b(grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
                   [](void* p, grpc_error_handle) {
                     GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(p),
@@ -939,7 +942,7 @@ class ClientCallData::PollContext {
                   },
                   self_->call_combiner(), nullptr)));
               b->cancel_stream = true;
-              b->payload->cancel_stream.cancel_error = error;
+              b->payload->cancel_stream.cancel_error = self_->cancelled_error_;
               b.ResumeWith(flusher_);
             }
             self_->cancelling_metadata_ = std::move(md);
@@ -2070,12 +2073,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          auto* message = md->get_pointer(GrpcMessageMetadata());
-          absl::Status error(
-              static_cast<absl::StatusCode>(
-                  *md->get_pointer(GrpcStatusMetadata())),
-              message == nullptr ? "" : message->as_string_view());
-          Cancel(error, flusher);
+          Cancel(StatusFromMetadata(*md), flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.

@@ -1909,6 +1909,10 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
 
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_error_handle due_to_error) {
+  gpr_log(GPR_ERROR, "cancel_error=%s; has_clear_grpc_status=%d",
+          due_to_error.ToString().c_str(),
+          grpc_error_has_clear_grpc_status(due_to_error));
+
   if (!t->is_client && !s->sent_trailing_metadata &&
       grpc_error_has_clear_grpc_status(due_to_error)) {
     close_from_api(t, s, due_to_error);

@@ -1238,7 +1238,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       }
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
   grpc_cq_end_op(cq_new_, rc->tag, absl::OkStatus(), Server::DoneRequestEvent,
                  rc, &rc->completion, true);
@@ -1358,11 +1358,10 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     /* do nothing */
-  } else {
+  } else if (error.ok()) {
     /* Pass the error reference to calld->recv_initial_metadata_error */
     grpc_error_handle src_error = error;
-    error = GRPC_ERROR_CREATE_REFERENCING("Missing :authority or :path",
-                                          &src_error, 1);
+    error = absl::UnknownError("Missing :authority or :path");
     calld->recv_initial_metadata_error_ = error;
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
