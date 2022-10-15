@@ -30,12 +30,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "compression_filter.h"
 
 #include <grpc/compression.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/http/message_compress/compression_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"

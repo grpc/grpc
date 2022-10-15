@@ -24,11 +24,11 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/variant.h"
-#include "promise_based_filter.h"
 
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
