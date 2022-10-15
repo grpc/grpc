@@ -324,6 +324,8 @@ class BaseCallData : public Activity, private Wakeable {
       kPushedToPipe,
       kPulledFromPipe,
       kCancelled,
+      kCancelledWhilstForwarding,
+      kBatchCompletedButCancelled,
     };
     static const char* StateString(State);
 

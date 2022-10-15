@@ -514,6 +514,10 @@ const char* BaseCallData::ReceiveMessage::StateString(State state) {
       return "PULLED_FROM_PIPE";
     case State::kCancelled:
       return "CANCELLED";
+    case State::kCancelledWhilstForwarding:
+      return "CANCELLED_WHILST_FORWARDING";
+    case State::kBatchCompletedButCancelled:
+      return "BATCH_COMPLETED_BUT_CANCELLED";
   }
   return "UNKNOWN";
 }
@@ -530,6 +534,8 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kIdle:
       state_ = State::kForwardedBatch;
       break;
+    case State::kCancelledWhilstForwarding:
+    case State::kBatchCompletedButCancelled:
     case State::kForwardedBatch:
     case State::kForwardedBatchNoPipe:
     case State::kBatchCompleted:
@@ -567,6 +573,8 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
     case State::kBatchCompleted:
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
+    case State::kCancelledWhilstForwarding:
+    case State::kBatchCompletedButCancelled:
       abort();
     case State::kCancelled:
       return;
@@ -587,6 +595,8 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kPulledFromPipe:
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
+    case State::kCancelled:
+    case State::kBatchCompletedButCancelled:
       abort();
     case State::kForwardedBatchNoPipe:
       state_ = State::kBatchCompletedNoPipe;
@@ -594,8 +604,9 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kForwardedBatch:
       state_ = State::kBatchCompleted;
       break;
-    case State::kCancelled:
-      return;
+    case State::kCancelledWhilstForwarding:
+      state_ = State::kBatchCompletedButCancelled;
+      break;
   }
   completed_status_ = status;
   Flusher flusher(base_);
@@ -613,9 +624,11 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
+      state_ = State::kCancelled;
+      break;
     case State::kForwardedBatch:
     case State::kForwardedBatchNoPipe:
-      state_ = State::kCancelled;
+      state_ = State::kCancelledWhilstForwarding;
       break;
     case State::kPushedToPipe: {
       auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK);
@@ -629,6 +642,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
     case State::kPulledFromPipe:
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
+    case State::kBatchCompletedButCancelled:
+    case State::kCancelledWhilstForwarding:
       abort();
     case State::kCancelled:
       break;
@@ -646,7 +661,14 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kForwardedBatchNoPipe:
     case State::kForwardedBatch:
     case State::kCancelled:
+    case State::kCancelledWhilstForwarding:
     case State::kBatchCompletedNoPipe:
+      break;
+    case State::kBatchCompletedButCancelled:
+      sender_->Close();
+      state_ = State::kCancelled;
+      flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
+                          completed_status_, "recv_message");
       break;
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
