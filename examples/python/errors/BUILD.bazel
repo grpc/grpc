@@ -35,7 +35,7 @@ py_library(
         "//examples/protos:helloworld_py_pb2",
         "//examples/protos:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_status/grpc_status:grpc_status",
+        "//src/python/grpcio_status/grpc_status",
     ],
 )
 
