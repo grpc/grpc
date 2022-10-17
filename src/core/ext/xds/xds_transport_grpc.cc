@@ -170,9 +170,8 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-void
-GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::CancelWithStatus(
-    absl::Status status) {
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    CancelWithStatus(absl::Status status) {
   GPR_ASSERT(call_ != nullptr);
   grpc_call_cancel_with_status_internal(call_, std::move(status));
 }
