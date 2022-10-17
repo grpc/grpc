@@ -27,10 +27,10 @@
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "thread_pool.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
