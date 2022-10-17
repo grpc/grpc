@@ -388,8 +388,6 @@ HttpConnectionManagerParse(
         }
         continue;
       }
-      // TODO(roth): Use extension->value here instead of
-      // google_protobuf_Any_value(any).
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(std::move(*extension),
                                             context.arena);

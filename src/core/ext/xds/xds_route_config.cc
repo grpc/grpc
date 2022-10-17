@@ -378,8 +378,6 @@ ClusterSpecifierPluginParse(
       }
       // Optional plugin, leave lb_policy_config empty.
     } else {
-      // TODO(roth): Use extension->serialized_value here instead of
-      // google_protobuf_Any_value(any).
       auto config =
           cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
               std::move(*extension), context.arena, context.symtab);
@@ -641,8 +639,6 @@ ParseTypedPerFilterConfig(
       return absl::InvalidArgumentError(absl::StrCat(
           "no filter registered for config type ", extension->type));
     }
-    // TODO(roth): Use extension->serialized_value here instead of
-    // google_protobuf_Any_value(any).
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(std::move(*extension),
                                                   context.arena);
