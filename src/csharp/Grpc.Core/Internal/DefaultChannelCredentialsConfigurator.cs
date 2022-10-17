@@ -82,7 +82,14 @@ namespace Grpc.Core.Internal
         {
             using (var callCreds = callCredentials.ToNativeCredentials())
             {
-                var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(channelCredentials.ToNativeCredentials(), callCreds);
+                var nativeChannelCredentials = channelCredentials.ToNativeCredentials();
+                if (nativeChannelCredentials == null)
+                {
+                    throw new InvalidOperationException($"CallCredentials can't be composed with {channelCredentials.GetType().Name}. " +
+                        $"CallCredentials must be used with secure channel credentials like SslCredentials.");
+                }
+                
+                var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(nativeChannelCredentials, callCreds);
                 if (nativeComposite.IsInvalid)
                 {
                     throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");
