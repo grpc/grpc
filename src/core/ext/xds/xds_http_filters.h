@@ -136,8 +136,8 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
     return nullptr;
   }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const override {
+      const FilterConfig& /*hcm_filter_config*/,
+      const FilterConfig* /*filter_config_override*/) const override {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
