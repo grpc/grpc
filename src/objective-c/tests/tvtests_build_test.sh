@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
-
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_sample_fuzzers.sh"
-timeout_mins: 120
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "**/test.log"
-    regex: "github/grpc/reports/**"
-    regex: "**/crash-*"
-  }
-}
+# //src/objective-c/tests:TvTests is set as "data"
+# for this test. Check that it's there.
+test -f src/objective-c/tests/TvTests

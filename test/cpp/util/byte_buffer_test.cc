@@ -116,8 +116,8 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
   bool owned = false;
   ByteBuffer buffer(&slices[0], 2);
   slices.clear();
-  auto status = SerializationTraits<ByteBuffer, void>::Serialize(
-      buffer, &send_buffer, &owned);
+  auto status =
+      SerializationTraits<ByteBuffer>::Serialize(buffer, &send_buffer, &owned);
   EXPECT_TRUE(status.ok());
   EXPECT_TRUE(owned);
   EXPECT_TRUE(send_buffer.Valid());
