@@ -562,7 +562,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
         "Failed to connect to remote host: FD shutdown|"
         "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-        "Socket closed)");
+        "(Socket closed|Connection reset by peer))");
   }
 
   const std::string server_host_;

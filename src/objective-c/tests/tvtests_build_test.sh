@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC Authors
+#!/bin/bash
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-py_test(
-    name = "test_csds",
-    size = "small",
-    srcs = ["test_csds.py"],
-    main = "test_csds.py",
-    python_version = "PY3",
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_csds/grpc_csds",
-    ],
-)
+# //src/objective-c/tests:TvTests is set as "data"
+# for this test. Check that it's there.
+test -f src/objective-c/tests/TvTests
