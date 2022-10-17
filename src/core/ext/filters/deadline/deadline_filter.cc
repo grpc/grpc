@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -83,9 +84,9 @@ class TimerState {
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
     if (error != absl::CancelledError()) {
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
+      error = grpc_error_set_int(GRPC_ERROR_CREATE("Deadline Exceeded"),
+                                 StatusIntProperty::kRpcStatus,
+                                 GRPC_STATUS_DEADLINE_EXCEEDED);
       deadline_state->call_combiner->Cancel(error);
       GRPC_CLOSURE_INIT(&self->closure_, SendCancelOpInCallCombiner, self,
                         nullptr);

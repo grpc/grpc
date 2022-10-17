@@ -16,7 +16,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -33,6 +32,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#include <arpa/inet.h>  // IWYU pragma: keep
 #ifdef GRPC_LINUX_TCP_H
 #include <linux/tcp.h>
 #else
@@ -55,6 +55,7 @@
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
@@ -92,7 +93,7 @@ absl::Status ErrorForFd(
   if (fd >= 0) return absl::OkStatus();
   const char* addr_str = reinterpret_cast<const char*>(addr.address());
   return absl::Status(absl::StatusCode::kInternal,
-                      absl::StrCat("socket: ", strerror(errno),
+                      absl::StrCat("socket: ", grpc_core::StrError(errno),
                                    std::string(addr_str, addr.size())));
 }
 
@@ -335,7 +336,8 @@ absl::StatusOr<std::string> SockaddrToString(
   if (ip != nullptr &&
       inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != nullptr) {
     if (sin6_scope_id != 0) {
-      // Enclose sin6_scope_id with the format defined in RFC 6874 section 2.
+      // Enclose sin6_scope_id with the format defined in RFC 6874
+      // section 2.
       std::string host_with_scope =
           absl::StrFormat("%s%%%" PRIu32, ntop_buf, sin6_scope_id);
       out = grpc_core::JoinHostPort(host_with_scope, port);
@@ -346,7 +348,8 @@ absl::StatusOr<std::string> SockaddrToString(
     return absl::InvalidArgumentError(
         absl::StrCat("Unknown sockaddr family: ", addr->sa_family));
   }
-  // This is probably redundant, but we wouldn't want to log the wrong error.
+  // This is probably redundant, but we wouldn't want to log the wrong
+  // error.
   errno = save_errno;
   return out;
 }
@@ -359,7 +362,7 @@ absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int bytes) {
   if (setsockopt(fd_, SOL_SOCKET, SO_RCVLOWAT, &bytes, sizeof(bytes)) != 0) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_RCVLOWAT): ", strerror(errno)));
+        absl::StrCat("setsockopt(SO_RCVLOWAT): ", grpc_core::StrError(errno)));
   }
   return bytes;
 }
@@ -372,13 +375,13 @@ absl::Status PosixSocketWrapper::SetSocketZeroCopy() {
   if (err != 0) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_ZEROCOPY): ", strerror(errno)));
+        absl::StrCat("setsockopt(SO_ZEROCOPY): ", grpc_core::StrError(errno)));
   }
   return absl::OkStatus();
 #else
-  return absl::Status(
-      absl::StatusCode::kInternal,
-      absl::StrCat("setsockopt(SO_ZEROCOPY): ", strerror(ENOSYS)));
+  return absl::Status(absl::StatusCode::kInternal,
+                      absl::StrCat("setsockopt(SO_ZEROCOPY): ",
+                                   grpc_core::StrError(ENOSYS).c_str()));
 #endif
 }
 
@@ -387,7 +390,7 @@ absl::Status PosixSocketWrapper::SetSocketNonBlocking(int non_blocking) {
   int oldflags = fcntl(fd_, F_GETFL, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", strerror(errno)));
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   if (non_blocking) {
@@ -398,7 +401,7 @@ absl::Status PosixSocketWrapper::SetSocketNonBlocking(int non_blocking) {
 
   if (fcntl(fd_, F_SETFL, oldflags) != 0) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", strerror(errno)));
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   return absl::OkStatus();
@@ -412,12 +415,12 @@ absl::Status PosixSocketWrapper::SetSocketNoSigpipeIfPossible() {
   if (0 != setsockopt(fd_, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_NOSIGPIPE): ", strerror(errno)));
+        absl::StrCat("setsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
   }
   if (0 != getsockopt(fd_, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_NOSIGPIPE): ", strerror(errno)));
+        absl::StrCat("getsockopt(SO_NOSIGPIPE): ", grpc_core::StrError(errno)));
   }
   if ((newval != 0) != (val != 0)) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -434,7 +437,7 @@ absl::Status PosixSocketWrapper::SetSocketIpPktInfoIfPossible() {
                       sizeof(get_local_ip))) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(IP_PKTINFO): ", strerror(errno)));
+        absl::StrCat("setsockopt(IP_PKTINFO): ", grpc_core::StrError(errno)));
   }
 #endif
   return absl::OkStatus();
@@ -445,9 +448,9 @@ absl::Status PosixSocketWrapper::SetSocketIpv6RecvPktInfoIfPossible() {
   int get_local_ip = 1;
   if (0 != setsockopt(fd_, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(IPV6_RECVPKTINFO): ", strerror(errno)));
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("setsockopt(IPV6_RECVPKTINFO): ",
+                                     grpc_core::StrError(errno)));
   }
 #endif
   return absl::OkStatus();
@@ -457,18 +460,18 @@ absl::Status PosixSocketWrapper::SetSocketSndBuf(int buffer_size_bytes) {
   return 0 == setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()
-             : absl::Status(
-                   absl::StatusCode::kInternal,
-                   absl::StrCat("setsockopt(SO_SNDBUF): ", strerror(errno)));
+             : absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("setsockopt(SO_SNDBUF): ",
+                                         grpc_core::StrError(errno)));
 }
 
 absl::Status PosixSocketWrapper::SetSocketRcvBuf(int buffer_size_bytes) {
   return 0 == setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()
-             : absl::Status(
-                   absl::StatusCode::kInternal,
-                   absl::StrCat("setsockopt(SO_RCVBUF): ", strerror(errno)));
+             : absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("setsockopt(SO_RCVBUF): ",
+                                         grpc_core::StrError(errno)));
 }
 
 // Set a socket to close on exec
@@ -476,7 +479,7 @@ absl::Status PosixSocketWrapper::SetSocketCloexec(int close_on_exec) {
   int oldflags = fcntl(fd_, F_GETFD, 0);
   if (oldflags < 0) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", strerror(errno)));
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   if (close_on_exec) {
@@ -487,7 +490,7 @@ absl::Status PosixSocketWrapper::SetSocketCloexec(int close_on_exec) {
 
   if (fcntl(fd_, F_SETFD, oldflags) != 0) {
     return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", strerror(errno)));
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
   }
 
   return absl::OkStatus();
@@ -501,12 +504,12 @@ absl::Status PosixSocketWrapper::SetSocketReuseAddr(int reuse) {
   if (0 != setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_REUSEADDR): ", strerror(errno)));
+        absl::StrCat("setsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
   }
   if (0 != getsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_REUSEADDR): ", strerror(errno)));
+        absl::StrCat("getsockopt(SO_REUSEADDR): ", grpc_core::StrError(errno)));
   }
   if ((newval != 0) != val) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -528,12 +531,12 @@ absl::Status PosixSocketWrapper::SetSocketReusePort(int reuse) {
   if (0 != setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(SO_REUSEPORT): ", strerror(errno)));
+        absl::StrCat("setsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
   }
   if (0 != getsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(SO_REUSEPORT): ", strerror(errno)));
+        absl::StrCat("getsockopt(SO_REUSEPORT): ", grpc_core::StrError(errno)));
   }
   if ((newval != 0) != val) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -549,8 +552,8 @@ bool PosixSocketWrapper::IsSocketReusePortSupported() {
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
       // This might be an ipv6-only environment in which case
-      // 'socket(AF_INET,..)' call would fail. Try creating IPv6 socket in that
-      // case
+      // 'socket(AF_INET,..)' call would fail. Try creating IPv6 socket in
+      // that case
       s = socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s >= 0) {
@@ -571,12 +574,12 @@ absl::Status PosixSocketWrapper::SetSocketLowLatency(int low_latency) {
   if (0 != setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("setsockopt(TCP_NODELAY): ", strerror(errno)));
+        absl::StrCat("setsockopt(TCP_NODELAY): ", grpc_core::StrError(errno)));
   }
   if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
     return absl::Status(
         absl::StatusCode::kInternal,
-        absl::StrCat("getsockopt(TCP_NODELAY): ", strerror(errno)));
+        absl::StrCat("getsockopt(TCP_NODELAY): ", grpc_core::StrError(errno)));
   }
   if ((newval != 0) != val) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -659,11 +662,13 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     if (g_socket_supports_tcp_user_timeout.load() > 0) {
       if (0 != setsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                           sizeof(timeout))) {
-        gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+        gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
+                grpc_core::StrError(errno).c_str());
         return;
       }
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+        gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s",
+                grpc_core::StrError(errno).c_str());
         return;
       }
       if (newval != timeout) {
@@ -728,7 +733,8 @@ PosixSocketWrapper::LocalAddress() {
   EventEngine::ResolvedAddress addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   if (getsockname(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(absl::StrCat("getsockname:", strerror(errno)));
+    return absl::InternalError(
+        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
   }
   return addr;
 }
@@ -737,7 +743,8 @@ absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
   EventEngine::ResolvedAddress addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   if (getpeername(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(absl::StrCat("getpeername:", strerror(errno)));
+    return absl::InternalError(
+        absl::StrCat("getpeername:", grpc_core::StrError(errno)));
   }
   return addr;
 }
@@ -925,16 +932,15 @@ bool PosixSocketWrapper::SetSocketDualStack() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static bool PosixSocketWrapper::IsSocketReusePortSupported() {
+bool PosixSocketWrapper::IsSocketReusePortSupported() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
+bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static absl::StatusOr<PosixSocketWrapper>
-PosixSocketWrapper::CreateDualStackSocket(
+absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
     /* socket_factory */,
     const experimental::EventEngine::ResolvedAddress& /*addr*/, int /*type*/,
@@ -947,7 +953,6 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
   GPR_ASSERT(false && "unimplemented");
-}
 }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */

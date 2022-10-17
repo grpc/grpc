@@ -184,7 +184,7 @@ static grpc_ares_request* my_dns_lookup_ares(
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
+    error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
     *addresses = std::make_unique<grpc_core::ServerAddressList>();
     grpc_sockaddr_in sa;

@@ -28,6 +28,7 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
@@ -51,8 +52,9 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
     if (!error.ok()) {
-      return grpc_error_to_absl_status(grpc_error_set_int(
-          error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_FAILED_PRECONDITION));
+      return grpc_error_to_absl_status(
+          grpc_error_set_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                             GRPC_STATUS_FAILED_PRECONDITION));
     }
     std::string contents_str(grpc_core::StringViewFromSlice(contents));
     grpc_slice_unref(contents);

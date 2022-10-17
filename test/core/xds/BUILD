@@ -156,6 +156,43 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_common_types_test",
+    srcs = ["xds_common_types_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_xds_client",
+        "//src/proto/grpc/testing/xds/v3:tls_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:grpc_cli_utils",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_cluster_resource_type_test",
+    srcs = ["xds_cluster_resource_type_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_xds_client",
+        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:tls_proto",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_endpoint_resource_type_test",
     srcs = ["xds_endpoint_resource_type_test.cc"],
     external_deps = ["gtest"],

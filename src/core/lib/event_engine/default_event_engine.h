@@ -38,9 +38,6 @@ namespace experimental {
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
-/// Reset the default event engine
-void ResetDefaultEventEngine();
-
 /// On ingress, ensure that an EventEngine exists in channel args via
 /// preconditioning.
 void RegisterEventEngineChannelArgPreconditioning(

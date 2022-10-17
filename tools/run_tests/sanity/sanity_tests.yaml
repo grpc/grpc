@@ -32,6 +32,8 @@
 - script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
 - script: tools/distrib/clang_format_code.sh
   cpu_cost: 1000
+- script: tools/distrib/gen_experiments_and_format.sh --check
+  cpu_cost: 1000
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
 - script: tools/distrib/yapf_code.sh --diff

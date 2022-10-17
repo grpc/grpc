@@ -40,6 +40,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -84,13 +85,13 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING &&
         it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:maxRequestMessageBytes error:should be of type number"));
     } else {
       max_request_message_bytes =
           gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_request_message_bytes == -1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:maxRequestMessageBytes error:should be non-negative"));
       }
     }
@@ -101,13 +102,13 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING &&
         it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:maxResponseMessageBytes error:should be of type number"));
     } else {
       max_response_message_bytes =
           gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_response_message_bytes == -1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:maxResponseMessageBytes error:should be non-negative"));
       }
     }
@@ -117,7 +118,7 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
         GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing message size method parameters: ",
-                     grpc_error_std_string(error)));
+                     StatusToString(error)));
     return status;
   }
   return std::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
@@ -185,7 +186,7 @@ struct call_data {
     }
   }
 
-  ~call_data() { GRPC_ERROR_UNREF(error); }
+  ~call_data() {}
 
   grpc_core::CallCombiner* call_combiner;
   grpc_core::MessageSizeParsedConfig::message_size_limits limits;
@@ -217,10 +218,11 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
       (*calld->recv_message)->Length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
     grpc_error_handle new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        GRPC_ERROR_CREATE(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
             (*calld->recv_message)->Length(), calld->limits.max_recv_size)),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+        grpc_core::StatusIntProperty::kRpcStatus,
+        GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(error, new_error);
     calld->error = error;
   }
@@ -272,11 +274,11 @@ static void message_size_start_transport_stream_op_batch(
           static_cast<size_t>(calld->limits.max_send_size)) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        grpc_error_set_int(GRPC_ERROR_CREATE(absl::StrFormat(
                                "Sent message larger than max (%u vs. %d)",
                                op->payload->send_message.send_message->Length(),
                                calld->limits.max_send_size)),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     return;

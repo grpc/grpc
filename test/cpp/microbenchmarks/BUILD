@@ -58,9 +58,13 @@ grpc_cc_test(
     name = "bm_event_engine_run",
     size = "small",
     srcs = ["bm_event_engine_run.cc"],
-    args = ["--benchmark_min_time=0.3"],
+    args = ["--benchmark_min_time=0.1"],
     external_deps = [
         "benchmark",
+    ],
+    tags = [
+        "no_mac",
+        "no_windows",
     ],
     uses_polling = False,
     deps = [

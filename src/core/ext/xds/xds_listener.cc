@@ -57,6 +57,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/json/json.h"
@@ -314,8 +315,13 @@ HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
+      ValidationErrors validation_errors;
       http_connection_manager.http_max_stream_duration =
-          ParseDuration(duration);
+          ParseDuration(duration, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status("max_stream_duration").message());
+      }
     }
   }
   // Parse filters.
@@ -352,18 +358,24 @@ HttpConnectionManagerParse(
         }
         continue;
       }
-      auto filter_type = ExtractExtensionTypeName(context, any);
-      if (!filter_type.ok()) {
-        errors.emplace_back(absl::StrCat("filter name ", name, ": ",
-                                         filter_type.status().message()));
+      ValidationErrors validation_errors;
+      ValidationErrors::ScopedField field(
+          &validation_errors,
+          absl::StrCat(".http_filters[", i, "].typed_config"));
+      auto extension = ExtractXdsExtension(context, any, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status(absl::StrCat("filter name ", name))
+                .message());
         continue;
       }
+      GPR_ASSERT(extension.has_value());
       const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
+          XdsHttpFilterRegistry::GetFilterForType(extension->type);
       if (filter_impl == nullptr) {
         if (!is_optional) {
           errors.emplace_back(absl::StrCat(
-              "no filter registered for config type ", filter_type->type));
+              "no filter registered for config type ", extension->type));
         }
         continue;
       }
@@ -371,17 +383,17 @@ HttpConnectionManagerParse(
           (!is_client && !filter_impl->IsSupportedOnServers())) {
         if (!is_optional) {
           errors.emplace_back(absl::StrFormat(
-              "Filter %s is not supported on %s", filter_type->type,
+              "Filter %s is not supported on %s", extension->type,
               is_client ? "clients" : "servers"));
         }
         continue;
       }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-          filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
+          filter_impl->GenerateFilterConfig(std::move(*extension),
                                             context.arena);
       if (!filter_config.ok()) {
         errors.emplace_back(absl::StrCat(
-            "filter config for type ", filter_type->type,
+            "filter config for type ", extension->type,
             " failed to parse: ", StatusToString(filter_config.status())));
         continue;
       }
@@ -427,49 +439,44 @@ HttpConnectionManagerParse(
         XdsListenerResource::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
-  // Guarding parsing of RouteConfig on the server side with the environmental
-  // variable since that's the first feature on the server side that will be
-  // using this.
-  if (is_client || XdsRbacEnabled()) {
-    // Found inlined route_config. Parse it to find the cluster_name.
-    if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
-            http_connection_manager_proto)) {
-      const envoy_config_route_v3_RouteConfiguration* route_config =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
-              http_connection_manager_proto);
-      auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
-      if (!rds_update.ok()) {
-        errors.emplace_back(rds_update.status().message());
-      } else {
-        http_connection_manager.rds_update = std::move(*rds_update);
-      }
+  // Found inlined route_config. Parse it to find the cluster_name.
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
+          http_connection_manager_proto)) {
+    const envoy_config_route_v3_RouteConfiguration* route_config =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
+            http_connection_manager_proto);
+    auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
+    if (!rds_update.ok()) {
+      errors.emplace_back(rds_update.status().message());
     } else {
-      // Validate that RDS must be used to get the route_config dynamically.
-      const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
-              http_connection_manager_proto);
-      if (rds == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "HttpConnectionManager neither has inlined route_config nor RDS.");
-      }
-      // Check that the ConfigSource specifies ADS.
-      const envoy_config_core_v3_ConfigSource* config_source =
-          envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
-              rds);
-      if (config_source == nullptr) {
-        errors.emplace_back(
-            "HttpConnectionManager missing config_source for RDS.");
-      } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
-                 !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
-        errors.emplace_back(
-            "HttpConnectionManager ConfigSource for RDS does not specify ADS "
-            "or SELF.");
-      } else {
-        // Get the route_config_name.
-        http_connection_manager.route_config_name = UpbStringToStdString(
-            envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-                rds));
-      }
+      http_connection_manager.rds_update = std::move(*rds_update);
+    }
+  } else {
+    // Validate that RDS must be used to get the route_config dynamically.
+    const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+            http_connection_manager_proto);
+    if (rds == nullptr) {
+      return GRPC_ERROR_CREATE(
+          "HttpConnectionManager neither has inlined route_config nor RDS.");
+    }
+    // Check that the ConfigSource specifies ADS.
+    const envoy_config_core_v3_ConfigSource* config_source =
+        envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
+            rds);
+    if (config_source == nullptr) {
+      errors.emplace_back(
+          "HttpConnectionManager missing config_source for RDS.");
+    } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
+               !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
+      errors.emplace_back(
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS "
+          "or SELF.");
+    } else {
+      // Get the route_config_name.
+      http_connection_manager.route_config_name = UpbStringToStdString(
+          envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+              rds));
     }
   }
   // Return result.
@@ -534,11 +541,12 @@ DownstreamTlsContextParse(
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
           downstream_tls_context_proto);
   if (common_tls_context != nullptr) {
-    auto common_context = CommonTlsContext::Parse(context, common_tls_context);
-    if (!common_context.ok()) {
-      errors.emplace_back(common_context.status().message());
-    } else {
-      downstream_tls_context.common_tls_context = std::move(*common_context);
+    ValidationErrors validation_errors;
+    downstream_tls_context.common_tls_context = CommonTlsContext::Parse(
+        context, common_tls_context, &validation_errors);
+    if (!validation_errors.ok()) {
+      errors.emplace_back(
+          validation_errors.status("errors in common_tls_context").message());
     }
   }
   auto* require_client_certificate =
@@ -1091,9 +1099,8 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
               context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
-    auto resource = std::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*listener);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsListenerResource>(std::move(*listener));
   }
   return result;
 }

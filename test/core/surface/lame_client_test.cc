@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -123,8 +124,11 @@ TEST(LameClientTest, MainTest) {
                                 tag(1), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
-  /* the call should immediately fail */
-  cqv.Expect(tag(1), false);
+  // Filter stack code considers this a failed to receive initial metadata
+  // result, where as promise based code interprets this as a trailers only
+  // failed request. Both are rational interpretations, so we accept the one
+  // that is implemented for each stack.
+  cqv.Expect(tag(1), grpc_core::IsPromiseBasedClientCallEnabled());
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));

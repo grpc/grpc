@@ -28,7 +28,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/slice_splitter.h"
@@ -58,12 +57,9 @@ static void assert_passthrough(grpc_slice value,
   ASSERT_NE(grpc_compression_algorithm_name(algorithm, &algorithm_name), 0);
   gpr_log(GPR_INFO,
           "assert_passthrough: value_length=%" PRIuPTR
-          " value_hash=0x%08x "
-          "algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
-          GRPC_SLICE_LENGTH(value),
-          gpr_murmur_hash3(GRPC_SLICE_START_PTR(value),
-                           GRPC_SLICE_LENGTH(value), 0),
-          algorithm_name, grpc_slice_split_mode_name(uncompressed_split_mode),
+          " algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
+          GRPC_SLICE_LENGTH(value), algorithm_name,
+          grpc_slice_split_mode_name(uncompressed_split_mode),
           grpc_slice_split_mode_name(compressed_split_mode));
 
   grpc_slice_buffer_init(&input);

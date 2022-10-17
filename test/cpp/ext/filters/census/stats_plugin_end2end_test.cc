@@ -169,6 +169,9 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 
     stub_ = EchoTestService::NewStub(grpc::CreateChannel(
         server_address_, grpc::InsecureChannelCredentials()));
+
+    // Clear out any previous spans
+    ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   }
 
   void ResetStub(std::shared_ptr<Channel> channel) {
@@ -659,7 +662,9 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
             ::testing::ElementsAre(client_method_name_),
             ::testing::Property(
                 &Distribution::mean,
-                ::testing::AllOf(::testing::Ge(50), ::testing::Le(300))))));
+                ::testing::AllOf(
+                    ::testing::Ge(50),
+                    ::testing::Le(500 * grpc_test_slowdown_factor()))))));
   }
 }
 
@@ -706,6 +711,7 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
     EXPECT_TRUE(status.ok());
   }
   absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
@@ -760,6 +766,7 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
     EXPECT_TRUE(status.ok());
   }
   absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
@@ -779,6 +786,70 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
   auto attempt_span_data =
       GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
   ASSERT_EQ(attempt_span_data, recorded_spans.end());
+}
+
+// Test the working of EnableOpenCensusStats.
+TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
+  EnableOpenCensusStats(false);
+
+  View client_started_rpcs_view(ClientStartedRpcsCumulative());
+  View server_started_rpcs_view(ServerStartedRpcsCumulative());
+  View client_completed_rpcs_view(ClientCompletedRpcsCumulative());
+  View server_completed_rpcs_view(ServerCompletedRpcsCumulative());
+
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  {
+    grpc::ClientContext context;
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    ASSERT_TRUE(status.ok());
+    EXPECT_EQ("foo", response.message());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+
+  EXPECT_TRUE(client_started_rpcs_view.GetData().int_data().empty());
+  EXPECT_TRUE(server_started_rpcs_view.GetData().int_data().empty());
+  EXPECT_TRUE(client_completed_rpcs_view.GetData().int_data().empty());
+  EXPECT_TRUE(server_completed_rpcs_view.GetData().int_data().empty());
+
+  EnableOpenCensusStats(true);
+}
+
+// Test the working of EnableOpenCensusTracing.
+TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
+  EnableOpenCensusTracing(false);
+
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // No span should be exported
+  ASSERT_EQ(0, recorded_spans.size());
+
+  EnableOpenCensusTracing(true);
 }
 
 }  // namespace

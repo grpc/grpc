@@ -132,12 +132,11 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   async_connect* ac = static_cast<async_connect*>(acp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
+            ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
-    grpc_fd_shutdown(
-        ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
+    grpc_fd_shutdown(ac->fd, GRPC_ERROR_CREATE("connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -172,7 +171,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
+            ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
 
   gpr_mu_lock(&ac->mu);
@@ -186,8 +185,8 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (!error.ok()) {
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
+    error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kOsError,
+                               "Timeout occurred");
     goto finish;
   }
 
@@ -261,12 +260,15 @@ finish:
   gpr_mu_unlock(&ac->mu);
   if (!error.ok()) {
     std::string str;
-    bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
+    bool ret = grpc_error_get_str(
+        error, grpc_core::StatusStrProperty::kDescription, &str);
     GPR_ASSERT(ret);
     std::string description =
         absl::StrCat("Failed to connect to remote host: ", str);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, description);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kDescription, description);
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kTargetAddress, addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -325,8 +327,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
 
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   if (!addr_uri.ok()) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
+    grpc_error_handle error = GRPC_ERROR_CREATE(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
@@ -350,8 +351,8 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               addr_uri.value());
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kTargetAddress, addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;

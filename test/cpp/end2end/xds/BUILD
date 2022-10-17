@@ -215,6 +215,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -346,6 +347,7 @@ grpc_cc_test(
         "//src/proto/grpc/lookup/v1:rls_config_proto",
         "//src/proto/grpc/lookup/v1:rls_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:rls_server",
     ],
 )

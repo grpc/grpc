@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -175,11 +176,11 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
               static_cast<uint32_t>(calld->max_recv_message_length_)) {
         GPR_DEBUG_ASSERT(calld->error_.ok());
         calld->error_ = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            GRPC_ERROR_CREATE(
                 absl::StrFormat("Received message larger than max (%u vs. %d)",
                                 (*calld->recv_message_)->Length(),
                                 calld->max_recv_message_length_)),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+            StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
         return calld->ContinueRecvMessageReadyCallback(calld->error_);
       }
       SliceBuffer decompressed_slices;
@@ -187,7 +188,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
                               (*calld->recv_message_)->c_slice_buffer(),
                               decompressed_slices.c_slice_buffer()) == 0) {
         GPR_DEBUG_ASSERT(calld->error_.ok());
-        calld->error_ = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        calld->error_ = GRPC_ERROR_CREATE(absl::StrCat(
             "Unexpected error decompressing data for algorithm with "
             "enum value ",
             calld->algorithm_));

@@ -45,11 +45,18 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 
 EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str);
 
-// A helper method to exchange data between two endpoints. It is assumed that
-// both endpoints are connected. The data (specified as a string) is written by
-// the sender_endpoint and read by the receiver_endpoint. It returns OK
-// status only if data written == data read. It also blocks the calling thread
-// until said Write and Read operations are complete.
+// Returns a random message with bounded length.
+std::string GetNextSendMessage();
+
+// Waits until the use_count of the event engine shared_ptr has reached 1
+// and returns.
+void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine);
+
+// A helper method to exchange data between two endpoints. It is assumed
+// that both endpoints are connected. The data (specified as a string) is
+// written by the sender_endpoint and read by the receiver_endpoint. It
+// returns OK status only if data written == data read. It also blocks the
+// calling thread until said Write and Read operations are complete.
 absl::Status SendValidatePayload(std::string data,
                                  EventEngine::Endpoint* send_endpoint,
                                  EventEngine::Endpoint* receive_endpoint);

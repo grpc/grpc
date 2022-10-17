@@ -34,7 +34,7 @@ void BM_ExecCtx_Run(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     for (int i = 0; i < cb_count; i++) {
-      exec_ctx.Run(DEBUG_LOCATION, &cb, GRPC_ERROR_NONE);
+      exec_ctx.Run(DEBUG_LOCATION, &cb, absl::OkStatus());
       exec_ctx.Flush();
     }
   }
@@ -68,7 +68,7 @@ void BM_ExecCtx_RunCounted(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     for (int i = 0; i < cb_count; i++) {
-      exec_ctx.Run(DEBUG_LOCATION, &cb, GRPC_ERROR_NONE);
+      exec_ctx.Run(DEBUG_LOCATION, &cb, absl::OkStatus());
       exec_ctx.Flush();
     }
     data.signal->WaitForNotification();

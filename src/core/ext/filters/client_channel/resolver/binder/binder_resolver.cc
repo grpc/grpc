@@ -18,6 +18,7 @@
 
 #include "absl/status/status.h"
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -95,7 +96,7 @@ class BinderResolverFactory : public ResolverFactory {
       absl::string_view path, grpc_resolved_address* resolved_addr) {
     path = absl::StripPrefix(path, "/");
     if (path.empty()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING("path is empty");
+      return GRPC_ERROR_CREATE("path is empty");
     }
     // Store parsed path in a unix socket so it can be reinterpreted as
     // sockaddr. An invalid address family (AF_MAX) is set to make sure it won't
@@ -107,7 +108,7 @@ class BinderResolverFactory : public ResolverFactory {
     static_assert(sizeof(un->sun_path) >= 101,
                   "unix socket path size is unexpectedly short");
     if (path.size() + 1 > sizeof(un->sun_path)) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return GRPC_ERROR_CREATE(
           absl::StrCat(path, " is too long to be handled"));
     }
     // `un` has already be set to zero, no need to append null after the string
@@ -126,7 +127,7 @@ class BinderResolverFactory : public ResolverFactory {
       }
       grpc_error_handle error = BinderAddrPopulate(uri.path(), &addr);
       if (!error.ok()) {
-        gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
+        gpr_log(GPR_ERROR, "%s", StatusToString(error).c_str());
         return false;
       }
     }

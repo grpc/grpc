@@ -516,17 +516,17 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   void CheckRequestMetadata(grpc_error_handle error) {
     gpr_log(GPR_INFO, "expected_error: %s",
-            grpc_error_std_string(expected_error_).c_str());
-    gpr_log(GPR_INFO, "actual_error: %s", grpc_error_std_string(error).c_str());
+            StatusToString(expected_error_).c_str());
+    gpr_log(GPR_INFO, "actual_error: %s", StatusToString(error).c_str());
     if (expected_error_.ok()) {
       GPR_ASSERT(error.ok());
     } else {
       std::string expected_error;
-      GPR_ASSERT(grpc_error_get_str(expected_error_, GRPC_ERROR_STR_DESCRIPTION,
-                                    &expected_error));
+      GPR_ASSERT(grpc_error_get_str(
+          expected_error_, StatusStrProperty::kDescription, &expected_error));
       std::string actual_error;
-      GPR_ASSERT(
-          grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
+      GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                    &actual_error));
       GPR_ASSERT(expected_error == actual_error);
     }
     md_.Remove(HttpAuthorityMetadata());
@@ -821,9 +821,7 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token."),
-      {});
+      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
@@ -921,9 +919,7 @@ TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token."),
-      {});
+      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -1188,9 +1184,7 @@ TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token."),
-      {});
+      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1258,9 +1252,7 @@ TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token."),
-      {});
+      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -1293,9 +1285,7 @@ TEST(CredentialsTest, TestStsCredsHttpFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token."),
-      {});
+      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -1483,7 +1473,7 @@ TEST(CredentialsTest, TestJwtCredsSigningFailure) {
   char* json_key_string = test_json_key_str();
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT."), {});
+      GRPC_ERROR_CREATE("Could not generate JWT."), {});
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
@@ -1961,7 +1951,7 @@ TEST(CredentialsTest, TestMetadataPluginFailure) {
   grpc_metadata_credentials_plugin plugin;
   ExecCtx exec_ctx;
   auto md_state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      GRPC_ERROR_CREATE(
           absl::StrCat("Getting metadata from plugin failed with error: ",
                        plugin_error_details)),
       {});
@@ -2526,11 +2516,10 @@ TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Invalid token url: invalid_token_url.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  grpc_error_handle error =
+      GRPC_ERROR_CREATE("Invalid token url: invalid_token_url.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
@@ -2559,12 +2548,11 @@ TEST(CredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+  grpc_error_handle error = GRPC_ERROR_CREATE(
       "Invalid service account impersonation url: "
       "invalid_service_account_impersonation_url.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
@@ -2594,13 +2582,12 @@ TEST(CredentialsTest,
       httpcli_get_should_not_be_called,
       external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token,
       httpcli_put_should_not_be_called);
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+  grpc_error_handle error = GRPC_ERROR_CREATE(
       "Missing or invalid access_token in "
       "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599,\"token_"
       "type\":\"Bearer\"}.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
@@ -2735,8 +2722,8 @@ TEST(CredentialsTest,
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
   std::string actual_error;
-  GPR_ASSERT(
-      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
   GPR_ASSERT(absl::StartsWith(actual_error, "Invalid credential source url."));
 }
 
@@ -2846,10 +2833,9 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to load file");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  error = GRPC_ERROR_CREATE("Failed to load file");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
@@ -2891,11 +2877,10 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "The content of the file is not a valid json object.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  error =
+      GRPC_ERROR_CREATE("The content of the file is not a valid json object.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
@@ -3282,8 +3267,8 @@ TEST(CredentialsTest,
   GPR_ASSERT(creds == nullptr);
   std::string expected_error = "environment_id does not match.";
   std::string actual_error;
-  GPR_ASSERT(
-      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
   GPR_ASSERT(expected_error == actual_error);
 }
 
@@ -3310,11 +3295,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Invalid region url: invalid_region_url.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  error = GRPC_ERROR_CREATE("Invalid region url: invalid_region_url.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
@@ -3348,10 +3331,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid url: invalid_url.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  error = GRPC_ERROR_CREATE("Invalid url: invalid_url.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
@@ -3385,11 +3367,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Missing role name when retrieving signing keys.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  error = GRPC_ERROR_CREATE("Missing role name when retrieving signing keys.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
@@ -3424,11 +3404,9 @@ TEST(CredentialsTest,
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Creating aws request signer failed.");
-  grpc_error_handle expected_error =
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occurred when fetching oauth2 token.", &error, 1);
+  error = GRPC_ERROR_CREATE("Creating aws request signer failed.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,

@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -39,6 +40,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -136,7 +138,7 @@ ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
       sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
   if (!call_config.error.ok()) {
     auto r = Immediate(ServerMetadataHandle(
-        absl::UnavailableError(grpc_error_std_string(call_config.error))));
+        absl::UnavailableError(StatusToString(call_config.error))));
     return std::move(r);
   }
   auto& ctx = GetContext<

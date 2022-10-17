@@ -28,14 +28,13 @@ package(
     ],
 )
 
-# This is an EXPERIMENTAL target subject to change.
 grpc_cc_library(
     name = "observability",
     srcs = [
         "observability.cc",
     ],
     hdrs = [
-        "observability.h",
+        "//:include/grpcpp/ext/gcp_observability.h",
     ],
     external_deps = [
         "absl/status",
@@ -50,7 +49,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":observability_config",
         "//:gpr",
@@ -85,5 +84,6 @@ grpc_cc_library(
         "//:json_args",
         "//:json_object_loader",
         "//:slice_refcount",
+        "//:status_helper",
     ],
 )

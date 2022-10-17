@@ -49,11 +49,13 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -161,7 +163,7 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
   if (GPR_UNLIKELY(!error->ok())) {
-    gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
+    gpr_log(GPR_ERROR, "error: %s", StatusToString(*error).c_str());
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
@@ -635,7 +637,7 @@ Subchannel::Subchannel(SubchannelKey key,
   // triggering segmentation faults. To prevent this issue, we call a grpc_init
   // here and a grpc_shutdown in the subchannel destructor.
   InitInternally();
-  GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
+  global_stats().IncrementClientSubchannelsCreated();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
@@ -907,7 +909,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
-            this, key_.ToString().c_str(), grpc_error_std_string(error).c_str(),
+            this, key_.ToString().c_str(), StatusToString(error).c_str(),
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
@@ -944,7 +946,7 @@ bool Subchannel::PublishTransportLocked() {
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR,
             "subchannel %p %s: error initializing subchannel stack: %s", this,
-            key_.ToString().c_str(), grpc_error_std_string(error).c_str());
+            key_.ToString().c_str(), StatusToString(error).c_str());
     return false;
   }
   RefCountedPtr<channelz::SocketNode> socket =
