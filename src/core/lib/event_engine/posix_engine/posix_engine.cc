@@ -410,6 +410,7 @@ PosixEventEngine::~PosixEventEngine() {
     poller_manager_->TriggerShutdown();
   }
 #endif  // GRPC_POSIX_SOCKET_TCP
+  executor_->Quiesce();
 }
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {

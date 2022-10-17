@@ -7986,6 +7986,16 @@ targets:
   - test/core/client_channel/outlier_detection_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+- name: outlier_detection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/outlier_detection_test.cc
+  deps:
+  - grpc_test_util
 - name: overload_test
   gtest: true
   build: test
@@ -11300,7 +11310,6 @@ targets:
   run: false
   language: c++
   headers:
-  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/no_op_http_filter.h
