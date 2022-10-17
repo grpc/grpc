@@ -7951,6 +7951,16 @@ targets:
   - test/core/client_channel/outlier_detection_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+- name: outlier_detection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/outlier_detection_test.cc
+  deps:
+  - grpc_test_util
 - name: overload_test
   gtest: true
   build: test
