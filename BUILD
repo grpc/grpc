@@ -2843,22 +2843,20 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/posix_engine_listener.h",
     ],
     external_deps = [
-        "absl/cleanup",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
-        "absl/strings",
     ],
     deps = [
         "event_engine_base_hdrs",
         "gpr",
         "iomgr_port",
+        "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
         "posix_event_engine_listener_utils",
         "posix_event_engine_tcp_socket_utils",
-        "status_helper",
     ],
 )
 
@@ -2934,7 +2932,6 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
-        "event_engine_poller",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
@@ -2947,7 +2944,6 @@ grpc_cc_library(
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
         "posix_event_engine_listener",
-        "posix_event_engine_listener_utils",
         "posix_event_engine_poller_posix_default",
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
