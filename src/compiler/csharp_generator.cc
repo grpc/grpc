@@ -23,6 +23,8 @@
 #include <sstream>
 #include <vector>
 
+#include <grpcpp/grpcpp.h>
+
 #include "src/compiler/config.h"
 #include "src/compiler/csharp_generator_helpers.h"
 
@@ -739,7 +741,8 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool internal_access) {
   GenerateDocCommentBody(out, service);
 
-  out->Print("[global::System.Runtime.CompilerServices.CompilerGenerated]");
+  out->Print("[global::System.CodeDom.Compiler.GeneratedCode(\"protocol buffer compiler\", \"$version$\")]",
+             "version", grpc::Version());
   out->Print("$access_level$ static partial class $classname$\n",
              "access_level", GetAccessLevel(internal_access), "classname",
              GetServiceClassName(service));
