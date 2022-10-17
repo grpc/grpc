@@ -44,7 +44,6 @@ py_binary(
         ":hash_name_py_pb2",
         ":hash_name_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
-        "@six",
     ],
 )
 
