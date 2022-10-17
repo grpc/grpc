@@ -18,11 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "exec_ctx.h"
-
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
