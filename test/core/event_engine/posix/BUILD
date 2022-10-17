@@ -201,7 +201,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     tags = [
-        "event_engine_client_test",
         "no_windows",
     ],
     uses_event_engine = True,
