@@ -488,9 +488,7 @@ EXTRAS_REQUIRES = {
 }
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
-    'Sphinx~=1.8.1',
-    'six>=1.10',
-) if ENABLE_DOCUMENTATION_BUILD else ()
+    'Sphinx~=1.8.1',) if ENABLE_DOCUMENTATION_BUILD else ()
 
 try:
     import Cython

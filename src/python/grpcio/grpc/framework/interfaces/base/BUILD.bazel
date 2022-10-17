@@ -27,7 +27,6 @@ py_library(
     srcs = ["base.py"],
     deps = [
         "//src/python/grpcio/grpc/framework/foundation:abandonment",
-        "@six//:six",
     ],
 )
 
