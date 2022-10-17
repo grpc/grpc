@@ -39,6 +39,11 @@ exports_files([
     "etc/roots.pem",
 ])
 
+exports_files(
+    glob(["include/**"]),
+    visibility = ["//:__subpackages__"],
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},
@@ -552,6 +557,7 @@ GRPC_XDS_TARGETS = [
     "grpc_lb_policy_xds_cluster_impl",
     "grpc_lb_policy_xds_cluster_manager",
     "grpc_lb_policy_xds_cluster_resolver",
+    "grpc_lb_policy_xds_wrr_locality",
     "grpc_resolver_xds",
     "grpc_resolver_c2p",
     "grpc_xds_server_config_fetcher",
@@ -5023,15 +5029,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_xds_common",
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+    name = "grpc_lb_xds_attributes",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc",
     ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h",
+    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "gpr_platform",
         "ref_counted_ptr",
         "server_address",
+        "useful",
         "xds_client",
     ],
 )
@@ -5056,9 +5067,8 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
-        "grpc_lb_policy_ring_hash",
+        "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
-        "grpc_lb_xds_common",
         "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_resolver_fake",
@@ -5102,8 +5112,8 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
-        "grpc_lb_xds_common",
         "grpc_public_hdrs",
         "grpc_trace",
         "grpc_xds_client",
@@ -5163,6 +5173,42 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_xds_wrr_locality",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "config",
+        "debug_location",
+        "gpr",
+        "grpc_base",
+        "grpc_lb_xds_attributes",
+        "grpc_public_hdrs",
+        "grpc_trace",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
+        "orphanable",
+        "pollset_set",
+        "ref_counted_ptr",
+        "server_address",
+        "subchannel_interface",
+        "validation_errors",
+        "xds_client",
     ],
 )
 
@@ -7774,6 +7820,20 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "slice_refcount",
+    ],
+)
+
+# This is an EXPERIMENTAL target subject to change.
+grpc_cc_library(
+    name = "grpcpp_gcp_observability",
+    hdrs = [
+        "include/grpcpp/ext/gcp_observability.h",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:grpcpp_gcp_observability"],
+    deps = [
+        "//src/cpp/ext/gcp:observability",
     ],
 )
 

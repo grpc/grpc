@@ -14,12 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_H
-#define GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_H
-
-// TODO(yashykt): This file would have been in the top include/grpcpp directory
-// instead of in src/, but I'm not yet sure about the naming, so keeping it here
-// till we decide.
+#ifndef GRPCPP_EXT_GCP_OBSERVABILITY_H
+#define GRPCPP_EXT_GCP_OBSERVABILITY_H
 
 #include "absl/status/status.h"
 
@@ -32,4 +28,4 @@ absl::Status GcpObservabilityInit();
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_H
+#endif  // GRPCPP_EXT_GCP_OBSERVABILITY_H
