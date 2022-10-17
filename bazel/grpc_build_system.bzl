@@ -154,6 +154,7 @@ def grpc_cc_library(
       alwayslink: Whether to enable alwayslink on the cc_library.
       data: Data dependencies.
       tags: Tags to apply to the rule.
+      linkstatic: Extra libraries to link.
       linkstatic: Whether to enable linkstatic on the cc_library.
     """
     visibility = _update_visibility(visibility)

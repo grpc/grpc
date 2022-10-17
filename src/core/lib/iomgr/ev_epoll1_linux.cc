@@ -466,7 +466,9 @@ static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
 
 static void fd_has_errors(grpc_fd* fd) { fd->error_closure->SetReady(); }
 
-static void fd_set_pre_allocated(grpc_fd* fd) { fd->is_pre_allocated = true; }
+static void fd_set_pre_allocated(grpc_fd* fd) {
+  fd->is_pre_allocated = true;
+}
 
 /*******************************************************************************
  * Pollset Definitions
