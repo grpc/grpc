@@ -131,6 +131,8 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 /* gRPC core internal version of grpc_call_cancel that does not create
  * exec_ctx. */
 void grpc_call_cancel_internal(grpc_call* call);
+void grpc_call_cancel_with_status_internal(grpc_call* call,
+                                           absl::Status status);
 
 /* Given the top call_element, get the call object. */
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);

@@ -58,6 +58,11 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
       // Only one message will be in flight at a time; subsequent
       // messages will not be sent until this one is done.
       virtual void SendMessage(std::string payload) = 0;
+
+      // Cancels the call with a specific status.
+      // If this is not invoked when the object is orphaned, the call
+      // will be cancelled with status CANCELLED.
+      virtual void CancelWithStatus(absl::Status status) = 0;
     };
 
     // Create a streaming call on this transport for the specified method.

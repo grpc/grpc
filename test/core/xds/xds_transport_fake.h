@@ -94,6 +94,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     };
 
     void SendMessage(std::string payload) override;
+    void CancelWithStatus(absl::Status status) override;
 
     RefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;

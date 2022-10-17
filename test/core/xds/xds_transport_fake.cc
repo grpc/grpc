@@ -43,20 +43,7 @@ namespace grpc_core {
 //
 
 void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
-  {
-    MutexLock lock(&mu_);
-    // Can't call event_handler_->OnStatusReceived() or unref event_handler_
-    // synchronously, since those operations will trigger code in
-    // XdsClient that acquires its mutex, but it was already holding its
-    // mutex when it called us, so it would deadlock.
-    GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
-                                  status_sent = status_sent_]() mutable {
-      ExecCtx exec_ctx;
-      if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
-      event_handler.reset();
-    });
-    status_sent_ = true;
-  }
+  CancelWithStatus(absl::CancelledError());
   transport_->RemoveStream(method_, this);
   Unref();
 }
@@ -75,6 +62,24 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
         event_handler->OnRequestSent(/*ok=*/true);
         event_handler.reset();
       });
+}
+
+void FakeXdsTransportFactory::FakeStreamingCall::CancelWithStatus(
+    absl::Status status) {
+  MutexLock lock(&mu_);
+  if (event_handler_ == nullptr) return;
+  // Can't call event_handler_->OnStatusReceived() or unref event_handler_
+  // synchronously, since those operations will trigger code in
+  // XdsClient that acquires its mutex, but it was already holding its
+  // mutex when it called us, so it would deadlock.
+  GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
+                                status_sent = status_sent_,
+                                status = std::move(status)]() mutable {
+    ExecCtx exec_ctx;
+    if (!status_sent) event_handler->OnStatusReceived(std::move(status));
+    event_handler.reset();
+  });
+  status_sent_ = true;
 }
 
 bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {

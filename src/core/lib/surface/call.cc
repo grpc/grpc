@@ -2936,6 +2936,11 @@ void grpc_call_cancel_internal(grpc_call* call) {
   grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
 }
 
+void grpc_call_cancel_with_status_internal(grpc_call* call,
+                                           absl::Status status) {
+  grpc_core::Call::FromC(call)->CancelWithError(std::move(status));
+}
+
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
     grpc_call* call) {
   return grpc_core::Call::FromC(call)->test_only_compression_algorithm();

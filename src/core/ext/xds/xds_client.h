@@ -73,7 +73,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
             OrphanablePtr<XdsTransportFactory> transport_factory,
-            Duration resource_request_timeout = Duration::Seconds(15));
+            Duration resource_request_timeout = Duration::Seconds(15),
+            Duration seen_ads_response_timeout = Duration::Minutes(1));
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
@@ -144,10 +145,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Expected to be invoked by wrapper languages in their CSDS service
   // implementation.
   std::string DumpClientConfigBinary();
-
-  grpc_event_engine::experimental::EventEngine* engine() {
-    return engine_.get();
-  }
 
  private:
   struct XdsResourceKey {
@@ -224,10 +221,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
 
-    // Stores the most recent accepted resource version for each resource type.
-    std::map<const XdsResourceType*, std::string /*version*/>
-        resource_type_version_map_;
-
     absl::Status status_;
   };
 
@@ -303,7 +296,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   OrphanablePtr<XdsTransportFactory> transport_factory_;
-  const Duration request_timeout_;
+  const Duration resource_request_timeout_;
+  const Duration seen_ads_response_timeout_;
   const bool xds_federation_enabled_;
   XdsApi api_;
   WorkSerializer work_serializer_;
