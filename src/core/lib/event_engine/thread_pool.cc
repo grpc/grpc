@@ -27,6 +27,7 @@
 #include "absl/base/attributes.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "thread_pool.h"
 
 #include <grpc/support/log.h>
 
@@ -147,7 +148,7 @@ ThreadPool::ThreadPool() {
   }
 }
 
-ThreadPool::~ThreadPool() {
+void ThreadPool::Quiesce() {
   state_->queue.SetShutdown();
   // Wait until all threads are exited.
   // Note that if this is a threadpool thread then we won't exit this thread
@@ -155,9 +156,15 @@ ThreadPool::~ThreadPool() {
   // thread running instead of zero.
   state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0,
                                              "shutting down");
+  quiesced_.store(true, std::memory_order_relaxed);
+}
+
+ThreadPool::~ThreadPool() {
+  GPR_ASSERT(quiesced_.load(std::memory_order_relaxed));
 }
 
 void ThreadPool::Run(absl::AnyInvocable<void()> callback) {
+  GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
   if (state_->queue.Add(std::move(callback))) {
     StartThread(state_, StartThreadReason::kNoWaitersWhenScheduling);
   }
