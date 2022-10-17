@@ -11298,7 +11298,6 @@ targets:
   run: false
   language: c++
   headers:
-  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/no_op_http_filter.h
