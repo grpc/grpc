@@ -95,14 +95,11 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
     : executor_(std::make_shared<ThreadPool>()) {
-#ifdef GRPC_POSIX_SOCKET_TCP
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
-#endif
 }
 
 PosixEventEngine::PosixEventEngine()
     : executor_(std::make_shared<ThreadPool>()) {
-#ifdef GRPC_POSIX_SOCKET_TCP
   if (grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
     poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
     if (poller_manager_->Poller() != nullptr) {
@@ -111,7 +108,6 @@ PosixEventEngine::PosixEventEngine()
       });
     }
   }
-#endif
 }
 
 void PosixEventEngine::PollerWorkInternal(
