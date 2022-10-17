@@ -38,11 +38,11 @@ TEST(TryConcurrentlyTest, Immediate) {
   EXPECT_EQ(d(), Poll<absl::Status>(absl::OkStatus()));
   auto e = TryConcurrently([] {
              return absl::OkStatus();
-           }).HelperPush([]() -> Poll<absl::Status> { return Pending{}; });
+           }).Push([]() -> Poll<absl::Status> { return Pending{}; });
   EXPECT_EQ(e(), Poll<absl::Status>(absl::OkStatus()));
   auto f = TryConcurrently([] {
              return absl::OkStatus();
-           }).HelperPull([]() -> Poll<absl::Status> { return Pending{}; });
+           }).Pull([]() -> Poll<absl::Status> { return Pending{}; });
   EXPECT_EQ(f(), Poll<absl::Status>(absl::OkStatus()));
 }
 
