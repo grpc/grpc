@@ -24,7 +24,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
@@ -32,27 +33,20 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
 absl::StatusOr<RefCountedPtr<ServiceConfig>> ServiceConfigImpl::Create(
     const ChannelArgs& args, absl::string_view json_string) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(json_string, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    absl::Status status =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
-    return status;
-  }
+  auto json = Json::Parse(json_string);
+  if (!json.ok()) return json.status();
   absl::Status status;
   auto service_config = MakeRefCounted<ServiceConfigImpl>(
-      args, std::string(json_string), std::move(json), &status);
+      args, std::string(json_string), std::move(*json), &status);
   if (!status.ok()) return status;
   return service_config;
 }
@@ -85,7 +79,7 @@ ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
 
 ServiceConfigImpl::~ServiceConfigImpl() {
   for (auto& p : parsed_method_configs_map_) {
-    grpc_slice_unref_internal(p.first);
+    CSliceUnref(p.first);
   }
 }
 
@@ -102,7 +96,7 @@ absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
     errors.emplace_back(parsed_configs_or.status().message());
   } else {
     auto parsed_configs =
-        absl::make_unique<ServiceConfigParser::ParsedConfigVector>(
+        std::make_unique<ServiceConfigParser::ParsedConfigVector>(
             std::move(*parsed_configs_or));
     parsed_method_config_vectors_storage_.push_back(std::move(parsed_configs));
     vector_ptr = parsed_method_config_vectors_storage_.back().get();
@@ -135,7 +129,7 @@ absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
                   "field:name error:multiple method configs with same name");
               // The map entry already existed, so we need to unref the
               // key we just created.
-              grpc_slice_unref_internal(key);
+              CSliceUnref(key);
             } else {
               value = vector_ptr;
             }

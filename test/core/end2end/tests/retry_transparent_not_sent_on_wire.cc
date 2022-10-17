@@ -19,6 +19,7 @@
 
 #include <new>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
@@ -34,6 +35,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -236,7 +238,6 @@ static void test_retry_transparent_not_sent_on_wire(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   GPR_ASSERT(
@@ -283,7 +284,7 @@ class FailFirstTenCallsFilter {
     static grpc_error_handle Init(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
 
     static void Destroy(grpc_call_element* elem,
@@ -308,10 +309,10 @@ class FailFirstTenCallsFilter {
         if (!batch->cancel_stream) {
           grpc_transport_stream_op_batch_finish_with_failure(
               batch,
-              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "FailFirstTenCallsFilter failing batch"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 GRPC_STATUS_UNAVAILABLE),
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE("FailFirstTenCallsFilter failing batch"),
+                  grpc_core::StatusIntProperty::kRpcStatus,
+                  GRPC_STATUS_UNAVAILABLE),
               calld->call_combiner_);
           return;
         }
@@ -330,7 +331,7 @@ class FailFirstTenCallsFilter {
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
     new (elem->channel_data) FailFirstTenCallsFilter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* elem) {

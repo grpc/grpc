@@ -20,22 +20,23 @@
 
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
 
 // A class that makes it easy to gracefully switch child policies.
 //
 // Callers should instantiate this instead of using
-// LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy().  Once
-// instantiated, this object will automatically take care of
-// constructing the child policy as needed upon receiving an update.
+// CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy().
+// Once instantiated, this object will automatically take care of constructing
+// the child policy as needed upon receiving an update.
 class ChildPolicyHandler : public LoadBalancingPolicy {
  public:
   ChildPolicyHandler(Args args, TraceFlag* tracer)
@@ -43,7 +44,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return "child_policy_handler"; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 

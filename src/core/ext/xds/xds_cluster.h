@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -35,14 +34,15 @@
 #include "upb/def.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 
 namespace grpc_core {
 
-struct XdsClusterResource {
+struct XdsClusterResource : public XdsResourceType::ResourceData {
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
   ClusterType cluster_type;
   // For cluster type EDS.
@@ -61,7 +61,7 @@ struct XdsClusterResource {
 
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
-  absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
+  absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
 
   // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
   std::string lb_policy;
@@ -84,7 +84,8 @@ struct XdsClusterResource {
            lb_policy == other.lb_policy &&
            min_ring_size == other.min_ring_size &&
            max_ring_size == other.max_ring_size &&
-           max_concurrent_requests == other.max_concurrent_requests;
+           max_concurrent_requests == other.max_concurrent_requests &&
+           outlier_detection == other.outlier_detection;
   }
 
   std::string ToString() const;
@@ -100,9 +101,9 @@ class XdsClusterResourceType
     return "envoy.api.v2.Cluster";
   }
 
-  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
-                                      absl::string_view serialized_resource,
-                                      bool is_v2) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource,
+                      bool is_v2) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 

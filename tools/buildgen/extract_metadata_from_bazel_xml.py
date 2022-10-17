@@ -655,7 +655,8 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     tests = [
         test for test in tests
         if not test.startswith('test/cpp/ext/filters/census:') and
-        not test.startswith('test/core/xds:xds_channel_stack_modifier_test')
+        not test.startswith('test/core/xds:xds_channel_stack_modifier_test') and
+        not test.startswith('test/cpp/ext/gcp:')
     ]
 
     # missing opencensus/stats/stats.h
@@ -758,9 +759,9 @@ def _generate_build_extra_metadata_for_tests(
             platforms.append('linux')
             platforms.append(
                 'posix')  # there is no posix-specific tag in bazel BUILD
-            if not 'no_mac' in bazel_tags:
+            if 'no_mac' not in bazel_tags:
                 platforms.append('mac')
-            if not 'no_windows' in bazel_tags:
+            if 'no_windows' not in bazel_tags:
                 platforms.append('windows')
             test_dict['platforms'] = platforms
 
@@ -787,7 +788,7 @@ def _generate_build_extra_metadata_for_tests(
     tests_by_simple_name = {}
     for test_name, test_dict in list(test_metadata.items()):
         simple_test_name = test_dict['_RENAME']
-        if not simple_test_name in tests_by_simple_name:
+        if simple_test_name not in tests_by_simple_name:
             tests_by_simple_name[simple_test_name] = []
         tests_by_simple_name[simple_test_name].append(test_name)
 

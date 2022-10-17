@@ -70,9 +70,6 @@ def _args():
                       type=str,
                       default="",
                       help='Regex to filter benchmarks run')
-    argp.add_argument('--counters', dest='counters', action='store_true')
-    argp.add_argument('--no-counters', dest='counters', action='store_false')
-    argp.set_defaults(counters=True)
     argp.add_argument('-n', '--new', type=str, help='New benchmark name')
     argp.add_argument('-o', '--old', type=str, help='Old benchmark name')
     argp.add_argument('-v',
@@ -161,7 +158,7 @@ def fmt_dict(d):
     return ''.join(["    " + k + ": " + str(d[k]) + "\n" for k in d])
 
 
-def diff(bms, loops, regex, track, old, new, counters):
+def diff(bms, loops, regex, track, old, new):
     benchmarks = collections.defaultdict(Benchmark)
 
     badjson_files = {}
@@ -181,25 +178,12 @@ def diff(bms, loops, regex, track, old, new, counters):
                 js_old_opt = _read_json(
                     '%s.%s.opt.%s.%d.json' % (bm, stripped_line, old, loop),
                     badjson_files, nonexistant_files)
-                if counters:
-                    js_new_ctr = _read_json(
-                        '%s.%s.counters.%s.%d.json' %
-                        (bm, stripped_line, new, loop), badjson_files,
-                        nonexistant_files)
-                    js_old_ctr = _read_json(
-                        '%s.%s.counters.%s.%d.json' %
-                        (bm, stripped_line, old, loop), badjson_files,
-                        nonexistant_files)
-                else:
-                    js_new_ctr = None
-                    js_old_ctr = None
-
-                for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+                for row in bm_json.expand_json(js_new_opt):
                     name = row['cpp_name']
                     if name.endswith('_mean') or name.endswith('_stddev'):
                         continue
                     benchmarks[name].add_sample(track, row, True)
-                for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+                for row in bm_json.expand_json(js_old_opt):
                     name = row['cpp_name']
                     if name.endswith('_mean') or name.endswith('_stddev'):
                         continue

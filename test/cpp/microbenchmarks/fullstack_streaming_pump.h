@@ -25,7 +25,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -70,7 +69,6 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     }
     response_rw.Read(&recv_request, tag(0));
     for (auto _ : state) {
-      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       request_rw->Write(send_request, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -103,7 +101,6 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     }
     GPR_ASSERT(final_status.ok());
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }
@@ -139,7 +136,6 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     }
     request_rw->Read(&recv_response, tag(0));
     for (auto _ : state) {
-      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       response_rw.Write(send_response, tag(1));
       while (true) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -161,7 +157,6 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
       need_tags &= ~(1 << i);
     }
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(state.range(0) * state.iterations());
 }

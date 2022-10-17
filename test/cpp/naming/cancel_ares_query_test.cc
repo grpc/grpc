@@ -37,6 +37,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -221,7 +222,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   // Make a second zero-timeout poll (in case the first one
@@ -229,7 +230,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(pollset);

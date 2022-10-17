@@ -18,27 +18,30 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <functional>
-#include <set>
+#include <memory>
+#include <string>
 #include <thread>
+#include <vector>
 
-#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/port.h"
@@ -288,7 +291,7 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   const int kNumCalls = 64;
   std::vector<std::thread> threads;
   threads.reserve(kNumCalls);
-  std::unique_ptr<TestServer> test_server = absl::make_unique<TestServer>();
+  std::unique_ptr<TestServer> test_server = std::make_unique<TestServer>();
   const std::string server_address = test_server->address();
   for (int i = 0; i < kNumCalls; i++) {
     threads.push_back(std::thread([server_address]() {

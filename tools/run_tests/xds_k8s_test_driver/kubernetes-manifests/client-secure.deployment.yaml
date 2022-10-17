@@ -6,16 +6,19 @@ metadata:
   namespace: ${namespace_name}
   labels:
     app: ${deployment_name}
+    deployment_id: ${deployment_id}
     owner: xds-k8s-interop-test
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: ${deployment_name}
+      deployment_id: ${deployment_id}
   template:
     metadata:
       labels:
         app: ${deployment_name}
+        deployment_id: ${deployment_id}
         owner: xds-k8s-interop-test
       annotations:
         security.cloud.google.com/use-workload-certificates: ""
@@ -66,8 +69,6 @@ spec:
             % if config_mesh:
             - "--config-mesh-experimental=${config_mesh}"
             % endif
-            - "--include-v3-features-experimental"
-            - "--include-psm-security-experimental"
           resources:
             limits:
               cpu: 100m

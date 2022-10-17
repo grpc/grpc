@@ -20,16 +20,14 @@
 
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/util/test_config.h"
 
@@ -46,21 +44,21 @@ static void expect_slice_eq(grpc_slice expected, grpc_slice slice,
     gpr_free(he);
     all_ok = 0;
   }
-  grpc_slice_unref_internal(expected);
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(expected);
+  grpc_slice_unref(slice);
 }
 
 static grpc_slice base64_encode(const char* s) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_encode(ss);
-  grpc_slice_unref_internal(ss);
+  grpc_slice_unref(ss);
   return out;
 }
 
 static grpc_slice base64_decode(const char* s) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_decode(ss);
-  grpc_slice_unref_internal(ss);
+  grpc_slice_unref(ss);
   return out;
 }
 
@@ -68,14 +66,14 @@ static grpc_slice base64_decode_with_length(const char* s,
                                             size_t output_length) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_decode_with_length(ss, output_length);
-  grpc_slice_unref_internal(ss);
+  grpc_slice_unref(ss);
   return out;
 }
 
 static size_t base64_infer_length(const char* s) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   size_t out = grpc_chttp2_base64_infer_length_after_decode(ss);
-  grpc_slice_unref_internal(ss);
+  grpc_slice_unref(ss);
   return out;
 }
 

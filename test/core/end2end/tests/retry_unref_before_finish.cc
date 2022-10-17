@@ -207,7 +207,6 @@ static void test_retry_unref_before_finish(grpc_end2end_test_config config) {
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_call_unref(s);

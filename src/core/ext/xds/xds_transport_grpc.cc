@@ -24,6 +24,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -34,6 +36,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -48,9 +51,9 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -134,7 +137,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref_internal(status_details_);
+  CSliceUnref(status_details_);
   GPR_ASSERT(call_ != nullptr);
   grpc_call_unref(call_);
 }
@@ -155,7 +158,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   // Create payload.
   grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
   send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref_internal(slice);
+  CSliceUnref(slice);
   // Send the message.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -174,7 +177,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(self->send_message_payload_);
   self->send_message_payload_ = nullptr;
   // Invoke request handler.
-  self->event_handler_->OnRequestSent(GRPC_ERROR_IS_NONE(error));
+  self->event_handler_->OnRequestSent(error.ok());
   // Drop the ref.
   self->Unref(DEBUG_LOCATION, "OnRequestSent");
 }
@@ -196,7 +199,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(self->recv_message_payload_);
   self->recv_message_payload_ = nullptr;
   self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-  grpc_slice_unref_internal(response_slice);
+  CSliceUnref(response_slice);
   // Keep reading.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -233,7 +236,9 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      on_connectivity_failure_(status);
+      on_connectivity_failure_(absl::Status(
+          status.code(),
+          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
     }
   }
 
@@ -247,11 +252,11 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 namespace {
 
 grpc_channel* CreateXdsChannel(const ChannelArgs& args,
-                               const XdsBootstrap::XdsServer& server) {
+                               const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type, server.channel_creds_config);
-  return grpc_channel_create(server.server_uri.c_str(), channel_creds.get(),
+          server.channel_creds_type(), server.channel_creds_config());
+  return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }
 
@@ -268,7 +273,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status)
     : factory_(factory) {
-  channel_ = CreateXdsChannel(factory->args_, server);
+  channel_ = CreateXdsChannel(
+      factory->args_,
+      static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
   GPR_ASSERT(channel_ != nullptr);
   if (IsLameChannel(channel_)) {
     *status = absl::UnavailableError("xds client has a lame channel");
@@ -327,14 +334,14 @@ GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args)
       interested_parties_(grpc_pollset_set_create()) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
   // destroyed.
-  grpc_init();
+  InitInternally();
 }
 
 GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
   grpc_pollset_set_destroy(interested_parties_);
   // Calling grpc_shutdown to ensure gRPC does not shut down until the XdsClient
   // is destroyed.
-  grpc_shutdown();
+  ShutdownInternally();
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>

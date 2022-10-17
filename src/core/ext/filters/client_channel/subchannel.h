@@ -22,7 +22,9 @@
 #include <stddef.h>
 
 #include <deque>
+#include <functional>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -238,8 +240,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
-  const ChannelArgs& channel_args() const { return args_; }
-
   channelz::SubchannelNode* channelz_node();
 
   // Starts watching the subchannel's connectivity state.
@@ -278,11 +278,19 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // We do not hold refs to the data producer; the implementation is
   // expected to register itself upon construction and remove itself
   // upon destruction.
-  void AddDataProducer(DataProducerInterface* data_producer)
+  //
+  // Looks up the current data producer for type and invokes get_or_add()
+  // with a pointer to that producer in the map.  The get_or_add() function
+  // can modify the pointed-to value to update the map.  This provides a
+  // way to either re-use an existing producer or register a new one in
+  // a non-racy way.
+  void GetOrAddDataProducer(
+      UniqueTypeName type,
+      std::function<void(DataProducerInterface**)> get_or_add)
       ABSL_LOCKS_EXCLUDED(mu_);
+  // Removes the data producer from the map, if the current producer for
+  // this type is the specified producer.
   void RemoveDataProducer(DataProducerInterface* data_producer)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  DataProducerInterface* GetDataProducer(UniqueTypeName type)
       ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
@@ -419,6 +427,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Data producer map.
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

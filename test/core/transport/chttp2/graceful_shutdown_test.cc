@@ -19,37 +19,49 @@
 #include <grpc/support/port_platform.h>
 
 #include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <atomic>
 #include <memory>
+#include <string>
 #include <thread>
 
-#include <gmock/gmock.h>
-
-#include "absl/memory/memory.h"
-#include "absl/synchronization/mutex.h"
-#include "absl/synchronization/notification.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/core/util/test_tcp_server.h"
 
 namespace grpc_core {
 namespace {
@@ -66,7 +78,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void SetupAndStart() {
     ExecCtx exec_ctx;
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<CqVerifier>(cq_);
+    cqv_ = std::make_unique<CqVerifier>(cq_);
     grpc_arg server_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
@@ -85,11 +97,11 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     GPR_ASSERT(core_server->SetupTransport(transport, nullptr,
                                            core_server->channel_args(),
-                                           nullptr) == GRPC_ERROR_NONE);
+                                           nullptr) == absl::OkStatus());
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     // Start polling on the client
-    absl::Notification client_poller_thread_started_notification;
-    client_poll_thread_ = absl::make_unique<std::thread>(
+    Notification client_poller_thread_started_notification;
+    client_poll_thread_ = std::make_unique<std::thread>(
         [this, &client_poller_thread_started_notification]() {
           grpc_completion_queue* client_cq =
               grpc_completion_queue_create_for_next(nullptr);
@@ -125,8 +137,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void ShutdownAndDestroy() {
     shutdown_ = true;
     ExecCtx exec_ctx;
-    grpc_endpoint_shutdown(
-        fds_.client, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Client shutdown"));
+    grpc_endpoint_shutdown(fds_.client, GRPC_ERROR_CREATE("Client shutdown"));
     ExecCtx::Get()->Flush();
     client_poll_thread_->join();
     GPR_ASSERT(read_end_notification_.WaitForNotificationWithTimeout(
@@ -144,7 +155,7 @@ class GracefulShutdownTest : public ::testing::Test {
 
   static void OnReadDone(void* arg, grpc_error_handle error) {
     GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
@@ -212,7 +223,7 @@ class GracefulShutdownTest : public ::testing::Test {
   }
 
   void WriteBuffer(grpc_slice_buffer* buffer) {
-    absl::Notification on_write_done_notification_;
+    Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
     grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr,
@@ -223,9 +234,8 @@ class GracefulShutdownTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
-    absl::Notification* on_write_done_notification_ =
-        static_cast<absl::Notification*>(arg);
+    GPR_ASSERT(error.ok());
+    Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
@@ -238,7 +248,7 @@ class GracefulShutdownTest : public ::testing::Test {
   grpc_closure on_read_done_;
   Mutex mu_;
   CondVar read_cv_;
-  absl::Notification read_end_notification_;
+  Notification read_end_notification_;
   grpc_slice_buffer read_buffer_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_closure on_write_done_;

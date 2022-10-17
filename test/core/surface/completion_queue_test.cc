@@ -18,17 +18,18 @@
 
 #include "src/core/lib/surface/completion_queue.h"
 
-#include <gtest/gtest.h>
+#include <stddef.h>
+
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -156,8 +157,8 @@ TEST(GrpcCompletionQueueTest, TestCqEndOp) {
         grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
     ASSERT_TRUE(grpc_cq_begin_op(cc, tag));
-    grpc_cq_end_op(cc, tag, GRPC_ERROR_NONE, do_nothing_end_completion, nullptr,
-                   &completion);
+    grpc_cq_end_op(cc, tag, absl::OkStatus(), do_nothing_end_completion,
+                   nullptr, &completion);
 
     ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME),
                                     nullptr);
@@ -192,8 +193,8 @@ TEST(GrpcCompletionQueueTest, TestCqTlsCacheFull) {
 
     grpc_completion_queue_thread_local_cache_init(cc);
     ASSERT_TRUE(grpc_cq_begin_op(cc, tag));
-    grpc_cq_end_op(cc, tag, GRPC_ERROR_NONE, do_nothing_end_completion, nullptr,
-                   &completion);
+    grpc_cq_end_op(cc, tag, absl::OkStatus(), do_nothing_end_completion,
+                   nullptr, &completion);
 
     ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME),
                                     nullptr);
@@ -313,7 +314,7 @@ TEST(GrpcCompletionQueueTest, TestPluck) {
 
     for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
       ASSERT_TRUE(grpc_cq_begin_op(cc, tags[i]));
-      grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+      grpc_cq_end_op(cc, tags[i], absl::OkStatus(), do_nothing_end_completion,
                      nullptr, &completions[i]);
     }
 
@@ -325,7 +326,7 @@ TEST(GrpcCompletionQueueTest, TestPluck) {
 
     for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
       ASSERT_TRUE(grpc_cq_begin_op(cc, tags[i]));
-      grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+      grpc_cq_end_op(cc, tags[i], absl::OkStatus(), do_nothing_end_completion,
                      nullptr, &completions[i]);
     }
 
@@ -450,7 +451,7 @@ TEST(GrpcCompletionQueueTest, TestCallback) {
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
         ASSERT_TRUE(grpc_cq_begin_op(cc, tags[i]));
-        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+        grpc_cq_end_op(cc, tags[i], absl::OkStatus(), do_nothing_end_completion,
                        nullptr, &completions[i]);
       }
 

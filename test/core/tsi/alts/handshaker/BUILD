@@ -47,7 +47,6 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -82,6 +81,7 @@ grpc_cc_test(
         "alts_concurrent_connectivity_test.cc",
     ],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     # TODO(apolcyn): make the fake TCP server used in this
     # test portable to Windows.

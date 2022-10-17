@@ -63,7 +63,7 @@ namespace {
 
 const size_t kNumBackends = 10;
 const size_t kNumBalancers = 5;
-const size_t kNumClientThreads = 100;
+const size_t kNumClientThreads = 10;
 const int kResolutionUpdateIntervalMs = 50;
 const int kServerlistUpdateIntervalMs = 10;
 const int kTestDurationSec = 30;
@@ -180,7 +180,7 @@ class ClientChannelStressTest {
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
       grpc::internal::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Start, this, server_host, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());

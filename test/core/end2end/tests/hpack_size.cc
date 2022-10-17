@@ -29,8 +29,10 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -259,10 +261,9 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   extra_metadata[2].value =
       grpc_slice_from_static_string(dragons[index % GPR_ARRAY_SIZE(dragons)]);
 
-  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -303,7 +304,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -331,7 +332,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

@@ -81,10 +81,9 @@ def debug_sock_tls(tls):
             f'remote: {debug_cert(tls.remote_certificate)}')
 
 
-def get_deployment_pod_ips(k8s_ns, deployment_name):
+def get_deployment_pods(k8s_ns, deployment_name):
     deployment = k8s_ns.get_deployment(deployment_name)
-    pods = k8s_ns.list_deployment_pods(deployment)
-    return [pod.status.pod_ip for pod in pods]
+    return k8s_ns.list_deployment_pods(deployment)
 
 
 def debug_security_setup_negative(test_client):
@@ -174,6 +173,9 @@ def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
 
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
+
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
 
     # Resource names.
@@ -183,10 +185,11 @@ def main(argv):
     server_name = xds_flags.SERVER_NAME.value
     server_namespace = resource_prefix
     server_k8s_ns = k8s.KubernetesNamespace(k8s_api_manager, server_namespace)
-    server_pod_ip = get_deployment_pod_ips(server_k8s_ns, server_name)[0]
+    server_pod = get_deployment_pods(server_k8s_ns, server_name)[0]
     test_server: _XdsTestServer = _XdsTestServer(
-        ip=server_pod_ip,
+        ip=server_pod.status.pod_ip,
         rpc_port=xds_flags.SERVER_PORT.value,
+        hostname=server_pod.metadata.name,
         xds_host=xds_flags.SERVER_XDS_HOST.value,
         xds_port=xds_flags.SERVER_XDS_PORT.value,
         rpc_host=_SERVER_RPC_HOST.value)
@@ -195,11 +198,12 @@ def main(argv):
     client_name = xds_flags.CLIENT_NAME.value
     client_namespace = resource_prefix
     client_k8s_ns = k8s.KubernetesNamespace(k8s_api_manager, client_namespace)
-    client_pod_ip = get_deployment_pod_ips(client_k8s_ns, client_name)[0]
+    client_pod = get_deployment_pods(client_k8s_ns, client_name)[0]
     test_client: _XdsTestClient = _XdsTestClient(
-        ip=client_pod_ip,
-        server_target=test_server.xds_uri,
+        ip=client_pod.status.pod_ip,
         rpc_port=xds_flags.CLIENT_PORT.value,
+        server_target=test_server.xds_uri,
+        hostname=client_pod.metadata.name,
         rpc_host=_CLIENT_RPC_HOST.value)
 
     if _SECURITY.value in ('mtls', 'tls', 'plaintext'):

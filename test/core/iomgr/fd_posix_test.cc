@@ -42,6 +42,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -67,8 +68,8 @@ static void create_test_socket(int port, int* socket_fd,
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   /* Reset the size of socket send buffer to the minimal value to facilitate
      buffer filling up and triggering notify_on_write  */
-  ASSERT_EQ(grpc_set_socket_sndbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
-  ASSERT_EQ(grpc_set_socket_rcvbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_set_socket_sndbuf(fd, buffer_size_bytes), absl::OkStatus());
+  ASSERT_EQ(grpc_set_socket_rcvbuf(fd, buffer_size_bytes), absl::OkStatus());
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   ASSERT_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
@@ -119,8 +120,7 @@ static void session_shutdown_cb(void* arg, /*session */
   grpc_fd_orphan(se->em_fd, nullptr, nullptr, "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
-  grpc_fd_shutdown(sv->em_fd,
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("session_shutdown_cb"));
+  grpc_fd_shutdown(sv->em_fd, GRPC_ERROR_CREATE("session_shutdown_cb"));
 }
 
 /* Called when data become readable in a session. */
@@ -132,7 +132,7 @@ static void session_read_cb(void* arg, /*session */
   ssize_t read_once = 0;
   ssize_t read_total = 0;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     session_shutdown_cb(arg, true);
     return;
   }
@@ -161,7 +161,8 @@ static void session_read_cb(void* arg, /*session */
          before notify_on_read is called.  */
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
-      gpr_log(GPR_ERROR, "Unhandled read error %s", strerror(errno));
+      gpr_log(GPR_ERROR, "Unhandled read error %s",
+              grpc_core::StrError(errno).c_str());
       abort();
     }
   }
@@ -192,7 +193,7 @@ static void listen_cb(void* arg, /*=sv_arg*/
   socklen_t slen = sizeof(ss);
   grpc_fd* listen_em_fd = sv->em_fd;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     listen_shutdown_cb(arg, 1);
     return;
   }
@@ -303,7 +304,7 @@ static void client_session_write(void* arg, /*client */
   int fd = grpc_fd_wrapped_fd(cl->em_fd);
   ssize_t write_once = 0;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_mu_lock(g_mu);
     client_session_shutdown_cb(arg, 1);
     gpr_mu_unlock(g_mu);
@@ -327,7 +328,7 @@ static void client_session_write(void* arg, /*client */
     }
     gpr_mu_unlock(g_mu);
   } else {
-    gpr_log(GPR_ERROR, "unknown errno %s", strerror(errno));
+    gpr_log(GPR_ERROR, "unknown errno %s", grpc_core::StrError(errno).c_str());
     abort();
   }
 }
@@ -357,7 +358,7 @@ static void client_start(client* cl, int port) {
   cl->em_fd = grpc_fd_create(fd, "client", false);
   grpc_pollset_add_fd(g_pollset, cl->em_fd);
 
-  client_session_write(cl, GRPC_ERROR_NONE);
+  client_session_write(cl, absl::OkStatus());
 }
 
 /* Wait for the signal to shutdown a client. */

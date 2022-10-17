@@ -22,31 +22,9 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "upb/arena.h"
-#include "upb/def.h"
 #include "upb/upb.h"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/lib/debug/trace.h"
-
 namespace grpc_core {
-
-class XdsClient;
-
-// TODO(roth): Rethink this.  All fields except symtab and arena should come
-// from XdsClient, injected into XdsResourceType::Decode() somehow without
-// passing through XdsApi code, maybe via the AdsResponseParser.
-struct XdsEncodingContext {
-  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
-  const XdsBootstrap::XdsServer& server;
-  TraceFlag* tracer;
-  upb_DefPool* symtab;
-  upb_Arena* arena;
-  bool use_v3;
-  const CertificateProviderStore::PluginDefinitionMap*
-      certificate_provider_definition_map;
-};
 
 // Works for both std::string and absl::string_view.
 template <typename T>

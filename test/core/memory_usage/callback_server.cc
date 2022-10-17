@@ -34,19 +34,36 @@
 
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
+#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
+ public:
+  explicit ServerCallbackImpl(long before_server_memory)
+      : before_server_create(before_server_memory) {}
+
   grpc::ServerUnaryReactor* UnaryCall(
       grpc::CallbackServerContext* context,
-      const grpc::testing::SimpleRequest* request,
-      grpc::testing::SimpleResponse* response) override {
-    gpr_log(GPR_INFO, "RPC CALL RECEIVED");
+      const grpc::testing::SimpleRequest* /* request */,
+      grpc::testing::SimpleResponse* /* response */) override {
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
+  grpc::ServerUnaryReactor* GetBeforeSnapshot(
+      grpc::CallbackServerContext* context,
+      const grpc::testing::SimpleRequest* /* request */,
+      grpc::testing::MemorySize* response) override {
+    gpr_log(GPR_INFO, "BeforeSnapshot RPC CALL RECEIVED");
+    response->set_rss(before_server_create);
+    auto* reactor = context->DefaultReactor();
+    reactor->Finish(grpc::Status::OK);
+    return reactor;
+  }
+
+ private:
+  long before_server_create;
 };
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
@@ -71,8 +88,11 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "Server port: %s", server_address.c_str());
 
-  ServerCallbackImpl callback_server;
+  // Get initial process memory usage before creating server
+  long before_server_create = GetMemUsage();
+  ServerCallbackImpl callback_server(before_server_create);
   grpc::ServerBuilder builder;
+
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();

@@ -40,7 +40,7 @@ static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer, size_t 
   // because the reader takes care of automatically decompressing it
   grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
   size_t uncompressed_length = GRPC_SLICE_LENGTH(slice);
-  char *result = malloc(uncompressed_length);
+  char *result = (char *)malloc(uncompressed_length);
   if (result) {
     memcpy(result, GRPC_SLICE_START_PTR(slice), uncompressed_length);
   }

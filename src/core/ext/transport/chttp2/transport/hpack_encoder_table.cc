@@ -17,7 +17,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
 #include <algorithm>
-#include <cstdint>
 
 #include <grpc/support/log.h>
 
@@ -61,7 +60,8 @@ bool HPackEncoderTable::SetMaxSize(uint32_t max_table_size) {
       hpack_constants::EntriesForBytes(max_table_size);
   // TODO(ctiller): integrate with ResourceQuota to rebuild smaller when we can.
   if (max_table_elems > elem_size_.size()) {
-    Rebuild(std::max(max_table_elems, 2 * elem_size_.size()));
+    Rebuild(static_cast<uint32_t>(
+        std::max(max_table_elems, 2 * elem_size_.size())));
   }
   return true;
 }

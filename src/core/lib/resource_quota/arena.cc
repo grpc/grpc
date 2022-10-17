@@ -23,8 +23,6 @@
 #include <atomic>
 #include <new>
 
-#include "absl/utility/utility.h"
-
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/alloc.h"
@@ -81,7 +79,7 @@ size_t Arena::Destroy() {
          nullptr) {
     // Inner loop: destruct a batch of objects.
     while (p != nullptr) {
-      Destruct(absl::exchange(p, p->next));
+      Destruct(std::exchange(p, p->next));
     }
   }
   size_t size = total_used_.load(std::memory_order_relaxed);

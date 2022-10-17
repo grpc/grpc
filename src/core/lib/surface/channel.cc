@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -51,22 +52,23 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
 
 namespace grpc_core {
 
-Channel::Channel(bool is_client, std::string target,
+Channel::Channel(bool is_client, bool is_promising, std::string target,
                  const ChannelArgs& channel_args,
                  grpc_compression_options compression_options,
                  RefCountedPtr<grpc_channel_stack> channel_stack)
     : is_client_(is_client),
+      is_promising_(is_promising),
       compression_options_(compression_options),
       call_size_estimate_(channel_stack->call_stack_size +
                           grpc_call_get_initial_size_estimate()),
@@ -92,7 +94,7 @@ Channel::Channel(bool is_client, std::string target,
   // accommodate that, we call grpc_init() here and then call
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
-  grpc_init();
+  InitInternally();
   auto channelz_node = channelz_node_;
   *channel_stack_->on_destroy = [channelz_node]() {
     if (channelz_node != nullptr) {
@@ -100,7 +102,7 @@ Channel::Channel(bool is_client, std::string target,
           channelz::ChannelTrace::Severity::Info,
           grpc_slice_from_static_string("Channel destroyed"));
     }
-    grpc_shutdown();
+    ShutdownInternally();
   };
 }
 
@@ -108,9 +110,9 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     ChannelStackBuilder* builder) {
   auto channel_args = builder->channel_args();
   if (builder->channel_stack_type() == GRPC_SERVER_CHANNEL) {
-    GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
+    global_stats().IncrementServerChannelsCreated();
   } else {
-    GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
+    global_stats().IncrementClientChannelsCreated();
   }
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder->Build();
   if (!r.ok()) {
@@ -150,8 +152,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
 
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
-      std::string(builder->target()), channel_args, compression_options,
-      std::move(*r)));
+      builder->IsPromising(), std::string(builder->target()), channel_args,
+      compression_options, std::move(*r)));
 }
 
 namespace {
@@ -319,9 +321,9 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, nullptr,
-      grpc_core::Slice(grpc_slice_ref_internal(method)),
+      grpc_core::Slice(grpc_core::CSliceRef(method)),
       host != nullptr
-          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
+          ? absl::optional<grpc_core::Slice>(grpc_core::CSliceRef(*host))
           : absl::nullopt,
       grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
@@ -337,7 +339,7 @@ grpc_call* grpc_channel_create_pollset_set_call(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
       grpc_core::Slice(method),
       host != nullptr
-          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
+          ? absl::optional<grpc_core::Slice>(grpc_core::CSliceRef(*host))
           : absl::nullopt,
       deadline);
 }
@@ -428,8 +430,7 @@ void grpc_channel_destroy_internal(grpc_channel* c_channel) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   grpc_channel_element* elem;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (c_channel));
-  op->disconnect_with_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
+  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   elem = grpc_channel_stack_element(channel->channel_stack(), 0);
   elem->filter->start_transport_op(elem, op);
 }

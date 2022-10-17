@@ -39,8 +39,13 @@ class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
     STATS_PARTIAL_RESULTS_TIMEOUT_SEC = 1200
     STATS_ACCUMULATED_RESULTS_TIMEOUT_SEC = 600
 
-    def __init__(self, channel: grpc.Channel):
-        super().__init__(channel, test_pb2_grpc.LoadBalancerStatsServiceStub)
+    def __init__(self,
+                 channel: grpc.Channel,
+                 *,
+                 log_target: Optional[str] = ''):
+        super().__init__(channel,
+                         test_pb2_grpc.LoadBalancerStatsServiceStub,
+                         log_target=log_target)
 
     def get_client_stats(
         self,
@@ -78,9 +83,13 @@ class XdsUpdateClientConfigureServiceClient(framework.rpc.grpc.GrpcClientHelper
     stub: test_pb2_grpc.XdsUpdateClientConfigureServiceStub
     CONFIGURE_TIMEOUT_SEC: int = 5
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self,
+                 channel: grpc.Channel,
+                 *,
+                 log_target: Optional[str] = ''):
         super().__init__(channel,
-                         test_pb2_grpc.XdsUpdateClientConfigureServiceStub)
+                         test_pb2_grpc.XdsUpdateClientConfigureServiceStub,
+                         log_target=log_target)
 
     def configure(
         self,
@@ -115,8 +124,10 @@ class XdsUpdateClientConfigureServiceClient(framework.rpc.grpc.GrpcClientHelper
 class XdsUpdateHealthServiceClient(framework.rpc.grpc.GrpcClientHelper):
     stub: test_pb2_grpc.XdsUpdateHealthServiceStub
 
-    def __init__(self, channel: grpc.Channel):
-        super().__init__(channel, test_pb2_grpc.XdsUpdateHealthServiceStub)
+    def __init__(self, channel: grpc.Channel, log_target: Optional[str] = ''):
+        super().__init__(channel,
+                         test_pb2_grpc.XdsUpdateHealthServiceStub,
+                         log_target=log_target)
 
     def set_serving(self):
         self.call_unary_with_deadline(rpc='SetServing',
@@ -132,8 +143,10 @@ class XdsUpdateHealthServiceClient(framework.rpc.grpc.GrpcClientHelper):
 class HealthClient(framework.rpc.grpc.GrpcClientHelper):
     stub: health_pb2_grpc.HealthStub
 
-    def __init__(self, channel: grpc.Channel):
-        super().__init__(channel, health_pb2_grpc.HealthStub)
+    def __init__(self, channel: grpc.Channel, log_target: Optional[str] = ''):
+        super().__init__(channel,
+                         health_pb2_grpc.HealthStub,
+                         log_target=log_target)
 
     def check_health(self):
         return self.call_unary_with_deadline(

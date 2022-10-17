@@ -19,8 +19,6 @@
 
 #include <utility>
 
-#include "src/core/lib/gpr/tls.h"
-
 namespace grpc_core {
 
 // To avoid accidentally creating context types, we require an explicit
@@ -44,12 +42,11 @@ class Context : public ContextType<T> {
 
  private:
   T* const old_;
-  static GPR_THREAD_LOCAL(T*) current_;
+  static thread_local T* current_;
 };
 
 template <typename T>
-GPR_THREAD_LOCAL(T*)
-Context<T>::current_;
+thread_local T* Context<T>::current_;
 
 template <typename T, typename F>
 class WithContext {
@@ -77,7 +74,7 @@ T* GetContext() {
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
 promise_detail::WithContext<T, F> WithContext(F f, T* context) {
-  return promise_detail::WithContext<T, F>(f, context);
+  return promise_detail::WithContext<T, F>(std::move(f), context);
 }
 
 }  // namespace grpc_core

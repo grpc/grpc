@@ -26,10 +26,10 @@
 #define NSStringize(x) @NSStringize_helper(x)
 
 // Default test flake repeat counts
-static const NSUInteger kGRPCDefaultTestFlakeRepeats = 2;
+static const NSUInteger kGRPCDefaultTestFlakeRepeats = 1;
 
 // Default interop local test timeout.
-const NSTimeInterval GRPCInteropTestTimeoutDefault = 3.0;
+const NSTimeInterval GRPCInteropTestTimeoutDefault = 15.0;
 
 NSString *GRPCGetLocalInteropTestServerAddressPlainText() {
   static NSString *address;
@@ -125,6 +125,10 @@ BOOL GRPCTestRunWithFlakeRepeats(XCTestCase *testCase, GRPCTestRunBlock testBloc
 
     if (result == XCTWaiterResultCompleted && assertionSuccess) {
       return YES;
+    }
+
+    if (!isLastRun) {
+      NSLog(@"test attempt %@ failed, will retry.", NSStringize(runs));
     }
     runs += 1;
   }

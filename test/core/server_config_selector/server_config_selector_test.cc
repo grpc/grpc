@@ -18,10 +18,10 @@
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/util/test_config.h"

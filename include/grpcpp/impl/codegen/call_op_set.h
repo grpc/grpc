@@ -27,7 +27,7 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
@@ -41,6 +41,7 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 
@@ -980,8 +981,8 @@ class CallOpSet : public CallOpSetInterface,
       // A failure here indicates an API misuse; for example, doing a Write
       // while another Write is already pending on the same RPC or invoking
       // WritesDone multiple times
-      // gpr_log(GPR_ERROR, "API misuse of type %s observed",
-      //        g_core_codegen_interface->grpc_call_error_to_string(err));
+      gpr_log(GPR_ERROR, "API misuse of type %s observed",
+              g_core_codegen_interface->grpc_call_error_to_string(err));
       GPR_CODEGEN_ASSERT(false);
     }
   }

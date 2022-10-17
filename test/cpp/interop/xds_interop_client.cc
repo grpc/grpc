@@ -40,7 +40,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

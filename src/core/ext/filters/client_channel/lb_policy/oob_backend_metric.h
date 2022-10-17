@@ -22,8 +22,8 @@
 #include <memory>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {
 
@@ -38,7 +38,7 @@ namespace grpc_core {
 // subchannel like this:
 //   subchannel->AddDataWatcher(
 //       MakeOobBackendMetricWatcher(
-//           absl::make_unique<MyOobBackendMetricWatcherSubclass>(...)));
+//           std::make_unique<MyOobBackendMetricWatcherSubclass>(...)));
 
 class OobBackendMetricWatcher {
  public:

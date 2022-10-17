@@ -43,6 +43,18 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/context.h"
 
+// TODO(yashykt): This might not be the right place for this channel arg, but we
+// don't have a better place for this right now.
+
+// EXPERIMENTAL. If zero, disables observability tracing and observability
+// logging (not yet implemented) on the client channel, defaults to true. Note
+// that this does not impact metrics/stats collection. This channel arg is
+// intended as a way to avoid cyclic execution of observability logging and
+// trace especially when the sampling rate of RPCs is very high which would
+// generate a lot of data.
+//
+#define GRPC_ARG_ENABLE_OBSERVABILITY "grpc.experimental.enable_observability"
+
 namespace grpc {
 
 class OpenCensusCallTracer : public grpc_core::CallTracer {
@@ -52,8 +64,8 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
                                 uint64_t attempt_num, bool is_transparent_retry,
                                 bool arena_allocated);
-    void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
-                                   uint32_t /*flags*/) override;
+    void RecordSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override;
     void RecordOnDoneSendInitialMetadata(gpr_atm* /*peer_string*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
@@ -89,7 +101,8 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit OpenCensusCallTracer(const grpc_call_element_args* args);
+  explicit OpenCensusCallTracer(const grpc_call_element_args* args,
+                                bool tracing_enabled);
   ~OpenCensusCallTracer() override;
 
   void GenerateContext();
@@ -97,12 +110,15 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
       bool is_transparent_retry) override;
 
  private:
+  CensusContext CreateCensusContextForCallAttempt();
+
   const grpc_call_context_element* call_context_;
   // Client method.
   grpc_core::Slice path_;
   absl::string_view method_;
   CensusContext context_;
   grpc_core::Arena* arena_;
+  bool tracing_enabled_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

@@ -24,6 +24,7 @@
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -115,6 +116,26 @@ using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 template <typename... Fs>
 using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
 
+template <typename I, typename F, typename Arg>
+struct TrySeqIterTraits {
+  using Iter = I;
+  using Factory = F;
+  using Argument = Arg;
+  using IterValue = decltype(*std::declval<Iter>());
+  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                                  std::declval<Arg>()));
+  using State = PromiseLike<StateCreated>;
+  using Wrapped = typename State::Result;
+
+  using Traits = TrySeqTraits<Wrapped>;
+};
+
+template <typename Iter, typename Factory, typename Argument>
+struct TrySeqIterResultTraits {
+  using IterTraits = TrySeqIterTraits<Iter, Factory, Argument>;
+  using Result = BasicSeqIter<IterTraits>;
+};
+
 }  // namespace promise_detail
 
 // Try a sequence of operations.
@@ -143,12 +164,12 @@ promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-promise_detail::BasicSeqIter<promise_detail::TrySeqTraits, Factory, Argument,
-                             Iter>
+typename promise_detail::TrySeqIterResultTraits<Iter, Factory, Argument>::Result
 TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  return promise_detail::BasicSeqIter<promise_detail::TrySeqTraits, Factory,
-                                      Argument, Iter>(
-      begin, end, std::move(factory), std::move(argument));
+  using Result =
+      typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
+                                                      Argument>::Result;
+  return Result(begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

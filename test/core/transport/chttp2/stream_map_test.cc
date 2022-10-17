@@ -18,7 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
 

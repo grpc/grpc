@@ -29,7 +29,7 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/test_tcp_server.h"
 
@@ -67,8 +67,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;
   peer = grpc_endpoint_get_peer(tcp);
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(tcp);
   last_colon = peer.rfind(':');
   if (server->peer == nullptr) {

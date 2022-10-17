@@ -24,7 +24,6 @@
 #include <map>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -32,9 +31,10 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
@@ -50,16 +50,16 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 void ClientChannelServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<ClientChannelServiceConfigParser>());
+      std::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
 
 absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
                                                    grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+  GPR_DEBUG_ASSERT(error != nullptr && error->ok());
   if (field.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    *error = GRPC_ERROR_CREATE(
         "field:healthCheckConfig error:should be of type object");
     return absl::nullopt;
   }
@@ -68,7 +68,7 @@ absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
   auto it = field.object_value().find("serviceName");
   if (it != field.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:serviceName error:should be of type string"));
     } else {
       service_name = it->second.string_value();
@@ -85,14 +85,15 @@ absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json) {
   std::vector<grpc_error_handle> error_list;
+  const auto& lb_policy_registry =
+      CoreConfiguration::Get().lb_policy_registry();
   // Parse LB config.
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
-    auto config =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+    auto config = lb_policy_registry.ParseLoadBalancingConfig(it->second);
     if (!config.ok()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      error_list.push_back(GRPC_ERROR_CREATE(absl::StrCat(
           "field:loadBalancingConfig error:", config.status().message())));
     } else {
       parsed_lb_config = std::move(*config);
@@ -103,7 +104,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   it = json.object_value().find("loadBalancingPolicy");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:loadBalancingPolicy error:type should be string"));
     } else {
       lb_policy_name = it->second.string_value();
@@ -111,12 +112,12 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
         lb_policy_name[i] = tolower(lb_policy_name[i]);
       }
       bool requires_config = false;
-      if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-              lb_policy_name.c_str(), &requires_config)) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      if (!lb_policy_registry.LoadBalancingPolicyExists(lb_policy_name.c_str(),
+                                                        &requires_config)) {
+        error_list.push_back(GRPC_ERROR_CREATE(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE(
             absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
                          " requires a config. Please use loadBalancingConfig "
                          "instead.")));
@@ -127,10 +128,10 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   absl::optional<std::string> health_check_service_name;
   it = json.object_value().find("healthCheckConfig");
   if (it != json.object_value().end()) {
-    grpc_error_handle parsing_error = GRPC_ERROR_NONE;
+    grpc_error_handle parsing_error;
     health_check_service_name =
         ParseHealthCheckConfig(it->second, &parsing_error);
-    if (!GRPC_ERROR_IS_NONE(parsing_error)) {
+    if (!parsing_error.ok()) {
       error_list.push_back(parsing_error);
     }
   }
@@ -139,11 +140,10 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
         "Client channel global parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing client channel global parameters: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
+                     StatusToString(error)));
     return status;
   }
-  return absl::make_unique<ClientChannelGlobalParsedConfig>(
+  return std::make_unique<ClientChannelGlobalParsedConfig>(
       std::move(parsed_lb_config), std::move(lb_policy_name),
       std::move(health_check_service_name));
 }
@@ -161,7 +161,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     } else if (it->second.type() == Json::Type::JSON_FALSE) {
       wait_for_ready.emplace(false);
     } else {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error_list.push_back(GRPC_ERROR_CREATE(
           "field:waitForReady error:Type should be true/false"));
     }
   }
@@ -175,12 +175,11 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
         GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing client channel method parameters: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
+                     StatusToString(error)));
     return status;
   }
-  return absl::make_unique<ClientChannelMethodParsedConfig>(timeout,
-                                                            wait_for_ready);
+  return std::make_unique<ClientChannelMethodParsedConfig>(timeout,
+                                                           wait_for_ready);
 }
 
 }  // namespace internal

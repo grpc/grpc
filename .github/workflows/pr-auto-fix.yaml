@@ -1,7 +1,13 @@
 name: PR AutoFix
 on: [push]
+permissions: {}
 jobs:
   PRAutoFix:
+    permissions:
+      actions: write # to cancel/stop running workflows (styfle/cancel-workflow-action)
+      contents: write # to create branch (peter-evans/create-pull-request)
+      pull-requests: write # to create a PR (peter-evans/create-pull-request)
+
     runs-on: ubuntu-latest
     steps:
       # Cache bazel build

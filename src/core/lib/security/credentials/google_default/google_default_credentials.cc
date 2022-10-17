@@ -44,9 +44,10 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
@@ -54,6 +55,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -64,9 +66,10 @@
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 using grpc_core::Json;
@@ -169,7 +172,7 @@ static void on_metadata_server_detection_http_response(
     void* user_data, grpc_error_handle error) {
   metadata_server_detector* detector =
       static_cast<metadata_server_detector*>(user_data);
-  if (GRPC_ERROR_IS_NONE(error) && detector->response.status == 200 &&
+  if (error.ok() && detector->response.status == 200 &&
       detector->response.hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
        it is necessary to check that metadata header is present also. */
@@ -216,7 +219,7 @@ static int is_metadata_server_reachable() {
   GPR_ASSERT(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
-      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
+      grpc_core::Timestamp::Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response,
@@ -305,20 +308,26 @@ static grpc_error_handle create_default_creds_from_path(
   grpc_auth_refresh_token token;
   grpc_core::RefCountedPtr<grpc_call_credentials> result;
   grpc_slice creds_data = grpc_empty_slice();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   Json json;
   if (creds_path.empty()) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("creds_path unset");
+    error = GRPC_ERROR_CREATE("creds_path unset");
     goto end;
   }
   error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
-  if (!GRPC_ERROR_IS_NONE(error)) goto end;
-  json = Json::Parse(grpc_core::StringViewFromSlice(creds_data), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) goto end;
+  if (!error.ok()) goto end;
+  {
+    auto json_or = Json::Parse(grpc_core::StringViewFromSlice(creds_data));
+    if (!json_or.ok()) {
+      error = absl_status_to_grpc_error(json_or.status());
+      goto end;
+    }
+    json = std::move(*json_or);
+  }
   if (json.type() != Json::Type::OBJECT) {
-    error = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_core::StringViewFromSlice(creds_data));
+    error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
+                               grpc_core::StatusStrProperty::kRawBytes,
+                               grpc_core::StringViewFromSlice(creds_data));
     goto end;
   }
 
@@ -329,7 +338,7 @@ static grpc_error_handle create_default_creds_from_path(
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             key, grpc_max_auth_token_lifetime());
     if (result == nullptr) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error = GRPC_ERROR_CREATE(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
           "key failed");
     }
@@ -342,7 +351,7 @@ static grpc_error_handle create_default_creds_from_path(
     result =
         grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
     if (result == nullptr) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      error = GRPC_ERROR_CREATE(
           "grpc_refresh_token_credentials_create_from_auth_refresh_token "
           "failed");
     }
@@ -351,15 +360,14 @@ static grpc_error_handle create_default_creds_from_path(
 
   /* Finally try an external account credentials.*/
   if (!ValidateExteralAccountCredentials(json)) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid external account credentials format.");
+    error = GRPC_ERROR_CREATE("Invalid external account credentials format.");
     goto end;
   }
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
-  GPR_ASSERT((result == nullptr) + (GRPC_ERROR_IS_NONE(error)) == 1);
-  grpc_slice_unref_internal(creds_data);
+  GPR_ASSERT((result == nullptr) + (error.ok()) == 1);
+  grpc_core::CSliceUnref(creds_data);
   *creds = result;
   return error;
 }
@@ -391,18 +399,17 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   grpc_error_handle err;
 
   /* First, try the environment variable. */
-  char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
-  if (path_from_env != nullptr) {
-    err = create_default_creds_from_path(path_from_env, &call_creds);
-    gpr_free(path_from_env);
-    if (GRPC_ERROR_IS_NONE(err)) return call_creds;
+  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
+  if (path_from_env.has_value()) {
+    err = create_default_creds_from_path(*path_from_env, &call_creds);
+    if (err.ok()) return call_creds;
     *error = grpc_error_add_child(*error, err);
   }
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
       grpc_get_well_known_google_credentials_file_path(), &call_creds);
-  if (GRPC_ERROR_IS_NONE(err)) return call_creds;
+  if (err.ok()) return call_creds;
   *error = grpc_error_add_child(*error, err);
 
   update_tenancy();
@@ -411,11 +418,9 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
     if (call_creds == nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
+      *error = GRPC_ERROR_CREATE(GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
       *error = grpc_error_add_child(
-          *error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "Failed to get credentials from network"));
+          *error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
     }
   }
 
@@ -426,7 +431,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_call_credentials* call_credentials) {
   grpc_channel_credentials* result = nullptr;
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1,
@@ -455,9 +460,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     GPR_ASSERT(result != nullptr);
   } else {
     gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
-  GRPC_ERROR_UNREF(error);
   return result;
 }
 

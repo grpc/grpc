@@ -155,7 +155,7 @@ grpc_cc_test(
     ],
     flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
-    shard_count = 10,
+    shard_count = 20,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -166,7 +166,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:connection_delay_injector",
+        "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
 
@@ -191,7 +191,7 @@ grpc_cc_test(
         "//:grpc_resolver_fake",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:connection_delay_injector",
+        "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
 
@@ -202,7 +202,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
+    shard_count = 15,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -213,6 +215,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -249,7 +252,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
+    shard_count = 5,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -274,6 +279,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
         "no_test_ios",
@@ -300,6 +306,7 @@ grpc_cc_test(
     ],
     flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
+    shard_count = 10,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -316,7 +323,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:route_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:connection_delay_injector",
+        "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
 
@@ -340,6 +347,7 @@ grpc_cc_test(
         "//src/proto/grpc/lookup/v1:rls_config_proto",
         "//src/proto/grpc/lookup/v1:rls_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:rls_server",
     ],
 )

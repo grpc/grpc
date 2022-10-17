@@ -28,9 +28,9 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
@@ -57,7 +57,7 @@ typedef struct grpc_transport_vtable {
      There is an on-going migration to move all filters to providing this, and
      then to drop perform_stream_op. */
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (*make_call_promise)(
-      grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata);
+      grpc_transport* self, grpc_core::CallArgs call_args);
 
   /* implementation of grpc_transport_set_pollset */
   void (*set_pollset)(grpc_transport* self, grpc_stream* stream,

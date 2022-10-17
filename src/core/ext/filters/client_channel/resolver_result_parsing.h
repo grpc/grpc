@@ -29,12 +29,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {

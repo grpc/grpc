@@ -6,16 +6,19 @@ metadata:
   namespace: ${namespace_name}
   labels:
     app: ${deployment_name}
+    deployment_id: ${deployment_id}
     owner: xds-k8s-interop-test
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: ${deployment_name}
+      deployment_id: ${deployment_id}
   template:
     metadata:
       labels:
         app: ${deployment_name}
+        deployment_id: ${deployment_id}
         owner: xds-k8s-interop-test
     spec:
       % if service_account_name:

@@ -143,7 +143,7 @@ def generate_cc_impl(ctx):
         f = ctx.attr.well_known_protos.files.to_list()[0].dirname
         if f != "external/com_google_protobuf/src/google/protobuf":
             print(
-                "Error: Only @com_google_protobuf//:well_known_protos is supported",
+                "Error: Only @com_google_protobuf//:well_known_type_protos is supported",
             )  # buildifier: disable=print
         else:
             # f points to "external/com_google_protobuf/src/google/protobuf"
@@ -200,7 +200,7 @@ _generate_cc = rule(
 def generate_cc(well_known_protos, **kwargs):
     if well_known_protos:
         _generate_cc(
-            well_known_protos = "@com_google_protobuf//:well_known_protos",
+            well_known_protos = "@com_google_protobuf//:well_known_type_protos",
             **kwargs
         )
     else:

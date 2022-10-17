@@ -18,9 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 

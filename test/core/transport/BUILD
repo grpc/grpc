@@ -66,6 +66,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "call_fragments_test",
+    srcs = ["call_fragments_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/promise:test_context",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "metadata_map_test",
     srcs = ["metadata_map_test.cc"],
     external_deps = [

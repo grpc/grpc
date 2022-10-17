@@ -22,6 +22,7 @@
 
 #include <limits.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <functional>
 #include <string>
@@ -35,6 +36,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
 #include <grpc/grpc_security.h>
@@ -55,13 +57,13 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/server/load_reporter/constants.h"
@@ -136,7 +138,7 @@ std::string GetCensusSafeClientIpString(
     }
     return client_ip;
   } else {
-    GPR_UNREACHABLE_CODE();
+    GPR_UNREACHABLE_CODE(abort());
   }
 }
 
@@ -155,7 +157,7 @@ std::string MakeClientIpAndLrToken(
       prefix = kEncodedIpv6AddressLengthString;
       break;
     default:
-      GPR_UNREACHABLE_CODE();
+      GPR_UNREACHABLE_CODE(abort());
   }
   return absl::StrCat(prefix, client_ip, lr_token);
 }

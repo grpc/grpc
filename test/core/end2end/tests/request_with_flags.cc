@@ -19,6 +19,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -94,8 +98,18 @@ static void test_invoke_request_with_flags(
       grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_invoke_request_with_flags", nullptr, nullptr);
+  grpc_end2end_test_fixture f = begin_test(
+      config,
+      absl::StrCat("test_invoke_request_with_flags[",
+                   absl::Hex(flags_for_op[GRPC_OP_SEND_INITIAL_METADATA]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_SEND_MESSAGE]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_SEND_CLOSE_FROM_CLIENT]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_RECV_INITIAL_METADATA]), ",",
+                   absl::Hex(flags_for_op[GRPC_OP_RECV_STATUS_ON_CLIENT]),
+                   "]=>",
+                   grpc_call_error_to_string(call_start_batch_expected_result))
+          .c_str(),
+      nullptr, nullptr);
   grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -154,6 +168,9 @@ static void test_invoke_request_with_flags(
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {
+    if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES) {
+      GPR_ASSERT(GRPC_CALL_OK == grpc_call_cancel(c, nullptr));
+    }
     cqv.Expect(tag(1), true);
     cqv.Verify();
     grpc_slice_unref(details);

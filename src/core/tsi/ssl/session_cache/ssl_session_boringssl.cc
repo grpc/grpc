@@ -51,7 +51,7 @@ class BoringSslCachedSession : public SslCachedSession {
 
 std::unique_ptr<SslCachedSession> SslCachedSession::Create(
     SslSessionPtr session) {
-  return absl::make_unique<BoringSslCachedSession>(std::move(session));
+  return std::make_unique<BoringSslCachedSession>(std::move(session));
 }
 
 }  // namespace tsi

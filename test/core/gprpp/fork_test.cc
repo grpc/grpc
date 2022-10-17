@@ -18,7 +18,12 @@
 
 #include "src/core/lib/gprpp/fork.h"
 
-#include <gtest/gtest.h>
+#include <stdint.h>
+
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
@@ -29,19 +34,16 @@ TEST(ForkTest, Init) {
   // Default fork support (disabled)
   grpc_core::Fork::GlobalInit();
   ASSERT_FALSE(grpc_core::Fork::Enabled());
-  grpc_core::Fork::GlobalShutdown();
 
   // Explicitly disabled fork support
   grpc_core::Fork::Enable(false);
   grpc_core::Fork::GlobalInit();
   ASSERT_FALSE(grpc_core::Fork::Enabled());
-  grpc_core::Fork::GlobalShutdown();
 
   // Explicitly enabled fork support
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
   ASSERT_TRUE(grpc_core::Fork::Enabled());
-  grpc_core::Fork::GlobalShutdown();
 }
 
 // This spawns CONCURRENT_TEST_THREADS that last up to
@@ -50,7 +52,7 @@ TEST(ForkTest, Init) {
 // because tsan threads can take a while to spawn/join.
 #define THREAD_DELAY_MS 6000
 #define THREAD_DELAY_EPSILON 1500
-#define CONCURRENT_TEST_THREADS 100
+#define CONCURRENT_TEST_THREADS 10
 
 static void sleeping_thd(void* arg) {
   int64_t sleep_ms = reinterpret_cast<int64_t>(arg);
@@ -63,7 +65,6 @@ TEST(ForkTest, ThdCount) {
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
   grpc_core::Fork::AwaitThreads();
-  grpc_core::Fork::GlobalShutdown();
 
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
@@ -71,8 +72,8 @@ TEST(ForkTest, ThdCount) {
   gpr_timespec est_end_time =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                    gpr_time_from_millis(THREAD_DELAY_MS, GPR_TIMESPAN));
-  gpr_timespec tolerance =
-      gpr_time_from_millis(THREAD_DELAY_EPSILON, GPR_TIMESPAN);
+  gpr_timespec tolerance = gpr_time_from_millis(
+      THREAD_DELAY_EPSILON * grpc_test_slowdown_factor(), GPR_TIMESPAN);
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     intptr_t sleep_time_ms =
         (i * THREAD_DELAY_MS) / (CONCURRENT_TEST_THREADS - 1);
@@ -86,7 +87,6 @@ TEST(ForkTest, ThdCount) {
     thd.Join();
   }
   ASSERT_TRUE(gpr_time_similar(end_time, est_end_time, tolerance));
-  grpc_core::Fork::GlobalShutdown();
 }
 
 static void exec_ctx_thread(void* arg) {
@@ -128,7 +128,6 @@ TEST(ForkTest, ExecCount) {
   ASSERT_FALSE(exec_ctx_created);
   grpc_core::Fork::AllowExecCtx();
   thd.Join();  // This ensure that the call got un-blocked
-  grpc_core::Fork::GlobalShutdown();
 }
 
 int main(int argc, char** argv) {

@@ -31,11 +31,9 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/call_fragments.h"
 
 //
 // grpc_composite_channel_credentials

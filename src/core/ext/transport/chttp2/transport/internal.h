@@ -60,6 +60,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -236,7 +237,21 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport {
+struct grpc_chttp2_transport
+// TODO(ctiller): #31319 fixed a crash on Linux & Mac whereby iomgr was
+// accessed after shutdown by chttp2. We've not seen similar behavior on
+// Windows afaik, but this fix has exposed another refcounting bug whereby
+// transports leak on Windows and prevent test shutdown.
+// This hack attempts to compromise between two things that are blocking our CI
+// from giving us a good quality signal, but are unlikely to be problems for
+// most customers. We should continue tracking down what's causing the failure,
+// but this gives us some runway to do so - and given that we're actively
+// working on removing the problematic code paths, it may be that effort brings
+// the result we need.
+#ifndef GPR_WINDOWS
+    : public grpc_core::KeepsGrpcInitialized
+#endif
+{
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
@@ -261,7 +276,7 @@ struct grpc_chttp2_transport {
   /** is the transport destroying itself? */
   uint8_t destroying = false;
   /** has the upper layer closed the transport? */
-  grpc_error_handle closed_with_error = GRPC_ERROR_NONE;
+  grpc_error_handle closed_with_error;
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading = 1;
@@ -309,8 +324,8 @@ struct grpc_chttp2_transport {
   uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
 
   /** Set to a grpc_error object if a goaway frame is received. By default, set
-   * to GRPC_ERROR_NONE */
-  grpc_error_handle goaway_error = GRPC_ERROR_NONE;
+   * to absl::OkStatus() */
+  grpc_error_handle goaway_error;
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
@@ -391,7 +406,7 @@ struct grpc_chttp2_transport {
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
-  grpc_error_handle close_transport_on_writes_finished = GRPC_ERROR_NONE;
+  grpc_error_handle close_transport_on_writes_finished;
 
   /* a list of closures to run after writes are finished */
   grpc_closure_list run_after_write = GRPC_CLOSURE_LIST_INIT;
@@ -527,9 +542,9 @@ struct grpc_chttp2_stream {
   bool eos_sent = false;
 
   /** the error that resulted in this stream being read-closed */
-  grpc_error_handle read_closed_error = GRPC_ERROR_NONE;
+  grpc_error_handle read_closed_error;
   /** the error that resulted in this stream being write-closed */
-  grpc_error_handle write_closed_error = GRPC_ERROR_NONE;
+  grpc_error_handle write_closed_error;
 
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
@@ -543,7 +558,7 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
-  grpc_error_handle forced_close_error = GRPC_ERROR_NONE;
+  grpc_error_handle forced_close_error;
   /** how many header frames have we received? */
   uint8_t header_frames_received = 0;
   /** number of bytes received - reset at end of parse thread execution */
@@ -781,5 +796,7 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
 void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
 
 void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
+
+uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

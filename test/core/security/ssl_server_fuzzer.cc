@@ -50,7 +50,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   GPR_ASSERT(state->done_callback_called == false);
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -90,7 +90,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         creds->create_security_connector(grpc_core::ChannelArgs());
     GPR_ASSERT(sc != nullptr);
     grpc_core::Timestamp deadline =
-        grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now();
+        grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
     struct handshake_state state;
     state.done_callback_called = false;
@@ -106,9 +106,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // server will wait for more data. Explicitly fail the server by shutting
     // down the endpoint.
     if (!state.done_callback_called) {
-      grpc_endpoint_shutdown(
-          mock_endpoint,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Explicit close"));
+      grpc_endpoint_shutdown(mock_endpoint,
+                             GRPC_ERROR_CREATE("Explicit close"));
       grpc_core::ExecCtx::Get()->Flush();
     }
     GPR_ASSERT(state.done_callback_called);

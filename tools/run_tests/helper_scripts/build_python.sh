@@ -86,20 +86,6 @@ function toolchain() {
   fi
 }
 
-# TODO(jtattermusch): this adds dependency on grealpath on mac
-# (brew install coreutils) for little reason.
-# Command to invoke the linux command `realpath` or equivalent.
-function script_realpath() {
-  # Find `realpath`
-  if [ -x "$(command -v realpath)" ]; then
-    realpath "$@"
-  elif [ -x "$(command -v grealpath)" ]; then
-    grealpath "$@"
-  else
-    exit 1
-  fi
-}
-
 ####################
 # Script Arguments #
 ####################
@@ -137,9 +123,9 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==16.7.9
+  $PYTHON -m pip install --user virtualenv==20.0.23
   $PYTHON -m virtualenv "$VENV"
-  VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+  VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
 
@@ -176,16 +162,10 @@ pip_install_dir_and_deps() {
   cd "$PWD"
 }
 
-# Install gevent
-if [[ "$VENV" == "py36" ]]; then
-  # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
-  pip_install gevent==1.3.b1
-else
-  pip_install -U gevent
-fi
+pip_install -U gevent
 
 pip_install --upgrade cython
-pip_install --upgrade six protobuf
+pip_install --upgrade six protobuf>=4.21.3
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then

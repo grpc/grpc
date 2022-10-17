@@ -23,6 +23,7 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -30,6 +31,8 @@ namespace testing {
 namespace {
 
 using ClientStats = LrsServiceImpl::ClientStats;
+
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 //
 // XdsClientTest - basic tests of XdsClient functionality
@@ -142,6 +145,8 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   constexpr char kClusterName2[] = "cluster_name_2";
   constexpr char kClusterName3[] = "cluster_name_3";
   CreateAndStartBackends(1);
+  balancer_->ads_service()->set_inject_bad_resources_for_resource_type(
+      kCdsTypeUrl);
   // Add cluster with unsupported type.
   auto cluster = default_cluster_;
   cluster.set_name(kClusterName2);
@@ -178,14 +183,20 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   // Send RPC.
   const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::ContainsRegex(absl::StrCat(kClusterName2,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid.*",
-                                            kClusterName3,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid")));
+      absl::StrCat("xDS response validation errors: ["
+                   "resource index 0: Can't decode Resource proto wrapper; ",
+                   "resource index 1: foo: "
+                   "INVALID_ARGUMENT: Can't parse Cluster resource.; "
+                   "resource index 3: ",
+                   kClusterName2,
+                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
+                   "field:type error:unknown discovery type]; "
+                   "resource index 4: ",
+                   kClusterName3,
+                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
+                   "field:type error:unknown discovery type]]"));
   // RPCs for default cluster should succeed.
   std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
       {"cluster", kDefaultClusterName},
@@ -199,8 +210,9 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   };
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "cluster_name_2: UNAVAILABLE: invalid resource: INVALID_ARGUMENT:.*"
-      "errors parsing CDS resource.*DiscoveryType is not valid.*",
+      "cluster_name_2: UNAVAILABLE: invalid resource: "
+      "INVALID_ARGUMENT: errors validating Cluster resource: \\["
+      "field:type error:unknown discovery type\\] .*",
       RpcOptions().set_metadata(std::move(metadata_cluster_2)));
 }
 
@@ -244,8 +256,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
@@ -269,8 +280,7 @@ TEST_P(
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Now, destroy the new channel, send an EDS update to use a different backend
   // and test that the channel switches to that backend.
   channel2.reset();
@@ -305,11 +315,10 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener.*")));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: "
+            "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   // Need to create a second channel to subscribe to a second LDS resource.
   auto channel2 = CreateChannel(0, kServerName2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
@@ -323,16 +332,13 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
     // Wait for second NACK to be reported to xDS server.
     const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
     ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName2,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
+    EXPECT_EQ(
+        response_state->error_message,
+        "xDS response validation errors: ["
+        "resource index 0: server.other.com: "
+        "INVALID_ARGUMENT: Listener has neither address nor ApiListener; "
+        "resource index 1: server.example.com: "
+        "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   }
   // Now start a new channel with a third server name, this one with a
   // valid resource.
@@ -361,13 +367,13 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION, StatusCode::OK);
+  const auto response_state =
+      WaitForLdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener")));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: "
+            "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -1073,6 +1079,9 @@ TEST_P(XdsFederationTest, FederationServer) {
   const char* kNewRouteConfigName =
       "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
+  const char* kNewServerRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_server_route_config_name";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "new_edsservice_name";
@@ -1101,7 +1110,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   new_cluster.mutable_eds_cluster_config()->set_service_name(
       kNewEdsServiceName);
   authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
+  // New RouteConfig
   RouteConfiguration new_route_config = default_route_config_;
   new_route_config.set_name(kNewRouteConfigName);
   new_route_config.mutable_virtual_hosts(0)
@@ -1113,6 +1122,9 @@ TEST_P(XdsFederationTest, FederationServer) {
   listener.set_name(kNewListenerName);
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
+  // New Server RouteConfig
+  RouteConfiguration new_server_route_config = default_server_route_config_;
+  new_server_route_config.set_name(kNewServerRouteConfigName);
   // New Server Listeners
   for (int port : GetBackendPorts()) {
     Listener server_listener = default_server_listener_;
@@ -1122,7 +1134,9 @@ TEST_P(XdsFederationTest, FederationServer) {
         "?psm_project_id=1234"));
     server_listener.mutable_address()->mutable_socket_address()->set_port_value(
         port);
-    authority_balancer_->ads_service()->SetLdsResource(server_listener);
+    SetListenerAndRouteConfiguration(authority_balancer_.get(), server_listener,
+                                     new_server_route_config,
+                                     ServerHcmAccessor());
   }
   WaitForAllBackends(DEBUG_LOCATION);
 }
@@ -1355,7 +1369,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
