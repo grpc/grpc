@@ -240,8 +240,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
-  const ChannelArgs& channel_args() const { return args_; }
-
   channelz::SubchannelNode* channelz_node();
 
   // Starts watching the subchannel's connectivity state.

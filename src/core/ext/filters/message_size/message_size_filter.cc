@@ -118,7 +118,7 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
         GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing message size method parameters: ",
-                     grpc_error_std_string(error)));
+                     StatusToString(error)));
     return status;
   }
   return std::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,

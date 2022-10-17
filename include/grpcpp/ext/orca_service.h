@@ -23,10 +23,10 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 
 namespace grpc {

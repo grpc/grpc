@@ -45,6 +45,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/http/httpcli.h"
@@ -211,9 +212,8 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     grpc_error_handle error) {
   absl::StatusOr<std::string> zone;
   if (!error.ok()) {
-    zone = absl::UnknownError(
-        absl::StrCat("error fetching zone from metadata server: ",
-                     grpc_error_std_string(error)));
+    zone = absl::UnknownError(absl::StrCat(
+        "error fetching zone from metadata server: ", StatusToString(error)));
   } else if (response->status != 200) {
     zone = absl::UnknownError(absl::StrFormat(
         "zone query received non-200 status: %d", response->status));
@@ -252,7 +252,7 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     grpc_error_handle error) {
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
   }
   resolver->IPv6QueryDone(error.ok() && response->status == 200);
 }
