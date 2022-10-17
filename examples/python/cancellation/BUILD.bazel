@@ -62,9 +62,9 @@ py_binary(
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
         ":hash_name_py_pb2",
         ":search",
+        "//src/python/grpcio/grpc:grpcio",
     ],
 )
 

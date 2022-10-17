@@ -55,9 +55,9 @@ py_binary(
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
         ":prime_proto_pb2",
         ":prime_proto_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
     ],
 )
 
