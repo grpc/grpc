@@ -739,6 +739,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool internal_access) {
   GenerateDocCommentBody(out, service);
 
+  out->Print("[global::System.Runtime.CompilerServices.CompilerGenerated]");
   out->Print("$access_level$ static partial class $classname$\n",
              "access_level", GetAccessLevel(internal_access), "classname",
              GetServiceClassName(service));
