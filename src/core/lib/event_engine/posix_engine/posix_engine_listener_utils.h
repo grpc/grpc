@@ -58,6 +58,8 @@ class ListenerSocketsContainer {
   virtual absl::StatusOr<ListenerSocket> Find(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
           addr) = 0;
+
+  virtual ~ListenerSocketsContainer() = default;
 };
 
 // If successful, add a socket to ListenerSocketsContainer for \a addr, set \a
