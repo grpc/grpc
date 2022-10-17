@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include <deque>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -29,7 +30,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -54,6 +54,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
@@ -300,13 +301,22 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Creates a new FakeHelper for the new LB policy, and sets helper_ to
   // point to the FakeHelper.
   OrphanablePtr<LoadBalancingPolicy> MakeLbPolicy(absl::string_view name) {
-    auto helper = absl::make_unique<FakeHelper>(this, work_serializer_);
+    auto helper = std::make_unique<FakeHelper>(this, work_serializer_);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
                                       ChannelArgs()};
     return CoreConfiguration::Get()
         .lb_policy_registry()
         .CreateLoadBalancingPolicy(name, std::move(args));
+  }
+
+  // Creates an LB policy config from json.
+  static RefCountedPtr<LoadBalancingPolicy::Config> MakeConfig(
+      const Json& json) {
+    return CoreConfiguration::Get()
+        .lb_policy_registry()
+        .ParseLoadBalancingConfig(json)
+        .value();
   }
 
   // Converts an address URI into a grpc_resolved_address.
@@ -333,25 +343,73 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return status;
   }
 
+  // Keeps reading state updates until continue_predicate() returns false.
+  // Returns false if the helper reports no events or if the event is
+  // not a state update; otherwise (if continue_predicate() tells us to
+  // stop) returns true.
+  bool WaitForStateUpdate(
+      std::function<
+          bool(grpc_connectivity_state, absl::Status,
+               std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>)>
+          continue_predicate,
+      SourceLocation location = SourceLocation()) {
+    while (true) {
+      auto event = helper_->GetEvent();
+      EXPECT_TRUE(event.has_value())
+          << location.file() << ":" << location.line();
+      if (!event.has_value()) return false;
+      auto* update = absl::get_if<FakeHelper::StateUpdate>(&*event);
+      EXPECT_NE(update, nullptr) << location.file() << ":" << location.line();
+      if (update == nullptr) return false;
+      if (!continue_predicate(update->state, std::move(update->status),
+                              std::move(update->picker))) {
+        return true;
+      }
+    }
+  }
+
   // Expects that the LB policy has reported the specified connectivity
   // state to helper_.  Returns the picker from the state update.
   std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> ExpectState(
-      grpc_connectivity_state state, absl::Status status = absl::OkStatus(),
+      grpc_connectivity_state expected_state,
+      absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
-    auto event = helper_->GetEvent();
-    EXPECT_TRUE(event.has_value()) << location.file() << ":" << location.line();
-    if (!event.has_value()) return nullptr;
-    auto* update = absl::get_if<FakeHelper::StateUpdate>(&*event);
-    EXPECT_NE(update, nullptr) << location.file() << ":" << location.line();
-    if (update == nullptr) return nullptr;
-    EXPECT_EQ(update->state, state)
-        << location.file() << ":" << location.line();
-    EXPECT_EQ(update->status, status)
-        << update->status << "\n"
-        << location.file() << ":" << location.line();
-    EXPECT_NE(update->picker, nullptr)
-        << location.file() << ":" << location.line();
-    return std::move(update->picker);
+    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> final_picker;
+    WaitForStateUpdate(
+        [&](grpc_connectivity_state state, absl::Status status,
+            std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
+          EXPECT_EQ(state, expected_state)
+              << "got " << ConnectivityStateName(state) << ", expected "
+              << ConnectivityStateName(expected_state) << "\n"
+              << "at " << location.file() << ":" << location.line();
+          EXPECT_EQ(status, expected_status)
+              << status << "\n"
+              << location.file() << ":" << location.line();
+          EXPECT_NE(picker, nullptr)
+              << location.file() << ":" << location.line();
+          final_picker = std::move(picker);
+          return false;
+        });
+    return final_picker;
+  }
+
+  // Waits for the LB policy to get connected.
+  std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
+      SourceLocation location = SourceLocation()) {
+    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> final_picker;
+    WaitForStateUpdate(
+        [&](grpc_connectivity_state state, absl::Status status,
+            std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
+          if (state == GRPC_CHANNEL_CONNECTING) {
+            EXPECT_TRUE(status.ok()) << status;
+            ExpectPickQueued(picker.get(), location);
+            return true;
+          }
+          EXPECT_EQ(state, GRPC_CHANNEL_READY) << ConnectivityStateName(state);
+          final_picker = std::move(picker);
+          return false;
+        });
+    return final_picker;
   }
 
   // Requests a pick on picker and expects a Queue result.

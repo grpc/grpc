@@ -2236,6 +2236,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/iomgr_internal.h",
     ],
+    visibility = ["@grpc:exec_ctx"],
     deps = [
         "closure",
         "debug_location",
