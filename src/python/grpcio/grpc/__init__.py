@@ -33,15 +33,6 @@ try:
 except ImportError:
     __version__ = "dev0"
 
-try:
-    # pylint: disable=ungrouped-imports
-    import futures
-    sys.stderr.write("futures_found")
-    sys.stderr.flush()
-except ImportError:
-    sys.stderr.write("no_futures_found")
-    sys.stderr.flush()
-
 ############################## Future Interface  ###############################
 
 
