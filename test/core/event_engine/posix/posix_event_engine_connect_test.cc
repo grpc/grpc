@@ -18,14 +18,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -56,7 +55,6 @@ namespace posix_engine {
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::PosixEventEngine;
-using ::grpc_event_engine::experimental::PosixOracleEventEngine;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using ::grpc_event_engine::experimental::WaitForSingleOwner;
 using namespace std::chrono_literals;
@@ -111,7 +109,7 @@ absl::StatusOr<std::vector<int>> CreateConnectedSockets(
   // attempts to identify the number of new connection attempts that will
   // be allowed by the kernel before any subsequent connection attempts
   // become pending indefinitely.
-  while (1) {
+  while (true) {
     client_socket = socket(AF_INET6, SOCK_STREAM, 0);
     setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     // Make fd non-blocking.

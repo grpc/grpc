@@ -15,8 +15,6 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
 #include <atomic>
 #include <cstdint>
 #include <memory>
