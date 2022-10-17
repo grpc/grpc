@@ -44,6 +44,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
@@ -147,7 +148,9 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "");
   // Check defaults.
-  EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
+  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+            "[{\"xds_wrr_locality_experimental\":{\"childPolicy\":"
+            "[{\"round_robin\":{}}]}}]");
   EXPECT_FALSE(resource.lrs_load_reporting_server.has_value());
   EXPECT_EQ(resource.max_concurrent_requests, 1024);
   EXPECT_FALSE(resource.outlier_detection.has_value());
@@ -580,9 +583,9 @@ TEST_F(LbPolicyTest, LbPolicyRingHash) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.lb_policy, "RING_HASH");
-  EXPECT_EQ(resource.min_ring_size, 1024);
-  EXPECT_EQ(resource.max_ring_size, 8388608);
+  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+            "[{\"ring_hash_experimental\":{"
+            "\"max_ring_size\":8388608,\"min_ring_size\":1024}}]");
 }
 
 TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSize) {
@@ -603,9 +606,9 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSize) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.lb_policy, "RING_HASH");
-  EXPECT_EQ(resource.min_ring_size, 2048);
-  EXPECT_EQ(resource.max_ring_size, 4096);
+  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+            "[{\"ring_hash_experimental\":{"
+            "\"max_ring_size\":4096,\"min_ring_size\":2048}}]");
 }
 
 TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSizeToZero) {
@@ -762,9 +765,6 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "");
-  EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
   EXPECT_EQ(resource.common_tls_context.certificate_validation_context
                 .ca_certificate_provider_instance.instance_name,
             "provider1");
@@ -907,9 +907,6 @@ TEST_F(LrsTest, Valid) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "");
-  EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
   ASSERT_TRUE(resource.lrs_load_reporting_server.has_value());
   EXPECT_EQ(*resource.lrs_load_reporting_server,
             xds_client_->bootstrap().server());
