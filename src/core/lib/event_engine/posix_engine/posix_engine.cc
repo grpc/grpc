@@ -15,17 +15,20 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <cstring>
 #include <string>
-#include <thread>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -42,6 +45,10 @@
 #include "src/core/lib/gprpp/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+#include <errno.h>       // IWYU pragma: keep
+#include <stdint.h>      // IWYU pragma: keep
+#include <sys/socket.h>  // IWYU pragma: keep
+
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
@@ -100,7 +107,7 @@ void AsyncConnect::OnWritable(absl::Status status)
 
   mu_.Lock();
   GPR_ASSERT(fd_ != nullptr);
-  fd = absl::exchange(fd_, nullptr);
+  fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
   mu_.Unlock();
 
@@ -319,15 +326,12 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(std::make_shared<ThreadPool>()) {
-#ifdef GRPC_POSIX_SOCKET_TCP
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
-#endif
 }
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(std::make_shared<ThreadPool>()) {
-#ifdef GRPC_POSIX_SOCKET_TCP
   if (grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
     poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
     if (poller_manager_->Poller() != nullptr) {
@@ -336,7 +340,6 @@ PosixEventEngine::PosixEventEngine()
       });
     }
   }
-#endif
 }
 
 void PosixEventEngine::PollerWorkInternal(
