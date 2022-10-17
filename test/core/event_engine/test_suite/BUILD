@@ -98,7 +98,7 @@ grpc_cc_test(
         "no_linux",
         "no_mac",
     ],
-    uses_polling = False,q
+    uses_polling = False,
     deps = [
         "//:windows_event_engine",
         "//test/core/event_engine/test_suite:timer",
