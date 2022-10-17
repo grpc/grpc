@@ -16,6 +16,7 @@
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
 #include <functional>
 #include <memory>
+#include <utility>
 
 #include <gtest/gtest.h>
 
