@@ -237,7 +237,11 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
+struct grpc_chttp2_transport
+#ifndef GPR_WINDOWS
+    : public grpc_core::KeepsGrpcInitialized
+#endif
+{
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
