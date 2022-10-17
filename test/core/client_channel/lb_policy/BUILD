@@ -48,3 +48,15 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "outlier_detection_test",
+    srcs = ["outlier_detection_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        ":lb_policy_test_lib",
+        "//:grpc_lb_policy_outlier_detection",
+        "//test/core/util:grpc_test_util",
+    ],
+)
