@@ -93,9 +93,9 @@ const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/cumulative")
-          .set_measure(experimental::kRpcClientSentBytesPerRpcMeasureName)
+          .set_measure(kRpcClientSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -103,9 +103,9 @@ const ViewDescriptor& ClientReceivedBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/cumulative")
-          .set_measure(experimental::kRpcClientReceivedBytesPerRpcMeasureName)
+          .set_measure(kRpcClientReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -113,9 +113,9 @@ const ViewDescriptor& ClientRoundtripLatencyCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/cumulative")
-          .set_measure(experimental::kRpcClientRoundtripLatencyMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -123,9 +123,9 @@ const ViewDescriptor& ClientServerLatencyCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/server_latency/cumulative")
-          .set_measure(experimental::kRpcClientServerLatencyMeasureName)
+          .set_measure(kRpcClientServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -133,9 +133,9 @@ const ViewDescriptor& ClientStartedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/started_rpcs/cumulative")
-          .set_measure(experimental::kRpcClientStartedRpcsMeasureName)
+          .set_measure(kRpcClientStartedRpcsMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -143,10 +143,10 @@ const ViewDescriptor& ClientCompletedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/completed_rpcs/cumulative")
-          .set_measure(experimental::kRpcClientRoundtripLatencyMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ClientMethodTagKey())
-          .add_column(experimental::ClientStatusTagKey());
+          .add_column(ClientMethodTagKey())
+          .add_column(ClientStatusTagKey());
   return descriptor;
 }
 
@@ -154,9 +154,9 @@ const ViewDescriptor& ClientSentMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/cumulative")
-          .set_measure(experimental::kRpcClientSentMessagesPerRpcMeasureName)
+          .set_measure(kRpcClientSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -164,10 +164,9 @@ const ViewDescriptor& ClientReceivedMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/cumulative")
-          .set_measure(
-              experimental::kRpcClientReceivedMessagesPerRpcMeasureName)
+          .set_measure(kRpcClientReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -175,9 +174,9 @@ const ViewDescriptor& ClientRetriesPerCallCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/retries_per_call/cumulative")
-          .set_measure(experimental::kRpcClientRetriesPerCallMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -185,9 +184,9 @@ const ViewDescriptor& ClientRetriesCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/retries/cumulative")
-          .set_measure(experimental::kRpcClientRetriesPerCallMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -195,10 +194,9 @@ const ViewDescriptor& ClientTransparentRetriesPerCallCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/transparent_retries_per_call/cumulative")
-          .set_measure(
-              experimental::kRpcClientTransparentRetriesPerCallMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -206,10 +204,9 @@ const ViewDescriptor& ClientTransparentRetriesCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/transparent_retries/cumulative")
-          .set_measure(
-              experimental::kRpcClientTransparentRetriesPerCallMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -217,9 +214,9 @@ const ViewDescriptor& ClientRetryDelayPerCallCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/client/retry_delay_per_call/cumulative")
-          .set_measure(experimental::kRpcClientRetryDelayPerCallMeasureName)
+          .set_measure(kRpcClientRetryDelayPerCallMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -228,9 +225,9 @@ const ViewDescriptor& ServerSentBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/cumulative")
-          .set_measure(experimental::kRpcServerSentBytesPerRpcMeasureName)
+          .set_measure(kRpcServerSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -238,9 +235,9 @@ const ViewDescriptor& ServerReceivedBytesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/cumulative")
-          .set_measure(experimental::kRpcServerReceivedBytesPerRpcMeasureName)
+          .set_measure(kRpcServerReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -248,9 +245,9 @@ const ViewDescriptor& ServerServerLatencyCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/elapsed_time/cumulative")
-          .set_measure(experimental::kRpcServerServerLatencyMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -258,9 +255,9 @@ const ViewDescriptor& ServerStartedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/started_rpcs/cumulative")
-          .set_measure(experimental::kRpcServerStartedRpcsMeasureName)
+          .set_measure(kRpcServerStartedRpcsMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -268,10 +265,10 @@ const ViewDescriptor& ServerCompletedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/completed_rpcs/cumulative")
-          .set_measure(experimental::kRpcServerServerLatencyMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ServerMethodTagKey())
-          .add_column(experimental::ServerStatusTagKey());
+          .add_column(ServerMethodTagKey())
+          .add_column(ServerStatusTagKey());
   return descriptor;
 }
 
@@ -279,9 +276,9 @@ const ViewDescriptor& ServerSentMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/cumulative")
-          .set_measure(experimental::kRpcServerSentMessagesPerRpcMeasureName)
+          .set_measure(kRpcServerSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -289,10 +286,9 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/cumulative")
-          .set_measure(
-              experimental::kRpcServerReceivedMessagesPerRpcMeasureName)
+          .set_measure(kRpcServerReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -301,9 +297,9 @@ const ViewDescriptor& ClientSentBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/minute")
-          .set_measure(experimental::kRpcClientSentBytesPerRpcMeasureName)
+          .set_measure(kRpcClientSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -311,9 +307,9 @@ const ViewDescriptor& ClientReceivedBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/minute")
-          .set_measure(experimental::kRpcClientReceivedBytesPerRpcMeasureName)
+          .set_measure(kRpcClientReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -321,9 +317,9 @@ const ViewDescriptor& ClientRoundtripLatencyMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/minute")
-          .set_measure(experimental::kRpcClientRoundtripLatencyMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -331,9 +327,9 @@ const ViewDescriptor& ClientServerLatencyMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/server_latency/minute")
-          .set_measure(experimental::kRpcClientServerLatencyMeasureName)
+          .set_measure(kRpcClientServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -341,9 +337,9 @@ const ViewDescriptor& ClientStartedRpcsMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/started_rpcs/minute")
-          .set_measure(experimental::kRpcClientStartedRpcsMeasureName)
+          .set_measure(kRpcClientStartedRpcsMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -351,10 +347,10 @@ const ViewDescriptor& ClientCompletedRpcsMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/completed_rpcs/minute")
-          .set_measure(experimental::kRpcClientRoundtripLatencyMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ClientMethodTagKey())
-          .add_column(experimental::ClientStatusTagKey());
+          .add_column(ClientMethodTagKey())
+          .add_column(ClientStatusTagKey());
   return descriptor;
 }
 
@@ -362,9 +358,9 @@ const ViewDescriptor& ClientSentMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/minute")
-          .set_measure(experimental::kRpcClientSentMessagesPerRpcMeasureName)
+          .set_measure(kRpcClientSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -372,10 +368,9 @@ const ViewDescriptor& ClientReceivedMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/minute")
-          .set_measure(
-              experimental::kRpcClientReceivedMessagesPerRpcMeasureName)
+          .set_measure(kRpcClientReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -383,9 +378,9 @@ const ViewDescriptor& ClientRetriesPerCallMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/retries_per_call/minute")
-          .set_measure(experimental::kRpcClientRetriesPerCallMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -393,9 +388,9 @@ const ViewDescriptor& ClientRetriesMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/retries/minute")
-          .set_measure(experimental::kRpcClientRetriesPerCallMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -403,10 +398,9 @@ const ViewDescriptor& ClientTransparentRetriesPerCallMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/transparent_retries_per_call/minute")
-          .set_measure(
-              experimental::kRpcClientTransparentRetriesPerCallMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -414,10 +408,9 @@ const ViewDescriptor& ClientTransparentRetriesMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/transparent_retries/minute")
-          .set_measure(
-              experimental::kRpcClientTransparentRetriesPerCallMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -425,9 +418,9 @@ const ViewDescriptor& ClientRetryDelayPerCallMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/retry_delay_per_call/minute")
-          .set_measure(experimental::kRpcClientRetryDelayPerCallMeasureName)
+          .set_measure(kRpcClientRetryDelayPerCallMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -436,9 +429,9 @@ const ViewDescriptor& ServerSentBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/minute")
-          .set_measure(experimental::kRpcServerSentBytesPerRpcMeasureName)
+          .set_measure(kRpcServerSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -446,9 +439,9 @@ const ViewDescriptor& ServerReceivedBytesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/minute")
-          .set_measure(experimental::kRpcServerReceivedBytesPerRpcMeasureName)
+          .set_measure(kRpcServerReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -456,9 +449,9 @@ const ViewDescriptor& ServerServerLatencyMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/server_latency/minute")
-          .set_measure(experimental::kRpcServerServerLatencyMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -466,9 +459,9 @@ const ViewDescriptor& ServerStartedRpcsMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/started_rpcs/minute")
-          .set_measure(experimental::kRpcServerStartedRpcsMeasureName)
+          .set_measure(kRpcServerStartedRpcsMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -476,10 +469,10 @@ const ViewDescriptor& ServerCompletedRpcsMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/completed_rpcs/minute")
-          .set_measure(experimental::kRpcServerServerLatencyMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ServerMethodTagKey())
-          .add_column(experimental::ServerStatusTagKey());
+          .add_column(ServerMethodTagKey())
+          .add_column(ServerStatusTagKey());
   return descriptor;
 }
 
@@ -487,9 +480,9 @@ const ViewDescriptor& ServerSentMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/minute")
-          .set_measure(experimental::kRpcServerSentMessagesPerRpcMeasureName)
+          .set_measure(kRpcServerSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -497,10 +490,9 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/minute")
-          .set_measure(
-              experimental::kRpcServerReceivedMessagesPerRpcMeasureName)
+          .set_measure(kRpcServerReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -509,9 +501,9 @@ const ViewDescriptor& ClientSentBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/hour")
-          .set_measure(experimental::kRpcClientSentBytesPerRpcMeasureName)
+          .set_measure(kRpcClientSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -519,9 +511,9 @@ const ViewDescriptor& ClientReceivedBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/hour")
-          .set_measure(experimental::kRpcClientReceivedBytesPerRpcMeasureName)
+          .set_measure(kRpcClientReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -529,9 +521,9 @@ const ViewDescriptor& ClientRoundtripLatencyHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/hour")
-          .set_measure(experimental::kRpcClientRoundtripLatencyMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -539,9 +531,9 @@ const ViewDescriptor& ClientServerLatencyHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/server_latency/hour")
-          .set_measure(experimental::kRpcClientServerLatencyMeasureName)
+          .set_measure(kRpcClientServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -549,9 +541,9 @@ const ViewDescriptor& ClientStartedRpcsHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/started_rpcs/hour")
-          .set_measure(experimental::kRpcClientStartedRpcsMeasureName)
+          .set_measure(kRpcClientStartedRpcsMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -559,10 +551,10 @@ const ViewDescriptor& ClientCompletedRpcsHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/completed_rpcs/hour")
-          .set_measure(experimental::kRpcClientRoundtripLatencyMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ClientMethodTagKey())
-          .add_column(experimental::ClientStatusTagKey());
+          .add_column(ClientMethodTagKey())
+          .add_column(ClientStatusTagKey());
   return descriptor;
 }
 
@@ -570,9 +562,9 @@ const ViewDescriptor& ClientSentMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/hour")
-          .set_measure(experimental::kRpcClientSentMessagesPerRpcMeasureName)
+          .set_measure(kRpcClientSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -580,10 +572,9 @@ const ViewDescriptor& ClientReceivedMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/hour")
-          .set_measure(
-              experimental::kRpcClientReceivedMessagesPerRpcMeasureName)
+          .set_measure(kRpcClientReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -591,9 +582,9 @@ const ViewDescriptor& ClientRetriesPerCallHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/retries_per_call/hour")
-          .set_measure(experimental::kRpcClientRetriesPerCallMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -601,9 +592,9 @@ const ViewDescriptor& ClientRetriesHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/retries/hour")
-          .set_measure(experimental::kRpcClientRetriesPerCallMeasureName)
+          .set_measure(kRpcClientRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -611,10 +602,9 @@ const ViewDescriptor& ClientTransparentRetriesPerCallHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/transparent_retries_per_call/hour")
-          .set_measure(
-              experimental::kRpcClientTransparentRetriesPerCallMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -622,10 +612,9 @@ const ViewDescriptor& ClientTransparentRetriesHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/transparent_retries/hour")
-          .set_measure(
-              experimental::kRpcClientTransparentRetriesPerCallMeasureName)
+          .set_measure(kRpcClientTransparentRetriesPerCallMeasureName)
           .set_aggregation(Aggregation::Sum())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -633,9 +622,9 @@ const ViewDescriptor& ClientRetryDelayPerCallHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/retry_delay_per_call/hour")
-          .set_measure(experimental::kRpcClientRetryDelayPerCallMeasureName)
+          .set_measure(kRpcClientRetryDelayPerCallMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -644,9 +633,9 @@ const ViewDescriptor& ServerSentBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/hour")
-          .set_measure(experimental::kRpcServerSentBytesPerRpcMeasureName)
+          .set_measure(kRpcServerSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -654,9 +643,9 @@ const ViewDescriptor& ServerReceivedBytesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/hour")
-          .set_measure(experimental::kRpcServerReceivedBytesPerRpcMeasureName)
+          .set_measure(kRpcServerReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -664,9 +653,9 @@ const ViewDescriptor& ServerServerLatencyHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/server_latency/hour")
-          .set_measure(experimental::kRpcServerServerLatencyMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -674,9 +663,9 @@ const ViewDescriptor& ServerStartedRpcsHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/started_rpcs/hour")
-          .set_measure(experimental::kRpcServerStartedRpcsMeasureName)
+          .set_measure(kRpcServerStartedRpcsMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ClientMethodTagKey());
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 
@@ -684,10 +673,10 @@ const ViewDescriptor& ServerCompletedRpcsHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/completed_rpcs/hour")
-          .set_measure(experimental::kRpcServerServerLatencyMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(Aggregation::Count())
-          .add_column(experimental::ServerMethodTagKey())
-          .add_column(experimental::ServerStatusTagKey());
+          .add_column(ServerMethodTagKey())
+          .add_column(ServerStatusTagKey());
   return descriptor;
 }
 
@@ -695,9 +684,9 @@ const ViewDescriptor& ServerSentMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/hour")
-          .set_measure(experimental::kRpcServerSentMessagesPerRpcMeasureName)
+          .set_measure(kRpcServerSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 
@@ -705,10 +694,9 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
   const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/hour")
-          .set_measure(
-              experimental::kRpcServerReceivedMessagesPerRpcMeasureName)
+          .set_measure(kRpcServerReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
-          .add_column(experimental::ServerMethodTagKey());
+          .add_column(ServerMethodTagKey());
   return descriptor;
 }
 

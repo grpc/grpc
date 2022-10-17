@@ -25,14 +25,6 @@
 
 namespace grpc {
 
-// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
-// of a program, before any channels/servers are built.
-void EnableOpenCensusStats(bool enable);
-void EnableOpenCensusTracing(bool enable);
-// Gets the current status of OpenCensus stats/tracing
-bool OpenCensusStatsEnabled();
-bool OpenCensusTracingEnabled();
-
 // The tag keys set when recording RPC stats.
 using experimental::ClientMethodTagKey;
 using experimental::ClientStatusTagKey;
@@ -127,6 +119,14 @@ using experimental::ServerSentMessagesPerRpcHour;
 using experimental::ServerServerLatencyHour;
 using experimental::ServerStartedCountHour;
 using experimental::ServerStartedRpcsHour;
+
+// Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
+// of a program, before any channels/servers are built.
+void EnableOpenCensusStats(bool enable);
+void EnableOpenCensusTracing(bool enable);
+// Gets the current status of OpenCensus stats/tracing
+bool OpenCensusStatsEnabled();
+bool OpenCensusTracingEnabled();
 
 }  // namespace grpc
 
