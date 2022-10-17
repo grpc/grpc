@@ -45,6 +45,8 @@ void RegisterOpenCensusViewsForExport();
 // Returns the tracing Span for the current RPC.
 ::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
+namespace experimental {
+
 // The tag keys set when recording RPC stats.
 ::opencensus::tags::TagKey ClientMethodTagKey();
 ::opencensus::tags::TagKey ClientStatusTagKey();
@@ -182,6 +184,8 @@ class CensusContext {
   ::opencensus::trace::Span span_;
   ::opencensus::tags::TagMap tags_;
 };
+
+}  // namespace experimental
 
 }  // namespace grpc
 

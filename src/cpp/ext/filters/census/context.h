@@ -39,6 +39,8 @@
 
 namespace grpc {
 
+using experimental::CensusContext;
+
 // Serializes the outgoing trace context. tracing_buf must be
 // opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,

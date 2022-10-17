@@ -83,7 +83,7 @@ class CensusServerCallData : public CallData {
   static void OnDoneRecvMessageCb(void* user_data, grpc_error_handle error);
 
  private:
-  CensusContext context_;
+  experimental::CensusContext context_;
   // server method
   absl::string_view method_;
   std::string qualified_method_;

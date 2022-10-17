@@ -75,32 +75,33 @@ void RegisterOpenCensusPlugin() {
     grpc::ServerContext* context) {
   if (context == nullptr) return opencensus::trace::Span::BlankSpan();
 
-  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
+  return reinterpret_cast<const grpc::experimental::CensusContext*>(
+             context->census_context())
       ->Span();
 }
 
 // These measure definitions should be kept in sync across opencensus
 // implementations--see
 // https://github.com/census-instrumentation/opencensus-java/blob/master/contrib/grpc_metrics/src/main/java/io/opencensus/contrib/grpc/metrics/RpcMeasureConstants.java.
-::opencensus::tags::TagKey ClientMethodTagKey() {
+::opencensus::tags::TagKey experimental::ClientMethodTagKey() {
   static const auto method_tag_key =
       ::opencensus::tags::TagKey::Register("grpc_client_method");
   return method_tag_key;
 }
 
-::opencensus::tags::TagKey ClientStatusTagKey() {
+::opencensus::tags::TagKey experimental::ClientStatusTagKey() {
   static const auto status_tag_key =
       ::opencensus::tags::TagKey::Register("grpc_client_status");
   return status_tag_key;
 }
 
-::opencensus::tags::TagKey ServerMethodTagKey() {
+::opencensus::tags::TagKey experimental::ServerMethodTagKey() {
   static const auto method_tag_key =
       ::opencensus::tags::TagKey::Register("grpc_server_method");
   return method_tag_key;
 }
 
-::opencensus::tags::TagKey ServerStatusTagKey() {
+::opencensus::tags::TagKey experimental::ServerStatusTagKey() {
   static const auto status_tag_key =
       ::opencensus::tags::TagKey::Register("grpc_server_status");
   return status_tag_key;
@@ -108,60 +109,69 @@ void RegisterOpenCensusPlugin() {
 
 // Client
 ABSL_CONST_INIT const absl::string_view
-    kRpcClientSentMessagesPerRpcMeasureName =
+    experimental::kRpcClientSentMessagesPerRpcMeasureName =
         "grpc.io/client/sent_messages_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcClientSentBytesPerRpcMeasureName =
-    "grpc.io/client/sent_bytes_per_rpc";
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcClientSentBytesPerRpcMeasureName =
+        "grpc.io/client/sent_bytes_per_rpc";
 
 ABSL_CONST_INIT const absl::string_view
-    kRpcClientReceivedMessagesPerRpcMeasureName =
+    experimental::kRpcClientReceivedMessagesPerRpcMeasureName =
         "grpc.io/client/received_messages_per_rpc";
 
 ABSL_CONST_INIT const absl::string_view
-    kRpcClientReceivedBytesPerRpcMeasureName =
+    experimental::kRpcClientReceivedBytesPerRpcMeasureName =
         "grpc.io/client/received_bytes_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcClientRoundtripLatencyMeasureName =
-    "grpc.io/client/roundtrip_latency";
-
-ABSL_CONST_INIT const absl::string_view kRpcClientServerLatencyMeasureName =
-    "grpc.io/client/server_latency";
-
-ABSL_CONST_INIT const absl::string_view kRpcClientStartedRpcsMeasureName =
-    "grpc.io/client/started_rpcs";
-
-ABSL_CONST_INIT const absl::string_view kRpcClientRetriesPerCallMeasureName =
-    "grpc.io/client/retries_per_call";
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcClientRoundtripLatencyMeasureName =
+        "grpc.io/client/roundtrip_latency";
 
 ABSL_CONST_INIT const absl::string_view
-    kRpcClientTransparentRetriesPerCallMeasureName =
+    experimental::kRpcClientServerLatencyMeasureName =
+        "grpc.io/client/server_latency";
+
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcClientStartedRpcsMeasureName =
+        "grpc.io/client/started_rpcs";
+
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcClientRetriesPerCallMeasureName =
+        "grpc.io/client/retries_per_call";
+
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcClientTransparentRetriesPerCallMeasureName =
         "grpc.io/client/transparent_retries_per_call";
 
-ABSL_CONST_INIT const absl::string_view kRpcClientRetryDelayPerCallMeasureName =
-    "grpc.io/client/retry_delay_per_call";
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcClientRetryDelayPerCallMeasureName =
+        "grpc.io/client/retry_delay_per_call";
 
 // Server
 ABSL_CONST_INIT const absl::string_view
-    kRpcServerSentMessagesPerRpcMeasureName =
+    experimental::kRpcServerSentMessagesPerRpcMeasureName =
         "grpc.io/server/sent_messages_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcServerSentBytesPerRpcMeasureName =
-    "grpc.io/server/sent_bytes_per_rpc";
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcServerSentBytesPerRpcMeasureName =
+        "grpc.io/server/sent_bytes_per_rpc";
 
 ABSL_CONST_INIT const absl::string_view
-    kRpcServerReceivedMessagesPerRpcMeasureName =
+    experimental::kRpcServerReceivedMessagesPerRpcMeasureName =
         "grpc.io/server/received_messages_per_rpc";
 
 ABSL_CONST_INIT const absl::string_view
-    kRpcServerReceivedBytesPerRpcMeasureName =
+    experimental::kRpcServerReceivedBytesPerRpcMeasureName =
         "grpc.io/server/received_bytes_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
-    "grpc.io/server/server_latency";
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcServerServerLatencyMeasureName =
+        "grpc.io/server/server_latency";
 
-ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
-    "grpc.io/server/started_rpcs";
+ABSL_CONST_INIT const absl::string_view
+    experimental::kRpcServerStartedRpcsMeasureName =
+        "grpc.io/server/started_rpcs";
 
 std::atomic<bool> g_open_census_stats_enabled(true);
 std::atomic<bool> g_open_census_tracing_enabled(true);
