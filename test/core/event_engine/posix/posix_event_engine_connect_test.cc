@@ -11,30 +11,40 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <chrono>
+#include <cstring>
 #include <memory>
-#include <random>
 #include <string>
-#include <thread>
+#include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 #include "test/core/util/port.h"
@@ -56,8 +66,8 @@ namespace {
 // Creates a server socket listening for one connection on a specific port. It
 // then creates another client socket connected to the server socket. This fills
 // up the kernel listen queue on the server socket. Any subsequent attempts to
-// connect to the server socket will hang indefinitely. This can be used to
-// test Connection timeouts and cancellation attempts.
+// connect to the server socket will be pending indefinitely. This can be used
+// to test Connection timeouts and cancellation attempts.
 absl::StatusOr<std::vector<int>> CreateConnectedSockets(
     EventEngine::ResolvedAddress resolved_addr) {
   int server_socket;
@@ -100,7 +110,7 @@ absl::StatusOr<std::vector<int>> CreateConnectedSockets(
   // accept a certain number of SYN packets before dropping them. This loop
   // attempts to identify the number of new connection attempts that will
   // be allowed by the kernel before any subsequent connection attempts
-  // hang indefinitely.
+  // become pending indefinitely.
   while (1) {
     client_socket = socket(AF_INET6, SOCK_STREAM, 0);
     setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
@@ -122,8 +132,8 @@ absl::StatusOr<std::vector<int>> CreateConnectedSockets(
           abort();
         } else if (ret == 0) {
           // current connection attempt timed out. It indicates that the
-          // kernel will cause any subsequent connection attempts to hang
-          // indefintely.
+          // kernel will cause any subsequent connection attempts to
+          // become pending indefinitely.
           ret_sockets.push_back(client_socket);
           return ret_sockets;
         }
@@ -226,5 +236,8 @@ int main(int argc, char** argv) {
   if (!grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
     return 0;
   }
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }
