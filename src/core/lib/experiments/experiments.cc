@@ -62,7 +62,7 @@ namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_read_chunks", description_tcp_read_chunks, false},
+    {"tcp_read_chunks", description_tcp_read_chunks, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
     {"peer_state_based_framing", description_peer_state_based_framing, false},
     {"flow_control_fixes", description_flow_control_fixes, false},
