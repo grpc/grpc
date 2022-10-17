@@ -30,7 +30,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -302,7 +301,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Creates a new FakeHelper for the new LB policy, and sets helper_ to
   // point to the FakeHelper.
   OrphanablePtr<LoadBalancingPolicy> MakeLbPolicy(absl::string_view name) {
-    auto helper = absl::make_unique<FakeHelper>(this, work_serializer_);
+    auto helper = std::make_unique<FakeHelper>(this, work_serializer_);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
                                       ChannelArgs()};
