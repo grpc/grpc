@@ -70,14 +70,14 @@ namespace grpc_core {
 
 std::string XdsListenerResource::HttpConnectionManager::ToString() const {
   std::vector<std::string> contents;
-  contents.push_back(
-      Match(route_config,
-            [](const std::string& rds_name) {
-              return absl::StrCat("rds_name=", rds_name);
-            },
-            [](const XdsRouteConfigResource& route_config) {
-              return absl::StrCat("route_config=", route_config.ToString());
-            }));
+  contents.push_back(Match(
+      route_config,
+      [](const std::string& rds_name) {
+        return absl::StrCat("rds_name=", rds_name);
+      },
+      [](const XdsRouteConfigResource& route_config) {
+        return absl::StrCat("route_config=", route_config.ToString());
+      }));
   contents.push_back(absl::StrCat("http_max_stream_duration=",
                                   http_max_stream_duration.ToString()));
   if (!http_filters.empty()) {
@@ -334,8 +334,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md
   if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_original_ip_detection_extensions(
           http_connection_manager_proto)) {
-    ValidationErrors::ScopedField field(
-        errors, ".original_ip_detection_extensions");
+    ValidationErrors::ScopedField field(errors,
+                                        ".original_ip_detection_extensions");
     errors->AddError("must be empty");
   }
   // common_http_protocol_options
@@ -408,9 +408,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         if ((is_client && !filter_impl->IsSupportedOnClients()) ||
             (!is_client && !filter_impl->IsSupportedOnServers())) {
           if (!is_optional) {
-            errors->AddError(absl::StrCat(
-                "filter is not supported on ",
-                is_client ? "clients" : "servers"));
+            errors->AddError(absl::StrCat("filter is not supported on ",
+                                          is_client ? "clients" : "servers"));
           }
           continue;
         }
@@ -561,8 +560,7 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
     // inside of CommonTlsContext, so we make the error message a bit
     // more verbose to compensate.
     if (!downstream_tls_context.common_tls_context
-             .certificate_validation_context
-             .match_subject_alt_names.empty()) {
+             .certificate_validation_context.match_subject_alt_names.empty()) {
       errors->AddError("match_subject_alt_names not supported on servers");
     }
   }
@@ -572,8 +570,9 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
   // more verbose to compensate.
   if (downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.instance_name.empty()) {
-    errors->AddError("TLS configuration provided but no "
-                     "tls_certificate_provider_instance found");
+    errors->AddError(
+        "TLS configuration provided but no "
+        "tls_certificate_provider_instance found");
   }
   auto* require_client_certificate =
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
@@ -584,10 +583,11 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
     if (downstream_tls_context.require_client_certificate &&
         downstream_tls_context.common_tls_context.certificate_validation_context
             .ca_certificate_provider_instance.instance_name.empty()) {
-      ValidationErrors::ScopedField field(
-          errors, ".require_client_certificate");
-      errors->AddError("client certificate required but no certificate "
-                       "provider instance specified for validation");
+      ValidationErrors::ScopedField field(errors,
+                                          ".require_client_certificate");
+      errors->AddError(
+          "client certificate required but no certificate "
+          "provider instance specified for validation");
     }
   }
   auto* require_sni =
@@ -650,9 +650,8 @@ absl::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
   }
   // prefix_ranges
   size_t size = 0;
-  auto* prefix_ranges =
-      envoy_config_listener_v3_FilterChainMatch_prefix_ranges(
-          filter_chain_match_proto, &size);
+  auto* prefix_ranges = envoy_config_listener_v3_FilterChainMatch_prefix_ranges(
+      filter_chain_match_proto, &size);
   filter_chain_match.prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
     ValidationErrors::ScopedField field(
@@ -757,8 +756,7 @@ absl::optional<FilterChain> FilterChainParse(
   }
   // transport_socket
   auto* transport_socket =
-      envoy_config_listener_v3_FilterChain_transport_socket(
-          filter_chain_proto);
+      envoy_config_listener_v3_FilterChain_transport_socket(filter_chain_proto);
   if (transport_socket != nullptr) {
     ValidationErrors::ScopedField field(errors, ".transport_socket");
     filter_chain.filter_chain_data->downstream_tls_context =
@@ -792,8 +790,7 @@ absl::optional<std::string> AddressParse(
     }
   }
   ValidationErrors::ScopedField field2(errors, ".port_value");
-  uint32_t port =
-      envoy_config_core_v3_SocketAddress_port_value(socket_address);
+  uint32_t port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
   if (port > 65535) {
     errors->AddError("invalid port");
     return absl::nullopt;
@@ -1028,8 +1025,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     parsed_filter_chains.reserve(num_filter_chains);
     for (size_t i = 0; i < num_filter_chains; i++) {
       ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
-      auto filter_chain =
-          FilterChainParse(context, filter_chains[i], &errors);
+      auto filter_chain = FilterChainParse(context, filter_chains[i], &errors);
       if (filter_chain.has_value()) {
         parsed_filter_chains.push_back(std::move(*filter_chain));
       }

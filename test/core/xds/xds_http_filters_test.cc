@@ -66,8 +66,7 @@ class XdsHttpFilterTest : public ::testing::Test {
         &errors_,
         absl::StrCat(
             "http_filter.value[",
-            absl::StripPrefix(any->type_url(), "types.googleapis.com/"),
-            "]"));
+            absl::StripPrefix(any->type_url(), "types.googleapis.com/"), "]"));
     XdsExtension extension;
     extension.type = any->type_url();
     extension.value = absl::string_view(any->value());
@@ -94,8 +93,8 @@ TEST_F(XdsHttpFilterTest, Router) {
   ASSERT_NE(router_filter, nullptr);
   Router router;
   XdsExtension extension = MakeXdsExtension(router);
-  auto config = router_filter->GenerateFilterConfig(
-      std::move(extension), arena_.ptr(), &errors_);
+  auto config = router_filter->GenerateFilterConfig(std::move(extension),
+                                                    arena_.ptr(), &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, router_filter->ConfigProtoName());

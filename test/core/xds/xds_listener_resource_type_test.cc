@@ -36,8 +36,8 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -54,7 +54,8 @@
 using envoy::config::listener::v3::Listener;
 using envoy::extensions::filters::http::fault::v3::HTTPFault;
 using envoy::extensions::filters::http::router::v3::Router;
-using envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager;
+using envoy::extensions::filters::network::http_connection_manager::v3::
+    HttpConnectionManager;
 using envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 
 namespace grpc_core {
@@ -163,8 +164,8 @@ TEST_F(ApiListenerTest, MinimumValidConfig) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -198,8 +199,8 @@ TEST_F(ApiListenerTest, RdsConfigSourceUsesAds) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -237,8 +238,8 @@ TEST_F(ApiListenerTest, SetsMaxStreamDuration) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -266,8 +267,8 @@ TEST_F(ApiListenerTest, InnerApiListenerNotSet) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -283,8 +284,8 @@ TEST_F(ApiListenerTest, DoesNotContainHttpConnectionManager) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -304,8 +305,8 @@ TEST_F(ApiListenerTest, UnparseableHttpConnectionManagerConfig) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -333,8 +334,8 @@ TEST_F(ApiListenerTest, UnsupportedFieldsSet) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -367,8 +368,8 @@ TEST_F(ApiListenerTest, InvalidMaxStreamDuration) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -394,8 +395,8 @@ TEST_F(ApiListenerTest, EmptyHttpFilterName) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -422,8 +423,8 @@ TEST_F(ApiListenerTest, DuplicateHttpFilterName) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -448,8 +449,8 @@ TEST_F(ApiListenerTest, HttpFilterMissingConfig) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -475,8 +476,8 @@ TEST_F(ApiListenerTest, HttpFilterTypeNotSupported) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -507,8 +508,8 @@ TEST_F(ApiListenerTest, HttpFilterNotSupportedOnClient) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -532,8 +533,8 @@ TEST_F(ApiListenerTest, NoHttpFilters) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -562,8 +563,8 @@ TEST_F(ApiListenerTest, TerminalFilterNotLast) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -591,8 +592,8 @@ TEST_F(ApiListenerTest, NeitherRouteConfigNorRdsName) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -618,8 +619,8 @@ TEST_F(ApiListenerTest, RdsConfigSourceNotAdsOrSelf) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),

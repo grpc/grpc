@@ -68,9 +68,8 @@ Json ParseInt64RangeToJson(const envoy_type_v3_Int64Range* range) {
                       {"end", envoy_type_v3_Int64Range_end(range)}};
 }
 
-Json ParseHeaderMatcherToJson(
-    const envoy_config_route_v3_HeaderMatcher* header,
-    ValidationErrors* errors) {
+Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
+                              ValidationErrors* errors) {
   Json::Object header_json;
   {
     ValidationErrors::ScopedField field(errors, ".name");
@@ -208,8 +207,8 @@ Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
     const envoy_config_rbac_v3_Permission* const* rules =
         envoy_config_rbac_v3_Permission_Set_rules(set, &size);
     for (size_t i = 0; i < size; ++i) {
-      ValidationErrors::ScopedField field(
-          errors, absl::StrCat(".rules[", i, "]"));
+      ValidationErrors::ScopedField field(errors,
+                                          absl::StrCat(".rules[", i, "]"));
       Json permission_json = ParsePermissionToJson(rules[i], errors);
       rules_json.emplace_back(std::move(permission_json));
     }
@@ -279,8 +278,8 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
     const envoy_config_rbac_v3_Principal* const* ids =
         envoy_config_rbac_v3_Principal_Set_ids(set, &size);
     for (size_t i = 0; i < size; ++i) {
-      ValidationErrors::ScopedField field(
-          errors, absl::StrCat(".ids[", i, "]"));
+      ValidationErrors::ScopedField field(errors,
+                                          absl::StrCat(".ids[", i, "]"));
       Json principal_json = ParsePrincipalToJson(ids[i], errors);
       ids_json.emplace_back(std::move(principal_json));
     }
@@ -307,8 +306,8 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
         envoy_config_rbac_v3_Principal_Authenticated_principal_name(
             envoy_config_rbac_v3_Principal_authenticated(principal));
     if (principal_name != nullptr) {
-      ValidationErrors::ScopedField field(
-          errors, ".authenticated.principal_name");
+      ValidationErrors::ScopedField field(errors,
+                                          ".authenticated.principal_name");
       Json principal_name_json =
           ParseStringMatcherToJson(principal_name, errors);
       authenticated_json->emplace("principalName",
@@ -357,8 +356,8 @@ Json ParsePolicyToJson(const envoy_config_rbac_v3_Policy* policy,
   const envoy_config_rbac_v3_Permission* const* permissions =
       envoy_config_rbac_v3_Policy_permissions(policy, &size);
   for (size_t i = 0; i < size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".permissions[", i, "]"));
+    ValidationErrors::ScopedField field(errors,
+                                        absl::StrCat(".permissions[", i, "]"));
     Json permission_json = ParsePermissionToJson(permissions[i], errors);
     permissions_json.emplace_back(std::move(permission_json));
   }
@@ -367,8 +366,8 @@ Json ParsePolicyToJson(const envoy_config_rbac_v3_Policy* policy,
   const envoy_config_rbac_v3_Principal* const* principals =
       envoy_config_rbac_v3_Policy_principals(policy, &size);
   for (size_t i = 0; i < size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".principals[", i, "]"));
+    ValidationErrors::ScopedField field(errors,
+                                        absl::StrCat(".principals[", i, "]"));
     Json principal_json = ParsePrincipalToJson(principals[i], errors);
     principals_json.emplace_back(std::move(principal_json));
   }
@@ -384,9 +383,8 @@ Json ParsePolicyToJson(const envoy_config_rbac_v3_Policy* policy,
   return policy_json;
 }
 
-Json ParseHttpRbacToJson(
-    const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
-    ValidationErrors* errors) {
+Json ParseHttpRbacToJson(const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
+                         ValidationErrors* errors) {
   Json::Object rbac_json;
   const auto* rules = envoy_extensions_filters_http_rbac_v3_RBAC_rules(rbac);
   if (rules != nullptr) {
@@ -405,8 +403,8 @@ Json ParseHttpRbacToJson(
         if (entry == nullptr) {
           break;
         }
-        absl::string_view key = UpbStringToAbsl(
-            envoy_config_rbac_v3_RBAC_PoliciesEntry_key(entry));
+        absl::string_view key =
+            UpbStringToAbsl(envoy_config_rbac_v3_RBAC_PoliciesEntry_key(entry));
         ValidationErrors::ScopedField field(
             errors, absl::StrCat(".policies[", key, "]"));
         Json policy = ParsePolicyToJson(

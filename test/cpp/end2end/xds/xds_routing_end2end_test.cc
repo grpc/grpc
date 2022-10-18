@@ -64,15 +64,14 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   balancer_->ads_service()->SetLdsResource(listener);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      "xDS response validation errors: ["
-      "resource index 0: server.example.com: INVALID_ARGUMENT: "
-      "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value["
-      "envoy.extensions.filters.network.http_connection_manager.v3"
-      ".HttpConnectionManager] "
-      "error:neither route_config nor rds fields are present]]");
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager] "
+            "error:neither route_config nor rds fields are present]]");
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -367,16 +366,15 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      "xDS response validation errors: ["
-      "resource index 0: server.example.com: INVALID_ARGUMENT: "
-      "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value["
-      "envoy.extensions.filters.network.http_connection_manager.v3"
-      ".HttpConnectionManager].http_filters[0].typed_config.value["
-      "envoy.extensions.filters.http.fault.v3.HTTPFault] "
-      "error:could not parse fault injection filter config]]");
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].http_filters[0].typed_config.value["
+            "envoy.extensions.filters.http.fault.v3.HTTPFault] "
+            "error:could not parse fault injection filter config]]");
 }
 
 // Test that we NACK HTTP filters unsupported on client-side.
@@ -397,16 +395,15 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      "xDS response validation errors: ["
-      "resource index 0: server.example.com: INVALID_ARGUMENT: "
-      "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value["
-      "envoy.extensions.filters.network.http_connection_manager.v3"
-      ".HttpConnectionManager].http_filters[0].typed_config.value["
-      "grpc.testing.server_only_http_filter] "
-      "error:filter is not supported on clients]]");
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].http_filters[0].typed_config.value["
+            "grpc.testing.server_only_http_filter] "
+            "error:filter is not supported on clients]]");
 }
 
 // Test that we ignore optional HTTP filters unsupported on client-side.
@@ -471,15 +468,14 @@ TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      "xDS response validation errors: ["
-      "resource index 0: server.example.com: INVALID_ARGUMENT: "
-      "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value["
-      "envoy.extensions.filters.network.http_connection_manager.v3"
-      ".HttpConnectionManager].original_ip_detection_extensions "
-      "error:must be empty]]");
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: INVALID_ARGUMENT: "
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].original_ip_detection_extensions "
+            "error:must be empty]]");
 }
 
 class LdsDeletionTest : public XdsEnd2endTest {

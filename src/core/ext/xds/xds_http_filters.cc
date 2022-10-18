@@ -54,9 +54,9 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfig(
-    XdsExtension extension, upb_Arena* arena, ValidationErrors* errors)
-    const {
+XdsHttpRouterFilter::GenerateFilterConfig(XdsExtension extension,
+                                          upb_Arena* arena,
+                                          ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
@@ -96,9 +96,8 @@ FilterRegistryMap* g_filter_registry = nullptr;
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
-  GPR_ASSERT(
-      g_filter_registry->emplace(filter->ConfigProtoName(), filter.get())
-      .second);
+  GPR_ASSERT(g_filter_registry->emplace(filter->ConfigProtoName(), filter.get())
+                 .second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
     GPR_ASSERT(

@@ -813,14 +813,13 @@ TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:default_filter_chain.filters[0].typed_config.value["
-          "envoy.extensions.filters.network.http_connection_manager.v3"
-          ".HttpConnectionManager].xff_num_trusted_hops "
-          "error:must be zero]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:default_filter_chain.filters[0].typed_config.value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].xff_num_trusted_hops "
+                   "error:must be zero]]"));
 }
 
 TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
@@ -838,14 +837,13 @@ TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:default_filter_chain.filters[0].typed_config.value["
-          "envoy.extensions.filters.network.http_connection_manager.v3"
-          ".HttpConnectionManager].original_ip_detection_extensions "
-          "error:must be empty]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:default_filter_chain.filters[0].typed_config.value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].original_ip_detection_extensions "
+                   "error:must be empty]]"));
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
@@ -860,13 +858,12 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:default_filter_chain.filters[0].typed_config.value["
-          "envoy.config.listener.v3.Listener] "
-          "error:unsupported filter type]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:default_filter_chain.filters[0].typed_config.value["
+                   "envoy.config.listener.v3.Listener] "
+                   "error:unsupported filter type]]"));
 }
 
 TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
@@ -884,14 +881,13 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:default_filter_chain.filters[0].typed_config.value["
-          "envoy.extensions.filters.network.http_connection_manager.v3"
-          ".HttpConnectionManager].http_filters "
-          "error:expected at least one HTTP filter]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:default_filter_chain.filters[0].typed_config.value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters "
+                   "error:expected at least one HTTP filter]]"));
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
@@ -917,15 +913,14 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:default_filter_chain.filters[0].typed_config.value["
-          "envoy.extensions.filters.network.http_connection_manager.v3"
-          ".HttpConnectionManager].http_filters[0].typed_config.value["
-          "grpc.testing.unsupported_http_filter] "
-          "error:unsupported filter type]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:default_filter_chain.filters[0].typed_config.value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters[0].typed_config.value["
+                   "grpc.testing.unsupported_http_filter] "
+                   "error:unsupported filter type]]"));
 }
 
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
@@ -951,15 +946,14 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:default_filter_chain.filters[0].typed_config.value["
-          "envoy.extensions.filters.network.http_connection_manager.v3"
-          ".HttpConnectionManager].http_filters[0].typed_config.value["
-          "grpc.testing.client_only_http_filter] "
-          "error:filter is not supported on servers]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:default_filter_chain.filters[0].typed_config.value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters[0].typed_config.value["
+                   "grpc.testing.client_only_http_filter] "
+                   "error:filter is not supported on servers]]"));
 }
 
 TEST_P(XdsEnabledServerTest,
@@ -1018,11 +1012,10 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:use_original_dst error:field not supported]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:use_original_dst error:field not supported]]"));
 }
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
@@ -1261,12 +1254,11 @@ TEST_P(XdsServerSecurityTest, TransportSocketTypedConfigUnset) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: errors validating server Listener: ["
-          "field:default_filter_chain.transport_socket.typed_config "
-          "error:field not present]]"));
+      absl::StrCat("xDS response validation errors: [resource index 0: ",
+                   GetServerListenerName(backends_[0]->port()),
+                   ": INVALID_ARGUMENT: errors validating server Listener: ["
+                   "field:default_filter_chain.transport_socket.typed_config "
+                   "error:field not present]]"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {

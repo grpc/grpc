@@ -132,9 +132,7 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
       XdsExtension extension, upb_Arena* arena,
       ValidationErrors* errors) const override;
-  const grpc_channel_filter* channel_filter() const override {
-    return nullptr;
-  }
+  const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
       const FilterConfig* /*filter_config_override*/) const override {
