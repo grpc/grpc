@@ -95,7 +95,6 @@ const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor&
 ServerReceivedBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerServerLatencyCumulative();
-const ::opencensus::stats::ViewDescriptor& ServerStartedCountCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcCumulative();
@@ -145,7 +144,6 @@ const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ServerReceivedMessagesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ServerReceivedBytesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ServerServerLatencyHour();
-const ::opencensus::stats::ViewDescriptor& ServerStartedCountHour();
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsHour();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
 

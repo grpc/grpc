@@ -25,100 +25,96 @@
 
 namespace grpc {
 
-// The tag keys set when recording RPC stats.
-using experimental::ClientMethodTagKey;
-using experimental::ClientStatusTagKey;
-using experimental::ServerMethodTagKey;
-using experimental::ServerStatusTagKey;
+// The following using declarations have been added to prevent breaking users
+// that were directly using this header file.
+using experimental::ClientMethodTagKey;  // NOLINT
+using experimental::ClientStatusTagKey;  // NOLINT
+using experimental::ServerMethodTagKey;  // NOLINT
+using experimental::ServerStatusTagKey;  // NOLINT
 
-// Names of measures used by the plugin--users can create views on these
-// measures but should not record data for them.
-using experimental::kRpcClientReceivedBytesPerRpcMeasureName;
-using experimental::kRpcClientReceivedMessagesPerRpcMeasureName;
-using experimental::kRpcClientRetriesPerCallMeasureName;
-using experimental::kRpcClientRetryDelayPerCallMeasureName;
-using experimental::kRpcClientRoundtripLatencyMeasureName;
-using experimental::kRpcClientSentBytesPerRpcMeasureName;
-using experimental::kRpcClientSentMessagesPerRpcMeasureName;
-using experimental::kRpcClientServerLatencyMeasureName;
-using experimental::kRpcClientStartedRpcsMeasureName;
-using experimental::kRpcClientTransparentRetriesPerCallMeasureName;
+using experimental::kRpcClientReceivedBytesPerRpcMeasureName;        // NOLINT
+using experimental::kRpcClientReceivedMessagesPerRpcMeasureName;     // NOLINT
+using experimental::kRpcClientRetriesPerCallMeasureName;             // NOLINT
+using experimental::kRpcClientRetryDelayPerCallMeasureName;          // NOLINT
+using experimental::kRpcClientRoundtripLatencyMeasureName;           // NOLINT
+using experimental::kRpcClientSentBytesPerRpcMeasureName;            // NOLINT
+using experimental::kRpcClientSentMessagesPerRpcMeasureName;         // NOLINT
+using experimental::kRpcClientServerLatencyMeasureName;              // NOLINT
+using experimental::kRpcClientStartedRpcsMeasureName;                // NOLINT
+using experimental::kRpcClientTransparentRetriesPerCallMeasureName;  // NOLINT
 
-using experimental::kRpcServerReceivedBytesPerRpcMeasureName;
-using experimental::kRpcServerReceivedMessagesPerRpcMeasureName;
-using experimental::kRpcServerSentBytesPerRpcMeasureName;
-using experimental::kRpcServerSentMessagesPerRpcMeasureName;
-using experimental::kRpcServerServerLatencyMeasureName;
-using experimental::kRpcServerStartedRpcsMeasureName;
+using experimental::kRpcServerReceivedBytesPerRpcMeasureName;     // NOLINT
+using experimental::kRpcServerReceivedMessagesPerRpcMeasureName;  // NOLINT
+using experimental::kRpcServerSentBytesPerRpcMeasureName;         // NOLINT
+using experimental::kRpcServerSentMessagesPerRpcMeasureName;      // NOLINT
+using experimental::kRpcServerServerLatencyMeasureName;           // NOLINT
+using experimental::kRpcServerStartedRpcsMeasureName;             // NOLINT
 
-// Canonical gRPC view definitions.
-using experimental::ClientCompletedRpcsCumulative;
-using experimental::ClientReceivedBytesPerRpcCumulative;
-using experimental::ClientReceivedMessagesPerRpcCumulative;
-using experimental::ClientRetriesCumulative;
-using experimental::ClientRetriesPerCallCumulative;
-using experimental::ClientRetryDelayPerCallCumulative;
-using experimental::ClientRoundtripLatencyCumulative;
-using experimental::ClientSentBytesPerRpcCumulative;
-using experimental::ClientSentMessagesPerRpcCumulative;
-using experimental::ClientServerLatencyCumulative;
-using experimental::ClientStartedRpcsCumulative;
-using experimental::ClientTransparentRetriesCumulative;
-using experimental::ClientTransparentRetriesPerCallCumulative;
+using experimental::ClientCompletedRpcsCumulative;              // NOLINT
+using experimental::ClientReceivedBytesPerRpcCumulative;        // NOLINT
+using experimental::ClientReceivedMessagesPerRpcCumulative;     // NOLINT
+using experimental::ClientRetriesCumulative;                    // NOLINT
+using experimental::ClientRetriesPerCallCumulative;             // NOLINT
+using experimental::ClientRetryDelayPerCallCumulative;          // NOLINT
+using experimental::ClientRoundtripLatencyCumulative;           // NOLINT
+using experimental::ClientSentBytesPerRpcCumulative;            // NOLINT
+using experimental::ClientSentMessagesPerRpcCumulative;         // NOLINT
+using experimental::ClientServerLatencyCumulative;              // NOLINT
+using experimental::ClientStartedRpcsCumulative;                // NOLINT
+using experimental::ClientTransparentRetriesCumulative;         // NOLINT
+using experimental::ClientTransparentRetriesPerCallCumulative;  // NOLINT
 
-using experimental::ServerCompletedRpcsCumulative;
-using experimental::ServerReceivedBytesPerRpcCumulative;
-using experimental::ServerReceivedMessagesPerRpcCumulative;
-using experimental::ServerSentBytesPerRpcCumulative;
-using experimental::ServerSentMessagesPerRpcCumulative;
-using experimental::ServerServerLatencyCumulative;
-using experimental::ServerStartedCountCumulative;
-using experimental::ServerStartedRpcsCumulative;
+using experimental::ServerCompletedRpcsCumulative;           // NOLINT
+using experimental::ServerReceivedBytesPerRpcCumulative;     // NOLINT
+using experimental::ServerReceivedMessagesPerRpcCumulative;  // NOLINT
+using experimental::ServerSentBytesPerRpcCumulative;         // NOLINT
+using experimental::ServerSentMessagesPerRpcCumulative;      // NOLINT
+using experimental::ServerServerLatencyCumulative;           // NOLINT
+using experimental::ServerStartedRpcsCumulative;             // NOLINT
 
-using experimental::ClientCompletedRpcsMinute;
-using experimental::ClientReceivedBytesPerRpcMinute;
-using experimental::ClientReceivedMessagesPerRpcMinute;
-using experimental::ClientRetriesMinute;
-using experimental::ClientRetriesPerCallMinute;
-using experimental::ClientRetryDelayPerCallMinute;
-using experimental::ClientRoundtripLatencyMinute;
-using experimental::ClientSentBytesPerRpcMinute;
-using experimental::ClientSentMessagesPerRpcMinute;
-using experimental::ClientServerLatencyMinute;
-using experimental::ClientStartedRpcsMinute;
-using experimental::ClientTransparentRetriesMinute;
-using experimental::ClientTransparentRetriesPerCallMinute;
+using experimental::ClientCompletedRpcsMinute;              // NOLINT
+using experimental::ClientReceivedBytesPerRpcMinute;        // NOLINT
+using experimental::ClientReceivedMessagesPerRpcMinute;     // NOLINT
+using experimental::ClientRetriesMinute;                    // NOLINT
+using experimental::ClientRetriesPerCallMinute;             // NOLINT
+using experimental::ClientRetryDelayPerCallMinute;          // NOLINT
+using experimental::ClientRoundtripLatencyMinute;           // NOLINT
+using experimental::ClientSentBytesPerRpcMinute;            // NOLINT
+using experimental::ClientSentMessagesPerRpcMinute;         // NOLINT
+using experimental::ClientServerLatencyMinute;              // NOLINT
+using experimental::ClientStartedRpcsMinute;                // NOLINT
+using experimental::ClientTransparentRetriesMinute;         // NOLINT
+using experimental::ClientTransparentRetriesPerCallMinute;  // NOLINT
 
-using experimental::ServerCompletedRpcsMinute;
-using experimental::ServerReceivedBytesPerRpcMinute;
-using experimental::ServerReceivedMessagesPerRpcMinute;
-using experimental::ServerSentBytesPerRpcMinute;
-using experimental::ServerSentMessagesPerRpcMinute;
-using experimental::ServerServerLatencyMinute;
-using experimental::ServerStartedRpcsMinute;
+using experimental::ServerCompletedRpcsMinute;           // NOLINT
+using experimental::ServerReceivedBytesPerRpcMinute;     // NOLINT
+using experimental::ServerReceivedMessagesPerRpcMinute;  // NOLINT
+using experimental::ServerSentBytesPerRpcMinute;         // NOLINT
+using experimental::ServerSentMessagesPerRpcMinute;      // NOLINT
+using experimental::ServerServerLatencyMinute;           // NOLINT
+using experimental::ServerStartedRpcsMinute;             // NOLINT
 
-using experimental::ClientCompletedRpcsHour;
-using experimental::ClientReceivedBytesPerRpcHour;
-using experimental::ClientReceivedMessagesPerRpcHour;
-using experimental::ClientRetriesHour;
-using experimental::ClientRetriesPerCallHour;
-using experimental::ClientRetryDelayPerCallHour;
-using experimental::ClientRoundtripLatencyHour;
-using experimental::ClientSentBytesPerRpcHour;
-using experimental::ClientSentMessagesPerRpcHour;
-using experimental::ClientServerLatencyHour;
-using experimental::ClientStartedRpcsHour;
-using experimental::ClientTransparentRetriesHour;
-using experimental::ClientTransparentRetriesPerCallHour;
+using experimental::ClientCompletedRpcsHour;              // NOLINT
+using experimental::ClientReceivedBytesPerRpcHour;        // NOLINT
+using experimental::ClientReceivedMessagesPerRpcHour;     // NOLINT
+using experimental::ClientRetriesHour;                    // NOLINT
+using experimental::ClientRetriesPerCallHour;             // NOLINT
+using experimental::ClientRetryDelayPerCallHour;          // NOLINT
+using experimental::ClientRoundtripLatencyHour;           // NOLINT
+using experimental::ClientSentBytesPerRpcHour;            // NOLINT
+using experimental::ClientSentMessagesPerRpcHour;         // NOLINT
+using experimental::ClientServerLatencyHour;              // NOLINT
+using experimental::ClientStartedRpcsHour;                // NOLINT
+using experimental::ClientTransparentRetriesHour;         // NOLINT
+using experimental::ClientTransparentRetriesPerCallHour;  // NOLINT
 
-using experimental::ServerCompletedRpcsHour;
-using experimental::ServerReceivedBytesPerRpcHour;
-using experimental::ServerReceivedMessagesPerRpcHour;
-using experimental::ServerSentBytesPerRpcHour;
-using experimental::ServerSentMessagesPerRpcHour;
-using experimental::ServerServerLatencyHour;
-using experimental::ServerStartedCountHour;
-using experimental::ServerStartedRpcsHour;
+using experimental::ServerCompletedRpcsHour;           // NOLINT
+using experimental::ServerReceivedBytesPerRpcHour;     // NOLINT
+using experimental::ServerReceivedMessagesPerRpcHour;  // NOLINT
+using experimental::ServerSentBytesPerRpcHour;         // NOLINT
+using experimental::ServerSentMessagesPerRpcHour;      // NOLINT
+using experimental::ServerServerLatencyHour;           // NOLINT
+using experimental::ServerStartedRpcsHour;             // NOLINT
 
 // Enables/Disables OpenCensus stats/tracing. It's only safe to do at the start
 // of a program, before any channels/servers are built.

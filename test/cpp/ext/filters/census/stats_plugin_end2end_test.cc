@@ -847,6 +847,101 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
   EnableOpenCensusTracing(true);
 }
 
+TEST(StatsPluginDeclarationTest, Declarations) {
+  gpr_log(GPR_INFO, "%p", ClientMethodTagKey);
+  gpr_log(GPR_INFO, "%p", ClientStatusTagKey);
+  gpr_log(GPR_INFO, "%p", ServerMethodTagKey);
+  gpr_log(GPR_INFO, "%p", ServerStatusTagKey);
+
+  // Names of measures used by the plugin--users can create views on these
+  // measures but should not record data for them.
+  gpr_log(GPR_INFO, "%p", kRpcClientReceivedBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientReceivedMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientRetriesPerCallMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientRetryDelayPerCallMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientRoundtripLatencyMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientSentBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientSentMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientServerLatencyMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientStartedRpcsMeasureName.data());
+  gpr_log(GPR_INFO, "%p",
+          kRpcClientTransparentRetriesPerCallMeasureName.data());
+
+  gpr_log(GPR_INFO, "%p", kRpcServerReceivedBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerReceivedMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerSentBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerSentMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerServerLatencyMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerStartedRpcsMeasureName.data());
+
+  // Canonical gRPC view definitions.
+  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsCumulative);
+  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRetriesCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyCumulative);
+  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientServerLatencyCumulative);
+  gpr_log(GPR_INFO, "%p", ClientStartedRpcsCumulative);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesCumulative);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallCumulative);
+
+  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsCumulative);
+  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerServerLatencyCumulative);
+  gpr_log(GPR_INFO, "%p", ServerStartedRpcsCumulative);
+
+  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsMinute);
+  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientRetriesMinute);
+  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallMinute);
+  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallMinute);
+  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyMinute);
+  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientServerLatencyMinute);
+  gpr_log(GPR_INFO, "%p", ClientStartedRpcsMinute);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesMinute);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallMinute);
+
+  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsMinute);
+  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerServerLatencyMinute);
+  gpr_log(GPR_INFO, "%p", ServerStartedRpcsMinute);
+
+  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsHour);
+  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientRetriesHour);
+  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallHour);
+  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallHour);
+  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyHour);
+  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientServerLatencyHour);
+  gpr_log(GPR_INFO, "%p", ClientStartedRpcsHour);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesHour);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallHour);
+
+  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsHour);
+  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerServerLatencyHour);
+  gpr_log(GPR_INFO, "%p", ServerStartedRpcsHour);
+}
+
 }  // namespace
 
 }  // namespace testing
