@@ -4302,7 +4302,6 @@ grpc_cc_library(
         "json_object_loader",
         "service_config_parser",
         "sleep",
-        "status_helper",
         "time",
         "try_seq",
         "validation_errors",
