@@ -48,6 +48,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -169,7 +170,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
-  GRPC_STATS_INC_HTTP2_PINGS_SENT();
+  grpc_core::global_stats().IncrementHttp2PingsSent();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -263,7 +264,7 @@ namespace {
 class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
-    GRPC_STATS_INC_HTTP2_WRITES_BEGUN();
+    grpc_core::global_stats().IncrementHttp2WritesBegun();
   }
 
   void FlushSettings() {
@@ -276,7 +277,7 @@ class WriteContext {
       t_->force_send_settings = false;
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
-      GRPC_STATS_INC_HTTP2_SETTINGS_WRITES();
+      grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }
 
@@ -502,11 +503,11 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
-        GRPC_STATS_INC_HTTP2_TRANSPORT_STALLS();
+        grpc_core::global_stats().IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
-        GRPC_STATS_INC_HTTP2_STREAM_STALLS();
+        grpc_core::global_stats().IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }

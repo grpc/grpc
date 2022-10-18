@@ -20,7 +20,7 @@
 #include "absl/flags/flag.h"
 
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
