@@ -60,7 +60,8 @@ struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   }
 };
 
-WindowsEventEngine::WindowsEventEngine() : iocp_(&executor_) {
+WindowsEventEngine::WindowsEventEngine()
+    : iocp_(&executor_), thread_pool_(executor) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);

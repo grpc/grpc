@@ -111,8 +111,8 @@ class WindowsEventEngine : public EventEngine,
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
 
-  posix_engine::TimerManager timer_manager_;
   ThreadPool executor_;
+  posix_engine::TimerManager timer_manager_;
   IOCP iocp_;
 };
 

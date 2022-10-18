@@ -58,7 +58,7 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
   // is true at this point, we should quickly exit this and get the next
   // deadline from the timer system
   if (!kicked_.load(std::memory_order_relaxed)) {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     cv_wait_.WaitWithTimeout(&mu_,
                              absl::Milliseconds((next - host_.Now()).millis()));
     ++wakeups_;
@@ -118,7 +118,7 @@ TimerManager::~TimerManager() {
     gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
   }
   {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     shutdown_ = true;
     // Wait on the main loop to exit.
     cv_wait_.Signal();
@@ -133,7 +133,7 @@ void TimerManager::Host::Kick() { timer_manager_->Kick(); }
 
 void TimerManager::Kick() {
   kicked_ = true;
-  absl::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&mu_);
   cv_wait_.Signal();
 }
 

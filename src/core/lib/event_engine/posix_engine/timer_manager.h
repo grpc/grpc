@@ -21,14 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include <atomic>
 #include <memory>
 #include <vector>
-
-#include "absl/base/thread_annotations.h"
 
 #include <grpc/event_engine/event_engine.h>
 

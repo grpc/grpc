@@ -2509,14 +2509,12 @@ grpc_cc_library(
         "//src/core:lib/event_engine/posix_engine/timer_manager.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
         "absl/time",
         "absl/types:optional",
     ],
     deps = [
         "event_engine_base_hdrs",
         "event_engine_thread_pool",
-        "forkable",
         "gpr",
         "grpc_trace",
         "notification",
