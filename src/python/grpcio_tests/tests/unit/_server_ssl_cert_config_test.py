@@ -38,7 +38,6 @@ import threading
 import unittest
 
 import grpc
-import six
 
 from tests.testing import _application_common
 from tests.testing import _server_application
@@ -118,8 +117,7 @@ class CertConfigFetcher(object):
                 return self._cert_config
 
 
-class _ServerSSLCertReloadTest(
-        six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
+class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
 
     def __init__(self, *args, **kwargs):
         super(_ServerSSLCertReloadTest, self).__init__(*args, **kwargs)

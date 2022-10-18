@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 
@@ -44,10 +45,14 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_StringView serialized_filter_config,
-      upb_Arena* arena) const override {
+      XdsExtension extension, upb_Arena* arena) const override {
+    absl::string_view* serialized_filter_config =
+        absl::get_if<absl::string_view>(&extension.value);
+    if (serialized_filter_config == nullptr) {
+      return absl::InvalidArgumentError("could not parse router filter config");
+    }
     if (envoy_extensions_filters_http_router_v3_Router_parse(
-            serialized_filter_config.data, serialized_filter_config.size,
+            serialized_filter_config->data(), serialized_filter_config->size(),
             arena) == nullptr) {
       return absl::InvalidArgumentError("could not parse router filter config");
     }
@@ -55,8 +60,7 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_StringView /*serialized_filter_config*/,
-      upb_Arena* /*arena*/) const override {
+      XdsExtension /*extension*/, upb_Arena* /*arena*/) const override {
     return absl::InvalidArgumentError(
         "router filter does not support config override");
   }

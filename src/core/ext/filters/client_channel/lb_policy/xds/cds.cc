@@ -504,27 +504,15 @@ void CdsLb::OnClusterChanged(const std::string& name,
     // underlying cluster that we may be processing an update for.
     auto it = watchers_.find(config_->cluster());
     GPR_ASSERT(it != watchers_.end());
-    const std::string& lb_policy = it->second.update->lb_policy;
     // Construct config for child policy.
-    Json::Object xds_lb_policy;
-    if (lb_policy == "RING_HASH") {
-      xds_lb_policy["RING_HASH"] = Json::Object{
-          {"min_ring_size", cluster_data.min_ring_size},
-          {"max_ring_size", cluster_data.max_ring_size},
-      };
-    } else {
-      xds_lb_policy["ROUND_ROBIN"] = Json::Object();
-    }
-    Json::Object child_config = {
-        {"xdsLbPolicy",
-         Json::Array{
-             xds_lb_policy,
-         }},
-        {"discoveryMechanisms", std::move(discovery_mechanisms)},
-    };
     Json json = Json::Array{
         Json::Object{
-            {"xds_cluster_resolver_experimental", std::move(child_config)},
+            {"xds_cluster_resolver_experimental",
+             Json::Object{
+                 {"xdsLbPolicy",
+                  std::move(it->second.update->lb_policy_config)},
+                 {"discoveryMechanisms", std::move(discovery_mechanisms)},
+             }},
         },
     };
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
