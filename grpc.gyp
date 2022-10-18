@@ -776,7 +776,6 @@
         'src/core/ext/xds/xds_http_rbac_filter.cc',
         'src/core/ext/xds/xds_lb_policy_registry.cc',
         'src/core/ext/xds/xds_listener.cc',
-        'src/core/ext/xds/xds_resource_type.cc',
         'src/core/ext/xds/xds_route_config.cc',
         'src/core/ext/xds/xds_routing.cc',
         'src/core/ext/xds/xds_server_config_fetcher.cc',
