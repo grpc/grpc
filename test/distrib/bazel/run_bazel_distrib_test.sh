@@ -25,7 +25,7 @@ for VERSION in $VERSIONS; do
     echo "Running bazel distribtest with bazel version ${VERSION}"
     ./test_single_bazel_version.sh "${VERSION}" || FAILED_VERSIONS="${FAILED_VERSIONS}${VERSION} "
 
-  if [ ! -z "$KOKORO_ARTIFACTS_DIR" ]; then
+  if [ -n "$KOKORO_ARTIFACTS_DIR" ]; then
     # `bazel clean` is not sufficient.
     rm -rf "$HOME/.cache/bazel"
   fi
