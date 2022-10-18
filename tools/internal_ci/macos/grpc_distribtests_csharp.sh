@@ -24,9 +24,6 @@ cd $(dirname $0)/../../..
 export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
-# Build all C# macos artifacts
-tools/run_tests/task_runner.py -f artifact macos csharp ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 4 -x build_artifacts_csharp/sponge_log.xml || FAILED="true"
-
 # Build all protoc macos artifacts
 tools/run_tests/task_runner.py -f artifact macos protoc ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 4 -x build_artifacts_protoc/sponge_log.xml || FAILED="true"
 
