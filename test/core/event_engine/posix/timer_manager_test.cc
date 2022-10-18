@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <memory>
 #include <random>
 
 #include "absl/functional/any_invocable.h"
@@ -46,7 +47,8 @@ TEST(TimerManagerTest, StressTest) {
   std::mt19937 gen(rd());
   std::uniform_real_distribution<> dis_millis(100, 3000);
   {
-    TimerManager manager;
+    auto pool = std::make_shared<grpc_event_engine::experimental::ThreadPool>();
+    TimerManager manager(std::move(pool));
     for (auto& timer : timers) {
       exec_ctx.InvalidateNow();
       manager.TimerInit(
@@ -80,7 +82,8 @@ TEST(TimerManagerTest, ShutDownBeforeAllCallbacksAreExecuted) {
   std::atomic_int called{0};
   experimental::AnyInvocableClosure closure([&called] { ++called; });
   {
-    TimerManager manager;
+    auto pool = std::make_shared<grpc_event_engine::experimental::ThreadPool>();
+    TimerManager manager(std::move(pool));
     for (auto& timer : timers) {
       manager.TimerInit(&timer, grpc_core::Timestamp::InfFuture(), &closure);
     }

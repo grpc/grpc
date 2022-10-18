@@ -15,6 +15,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -49,6 +50,8 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
     delete this;
   }
 };
+PosixEventEngine::PosixEventEngine()
+    : executor_(std::make_shared<ThreadPool>()), timer_manager_(executor_) {}
 
 PosixEventEngine::~PosixEventEngine() {
   grpc_core::MutexLock lock(&mu_);
@@ -84,11 +87,11 @@ EventEngine::TaskHandle PosixEventEngine::RunAfter(
 }
 
 void PosixEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  executor_.Run(std::move(closure));
+  executor_->Run(std::move(closure));
 }
 
 void PosixEventEngine::Run(EventEngine::Closure* closure) {
-  executor_.Run(closure);
+  executor_->Run(closure);
 }
 
 EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(

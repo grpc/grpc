@@ -79,7 +79,7 @@ class PosixEventEngine final : public EventEngine,
     bool CancelLookup(LookupTaskHandle handle) override;
   };
 
-  PosixEventEngine() = default;
+  PosixEventEngine();
   ~PosixEventEngine() override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
@@ -114,8 +114,8 @@ class PosixEventEngine final : public EventEngine,
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
+  std::shared_ptr<ThreadPool> executor_;
   posix_engine::TimerManager timer_manager_;
-  ThreadPool executor_;
 };
 
 }  // namespace experimental
