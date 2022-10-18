@@ -90,7 +90,7 @@ class TimerManager final {
   // are we shutting down?
   std::atomic_bool kicked_{false};
   // number of timer wakeups
-  std::atomic_uint64_t wakeups_{0};
+  std::atomic<uint64_t> wakeups_{0};
   // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
   std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool_;
