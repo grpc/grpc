@@ -1609,8 +1609,6 @@ try:
     if args.verbose:
         print('Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
 
-    print('apolcyn reversing jobs to run list')
-    jobs.reverse()
     num_failures, resultset = jobset.run(jobs,
                                          newline_on_success=True,
                                          maxjobs=args.jobs,
