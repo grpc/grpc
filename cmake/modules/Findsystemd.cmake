@@ -24,7 +24,7 @@ if(TARGET systemd)
   return()
 endif()
 
-find_package(PkgConfig REQUIRED)
+find_package(PkgConfig)
 pkg_check_modules(SYSTEMD libsystemd)
 
 if(SYSTEMD_FOUND)
