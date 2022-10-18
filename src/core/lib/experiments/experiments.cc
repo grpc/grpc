@@ -69,7 +69,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"memory_pressure_controller", description_memory_pressure_controller,
      false},
     {"periodic_resource_quota_reclamation",
-     description_periodic_resource_quota_reclamation, false},
+     description_periodic_resource_quota_reclamation, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,

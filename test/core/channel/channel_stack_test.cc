@@ -26,6 +26,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
@@ -127,7 +128,7 @@ TEST(ChannelStackTest, CreateChannelStack) {
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
-  ASSERT_TRUE(error.ok()) << grpc_error_std_string(error);
+  ASSERT_TRUE(error.ok()) << grpc_core::StatusToString(error);
   EXPECT_EQ(call_stack->count, 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   EXPECT_EQ(call_elem->filter, channel_elem->filter);

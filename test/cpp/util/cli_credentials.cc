@@ -22,7 +22,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/slice.h>
+#include <grpcpp/support/slice.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 

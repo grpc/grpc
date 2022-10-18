@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -108,7 +109,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
       auto err = parser_->Parse(slices[i], i == nslices - 1);
       if (!err.ok()) {
         gpr_log(GPR_ERROR, "Unexpected parse error: %s",
-                grpc_error_std_string(err).c_str());
+                grpc_core::StatusToString(err).c_str());
         abort();
       }
     }

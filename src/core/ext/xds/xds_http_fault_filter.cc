@@ -28,6 +28,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
@@ -74,9 +75,9 @@ uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
 }
 
 absl::StatusOr<Json> ParseHttpFaultIntoJson(
-    upb_StringView serialized_http_fault, upb_Arena* arena) {
+    absl::string_view serialized_http_fault, upb_Arena* arena) {
   auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
-      serialized_http_fault.data, serialized_http_fault.size, arena);
+      serialized_http_fault.data(), serialized_http_fault.size(), arena);
   if (http_fault == nullptr) {
     return absl::InvalidArgumentError(
         "could not parse fault injection filter config");
@@ -184,10 +185,16 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
-    upb_StringView serialized_filter_config, upb_Arena* arena) const {
+XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
+                                         upb_Arena* arena) const {
+  absl::string_view* serialized_filter_config =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "could not parse fault injection filter config");
+  }
   absl::StatusOr<Json> parse_result =
-      ParseHttpFaultIntoJson(serialized_filter_config, arena);
+      ParseHttpFaultIntoJson(*serialized_filter_config, arena);
   if (!parse_result.ok()) {
     return parse_result.status();
   }
@@ -195,11 +202,11 @@ XdsHttpFaultFilter::GenerateFilterConfig(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(
-    upb_StringView serialized_filter_config, upb_Arena* arena) const {
+XdsHttpFaultFilter::GenerateFilterConfigOverride(XdsExtension extension,
+                                                 upb_Arena* arena) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(serialized_filter_config, arena);
+  return GenerateFilterConfig(std::move(extension), arena);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
