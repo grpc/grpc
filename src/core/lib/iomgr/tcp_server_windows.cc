@@ -316,7 +316,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
      case. We only need to adjust the pending callback count */
   if (!error.ok()) {
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
 
     gpr_mu_unlock(&sp->server->mu);
     return;

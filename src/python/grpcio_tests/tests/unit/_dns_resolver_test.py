@@ -17,7 +17,6 @@ import logging
 import unittest
 
 import grpc
-import six
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants

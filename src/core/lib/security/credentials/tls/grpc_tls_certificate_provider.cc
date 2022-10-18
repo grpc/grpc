@@ -40,6 +40,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -283,8 +284,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
       grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
   if (!root_error.ok()) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
-            root_cert_full_path.c_str(),
-            grpc_error_std_string(root_error).c_str());
+            root_cert_full_path.c_str(), StatusToString(root_error).c_str());
     return absl::nullopt;
   }
   std::string root_cert(StringViewFromSlice(root_slice));
@@ -341,8 +341,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
         grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
     if (!key_error.ok()) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              private_key_path.c_str(),
-              grpc_error_std_string(key_error).c_str());
+              private_key_path.c_str(), StatusToString(key_error).c_str());
       continue;
     }
     grpc_error_handle cert_error =
@@ -350,7 +349,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     if (!cert_error.ok()) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               identity_certificate_path.c_str(),
-              grpc_error_std_string(cert_error).c_str());
+              StatusToString(cert_error).c_str());
       continue;
     }
     std::string private_key(StringViewFromSlice(key_slice.slice));
