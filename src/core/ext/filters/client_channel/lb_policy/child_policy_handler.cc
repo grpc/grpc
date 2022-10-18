@@ -107,6 +107,10 @@ class ChildPolicyHandler::Helper
     return parent_->channel_control_helper()->GetAuthority();
   }
 
+  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+    return parent_->channel_control_helper()->GetEventEngine();
+  }
+
   void AddTraceEvent(TraceSeverity severity,
                      absl::string_view message) override {
     if (parent_->shutting_down_) return;

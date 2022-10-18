@@ -467,6 +467,7 @@ class GrpcLb : public LoadBalancingPolicy {
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -556,8 +557,6 @@ class GrpcLb : public LoadBalancingPolicy {
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
   // Parent channelz node.
   RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
-
-  std::shared_ptr<EventEngine> event_engine_;
 
   // The data associated with the current LB call. It holds a ref to this LB
   // policy. It's initialized every time we query for backends. It's reset to
@@ -872,6 +871,10 @@ absl::string_view GrpcLb::Helper::GetAuthority() {
   return parent_->channel_control_helper()->GetAuthority();
 }
 
+grpc_event_engine::experimental::EventEngine* GrpcLb::Helper::GetEventEngine() {
+  return parent_->channel_control_helper()->GetEventEngine();
+}
+
 void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,
                                    absl::string_view message) {
   if (parent_->shutting_down_) return;
@@ -945,7 +948,7 @@ void GrpcLb::BalancerCallState::Orphan() {
   // call, then the following cancellation will be a no-op.
   grpc_call_cancel_internal(lb_call_);
   if (client_load_report_handle_.has_value() &&
-      grpclb_policy()->event_engine_->Cancel(
+      grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
           client_load_report_handle_.value())) {
     Unref(DEBUG_LOCATION, "client_load_report cancelled");
   }
@@ -1031,13 +1034,14 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
-  client_load_report_handle_ = grpclb_policy()->event_engine_->RunAfter(
-      client_stats_report_interval_, [this] {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        grpclb_policy()->work_serializer()->Run(
-            [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
-      });
+  client_load_report_handle_ =
+      grpclb_policy()->channel_control_helper()->GetEventEngine()->RunAfter(
+          client_stats_report_interval_, [this] {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            grpclb_policy()->work_serializer()->Run(
+                [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
+          });
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
@@ -1465,7 +1469,6 @@ GrpcLb::GrpcLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       server_name_(GetServerNameFromChannelArgs(channel_args())),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
-      event_engine_(channel_args().GetObjectRef<EventEngine>()),
       lb_call_timeout_(std::max(
           Duration::Zero(),
           channel_args()
@@ -1904,13 +1907,10 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
 //
 // Plugin registration
 //
 
-namespace grpc_core {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<GrpcLbFactory>());
@@ -1929,4 +1929,5 @@ void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
         return true;
       });
 }
+
 }  // namespace grpc_core

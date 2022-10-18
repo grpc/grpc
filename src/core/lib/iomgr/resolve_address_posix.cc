@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/resolve_address_posix.h"
-
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
@@ -169,16 +167,13 @@ done:
   return error_result;
 }
 
-NativeDNSResolver::NativeDNSResolver()
-    : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
-
 DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolved,
     absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  event_engine_->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
@@ -193,7 +188,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  event_engine_->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(

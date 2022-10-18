@@ -125,16 +125,14 @@ struct MaxAgeFilter::Config {
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
   ClientIdleFilter filter(filter_args.channel_stack(),
-                          GetClientIdleTimeout(args),
-                          args.GetObjectRef<EventEngine>());
+                          GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
   MaxAgeFilter filter(filter_args.channel_stack(),
-                      Config::FromChannelArgs(args),
-                      args.GetObjectRef<EventEngine>());
+                      Config::FromChannelArgs(args));
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));
 }
 
@@ -208,7 +206,7 @@ void MaxAgeFilter::PostInit() {
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
         },
-        engine_.get()));
+        channel_stack->EventEngine()));
   }
 }
 
@@ -269,7 +267,7 @@ void ChannelIdleFilter::StartIdleTimer() {
       [channel_stack, this](absl::Status status) {
         if (status.ok()) CloseChannel();
       },
-      engine_.get()));
+      channel_stack->EventEngine()));
 }
 
 void ChannelIdleFilter::CloseChannel() {
@@ -311,13 +309,10 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       });
 }
 
-MaxAgeFilter::MaxAgeFilter(
-    grpc_channel_stack* channel_stack, const Config& max_age_config,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
-    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle,
-                        engine),
+MaxAgeFilter::MaxAgeFilter(grpc_channel_stack* channel_stack,
+                           const Config& max_age_config)
+    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle),
       max_connection_age_(max_age_config.max_connection_age),
-      max_connection_age_grace_(max_age_config.max_connection_age_grace),
-      engine_(engine) {}
+      max_connection_age_grace_(max_age_config.max_connection_age_grace) {}
 
 }  // namespace grpc_core

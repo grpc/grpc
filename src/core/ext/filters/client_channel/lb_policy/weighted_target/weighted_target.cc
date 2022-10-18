@@ -192,6 +192,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -249,8 +250,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
   bool update_in_progress_ = false;
 
-  std::shared_ptr<EventEngine> event_engine_;
-
   // Children.
   std::map<std::string, OrphanablePtr<WeightedChild>> targets_;
 };
@@ -291,8 +290,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
 //
 
 WeightedTargetLb::WeightedTargetLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      event_engine_(channel_args().GetObjectRef<EventEngine>()) {
+    : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] created", this);
   }
@@ -484,8 +482,9 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
     : weighted_child_(std::move(weighted_child)) {
   timer_handle_ =
-      weighted_child_->weighted_target_policy_->event_engine_->RunAfter(
-          kChildRetentionInterval, [self = Ref()]() mutable {
+      weighted_child_->weighted_target_policy_->channel_control_helper()
+          ->GetEventEngine()
+          ->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
             ApplicationCallbackExecCtx app_exec_ctx;
             ExecCtx exec_ctx;
             self->weighted_child_->weighted_target_policy_->work_serializer()
@@ -503,8 +502,9 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    weighted_child_->weighted_target_policy_->event_engine_->Cancel(
-        *timer_handle_);
+    weighted_child_->weighted_target_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(*timer_handle_);
   }
   Unref();
 }
@@ -703,6 +703,12 @@ absl::string_view WeightedTargetLb::WeightedChild::Helper::GetAuthority() {
       ->GetAuthority();
 }
 
+grpc_event_engine::experimental::EventEngine*
+WeightedTargetLb::WeightedChild::Helper::GetEventEngine() {
+  return weighted_child_->weighted_target_policy_->channel_control_helper()
+      ->GetEventEngine();
+}
+
 void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
     TraceSeverity severity, absl::string_view message) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
@@ -756,7 +762,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<WeightedTargetLb>(std::move(args));
-  }  // namespace
+  }
 
   absl::string_view name() const override { return kWeightedTarget; }
 
@@ -773,7 +779,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     return LoadRefCountedFromJson<WeightedTargetLbConfig>(
         json, JsonArgs(), "errors validating weighted_target LB policy config");
   }
-};  // namespace grpc_core
+};
 
 }  // namespace
 
