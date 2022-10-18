@@ -61,7 +61,6 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -301,7 +300,7 @@ void MaybeLogHttpConnectionManager(
 
 XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     bool is_client, const XdsResourceType::DecodeContext& context,
-    XdsExtension extension, bool is_v2, ValidationErrors* errors) {
+    XdsExtension extension, ValidationErrors* errors) {
   if (extension.type !=
       "envoy.extensions.filters.network.http_connection_manager.v3"
       ".HttpConnectionManager") {
@@ -355,7 +354,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     }
   }
   // http_filters
-  if (!is_v2) {
+  {
     ValidationErrors::ScopedField field(errors, ".http_filters");
     size_t num_filters = 0;
     const auto* http_filters =
@@ -455,14 +454,6 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         }
       }
     }
-  } else {
-    // If using a v2 config, we just hard-code a list containing only the
-    // router filter without actually looking at the config.  This ensures
-    // that the right thing happens in the xds resolver without having
-    // to expose whether the resource we received was v2 or v3.
-    http_connection_manager.http_filters.emplace_back(
-        XdsListenerResource::HttpConnectionManager::HttpFilter{
-            "router", {XdsHttpRouterFilter::StaticConfigName(), Json()}});
   }
   // Found inlined route_config. Parse it to find the cluster_name.
   if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
@@ -507,7 +498,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
 
 absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2) {
+    const envoy_config_listener_v3_ApiListener* api_listener) {
   XdsListenerResource lds_update;
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, "api_listener.api_listener");
@@ -519,8 +510,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
     if (extension.has_value()) {
       lds_update.listener = HttpConnectionManagerParse(
-          true /* is_client */, context, std::move(*extension), is_v2,
-          &errors);
+          /*is_client=*/true, context, std::move(*extension), &errors);
     }
   }
   if (!errors.ok()) return errors.status("errors validating ApiListener");
@@ -724,7 +714,7 @@ absl::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
 absl::optional<FilterChain> FilterChainParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto,
-    bool is_v2, ValidationErrors* errors) {
+    ValidationErrors* errors) {
   FilterChain filter_chain;
   const size_t original_error_size = errors->size();
   // filter_chain_match
@@ -761,7 +751,7 @@ absl::optional<FilterChain> FilterChainParse(
       if (extension.has_value()) {
         filter_chain.filter_chain_data->http_connection_manager =
             HttpConnectionManagerParse(/*is_client=*/false, context,
-                                       std::move(*extension), is_v2, errors);
+                                       std::move(*extension), errors);
       }
     }
   }
@@ -1008,7 +998,7 @@ absl::optional<XdsListenerResource::FilterChainMap> BuildFilterChainMap(
 
 absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_Listener* listener, bool is_v2) {
+    const envoy_config_listener_v3_Listener* listener) {
   ValidationErrors errors;
   XdsListenerResource::TcpListener tcp_listener;
   // address
@@ -1039,7 +1029,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     for (size_t i = 0; i < num_filter_chains; i++) {
       ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
       auto filter_chain =
-          FilterChainParse(context, filter_chains[i], is_v2, &errors);
+          FilterChainParse(context, filter_chains[i], &errors);
       if (filter_chain.has_value()) {
         parsed_filter_chains.push_back(std::move(*filter_chain));
       }
@@ -1055,7 +1045,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
   if (default_filter_chain != nullptr) {
     ValidationErrors::ScopedField field(&errors, "default_filter_chain");
     auto filter_chain =
-        FilterChainParse(context, default_filter_chain, is_v2, &errors);
+        FilterChainParse(context, default_filter_chain, &errors);
     if (filter_chain.has_value() &&
         filter_chain->filter_chain_data != nullptr) {
       tcp_listener.default_filter_chain =
@@ -1075,7 +1065,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
 
 absl::StatusOr<XdsListenerResource> LdsResourceParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_Listener* listener, bool is_v2) {
+    const envoy_config_listener_v3_Listener* listener) {
   // Check whether it's a client or server listener.
   const envoy_config_listener_v3_ApiListener* api_listener =
       envoy_config_listener_v3_Listener_api_listener(listener);
@@ -1094,9 +1084,9 @@ absl::StatusOr<XdsListenerResource> LdsResourceParse(
   // If api_listener is present, it's for a client; otherwise, it's
   // for a server.
   if (api_listener != nullptr) {
-    return LdsResourceParseClient(context, api_listener, is_v2);
+    return LdsResourceParseClient(context, api_listener);
   }
-  return LdsResourceParseServer(context, listener, is_v2);
+  return LdsResourceParseServer(context, listener);
 }
 
 void MaybeLogListener(const XdsResourceType::DecodeContext& context,
@@ -1115,7 +1105,7 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
 
 XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_resource, bool is_v2) const {
+    absl::string_view serialized_resource) const {
   DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
@@ -1129,7 +1119,7 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
   // Validate resource.
   result.name =
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
-  auto listener = LdsResourceParse(context, resource, is_v2);
+  auto listener = LdsResourceParse(context, resource);
   if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",

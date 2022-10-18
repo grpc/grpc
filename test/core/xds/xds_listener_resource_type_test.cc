@@ -113,15 +113,14 @@ TEST_F(XdsListenerTest, Definition) {
   auto* resource_type = XdsListenerResourceType::Get();
   ASSERT_NE(resource_type, nullptr);
   EXPECT_EQ(resource_type->type_url(), "envoy.config.listener.v3.Listener");
-  EXPECT_EQ(resource_type->v2_type_url(), "envoy.api.v2.Listener");
   EXPECT_TRUE(resource_type->AllResourcesRequiredInSotW());
 }
 
 TEST_F(XdsListenerTest, UnparseableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -135,8 +134,8 @@ TEST_F(XdsListenerTest, NeitherAddressNotApiListener) {
   std::string serialized_resource;
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -165,7 +164,7 @@ TEST_F(ApiListenerTest, MinimumValidConfig) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -200,7 +199,7 @@ TEST_F(ApiListenerTest, RdsConfigSourceUsesAds) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -239,7 +238,7 @@ TEST_F(ApiListenerTest, SetsMaxStreamDuration) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -268,7 +267,7 @@ TEST_F(ApiListenerTest, InnerApiListenerNotSet) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -285,7 +284,7 @@ TEST_F(ApiListenerTest, DoesNotContainHttpConnectionManager) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -306,7 +305,7 @@ TEST_F(ApiListenerTest, UnparseableHttpConnectionManagerConfig) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -335,7 +334,7 @@ TEST_F(ApiListenerTest, UnsupportedFieldsSet) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -369,7 +368,7 @@ TEST_F(ApiListenerTest, InvalidMaxStreamDuration) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -396,7 +395,7 @@ TEST_F(ApiListenerTest, EmptyHttpFilterName) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -424,7 +423,7 @@ TEST_F(ApiListenerTest, DuplicateHttpFilterName) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -450,7 +449,7 @@ TEST_F(ApiListenerTest, HttpFilterMissingConfig) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -477,7 +476,7 @@ TEST_F(ApiListenerTest, HttpFilterTypeNotSupported) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -509,7 +508,7 @@ TEST_F(ApiListenerTest, HttpFilterNotSupportedOnClient) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -534,7 +533,7 @@ TEST_F(ApiListenerTest, NoHttpFilters) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -564,7 +563,7 @@ TEST_F(ApiListenerTest, TerminalFilterNotLast) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -593,7 +592,7 @@ TEST_F(ApiListenerTest, NeitherRouteConfigNorRdsName) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -620,7 +619,7 @@ TEST_F(ApiListenerTest, RdsConfigSourceNotAdsOrSelf) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+      decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
