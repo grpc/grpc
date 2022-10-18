@@ -129,6 +129,7 @@ class XdsWrrLocalityLb : public LoadBalancingPolicy {
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -311,6 +312,11 @@ void XdsWrrLocalityLb::Helper::RequestReresolution() {
 
 absl::string_view XdsWrrLocalityLb::Helper::GetAuthority() {
   return xds_wrr_locality_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine*
+XdsWrrLocalityLb::Helper::GetEventEngine() {
+  return this->xds_wrr_locality_->channel_control_helper()->GetEventEngine();
 }
 
 void XdsWrrLocalityLb::Helper::AddTraceEvent(TraceSeverity severity,
