@@ -32,6 +32,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -43,6 +44,7 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/upb.h"
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
@@ -493,16 +495,22 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfig(upb_StringView serialized_filter_config,
+XdsHttpRbacFilter::GenerateFilterConfig(XdsExtension extension,
                                         upb_Arena* arena) const {
-  absl::StatusOr<Json> rbac_json;
+  absl::string_view* serialized_filter_config =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "could not parse HTTP RBAC filter config");
+  }
   auto* rbac = envoy_extensions_filters_http_rbac_v3_RBAC_parse(
-      serialized_filter_config.data, serialized_filter_config.size, arena);
+      serialized_filter_config->data(), serialized_filter_config->size(),
+      arena);
   if (rbac == nullptr) {
     return absl::InvalidArgumentError(
         "could not parse HTTP RBAC filter config");
   }
-  rbac_json = ParseHttpRbacToJson(rbac);
+  absl::StatusOr<Json> rbac_json = ParseHttpRbacToJson(rbac);
   if (!rbac_json.ok()) {
     return rbac_json.status();
   }
@@ -510,11 +518,17 @@ XdsHttpRbacFilter::GenerateFilterConfig(upb_StringView serialized_filter_config,
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfigOverride(
-    upb_StringView serialized_filter_config, upb_Arena* arena) const {
+XdsHttpRbacFilter::GenerateFilterConfigOverride(XdsExtension extension,
+                                                upb_Arena* arena) const {
+  absl::string_view* serialized_filter_config =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    return absl::InvalidArgumentError("could not parse RBACPerRoute");
+  }
   auto* rbac_per_route =
       envoy_extensions_filters_http_rbac_v3_RBACPerRoute_parse(
-          serialized_filter_config.data, serialized_filter_config.size, arena);
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          arena);
   if (rbac_per_route == nullptr) {
     return absl::InvalidArgumentError("could not parse RBACPerRoute");
   }

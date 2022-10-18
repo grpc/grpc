@@ -30,6 +30,7 @@
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+#include <grpcpp/support/status_code_enum.h>
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"

@@ -92,9 +92,10 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       "    { \"does_not_exist\":{} },\n"
       "    { \"xds_cluster_resolver_experimental\":{\n"
       "      \"discoveryMechanisms\": [\n"
-      "      { \"clusterName\": \"foo\",\n"
-      "        \"type\": \"EDS\"\n"
-      "    } ]\n"
+      "        { \"clusterName\": \"foo\",\n"
+      "          \"type\": \"EDS\"\n"
+      "        } ],\n"
+      "      \"xdsLbPolicy\": [{\"round_robin\":{}}]\n"
       "    } }\n"
       "  ]\n"
       "}";
