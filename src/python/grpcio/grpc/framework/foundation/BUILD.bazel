@@ -34,19 +34,16 @@ py_library(
 py_library(
     name = "callable_util",
     srcs = ["callable_util.py"],
-    deps = [],
 )
 
 py_library(
     name = "future",
     srcs = ["future.py"],
-    deps = [],
 )
 
 py_library(
     name = "logging_pool",
     srcs = ["logging_pool.py"],
-    deps = [],
 )
 
 py_library(
@@ -60,5 +57,4 @@ py_library(
 py_library(
     name = "stream",
     srcs = ["stream.py"],
-    deps = [],
 )

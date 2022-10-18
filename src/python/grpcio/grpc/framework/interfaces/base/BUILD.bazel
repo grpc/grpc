@@ -33,5 +33,4 @@ py_library(
 py_library(
     name = "utilities",
     srcs = ["utilities.py"],
-    deps = [],
 )

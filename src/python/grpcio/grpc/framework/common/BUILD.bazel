@@ -25,11 +25,9 @@ py_library(
 py_library(
     name = "cardinality",
     srcs = ["cardinality.py"],
-    deps = [],
 )
 
 py_library(
     name = "style",
     srcs = ["style.py"],
-    deps = [],
 )
