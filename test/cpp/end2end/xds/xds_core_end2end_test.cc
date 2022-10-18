@@ -68,29 +68,6 @@ TEST_P(XdsClientTest, ResourceWrappedInResourceMessage) {
             channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_P(XdsClientTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
-  CreateAndStartBackends(2);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait for backends to come online.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  // Stop balancer.
-  balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
-  // Update backend, just so we can be sure that the client has
-  // reconnected to the balancer.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Restart balancer.
-  balancer_->Start();
-  // Make sure client has reconnected.
-  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
-}
-
 // Tests that we restart all xDS requests when we reestablish the ADS call.
 TEST_P(XdsClientTest, RestartsRequestsUponReconnection) {
   CreateAndStartBackends(2);
@@ -597,36 +574,6 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
       },
       /*timeout_ms=*/30000,
       RpcOptions().set_rpc_method(METHOD_ECHO1).set_timeout_ms(4000));
-}
-
-TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
-  // Stop balancer.
-  balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types
-  // and to not reply to the requests.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
-  balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
-  balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
-  balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
-  balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
-  // Restart balancer.
-  balancer_->Start();
-  // Send RPCs for long enough to cover the ADS stream restart delay,
-  // the stream restart, and then the resulting timeout period, just to
-  // be sure that the channel continues to use the resources from before
-  // the restart.
-  absl::Time deadline =
-      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
-  do {
-    CheckRpcSendOk(DEBUG_LOCATION);
-  } while (absl::Now() < deadline);
 }
 
 //
