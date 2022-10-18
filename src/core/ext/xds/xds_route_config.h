@@ -46,8 +46,6 @@
 
 namespace grpc_core {
 
-bool XdsRbacEnabled();
-
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
