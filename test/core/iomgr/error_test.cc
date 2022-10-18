@@ -147,7 +147,7 @@ TEST(ErrorTest, PrintErrorString) {
   error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kSize, 666);
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "message");
-  // gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
+  // gpr_log(GPR_DEBUG, "%s", grpc_core::StatusToString(error).c_str());
 }
 
 TEST(ErrorTest, PrintErrorStringReference) {

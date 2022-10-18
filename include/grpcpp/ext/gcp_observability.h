@@ -1,4 +1,5 @@
-// Copyright 2017 gRPC authors.
+//
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,28 +12,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-syntax = "proto3";
+#ifndef GRPCPP_EXT_GCP_OBSERVABILITY_H
+#define GRPCPP_EXT_GCP_OBSERVABILITY_H
 
-package grpc.core;
+#include "absl/status/status.h"
 
-message Bucket {
-  double start = 1;
-  uint64 count = 2;
-}
+namespace grpc {
+namespace experimental {
 
-message Histogram {
-  repeated Bucket buckets = 1;
-}
+// Initialize GCP Observability for gRPC.
+absl::Status GcpObservabilityInit();
 
-message Metric {
-  string name = 1;
-  oneof value {
-    uint64 count = 10;
-    Histogram histogram = 11;
-  }
-}
+}  // namespace experimental
+}  // namespace grpc
 
-message Stats {
-  repeated Metric metrics = 1;
-}
+#endif  // GRPCPP_EXT_GCP_OBSERVABILITY_H

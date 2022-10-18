@@ -1111,11 +1111,13 @@ src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
 src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
@@ -1882,7 +1884,6 @@ src/core/ext/xds/xds_lb_policy_registry.cc \
 src/core/ext/xds/xds_lb_policy_registry.h \
 src/core/ext/xds/xds_listener.cc \
 src/core/ext/xds/xds_listener.h \
-src/core/ext/xds/xds_resource_type.cc \
 src/core/ext/xds/xds_resource_type.h \
 src/core/ext/xds/xds_resource_type_impl.h \
 src/core/ext/xds/xds_route_config.cc \
@@ -1935,6 +1936,8 @@ src/core/lib/config/core_configuration.cc \
 src/core/lib/config/core_configuration.h \
 src/core/lib/debug/event_log.cc \
 src/core/lib/debug/event_log.h \
+src/core/lib/debug/histogram_view.cc \
+src/core/lib/debug/histogram_view.h \
 src/core/lib/debug/stats.cc \
 src/core/lib/debug/stats.h \
 src/core/lib/debug/stats_data.cc \

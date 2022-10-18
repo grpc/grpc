@@ -42,9 +42,11 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+#include <grpcpp/support/status_code_enum.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
@@ -238,8 +240,8 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   }
   error = grpc_load_file(sts_creds_path->c_str(), 1, &json_string);
   if (!error.ok()) {
-    status =
-        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));
+    status = grpc::Status(grpc::StatusCode::NOT_FOUND,
+                          grpc_core::StatusToString(error));
     return cleanup();
   }
   status = StsCredentialsOptionsFromJson(
