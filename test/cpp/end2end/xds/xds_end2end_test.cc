@@ -776,9 +776,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   DoSetUp();
   Listener listener = default_server_listener_;
   listener.clear_address();
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.set_name(GetServerListenerName(backends_[0]->port()));
   balancer_->ads_service()->SetLdsResource(listener);
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
@@ -818,8 +816,16 @@ TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.filters[0].typed_config.value["
+          "envoy.extensions.filters.network.http_connection_manager.v3"
+          ".HttpConnectionManager].xff_num_trusted_hops "
+          "error:must be zero]]"));
 }
 
 TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
@@ -835,9 +841,16 @@ TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.filters[0].typed_config.value["
+          "envoy.extensions.filters.network.http_connection_manager.v3"
+          ".HttpConnectionManager].original_ip_detection_extensions "
+          "error:must be empty]]"));
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
@@ -850,8 +863,15 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Unsupported filter type"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.filters[0].typed_config.value["
+          "envoy.config.listener.v3.Listener] "
+          "error:unsupported filter type]]"));
 }
 
 TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
@@ -867,8 +887,16 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Expected at least one HTTP filter"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.filters[0].typed_config.value["
+          "envoy.extensions.filters.network.http_connection_manager.v3"
+          ".HttpConnectionManager].http_filters "
+          "error:expected at least one HTTP filter]]"));
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
@@ -892,9 +920,17 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "grpc.testing.unsupported_http_filter"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.filters[0].typed_config.value["
+          "envoy.extensions.filters.network.http_connection_manager.v3"
+          ".HttpConnectionManager].http_filters[0].typed_config.value["
+          "grpc.testing.unsupported_http_filter] "
+          "error:unsupported filter type]]"));
 }
 
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
@@ -918,10 +954,17 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::HasSubstr("Filter grpc.testing.client_only_http_filter is not "
-                           "supported on servers"));
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.filters[0].typed_config.value["
+          "envoy.extensions.filters.network.http_connection_manager.v3"
+          ".HttpConnectionManager].http_filters[0].typed_config.value["
+          "grpc.testing.client_only_http_filter] "
+          "error:filter is not supported on servers]]"));
 }
 
 TEST_P(XdsEnabledServerTest,
@@ -978,9 +1021,13 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::HasSubstr("Field \'use_original_dst\' is not supported."));
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:use_original_dst error:field not supported]]"));
 }
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
@@ -1217,8 +1264,14 @@ TEST_P(XdsServerSecurityTest, TransportSocketTypedConfigUnset) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("transport socket typed config unset"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.transport_socket.typed_config "
+          "error:field not present]]"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
@@ -1232,9 +1285,15 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Unrecognized transport socket type: "
-                                   "envoy.config.listener.v3.Listener"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.config.listener.v3.Listener].type_url "
+          "error:unsupported transport socket type]]"));
 }
 
 TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
@@ -1254,8 +1313,17 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("require_sni: unsupported"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".value[envoy.extensions.transport_sockets.tls.v3"
+          ".DownstreamTlsContext].require_sni "
+          "error:field unsupported]]"));
 }
 
 TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
@@ -1277,9 +1345,17 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "ocsp_staple_policy: Only LENIENT_STAPLING supported"));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".value[envoy.extensions.transport_sockets.tls.v3"
+          ".DownstreamTlsContext].ocsp_staple_policy "
+          "error:value must be LENIENT_STAPLING]]"));
 }
 
 TEST_P(
@@ -1301,10 +1377,18 @@ TEST_P(
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration requires client certificates but no "
-                  "certificate provider instance specified for validation."));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".value[envoy.extensions.transport_sockets.tls.v3"
+          ".DownstreamTlsContext].require_client_certificate "
+          "error:client certificate required but no certificate provider "
+          "instance specified for validation]]"));
 }
 
 TEST_P(XdsServerSecurityTest,
@@ -1321,9 +1405,18 @@ TEST_P(XdsServerSecurityTest,
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "tls_certificate_provider_instance found."));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetServerListenerName(backends_[0]->port()),
+          ": INVALID_ARGUMENT: errors validating server Listener: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".value[envoy.extensions.transport_sockets.tls.v3"
+          ".DownstreamTlsContext] "
+          "error:TLS configuration provided but no "
+          "tls_certificate_provider_instance found]]"));
 }
 
 TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
@@ -3722,21 +3815,18 @@ int main(int argc, char** argv) {
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ false,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.client_only_http_filter"});
+          /*supported_on_clients=*/true, /*supported_on_servers=*/false,
+          /*is_terminal_filter=*/false));
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.server_only_http_filter",
-          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.server_only_http_filter"});
+          /*supported_on_clients=*/false, /*supported_on_servers=*/true,
+          /*is_terminal_filter=*/false));
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.terminal_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ true),
-      {"grpc.testing.terminal_http_filter"});
+          /*supported_on_clients=*/true, /*supported_on_servers=*/true,
+          /*is_terminal_filter=*/true));
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

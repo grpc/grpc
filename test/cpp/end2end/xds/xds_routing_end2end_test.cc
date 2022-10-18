@@ -69,7 +69,9 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
       "xDS response validation errors: ["
       "resource index 0: server.example.com: INVALID_ARGUMENT: "
       "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value[HttpConnectionManager] "
+      "field:api_listener.api_listener.value["
+      "envoy.extensions.filters.network.http_connection_manager.v3"
+      ".HttpConnectionManager] "
       "error:neither route_config nor rds fields are present]]");
 }
 
@@ -91,8 +93,10 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
             "xDS response validation errors: ["
             "resource index 0: server.example.com: INVALID_ARGUMENT: "
             "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value[HttpConnectionManager]"
-            ".rds.config_source error:field not present]]");
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].rds.config_source "
+            "error:field not present]]");
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -115,8 +119,9 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
             "xDS response validation errors: ["
             "resource index 0: server.example.com: INVALID_ARGUMENT: "
             "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value[HttpConnectionManager]"
-            ".rds.config_source "
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].rds.config_source "
             "error:ConfigSource does not specify ADS or SELF]]");
 }
 
@@ -211,8 +216,10 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
             "xDS response validation errors: ["
             "resource index 0: server.example.com: INVALID_ARGUMENT: "
             "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value[HttpConnectionManager]"
-            ".http_filters[0].name error:empty filter name]]");
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].http_filters[0].name "
+            "error:empty filter name]]");
 }
 
 // Test that we NACK duplicate HTTP filter names.
@@ -253,9 +260,15 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "envoy.config.listener.v3.Listener"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: "
+            "INVALID_ARGUMENT: errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].http_filters[0].typed_config.value["
+            "envoy.config.listener.v3.Listener] "
+            "error:unsupported filter type]]");
 }
 
 // Test that we ignore optional unknown filter types.
@@ -300,9 +313,14 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
                                    default_route_config_);
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: "
+            "INVALID_ARGUMENT: errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].http_filters[0].typed_config "
+            "error:field not present]]");
 }
 
 // Test that we ignore optional filters without configs.
@@ -354,8 +372,9 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       "xDS response validation errors: ["
       "resource index 0: server.example.com: INVALID_ARGUMENT: "
       "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value[HttpConnectionManager]"
-      ".http_filters[0].typed_config.value["
+      "field:api_listener.api_listener.value["
+      "envoy.extensions.filters.network.http_connection_manager.v3"
+      ".HttpConnectionManager].http_filters[0].typed_config.value["
       "envoy.extensions.filters.http.fault.v3.HTTPFault] "
       "error:could not parse fault injection filter config]]");
 }
@@ -383,8 +402,9 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
       "xDS response validation errors: ["
       "resource index 0: server.example.com: INVALID_ARGUMENT: "
       "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value[HttpConnectionManager]"
-      ".http_filters[0].typed_config.value["
+      "field:api_listener.api_listener.value["
+      "envoy.extensions.filters.network.http_connection_manager.v3"
+      ".HttpConnectionManager].http_filters[0].typed_config.value["
       "grpc.testing.server_only_http_filter] "
       "error:filter is not supported on clients]]");
 }
@@ -432,8 +452,10 @@ TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
             "xDS response validation errors: ["
             "resource index 0: server.example.com: INVALID_ARGUMENT: "
             "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value[HttpConnectionManager]"
-            ".xff_num_trusted_hops error:must be zero]]");
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].xff_num_trusted_hops "
+            "error:must be zero]]");
 }
 
 // Test that we NACK non-empty original_ip_detection_extensions
@@ -454,8 +476,10 @@ TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
       "xDS response validation errors: ["
       "resource index 0: server.example.com: INVALID_ARGUMENT: "
       "errors validating ApiListener: ["
-      "field:api_listener.api_listener.value[HttpConnectionManager]"
-      ".original_ip_detection_extensions error:must be empty]]");
+      "field:api_listener.api_listener.value["
+      "envoy.extensions.filters.network.http_connection_manager.v3"
+      ".HttpConnectionManager].original_ip_detection_extensions "
+      "error:must be empty]]");
 }
 
 using LdsV2Test = XdsEnd2endTest;
@@ -3220,21 +3244,18 @@ int main(int argc, char** argv) {
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ false,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.client_only_http_filter"});
+          /*supported_on_clients=*/true, /*supported_on_servers=*/false,
+          /*is_terminal_filter=*/false));
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.server_only_http_filter",
-          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.server_only_http_filter"});
+          /*supported_on_clients=*/false, /*supported_on_servers=*/true,
+          /*is_terminal_filter=*/false));
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       std::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.terminal_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ true),
-      {"grpc.testing.terminal_http_filter"});
+          /*supported_on_clients=*/true, /*supported_on_servers=*/true,
+          /*is_terminal_filter=*/true));
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

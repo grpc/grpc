@@ -29,6 +29,10 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
         supported_on_servers_(supported_on_servers),
         is_terminal_filter_(is_terminal_filter) {}
 
+  absl::string_view ConfigProtoName() const override { return name_; }
+
+  absl::string_view OverrideConfigProtoName() const { return ""; }
+
   void PopulateSymtab(upb_DefPool* /*symtab*/) const override {}
 
   absl::optional<grpc_core::XdsHttpFilterImpl::FilterConfig>
