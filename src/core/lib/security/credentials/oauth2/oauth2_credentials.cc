@@ -47,6 +47,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -684,8 +685,7 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
   }
   auto grpc_error_vec = GRPC_ERROR_CREATE_FROM_VECTOR(
       "Invalid STS Credentials Options", &error_list);
-  auto retval =
-      absl::InvalidArgumentError(grpc_error_std_string(grpc_error_vec));
+  auto retval = absl::InvalidArgumentError(StatusToString(grpc_error_vec));
   return retval;
 }
 

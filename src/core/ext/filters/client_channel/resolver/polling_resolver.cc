@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -115,7 +116,7 @@ void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO,
             "[polling resolver %p] re-resolution timer fired: error=\"%s\", "
             "shutdown_=%d",
-            this, grpc_error_std_string(error).c_str(), shutdown_);
+            this, StatusToString(error).c_str(), shutdown_);
   }
   have_next_resolution_timer_ = false;
   if (error.ok() && !shutdown_) {

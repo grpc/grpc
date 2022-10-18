@@ -307,6 +307,7 @@ grpc_cc_test(
         "//:pipe",
         "//:resource_quota",
         "//:seq",
+        "//:try_seq",
     ],
 )
 
