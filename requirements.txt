@@ -2,4 +2,5 @@
 coverage>=4.0
 cython>=0.29.8
 protobuf>=4.21.3,<5.0dev
+six>=1.10
 wheel>=0.29

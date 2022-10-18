@@ -19,6 +19,18 @@ load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_confi
 # buildifier: disable=unnamed-macro
 def grpc_python_deps():
     """Loads dependencies for gRPC Python."""
+
+    # protobuf binds to the name "six", so we can't use it here.
+    # See https://github.com/bazelbuild/bazel/issues/1952 for why bind is
+    # horrible.
+    if "six" not in native.existing_rules():
+        http_archive(
+            name = "six",
+            build_file = "@com_github_grpc_grpc//third_party:six.BUILD",
+            sha256 = "1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926",
+            urls = ["https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz"],
+        )
+
     if "enum34" not in native.existing_rules():
         http_archive(
             name = "enum34",

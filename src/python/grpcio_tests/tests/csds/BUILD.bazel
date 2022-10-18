@@ -21,5 +21,6 @@ py_test(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_csds/grpc_csds",
+        "@six",
     ],
 )
