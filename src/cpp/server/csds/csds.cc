@@ -29,6 +29,7 @@
 #include <grpc/slice.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
+#include <grpcpp/support/status_code_enum.h>
 
 namespace grpc {
 namespace xds {

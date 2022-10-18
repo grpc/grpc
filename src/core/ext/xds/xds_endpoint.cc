@@ -430,7 +430,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
 
 XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_resource, bool /*is_v2*/) const {
+    absl::string_view serialized_resource) const {
   DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
