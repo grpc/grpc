@@ -57,7 +57,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -795,19 +794,17 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
-      if (context.server.ShouldUseV3()) {
-        auto typed_per_filter_config = ParseTypedPerFilterConfig<
-            envoy_config_route_v3_WeightedCluster_ClusterWeight,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
-            context, cluster_weight,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
-            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value);
-        if (!typed_per_filter_config.ok()) {
-          return typed_per_filter_config.status();
-        }
-        cluster.typed_per_filter_config = std::move(*typed_per_filter_config);
+      auto typed_per_filter_config = ParseTypedPerFilterConfig<
+          envoy_config_route_v3_WeightedCluster_ClusterWeight,
+          envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
+          context, cluster_weight,
+          envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
+          envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
+          envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value);
+      if (!typed_per_filter_config.ok()) {
+        return typed_per_filter_config.status();
       }
+      cluster.typed_per_filter_config = std::move(*typed_per_filter_config);
       action_weighted_clusters.emplace_back(std::move(cluster));
     }
     if (total_weight != sum_of_weights) {
@@ -996,19 +993,17 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
       return absl::InvalidArgumentError("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    if (context.server.ShouldUseV3()) {
-      auto typed_per_filter_config = ParseTypedPerFilterConfig<
-          envoy_config_route_v3_VirtualHost,
-          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
-          context, virtual_hosts[i],
-          envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
-          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
-          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value);
-      if (!typed_per_filter_config.ok()) {
-        return typed_per_filter_config.status();
-      }
-      vhost.typed_per_filter_config = std::move(*typed_per_filter_config);
+    auto typed_per_filter_config = ParseTypedPerFilterConfig<
+        envoy_config_route_v3_VirtualHost,
+        envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
+        context, virtual_hosts[i],
+        envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
+        envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
+        envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value);
+    if (!typed_per_filter_config.ok()) {
+      return typed_per_filter_config.status();
     }
+    vhost.typed_per_filter_config = std::move(*typed_per_filter_config);
     // Parse retry policy.
     absl::optional<XdsRouteConfigResource::RetryPolicy>
         virtual_host_retry_policy;
@@ -1079,19 +1074,17 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
         route.action
             .emplace<XdsRouteConfigResource::Route::NonForwardingAction>();
       }
-      if (context.server.ShouldUseV3()) {
-        auto typed_per_filter_config = ParseTypedPerFilterConfig<
-            envoy_config_route_v3_Route,
-            envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
-            context, routes[j],
-            envoy_config_route_v3_Route_typed_per_filter_config_next,
-            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
-            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value);
-        if (!typed_per_filter_config.ok()) {
-          return typed_per_filter_config.status();
-        }
-        route.typed_per_filter_config = std::move(*typed_per_filter_config);
+      auto typed_per_filter_config = ParseTypedPerFilterConfig<
+          envoy_config_route_v3_Route,
+          envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
+          context, routes[j],
+          envoy_config_route_v3_Route_typed_per_filter_config_next,
+          envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
+          envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value);
+      if (!typed_per_filter_config.ok()) {
+        return typed_per_filter_config.status();
       }
+      route.typed_per_filter_config = std::move(*typed_per_filter_config);
       vhost.routes.emplace_back(std::move(route));
     }
     if (vhost.routes.empty()) {
@@ -1130,7 +1123,7 @@ void MaybeLogRouteConfiguration(
 
 XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_resource, bool /*is_v2*/) const {
+    absl::string_view serialized_resource) const {
   DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(

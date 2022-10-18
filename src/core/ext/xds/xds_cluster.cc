@@ -275,7 +275,7 @@ void AggregateClusterParse(const XdsResourceType::DecodeContext& context,
 
 absl::StatusOr<XdsClusterResource> CdsResourceParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/) {
+    const envoy_config_cluster_v3_Cluster* cluster) {
   XdsClusterResource cds_update;
   ValidationErrors errors;
   // Check the cluster discovery type.
@@ -580,7 +580,7 @@ void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
 
 XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_resource, bool is_v2) const {
+    absl::string_view serialized_resource) const {
   DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
@@ -594,7 +594,7 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
   // Validate resource.
   result.name =
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
-  auto cds_resource = CdsResourceParse(context, resource, is_v2);
+  auto cds_resource = CdsResourceParse(context, resource);
   if (!cds_resource.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Cluster %s: %s",
