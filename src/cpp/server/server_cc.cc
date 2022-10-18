@@ -67,7 +67,6 @@
 #include <grpcpp/support/server_interceptor.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
-#include <grpcpp/support/status_code_enum.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
