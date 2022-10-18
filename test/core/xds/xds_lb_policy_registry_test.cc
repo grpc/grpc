@@ -299,7 +299,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": null}").value());
+  EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": {}}").value());
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
@@ -312,7 +312,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": null}").value());
+  EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": {}}").value());
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
@@ -338,11 +338,13 @@ TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlMissingSlash) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("Error parsing "
-                           "LoadBalancingPolicy::Policy::TypedExtensionConfig::"
-                           "typed_config: Invalid type_url test.UnknownLb"));
+  EXPECT_EQ(result.status().message(),
+            "Error parsing "
+            "LoadBalancingPolicy::Policy::TypedExtensionConfig::"
+            "typed_config: ["
+            "field:value[xds.type.v3.TypedStruct].type_url "
+            "error:invalid value \"test.UnknownLb\"]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlEmptyType) {
@@ -354,11 +356,13 @@ TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlEmptyType) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(result.status().message()),
-      ::testing::HasSubstr("Error parsing "
-                           "LoadBalancingPolicy::Policy::TypedExtensionConfig::"
-                           "typed_config: Invalid type_url myorg/"));
+  EXPECT_EQ(result.status().message(),
+            "Error parsing "
+            "LoadBalancingPolicy::Policy::TypedExtensionConfig::"
+            "typed_config: "
+            "[field:value[xds.type.v3.TypedStruct].type_url "
+            "error:invalid value \"myorg/\"]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
@@ -437,11 +441,13 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(result.status().message()),
-              ::testing::HasSubstr(
-                  "Error parsing LoadBalancingPolicy: Custom Policy: "
-                  "test.CustomLb: Error parsing google::Protobuf::Struct: No "
-                  "value set in Value proto"));
+  EXPECT_EQ(result.status().message(),
+            "Error parsing "
+            "LoadBalancingPolicy::Policy::TypedExtensionConfig::typed_config: ["
+            "field:value[xds.type.v3.TypedStruct].value[test.CustomLb] "
+            "error:error encoding google::Protobuf::Struct as JSON: "
+            "No value set in Value proto]")
+      << result.status();
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {

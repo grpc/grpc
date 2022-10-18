@@ -78,7 +78,7 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
@@ -99,7 +99,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
