@@ -23,7 +23,7 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/cpp/end2end/xds/no_op_http_filter.h"
+#include "test/core/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -3178,17 +3178,17 @@ int main(int argc, char** argv) {
 #endif
   grpc_init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      std::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc_core::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
           /*supported_on_clients=*/true, /*supported_on_servers=*/false,
           /*is_terminal_filter=*/false));
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      std::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc_core::testing::NoOpHttpFilter>(
           "grpc.testing.server_only_http_filter",
           /*supported_on_clients=*/false, /*supported_on_servers=*/true,
           /*is_terminal_filter=*/false));
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      std::make_unique<grpc::testing::NoOpHttpFilter>(
+      std::make_unique<grpc_core::testing::NoOpHttpFilter>(
           "grpc.testing.terminal_http_filter",
           /*supported_on_clients=*/true, /*supported_on_servers=*/true,
           /*is_terminal_filter=*/true));

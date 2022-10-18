@@ -175,6 +175,16 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "no_op_http_filter",
+    testonly = True,
+    hdrs = ["no_op_http_filter.h"],
+    deps = [
+        "//:grpc_xds_client",
+    ],
+    visibility = ["//test/cpp/end2end/xds:__pkg__"],
+)
+
 grpc_cc_test(
     name = "xds_http_filters_test",
     srcs = ["xds_http_filters_test.cc"],
@@ -183,6 +193,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":no_op_http_filter",
         "//:gpr",
         "//:grpc",
         "//src/proto/grpc/testing/xds/v3:fault_proto",

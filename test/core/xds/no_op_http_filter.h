@@ -16,7 +16,7 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
-namespace grpc {
+namespace grpc_core {
 namespace testing {
 
 // A No-op HTTP filter used for verifying parsing logic.
@@ -31,7 +31,7 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 
   absl::string_view ConfigProtoName() const override { return name_; }
 
-  absl::string_view OverrideConfigProtoName() const { return ""; }
+  absl::string_view OverrideConfigProtoName() const override { return ""; }
 
   void PopulateSymtab(upb_DefPool* /*symtab*/) const override {}
 
@@ -73,4 +73,4 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 };
 
 }  // namespace testing
-}  // namespace grpc
+}  // namespace grpc_core

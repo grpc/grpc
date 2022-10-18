@@ -115,6 +115,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
   const auto* fault_abort =
       envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
   if (fault_abort != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".abort");
     grpc_status_code abort_grpc_status_code = GRPC_STATUS_OK;
     // Try if gRPC status code is set first
     int abort_grpc_status_code_raw =
@@ -152,15 +153,18 @@ XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
     auto* percent =
         envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
             fault_abort);
-    fault_injection_policy_json["abortPercentageNumerator"] =
-        Json(envoy_type_v3_FractionalPercent_numerator(percent));
-    fault_injection_policy_json["abortPercentageDenominator"] =
-        Json(GetDenominator(percent));
+    if (percent != nullptr) {
+      fault_injection_policy_json["abortPercentageNumerator"] =
+          envoy_type_v3_FractionalPercent_numerator(percent);
+      fault_injection_policy_json["abortPercentageDenominator"] =
+          GetDenominator(percent);
+    }
   }
   // Section 2: Parse the delay injection config
   const auto* fault_delay =
       envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
   if (fault_delay != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".delay");
     // Parse the delay duration
     const auto* delay_duration =
         envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
@@ -182,10 +186,12 @@ XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
     auto* percent =
         envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
             fault_delay);
-    fault_injection_policy_json["delayPercentageNumerator"] =
-        Json(envoy_type_v3_FractionalPercent_numerator(percent));
-    fault_injection_policy_json["delayPercentageDenominator"] =
-        Json(GetDenominator(percent));
+    if (percent != nullptr) {
+      fault_injection_policy_json["delayPercentageNumerator"] =
+          envoy_type_v3_FractionalPercent_numerator(percent);
+      fault_injection_policy_json["delayPercentageDenominator"] =
+          GetDenominator(percent);
+    }
   }
   // Section 3: Parse the maximum active faults
   const auto* max_fault_wrapper =
