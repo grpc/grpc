@@ -263,6 +263,8 @@ class PipeSender {
     if (auto* center = std::exchange(center_, nullptr)) center->UnrefSend();
   }
 
+  void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }
+
   // Send a single message along the pipe.
   // Returns a promise that will resolve to a bool - true if the message was
   // sent, false if it could never be sent. Blocks the promise until the
@@ -296,6 +298,8 @@ class PipeReceiver {
   ~PipeReceiver() {
     if (center_ != nullptr) center_->UnrefRecv();
   }
+
+  void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
 
   // Receive a single message from the pipe.
   // Returns a promise that will resolve to an optional<T> - with a value if a

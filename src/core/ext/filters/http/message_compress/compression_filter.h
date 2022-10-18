@@ -64,12 +64,8 @@ class CompressionFilter : public ChannelFilter {
  protected:
   explicit CompressionFilter(const ChannelArgs& args);
 
-  auto CompressLoop(grpc_metadata_batch* md,
-                    PipeReceiver<MessageHandle>* uncompressed,
-                    PipeSender<MessageHandle>* compressed) const;
-  auto DecompressLoop(grpc_compression_algorithm algorithm,
-                      PipeReceiver<MessageHandle>* compressed,
-                      PipeSender<MessageHandle>* decompressed) const;
+  class CompressLoop;
+  class DecompressLoop;
 
   grpc_compression_algorithm default_compression_algorithm() const {
     return default_compression_algorithm_;

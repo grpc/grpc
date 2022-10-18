@@ -505,7 +505,7 @@ static void test_max_receive_message_length_on_compressed_request(
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  grpc_slice details, status_details;
+  grpc_slice details;
   int was_cancelled = 2;
 
   // Set limit via channel args.

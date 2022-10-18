@@ -1771,6 +1771,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "map_pipe",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/map_pipe.h",
+    ],
+    deps = [
+        "for_each",
+        "map",
+        "pipe",
+        "promise_factory",
+    ],
+)
+
+grpc_cc_library(
     name = "for_each",
     external_deps = [
         "absl/status",
@@ -4414,6 +4428,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "latch",
+        "map_pipe",
         "percent_encoding",
         "pipe",
         "promise",
