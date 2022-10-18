@@ -847,14 +847,14 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
   EnableOpenCensusTracing(true);
 }
 
+// This test verifies that users depending on src/cpp/ext/filters/census header
+// files can continue using the non-experimental names.
 TEST(StatsPluginDeclarationTest, Declarations) {
   gpr_log(GPR_INFO, "%p", ClientMethodTagKey);
   gpr_log(GPR_INFO, "%p", ClientStatusTagKey);
   gpr_log(GPR_INFO, "%p", ServerMethodTagKey);
   gpr_log(GPR_INFO, "%p", ServerStatusTagKey);
 
-  // Names of measures used by the plugin--users can create views on these
-  // measures but should not record data for them.
   gpr_log(GPR_INFO, "%p", kRpcClientReceivedBytesPerRpcMeasureName.data());
   gpr_log(GPR_INFO, "%p", kRpcClientReceivedMessagesPerRpcMeasureName.data());
   gpr_log(GPR_INFO, "%p", kRpcClientRetriesPerCallMeasureName.data());
@@ -874,7 +874,6 @@ TEST(StatsPluginDeclarationTest, Declarations) {
   gpr_log(GPR_INFO, "%p", kRpcServerServerLatencyMeasureName.data());
   gpr_log(GPR_INFO, "%p", kRpcServerStartedRpcsMeasureName.data());
 
-  // Canonical gRPC view definitions.
   gpr_log(GPR_INFO, "%p", ClientCompletedRpcsCumulative);
   gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcCumulative);
   gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcCumulative);
