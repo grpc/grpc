@@ -337,12 +337,11 @@ TEST_P(XdsFaultInjectionFilterConfigTest, InvalidGrpcStatusCode) {
   auto config = GenerateConfig(std::move(extension));
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
-      ".HTTPFault].abort.grpc_status "
-      "error:invalid gRPC status code: 17]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
+            ".HTTPFault].abort.grpc_status "
+            "error:invalid gRPC status code: 17]")
       << status;
 }
 
@@ -353,12 +352,11 @@ TEST_P(XdsFaultInjectionFilterConfigTest, InvalidDuration) {
   auto config = GenerateConfig(std::move(extension));
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
-      ".HTTPFault].delay.fixed_delay.seconds "
-      "error:value must be in the range [0, 315576000000]]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
+            ".HTTPFault].delay.fixed_delay.seconds "
+            "error:value must be in the range [0, 315576000000]]")
       << status;
 }
 
@@ -368,11 +366,10 @@ TEST_P(XdsFaultInjectionFilterConfigTest, TypedStruct) {
   auto config = GenerateConfig(std::move(extension));
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
-      ".HTTPFault] error:could not parse fault injection filter config]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
+            ".HTTPFault] error:could not parse fault injection filter config]")
       << status;
 }
 
@@ -383,11 +380,10 @@ TEST_P(XdsFaultInjectionFilterConfigTest, Unparseable) {
   auto config = GenerateConfig(std::move(extension));
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
-      ".HTTPFault] error:could not parse fault injection filter config]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
+            ".HTTPFault] error:could not parse fault injection filter config]")
       << status;
 }
 
@@ -467,8 +463,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparseable) {
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
-  auto config = filter_->GenerateFilterConfigOverride(
-      std::move(extension), arena_.ptr(), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride(std::move(extension),
+                                                      arena_.ptr(), &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
@@ -478,15 +474,14 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfigOverride(
-      std::move(extension), arena_.ptr(), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride(std::move(extension),
+                                                      arena_.ptr(), &errors_);
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
-      ".RBACPerRoute] error:could not parse RBACPerRoute]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
+            ".RBACPerRoute] error:could not parse RBACPerRoute]")
       << status;
 }
 
@@ -494,15 +489,14 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparseable) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfigOverride(
-      std::move(extension), arena_.ptr(), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride(std::move(extension),
+                                                      arena_.ptr(), &errors_);
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
-      ".RBACPerRoute] error:could not parse RBACPerRoute]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
+            ".RBACPerRoute] error:could not parse RBACPerRoute]")
       << status;
 }
 
@@ -526,13 +520,10 @@ class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
   }
 
   std::string FieldPrefix() {
-    return absl::StrCat(
-        "http_filter.value[",
-        (GetParam()
-             ? filter_->OverrideConfigProtoName()
-             : filter_->ConfigProtoName()),
-        "]",
-        (GetParam() ? ".rbac" : ""));
+    return absl::StrCat("http_filter.value[",
+                        (GetParam() ? filter_->OverrideConfigProtoName()
+                                    : filter_->ConfigProtoName()),
+                        "]", (GetParam() ? ".rbac" : ""));
   }
 };
 
@@ -544,9 +535,8 @@ TEST_P(XdsRbacFilterConfigTest, EmptyConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name,
-            GetParam()
-                ? filter_->OverrideConfigProtoName()
-                : filter_->ConfigProtoName());
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
   EXPECT_EQ(config->config, Json(Json::Object())) << config->config.Dump();
 }
 
@@ -631,9 +621,8 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name,
-            GetParam()
-                ? filter_->OverrideConfigProtoName()
-                : filter_->ConfigProtoName());
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
   EXPECT_EQ(config->config.Dump(),
             "{\"rules\":{"
             "\"action\":0,"
@@ -758,9 +747,8 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
   ASSERT_TRUE(errors_.ok()) << errors_.status("unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name,
-            GetParam()
-                ? filter_->OverrideConfigProtoName()
-                : filter_->ConfigProtoName());
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
   EXPECT_EQ(config->config.Dump(),
             "{\"rules\":{"
             "\"action\":0,"
@@ -808,19 +796,17 @@ TEST_P(XdsRbacFilterConfigTest, InvalidFieldsInPolicy) {
   auto config = GenerateConfig(rbac);
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      absl::StrCat(
-          "errors validating filter config: ["
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].checked_condition "
-          "error:checked condition not supported; "
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].condition "
-          "error:condition not supported]"))
-    << status;
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].checked_condition "
+                         "error:checked condition not supported; "
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].condition "
+                         "error:condition not supported]"))
+      << status;
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidHeaderMatchers) {
@@ -841,21 +827,20 @@ TEST_P(XdsRbacFilterConfigTest, InvalidHeaderMatchers) {
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       status.message(),
-      absl::StrCat(
-          "errors validating filter config: ["
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].permissions[0].header.name "
-          "error:':scheme' not allowed in header; "
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].principals[0].header.name "
-          "error:'grpc-' prefixes not allowed in header; "
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].principals[1].header "
-          "error:invalid route header matcher specified]"))
-    << status;
+      absl::StrCat("errors validating filter config: ["
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].permissions[0].header.name "
+                   "error:':scheme' not allowed in header; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[0].header.name "
+                   "error:'grpc-' prefixes not allowed in header; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[1].header "
+                   "error:invalid route header matcher specified]"))
+      << status;
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidStringMatchers) {
@@ -870,17 +855,16 @@ TEST_P(XdsRbacFilterConfigTest, InvalidStringMatchers) {
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       status.message(),
-      absl::StrCat(
-          "errors validating filter config: ["
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].permissions[0].url_path.path "
-          "error:invalid match pattern; "
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].principals[0].url_path.path "
-          "error:field not present]"))
-    << status;
+      absl::StrCat("errors validating filter config: ["
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].permissions[0].url_path.path "
+                   "error:invalid match pattern; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[0].url_path.path "
+                   "error:field not present]"))
+      << status;
 }
 
 TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
@@ -893,19 +877,17 @@ TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
   auto config = GenerateConfig(rbac);
   absl::Status status = errors_.status("errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      absl::StrCat(
-          "errors validating filter config: ["
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].permissions[0] "
-          "error:invalid rule; "
-          "field:",
-          FieldPrefix(),
-          ".rules.policies[policy_name].principals[0] "
-          "error:invalid rule]"))
-    << status;
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].permissions[0] "
+                         "error:invalid rule; "
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].principals[0] "
+                         "error:invalid rule]"))
+      << status;
 }
 
 }  // namespace

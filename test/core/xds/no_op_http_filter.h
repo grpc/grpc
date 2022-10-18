@@ -20,7 +20,7 @@ namespace grpc_core {
 namespace testing {
 
 // A No-op HTTP filter used for verifying parsing logic.
-class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
+class NoOpHttpFilter : public XdsHttpFilterImpl {
  public:
   NoOpHttpFilter(std::string name, bool supported_on_clients,
                  bool supported_on_servers, bool is_terminal_filter)
@@ -35,28 +35,25 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 
   void PopulateSymtab(upb_DefPool* /*symtab*/) const override {}
 
-  absl::optional<grpc_core::XdsHttpFilterImpl::FilterConfig>
-  GenerateFilterConfig(grpc_core::XdsExtension /*extension*/,
-                       upb_Arena* /*arena*/,
-                       grpc_core::ValidationErrors* /*errors*/) const override {
-    return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
+  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateFilterConfig(
+      XdsExtension /*extension*/, upb_Arena* /*arena*/,
+      ValidationErrors* /*errors*/) const override {
+    return XdsHttpFilterImpl::FilterConfig{name_, Json()};
   }
 
-  absl::optional<grpc_core::XdsHttpFilterImpl::FilterConfig>
-  GenerateFilterConfigOverride(
-      grpc_core::XdsExtension /*serialized_filter_config*/,
-      upb_Arena* /*arena*/,
-      grpc_core::ValidationErrors* /*errors*/) const override {
-    return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
+  absl::optional<XdsHttpFilterImpl::FilterConfig> GenerateFilterConfigOverride(
+      XdsExtension /*serialized_filter_config*/, upb_Arena* /*arena*/,
+      ValidationErrors* /*errors*/) const override {
+    return XdsHttpFilterImpl::FilterConfig{name_, Json()};
   }
 
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
 
-  absl::StatusOr<grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry>
+  absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
   GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
       const FilterConfig* /*filter_config_override*/) const override {
-    return grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry{name_, ""};
+    return XdsHttpFilterImpl::ServiceConfigJsonEntry{name_, ""};
   }
 
   bool IsSupportedOnClients() const override { return supported_on_clients_; }

@@ -179,10 +179,10 @@ grpc_cc_library(
     name = "no_op_http_filter",
     testonly = True,
     hdrs = ["no_op_http_filter.h"],
+    visibility = ["//test/cpp/end2end/xds:__pkg__"],
     deps = [
         "//:grpc_xds_client",
     ],
-    visibility = ["//test/cpp/end2end/xds:__pkg__"],
 )
 
 grpc_cc_test(

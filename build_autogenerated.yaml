@@ -11287,9 +11287,9 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/xds/no_op_http_filter.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
-  - test/cpp/end2end/xds/no_op_http_filter.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
@@ -11409,6 +11409,47 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_http_filters_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/xds/no_op_http_filter.h
+  - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  - test/cpp/util/service_describer.h
+  src:
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/fault.proto
+  - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/core/xds/xds_http_filters_test.cc
+  - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/service_describer.cc
+  deps:
+  - absl/flags:flag
+  - grpc++
+  - grpc_test_util
+  uses_polling: false
 - name: xds_interop_client
   build: test
   run: false
@@ -11546,9 +11587,9 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/xds/no_op_http_filter.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
-  - test/cpp/end2end/xds/no_op_http_filter.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
@@ -11715,9 +11756,9 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/xds/no_op_http_filter.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
-  - test/cpp/end2end/xds/no_op_http_filter.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
