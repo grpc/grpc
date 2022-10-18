@@ -816,8 +816,9 @@ GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the minimum TLS version that will be negotiated during the TLS handshake.
- * If not set, the underlying SSL library will pick the version automatically.
+ * Sets the minimum TLS version that will be negotiated during the TLS
+ * handshake. If not set, the underlying SSL library will pick the version
+ * automatically.
  */
 GRPCAPI void grpc_tls_credentials_options_set_min_tls_version(
     grpc_tls_credentials_options* options, grpc_tls_version min_tls_version);
