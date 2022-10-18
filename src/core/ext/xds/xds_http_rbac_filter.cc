@@ -229,10 +229,12 @@ Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
     permission_json.emplace("any",
                             envoy_config_rbac_v3_Permission_any(permission));
   } else if (envoy_config_rbac_v3_Permission_has_header(permission)) {
+    ValidationErrors::ScopedField field(errors, ".header");
     Json header_json = ParseHeaderMatcherToJson(
         envoy_config_rbac_v3_Permission_header(permission), errors);
     permission_json.emplace("header", std::move(header_json));
   } else if (envoy_config_rbac_v3_Permission_has_url_path(permission)) {
+    ValidationErrors::ScopedField field(errors, ".url_path");
     Json url_path_json = ParsePathMatcherToJson(
         envoy_config_rbac_v3_Permission_url_path(permission), errors);
     permission_json.emplace("urlPath", std::move(url_path_json));
@@ -250,11 +252,13 @@ Json ParsePermissionToJson(const envoy_config_rbac_v3_Permission* permission,
         "metadata", ParseMetadataMatcherToJson(
                         envoy_config_rbac_v3_Permission_metadata(permission)));
   } else if (envoy_config_rbac_v3_Permission_has_not_rule(permission)) {
+    ValidationErrors::ScopedField field(errors, ".not_rule");
     Json not_rule_json = ParsePermissionToJson(
         envoy_config_rbac_v3_Permission_not_rule(permission), errors);
     permission_json.emplace("notRule", std::move(not_rule_json));
   } else if (envoy_config_rbac_v3_Permission_has_requested_server_name(
                  permission)) {
+    ValidationErrors::ScopedField field(errors, ".requested_server_name");
     Json requested_server_name_json = ParseStringMatcherToJson(
         envoy_config_rbac_v3_Permission_requested_server_name(permission),
         errors);
@@ -327,10 +331,12 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
         "remoteIp", ParseCidrRangeToJson(
                         envoy_config_rbac_v3_Principal_remote_ip(principal)));
   } else if (envoy_config_rbac_v3_Principal_has_header(principal)) {
+    ValidationErrors::ScopedField field(errors, ".header");
     Json header_json = ParseHeaderMatcherToJson(
         envoy_config_rbac_v3_Principal_header(principal), errors);
     principal_json.emplace("header", std::move(header_json));
   } else if (envoy_config_rbac_v3_Principal_has_url_path(principal)) {
+    ValidationErrors::ScopedField field(errors, ".url_path");
     Json url_path_json = ParsePathMatcherToJson(
         envoy_config_rbac_v3_Principal_url_path(principal), errors);
     principal_json.emplace("urlPath", std::move(url_path_json));
@@ -339,6 +345,7 @@ Json ParsePrincipalToJson(const envoy_config_rbac_v3_Principal* principal,
         "metadata", ParseMetadataMatcherToJson(
                         envoy_config_rbac_v3_Principal_metadata(principal)));
   } else if (envoy_config_rbac_v3_Principal_has_not_id(principal)) {
+    ValidationErrors::ScopedField field(errors, ".not_id");
     Json not_id_json = ParsePrincipalToJson(
         envoy_config_rbac_v3_Principal_not_id(principal), errors);
     principal_json.emplace("notId", std::move(not_id_json));
@@ -388,6 +395,7 @@ Json ParseHttpRbacToJson(const envoy_extensions_filters_http_rbac_v3_RBAC* rbac,
   Json::Object rbac_json;
   const auto* rules = envoy_extensions_filters_http_rbac_v3_RBAC_rules(rbac);
   if (rules != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".rules");
     int action = envoy_config_rbac_v3_RBAC_action(rules);
     // Treat Log action as RBAC being absent
     if (action == envoy_config_rbac_v3_RBAC_LOG) {

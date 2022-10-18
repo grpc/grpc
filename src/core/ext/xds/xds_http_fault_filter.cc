@@ -39,6 +39,7 @@
 #include <grpc/status.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
+#include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
