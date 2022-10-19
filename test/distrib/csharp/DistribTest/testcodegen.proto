@@ -20,7 +20,7 @@ service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {}
 }
 
-message HelloRequest {sdfsafafasasdfsadfasf
+message HelloRequest {
   string name = 1;
 }
 
