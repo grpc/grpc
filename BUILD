@@ -1381,7 +1381,7 @@ grpc_cc_library(
     public_hdrs = [
         "//src/core:lib/promise/context.h",
     ],
-    deps = ["gpr_platform"],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
