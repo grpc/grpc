@@ -812,97 +812,102 @@ struct InternalFilterChainMap {
   DestinationIpMap destination_ip_map;
 };
 
-absl::Status AddFilterChainDataForSourcePort(
+void AddFilterChainDataForSourcePort(
     const FilterChain& filter_chain, uint32_t port,
-    XdsListenerResource::FilterChainMap::SourcePortsMap* ports_map) {
+    XdsListenerResource::FilterChainMap::SourcePortsMap* ports_map,
+    ValidationErrors* errors) {
   auto insert_result = ports_map->emplace(
       port, XdsListenerResource::FilterChainMap::FilterChainDataSharedPtr{
                 filter_chain.filter_chain_data});
   if (!insert_result.second) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Duplicate matching rules detected when adding filter chain: ",
+    errors->AddError(absl::StrCat(
+        "duplicate matching rules detected when adding filter chain: ",
         filter_chain.filter_chain_match.ToString()));
   }
-  return absl::OkStatus();
 }
 
-absl::Status AddFilterChainDataForSourcePorts(
+void AddFilterChainDataForSourcePorts(
     const FilterChain& filter_chain,
-    XdsListenerResource::FilterChainMap::SourcePortsMap* ports_map) {
+    XdsListenerResource::FilterChainMap::SourcePortsMap* ports_map,
+    ValidationErrors* errors) {
   if (filter_chain.filter_chain_match.source_ports.empty()) {
-    return AddFilterChainDataForSourcePort(filter_chain, 0, ports_map);
+    AddFilterChainDataForSourcePort(filter_chain, 0, ports_map, errors);
   } else {
     for (uint32_t port : filter_chain.filter_chain_match.source_ports) {
-      absl::Status status =
-          AddFilterChainDataForSourcePort(filter_chain, port, ports_map);
-      if (!status.ok()) return status;
+      AddFilterChainDataForSourcePort(filter_chain, port, ports_map, errors);
     }
   }
-  return absl::OkStatus();
 }
 
-absl::Status AddFilterChainDataForSourceIpRange(
+void AddFilterChainDataForSourceIpRange(
     const FilterChain& filter_chain,
-    InternalFilterChainMap::SourceIpMap* source_ip_map) {
+    InternalFilterChainMap::SourceIpMap* source_ip_map,
+    ValidationErrors* errors) {
   if (filter_chain.filter_chain_match.source_prefix_ranges.empty()) {
     auto insert_result = source_ip_map->emplace(
         "", XdsListenerResource::FilterChainMap::SourceIp());
-    return AddFilterChainDataForSourcePorts(
-        filter_chain, &insert_result.first->second.ports_map);
+    AddFilterChainDataForSourcePorts(
+        filter_chain, &insert_result.first->second.ports_map, errors);
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.source_prefix_ranges) {
       auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
-      if (!addr_str.ok()) return addr_str.status();
+      if (!addr_str.ok()) {
+        errors->AddError(absl::StrCat(
+            "error parsing source IP sockaddr (should not happen): ",
+            addr_str.status().message()));
+        continue;
+      }
       auto insert_result = source_ip_map->emplace(
           absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           XdsListenerResource::FilterChainMap::SourceIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      absl::Status status = AddFilterChainDataForSourcePorts(
-          filter_chain, &insert_result.first->second.ports_map);
-      if (!status.ok()) return status;
+      AddFilterChainDataForSourcePorts(
+          filter_chain, &insert_result.first->second.ports_map, errors);
     }
   }
-  return absl::OkStatus();
 }
 
-absl::Status AddFilterChainDataForSourceType(
+void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
-    InternalFilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip,
+    ValidationErrors* errors) {
   GPR_ASSERT(static_cast<unsigned int>(
                  filter_chain.filter_chain_match.source_type) < 3);
-  return AddFilterChainDataForSourceIpRange(
+  AddFilterChainDataForSourceIpRange(
       filter_chain, &destination_ip->source_types_array[static_cast<int>(
-                        filter_chain.filter_chain_match.source_type)]);
+                        filter_chain.filter_chain_match.source_type)],
+      errors);
 }
 
-absl::Status AddFilterChainDataForApplicationProtocols(
+void AddFilterChainDataForApplicationProtocols(
     const FilterChain& filter_chain,
-    InternalFilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip,
+    ValidationErrors* errors) {
   // Only allow filter chains that do not mention application protocols
-  if (!filter_chain.filter_chain_match.application_protocols.empty()) {
-    return absl::OkStatus();
+  if (filter_chain.filter_chain_match.application_protocols.empty()) {
+    AddFilterChainDataForSourceType(filter_chain, destination_ip, errors);
   }
-  return AddFilterChainDataForSourceType(filter_chain, destination_ip);
 }
 
-absl::Status AddFilterChainDataForTransportProtocol(
+void AddFilterChainDataForTransportProtocol(
     const FilterChain& filter_chain,
-    InternalFilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip,
+    ValidationErrors* errors) {
   const std::string& transport_protocol =
       filter_chain.filter_chain_match.transport_protocol;
   // Only allow filter chains with no transport protocol or "raw_buffer"
   if (!transport_protocol.empty() && transport_protocol != "raw_buffer") {
-    return absl::OkStatus();
+    return;
   }
   // If for this configuration, we've already seen filter chains that mention
   // the transport protocol as "raw_buffer", we will never match filter chains
   // that do not mention it.
   if (destination_ip->transport_protocol_raw_buffer_provided &&
       transport_protocol.empty()) {
-    return absl::OkStatus();
+    return;
   }
   if (!transport_protocol.empty() &&
       !destination_ip->transport_protocol_raw_buffer_provided) {
@@ -912,45 +917,50 @@ absl::Status AddFilterChainDataForTransportProtocol(
     destination_ip->source_types_array =
         InternalFilterChainMap::ConnectionSourceTypesArray();
   }
-  return AddFilterChainDataForApplicationProtocols(filter_chain,
-                                                   destination_ip);
+  AddFilterChainDataForApplicationProtocols(filter_chain, destination_ip,
+                                            errors);
 }
 
-absl::Status AddFilterChainDataForServerNames(
+void AddFilterChainDataForServerNames(
     const FilterChain& filter_chain,
-    InternalFilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip,
+    ValidationErrors* errors) {
   // Don't continue adding filter chains with server names mentioned
-  if (!filter_chain.filter_chain_match.server_names.empty()) {
-    return absl::OkStatus();
+  if (filter_chain.filter_chain_match.server_names.empty()) {
+    AddFilterChainDataForTransportProtocol(filter_chain, destination_ip,
+                                           errors);
   }
-  return AddFilterChainDataForTransportProtocol(filter_chain, destination_ip);
 }
 
-absl::Status AddFilterChainDataForDestinationIpRange(
+void AddFilterChainDataForDestinationIpRange(
     const FilterChain& filter_chain,
-    InternalFilterChainMap::DestinationIpMap* destination_ip_map) {
+    InternalFilterChainMap::DestinationIpMap* destination_ip_map,
+    ValidationErrors* errors) {
   if (filter_chain.filter_chain_match.prefix_ranges.empty()) {
     auto insert_result = destination_ip_map->emplace(
         "", InternalFilterChainMap::DestinationIp());
-    return AddFilterChainDataForServerNames(filter_chain,
-                                            &insert_result.first->second);
+    AddFilterChainDataForServerNames(
+        filter_chain, &insert_result.first->second, errors);
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.prefix_ranges) {
       auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
-      if (!addr_str.ok()) return addr_str.status();
+      if (!addr_str.ok()) {
+        errors->AddError(absl::StrCat(
+            "error parsing destination IP sockaddr (should not happen): ",
+            addr_str.status().message()));
+        continue;
+      }
       auto insert_result = destination_ip_map->emplace(
           absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           InternalFilterChainMap::DestinationIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      absl::Status status = AddFilterChainDataForServerNames(
-          filter_chain, &insert_result.first->second);
-      if (!status.ok()) return status;
+      AddFilterChainDataForServerNames(filter_chain,
+                                       &insert_result.first->second, errors);
     }
   }
-  return absl::OkStatus();
 }
 
 XdsListenerResource::FilterChainMap BuildFromInternalFilterChainMap(
@@ -972,18 +982,14 @@ XdsListenerResource::FilterChainMap BuildFromInternalFilterChainMap(
   return filter_chain_map;
 }
 
-absl::optional<XdsListenerResource::FilterChainMap> BuildFilterChainMap(
+XdsListenerResource::FilterChainMap BuildFilterChainMap(
     const std::vector<FilterChain>& filter_chains, ValidationErrors* errors) {
   InternalFilterChainMap internal_filter_chain_map;
   for (const auto& filter_chain : filter_chains) {
     // Discard filter chain entries that specify destination port
     if (filter_chain.filter_chain_match.destination_port != 0) continue;
-    absl::Status status = AddFilterChainDataForDestinationIpRange(
-        filter_chain, &internal_filter_chain_map.destination_ip_map);
-    if (!status.ok()) {
-      errors->AddError(status.message());
-      return absl::nullopt;
-    }
+    AddFilterChainDataForDestinationIpRange(
+        filter_chain, &internal_filter_chain_map.destination_ip_map, errors);
   }
   return BuildFromInternalFilterChainMap(&internal_filter_chain_map);
 }
@@ -1025,10 +1031,8 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
         parsed_filter_chains.push_back(std::move(*filter_chain));
       }
     }
-    auto filter_chain_map = BuildFilterChainMap(parsed_filter_chains, &errors);
-    if (filter_chain_map.has_value()) {
-      tcp_listener.filter_chain_map = std::move(*filter_chain_map);
-    }
+    tcp_listener.filter_chain_map =
+        BuildFilterChainMap(parsed_filter_chains, &errors);
   }
   // default_filter_chain
   {

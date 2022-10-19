@@ -1006,6 +1006,40 @@ TEST_F(TcpListenerTest, BadCidrRanges) {
       << decode_result.resource.status();
 }
 
+TEST_F(TcpListenerTest, OverlappingFilterChainMatches) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* match = filter_chain->mutable_filter_chain_match();
+  auto* cidr_range = match->add_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.0");
+  cidr_range->mutable_prefix_len()->set_value(24);
+  *listener.add_filter_chains() = *filter_chain;
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: [field:filter_chains "
+            "error:duplicate matching rules detected when adding filter chain: "
+            "{prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}}}]")
+      << decode_result.resource.status();
+}
+
 TEST_F(TcpListenerTest, DownstreamTlsContext) {
   Listener listener;
   listener.set_name("foo");
