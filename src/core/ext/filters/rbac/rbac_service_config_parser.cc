@@ -35,6 +35,13 @@ namespace grpc_core {
 
 namespace {
 
+  #define MOVE_ONLY(x) \
+    x() = default; \
+    x(const x&) = delete; \
+    x& operator=(const x&) = delete; \
+    x(x&&) = default; \
+    x& operator=(x&&) = default
+
 struct RbacConfig {
   struct RbacPolicy {
     struct Rules {
@@ -252,6 +259,8 @@ struct RbacConfig {
           struct PermissionList {
             std::vector<Permission> rules;
 
+            MOVE_ONLY(PermissionList);
+
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
               static const auto* loader =
                   JsonObjectLoader<PermissionList>()
@@ -266,12 +275,8 @@ struct RbacConfig {
           Permission() = default;
           Permission(const Permission&) = delete;
           Permission& operator=(const Permission&) = delete;
-          Permission(Permission&& other) noexcept
-              : permission(std::move(other.permission)) {}
-          Permission& operator=(Permission&& other) noexcept {
-            permission = std::move(other.permission);
-            return *this;
-          }
+          Permission(Permission&& other) noexcept = default;
+          Permission& operator=(Permission&& other) noexcept = default;
 
           static std::vector<std::unique_ptr<Rbac::Permission>>
           MakeRbacPermissionList(std::vector<Permission>&& permission_list) {
@@ -385,7 +390,9 @@ struct RbacConfig {
 
         struct Principal {
           struct PrincipalList {
-            std::vector<Principal> ids;
+            std::vector<Principal> ids; 
+
+            MOVE_ONLY(PrincipalList);
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
               static const auto* loader = JsonObjectLoader<PrincipalList>()
@@ -413,15 +420,11 @@ struct RbacConfig {
           Principal() = default;
           Principal(const Principal&) = delete;
           Principal& operator=(const Principal&) = delete;
-          Principal(Principal&& other) noexcept
-              : principal(std::move(other.principal)) {}
-          Principal& operator=(Principal&& other) noexcept {
-            principal = std::move(other.principal);
-            return *this;
-          }
+          Principal(Principal&& other) noexcept = default;
+          Principal& operator=(Principal&& other) noexcept = default;
 
           static std::vector<std::unique_ptr<Rbac::Principal>>
-          MakeRbacPrincipalList(std::vector<Principal>&& principal_list) {
+          MakeRbacPrincipalList(std::vector<Principal> principal_list) {
             std::vector<std::unique_ptr<Rbac::Principal>> principals;
             principals.reserve(principal_list.size());
             for (auto& id : principal_list) {
@@ -550,6 +553,8 @@ struct RbacConfig {
         std::vector<Permission> permissions;
         std::vector<Principal> principals;
 
+        MOVE_ONLY(Policy);
+
         static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
           static const auto* loader =
               JsonObjectLoader<Policy>()
@@ -571,6 +576,8 @@ struct RbacConfig {
 
       int action;
       std::map<std::string, Policy> policies;
+
+      MOVE_ONLY(Rules);
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
         static const auto* loader =
