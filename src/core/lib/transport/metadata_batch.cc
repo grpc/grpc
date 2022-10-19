@@ -204,7 +204,7 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
     case kGet:
       return StaticSlice::FromStaticString("GET");
     default:
-      abort();
+      return StaticSlice::FromStaticString("???");
   }
 }
 

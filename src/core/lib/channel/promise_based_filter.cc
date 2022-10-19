@@ -630,6 +630,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
     case State::kForwardedBatchNoPipe:
       state_ = State::kCancelledWhilstForwarding;
       break;
+    case State::kPulledFromPipe:
     case State::kPushedToPipe: {
       auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK);
       GPR_ASSERT(status_code != GRPC_STATUS_OK);
@@ -639,7 +640,6 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
                           "recv_message_done");
       state_ = State::kCancelled;
     } break;
-    case State::kPulledFromPipe:
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
