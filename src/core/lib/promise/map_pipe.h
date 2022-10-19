@@ -24,7 +24,12 @@
 
 namespace grpc_core {
 
-// DO NOT SUBMIT: Add tests
+// Apply a (possibly async) mapping function to src, and output into dst.
+//
+// In psuedo-code:
+// for each element in wait_for src.Next:
+//   x = wait_for filter_factory(element)
+//   wait_for dst.Push(x)
 template <typename T, typename Filter>
 auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
   return ForEach(
@@ -43,7 +48,12 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
       });
 }
 
-// DO NOT SUBMIT: Add tests
+// Helper to intecept a pipe and apply a mapping function.
+// Each of the `Intercept` constructors will take a PipeSender or PipeReceiver,
+// construct a new pipe, and then replace the passed in pipe with its new end.
+// In this way it can interject logic per-element.
+// Next, the TakeAndRun function will return a promise that can be run to apply
+// a mapping promise to each element of the pipe.
 template <typename T>
 class PipeMapper {
  public:

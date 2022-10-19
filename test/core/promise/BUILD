@@ -312,6 +312,28 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "map_pipe_test",
+    srcs = ["map_pipe_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
+        "//:resource_quota",
+        "//:seq",
+        "//:try_seq",
+        "//:map_pipe",
+    ],
+)
+
+grpc_cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     external_deps = ["gtest"],
