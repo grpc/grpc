@@ -83,8 +83,8 @@ to clone the gRPC repository at the [latest stable release tag](https://github.c
 > git submodule update --init
 ```
 
-NOTE: The `bazel` build tool uses a different model for dependencies. You only need to worry about downloading submodules if you're building
-with something else than `bazel` (e.g. `cmake`).
+> **Note**
+> The `bazel` build tool uses a different model for dependencies. You only need to worry about downloading submodules if you're building with something else than `bazel` (e.g. `cmake`).
 
 # Build from source
 
@@ -112,8 +112,8 @@ $ bazel build :all
 $ bazel test --config=dbg //test/...
 ```
 
-NOTE: If you are a gRPC maintainer and you have access to our test cluster, you should use our [gRPC's Remote Execution environment](tools/remote_build/README.md)
-to get significant improvement to the build and test speed (and a bunch of other very useful features).
+> **Note**
+> If you are a gRPC maintainer and you have access to our test cluster, you should use our [gRPC's Remote Execution environment](tools/remote_build/README.md) to get significant improvement to the build and test speed (and a bunch of other very useful features).
 
 ## Building with CMake
 
@@ -210,8 +210,10 @@ This means you will need to have external copies of these libraries available
 on your system. This [example](test/distrib/cpp/run_distrib_test_cmake.sh) shows
 how to install dependencies with cmake before proceeding to installing gRPC itself. 
 
+> **Note**
+> All of gRPC's dependencies need to be already installed. 
+
 ```
-# NOTE: all of gRPC's dependencies need to be already installed
 $ cmake ../.. -DgRPC_INSTALL=ON                \
               -DCMAKE_BUILD_TYPE=Release       \
               -DgRPC_ABSL_PROVIDER=package     \
@@ -253,14 +255,21 @@ can be made about any sort of ABI stability across the same SONAME version.
 
 ## Building with make on UNIX systems (deprecated)
 
-NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. You should use `bazel` or `cmake` instead. The `Makefile` is only intended for internal usage and is not meant for public consumption.
+> **Warning**
+> Building gRPC using `make` is no longer recommended. 
 
-From the grpc repository root
+While the `make` build automation tool was gRPC's default build system, we're no longer recommending now. Please considering using  `bazel` or `CMake` instead. 
+
+
+> **Note** The `Makefile` in the gRPC root directory is intended for internal use only and is not meant for public consumption.
+
+From the gRPC repository root
 ```sh
  $ make
 ```
 
-NOTE: if you get an error on linux such as 'aclocal-1.15: command not found', which can happen if you ran 'make' before installing the pre-reqs, try the following:
+
+If you happen to get an error on Linux such as 'aclocal-1.15: command not found', which can happen if you ran 'make' before installing the pre-reqs, try the following:
 ```sh
 $ git clean -f -d -x && git submodule foreach --recursive git clean -f -d -x
 $ [sudo] apt-get install build-essential autoconf libtool pkg-config
