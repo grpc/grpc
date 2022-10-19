@@ -29,7 +29,7 @@ namespace TestGrpcPackage
         public static void Main(string[] args)
         {
             // protobuf message
-            Console.WriteLine(new HelloRequest { Name = user });
+            Console.WriteLine(new HelloRequest { Name = "Foo Bar" });
 
             // grpc stub...
             // TODO:
