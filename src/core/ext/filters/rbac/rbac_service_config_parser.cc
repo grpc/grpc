@@ -620,6 +620,12 @@ struct RbacConfig {
 
     absl::optional<Rules> rules;
 
+    RbacPolicy() = default;
+    RbacPolicy(const RbacPolicy&) = delete;
+    RbacPolicy& operator=(const RbacPolicy&) = delete;
+    RbacPolicy(RbacPolicy&&) noexcept = default;
+    RbacPolicy& operator=(RbacPolicy&&) noexcept = default;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<RbacPolicy>()
