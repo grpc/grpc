@@ -64,7 +64,7 @@ PosixEventEngine::~PosixEventEngine() {
     }
   }
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
-  executor_.Quiesce();
+  executor_->Quiesce();
 }
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
