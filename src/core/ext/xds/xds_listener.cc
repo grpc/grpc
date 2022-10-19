@@ -784,7 +784,6 @@ absl::optional<std::string> AddressParse(
     if (envoy_config_core_v3_SocketAddress_protocol(socket_address) !=
         envoy_config_core_v3_SocketAddress_TCP) {
       errors->AddError("value must be TCP");
-      return absl::nullopt;
     }
   }
   ValidationErrors::ScopedField field2(errors, ".port_value");
@@ -1034,21 +1033,22 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     }
   }
   // default_filter_chain
-  auto* default_filter_chain =
-      envoy_config_listener_v3_Listener_default_filter_chain(listener);
-  if (default_filter_chain != nullptr) {
+  {
     ValidationErrors::ScopedField field(&errors, "default_filter_chain");
-    auto filter_chain =
-        FilterChainParse(context, default_filter_chain, &errors);
-    if (filter_chain.has_value() &&
-        filter_chain->filter_chain_data != nullptr) {
-      tcp_listener.default_filter_chain =
-          std::move(*filter_chain->filter_chain_data);
+    auto* default_filter_chain =
+        envoy_config_listener_v3_Listener_default_filter_chain(listener);
+    if (default_filter_chain != nullptr) {
+      auto filter_chain =
+          FilterChainParse(context, default_filter_chain, &errors);
+      if (filter_chain.has_value() &&
+          filter_chain->filter_chain_data != nullptr) {
+        tcp_listener.default_filter_chain =
+            std::move(*filter_chain->filter_chain_data);
+      }
+    } else if (num_filter_chains == 0) {
+      // Make sure that there is at least one filter chain to use.
+      errors.AddError("must be set if filter_chains is unset");
     }
-  }
-  // Make sure that there is at least one filter chain to use.
-  if (num_filter_chains == 0 && default_filter_chain == nullptr) {
-    errors.AddError("no filter chain provided");
   }
   // Return result.
   if (!errors.ok()) return errors.status("errors validating server Listener");
