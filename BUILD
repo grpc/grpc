@@ -826,7 +826,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr",
         "grpc_base",
@@ -859,7 +858,7 @@ grpc_cc_library(
         "grpc++",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
-        "//src/core:grpc_authorization_provider",
+        "//:grpc_authorization_provider",
     ],
 )
 

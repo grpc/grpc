@@ -449,7 +449,7 @@ def grpc_end2end_tests():
             ":proxy",
             ":local_util",
             "//test/core/util:test_lb_policies",
-            "//src/core:grpc_authorization_provider",
+            "//:grpc_authorization_provider",
             "//test/core/compression:args_utils",
             "//:grpc_http_filters",
             "//src/core:event_log",

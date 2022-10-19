@@ -120,7 +120,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//src/core:grpc_authorization_provider",
+        "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
     ],
 )
