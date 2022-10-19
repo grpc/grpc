@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_FILTER_PIPE_H
-#define GRPC_CORE_LIB_PROMISE_FILTER_PIPE_H
+#ifndef GRPC_CORE_LIB_PROMISE_MAP_PIPE_H
+#define GRPC_CORE_LIB_PROMISE_MAP_PIPE_H
 
-#include "pipe.h"
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"
@@ -72,4 +72,4 @@ class PipeMapper {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_MAP_PIPE_H

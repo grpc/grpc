@@ -26,7 +26,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "compression_filter.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
