@@ -25,12 +25,9 @@
 #include <map>
 #include <string>
 #include <utility>
-#include <vector>
 
-#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.upb.h"

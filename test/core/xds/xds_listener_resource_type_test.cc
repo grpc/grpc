@@ -17,15 +17,15 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
-#include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-#include "gmock/gmock.h"
+#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 #include "upb/def.hpp"
 #include "upb/upb.hpp"
@@ -36,17 +36,20 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
+#include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
+#include "src/proto/grpc/testing/xds/v3/protocol.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "test/core/util/test_config.h"

@@ -32,6 +32,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "upb/def.h"

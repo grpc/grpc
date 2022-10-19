@@ -20,13 +20,15 @@
 
 #include <algorithm>
 #include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
 #include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 #include "src/core/ext/xds/xds_http_rbac_filter.h"

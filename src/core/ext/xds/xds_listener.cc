@@ -28,7 +28,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -57,10 +56,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 

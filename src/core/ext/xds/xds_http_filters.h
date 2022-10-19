@@ -20,18 +20,20 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-#include <set>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "upb/arena.h"
 #include "upb/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {

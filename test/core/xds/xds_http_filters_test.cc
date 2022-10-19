@@ -18,38 +18,43 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <google/protobuf/any.pb.h>
-#include <google/protobuf/struct.pb.h>
+#include <google/protobuf/duration.pb.h>
+#include <google/protobuf/message.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
-#include "gmock/gmock.h"
+#include "absl/strings/strip.h"
+#include "absl/types/variant.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.pb.h"
+#include "src/proto/grpc/testing/xds/v3/fault_common.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
+#include "src/proto/grpc/testing/xds/v3/metadata.pb.h"
+#include "src/proto/grpc/testing/xds/v3/path.pb.h"
+#include "src/proto/grpc/testing/xds/v3/percent.pb.h"
+#include "src/proto/grpc/testing/xds/v3/range.pb.h"
+#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
+#include "src/proto/grpc/testing/xds/v3/regex.pb.h"
+#include "src/proto/grpc/testing/xds/v3/route.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
+#include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/no_op_http_filter.h"
-#include "test/cpp/util/config_grpc_cli.h"
 
 namespace grpc_core {
 namespace testing {
@@ -67,7 +72,7 @@ using ::envoy::extensions::filters::http::router::v3::Router;
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest() { XdsHttpFilterRegistry::Init(); }
-  ~XdsHttpFilterTest() { XdsHttpFilterRegistry::Shutdown(); }
+  ~XdsHttpFilterTest() override { XdsHttpFilterRegistry::Shutdown(); }
 
   XdsExtension MakeXdsExtension(const google::protobuf::Message& message) {
     any_storage_.PackFrom(message);
