@@ -113,12 +113,13 @@ bool TimerManager::TimerCancel(Timer* timer) {
   return timer_list_->TimerCancel(timer);
 }
 
-TimerManager::~TimerManager() {
-  if (grpc_event_engine_timer_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
-  }
+void TimerManager::Shutdown() {
   {
     grpc_core::MutexLock lock(&mu_);
+    if (shutdown_) return;
+    if (grpc_event_engine_timer_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
+    }
     shutdown_ = true;
     // Wait on the main loop to exit.
     cv_wait_.Signal();
@@ -128,6 +129,8 @@ TimerManager::~TimerManager() {
     gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
   }
 }
+
+TimerManager::~TimerManager() { Shutdown(); }
 
 void TimerManager::Host::Kick() { timer_manager_->Kick(); }
 

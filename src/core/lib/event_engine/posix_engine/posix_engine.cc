@@ -64,6 +64,7 @@ PosixEventEngine::~PosixEventEngine() {
     }
   }
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+  timer_manager_.Shutdown();
   executor_->Quiesce();
 }
 

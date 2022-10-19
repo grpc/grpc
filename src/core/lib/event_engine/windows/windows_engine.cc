@@ -61,7 +61,9 @@ struct WindowsEventEngine::Closure final : public EventEngine::Closure {
 };
 
 WindowsEventEngine::WindowsEventEngine()
-    : iocp_(&executor_), thread_pool_(executor) {
+    : executor_(std::make_shared<ThreadPool>()),
+      iocp_(executor_.get()),
+      timer_manager_(executor_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);
@@ -78,7 +80,8 @@ WindowsEventEngine::~WindowsEventEngine() {
   }
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   GPR_ASSERT(WSACleanup() == 0);
-  executor_.Quiesce();
+  timer_manager_.Shutdown();
+  executor_->Quiesce();
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
@@ -102,11 +105,11 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfter(
 }
 
 void WindowsEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  executor_.Run(std::move(closure));
+  executor_->Run(std::move(closure));
 }
 
 void WindowsEventEngine::Run(EventEngine::Closure* closure) {
-  executor_.Run(closure);
+  executor_->Run(closure);
 }
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(

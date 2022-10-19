@@ -56,6 +56,8 @@ class TimerManager final {
 
   static bool IsTimerManagerThread();
 
+  void Shutdown();
+
  private:
   class Host final : public TimerListHost {
    public:
