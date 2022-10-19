@@ -3447,6 +3447,7 @@ grpc_cc_library(
         "init_internally",
         "iomgr_fwd",
         "json",
+        "json_args",
         "json_object_loader",
         "json_util",
         "lb_policy_registry",
