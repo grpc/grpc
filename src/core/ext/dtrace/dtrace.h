@@ -1,0 +1,43 @@
+/*
+ *
+ * Copyright 2022 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#ifndef GRPC_CORE_EXT_DTRACE_H
+#define GRPC_CORE_EXT_DTRACE_H
+
+#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
+
+#ifdef GRPC_DTRACE
+
+void grpc_dtrace_transport_on_stream_created(grpc_transport* transport,
+                                             grpc_stream* stream);
+
+void grpc_dtrace_transport_on_stream_destroyed(grpc_transport* transport,
+                                               grpc_stream* stream);
+
+void grpc_dtrace_transport_on_perform_stream_op(grpc_transport* transport,
+                                                grpc_stream* stream,
+                                                grpc_transport_stream_op_batch* op);
+
+#else
+#define grpc_dtrace_transport_on_stream_created(...)
+#define grpc_dtrace_transport_on_stream_destroyed(...)
+#define grpc_dtrace_transport_on_perform_stream_op(...)
+#endif
+
+#endif /* GRPC_CORE_EXT_DTRACE_H */
