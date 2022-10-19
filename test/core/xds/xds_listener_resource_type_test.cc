@@ -150,11 +150,31 @@ TEST_F(XdsListenerTest, NeitherAddressNotApiListener) {
       << decode_result.resource.status();
 }
 
+// TODO(roth): Re-enable the following test once
+// github.com/istio/istio/issues/38914 is resolved.
+TEST_F(XdsListenerTest, DISABLED_BothAddressAndApiListener) {
+  Listener listener;
+  listener.set_name("foo");
+  listener.mutable_api_listener();
+  listener.mutable_address();
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "Listener has both address and ApiListener")
+      << decode_result.resource.status();
+}
+
 //
 // HttpConnectionManager tests
 // (common behavior for both API listeners and TCP listeners)
 //
 
+// FIXME BEFORE MERGING: run these tests for both client and server
 using HttpConnectionManagerTest = XdsListenerTest;
 
 TEST_F(HttpConnectionManagerTest, MinimumValidConfig) {
@@ -225,6 +245,84 @@ TEST_F(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
             "envoy.extensions.filters.http.router.v3.Router");
   EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
   EXPECT_EQ(api_listener->http_max_stream_duration, Duration::Zero());
+}
+
+TEST_F(HttpConnectionManagerTest, NeitherRouteConfigNorRdsName) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  hcm.mutable_scoped_routes();
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager] "
+            "error:neither route_config nor rds fields are present]")
+      << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectionManagerTest, RdsConfigSourceNotAdsOrSelf) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->set_path("/foo/bar");
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].rds.config_source "
+            "error:ConfigSource does not specify ADS or SELF]")
+      << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectionManagerTest, RdsConfigSourceNotSet) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating ApiListener: ["
+            "field:api_listener.api_listener.value["
+            "envoy.extensions.filters.network.http_connection_manager.v3"
+            ".HttpConnectionManager].rds.config_source "
+            "error:field not present]")
+      << decode_result.resource.status();
 }
 
 TEST_F(HttpConnectionManagerTest, SetsMaxStreamDuration) {
@@ -411,6 +509,40 @@ TEST_F(HttpConnectionManagerTest, HttpFilterMissingConfig) {
       << decode_result.resource.status();
 }
 
+TEST_F(HttpConnectionManagerTest, HttpFilterMissingConfigButOptional) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("foo");
+  filter->set_is_optional(true);
+  filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto* api_listener = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+      &resource.listener);
+  ASSERT_NE(api_listener, nullptr);
+  ASSERT_EQ(api_listener->http_filters.size(), 1UL);
+  auto& router = api_listener->http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_EQ(router.config.config_proto_type_name,
+            "envoy.extensions.filters.http.router.v3.Router");
+  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+}
+
 TEST_F(HttpConnectionManagerTest, HttpFilterTypeNotSupported) {
   Listener listener;
   listener.set_name("foo");
@@ -437,6 +569,41 @@ TEST_F(HttpConnectionManagerTest, HttpFilterTypeNotSupported) {
             "envoy.config.listener.v3.Listener] "
             "error:unsupported filter type]")
       << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("unsupported");
+  filter->mutable_typed_config()->PackFrom(Listener());
+  filter->set_is_optional(true);
+  filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto* api_listener = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+      &resource.listener);
+  ASSERT_NE(api_listener, nullptr);
+  ASSERT_EQ(api_listener->http_filters.size(), 1UL);
+  auto& router = api_listener->http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_EQ(router.config.config_proto_type_name,
+            "envoy.extensions.filters.http.router.v3.Router");
+  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
 }
 
 TEST_F(HttpConnectionManagerTest, HttpFilterNotSupportedOnClient) {
@@ -469,6 +636,42 @@ TEST_F(HttpConnectionManagerTest, HttpFilterNotSupportedOnClient) {
             "envoy.extensions.filters.http.rbac.v3.RBAC] "
             "error:filter is not supported on clients]")
       << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectionManagerTest, HttpFilterNotSupportedOnClientButOptional) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("rbac");
+  filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::rbac::v3::RBAC());
+  filter->set_is_optional(true);
+  filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto* api_listener = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+      &resource.listener);
+  ASSERT_NE(api_listener, nullptr);
+  ASSERT_EQ(api_listener->http_filters.size(), 1UL);
+  auto& router = api_listener->http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_EQ(router.config.config_proto_type_name,
+            "envoy.extensions.filters.http.router.v3.Router");
+  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
 }
 
 TEST_F(HttpConnectionManagerTest, HttpFilterNotSupportedOnServer) {
@@ -507,6 +710,51 @@ TEST_F(HttpConnectionManagerTest, HttpFilterNotSupportedOnServer) {
             "envoy.extensions.filters.http.fault.v3.HTTPFault] "
             "error:filter is not supported on servers]")
       << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectionManagerTest, HttpFilterNotSupportedOnServerButOptional) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("fault");
+  filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::fault::v3::HTTPFault());
+  filter->set_is_optional(true);
+  filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(hcm);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto* tcp_listener =
+      absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
+  ASSERT_NE(tcp_listener, nullptr);
+  ASSERT_TRUE(tcp_listener->default_filter_chain.has_value());
+  const auto& http_connection_manager =
+      tcp_listener->default_filter_chain->http_connection_manager;
+  ASSERT_EQ(http_connection_manager.http_filters.size(), 1UL);
+  auto& router = http_connection_manager.http_filters[0];
+  EXPECT_EQ(router.name, "router");
+  EXPECT_EQ(router.config.config_proto_type_name,
+            "envoy.extensions.filters.http.router.v3.Router");
+  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
 }
 
 TEST_F(HttpConnectionManagerTest, NoHttpFilters) {
@@ -565,57 +813,6 @@ TEST_F(HttpConnectionManagerTest, TerminalFilterNotLast) {
             "non-terminal filter for config type "
             "envoy.extensions.filters.http.fault.v3.HTTPFault is the "
             "last filter in the chain]]")
-      << decode_result.resource.status();
-}
-
-TEST_F(HttpConnectionManagerTest, NeitherRouteConfigNorRdsName) {
-  Listener listener;
-  listener.set_name("foo");
-  HttpConnectionManager hcm;
-  auto* filter = hcm.add_http_filters();
-  filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(Router());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
-  std::string serialized_resource;
-  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager] "
-            "error:neither route_config nor rds fields are present]")
-      << decode_result.resource.status();
-}
-
-TEST_F(HttpConnectionManagerTest, RdsConfigSourceNotAdsOrSelf) {
-  Listener listener;
-  listener.set_name("foo");
-  HttpConnectionManager hcm;
-  auto* filter = hcm.add_http_filters();
-  filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(Router());
-  auto* rds = hcm.mutable_rds();
-  rds->set_route_config_name("rds_name");
-  rds->mutable_config_source()->set_path("/foo/bar");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
-  std::string serialized_resource;
-  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].rds.config_source "
-            "error:ConfigSource does not specify ADS or SELF]")
       << decode_result.resource.status();
 }
 
@@ -1006,7 +1203,7 @@ TEST_F(TcpListenerTest, BadCidrRanges) {
       << decode_result.resource.status();
 }
 
-TEST_F(TcpListenerTest, OverlappingFilterChainMatches) {
+TEST_F(TcpListenerTest, DuplicateMatchOnDestinationPrefixRanges) {
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;
@@ -1020,9 +1217,20 @@ TEST_F(TcpListenerTest, OverlappingFilterChainMatches) {
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
   auto* match = filter_chain->mutable_filter_chain_match();
   auto* cidr_range = match->add_prefix_ranges();
-  cidr_range->set_address_prefix("1.2.3.0");
+  cidr_range->set_address_prefix("1.2.3.4");
   cidr_range->mutable_prefix_len()->set_value(24);
-  *listener.add_filter_chains() = *filter_chain;
+  cidr_range = match->add_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.4");
+  cidr_range->mutable_prefix_len()->set_value(16);
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  match = filter_chain->mutable_filter_chain_match();
+  cidr_range = match->add_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.4");
+  cidr_range->mutable_prefix_len()->set_value(24);
+  cidr_range = match->add_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.4");
+  cidr_range->mutable_prefix_len()->set_value(32);
   auto* address = listener.mutable_address()->mutable_socket_address();
   address->set_address("127.0.0.1");
   address->set_port_value(443);
@@ -1036,7 +1244,157 @@ TEST_F(TcpListenerTest, OverlappingFilterChainMatches) {
   EXPECT_EQ(decode_result.resource.status().message(),
             "errors validating server Listener: [field:filter_chains "
             "error:duplicate matching rules detected when adding filter chain: "
-            "{prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}}}]")
+            "{prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}, "
+            "{address_prefix=1.2.3.4:0, prefix_len=32}}}]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, DuplicateMatchOnTransportProtocol) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
+      "raw_buffer");
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
+      "raw_buffer");
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: [field:filter_chains "
+            "error:duplicate matching rules detected when adding filter chain: "
+            "{transport_protocol=raw_buffer}]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, DuplicateMatchOnSourceType) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* match = filter_chain->mutable_filter_chain_match();
+  match->set_source_type(match->SAME_IP_OR_LOOPBACK);
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  match = filter_chain->mutable_filter_chain_match();
+  match->set_source_type(match->SAME_IP_OR_LOOPBACK);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: [field:filter_chains "
+            "error:duplicate matching rules detected when adding filter chain: "
+            "{source_type=SAME_IP_OR_LOOPBACK}]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, DuplicateMatchOnSourcePrefixRanges) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* match = filter_chain->mutable_filter_chain_match();
+  auto* cidr_range = match->add_source_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.4");
+  cidr_range->mutable_prefix_len()->set_value(24);
+  cidr_range = match->add_source_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.4");
+  cidr_range->mutable_prefix_len()->set_value(16);
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  match = filter_chain->mutable_filter_chain_match();
+  cidr_range = match->add_source_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.4");
+  cidr_range->mutable_prefix_len()->set_value(24);
+  cidr_range = match->add_source_prefix_ranges();
+  cidr_range->set_address_prefix("1.2.3.4");
+  cidr_range->mutable_prefix_len()->set_value(32);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: [field:filter_chains "
+            "error:duplicate matching rules detected when adding filter chain: "
+            "{source_prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}, "
+            "{address_prefix=1.2.3.4:0, prefix_len=32}}}]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, DuplicateMatchOnSourcePort) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: [field:filter_chains "
+            "error:duplicate matching rules detected when adding filter chain: "
+            "{source_ports={8080}}]")
       << decode_result.resource.status();
 }
 
