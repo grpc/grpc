@@ -26,6 +26,10 @@
 
 #include "src/core/lib/slice/slice.h"
 
+// Copy the first n bytes of src into memory pointed to by dst.
+void grpc_slice_buffer_copy_first_into_buffer(const grpc_slice_buffer* src, size_t n,
+                                              void* dst);
+
 namespace grpc_core {
 
 /// A slice buffer holds the memory for a collection of slices.
@@ -73,6 +77,11 @@ class SliceBuffer {
   /// Removes/deletes the last n bytes in the SliceBuffer.
   void RemoveLastNBytes(size_t n) {
     grpc_slice_buffer_trim_end(&slice_buffer_, n, nullptr);
+  }
+
+  /// Copy the first n bytes of the SliceBuffer into a memory pointed to by dst.
+  void CopyFirstNBytesIntoBuffer(size_t n, void* dst) const {
+    grpc_slice_buffer_copy_first_into_buffer(&slice_buffer_, n, dst);
   }
 
   /// Move the first n bytes of the SliceBuffer into a memory pointed to by dst.
@@ -129,9 +138,5 @@ class SliceBuffer {
 };
 
 }  // namespace grpc_core
-
-// Copy the first n bytes of src into memory pointed to by dst.
-void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
-                                              void* dst);
 
 #endif  // GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H

@@ -380,7 +380,7 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
   }
 }
 
-void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
+void grpc_slice_buffer_copy_first_into_buffer(const grpc_slice_buffer* src, size_t n,
                                               void* dst) {
   uint8_t* dstp = static_cast<uint8_t*>(dst);
   GPR_ASSERT(src->length >= n);
