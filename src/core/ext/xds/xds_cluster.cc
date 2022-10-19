@@ -100,39 +100,34 @@ std::string XdsClusterResource::ToString() const {
 
 namespace {
 
-absl::optional<CommonTlsContext> UpstreamTlsContextParse(
+CommonTlsContext UpstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket,
     ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".typed_config");
   const auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-  if (typed_config == nullptr) {
-    errors->AddError("field not present");
-    return absl::nullopt;
-  }
-  absl::string_view type_url = absl::StripPrefix(
-      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
-      "type.googleapis.com/");
-  if (type_url !=
+  auto extension = ExtractXdsExtension(context, typed_config, errors);
+  if (!extension.has_value()) return {};
+  if (extension->type !=
       "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext") {
     ValidationErrors::ScopedField field(errors, ".type_url");
-    errors->AddError(
-        absl::StrCat("unrecognized transport socket type: ", type_url));
-    return absl::nullopt;
+    errors->AddError("unsupported transport socket type");
+    return {};
   }
-  ValidationErrors::ScopedField field2(
-      errors,
-      ".value[envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]");
-  absl::string_view serialized_upstream_tls_context =
-      UpbStringToAbsl(google_protobuf_Any_value(typed_config));
+  absl::string_view* serialized_upstream_tls_context =
+      absl::get_if<absl::string_view>(&extension->value);
+  if (serialized_upstream_tls_context == nullptr) {
+    errors->AddError("can't decode UpstreamTlsContext");
+    return {};
+  }
   const auto* upstream_tls_context =
       envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
-          serialized_upstream_tls_context.data(),
-          serialized_upstream_tls_context.size(), context.arena);
+          serialized_upstream_tls_context->data(),
+          serialized_upstream_tls_context->size(), context.arena);
   if (upstream_tls_context == nullptr) {
     errors->AddError("can't decode UpstreamTlsContext");
-    return absl::nullopt;
+    return {};
   }
   ValidationErrors::ScopedField field3(errors, ".common_tls_context");
   const auto* common_tls_context_proto =
@@ -394,11 +389,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
     ValidationErrors::ScopedField field(&errors, ".transport_socket");
-    auto common_tls_context =
+    cds_update.common_tls_context =
         UpstreamTlsContextParse(context, transport_socket, &errors);
-    if (common_tls_context.has_value()) {
-      cds_update.common_tls_context = std::move(*common_tls_context);
-    }
   }
   // Record LRS server name (if any).
   const envoy_config_core_v3_ConfigSource* lrs_server =

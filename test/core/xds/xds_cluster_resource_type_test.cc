@@ -53,6 +53,7 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
+#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
@@ -809,7 +810,7 @@ TEST_F(TlsConfigTest, UnknownCertificateProviderInstance) {
       << decode_result.resource.status();
 }
 
-TEST_F(TlsConfigTest, TransportSocketTypedConfigUnset) {
+TEST_F(TlsConfigTest, UnknownTransportSocketType) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -827,13 +828,13 @@ TEST_F(TlsConfigTest, TransportSocketTypedConfigUnset) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
             "errors validating Cluster resource: ["
-            "field:transport_socket.typed_config.type_url "
-            "error:unrecognized transport socket type: "
-            "envoy.config.cluster.v3.Cluster]")
+            "field:transport_socket.typed_config.value["
+            "envoy.config.cluster.v3.Cluster].type_url "
+            "error:unsupported transport socket type]")
       << decode_result.resource.status();
 }
 
-TEST_F(TlsConfigTest, UnknownTransportSocketType) {
+TEST_F(TlsConfigTest, UnparseableUpstreamTlsContext) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -854,6 +855,35 @@ TEST_F(TlsConfigTest, UnknownTransportSocketType) {
   EXPECT_EQ(decode_result.resource.status().message(),
             "errors validating Cluster resource: ["
             "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext] "
+            "error:can't decode UpstreamTlsContext]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TlsConfigTest, UpstreamTlsContextInTypedStruct) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  xds::type::v3::TypedStruct typed_struct;
+  typed_struct.set_type_url(
+      "types.googleapis.com/"
+      "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext");
+  transport_socket->mutable_typed_config()->PackFrom(typed_struct);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "xds.type.v3.TypedStruct].value["
             "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext] "
             "error:can't decode UpstreamTlsContext]")
       << decode_result.resource.status();

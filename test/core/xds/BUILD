@@ -221,6 +221,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
     ],
@@ -240,6 +241,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//test/core/util:grpc_test_util",
     ],
 )

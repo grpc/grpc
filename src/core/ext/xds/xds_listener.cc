@@ -535,8 +535,6 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
     errors->AddError("can't decode DownstreamTlsContext");
     return {};
   }
-  ValidationErrors::ScopedField field2(
-      errors, absl::StrCat(".value[", extension->type, "]"));
   const auto* downstream_tls_context_proto =
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
           serialized_downstream_tls_context->data(),

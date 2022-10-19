@@ -54,6 +54,7 @@
 #include "src/proto/grpc/testing/xds/v3/protocol.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
+#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::listener::v3::Listener;
@@ -923,6 +924,577 @@ TEST_F(TcpListenerTest, NoFilterChains) {
             "errors validating server Listener: ["
             "field:default_filter_chain "
             "error:must be set if filter_chains is unset]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, UnsupportedFilter) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(Listener());
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(hcm);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.filters "
+            "error:must have exactly one filter (HttpConnectionManager -- "
+            "no other filter is supported at the moment); "
+            "field:default_filter_chain.filters[0].typed_config.value["
+            "envoy.config.listener.v3.Listener] "
+            "error:unsupported filter type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, BadCidrRanges) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* match = filter_chain->mutable_filter_chain_match();
+  auto* cidr_range = match->add_prefix_ranges();
+  cidr_range->set_address_prefix("foobar");
+  cidr_range->mutable_prefix_len()->set_value(24);
+  cidr_range = match->add_source_prefix_ranges();
+  cidr_range->set_address_prefix("invalid");
+  cidr_range->mutable_prefix_len()->set_value(16);
+  match->add_source_ports(1025);
+  match->set_transport_protocol("raw_buffer");
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:filter_chains[0].filter_chain_match.prefix_ranges[0]"
+            ".address_prefix error:Failed to parse address:foobar:0; "
+            "field:filter_chains[0].filter_chain_match.source_prefix_ranges[0]"
+            ".address_prefix error:Failed to parse address:invalid:0]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, DownstreamTlsContext) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto* tcp_listener =
+      absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
+  ASSERT_NE(tcp_listener, nullptr);
+  EXPECT_EQ(tcp_listener->address, "127.0.0.1:443");
+  EXPECT_THAT(tcp_listener->filter_chain_map.destination_ip_vector,
+              ::testing::ElementsAre());
+  ASSERT_TRUE(tcp_listener->default_filter_chain.has_value());
+  auto& tls_context =
+      tcp_listener->default_filter_chain->downstream_tls_context;
+  EXPECT_FALSE(tls_context.require_client_certificate);
+  auto& cert_provider_instance =
+      tls_context.common_tls_context.tls_certificate_provider_instance;
+  EXPECT_EQ(cert_provider_instance.instance_name, "provider1");
+  EXPECT_EQ(cert_provider_instance.certificate_name, "cert_name");
+  EXPECT_TRUE(
+      tls_context.common_tls_context.certificate_validation_context.Empty());
+}
+
+TEST_F(TcpListenerTest, DownstreamTlsContextWithCaCertProviderInstance) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  cert_provider = common_tls_context->mutable_validation_context()
+                      ->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("ca_cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto* tcp_listener =
+      absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
+  ASSERT_NE(tcp_listener, nullptr);
+  EXPECT_EQ(tcp_listener->address, "127.0.0.1:443");
+  EXPECT_THAT(tcp_listener->filter_chain_map.destination_ip_vector,
+              ::testing::ElementsAre());
+  ASSERT_TRUE(tcp_listener->default_filter_chain.has_value());
+  auto& tls_context =
+      tcp_listener->default_filter_chain->downstream_tls_context;
+  EXPECT_FALSE(tls_context.require_client_certificate);
+  auto& cert_provider_instance =
+      tls_context.common_tls_context.tls_certificate_provider_instance;
+  EXPECT_EQ(cert_provider_instance.instance_name, "provider1");
+  EXPECT_EQ(cert_provider_instance.certificate_name, "cert_name");
+  auto& ca_cert_provider_instance =
+      tls_context.common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance;
+  EXPECT_EQ(ca_cert_provider_instance.instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider_instance.certificate_name, "ca_cert_name");
+}
+
+TEST_F(TcpListenerTest, ClientCertificateRequired) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  cert_provider = common_tls_context->mutable_validation_context()
+                      ->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("ca_cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto* tcp_listener =
+      absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
+  ASSERT_NE(tcp_listener, nullptr);
+  EXPECT_EQ(tcp_listener->address, "127.0.0.1:443");
+  EXPECT_THAT(tcp_listener->filter_chain_map.destination_ip_vector,
+              ::testing::ElementsAre());
+  ASSERT_TRUE(tcp_listener->default_filter_chain.has_value());
+  auto& tls_context =
+      tcp_listener->default_filter_chain->downstream_tls_context;
+  EXPECT_TRUE(tls_context.require_client_certificate);
+  auto& cert_provider_instance =
+      tls_context.common_tls_context.tls_certificate_provider_instance;
+  EXPECT_EQ(cert_provider_instance.instance_name, "provider1");
+  EXPECT_EQ(cert_provider_instance.certificate_name, "cert_name");
+  auto& ca_cert_provider_instance =
+      tls_context.common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance;
+  EXPECT_EQ(ca_cert_provider_instance.instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider_instance.certificate_name, "ca_cert_name");
+}
+
+// This is just one example of where CommonTlsContext::Parse() will
+// generate an error, to show that we're propagating any such errors
+// correctly.  An exhaustive set of tests for CommonTlsContext::Parse()
+// is in xds_common_types_test.cc.
+TEST_F(TcpListenerTest, UnknownCertificateProviderInstance) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("fake");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+            ".common_tls_context.tls_certificate_provider_instance"
+            ".instance_name "
+            "error:unrecognized certificate provider instance name: fake]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, UnknownTransportSocketType) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  transport_socket->mutable_typed_config()->PackFrom(Listener());
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.config.listener.v3.Listener].type_url "
+            "error:unsupported transport socket type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, UnparseableDownstreamTlsContext) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  auto* typed_config = transport_socket->mutable_typed_config();
+  typed_config->PackFrom(DownstreamTlsContext());
+  typed_config->set_value(std::string("\0", 1));
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
+            "error:can't decode DownstreamTlsContext]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, DownstreamTlsContextInTypedStruct) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  xds::type::v3::TypedStruct typed_struct;
+  typed_struct.set_type_url(
+      "types.googleapis.com/"
+      "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext");
+  transport_socket->mutable_typed_config()->PackFrom(typed_struct);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "xds.type.v3.TypedStruct].value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
+            "error:can't decode DownstreamTlsContext]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, MatchSubjectAltNames) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  common_tls_context->mutable_validation_context()
+      ->add_match_subject_alt_names()
+      ->set_exact("exact");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+            ".common_tls_context "
+            "error:match_subject_alt_names not supported on servers]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, NoTlsCertificateProvider) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  transport_socket->mutable_typed_config()->PackFrom(DownstreamTlsContext());
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
+            "error:TLS configuration provided but no "
+            "tls_certificate_provider_instance found]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, RequireClientCertWithoutCaCertProvider) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+            ".require_client_certificate "
+            "error:client certificate required but no certificate "
+            "provider instance specified for validation]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TcpListenerTest, UnsupportedFields) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_require_sni()->set_value(true);
+  downstream_tls_context.set_ocsp_staple_policy(
+      downstream_tls_context.STRICT_STAPLING);
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+            ".ocsp_staple_policy "
+            "error:value must be LENIENT_STAPLING; "
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+            ".require_sni "
+            "error:field unsupported]")
       << decode_result.resource.status();
 }
 
