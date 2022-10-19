@@ -1762,6 +1762,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "activity",
         "arena",
         "context",
         "gpr",
@@ -1779,6 +1780,7 @@ grpc_cc_library(
     ],
     deps = [
         "for_each",
+        "gpr",
         "map",
         "pipe",
         "promise_factory",
