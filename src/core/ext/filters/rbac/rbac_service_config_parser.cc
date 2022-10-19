@@ -255,8 +255,8 @@ struct RbacConfig {
             PermissionList() = default;
             PermissionList(const PermissionList&) = delete;
             PermissionList& operator=(const PermissionList&) = delete;
-            PermissionList(PermissionList&&) noexcept = default;
-            PermissionList& operator=(PermissionList&&) noexcept = default;
+            PermissionList(PermissionList&&) = default;
+            PermissionList& operator=(PermissionList&&) = default;
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
               static const auto* loader =
@@ -272,8 +272,8 @@ struct RbacConfig {
           Permission() = default;
           Permission(const Permission&) = delete;
           Permission& operator=(const Permission&) = delete;
-          Permission(Permission&&) noexcept = default;
-          Permission& operator=(Permission&&) noexcept = default;
+          Permission(Permission&&) = default;
+          Permission& operator=(Permission&&) = default;
 
           static std::vector<std::unique_ptr<Rbac::Permission>>
           MakeRbacPermissionList(std::vector<Permission> permission_list) {
@@ -392,8 +392,8 @@ struct RbacConfig {
             PrincipalList() = default;
             PrincipalList(const PrincipalList&) = delete;
             PrincipalList& operator=(const PrincipalList&) = delete;
-            PrincipalList(PrincipalList&&) noexcept = default;
-            PrincipalList& operator=(PrincipalList&&) noexcept = default;
+            PrincipalList(PrincipalList&&) = default;
+            PrincipalList& operator=(PrincipalList&&) = default;
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
               static const auto* loader = JsonObjectLoader<PrincipalList>()
@@ -421,8 +421,8 @@ struct RbacConfig {
           Principal() = default;
           Principal(const Principal&) = delete;
           Principal& operator=(const Principal&) = delete;
-          Principal(Principal&&) noexcept = default;
-          Principal& operator=(Principal&&) noexcept = default;
+          Principal(Principal&&) = default;
+          Principal& operator=(Principal&&) = default;
 
           static std::vector<std::unique_ptr<Rbac::Principal>>
           MakeRbacPrincipalList(std::vector<Principal> principal_list) {
@@ -557,8 +557,8 @@ struct RbacConfig {
         Policy() = default;
         Policy(const Policy&) = delete;
         Policy& operator=(const Policy&) = delete;
-        Policy(Policy&&) noexcept = default;
-        Policy& operator=(Policy&&) noexcept = default;
+        Policy(Policy&&) = default;
+        Policy& operator=(Policy&&) = default;
 
         static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
           static const auto* loader =
@@ -585,8 +585,8 @@ struct RbacConfig {
       Rules() = default;
       Rules(const Rules&) = delete;
       Rules& operator=(const Rules&) = delete;
-      Rules(Rules&&) noexcept = default;
-      Rules& operator=(Rules&&) noexcept = default;
+      Rules(Rules&&) = default;
+      Rules& operator=(Rules&&) = default;
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
         static const auto* loader =
@@ -623,8 +623,8 @@ struct RbacConfig {
     RbacPolicy() = default;
     RbacPolicy(const RbacPolicy&) = delete;
     RbacPolicy& operator=(const RbacPolicy&) = delete;
-    RbacPolicy(RbacPolicy&&) noexcept = default;
-    RbacPolicy& operator=(RbacPolicy&&) noexcept = default;
+    RbacPolicy(RbacPolicy&&) = default;
+    RbacPolicy& operator=(RbacPolicy&&) = default;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
@@ -649,8 +649,8 @@ struct RbacConfig {
   RbacConfig() = default;
   RbacConfig(const RbacConfig&) = delete;
   RbacConfig& operator=(const RbacConfig&) = delete;
-  RbacConfig(RbacConfig&&) noexcept = default;
-  RbacConfig& operator=(RbacConfig&&) noexcept = default;
+  RbacConfig(RbacConfig&&) = default;
+  RbacConfig& operator=(RbacConfig&&) = default;
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
