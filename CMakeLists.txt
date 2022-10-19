@@ -1338,6 +1338,42 @@ if(gRPC_INSTALL)
   )
 endif()
 
+if (gRPC_DTRACE)
+  if (NOT _gRPC_PLATFORM_LINUX)
+    message(FATAL_ERROR "DTrace not supported on non-linux platforms.")
+  endif()
+
+  find_program(_gRPC_DTRACE_EXECUTABLE dtrace)
+
+  set(_gRPC_DTRACE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/core/ext/dtrace)
+  set(_gRPC_DTRACE_PROVIDER_D ${_gRPC_DTRACE_SRC_DIR}/dtrace_provider.d)
+
+  set(_gRPC_DTRACE_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/dtrace)
+  file(MAKE_DIRECTORY ${_gRPC_DTRACE_GEN_DIR})
+  set(_gRPC_DTRACE_PROVIDER_H ${_gRPC_DTRACE_GEN_DIR}/dtrace_provider.h)
+  set(_gRPC_DTRACE_PROVIDER_O ${_gRPC_DTRACE_GEN_DIR}/dtrace_provider.o)  
+
+  add_custom_target(grpc_dtrace_provider_h
+    COMMAND ${_gRPC_DTRACE_EXECUTABLE} -h -s ${_gRPC_DTRACE_PROVIDER_D} -o ${_gRPC_DTRACE_PROVIDER_H}
+    SOURCES ${_gRPC_DTRACE_PROVIDER_D}
+    WORKING_DIRECTORY ${_gRPC_DTRACE_SRC_DIR}
+    COMMENT "Generating DTrace provider header file"
+    VERBATIM)
+
+  add_custom_command(
+    OUTPUT ${_gRPC_DTRACE_PROVIDER_O}
+    COMMAND ${_gRPC_DTRACE_EXECUTABLE}
+    ARGS -G -s ${_gRPC_DTRACE_PROVIDER_D} -o ${_gRPC_DTRACE_PROVIDER_O}
+    DEPENDS ${_gRPC_DTRACE_PROVIDER_D}
+    WORKING_DIRECTORY ${_gRPC_DTRACE_SRC_DIR}
+    COMMENT "Generating DTrace provider object file"
+    VERBATIM)
+
+  set(_gRPC_DTRACE_GEN_SOURCES ${_gRPC_DTRACE_PROVIDER_O})
+
+  add_definitions(-DGRPC_DTRACE)
+endif()
+
 if(gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
@@ -1670,6 +1706,7 @@ endif()
 
 
 add_library(grpc
+  src/core/ext/dtrace/dtrace.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -2359,7 +2396,10 @@ add_library(grpc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  ${_gRPC_DTRACE_GEN_SOURCES}
 )
+
+add_dependencies(grpc grpc_dtrace_provider_h)
 
 set_target_properties(grpc PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
@@ -2389,6 +2429,7 @@ target_include_directories(grpc
     ${_gRPC_UPB_INCLUDE_DIR}
     ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_DTRACE_GEN_DIR}
 )
 target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
@@ -15450,7 +15491,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(resolve_address_using_native_resolver_posix_test
+add_executable(resolve_address_using_native_resolver_posix_test
     test/core/iomgr/resolve_address_posix_test.cc
     test/core/util/cmdline.cc
     test/core/util/fuzzer_util.cc

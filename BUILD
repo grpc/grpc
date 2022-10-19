@@ -22,6 +22,10 @@ load(
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
 )
+load(
+    "//bazel:dtrace.bzl",
+    "dtrace_generate_provider",
+)
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
 licenses(["reciprocal"])
@@ -146,6 +150,16 @@ config_setting(
 config_setting(
     name = "use_strict_warning",
     values = {"define": "use_strict_warning=true"},
+)
+
+config_setting(
+    name="grpc_dtrace",
+    values = {"define": "grpc_dtrace=true"},
+)
+
+dtrace_generate_provider(
+    name="grpc_dtrace_provider",
+    path="//src/core:ext/dtrace/dtrace_provider.d",
 )
 
 python_config_settings()
@@ -3300,7 +3314,13 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
-    ],
+    ] + select({
+        ":grpc_dtrace": [
+            "//src/core:ext/dtrace/dtrace.cc",
+            "grpc_dtrace_provider_o",
+        ],
+        "//conditions:default": [],
+    }),
     hdrs = [
         "//src/core:lib/transport/error_utils.h",
         "//src/core:lib/address_utils/parse_address.h",
@@ -3387,6 +3407,7 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
         "//src/core:lib/transport/transport_impl.h",
+        "//src/core:ext/dtrace/dtrace.h",
     ] +
     # TODO(ctiller): remove these
     # These headers used to be vended by this target, but they have been split
@@ -3404,7 +3425,16 @@ grpc_cc_library(
         "//src/core:lib/iomgr/iomgr_internal.h",
         "//src/core:lib/channel/channel_args.h",
         "//src/core:lib/channel/channel_stack_builder.h",
-    ],
+    ] + select({
+        ":grpc_dtrace": [
+            "grpc_dtrace_provider_h",
+        ],
+        "//conditions:default": [],
+    }),
+    defines = select({
+        ":grpc_dtrace": ["GRPC_DTRACE=1"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
