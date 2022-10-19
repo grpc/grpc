@@ -853,6 +853,7 @@ grpc_cc_library(
         "include/grpcpp/security/authorization_policy_provider.h",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     deps = [
         "gpr",
         "grpc++",
@@ -1615,6 +1616,7 @@ grpc_cc_library(
     ],
     language = "c++",
     visibility = ["@grpc:tsi_interface"],
+    tags = ["nofixdeps"],
     deps = [
         "gpr",
         "grpc_trace",
