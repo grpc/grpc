@@ -29,7 +29,7 @@ TEST(Context, WithContext) {
   EXPECT_FALSE(HasContext<TestContext>());
   TestContext test;
   EXPECT_FALSE(HasContext<TestContext>());
-  EXPECT_EQ(test.done, false);
+  EXPECT_FALSE(test.done);
   WithContext(
       []() {
         EXPECT_TRUE(HasContext<TestContext>());
@@ -37,7 +37,7 @@ TEST(Context, WithContext) {
       },
       &test)();
   EXPECT_FALSE(HasContext<TestContext>());
-  EXPECT_EQ(test.done, true);
+  EXPECT_TRUE(test.done);
 }
 
 }  // namespace grpc_core
