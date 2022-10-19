@@ -922,26 +922,29 @@ Server::Server(
     acceptor->SetToChannelArgs(args);
   }
 
-  grpc_channel_args channel_args;
-  args->SetChannelArgs(&channel_args);
+  grpc_channel_args tmp_args;
+  args->SetChannelArgs(&tmp_args);
+  // precondition
+  auto channel_args = grpc_core::CoreConfiguration::Get()
+                          .channel_args_preconditioning()
+                          .PreconditionChannelArgs(&tmp_args);
 
-  for (size_t i = 0; i < channel_args.num_args; i++) {
-    if (0 == strcmp(channel_args.args[i].key,
-                    grpc::kHealthCheckServiceInterfaceArg)) {
-      if (channel_args.args[i].value.pointer.p == nullptr) {
-        health_check_service_disabled_ = true;
-      } else {
-        health_check_service_.reset(
-            static_cast<grpc::HealthCheckServiceInterface*>(
-                channel_args.args[i].value.pointer.p));
-      }
-    }
-    if (0 ==
-        strcmp(channel_args.args[i].key, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)) {
-      max_receive_message_size_ = channel_args.args[i].value.integer;
+  if (channel_args.Contains(grpc::kHealthCheckServiceInterfaceArg)) {
+    auto* health_check =
+        channel_args.GetPointer<grpc::HealthCheckServiceInterface>(
+            grpc::kHealthCheckServiceInterfaceArg);
+    if (health_check == nullptr) {
+      health_check_service_disabled_ = true;
+    } else {
+      health_check_service_.reset(health_check);
     }
   }
-  server_ = grpc_server_create(&channel_args, nullptr);
+  auto chan_max_receive_message_size =
+      channel_args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+  if (chan_max_receive_message_size.has_value()) {
+    max_receive_message_size_ = *chan_max_receive_message_size;
+  }
+  server_ = grpc_server_create(channel_args.ToC().get(), nullptr);
   grpc_server_set_config_fetcher(server_, server_config_fetcher);
 }
 

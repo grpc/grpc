@@ -48,6 +48,7 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/server_interceptor.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"

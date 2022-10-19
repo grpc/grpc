@@ -189,12 +189,18 @@ class EndpointPairFixture : public BaseFixture {
 
     /* create channel */
     {
-      ChannelArguments args;
-      args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
-      fixture_configuration.ApplyCommonChannelArguments(&args);
-
-      grpc_core::ChannelArgs c_args =
-          grpc_core::ChannelArgs::FromC(args.c_channel_args());
+      grpc_core::ChannelArgs c_args;
+      {
+        ChannelArguments args;
+        args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+        fixture_configuration.ApplyCommonChannelArguments(&args);
+        // precondition
+        grpc_channel_args tmp_args;
+        args.SetChannelArgs(&tmp_args);
+        c_args = grpc_core::CoreConfiguration::Get()
+                     .channel_args_preconditioning()
+                     .PreconditionChannelArgs(&tmp_args);
+      }
       client_transport_ =
           grpc_create_chttp2_transport(c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
