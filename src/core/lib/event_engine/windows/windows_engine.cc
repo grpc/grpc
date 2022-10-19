@@ -78,6 +78,7 @@ WindowsEventEngine::~WindowsEventEngine() {
   }
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   GPR_ASSERT(WSACleanup() == 0);
+  executor_.Quiesce();
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
