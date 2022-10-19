@@ -554,6 +554,12 @@ struct RbacConfig {
         std::vector<Permission> permissions;
         std::vector<Principal> principals;
 
+        Policy() = default;
+        Policy(const Policy&) = delete;
+        Policy& operator=(const Policy&) = delete;
+        Policy(Policy&&) noexcept = default;
+        Policy& operator=(Policy&&) noexcept = default;
+
         static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
           static const auto* loader =
               JsonObjectLoader<Policy>()
@@ -575,6 +581,12 @@ struct RbacConfig {
 
       int action;
       std::map<std::string, Policy> policies;
+
+      Rules() = default;
+      Rules(const Rules&) = delete;
+      Rules& operator=(const Rules&) = delete;
+      Rules(Rules&&) noexcept = default;
+      Rules& operator=(Rules&&) noexcept = default;
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
         static const auto* loader =
