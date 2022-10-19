@@ -61,7 +61,8 @@ void chttp2_init_client_fullstack_compression(
   f->client = grpc_channel_create(
       ffd->localaddr.c_str(), creds,
       grpc_core::ChannelArgs::FromC(client_args)
-          .SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, GRPC_COMPRESS_GZIP)
+          .SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                      GRPC_COMPRESS_GZIP)
           .ToC()
           .get());
   grpc_channel_credentials_release(creds);
@@ -76,7 +77,8 @@ void chttp2_init_server_fullstack_compression(
   }
   f->server = grpc_server_create(
       grpc_core::ChannelArgs::FromC(server_args)
-          .SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, GRPC_COMPRESS_GZIP)
+          .SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                      GRPC_COMPRESS_GZIP)
           .ToC()
           .get(),
       nullptr);
