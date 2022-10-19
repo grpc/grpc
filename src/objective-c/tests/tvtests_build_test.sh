@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC Authors
+#!/bin/bash
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,26 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-package(default_visibility = ["//visibility:public"])
 
-py_library(
-    name = "base_lib",
-    srcs = ["__init__.py"],
-    deps = [
-        ":base",
-        ":utilities",
-    ],
-)
-
-py_library(
-    name = "base",
-    srcs = ["base.py"],
-    deps = [
-        "//src/python/grpcio/grpc/framework/foundation:abandonment",
-    ],
-)
-
-py_library(
-    name = "utilities",
-    srcs = ["utilities.py"],
-)
+# //src/objective-c/tests:TvTests is set as "data"
+# for this test. Check that it's there.
+test -f src/objective-c/tests/TvTests
