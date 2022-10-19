@@ -166,7 +166,7 @@ Technically, we'll use CMake here to generate Visual C++ projects as above but w
 3. Select a 'Release' build and build the `grpc` solution. Once complete, check the build output to confirm a clean build with no errors. 
 4. To install, build the `INSTALL` project. This will copy all the binaries, header files, etc. to the location specified by `$MY_INSTALL_DIR` (and is why it's important for your Visual Studio instance to inherit it).
 
-> **Note** There are both Debug and Release builds and their respective installs differ slightly (e.g. debug/release verions of libs). If you want a 'complete' install that includes both Debug and Release artifacts, then you'll need to perform two builds to separate install target-locations and then merge the differences. 
+
 
 ### Windows, Using Ninja (faster build).
 
@@ -196,6 +196,9 @@ at your own risk.
 > **Warning**
 > Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
 
+**Debug/Release Installs**
+
+There are both Debug and Release builds and their respective installs differ slightly (e.g. debug/release verions of libs). If you want a 'complete' install that includes both Debug and Release artifacts, then you'll need to perform two builds to separate install target-locations and then merge the differences. 
 
 ### Dependency management
 
