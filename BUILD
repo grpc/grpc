@@ -2509,6 +2509,7 @@ grpc_cc_library(
         "//src/core:lib/event_engine/posix_engine/timer_manager.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/time",
         "absl/types:optional",
     ],

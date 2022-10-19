@@ -20,7 +20,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
-#include <atomic>
 #include <memory>
 #include <utility>
 
