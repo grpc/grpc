@@ -84,7 +84,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_cel_engine",
+        "//src/core:grpc_cel_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -124,7 +124,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_authorization_base",
+        "//src/core:grpc_authorization_base",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -469,7 +469,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_authorization_provider",
+        "//src/core:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -483,7 +483,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_rbac_engine",
+        "//src/core:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -497,7 +497,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_rbac_engine",
+        "//src/core:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -516,7 +516,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_authorization_provider",
+        "//src/core:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
