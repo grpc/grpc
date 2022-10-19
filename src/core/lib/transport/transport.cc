@@ -29,6 +29,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/ext/dtrace/dtrace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -109,13 +110,18 @@ int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
                                grpc_stream_refcount* refcount,
                                const void* server_data,
                                grpc_core::Arena* arena) {
-  return transport->vtable->init_stream(transport, stream, refcount,
-                                        server_data, arena);
+  int err = transport->vtable->init_stream(transport, stream, refcount,
+                                           server_data, arena);
+  if (!err) {
+    grpc_dtrace_transport_on_stream_created(transport, stream);
+  }
+  return err;
 }
 
 void grpc_transport_perform_stream_op(grpc_transport* transport,
                                       grpc_stream* stream,
                                       grpc_transport_stream_op_batch* op) {
+  grpc_dtrace_transport_on_perform_stream_op(transport, stream, op);
   transport->vtable->perform_stream_op(transport, stream, op);
 }
 
@@ -142,6 +148,7 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
 void grpc_transport_destroy_stream(grpc_transport* transport,
                                    grpc_stream* stream,
                                    grpc_closure* then_schedule_closure) {
+  grpc_dtrace_transport_on_stream_destroyed(transport, stream);
   transport->vtable->destroy_stream(transport, stream, then_schedule_closure);
 }
 
