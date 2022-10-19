@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/promise/pipe.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_promise_pipe(false, "promise_pipe");
