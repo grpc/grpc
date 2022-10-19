@@ -646,6 +646,12 @@ struct RbacConfig {
 
   std::vector<RbacPolicy> rbac_policies;
 
+  RbacConfig() = default;
+  RbacConfig(const RbacConfig&) = delete;
+  RbacConfig& operator=(const RbacConfig&) = delete;
+  RbacConfig(RbacConfig&&) noexcept = default;
+  RbacConfig& operator=(RbacConfig&&) noexcept = default;
+
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<RbacConfig>()
