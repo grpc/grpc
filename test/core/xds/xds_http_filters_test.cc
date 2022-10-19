@@ -71,8 +71,11 @@ using ::envoy::extensions::filters::http::router::v3::Router;
 
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
-  XdsHttpFilterTest() { XdsHttpFilterRegistry::Init(); }
-  ~XdsHttpFilterTest() override { XdsHttpFilterRegistry::Shutdown(); }
+  XdsHttpFilterTest() {
+    // Start with a clean registry for each test.
+    XdsHttpFilterRegistry::Shutdown();
+    XdsHttpFilterRegistry::Init();
+  }
 
   XdsExtension MakeXdsExtension(const google::protobuf::Message& message) {
     any_storage_.PackFrom(message);
