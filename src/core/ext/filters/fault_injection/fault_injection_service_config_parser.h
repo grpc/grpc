@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
-#define GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
+#ifndef GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
+#define GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,10 +25,8 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/status.h>
@@ -36,7 +34,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
@@ -46,7 +47,7 @@ class FaultInjectionMethodParsedConfig
  public:
   struct FaultInjectionPolicy {
     grpc_status_code abort_code = GRPC_STATUS_OK;
-    std::string abort_message;
+    std::string abort_message = "Fault injected";
     std::string abort_code_header;
     std::string abort_percentage_header;
     uint32_t abort_percentage_numerator = 0;
@@ -60,11 +61,11 @@ class FaultInjectionMethodParsedConfig
 
     // By default, the max allowed active faults are unlimited.
     uint32_t max_faults = std::numeric_limits<uint32_t>::max();
-  };
 
-  explicit FaultInjectionMethodParsedConfig(
-      std::vector<FaultInjectionPolicy> fault_injection_policies)
-      : fault_injection_policies_(std::move(fault_injection_policies)) {}
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&,
+                      ValidationErrors* errors);
+  };
 
   // Returns the fault injection policy at certain index.
   // There might be multiple fault injection policies functioning at the same
@@ -79,6 +80,8 @@ class FaultInjectionMethodParsedConfig
     return &fault_injection_policies_[index];
   }
 
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+
  private:
   std::vector<FaultInjectionPolicy> fault_injection_policies_;
 };
@@ -88,8 +91,9 @@ class FaultInjectionServiceConfigParser final
  public:
   absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for fault injection filter.
-  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-  ParsePerMethodParams(const ChannelArgs& args, const Json& json) override;
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
+      const ChannelArgs& args, const Json& json,
+      ValidationErrors* errors) override;
   // Returns the parser index for FaultInjectionServiceConfigParser.
   static size_t ParserIndex();
   // Registers FaultInjectionServiceConfigParser to ServiceConfigParser.
@@ -101,4 +105,4 @@ class FaultInjectionServiceConfigParser final
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
+#endif  // GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H

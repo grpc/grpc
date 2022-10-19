@@ -178,10 +178,6 @@ absl::StatusOr<Json> ParsePathMatcherToJson(
   return json;
 }
 
-Json ParseUInt32ValueToJson(const google_protobuf_UInt32Value* value) {
-  return Json::Object{{"value", google_protobuf_UInt32Value_value(value)}};
-}
-
 Json ParseCidrRangeToJson(const envoy_config_core_v3_CidrRange* range) {
   Json::Object json;
   json.emplace("addressPrefix",
@@ -189,7 +185,7 @@ Json ParseCidrRangeToJson(const envoy_config_core_v3_CidrRange* range) {
                    envoy_config_core_v3_CidrRange_address_prefix(range)));
   const auto* prefix_len = envoy_config_core_v3_CidrRange_prefix_len(range);
   if (prefix_len != nullptr) {
-    json.emplace("prefixLen", ParseUInt32ValueToJson(prefix_len));
+    json.emplace("prefixLen", google_protobuf_UInt32Value_value(prefix_len));
   }
   return json;
 }
