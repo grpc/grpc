@@ -548,6 +548,10 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
   }
   intercepted_slice_buffer_ = batch->payload->recv_message.recv_message;
   intercepted_flags_ = batch->payload->recv_message.flags;
+  if (intercepted_flags_ == nullptr) {
+    intercepted_flags_ = &message_.mutable_flags();
+    *intercepted_flags_ = 0;
+  }
   intercepted_on_complete_ = std::exchange(
       batch->payload->recv_message.recv_message_ready, &on_complete_);
 }
@@ -1767,7 +1771,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
         send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
         break;
       case SendInitialMetadata::kCancelled:
-        batch.CancelWith(cancelled_error_, &flusher);
+        batch.CancelWith(
+            cancelled_error_.ok() ? absl::CancelledError() : cancelled_error_,
+            &flusher);
         break;
       case SendInitialMetadata::kQueuedAndGotLatch:
       case SendInitialMetadata::kQueuedWaitingForLatch:
@@ -1806,7 +1812,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
         abort();  // unreachable
         break;
       case SendTrailingState::kCancelled:
-        batch.CancelWith(cancelled_error_, &flusher);
+        batch.CancelWith(
+            cancelled_error_.ok() ? absl::CancelledError() : cancelled_error_,
+            &flusher);
         break;
     }
   }
@@ -1845,6 +1853,13 @@ void ServerCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
   if (auto* closure =
           std::exchange(original_recv_initial_metadata_ready_, nullptr)) {
     flusher->AddClosure(closure, error, "original_recv_initial_metadata");
+  }
+  ScopedContext ctx(this);
+  if (send_message() != nullptr) {
+    send_message()->Done(*ServerMetadataFromStatus(error), flusher);
+  }
+  if (receive_message() != nullptr) {
+    receive_message()->Done(*ServerMetadataFromStatus(error), flusher);
   }
 }
 

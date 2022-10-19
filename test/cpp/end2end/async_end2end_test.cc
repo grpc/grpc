@@ -67,23 +67,29 @@ class Verifier {
  public:
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
-    return ExpectUnless(i, expect_ok, false);
+  Verifier& Expect(
+      int i, bool expect_ok,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
+    return ExpectUnless(i, expect_ok, false, whence);
   }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
-  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+  Verifier& ExpectUnless(
+      int i, bool expect_ok, bool seen,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
     if (!seen) {
-      expectations_[tag(i)] = expect_ok;
+      expectations_[tag(i)] = {expect_ok, whence};
     }
     return *this;
   }
   // ExpectMaybe sets the expected ok value for a specific tag, but does not
   // require it to appear
   // If it does, sets *seen to true
-  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+  Verifier& ExpectMaybe(
+      int i, bool expect_ok, bool* seen,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
     if (!*seen) {
-      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen, whence};
     }
     return *this;
   }
@@ -172,7 +178,7 @@ class Verifier {
     auto it = expectations_.find(got_tag);
     if (it != expectations_.end()) {
       if (!ignore_ok) {
-        EXPECT_EQ(it->second, ok);
+        EXPECT_EQ(it->second.ok, ok) << it->second.ToString(it->first);
       }
       expectations_.erase(it);
     } else {
@@ -183,7 +189,7 @@ class Verifier {
           *it2->second.seen = true;
         }
         if (!ignore_ok) {
-          EXPECT_EQ(it2->second.ok, ok);
+          EXPECT_EQ(it2->second.ok, ok) << it->second.ToString(it->first);
         }
         maybe_expectations_.erase(it2);
       } else {
@@ -196,9 +202,25 @@ class Verifier {
   struct MaybeExpect {
     bool ok;
     bool* seen;
+    grpc_core::SourceLocation whence;
+    std::string ToString(void* tag) const {
+      return absl::StrCat(
+          "[MaybeExpect] tag=", reinterpret_cast<uintptr_t>(tag),
+          " expect_ok=", ok, " whence=", whence.file(), ":", whence.line());
+    }
   };
 
-  std::map<void*, bool> expectations_;
+  struct DefinitelyExpect {
+    bool ok;
+    grpc_core::SourceLocation whence;
+    std::string ToString(void* tag) const {
+      return absl::StrCat("[Expect] tag=", reinterpret_cast<uintptr_t>(tag),
+                          " expect_ok=", ok, " whence=", whence.file(), ":",
+                          whence.line());
+    }
+  };
+
+  std::map<void*, DefinitelyExpect> expectations_;
   std::map<void*, MaybeExpect> maybe_expectations_;
   bool lambda_run_;
 };
