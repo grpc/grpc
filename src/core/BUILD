@@ -4190,7 +4190,7 @@ grpc_cc_library(
         "ext/filters/load_reporting/server_load_reporting_filter.cc",
     ],
     hdrs = [
-        "src/cpp/server/load_reporter/constants.h",
+        "//:src/cpp/server/load_reporter/constants.h",
         "ext/filters/load_reporting/registered_opencensus_objects.h",
         "ext/filters/load_reporting/server_load_reporting_filter.h",
     ],
