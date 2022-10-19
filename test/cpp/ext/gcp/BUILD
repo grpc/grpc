@@ -28,7 +28,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//src/cpp/ext/gcp:observability",
+        "//:grpcpp_gcp_observability",
         "//test/cpp/util:test_util",
     ],
 )

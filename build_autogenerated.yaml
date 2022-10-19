@@ -336,7 +336,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
@@ -1046,9 +1046,11 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1417,7 +1419,6 @@ libs:
   - src/core/ext/xds/xds_http_rbac_filter.cc
   - src/core/ext/xds/xds_lb_policy_registry.cc
   - src/core/ext/xds/xds_listener.cc
-  - src/core/ext/xds/xds_resource_type.cc
   - src/core/ext/xds/xds_route_config.cc
   - src/core/ext/xds/xds_routing.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
@@ -7937,6 +7938,16 @@ targets:
   - test/core/client_channel/outlier_detection_lb_config_parser_test.cc
   deps:
   - grpc_test_util
+- name: outlier_detection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/outlier_detection_test.cc
+  deps:
+  - grpc_test_util
 - name: overload_test
   gtest: true
   build: test
@@ -10949,9 +10960,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -11029,9 +11037,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
@@ -11120,9 +11125,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -11225,9 +11227,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -11274,7 +11273,6 @@ targets:
   run: false
   language: c++
   headers:
-  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/no_op_http_filter.h
@@ -11286,11 +11284,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/cds_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lds_rds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
@@ -11363,9 +11356,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -11508,9 +11498,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -11567,9 +11554,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
@@ -11628,9 +11612,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -11686,9 +11667,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/base.proto

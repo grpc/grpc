@@ -14,10 +14,12 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_ATTRIBUTES_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_ATTRIBUTES_H
 
 #include <grpc/support/port_platform.h>
+
+#include <stdint.h>
 
 #include <memory>
 #include <string>
@@ -29,36 +31,34 @@
 
 namespace grpc_core {
 
-// Defined in the EDS policy.
 extern const char* kXdsLocalityNameAttributeKey;
 
 class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
  public:
-  explicit XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name)
-      : locality_name_(std::move(locality_name)) {}
+  XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name,
+                       uint32_t weight)
+      : locality_name_(std::move(locality_name)), weight_(weight) {}
 
   RefCountedPtr<XdsLocalityName> locality_name() const {
     return locality_name_;
   }
 
+  uint32_t weight() const { return weight_; }
+
   std::unique_ptr<AttributeInterface> Copy() const override {
-    return std::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
+    return std::make_unique<XdsLocalityAttribute>(locality_name_->Ref(),
+                                                  weight_);
   }
 
-  int Cmp(const AttributeInterface* other) const override {
-    const auto* other_locality_attr =
-        static_cast<const XdsLocalityAttribute*>(other);
-    return locality_name_->Compare(*other_locality_attr->locality_name_);
-  }
+  int Cmp(const AttributeInterface* other) const override;
 
-  std::string ToString() const override {
-    return locality_name_->AsHumanReadableString();
-  }
+  std::string ToString() const override;
 
  private:
   RefCountedPtr<XdsLocalityName> locality_name_;
+  uint32_t weight_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_ATTRIBUTES_H

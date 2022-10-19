@@ -103,15 +103,14 @@ TEST_F(XdsEndpointTest, Definition) {
   ASSERT_NE(resource_type, nullptr);
   EXPECT_EQ(resource_type->type_url(),
             "envoy.config.endpoint.v3.ClusterLoadAssignment");
-  EXPECT_EQ(resource_type->v2_type_url(), "envoy.api.v2.ClusterLoadAssignment");
   EXPECT_FALSE(resource_type->AllResourcesRequiredInSotW());
 }
 
 TEST_F(XdsEndpointTest, UnparseableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
@@ -137,8 +136,8 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -185,8 +184,8 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -235,8 +234,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -286,8 +285,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -328,8 +327,8 @@ TEST_F(XdsEndpointTest, LocalityWithNoEndpoints) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -362,8 +361,8 @@ TEST_F(XdsEndpointTest, NoLocality) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -392,8 +391,8 @@ TEST_F(XdsEndpointTest, InvalidPort) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -423,8 +422,8 @@ TEST_F(XdsEndpointTest, InvalidAddress) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -450,8 +449,8 @@ TEST_F(XdsEndpointTest, MissingSocketAddress) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -476,8 +475,8 @@ TEST_F(XdsEndpointTest, MissingAddress) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -502,8 +501,8 @@ TEST_F(XdsEndpointTest, MissingEndpoint) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -533,8 +532,8 @@ TEST_F(XdsEndpointTest, EndpointWeightZero) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -576,8 +575,8 @@ TEST_F(XdsEndpointTest, DuplicateLocalityName) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -621,8 +620,8 @@ TEST_F(XdsEndpointTest, SparsePriorityList) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -668,8 +667,8 @@ TEST_F(XdsEndpointTest, LocalityWeightsWithinPriorityExceedUint32Max) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -713,8 +712,8 @@ TEST_F(XdsEndpointTest, DuplicateAddresses) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -757,8 +756,8 @@ TEST_F(XdsEndpointTest, DropConfig) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -795,8 +794,8 @@ TEST_F(XdsEndpointTest, CapsDropPercentageAt100) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -829,8 +828,8 @@ TEST_F(XdsEndpointTest, MissingDropCategoryName) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -862,8 +861,8 @@ TEST_F(XdsEndpointTest, MissingDropPercentage) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
@@ -898,8 +897,8 @@ TEST_F(XdsEndpointTest, DropPercentageInvalidDenominator) {
   std::string serialized_resource;
   ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
   auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
