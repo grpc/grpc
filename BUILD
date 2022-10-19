@@ -1753,21 +1753,22 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
+    srcs = [
+        "src/core/lib/promise/pipe.cc",
+    ],
+    hdrs = [
+        "src/core/lib/promise/pipe.h",
+    ],
     external_deps = [
         "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
-    hdrs = [
-        "src/core/lib/promise/pipe.h",
-    ],
-    srcs = [
-        "src/core/lib/promise/pipe.cc",
-    ],
     deps = [
         "arena",
         "context",
         "gpr",
+        "grpc_trace",
         "intra_activity_waiter",
         "poll",
     ],

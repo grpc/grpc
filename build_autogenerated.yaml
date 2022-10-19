@@ -863,6 +863,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/map_pipe.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -1553,6 +1554,7 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/pipe.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
@@ -2060,6 +2062,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/map_pipe.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -2391,6 +2394,7 @@ libs:
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/pipe.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
@@ -6190,6 +6194,7 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/pipe.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
@@ -8179,6 +8184,7 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/pipe.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
