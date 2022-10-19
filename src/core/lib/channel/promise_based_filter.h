@@ -449,7 +449,7 @@ class ClientCallData : public BaseCallData {
   class PollContext;
 
   // Handle cancellation.
-  void Cancel(grpc_error_handle error);
+  void Cancel(grpc_error_handle error, Flusher* flusher);
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
   void StartPromise(Flusher* flusher);

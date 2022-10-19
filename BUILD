@@ -1758,8 +1758,11 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
-    public_hdrs = [
+    hdrs = [
         "src/core/lib/promise/pipe.h",
+    ],
+    srcs = [
+        "src/core/lib/promise/pipe.cc",
     ],
     deps = [
         "arena",

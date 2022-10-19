@@ -1130,7 +1130,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
-    Cancel(batch->payload->cancel_stream.cancel_error);
+    Cancel(batch->payload->cancel_stream.cancel_error, &flusher);
     poll_ctx.Run();
     if (is_last()) {
       batch.CompleteWith(&flusher);
@@ -1238,7 +1238,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ClientCallData::Cancel(grpc_error_handle error) {
+void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG, "%s Cancel error=%s", LogTag().c_str(),
             error.ToString().c_str());
@@ -1254,26 +1254,7 @@ void ClientCallData::Cancel(grpc_error_handle error) {
     if (recv_trailing_state_ == RecvTrailingState::kQueued) {
       recv_trailing_state_ = RecvTrailingState::kCancelled;
     }
-    struct FailBatch : public grpc_closure {
-      CapturedBatch batch;
-      ClientCallData* call;
-    };
-    auto fail = [](void* p, grpc_error_handle error) {
-      auto* f = static_cast<FailBatch*>(p);
-      {
-        Flusher flusher(f->call);
-        f->batch.CancelWith(error, &flusher);
-        GRPC_CALL_STACK_UNREF(f->call->call_stack(), "cancel pending batch");
-      }
-      delete f;
-    };
-    auto* b = new FailBatch();
-    GRPC_CLOSURE_INIT(b, fail, b, nullptr);
-    b->batch = std::move(send_initial_metadata_batch_);
-    b->call = this;
-    GRPC_CALL_STACK_REF(call_stack(), "cancel pending batch");
-    GRPC_CALL_COMBINER_START(call_combiner(), b, cancelled_error_,
-                             "cancel pending batch");
+    send_initial_metadata_batch_.CancelWith(error, flusher);
   } else {
     send_initial_state_ = SendInitialState::kCancelled;
   }
@@ -1299,6 +1280,12 @@ void ClientCallData::Cancel(grpc_error_handle error) {
         abort();
         break;
     }
+  }
+  if (send_message() != nullptr) {
+    send_message()->Done(*ServerMetadataFromStatus(error), flusher);
+  }
+  if (receive_message() != nullptr) {
+    receive_message()->Done(*ServerMetadataFromStatus(error), flusher);
   }
 }
 

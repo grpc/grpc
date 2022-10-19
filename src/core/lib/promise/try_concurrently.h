@@ -35,9 +35,6 @@ namespace grpc_core {
 
 namespace promise_detail {
 
-template <typename... Ts>
-struct List;
-
 template <typename Promise>
 struct Necessary {
   PromiseLike<Promise> promise;
@@ -50,59 +47,100 @@ struct Helper {
   static constexpr bool must_complete() { return false; }
 };
 
-template <int kIdx, int kDoneBit, typename... Ts>
-struct RunTheThings;
+template <typename... Ts>
+class FusedSet;
 
-template <int kIdx, int kDoneBit, typename T, typename... Ts>
-struct RunTheThings<kIdx, kDoneBit, T, Ts...> {
-  template <typename Result, typename Tpl>
-  static Poll<Result> Run(uint8_t& done_bits, Tpl& ts) {
+template <typename T, typename... Ts>
+class FusedSet<T, Ts...> : public FusedSet<Ts...> {
+ public:
+  explicit FusedSet(T&& x, Ts&&... xs)
+      : FusedSet<Ts...>(std::forward<T>(xs)...) {
+    Construct(&wrapper_, std::forward<T>(x));
+  }
+  explicit FusedSet(T&& x, FusedSet<Ts...>&& xs)
+      : FusedSet<Ts...>(std::forward<FusedSet<Ts...>>(xs)) {
+    Construct(&wrapper_, std::forward<T>(x));
+  }
+  // Empty destructor: consumers must call Destroy() to ensure cleanup occurs
+  ~FusedSet() {}
+
+  FusedSet(const FusedSet&) = delete;
+  FusedSet& operator=(const FusedSet&) = delete;
+
+  // Assumes all 'done_bits' are 0
+  FusedSet(FusedSet&& other) noexcept : FusedSet<Ts...>(std::move(other)) {
+    Construct(&wrapper_, std::move(other.wrapper_));
+  }
+  FusedSet& operator=(FusedSet&& other) noexcept {
+    FusedSet<Ts...>::operator=(std::move(other));
+    wrapper_ = std::move(other.wrapper_);
+    return *this;
+  }
+
+  static constexpr size_t Size() { return 1 + sizeof...(Ts); }
+
+  static constexpr uint8_t NecessaryBits() {
+    return (T::must_complete() ? 1 : 0) |
+           (FusedSet<Ts...>::NecessaryBits() << 1);
+  }
+
+  template <int kDoneBit>
+  void Destroy(uint8_t done_bits) {
     if ((done_bits & (1 << kDoneBit)) == 0) {
-      auto& t = std::get<kIdx>(ts);
-      auto p = t.promise();
+      Destruct(&wrapper_);
+    }
+    FusedSet<Ts...>::template Destroy<kDoneBit + 1>(done_bits);
+  }
+
+  template <typename Result, int kDoneBit>
+  Poll<Result> Run(uint8_t& done_bits) {
+    if ((done_bits & (1 << kDoneBit)) == 0) {
+      auto p = wrapper_.promise();
       if (auto* status = absl::get_if<kPollReadyIdx>(&p)) {
-        if (IsStatusOk(*status)) {
-          done_bits |= (1 << kDoneBit);
-        } else {
+        done_bits |= (1 << kDoneBit);
+        Destruct(&wrapper_);
+        if (!IsStatusOk(*status)) {
           return StatusCast<Result>(std::move(*status));
         }
       }
     }
-    return RunTheThings<kIdx + 1, kDoneBit + 1, Ts...>::template Run<Result>(
-        done_bits, ts);
+    return FusedSet<Ts...>::template Run<Result, kDoneBit + 1>(done_bits);
   }
-};
 
-template <int kIdx, int kDoneBit>
-struct RunTheThings<kIdx, kDoneBit> {
-  template <typename Result, typename Tpl>
-  static Poll<Result> Run(uint8_t& done_bits, Tpl& ts) {
-    return Pending();
+  template <typename P>
+  FusedSet<P, T, Ts...> With(P x) {
+    return FusedSet<P, T, Ts...>(std::move(x), std::move(*this));
   }
-};
 
-template <typename... Ts>
-struct NecessaryBits;
-
-template <typename T, typename... Ts>
-struct NecessaryBits<T, Ts...> {
-  static constexpr uint8_t value =
-      (T::must_complete() ? 1 : 0) | (NecessaryBits<Ts...>::value << 1);
+ private:
+  union {
+    T wrapper_;
+  };
 };
 
 template <>
-struct NecessaryBits<> {
-  static constexpr uint8_t value = 0;
+class FusedSet<> {
+ public:
+  static constexpr size_t Size() { return 0; }
+  static constexpr uint8_t NecessaryBits() { return 0; }
+
+  template <typename Result, int kDoneBit>
+  Poll<Result> Run(uint8_t done_bits) {
+    return Pending{};
+  }
+  template <int kDoneBit>
+  void Destroy(uint8_t done_bits) {}
+
+  template <typename P>
+  FusedSet<P> With(P x) {
+    return FusedSet<P>(std::move(x));
+  }
 };
 
 template <typename Main, typename PreMain, typename PostMain>
-class TryConcurrently;
-
-template <typename Main, typename... PreMain, typename... PostMain>
-class TryConcurrently<Main, List<PreMain...>, List<PostMain...>> {
+class TryConcurrently {
  public:
-  TryConcurrently(Main main, std::tuple<PreMain...> pre_main,
-                  std::tuple<PostMain...> post_main)
+  TryConcurrently(Main main, PreMain pre_main, PostMain post_main)
       : done_bits_(0),
         pre_main_(std::move(pre_main)),
         post_main_(std::move(post_main)) {
@@ -133,14 +171,15 @@ class TryConcurrently<Main, List<PreMain...>, List<PostMain...>> {
     } else {
       Destruct(&main_);
     }
+    pre_main_.template Destroy<1>(done_bits_);
+    post_main_.template Destroy<1 + PreMain::Size()>(done_bits_);
   }
 
   using Result =
       typename PollTraits<decltype(std::declval<PromiseLike<Main>>()())>::Type;
 
   Poll<Result> operator()() {
-    auto r = RunTheThings<0, 1, PreMain...>::template Run<Result>(done_bits_,
-                                                                  pre_main_);
+    auto r = pre_main_.template Run<Result, 1>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
       GPR_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
@@ -153,20 +192,14 @@ class TryConcurrently<Main, List<PreMain...>, List<PostMain...>> {
         Construct(&result_, std::move(*status));
       }
     }
-    r = RunTheThings<0, 1 + sizeof...(PreMain),
-                     PostMain...>::template Run<Result>(done_bits_, post_main_);
+    r = post_main_.template Run<Result, 1 + PreMain::Size()>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
       GPR_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
     }
     static const uint8_t kNecessaryBits =
-        1 | (NecessaryBits<PreMain...>::value << 1) |
-        (NecessaryBits<PostMain...>::value << (1 + sizeof...(PreMain)));
-    /*
-    gpr_log(GPR_DEBUG, "done_bits=%d necessary_bits=%d all_bits=%d", done_bits_,
-            kNecessaryBits,
-            (1 << (sizeof...(PreMain) + sizeof...(PostMain) + 1)) - 1);
-*/
+        1 | (PreMain::NecessaryBits() << 1) |
+        (PostMain::NecessaryBits() << (1 + PreMain::Size()));
     if ((done_bits_ & kNecessaryBits) == kNecessaryBits) {
       return std::move(result_);
     }
@@ -174,69 +207,73 @@ class TryConcurrently<Main, List<PreMain...>, List<PostMain...>> {
   }
 
   template <typename P>
-  TryConcurrently<Main, List<PreMain..., Necessary<P>>, List<PostMain...>>
-  NecessaryPush(P p) {
-    GPR_DEBUG_ASSERT(done_bits_ == 0);
-    return TryConcurrently<Main, List<PreMain..., Necessary<P>>,
-                           List<PostMain...>>(
-        std::move(main_),
-        std::tuple_cat(std::move(pre_main_),
-                       std::make_tuple(Necessary<P>{std::move(p)})),
-        std::move(post_main_));
-  }
-
+  auto NecessaryPush(P p);
   template <typename P>
-  TryConcurrently<Main, List<PreMain...>, List<PostMain..., Necessary<P>>>
-  NecessaryPull(P p) {
-    GPR_DEBUG_ASSERT(done_bits_ == 0);
-    return TryConcurrently<Main, List<PreMain...>,
-                           List<PostMain..., Necessary<P>>>(
-        std::move(main_), std::move(pre_main_),
-        std::tuple_cat(std::move(post_main_),
-                       std::make_tuple(Necessary<P>{std::move(p)})));
-  }
-
+  auto NecessaryPull(P p);
   template <typename P>
-  TryConcurrently<Main, List<PreMain..., Helper<P>>, List<PostMain...>> Push(
-      P p) {
-    GPR_DEBUG_ASSERT(done_bits_ == 0);
-    return TryConcurrently<Main, List<PreMain..., Helper<P>>,
-                           List<PostMain...>>(
-        std::move(main_),
-        std::tuple_cat(std::move(pre_main_),
-                       std::make_tuple(Helper<P>{std::move(p)})),
-        std::move(post_main_));
-  }
-
+  auto Push(P p);
   template <typename P>
-  TryConcurrently<Main, List<PreMain...>, List<PostMain..., Helper<P>>> Pull(
-      P p) {
-    GPR_DEBUG_ASSERT(done_bits_ == 0);
-    return TryConcurrently<Main, List<PreMain...>,
-                           List<PostMain..., Helper<P>>>(
-        std::move(main_), std::move(pre_main_),
-        std::tuple_cat(std::move(post_main_),
-                       std::make_tuple(Helper<P>{std::move(p)})));
-  }
+  auto Pull(P p);
 
  private:
   uint8_t done_bits_;
-  std::tuple<PreMain...> pre_main_;
+  PreMain pre_main_;
   union {
-    Main main_;
+    PromiseLike<Main> main_;
     Result result_;
   };
-  std::tuple<PostMain...> post_main_;
+  PostMain post_main_;
 };
+
+template <typename Main, typename PreMain, typename PostMain>
+auto MakeTryConcurrently(Main&& main, PreMain&& pre_main,
+                         PostMain&& post_main) {
+  return TryConcurrently<Main, PreMain, PostMain>(
+      std::forward<Main>(main), std::forward<PreMain>(pre_main),
+      std::forward<PostMain>(post_main));
+}
+
+template <typename Main, typename PreMain, typename PostMain>
+template <typename P>
+auto TryConcurrently<Main, PreMain, PostMain>::NecessaryPush(P p) {
+  GPR_DEBUG_ASSERT(done_bits_ == 0);
+  return MakeTryConcurrently(std::move(main_),
+                             pre_main_.With(Necessary<P>{std::move(p)}),
+                             std::move(post_main_));
+}
+
+template <typename Main, typename PreMain, typename PostMain>
+template <typename P>
+auto TryConcurrently<Main, PreMain, PostMain>::NecessaryPull(P p) {
+  GPR_DEBUG_ASSERT(done_bits_ == 0);
+  return MakeTryConcurrently(std::move(main_), std::move(pre_main_),
+                             post_main_.With(Necessary<P>{std::move(p)}));
+}
+
+template <typename Main, typename PreMain, typename PostMain>
+template <typename P>
+auto TryConcurrently<Main, PreMain, PostMain>::Push(P p) {
+  GPR_DEBUG_ASSERT(done_bits_ == 0);
+  return MakeTryConcurrently(std::move(main_),
+                             pre_main_.With(Helper<P>{std::move(p)}),
+                             std::move(post_main_));
+}
+
+template <typename Main, typename PreMain, typename PostMain>
+template <typename P>
+auto TryConcurrently<Main, PreMain, PostMain>::Pull(P p) {
+  GPR_DEBUG_ASSERT(done_bits_ == 0);
+  return MakeTryConcurrently(std::move(main_), std::move(pre_main_),
+                             post_main_.With(Helper<P>{std::move(p)}));
+}
 
 }  // namespace promise_detail
 
 template <typename Main>
 auto TryConcurrently(Main main) {
-  return promise_detail::TryConcurrently<promise_detail::PromiseLike<Main>,
-                                         promise_detail::List<>,
-                                         promise_detail::List<>>(
-      std::move(main), std::make_tuple(), std::make_tuple());
+  return promise_detail::MakeTryConcurrently(std::move(main),
+                                             promise_detail::FusedSet<>(),
+                                             promise_detail::FusedSet<>());
 }
 
 }  // namespace grpc_core
