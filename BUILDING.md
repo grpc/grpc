@@ -117,7 +117,7 @@ $ bazel test --config=dbg //test/...
 
 ## Building with CMake
 
-### Linux/Unix, Using Make
+### Linux/Unix, Using `make`
 
 Run from the grpc directory after cloning the repo with --recursive or updating submodules.
 ```
@@ -129,13 +129,18 @@ $ make
 
 If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
 
-### Windows, Using Visual Studio 2015 or 2017
+
+### Windows, Using CMake
 
 When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for
 every target defined in `CMakeLists.txt` (+ a few extra convenience projects
 added automatically by cmake). After opening the solution with Visual Studio
 you will be able to browse and build the code.
+
+> **Note**
+> A Visual C++ compiler is needed when building using CMake directly, which you specify as a [cmake-generator](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#manual:cmake-generators(7)) option.
+
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
@@ -143,8 +148,9 @@ you will be able to browse and build the code.
 > cmake .. -G "Visual Studio 14 2015"
 > cmake --build . --config Release
 ```
+> **Note** Wikipedia details the [mapping between Visual Studio version number and product name](https://en.wikipedia.org/wiki/Microsoft_Visual_Studio) in the 'History' section.
 
-Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
+
 
 ### Windows, Using Ninja (faster build).
 
@@ -160,16 +166,20 @@ installed to be able to compile the C/C++ sources.
 > cmake --build .
 ```
 
-Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+### Windows Build Notes 
 
-### Windows: A note on building shared libs (DLLs)
+**Building shared libs (DLLs)**
 
-Windows DLL build is supported at a "best effort" basis and we don't recommend using gRPC C++ as a DLL as there are some known drawbacks around how C++ DLLs work on Windows. For example, there is no stable C++ ABI and you can't safely allocate memory in one DLL, and free it in another etc.
+Windows DLL build is supported on a "best effort" basis and we don't recommend using gRPC C++ as a DLL as there are some known drawbacks around how C++ DLLs work on Windows. For example, there is no stable C++ ABI and you can't safely allocate memory in one DLL, and free it in another etc.
 
 That said, we don't actively prohibit building DLLs on windows (it can be enabled in cmake with `-DBUILD_SHARED_LIBS=ON`), and are free to use the DLL builds
 at your own risk.
 - you've been warned that there are some important drawbacks and some things might not work at all or will be broken in interesting ways.
 - we don't have extensive testing for DLL builds in place (to avoid maintenance costs, increased test duration etc.) so regressions / build breakages might occur
+
+> **Warning**
+> Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
+
 
 ### Dependency management
 
