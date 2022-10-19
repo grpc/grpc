@@ -85,11 +85,11 @@ class TimerManager final {
   grpc_core::CondVar cv_wait_;
   Host host_;
   // are we shutting down?
-  std::atomic_bool shutdown_{false};
+  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   // are we shutting down?
-  std::atomic_bool kicked_{false};
+  bool kicked_ ABSL_GUARDED_BY(mu_) = false;
   // number of timer wakeups
-  std::atomic<uint64_t> wakeups_{0};
+  uint64_t wakeups_ ABSL_GUARDED_BY(mu_) = false;
   // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
   std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool_;

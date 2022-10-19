@@ -51,14 +51,14 @@ void TimerManager::RunSomeTimers(
 // returns true if the thread should continue executing (false if it should
 // shutdown)
 bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
-  if (shutdown_.load(std::memory_order_relaxed)) return false;
+  grpc_core::MutexLock lock(&mu_);
+  if (shutdown_) return false;
   // If kicked_ is true at this point, it means there was a kick from the timer
   // system that the timer-manager threads here missed. We cannot trust 'next'
   // here any longer (since there might be an earlier deadline). So if kicked_
   // is true at this point, we should quickly exit this and get the next
   // deadline from the timer system
-  if (!kicked_.load(std::memory_order_relaxed)) {
-    grpc_core::MutexLock lock(&mu_);
+  if (!kicked_) {
     cv_wait_.WaitWithTimeout(&mu_,
                              absl::Milliseconds((next - host_.Now()).millis()));
     ++wakeups_;
@@ -99,12 +99,14 @@ grpc_core::Timestamp TimerManager::Host::Now() {
 
 void TimerManager::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                              experimental::EventEngine::Closure* closure) {
-  if (grpc_event_engine_timer_trace.enabled() &&
-      shutdown_.load(std::memory_order_relaxed)) {
-    gpr_log(GPR_ERROR,
-            "TimerManager::%p: scheduling Closure::%p after TimerManager has "
-            "been shut down.",
-            this, closure);
+  if (grpc_event_engine_timer_trace.enabled()) {
+    grpc_core::MutexLock lock(&mu_);
+    if (shutdown_) {
+      gpr_log(GPR_ERROR,
+              "WARNING: TimerManager::%p: scheduling Closure::%p after "
+              "TimerManager has been shut down.",
+              this, closure);
+    }
   }
   timer_list_->TimerInit(timer, deadline, closure);
 }
@@ -135,8 +137,8 @@ TimerManager::~TimerManager() { Shutdown(); }
 void TimerManager::Host::Kick() { timer_manager_->Kick(); }
 
 void TimerManager::Kick() {
-  kicked_ = true;
   grpc_core::MutexLock lock(&mu_);
+  kicked_ = true;
   cv_wait_.Signal();
 }
 
