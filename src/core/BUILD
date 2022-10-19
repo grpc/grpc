@@ -163,7 +163,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "construct_destruct",
-        "//:gpr_public_hdrs",
+        "//:gpr_platform",
     ],
 )
 
@@ -176,7 +176,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_atm",
-        "//:gpr_public_hdrs",
+        "//:gpr_platform",
     ],
 )
 
@@ -247,12 +247,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_rpc_status_upb",
         "percent_encoding",
-        "protobuf_any_upb",
         "slice",
         "//:debug_location",
+        "//:google_rpc_status_upb",
         "//:gpr",
+        "//:protobuf_any_upb",
     ],
 )
 
@@ -322,7 +322,7 @@ grpc_cc_library(
     deps = [
         "sorted_pack",
         "table",
-        "//:gpr_public_hdrs",
+        "//:gpr_platform",
     ],
 )
 
@@ -1007,8 +1007,8 @@ grpc_cc_library(
         "ref_counted",
         "thread_quota",
         "useful",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
@@ -1022,8 +1022,8 @@ grpc_cc_library(
         "//:include/grpc/slice.h",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1045,8 +1045,8 @@ grpc_cc_library(
     ],
     deps = [
         "slice_refcount",
+        "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1655,7 +1655,6 @@ grpc_cc_library(
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
@@ -1803,8 +1802,8 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1861,8 +1860,8 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "useful",
+        "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1934,7 +1933,6 @@ grpc_cc_library(
     deps = [
         "per_cpu",
         "//:gpr",
-        "//:gpr_public_hdrs",
     ],
 )
 
@@ -2077,8 +2075,8 @@ grpc_cc_library(
         "time",
         "useful",
         "//:debug_location",
+        "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
@@ -2114,9 +2112,9 @@ grpc_cc_library(
         "ref_counted",
         "subchannel_interface",
         "//:debug_location",
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr_platform",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -2168,8 +2166,8 @@ grpc_cc_library(
     deps = [
         "iomgr_fwd",
         "ref_counted",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
@@ -2226,7 +2224,6 @@ grpc_cc_library(
         "useful",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
@@ -2280,8 +2277,8 @@ grpc_cc_library(
         "error",
         "json",
         "ref_counted",
+        "//:alts_util",
         "//:gpr",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
@@ -2297,7 +2294,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "certificate_provider_factory",
-        "//:gpr_public_hdrs",
+        "//:gpr",
     ],
 )
 
@@ -2333,7 +2330,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_credentials_util",
-        "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:promise",
@@ -2369,7 +2365,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:handshaker",
         "//:promise",
@@ -2420,9 +2415,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
-        "//:grpc_trace",
         "//:tsi_base",
     ],
 )
@@ -2491,7 +2486,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:handshaker",
@@ -2755,7 +2749,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:handshaker",
         "//:promise",
@@ -2793,7 +2786,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_type_expr_upb",
+        "//:google_type_expr_upb",
         "//:gpr_platform",
     ],
 )
@@ -2869,9 +2862,9 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_config_rbac_upb",
-        "google_type_expr_upb",
         "grpc_authorization_base",
         "grpc_mock_cel",
+        "//:google_type_expr_upb",
         "//:gpr",
     ],
 )
@@ -3004,7 +2997,6 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:promise",
@@ -3071,7 +3063,6 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
     ],
 )
 
@@ -3222,7 +3213,6 @@ grpc_cc_library(
         "channel_stack_type",
         "default_event_engine",
         "gpr_atm",
-        "grpc_lb_upb",
         "grpc_sockaddr",
         "json",
         "json_args",
@@ -3231,8 +3221,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "protobuf_duration_upb",
-        "protobuf_timestamp_upb",
         "ref_counted",
         "resolved_address",
         "slice",
@@ -3249,6 +3237,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_grpclb_balancer_addresses",
+        "//:grpc_lb_upb",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:grpc_resolver_fake",
@@ -3256,6 +3245,8 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:iomgr_timer",
         "//:orphanable",
+        "//:protobuf_duration_upb",
+        "//:protobuf_timestamp_upb",
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
@@ -3300,7 +3291,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "rls_upb",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -3321,6 +3311,7 @@ grpc_cc_library(
         "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:rls_upb",
         "//:server_address",
         "//:uri_parser",
         "//:work_serializer",
@@ -3523,7 +3514,6 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
@@ -3609,8 +3599,8 @@ grpc_cc_library(
         "json",
         "json_util",
         "time",
+        "//:alts_util",
         "//:gpr_platform",
-        "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
 )
@@ -3646,7 +3636,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:orphanable",
@@ -3716,7 +3705,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:grpc_resolver_fake",
         "//:grpc_trace",
@@ -3762,7 +3750,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -3804,7 +3791,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -3840,7 +3826,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -3887,7 +3872,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
         "//:server_address",
     ],
@@ -3917,7 +3901,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -3961,7 +3944,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -3994,7 +3976,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -4050,7 +4031,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:iomgr_timer",
         "//:orphanable",
@@ -4093,7 +4073,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:iomgr_timer",
         "//:orphanable",
@@ -4136,7 +4115,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -4258,7 +4236,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:grpc_trace",
         "//:orphanable",
@@ -4314,7 +4291,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_grpclb_balancer_addresses",
-        "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
@@ -4460,7 +4436,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:grpc_security_base",
         "//:httpcli",
@@ -4652,7 +4627,6 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:grpc_transport_chttp2",

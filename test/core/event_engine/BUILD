@@ -44,9 +44,9 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_unsecure",
         "//src/core:forkable",
     ],
 )
@@ -90,7 +90,6 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc",
         "//src/core:default_event_engine",
         "//test/core/util:grpc_test_util",
     ],
@@ -103,7 +102,6 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -116,7 +114,6 @@ grpc_cc_test(
         "aborting_event_engine",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc",
         "//src/core:default_event_engine",
         "//test/core/util:grpc_test_util_unsecure",
     ],

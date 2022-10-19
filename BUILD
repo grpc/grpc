@@ -1615,8 +1615,8 @@ grpc_cc_library(
         "//src/core:tsi/transport_security_interface.h",
     ],
     language = "c++",
-    visibility = ["@grpc:tsi_interface"],
     tags = ["nofixdeps"],
+    visibility = ["@grpc:tsi_interface"],
     deps = [
         "gpr",
         "grpc_trace",
@@ -1647,7 +1647,7 @@ grpc_cc_library(
     deps = [
         "alts_upb",
         "gpr",
-        "grpc_trace",
+        "grpc_public_hdrs",
     ],
 )
 

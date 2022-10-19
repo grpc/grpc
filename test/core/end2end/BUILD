@@ -102,7 +102,6 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
     ],
 )
@@ -129,9 +128,10 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:exec_ctx",
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -193,7 +193,6 @@ grpc_cc_test(
     deps = [
         "local_util",
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
         "//src/core:grpc_transport_inproc",
         "//test/core/util:grpc_test_util",
@@ -208,7 +207,6 @@ grpc_cc_test(
         "cq_verifier",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc",
         "//:grpc_public_hdrs",
         "//test/core/util:grpc_test_util",
     ],
@@ -219,8 +217,8 @@ grpc_cc_test(
     srcs = ["multiple_server_queues_test.cc"],
     language = "C++",
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -233,7 +231,6 @@ grpc_cc_test(
         "cq_verifier",
         "//:exec_ctx",
         "//:gpr",
-        "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
