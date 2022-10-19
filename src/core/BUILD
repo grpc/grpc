@@ -2852,42 +2852,6 @@ grpc_cc_library(
 
 # This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
-    name = "grpc_authorization_provider",
-    srcs = [
-        "lib/security/authorization/grpc_authorization_policy_provider.cc",
-        "lib/security/authorization/rbac_translator.cc",
-    ],
-    hdrs = [
-        "lib/security/authorization/grpc_authorization_policy_provider.h",
-        "lib/security/authorization/rbac_translator.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_authorization_base",
-        "grpc_matchers",
-        "grpc_rbac_engine",
-        "json",
-        "slice",
-        "slice_refcount",
-        "status_helper",
-        "useful",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_public_hdrs",
-        "//:grpc_trace",
-        "//:ref_counted_ptr",
-    ],
-)
-
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
-grpc_cc_library(
     name = "grpc_cel_engine",
     srcs = [
         "lib/security/authorization/cel_authorization_engine.cc",

@@ -809,6 +809,43 @@ grpc_cc_library(
 
 # This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
+    name = "grpc_authorization_provider",
+    srcs = [
+        "//src/core:lib/security/authorization/grpc_authorization_policy_provider.cc",
+        "//src/core:lib/security/authorization/rbac_translator.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/security/authorization/grpc_authorization_policy_provider.h",
+        "//src/core:lib/security/authorization/rbac_translator.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    public_hdrs = GRPC_PUBLIC_HDRS,
+    deps = [
+        "gpr",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "grpc_trace",
+        "ref_counted_ptr",
+        "//src/core:grpc_authorization_base",
+        "//src/core:grpc_matchers",
+        "//src/core:grpc_rbac_engine",
+        "//src/core:json",
+        "//src/core:slice",
+        "//src/core:slice_refcount",
+        "//src/core:status_helper",
+        "//src/core:useful",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
     name = "grpc++_authorization_provider",
     srcs = [
         "src/cpp/server/authorization_policy_provider.cc",
@@ -3420,6 +3457,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "google_rpc_status_upbdefs",
     deps = ["@com_google_googleapis//google/rpc:status_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "google_type_expr_upb",
+    deps = ["@com_google_googleapis//google/type:expr_proto"],
 )
 
 grpc_upb_proto_library(
