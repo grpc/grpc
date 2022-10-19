@@ -21,6 +21,12 @@ EXPERIMENTS = {
         "core_end2end_tests": [
             "new_hpack_huffman_decoder",
         ],
+        "endpoint_test": [
+            "tcp_read_chunks",
+        ],
+        "flow_control_test": [
+            "tcp_read_chunks",
+        ],
         "hpack_test": [
             "new_hpack_huffman_decoder",
         ],
@@ -32,7 +38,6 @@ EXPERIMENTS = {
         "endpoint_test": [
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
-            "tcp_read_chunks",
         ],
         "event_engine_client_test": [
             "event_engine_client",
@@ -42,7 +47,6 @@ EXPERIMENTS = {
             "peer_state_based_framing",
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
-            "tcp_read_chunks",
         ],
         "lame_client_test": [
             "promise_based_client_call",
