@@ -115,8 +115,9 @@ class CSharpDistribTest(object):
                 self.name,
                 'tools/dockerfile/distribtest/csharp_%s_%s' %
                 (self.docker_suffix, self.arch),
-                'tools/run_tests/artifacts/run_distribtest_csharp.sh',
-                copy_rel_path='tools/run_tests/artifacts')
+                'test/distrib/csharp/run_distrib_test%s.sh' %
+                self.script_suffix,
+                copy_rel_path='test/distrib')
         elif self.platform == 'macos':
             return create_jobspec(
                 self.name,
