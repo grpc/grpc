@@ -62,13 +62,10 @@ py_binary(
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
         ":hash_name_py_pb2",
         ":search",
-    ] + select({
-        "//conditions:default": ["@futures//:futures"],
-        "//:python3": [],
-    }),
+        "//src/python/grpcio/grpc:grpcio",
+    ],
 )
 
 py_test(

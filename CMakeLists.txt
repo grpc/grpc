@@ -8543,6 +8543,7 @@ target_include_directories(context_test
 target_link_libraries(context_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
 )
 
 
