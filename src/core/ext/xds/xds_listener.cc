@@ -877,8 +877,9 @@ void AddFilterChainDataForSourceType(
   GPR_ASSERT(static_cast<unsigned int>(
                  filter_chain.filter_chain_match.source_type) < 3);
   AddFilterChainDataForSourceIpRange(
-      filter_chain, &destination_ip->source_types_array[static_cast<int>(
-                        filter_chain.filter_chain_match.source_type)],
+      filter_chain,
+      &destination_ip->source_types_array[static_cast<int>(
+          filter_chain.filter_chain_match.source_type)],
       errors);
 }
 
@@ -939,8 +940,8 @@ void AddFilterChainDataForDestinationIpRange(
   if (filter_chain.filter_chain_match.prefix_ranges.empty()) {
     auto insert_result = destination_ip_map->emplace(
         "", InternalFilterChainMap::DestinationIp());
-    AddFilterChainDataForServerNames(
-        filter_chain, &insert_result.first->second, errors);
+    AddFilterChainDataForServerNames(filter_chain, &insert_result.first->second,
+                                     errors);
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.prefix_ranges) {
