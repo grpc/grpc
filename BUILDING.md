@@ -150,7 +150,23 @@ you will be able to browse and build the code.
 ```
 > **Note** Wikipedia details the [mapping between Visual Studio version number and product name](https://en.wikipedia.org/wiki/Microsoft_Visual_Studio) in the 'History' section.
 
+### Windows, Using Visual Studio
 
+Technically, we'll use CMake here to generate Visual C++ projects as above but will perform the actual build using Visual Studio directly. The steps involved are detailed in the [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. This is subsequently used in the install step below. 
+
+```
+> @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
+> md .build
+> cd .build
+> cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR  ../..
+```
+
+1. Ensure you have defined the `$MY_INSTALL_DIR` environment variable as outlined above and created the target location is references (See [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/)). 
+2. Start Visual Studio and open the `grpc.sln` solution file, ensuring your Visual Studio instance 'inherits' the `$MY_INSTALL_DIR` environment variable. If you've only declared the `$MY_INSTALL_DIR` environment variable in a shell (e.g. Git Bash/CMD-prompt) then you'll need to ensure you start Visual Studio from this shell in order to inherit the environment variable. Otherwise, you'll need to set it using the Control Panel and restart Visual Studio.
+3. Select a 'Release' build and build the `grpc` solution. Once complete, check the build output to confirm a clean build with no errors. 
+4. To install, build the `INSTALL` project. This will copy all the binaries, header files, etc. to the location specified by `$MY_INSTALL_DIR` (and is why it's important for your Visual Studio instance to inherit it).
+
+> **Note** There are both Debug and Release builds and their respective installs differ slightly (e.g. debug/release verions of libs). If you want a 'complete' install that includes both Debug and Release artifacts, then you'll need to perform two builds to separate install target-locations and then merge the differences. 
 
 ### Windows, Using Ninja (faster build).
 
