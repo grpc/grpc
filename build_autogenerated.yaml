@@ -5350,7 +5350,8 @@ targets:
   - src/core/lib/promise/context.h
   src:
   - test/core/promise/context_test.cc
-  deps: []
+  deps:
+  - gpr
   uses_polling: false
 - name: core_configuration_test
   gtest: true
