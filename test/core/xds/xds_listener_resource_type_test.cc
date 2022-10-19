@@ -52,15 +52,14 @@
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "src/proto/grpc/testing/xds/v3/protocol.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::listener::v3::Listener;
-using envoy::extensions::filters::http::rbac::v3::RBAC;
 using envoy::extensions::filters::http::fault::v3::HTTPFault;
+using envoy::extensions::filters::http::rbac::v3::RBAC;
 using envoy::extensions::filters::http::router::v3::Router;
 using envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
@@ -317,14 +316,11 @@ TEST_P(HttpConnectionManagerTest, NeitherRouteConfigNorRdsName) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager] "
-            "error:neither route_config nor rds fields are present]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager] "
+                   "error:neither route_config nor rds fields are present]"))
       << decode_result.resource.status();
 }
 
@@ -346,14 +342,11 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceNotAdsOrSelf) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].rds.config_source "
-            "error:ConfigSource does not specify ADS or SELF]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].rds.config_source "
+                   "error:ConfigSource does not specify ADS or SELF]"))
       << decode_result.resource.status();
 }
 
@@ -374,14 +367,11 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceNotSet) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].rds.config_source "
-            "error:field not present]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].rds.config_source "
+                   "error:field not present]"))
       << decode_result.resource.status();
 }
 
@@ -409,7 +399,8 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
   auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
   auto http_connection_manager = GetHCMConfig(resource);
   ASSERT_TRUE(http_connection_manager.has_value());
-  auto* rds_name = absl::get_if<std::string>(&http_connection_manager->route_config);
+  auto* rds_name =
+      absl::get_if<std::string>(&http_connection_manager->route_config);
   ASSERT_NE(rds_name, nullptr);
   EXPECT_EQ(*rds_name, "rds_name");
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
@@ -443,15 +434,12 @@ TEST_P(HttpConnectionManagerTest, InvalidMaxStreamDuration) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].common_http_protocol_options"
-            ".max_stream_duration.seconds "
-            "error:value must be in the range [0, 315576000000]]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].common_http_protocol_options"
+                   ".max_stream_duration.seconds "
+                   "error:value must be in the range [0, 315576000000]]"))
       << decode_result.resource.status();
 }
 
@@ -475,19 +463,16 @@ TEST_P(HttpConnectionManagerTest, UnsupportedFieldsSet) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].original_ip_detection_extensions "
-            "error:must be empty; field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].xff_num_trusted_hops "
-            "error:must be zero]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].original_ip_detection_extensions "
+                   "error:must be empty; field:",
+                   FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].xff_num_trusted_hops "
+                   "error:must be zero]"))
       << decode_result.resource.status();
 }
 
@@ -508,14 +493,11 @@ TEST_P(HttpConnectionManagerTest, EmptyHttpFilterName) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters[0].name "
-            "error:empty filter name]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters[0].name "
+                   "error:empty filter name]"))
       << decode_result.resource.status();
 }
 
@@ -538,14 +520,11 @@ TEST_P(HttpConnectionManagerTest, DuplicateHttpFilterName) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters[1].name "
-            "error:duplicate HTTP filter name: router]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters[1].name "
+                   "error:duplicate HTTP filter name: router]"))
       << decode_result.resource.status();
 }
 
@@ -566,14 +545,11 @@ TEST_P(HttpConnectionManagerTest, HttpFilterMissingConfig) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters[0].typed_config "
-            "error:field not present]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters[0].typed_config "
+                   "error:field not present]"))
       << decode_result.resource.status();
 }
 
@@ -626,15 +602,12 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupported) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters[0].typed_config.value["
-            "envoy.config.listener.v3.Listener] "
-            "error:unsupported filter type]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters[0].typed_config.value["
+                   "envoy.config.listener.v3.Listener] "
+                   "error:unsupported filter type]"))
       << decode_result.resource.status();
 }
 
@@ -685,14 +658,11 @@ TEST_P(HttpConnectionManagerTest, NoHttpFilters) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters "
-            "error:expected at least one HTTP filter]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters "
+                   "error:expected at least one HTTP filter]"))
       << decode_result.resource.status();
 }
 
@@ -725,20 +695,17 @@ TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-            ErrorPrefix(),
-            "[field:",
-            FieldPrefix(),
-            ".value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters errors:["
-            "terminal filter for config type "
-            "envoy.extensions.filters.http.router.v3.Router must be the "
-            "last filter in the chain; "
-            "non-terminal filter for config type ",
-            (GetParam()
-                ? "envoy.extensions.filters.http.rbac.v3.RBAC"
-                : "envoy.extensions.filters.http.fault.v3.HTTPFault"),
-            " is the last filter in the chain]]"))
+          ErrorPrefix(), "[field:", FieldPrefix(),
+          ".value["
+          "envoy.extensions.filters.network.http_connection_manager.v3"
+          ".HttpConnectionManager].http_filters errors:["
+          "terminal filter for config type "
+          "envoy.extensions.filters.http.router.v3.Router must be the "
+          "last filter in the chain; "
+          "non-terminal filter for config type ",
+          (GetParam() ? "envoy.extensions.filters.http.rbac.v3.RBAC"
+                      : "envoy.extensions.filters.http.fault.v3.HTTPFault"),
+          " is the last filter in the chain]]"))
       << decode_result.resource.status();
 }
 
