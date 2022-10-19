@@ -323,6 +323,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(false);
+  // Only send the prefered rx frame size http2 setting if we are instructed
+  // to auto size the buffers allocated at tcp level and we also can adjust
+  // sending frame size.
+  t->enable_preferred_rx_frame_advertisement = false;
 
   if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -376,6 +380,12 @@ static void read_channel_args(grpc_chttp2_transport* t,
                        -1,
                        5,
                        INT32_MAX,
+                       {true, true}},
+                      {GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_FRAME_SIZE,
+                       GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE,
+                       -1,
+                       16384,
+                       16777215,
                        {true, true}}};
 
   for (size_t i = 0; i < GPR_ARRAY_SIZE(settings_map); i++) {
@@ -384,8 +394,18 @@ static void read_channel_args(grpc_chttp2_transport* t,
       const int value = channel_args.GetInt(setting.channel_arg_name)
                             .value_or(setting.default_value);
       if (value >= 0) {
-        queue_setting_update(t, setting.setting_id,
-                             grpc_core::Clamp(value, setting.min, setting.max));
+        if (setting.setting_id !=
+            GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE) {
+          queue_setting_update(
+              t, setting.setting_id,
+              grpc_core::Clamp(value, setting.min, setting.max));
+        } else if (grpc_core::IsPeerStateBasedFramingEnabled() &&
+                   grpc_core::IsTcpFrameSizeTuningEnabled()) {
+          t->enable_preferred_rx_frame_advertisement = true;
+          queue_setting_update(
+              t, setting.setting_id,
+              grpc_core::Clamp(value, setting.min, setting.max));
+        }
       }
     } else if (channel_args.Contains(setting.channel_arg_name)) {
       gpr_log(GPR_DEBUG, "%s is not available on %s",
@@ -865,15 +885,17 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   void* cl = t->cl;
   t->cl = nullptr;
   // If the peer_state_based_framing experiment is set to true,
-  // choose max_frame_size as 2 * max http2 frame size of peer. If peer is under
-  // high memory pressure, then it would advertise a smaller max http2 frame
-  // size. With this logic, the sender would automatically reduce the sending
-  // frame size as well.
+  // choose max_frame_size as the prefered rx frame size indicated by the peer.
   int max_frame_size =
       grpc_core::IsPeerStateBasedFramingEnabled()
-          ? 2 * t->settings[GRPC_PEER_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
+          ? t->settings[GRPC_PEER_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE]
           : INT_MAX;
+  // Note: max frame size is 0 if the remote peer does not support adjusting the
+  // sending frame size.
+  if (max_frame_size == 0) {
+    max_frame_size = INT_MAX;
+  }
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
@@ -2298,6 +2320,14 @@ void grpc_chttp2_act_on_flowctl_action(
                 queue_setting_update(t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
                                      action.max_frame_size());
               });
+  if (t->enable_preferred_rx_frame_advertisement) {
+    WithUrgency(t, action.preferred_rx_frame_size_update(),
+                GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
+                  queue_setting_update(
+                      t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE,
+                      action.preferred_rx_frame_size());
+                });
+  }
 }
 
 static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
@@ -2415,8 +2445,21 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
   const bool urgent = !t->goaway_error.ok();
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
+  // Set min progress size on the read path iff we are able to advertise
+  // prefered rx frame sizes to the peer and the peer has also indicated that it
+  // can adjust sending frame sizes. (The peer would have informed us of this
+  // cabability by sending prefered rx frame sizes to us). Otherwise set
+  // min_progress_size it to -1. The endpoints should ignore the
+  // min_progress_size value if set to -1.
+  int min_progress_size =
+      t->enable_preferred_rx_frame_advertisement &&
+              t->settings
+                  [GRPC_PEER_SETTINGS]
+                  [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE]
+          ? grpc_chttp2_min_read_progress_size(t)
+          : -1;
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
-                     grpc_chttp2_min_read_progress_size(t));
+                     min_progress_size);
 }
 
 // t is reffed prior to calling the first time, and once the callback chain

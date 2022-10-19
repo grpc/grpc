@@ -282,7 +282,11 @@ static void on_read(void* user_data, grpc_error_handle error) {
           ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
           &min_progress_size);
       min_progress_size = std::max(1, min_progress_size);
-      ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
+      // Only update ep->min_progress_size if tcp buffer auto sizing is not
+      // disabled for this read.
+      if (ep->min_progress_size > 0) {
+        ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
+      }
     } else {
       // Use frame protector to unprotect.
       /* TODO(yangg) check error, maybe bail out early */
@@ -352,11 +356,24 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                           grpc_closure* cb, bool urgent,
-                          int /*min_progress_size*/) {
+                          int min_progress_size) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
   grpc_slice_buffer_reset_and_unref(ep->read_buffer);
+
+  // The value of min_progress_size here is passed directly from transport.
+  // Interpret a negative value as an intent to disable tcp receive buffer auto
+  // sizing.
+  if (min_progress_size < 0) {
+    // Set ep->min_progress_size to a negative value to disable tcp receive
+    // buffer auto sizing.
+    ep->min_progress_size = min_progress_size;
+  } else if (min_progress_size > 0 && ep->min_progress_size < 0) {
+    // If tcp receive buffer auto sizing had been disabled before, enable it
+    // now.
+    ep->min_progress_size = 1;
+  }
 
   SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
@@ -367,7 +384,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   }
 
   grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent,
-                     /*min_progress_size=*/ep->min_progress_size);
+                     /*min_progress_size=*/std::max(ep->min_progress_size, 1));
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,

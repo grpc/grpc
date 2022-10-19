@@ -460,6 +460,9 @@ struct grpc_chttp2_transport
    * thereby reducing the number of induced frames. */
   uint32_t num_pending_induced_frames = 0;
   bool reading_paused_on_pending_induced_frames = false;
+  /** Based on channel args, preferred_rx_frame_sizes are advertised to the peer
+   */
+  bool enable_preferred_rx_frame_advertisement = false;
 };
 
 typedef enum {

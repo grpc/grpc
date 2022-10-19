@@ -1153,7 +1153,7 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
   tcp->min_progress_size =
-      tcp->frame_size_tuning_enabled ? min_progress_size : 1;
+      tcp->frame_size_tuning_enabled ? std::max(min_progress_size, 1) : 1;
   grpc_slice_buffer_reset_and_unref(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");

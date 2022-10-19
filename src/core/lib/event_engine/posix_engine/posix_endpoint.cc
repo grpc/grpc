@@ -585,7 +585,7 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_->Swap(last_read_buffer_);
   read_mu_.Unlock();
   if (args != nullptr && frame_size_tuning_enabled_) {
-    min_progress_size_ = args->read_hint_bytes;
+    min_progress_size_ = std::max(args->read_hint_bytes, 1l);
   } else {
     min_progress_size_ = 1;
   }
