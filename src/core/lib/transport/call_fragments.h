@@ -205,10 +205,10 @@ FragmentHandle<T>::FragmentHandle(const absl::Status& status) {
   // need to do the hacky thing promise_based_filter does.
   // This all goes away when promise_based_filter goes away, and this code will
   // just assume there's an allocator present and move forward.
-  if (auto* allocator = GetContext<FragmentAllocator>()) {
+  if (HasContext<FragmentAllocator>()) {
     handle_ = nullptr;
     allocated_by_allocator_ = false;
-    *this = allocator->MakeServerMetadata();
+    *this = GetContext<FragmentAllocator>()->MakeServerMetadata();
   } else {
     handle_ = GetContext<Arena>()->New<T>(GetContext<Arena>());
     allocated_by_allocator_ = false;
