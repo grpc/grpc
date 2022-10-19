@@ -143,11 +143,14 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "//:include/grpc/support/atm.h",
+        "//:include/grpc/impl/codegen/atm.h",
+        "//:include/grpc/impl/codegen/atm_gcc_atomic.h",
+        "//:include/grpc/impl/codegen/atm_gcc_sync.h",
+        "//:include/grpc/impl/codegen/atm_windows.h",
     ],
     deps = [
         "useful",
         "//:gpr_platform",
-        "//:gpr_public_hdrs",
     ],
 )
 
