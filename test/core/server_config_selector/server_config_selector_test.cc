@@ -30,8 +30,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using grpc_core::ServerConfigSelector;
-using grpc_core::ServerConfigSelectorProvider;
+using ::grpc_core::ServerConfigSelector;
+using ::grpc_core::ServerConfigSelectorProvider;
 
 class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
   absl::StatusOr<grpc_core::RefCountedPtr<ServerConfigSelector>> Watch(

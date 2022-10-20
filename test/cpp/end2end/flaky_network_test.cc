@@ -51,8 +51,8 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 #ifdef GPR_LINUX
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {

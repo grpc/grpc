@@ -1320,7 +1320,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::WaitForReady>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
-  using grpc_metadata_batch_base::grpc_metadata_batch_base;
+  using ::grpc_metadata_batch_base::grpc_metadata_batch_base;
 };
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

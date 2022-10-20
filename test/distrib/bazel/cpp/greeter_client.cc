@@ -24,9 +24,9 @@
 
 #include "protos/helloworld.grpc.pb.h"
 
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
+using ::grpc::Channel;
+using ::grpc::ClientContext;
+using ::grpc::Status;
 using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;

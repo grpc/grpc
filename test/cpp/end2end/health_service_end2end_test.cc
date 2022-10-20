@@ -42,9 +42,9 @@
 #include "test/cpp/end2end/test_health_check_service_impl.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-using grpc::health::v1::Health;
-using grpc::health::v1::HealthCheckRequest;
-using grpc::health::v1::HealthCheckResponse;
+using ::grpc::health::v1::Health;
+using ::grpc::health::v1::HealthCheckRequest;
+using ::grpc::health::v1::HealthCheckResponse;
 
 namespace grpc {
 namespace testing {

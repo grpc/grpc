@@ -33,9 +33,9 @@
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
-using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::GetDefaultEventEngine;
-using grpc_event_engine::experimental::MockEventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::MockEventEngine;
 using testing::_;
 using testing::DoAll;
 using testing::Matcher;

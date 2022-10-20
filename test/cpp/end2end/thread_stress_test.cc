@@ -40,8 +40,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 #if defined(__APPLE__)
 // Use less # of threads on Mac because its test machines are less powerful

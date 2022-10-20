@@ -62,7 +62,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-using grpc_core::Json;
+using ::grpc_core::Json;
 
 //
 // Auth Refresh Token.

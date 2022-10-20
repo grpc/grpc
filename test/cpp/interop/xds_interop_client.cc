@@ -66,27 +66,27 @@ ABSL_FLAG(
     bool, secure_mode, false,
     "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
 
-using grpc::Channel;
-using grpc::ClientAsyncResponseReader;
-using grpc::ClientContext;
-using grpc::CompletionQueue;
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::Status;
-using grpc::testing::ClientConfigureRequest;
-using grpc::testing::ClientConfigureRequest_RpcType_Name;
-using grpc::testing::ClientConfigureResponse;
-using grpc::testing::Empty;
-using grpc::testing::LoadBalancerAccumulatedStatsRequest;
-using grpc::testing::LoadBalancerAccumulatedStatsResponse;
-using grpc::testing::LoadBalancerStatsRequest;
-using grpc::testing::LoadBalancerStatsResponse;
-using grpc::testing::LoadBalancerStatsService;
-using grpc::testing::SimpleRequest;
-using grpc::testing::SimpleResponse;
-using grpc::testing::TestService;
-using grpc::testing::XdsUpdateClientConfigureService;
+using ::grpc::Channel;
+using ::grpc::ClientAsyncResponseReader;
+using ::grpc::ClientContext;
+using ::grpc::CompletionQueue;
+using ::grpc::Server;
+using ::grpc::ServerBuilder;
+using ::grpc::ServerContext;
+using ::grpc::Status;
+using ::grpc::testing::ClientConfigureRequest;
+using ::grpc::testing::ClientConfigureRequest_RpcType_Name;
+using ::grpc::testing::ClientConfigureResponse;
+using ::grpc::testing::Empty;
+using ::grpc::testing::LoadBalancerAccumulatedStatsRequest;
+using ::grpc::testing::LoadBalancerAccumulatedStatsResponse;
+using ::grpc::testing::LoadBalancerStatsRequest;
+using ::grpc::testing::LoadBalancerStatsResponse;
+using ::grpc::testing::LoadBalancerStatsService;
+using ::grpc::testing::SimpleRequest;
+using ::grpc::testing::SimpleResponse;
+using ::grpc::testing::TestService;
+using ::grpc::testing::XdsUpdateClientConfigureService;
 
 class XdsStatsWatcher;
 

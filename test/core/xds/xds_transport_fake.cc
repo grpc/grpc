@@ -34,7 +34,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
-using grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 namespace grpc_core {
 

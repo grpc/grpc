@@ -34,8 +34,7 @@ def save(fpath, contents):
         f.write(contents)
 
 
-class QualificationValidator(object):
-
+class UnnecessaryQualificationValidator(object):
     def __init__(self):
         self.fully_qualified_re = re.compile(r'([ (<])::(grpc[A-Za-z_:])')
         self.using_re = re.compile(
@@ -59,6 +58,36 @@ class QualificationValidator(object):
                 fcontents[i] = self.fully_qualified_re.sub(r'\1\2', line)
             else:
                 print("Found in %s:%d - %s" % (fpath, i, line.strip()))
+                failed = True
+        if fix:
+            save(fpath, ''.join(fcontents))
+        return not failed
+
+
+class UsingStatementFullQualificationValidator(object):
+    def __init__(self):
+        self.fully_qualified_re = re.compile(r'[ (<]::grpc[A-Za-z_:]')
+        self.ignore_using_statement_re = re.compile(r'using namespace|using typename|using.*=')
+        # self.using_re = re.compile(r'(.*using )([^:].*)\s*;\s*$')
+        self.using_re = re.compile(r'(.*using )((grpc|google).*)\s*;\s*$')
+
+    def check(self, fpath, fix):
+        fcontents = load(fpath)
+        failed = False
+        for (i, line) in enumerate(fcontents):
+            if self.fully_qualified_re.search(line):
+                continue
+            if self.ignore_using_statement_re.search(line):
+                continue
+            # only check `using` statements
+            if not self.using_re.search(line):
+                continue
+            # not-fully-qualified namespace found
+            if fix:
+                fcontents[i] = self.using_re.sub(r'\1::\2;\n', line)
+            else:
+                print("Found missing full-qualification in %s:%d - %s" %
+                      (fpath, i, line.strip()))
                 failed = True
         if fix:
             save(fpath, ''.join(fcontents))
@@ -108,7 +137,8 @@ try:
 except subprocess.CalledProcessError:
     sys.exit(0)
 
-validator = QualificationValidator()
+unnecessary_qualification_validator = UnnecessaryQualificationValidator()
+using_statement_full_qualification_validator = UsingStatementFullQualificationValidator()
 
 for filename in filename_list:
     # Skip check for upb generated code and ignored files.
@@ -116,6 +146,8 @@ for filename in filename_list:
             filename.endswith('.upbdefs.h') or
             filename.endswith('.upbdefs.c') or filename in IGNORED_FILES):
         continue
-    ok = validator.check(filename, args.fix) and ok
+    ok = unnecessary_qualification_validator.check(filename, args.fix) and ok
+    ok = using_statement_full_qualification_validator.check(
+        filename, args.fix) and ok
 
 sys.exit(0 if ok else 1)

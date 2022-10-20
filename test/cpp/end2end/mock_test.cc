@@ -42,11 +42,11 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::testing::DefaultReactorTestPeer;
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::EchoTestService;
-using grpc::testing::MockClientReaderWriter;
+using ::grpc::testing::DefaultReactorTestPeer;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
+using ::grpc::testing::EchoTestService;
+using ::grpc::testing::MockClientReaderWriter;
 using std::vector;
 using ::testing::_;
 using ::testing::AtLeast;

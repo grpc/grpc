@@ -30,9 +30,9 @@
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "test/core/util/fuzzer_util.h"
 
-using grpc_core::testing::grpc_fuzzer_get_next_byte;
-using grpc_core::testing::grpc_fuzzer_get_next_string;
-using grpc_core::testing::input_stream;
+using ::grpc_core::testing::grpc_fuzzer_get_next_byte;
+using ::grpc_core::testing::grpc_fuzzer_get_next_string;
+using ::grpc_core::testing::input_stream;
 
 // Logging
 bool squelch = true;

@@ -24,8 +24,8 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 TEST(MockStreamTest, Basic) {
   auto cr = std::make_unique<grpc::testing::MockClientReader<EchoResponse>>();

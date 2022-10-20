@@ -38,10 +38,10 @@
 #include "src/compiler/python_generator_helpers.h"
 #include "src/compiler/python_private_generator.h"
 
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::compiler::GeneratorContext;
-using grpc::protobuf::io::CodedOutputStream;
-using grpc::protobuf::io::ZeroCopyOutputStream;
+using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::compiler::GeneratorContext;
+using ::grpc::protobuf::io::CodedOutputStream;
+using ::grpc::protobuf::io::ZeroCopyOutputStream;
 using std::make_pair;
 using std::map;
 using std::pair;

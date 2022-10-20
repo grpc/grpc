@@ -32,8 +32,8 @@
 
 ABSL_FLAG(std::string, address, "", "Address to bind to");
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {

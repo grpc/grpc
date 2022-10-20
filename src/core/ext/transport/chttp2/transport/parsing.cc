@@ -57,7 +57,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-using grpc_core::HPackParser;
+using ::grpc_core::HPackParser;
 
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,

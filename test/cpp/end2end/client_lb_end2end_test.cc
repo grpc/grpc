@@ -76,8 +76,8 @@
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {

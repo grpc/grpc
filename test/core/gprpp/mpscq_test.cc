@@ -32,7 +32,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
-using grpc_core::MultiProducerSingleConsumerQueue;
+using ::grpc_core::MultiProducerSingleConsumerQueue;
 
 typedef struct test_node {
   MultiProducerSingleConsumerQueue::Node node;

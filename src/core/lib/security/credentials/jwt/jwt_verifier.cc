@@ -68,7 +68,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/ssl_types.h"
 
-using grpc_core::Json;
+using ::grpc_core::Json;
 
 /* --- Utils. --- */
 

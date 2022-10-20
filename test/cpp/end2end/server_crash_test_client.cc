@@ -34,8 +34,8 @@
 ABSL_FLAG(std::string, address, "", "Address to connect to");
 ABSL_FLAG(std::string, mode, "", "Test mode to use");
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);

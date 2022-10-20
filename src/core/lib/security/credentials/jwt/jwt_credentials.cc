@@ -46,7 +46,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-using grpc_core::Json;
+using ::grpc_core::Json;
 
 grpc_service_account_jwt_access_credentials::
     ~grpc_service_account_jwt_access_credentials() {

@@ -70,8 +70,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer.h"
 
-using grpc_core::ServerAddress;
-using grpc_core::ServerAddressList;
+using ::grpc_core::ServerAddress;
+using ::grpc_core::ServerAddressList;
 
 grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
                                                       "cares_address_sorting");

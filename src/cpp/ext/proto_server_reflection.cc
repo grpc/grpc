@@ -26,15 +26,15 @@
 
 // IWYU pragma: no_include <google/protobuf/descriptor.h>
 
-using grpc::Status;
-using grpc::StatusCode;
-using grpc::reflection::v1alpha::ErrorResponse;
-using grpc::reflection::v1alpha::ExtensionNumberResponse;
-using grpc::reflection::v1alpha::ExtensionRequest;
-using grpc::reflection::v1alpha::ListServiceResponse;
-using grpc::reflection::v1alpha::ServerReflectionRequest;
-using grpc::reflection::v1alpha::ServerReflectionResponse;
-using grpc::reflection::v1alpha::ServiceResponse;
+using ::grpc::Status;
+using ::grpc::StatusCode;
+using ::grpc::reflection::v1alpha::ErrorResponse;
+using ::grpc::reflection::v1alpha::ExtensionNumberResponse;
+using ::grpc::reflection::v1alpha::ExtensionRequest;
+using ::grpc::reflection::v1alpha::ListServiceResponse;
+using ::grpc::reflection::v1alpha::ServerReflectionRequest;
+using ::grpc::reflection::v1alpha::ServerReflectionResponse;
+using ::grpc::reflection::v1alpha::ServiceResponse;
 
 namespace grpc {
 

@@ -82,9 +82,9 @@
 
 using std::chrono::system_clock;
 
-using grpc::lb::v1::LoadBalancer;
-using grpc::lb::v1::LoadBalanceRequest;
-using grpc::lb::v1::LoadBalanceResponse;
+using ::grpc::lb::v1::LoadBalancer;
+using ::grpc::lb::v1::LoadBalanceRequest;
+using ::grpc::lb::v1::LoadBalanceResponse;
 
 namespace grpc {
 namespace testing {

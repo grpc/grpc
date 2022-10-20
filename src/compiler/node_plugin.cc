@@ -24,8 +24,8 @@
 #include "src/compiler/node_generator.h"
 #include "src/compiler/node_generator_helpers.h"
 
-using grpc_node_generator::GenerateFile;
-using grpc_node_generator::GetJSServiceFilename;
+using ::grpc_node_generator::GenerateFile;
+using ::grpc_node_generator::GetJSServiceFilename;
 
 class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:

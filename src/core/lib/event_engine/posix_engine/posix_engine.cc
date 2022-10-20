@@ -46,7 +46,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-using grpc_event_engine::posix_engine::PosixEventPoller;
+using ::grpc_event_engine::posix_engine::PosixEventPoller;
 
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<ThreadPool> executor)

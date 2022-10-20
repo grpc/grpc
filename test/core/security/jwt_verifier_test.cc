@@ -33,7 +33,7 @@
 #include "src/core/lib/slice/b64.h"
 #include "test/core/util/test_config.h"
 
-using grpc_core::Json;
+using ::grpc_core::Json;
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.

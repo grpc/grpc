@@ -26,13 +26,13 @@
 #include "src/compiler/config.h"
 #include "src/compiler/csharp_generator_helpers.h"
 
-using grpc::protobuf::Descriptor;
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::MethodDescriptor;
-using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::io::Printer;
-using grpc::protobuf::io::StringOutputStream;
-using grpc_generator::StringReplace;
+using ::grpc::protobuf::Descriptor;
+using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::MethodDescriptor;
+using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::protobuf::io::Printer;
+using ::grpc::protobuf::io::StringOutputStream;
+using ::grpc_generator::StringReplace;
 using std::vector;
 
 namespace grpc_csharp_generator {

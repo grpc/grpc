@@ -463,8 +463,8 @@ class TcpZerocopySendCtx {
 
 }  // namespace grpc_core
 
-using grpc_core::TcpZerocopySendCtx;
-using grpc_core::TcpZerocopySendRecord;
+using ::grpc_core::TcpZerocopySendCtx;
+using ::grpc_core::TcpZerocopySendRecord;
 
 namespace {
 

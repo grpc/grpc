@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 
-using grpc_core::WithSortedPack;
+using ::grpc_core::WithSortedPack;
 
 template <int I>
 struct Int {

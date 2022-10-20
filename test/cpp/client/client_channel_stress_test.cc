@@ -53,9 +53,9 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-using grpc::lb::v1::LoadBalancer;
-using grpc::lb::v1::LoadBalanceRequest;
-using grpc::lb::v1::LoadBalanceResponse;
+using ::grpc::lb::v1::LoadBalancer;
+using ::grpc::lb::v1::LoadBalanceRequest;
+using ::grpc::lb::v1::LoadBalanceResponse;
 
 namespace grpc {
 namespace testing {

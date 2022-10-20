@@ -48,13 +48,13 @@ namespace grpc_core {
 class BasicMemoryQuota;
 class MemoryQuota;
 
-using grpc_event_engine::experimental::MemoryRequest;
+using ::grpc_event_engine::experimental::MemoryRequest;
 
 // Pull in impl under a different name to keep the gRPC/EventEngine separation
 // clear.
 using EventEngineMemoryAllocatorImpl =
     grpc_event_engine::experimental::internal::MemoryAllocatorImpl;
-using grpc_event_engine::experimental::MemoryAllocator;
+using ::grpc_event_engine::experimental::MemoryAllocator;
 template <typename T>
 using Vector = grpc_event_engine::experimental::Vector<T>;
 

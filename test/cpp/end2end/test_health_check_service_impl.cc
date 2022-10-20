@@ -20,8 +20,8 @@
 
 #include <grpc/grpc.h>
 
-using grpc::health::v1::HealthCheckRequest;
-using grpc::health::v1::HealthCheckResponse;
+using ::grpc::health::v1::HealthCheckRequest;
+using ::grpc::health::v1::HealthCheckResponse;
 
 namespace grpc {
 namespace testing {

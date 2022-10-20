@@ -50,8 +50,8 @@
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 #define USAGE_REGEX "(  grpc_cli .+\n){2,10}"
 

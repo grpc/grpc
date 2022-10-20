@@ -33,8 +33,8 @@
 namespace grpc {
 namespace {
 
-using grpc::lb::v1::LoadBalanceRequest;
-using grpc::lb::v1::LoadBalanceResponse;
+using ::grpc::lb::v1::LoadBalanceRequest;
+using ::grpc::lb::v1::LoadBalanceResponse;
 
 class GrpclbTest : public ::testing::Test {
  protected:

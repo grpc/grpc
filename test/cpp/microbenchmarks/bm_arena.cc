@@ -26,7 +26,7 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc_core::Arena;
+using ::grpc_core::Arena;
 
 static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
     grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(

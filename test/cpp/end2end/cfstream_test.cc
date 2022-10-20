@@ -47,10 +47,10 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 #ifdef GRPC_CFSTREAM
-using grpc::ClientAsyncResponseReader;
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::RequestParams;
+using ::grpc::ClientAsyncResponseReader;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
+using ::grpc::testing::RequestParams;
 using std::chrono::system_clock;
 
 namespace grpc {

@@ -36,8 +36,8 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {

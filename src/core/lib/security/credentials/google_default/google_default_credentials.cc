@@ -72,7 +72,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-using grpc_core::Json;
+using ::grpc_core::Json;
 
 /* -- Constants. -- */
 

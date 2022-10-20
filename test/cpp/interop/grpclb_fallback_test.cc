@@ -71,10 +71,10 @@ ABSL_FLAG(std::string, test_case, "",
 #endif
 
 #ifdef SOCKET_SUPPORTS_TCP_USER_TIMEOUT
-using grpc::testing::GrpclbRouteType;
-using grpc::testing::SimpleRequest;
-using grpc::testing::SimpleResponse;
-using grpc::testing::TestService;
+using ::grpc::testing::GrpclbRouteType;
+using ::grpc::testing::SimpleRequest;
+using ::grpc::testing::SimpleResponse;
+using ::grpc::testing::TestService;
 
 namespace {
 

@@ -41,18 +41,18 @@ ABSL_FLAG(std::string, server_host, "localhost", "Server host to connect to");
 ABSL_FLAG(int32_t, max_reconnect_backoff_ms, 0,
           "Maximum backoff time, or 0 for default.");
 
-using grpc::CallCredentials;
-using grpc::Channel;
-using grpc::ChannelArguments;
-using grpc::ClientContext;
-using grpc::CreateTestChannel;
-using grpc::Status;
-using grpc::testing::Empty;
-using grpc::testing::INSECURE;
-using grpc::testing::ReconnectInfo;
-using grpc::testing::ReconnectParams;
-using grpc::testing::ReconnectService;
-using grpc::testing::TLS;
+using ::grpc::CallCredentials;
+using ::grpc::Channel;
+using ::grpc::ChannelArguments;
+using ::grpc::ClientContext;
+using ::grpc::CreateTestChannel;
+using ::grpc::Status;
+using ::grpc::testing::Empty;
+using ::grpc::testing::INSECURE;
+using ::grpc::testing::ReconnectInfo;
+using ::grpc::testing::ReconnectParams;
+using ::grpc::testing::ReconnectService;
+using ::grpc::testing::TLS;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);

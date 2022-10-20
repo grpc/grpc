@@ -44,7 +44,7 @@
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
-using grpc_core::Json;
+using ::grpc_core::Json;
 
 /* --- Constants. --- */
 

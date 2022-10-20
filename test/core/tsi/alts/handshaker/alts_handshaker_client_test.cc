@@ -46,16 +46,16 @@ const size_t kMaxRpcVersionMinor = 2;
 const size_t kMinRpcVersionMajor = 2;
 const size_t kMinRpcVersionMinor = 1;
 
-using grpc_core::internal::alts_handshaker_client_get_closure_for_testing;
+using ::grpc_core::internal::alts_handshaker_client_get_closure_for_testing;
 using grpc_core::internal::
     alts_handshaker_client_get_initial_metadata_for_testing;
 using grpc_core::internal::
     alts_handshaker_client_get_recv_buffer_addr_for_testing;
-using grpc_core::internal::alts_handshaker_client_get_send_buffer_for_testing;
+using ::grpc_core::internal::alts_handshaker_client_get_send_buffer_for_testing;
 using grpc_core::internal::
     alts_handshaker_client_on_status_received_for_testing;
-using grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
-using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
+using ::grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
+using ::grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
 
 typedef struct alts_handshaker_client_test_config {
   grpc_channel* channel;

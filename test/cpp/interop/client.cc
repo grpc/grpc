@@ -124,9 +124,9 @@ ABSL_FLAG(
     "If set to 'true', will print received initial and trailing metadata, "
     "grpc-status and error message to the console, in a stable format.");
 
-using grpc::testing::CreateChannelForTestCase;
-using grpc::testing::GetServiceAccountJsonKey;
-using grpc::testing::UpdateActions;
+using ::grpc::testing::CreateChannelForTestCase;
+using ::grpc::testing::GetServiceAccountJsonKey;
+using ::grpc::testing::UpdateActions;
 
 namespace {
 

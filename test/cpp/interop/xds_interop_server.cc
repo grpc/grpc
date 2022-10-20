@@ -52,17 +52,17 @@ ABSL_FLAG(bool, secure_mode, false,
           "If true, XdsServerCredentials are used, InsecureServerCredentials "
           "otherwise");
 
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::Status;
-using grpc::XdsServerBuilder;
-using grpc::testing::Empty;
-using grpc::testing::HealthCheckServiceImpl;
-using grpc::testing::SimpleRequest;
-using grpc::testing::SimpleResponse;
-using grpc::testing::TestService;
-using grpc::testing::XdsUpdateHealthService;
+using ::grpc::Server;
+using ::grpc::ServerBuilder;
+using ::grpc::ServerContext;
+using ::grpc::Status;
+using ::grpc::XdsServerBuilder;
+using ::grpc::testing::Empty;
+using ::grpc::testing::HealthCheckServiceImpl;
+using ::grpc::testing::SimpleRequest;
+using ::grpc::testing::SimpleResponse;
+using ::grpc::testing::TestService;
+using ::grpc::testing::XdsUpdateHealthService;
 
 class TestServiceImpl : public TestService::Service {
  public:

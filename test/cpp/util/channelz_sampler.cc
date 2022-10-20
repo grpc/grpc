@@ -60,19 +60,19 @@ ABSL_FLAG(int64_t, sampling_interval_seconds, 0,
 ABSL_FLAG(std::string, output_json, "", "output filename in json format");
 
 namespace {
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::StatusCode;
-using grpc::channelz::v1::GetChannelRequest;
-using grpc::channelz::v1::GetChannelResponse;
-using grpc::channelz::v1::GetServersRequest;
-using grpc::channelz::v1::GetServersResponse;
-using grpc::channelz::v1::GetSocketRequest;
-using grpc::channelz::v1::GetSocketResponse;
-using grpc::channelz::v1::GetSubchannelRequest;
-using grpc::channelz::v1::GetSubchannelResponse;
-using grpc::channelz::v1::GetTopChannelsRequest;
-using grpc::channelz::v1::GetTopChannelsResponse;
+using ::grpc::ClientContext;
+using ::grpc::Status;
+using ::grpc::StatusCode;
+using ::grpc::channelz::v1::GetChannelRequest;
+using ::grpc::channelz::v1::GetChannelResponse;
+using ::grpc::channelz::v1::GetServersRequest;
+using ::grpc::channelz::v1::GetServersResponse;
+using ::grpc::channelz::v1::GetSocketRequest;
+using ::grpc::channelz::v1::GetSocketResponse;
+using ::grpc::channelz::v1::GetSubchannelRequest;
+using ::grpc::channelz::v1::GetSubchannelResponse;
+using ::grpc::channelz::v1::GetTopChannelsRequest;
+using ::grpc::channelz::v1::GetTopChannelsResponse;
 }  // namespace
 
 class ChannelzSampler final {

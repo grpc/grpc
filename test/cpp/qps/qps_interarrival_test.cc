@@ -25,8 +25,8 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc::testing::InterarrivalTimer;
-using grpc::testing::RandomDistInterface;
+using ::grpc::testing::InterarrivalTimer;
+using ::grpc::testing::RandomDistInterface;
 
 static void RunTest(RandomDistInterface&& r, int threads,
                     const std::string& title) {
@@ -49,7 +49,7 @@ static void RunTest(RandomDistInterface&& r, int threads,
   grpc_histogram_destroy(h);
 }
 
-using grpc::testing::ExpDist;
+using ::grpc::testing::ExpDist;
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

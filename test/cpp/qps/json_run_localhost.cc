@@ -34,7 +34,7 @@
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
 
-using grpc::SubProcess;
+using ::grpc::SubProcess;
 
 constexpr auto kNumWorkers = 2;
 

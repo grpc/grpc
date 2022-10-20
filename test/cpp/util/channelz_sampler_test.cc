@@ -53,11 +53,11 @@
 static std::string g_root;
 
 namespace {
-using grpc::ClientContext;
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::Status;
+using ::grpc::ClientContext;
+using ::grpc::Server;
+using ::grpc::ServerBuilder;
+using ::grpc::ServerContext;
+using ::grpc::Status;
 }  // namespace
 
 // Test variables

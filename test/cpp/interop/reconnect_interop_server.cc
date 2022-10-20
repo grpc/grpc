@@ -44,14 +44,14 @@ ABSL_FLAG(int32_t, retry_port, 0,
           "Server port for raw tcp connections. All incoming "
           "connections will be closed immediately.");
 
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::Status;
-using grpc::testing::Empty;
-using grpc::testing::ReconnectInfo;
-using grpc::testing::ReconnectParams;
-using grpc::testing::ReconnectService;
+using ::grpc::Server;
+using ::grpc::ServerBuilder;
+using ::grpc::ServerContext;
+using ::grpc::Status;
+using ::grpc::testing::Empty;
+using ::grpc::testing::ReconnectInfo;
+using ::grpc::testing::ReconnectParams;
+using ::grpc::testing::ReconnectService;
 
 static bool got_sigint = false;
 

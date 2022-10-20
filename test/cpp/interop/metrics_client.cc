@@ -39,9 +39,9 @@ ABSL_FLAG(int32_t, deadline_secs, kDeadlineSecs,
 ABSL_FLAG(bool, total_only, false,
           "If true, this prints only the total value of all gauges");
 
-using grpc::testing::EmptyMessage;
-using grpc::testing::GaugeResponse;
-using grpc::testing::MetricsService;
+using ::grpc::testing::EmptyMessage;
+using ::grpc::testing::GaugeResponse;
+using ::grpc::testing::MetricsService;
 
 // Do not log anything
 void BlackholeLogger(gpr_log_func_args* /*args*/) {}

@@ -27,11 +27,11 @@
 #include "src/compiler/ruby_generator_map-inl.h"
 #include "src/compiler/ruby_generator_string-inl.h"
 
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::MethodDescriptor;
-using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::io::Printer;
-using grpc::protobuf::io::StringOutputStream;
+using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::MethodDescriptor;
+using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::protobuf::io::Printer;
+using ::grpc::protobuf::io::StringOutputStream;
 using std::map;
 using std::vector;
 

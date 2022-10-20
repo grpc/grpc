@@ -20,7 +20,7 @@
 
 #include "absl/memory/memory.h"
 
-using grpc::ServerBuilder;
+using ::grpc::ServerBuilder;
 
 namespace grpc {
 namespace testing {

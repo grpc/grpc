@@ -47,21 +47,21 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-using grpc::channelz::v1::Address;
-using grpc::channelz::v1::GetChannelRequest;
-using grpc::channelz::v1::GetChannelResponse;
-using grpc::channelz::v1::GetServerRequest;
-using grpc::channelz::v1::GetServerResponse;
-using grpc::channelz::v1::GetServerSocketsRequest;
-using grpc::channelz::v1::GetServerSocketsResponse;
-using grpc::channelz::v1::GetServersRequest;
-using grpc::channelz::v1::GetServersResponse;
-using grpc::channelz::v1::GetSocketRequest;
-using grpc::channelz::v1::GetSocketResponse;
-using grpc::channelz::v1::GetSubchannelRequest;
-using grpc::channelz::v1::GetSubchannelResponse;
-using grpc::channelz::v1::GetTopChannelsRequest;
-using grpc::channelz::v1::GetTopChannelsResponse;
+using ::grpc::channelz::v1::Address;
+using ::grpc::channelz::v1::GetChannelRequest;
+using ::grpc::channelz::v1::GetChannelResponse;
+using ::grpc::channelz::v1::GetServerRequest;
+using ::grpc::channelz::v1::GetServerResponse;
+using ::grpc::channelz::v1::GetServerSocketsRequest;
+using ::grpc::channelz::v1::GetServerSocketsResponse;
+using ::grpc::channelz::v1::GetServersRequest;
+using ::grpc::channelz::v1::GetServersResponse;
+using ::grpc::channelz::v1::GetSocketRequest;
+using ::grpc::channelz::v1::GetSocketResponse;
+using ::grpc::channelz::v1::GetSubchannelRequest;
+using ::grpc::channelz::v1::GetSubchannelResponse;
+using ::grpc::channelz::v1::GetTopChannelsRequest;
+using ::grpc::channelz::v1::GetTopChannelsResponse;
 
 namespace grpc {
 namespace testing {

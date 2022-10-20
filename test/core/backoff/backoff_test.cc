@@ -32,7 +32,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using grpc_core::BackOff;
+using ::grpc_core::BackOff;
 
 TEST(BackOffTest, ConstantBackOff) {
   const auto initial_backoff = grpc_core::Duration::Milliseconds(200);

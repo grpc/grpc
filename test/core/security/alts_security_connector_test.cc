@@ -33,7 +33,7 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
 
-using grpc_core::internal::grpc_alts_auth_context_from_tsi_peer;
+using ::grpc_core::internal::grpc_alts_auth_context_from_tsi_peer;
 
 /* This file contains unit tests of grpc_alts_auth_context_from_tsi_peer(). */
 TEST(AltsSecurityConnectorTest, InvalidInputFailure) {
