@@ -693,6 +693,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cpp_impl_of",
+    hdrs = ["//src/core:lib/gprpp/cpp_impl_of.h"],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],
@@ -722,7 +728,7 @@ grpc_cc_library(
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_message_size_filter",
         "//src/core:grpc_resolver_binder",
-        "//src/core:grpc_resolver_dns_ares",
+        "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
         "//src/core:grpc_resolver_dns_native",
         "//src/core:grpc_resolver_sockaddr",
@@ -858,8 +864,34 @@ grpc_cc_library(
         "gpr",
         "grpc++",
         "grpc++_public_hdrs",
+        "grpc_authorization_provider",
         "grpc_public_hdrs",
-        "//:grpc_authorization_provider",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_cel_engine",
+    srcs = [
+        "//src/core:lib/security/authorization/cel_authorization_engine.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/security/authorization/cel_authorization_engine.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "envoy_config_rbac_upb",
+        "google_type_expr_upb",
+        "gpr",
+        "//src/core:grpc_authorization_base",
+        "//src/core:grpc_mock_cel",
     ],
 )
 
@@ -1339,6 +1371,7 @@ grpc_cc_library(
     deps = [
         "channel_stack_builder",
         "config",
+        "cpp_impl_of",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -1366,7 +1399,6 @@ grpc_cc_library(
         "//src/core:chunked_vector",
         "//src/core:closure",
         "//src/core:context",
-        "//src/core:cpp_impl_of",
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:error",
@@ -2674,6 +2706,64 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_ares",
+    srcs = [
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
+        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_set",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "address_sorting",
+        "cares",
+    ],
+    language = "c++",
+    deps = [
+        "backoff",
+        "config",
+        "debug_location",
+        "gpr",
+        "grpc_base",
+        "grpc_grpclb_balancer_addresses",
+        "grpc_resolver",
+        "grpc_service_config_impl",
+        "grpc_trace",
+        "iomgr_timer",
+        "orphanable",
+        "ref_counted_ptr",
+        "server_address",
+        "sockaddr_utils",
+        "uri_parser",
+        "//src/core:event_engine_common",
+        "//src/core:grpc_resolver_dns_selection",
+        "//src/core:grpc_service_config",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_fwd",
+        "//src/core:iomgr_port",
+        "//src/core:json",
+        "//src/core:polling_resolver",
+        "//src/core:pollset_set",
+        "//src/core:resolved_address",
+        "//src/core:slice",
+        "//src/core:status_helper",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
     name = "httpcli",
     srcs = [
         "//src/core:lib/http/format_request.cc",
@@ -2938,9 +3028,9 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "cpp_impl_of",
         "gpr",
         "grpc_public_hdrs",
-        "//src/core:cpp_impl_of",
         "//src/core:ref_counted",
         "//src/core:slice",
     ],

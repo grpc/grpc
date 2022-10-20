@@ -224,12 +224,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "cpp_impl_of",
-    hdrs = ["lib/gprpp/cpp_impl_of.h"],
-    language = "c++",
-)
-
-grpc_cc_library(
     name = "status_helper",
     srcs = [
         "lib/gprpp/status_helper.cc",
@@ -1002,11 +996,11 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
-        "cpp_impl_of",
         "memory_quota",
         "ref_counted",
         "thread_quota",
         "useful",
+        "//:cpp_impl_of",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:ref_counted_ptr",
@@ -2843,32 +2837,6 @@ grpc_cc_library(
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
-grpc_cc_library(
-    name = "grpc_cel_engine",
-    srcs = [
-        "lib/security/authorization/cel_authorization_engine.cc",
-    ],
-    hdrs = [
-        "lib/security/authorization/cel_authorization_engine.h",
-    ],
-    external_deps = [
-        "absl/container:flat_hash_set",
-        "absl/strings",
-        "absl/types:optional",
-        "absl/types:span",
-        "upb_lib",
-    ],
-    language = "c++",
-    deps = [
-        "envoy_config_rbac_upb",
-        "grpc_authorization_base",
-        "grpc_mock_cel",
-        "//:google_type_expr_upb",
-        "//:gpr",
-    ],
-)
-
 grpc_cc_library(
     name = "json",
     srcs = [
@@ -4245,64 +4213,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
-        "//:uri_parser",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_resolver_dns_ares",
-    srcs = [
-        "ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
-        "ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
-        "ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
-        "ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
-        "ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
-        "ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
-    ],
-    hdrs = [
-        "ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
-        "ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/container:flat_hash_set",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "address_sorting",
-        "cares",
-    ],
-    language = "c++",
-    deps = [
-        "event_engine_common",
-        "grpc_resolver_dns_selection",
-        "grpc_service_config",
-        "grpc_sockaddr",
-        "iomgr_fwd",
-        "iomgr_port",
-        "json",
-        "polling_resolver",
-        "pollset_set",
-        "resolved_address",
-        "slice",
-        "status_helper",
-        "time",
-        "//:backoff",
-        "//:config",
-        "//:debug_location",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_grpclb_balancer_addresses",
-        "//:grpc_resolver",
-        "//:grpc_service_config_impl",
-        "//:grpc_trace",
-        "//:iomgr_timer",
-        "//:orphanable",
-        "//:ref_counted_ptr",
-        "//:server_address",
-        "//:sockaddr_utils",
         "//:uri_parser",
     ],
 )

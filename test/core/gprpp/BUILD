@@ -297,7 +297,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:cpp_impl_of",
+        "//:cpp_impl_of",
     ],
 )
 

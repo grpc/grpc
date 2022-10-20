@@ -26,11 +26,13 @@ grpc_fuzzer(
     language = "C++",
     tags = [
         "no_windows",
+        # Without "nofixdeps", "//:grpc" gets substituted with "//:event_engine_base_hdrs"
+        "nofixdeps",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
+        "//:grpc",
         "//:uri_parser",
     ],
 )
