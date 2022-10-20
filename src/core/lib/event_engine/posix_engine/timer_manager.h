@@ -50,7 +50,7 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
  public:
   explicit TimerManager(
       std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool);
-  ~TimerManager();
+  ~TimerManager() override;
 
   grpc_core::Timestamp Now() { return host_.Now(); }
 
