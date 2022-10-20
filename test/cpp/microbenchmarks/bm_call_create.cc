@@ -501,7 +501,9 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   FakeClientChannelFactory fake_client_channel_factory;
 
   grpc_core::ChannelArgs channel_args =
-      grpc_core::ChannelArgs()
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(nullptr)
           .SetObject(&fake_client_channel_factory)
           .Set(GRPC_ARG_SERVER_URI, "localhost");
   if (fixture.flags & REQUIRES_TRANSPORT) {
