@@ -44,7 +44,7 @@ namespace posix_engine {
 // all times, and thus effectively preventing the thundering herd problem.
 // TODO(ctiller): consider unifying this thread pool and the one in
 // thread_pool.{h,cc}.
-class TimerManager final {
+class TimerManager final : public grpc_event_engine::experimental::Forkable {
  public:
   explicit TimerManager(
       std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool);
@@ -58,7 +58,12 @@ class TimerManager final {
 
   static bool IsTimerManagerThread();
 
+  // Called on destruction, prefork, and manually when needed.
   void Shutdown();
+
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
 
  private:
   class Host final : public TimerListHost {
@@ -73,6 +78,8 @@ class TimerManager final {
     TimerManager* const timer_manager_;
   };
 
+  void StartMainLoopThread();
+  void RestartPostFork();
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);
@@ -96,7 +103,7 @@ class TimerManager final {
   std::unique_ptr<TimerList> timer_list_;
   grpc_core::Thread main_thread_;
   std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool_;
-  grpc_core::Notification main_loop_exit_signal_;
+  absl::optional<grpc_core::Notification> main_loop_exit_signal_;
 };
 
 }  // namespace posix_engine

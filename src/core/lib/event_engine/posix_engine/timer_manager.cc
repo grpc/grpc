@@ -80,15 +80,12 @@ void TimerManager::MainLoop() {
     }
     if (!WaitUntil(next)) break;
   }
-  main_loop_exit_signal_.Notify();
+  main_loop_exit_signal_->Notify();
 }
 
 bool TimerManager::IsTimerManagerThread() { return g_timer_thread; }
 
-TimerManager::TimerManager(
-    std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool)
-    : host_(this), thread_pool_(std::move(thread_pool)) {
-  timer_list_ = std::make_unique<TimerList>(&host_);
+void TimerManager::StartMainLoopThread() {
   main_thread_ = grpc_core::Thread(
       "timer_manager",
       [](void* arg) {
@@ -98,6 +95,14 @@ TimerManager::TimerManager(
       this, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
   main_thread_.Start();
+}
+
+TimerManager::TimerManager(
+    std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool)
+    : host_(this), thread_pool_(std::move(thread_pool)) {
+  timer_list_ = std::make_unique<TimerList>(&host_);
+  main_loop_exit_signal_.emplace();
+  StartMainLoopThread();
 }
 
 grpc_core::Timestamp TimerManager::Host::Now() {
@@ -134,7 +139,7 @@ void TimerManager::Shutdown() {
     // Wait on the main loop to exit.
     cv_wait_.Signal();
   }
-  main_loop_exit_signal_.WaitForNotification();
+  main_loop_exit_signal_->WaitForNotification();
   if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
   }
@@ -149,6 +154,21 @@ void TimerManager::Kick() {
   kicked_ = true;
   cv_wait_.Signal();
 }
+
+void TimerManager::RestartPostFork() {
+  grpc_core::MutexLock lock(&mu_);
+  GPR_ASSERT(GPR_LIKELY(shutdown_));
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p restarting after shutdown", this);
+  }
+  shutdown_ = false;
+  main_loop_exit_signal_.emplace();
+  StartMainLoopThread();
+}
+
+void TimerManager::PrepareFork() { Shutdown(); }
+void TimerManager::PostforkParent() { RestartPostFork(); }
+void TimerManager::PostforkChild() { RestartPostFork(); }
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
