@@ -159,7 +159,8 @@ absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
             algorithm);
   }
   if (max_recv_message_length > 0 &&
-      message->payload()->Length() > max_recv_message_length) {
+      message->payload()->Length() >
+          static_cast<size_t>(max_recv_message_length)) {
     return absl::ResourceExhaustedError(
         absl::StrFormat("Received message larger than max (%u vs. %d)",
                         message->payload()->Length(), max_recv_message_length));

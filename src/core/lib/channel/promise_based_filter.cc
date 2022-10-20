@@ -391,8 +391,7 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
   }
 }
 
-void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
-                                     Flusher* flusher) {
+void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG, "%s SendMessage.Done st=%s md=%s",
             base_->LogTag().c_str(), StateString(state_),
@@ -618,12 +617,12 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
   base_->WakeInsideCombiner(&flusher);
 }
 
-void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
+void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
                                         Flusher* flusher) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG, "%s ReceiveMessage.Done st=%s md=%s",
             base_->LogTag().c_str(), StateString(state_),
-            md.DebugString().c_str());
+            metadata.DebugString().c_str());
   }
   switch (state_) {
     case State::kInitial:
@@ -636,12 +635,13 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
       break;
     case State::kPulledFromPipe:
     case State::kPushedToPipe: {
-      auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK);
+      auto status_code =
+          metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK);
       GPR_ASSERT(status_code != GRPC_STATUS_OK);
       push_.reset();
       next_.reset();
-      flusher->AddClosure(intercepted_on_complete_, StatusFromMetadata(md),
-                          "recv_message_done");
+      flusher->AddClosure(intercepted_on_complete_,
+                          StatusFromMetadata(metadata), "recv_message_done");
       state_ = State::kCancelled;
     } break;
     case State::kBatchCompleted:
@@ -877,7 +877,7 @@ class ClientCallData::PollContext {
         if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
           auto md = std::move(*r);
           if (self_->send_message() != nullptr) {
-            self_->send_message()->Done(*md, flusher_);
+            self_->send_message()->Done(*md);
           }
           if (self_->receive_message() != nullptr) {
             self_->receive_message()->Done(*md, flusher_);
@@ -1286,7 +1286,7 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
     }
   }
   if (send_message() != nullptr) {
-    send_message()->Done(*ServerMetadataFromStatus(error), flusher);
+    send_message()->Done(*ServerMetadataFromStatus(error));
   }
   if (receive_message() != nullptr) {
     receive_message()->Done(*ServerMetadataFromStatus(error), flusher);
@@ -1856,7 +1856,7 @@ void ServerCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
   }
   ScopedContext ctx(this);
   if (send_message() != nullptr) {
-    send_message()->Done(*ServerMetadataFromStatus(error), flusher);
+    send_message()->Done(*ServerMetadataFromStatus(error));
   }
   if (receive_message() != nullptr) {
     receive_message()->Done(*ServerMetadataFromStatus(error), flusher);
@@ -2074,7 +2074,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
       auto* md = UnwrapMetadata(std::move(*r));
       bool destroy_md = true;
       if (send_message() != nullptr) {
-        send_message()->Done(*md, flusher);
+        send_message()->Done(*md);
       }
       if (receive_message() != nullptr) {
         receive_message()->Done(*md, flusher);

@@ -268,7 +268,7 @@ class BaseCallData : public Activity, private Wakeable {
     void StartOp(CapturedBatch batch);
     void GotPipe(PipeReceiver<MessageHandle>* receiver);
     void WakeInsideCombiner(Flusher* flusher);
-    void Done(const ServerMetadata& metadata, Flusher* flusher);
+    void Done(const ServerMetadata& metadata);
     bool HaveCapturedBatch() const { return batch_.is_captured(); }
     bool IsIdle() const;
 

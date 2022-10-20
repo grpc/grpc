@@ -35,6 +35,8 @@ namespace internal {
 void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
   // Unlike other uses of closure, do not Ref or Unref here since the reactor
   // object's lifetime is controlled by user code.
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+      [this, s = std::move(s)] { OnDone(s); });
   grpc_core::ExecCtx exec_ctx;
   struct ClosureWithArg {
     grpc_closure closure;

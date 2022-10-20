@@ -125,11 +125,11 @@ class FusedSet<> {
   static constexpr uint8_t NecessaryBits() { return 0; }
 
   template <typename Result, int kDoneBit>
-  Poll<Result> Run(uint8_t done_bits) {
+  Poll<Result> Run(uint8_t) {
     return Pending{};
   }
   template <int kDoneBit>
-  void Destroy(uint8_t done_bits) {}
+  void Destroy(uint8_t) {}
 
   template <typename P>
   FusedSet<P> With(P x) {
