@@ -220,13 +220,9 @@ class XdsRouteConfigResourceType
   absl::string_view type_url() const override {
     return "envoy.config.route.v3.RouteConfiguration";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.RouteConfiguration";
-  }
 
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource,
-                      bool /*is_v2*/) const override;
+                      absl::string_view serialized_resource) const override;
 
   void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);

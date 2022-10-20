@@ -429,8 +429,9 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "empty address list: EDS resource eds_service_name contains empty "
-      "localities: \\[\\{region=\"xds_default_locality_region\", "
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name contains empty localities: "
+      "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.

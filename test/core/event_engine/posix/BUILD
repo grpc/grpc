@@ -31,8 +31,8 @@ grpc_cc_library(
     ],
     visibility = ["//test:__subpackages__"],
     deps = [
-        "//:event_engine_common",
         "//:posix_event_engine_event_poller",
+        "//src/core:event_engine_common",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -162,9 +162,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:event_engine_common",
         "//:posix_event_engine_tcp_socket_utils",
         "//:socket_mutator",
+        "//src/core:event_engine_common",
         "//test/core/util:grpc_test_util",
     ],
 )
