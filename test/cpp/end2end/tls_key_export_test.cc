@@ -25,12 +25,12 @@
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -163,6 +163,8 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
           GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
       server_creds_options.watch_identity_key_cert_pairs();
       server_creds_options.watch_root_certs();
+      server_creds_options.set_min_tls_version(grpc_tls_version::TLS1_2);
+      server_creds_options.set_max_tls_version(grpc_tls_version::TLS1_3);
 
       // Set a separate ssl key log file for each port if not shared
       if (GetParam().share_tls_key_log_file()) {
@@ -200,6 +202,8 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
           channel_certificate_provider);
       channel_creds_options.watch_identity_key_cert_pairs();
       channel_creds_options.watch_root_certs();
+      channel_creds_options.set_min_tls_version(grpc_tls_version::TLS1_2);
+      channel_creds_options.set_max_tls_version(grpc_tls_version::TLS1_3);
 
       // Set a separate ssl key log file for each port if not shared.
       if (GetParam().share_tls_key_log_file()) {

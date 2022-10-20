@@ -91,6 +91,18 @@ void TlsCredentialsOptions::set_check_call_host(bool check_call_host) {
   grpc_tls_credentials_options_set_check_call_host(options, check_call_host);
 }
 
+void TlsCredentialsOptions::set_min_tls_version(grpc_tls_version tls_version) {
+  grpc_tls_credentials_options* options = c_credentials_options();
+  GPR_ASSERT(options != nullptr);
+  grpc_tls_credentials_options_set_min_tls_version(options, tls_version);
+}
+
+void TlsCredentialsOptions::set_max_tls_version(grpc_tls_version tls_version) {
+  grpc_tls_credentials_options* options = c_credentials_options();
+  GPR_ASSERT(options != nullptr);
+  grpc_tls_credentials_options_set_max_tls_version(options, tls_version);
+}
+
 void TlsChannelCredentialsOptions::set_verify_server_certs(
     bool verify_server_certs) {
   grpc_tls_credentials_options* options = c_credentials_options();
