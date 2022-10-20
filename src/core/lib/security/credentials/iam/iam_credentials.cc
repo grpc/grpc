@@ -22,7 +22,6 @@
 
 #include <stdlib.h>
 
-#include <memory>
 #include <utility>
 
 #include "absl/strings/str_format.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>

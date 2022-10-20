@@ -116,23 +116,4 @@ void Arena::ManagedNewObject::Link(std::atomic<ManagedNewObject*>* head) {
   }
 }
 
-void* Arena::AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head) {
-  FreePoolNode* p = head->load(std::memory_order_acquire);
-  while (p != nullptr) {
-    if (head->compare_exchange_weak(p, p->next, std::memory_order_acq_rel,
-                                    std::memory_order_relaxed)) {
-      return p;
-    }
-  }
-  return Alloc(alloc_size);
-}
-
-void Arena::FreePooled(void* p, std::atomic<FreePoolNode*>* head) {
-  FreePoolNode* node = static_cast<FreePoolNode*>(p);
-  node->next = head->load(std::memory_order_acquire);
-  while (!head->compare_exchange_weak(
-      node->next, node, std::memory_order_acq_rel, std::memory_order_relaxed)) {
-  }
-}
-
 }  // namespace grpc_core
