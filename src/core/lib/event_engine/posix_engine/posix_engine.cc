@@ -17,6 +17,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -91,12 +92,12 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 }
 
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
-    : executor_(std::make_shared<ThreadPool>()) {
+    : executor_(std::make_shared<ThreadPool>()), timer_manager_(executor_) {
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 }
 
 PosixEventEngine::PosixEventEngine()
-    : executor_(std::make_shared<ThreadPool>()) {
+    : executor_(std::make_shared<ThreadPool>()), timer_manager_(executor_) {
   if (grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
     poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
     if (poller_manager_->Poller() != nullptr) {
@@ -174,6 +175,7 @@ PosixEventEngine::~PosixEventEngine() {
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
+  timer_manager_.Shutdown();
 #ifdef GRPC_POSIX_SOCKET_TCP
   if (poller_manager_ != nullptr) {
     poller_manager_->TriggerShutdown();
