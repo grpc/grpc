@@ -25,7 +25,6 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
