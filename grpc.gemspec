@@ -985,6 +985,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/internal_errqueue.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/lockfree_event.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/lockfree_event.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/poll_strategy_config.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/poll_strategy_config.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_closure.h )
