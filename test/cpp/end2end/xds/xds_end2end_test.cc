@@ -101,7 +101,6 @@
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/core/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -3013,21 +3012,6 @@ int main(int argc, char** argv) {
                     "fake2", grpc::testing::g_fake2_cert_data_map));
       });
   grpc_init();
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      std::make_unique<grpc_core::testing::NoOpHttpFilter>(
-          "grpc.testing.client_only_http_filter",
-          /*supported_on_clients=*/true, /*supported_on_servers=*/false,
-          /*is_terminal_filter=*/false));
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      std::make_unique<grpc_core::testing::NoOpHttpFilter>(
-          "grpc.testing.server_only_http_filter",
-          /*supported_on_clients=*/false, /*supported_on_servers=*/true,
-          /*is_terminal_filter=*/false));
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      std::make_unique<grpc_core::testing::NoOpHttpFilter>(
-          "grpc.testing.terminal_http_filter",
-          /*supported_on_clients=*/true, /*supported_on_servers=*/true,
-          /*is_terminal_filter=*/true));
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
