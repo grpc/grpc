@@ -9,21 +9,13 @@
     <TargetFrameworks Condition="'$(SKIP_NETCOREAPP21_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(SKIP_NETCOREAPP31_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp3.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(SKIP_NET50_DISTRIBTEST)' == ''">$(TargetFrameworks);net5.0</TargetFrameworks>
-
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-    <!--<PackageReference Include="Grpc" Version="__GRPC_NUGET_VERSION__" />-->
-    <!--<PackageReference Include="Grpc.Auth" Version="__GRPC_NUGET_VERSION__" />-->
     <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
-    <PackageReference Include="Google.Protobuf" Version="3.13.0" />
+    <!-- Grpc.Core.Api is not the package under test, it's included only so that gRPC generated service stubs can compile. -->
+    <PackageReference Include="Grpc.Core.Api" Version="2.49.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.21.8" />
   </ItemGroup>
   
   <ItemGroup>

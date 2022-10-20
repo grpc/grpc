@@ -28,37 +28,15 @@ namespace TestGrpcPackage
     {
         public static void Main(string[] args)
         {
-            // protobuf message
-            Console.WriteLine(new HelloRequest { Name = "Foo Bar" });
+            CheckGreeterProtobufCodegenWorks();
+            CheckDuplicateProtoFilesAreOk();
 
-            // grpc stub...
-            // TODO:
+            // TODO: check grpc stubs
+        }
 
-
-            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
-            // Server server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
-            // {
-            //     Services = { Greeter.BindService(new GreeterImpl()) },
-            //     Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
-            // };
-            // server.Start();
-
-            // Channel channel = new Channel("localhost", server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
-
-            // try
-            // {
-            //     var client = new Greeter.GreeterClient(channel);
-            //     String user = "you";
-
-            //     var reply = client.SayHello(new HelloRequest { Name = user });
-            //     Console.WriteLine("Greeting: " + reply.Message);
-            //     Console.WriteLine("Success!");
-            // }
-            // finally
-            // {
-            //     channel.ShutdownAsync().Wait();
-            //     server.ShutdownAsync().Wait();
-            // }
+        private static object CheckGreeterProtobufCodegenWorks()
+        {
+            return new HelloRequest { Name = "ABC" };
         }
 
         // Test that codegen works well in case the .csproj has .proto files
