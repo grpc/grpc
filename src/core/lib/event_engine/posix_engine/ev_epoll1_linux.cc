@@ -556,7 +556,7 @@ void Epoll1Poller::Kick() {
   GPR_ASSERT(wakeup_fd_->Wakeup().ok());
 }
 
-Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler) {
+Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
   static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
   if (kEpoll1PollerSupported) {
     return new Epoll1Poller(scheduler);
@@ -608,7 +608,7 @@ void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-Epoll1Poller* GetEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
+Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

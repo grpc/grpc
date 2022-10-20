@@ -32,7 +32,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -467,6 +466,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   PosixEndpointImpl(
       EventHandle* handle, PosixEngineClosure* on_done,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+      grpc_event_engine::experimental::MemoryAllocator&& allocator,
       const PosixTcpOptions& options);
   ~PosixEndpointImpl() override;
   void Read(
@@ -592,9 +592,10 @@ class PosixEndpoint
   PosixEndpoint(
       EventHandle* handle, PosixEngineClosure* on_shutdown,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
-      const grpc_event_engine::experimental::EndpointConfig& config)
+      grpc_event_engine::experimental::MemoryAllocator&& allocator,
+      const PosixTcpOptions& options)
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
-                                    TcpOptionsFromEndpointConfig(config))) {}
+                                    std::move(allocator), options)) {}
 
   void Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
@@ -672,8 +673,9 @@ class PosixEndpoint
 // of the EventHandle is transferred to the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
-    const grpc_event_engine::experimental::EndpointConfig& config);
+    std::shared_ptr<EventEngine> engine,
+    grpc_event_engine::experimental::MemoryAllocator&& allocator,
+    const PosixTcpOptions& options);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

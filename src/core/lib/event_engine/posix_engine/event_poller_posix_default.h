@@ -25,7 +25,7 @@ class Scheduler;
 
 // Return an instance of an event poller which is tied to the specified
 // scheduler.
-PosixEventPoller* GetDefaultPoller(Scheduler* scheduler);
+PosixEventPoller* MakeDefaultPoller(Scheduler* scheduler);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
