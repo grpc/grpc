@@ -58,7 +58,13 @@ class Epoll1Poller : public PosixEventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
-  bool CanTrackErrors() const override { return KernelSupportsErrqueue(); }
+  bool CanTrackErrors() const override {
+#ifdef GRPC_POSIX_SOCKET_TCP
+    return KernelSupportsErrqueue();
+#else
+    return false;
+#endif
+  }
   ~Epoll1Poller() override;
 
  private:
@@ -115,7 +121,7 @@ class Epoll1Poller : public PosixEventPoller {
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
-Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler);
+Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

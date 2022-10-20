@@ -129,5 +129,10 @@ TEST(ClientAuthorityFilterTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  // TODO(ctiller): promise_based_call currently demands to instantiate an event
+  // engine which needs grpc to be initialized.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

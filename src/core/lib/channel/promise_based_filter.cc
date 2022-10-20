@@ -88,7 +88,13 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       receive_message_(flags & kFilterExaminesInboundMessages
                            ? arena_->New<ReceiveMessage>(this)
                            : nullptr),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+      event_engine_(
+          static_cast<ChannelFilter*>(elem->channel_data)
+              ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
+  if (flags & kFilterExaminesServerInitialMetadata) {
+    server_initial_metadata_latch_ = arena_->New<Latch<ServerMetadata*>>();
+  }
+}
 
 BaseCallData::~BaseCallData() {
   FakeActivity().Run([this] {
