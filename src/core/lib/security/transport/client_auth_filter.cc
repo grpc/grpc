@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <functional>
-#include <memory>
 #include <type_traits>  // IWYU pragma: keep
 #include <utility>
 
@@ -53,6 +52,7 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 

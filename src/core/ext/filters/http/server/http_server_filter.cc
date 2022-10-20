@@ -21,7 +21,6 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 
 #include <functional>
-#include <memory>
 #include <utility>
 
 #include "absl/base/attributes.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -75,11 +75,11 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
       case HttpMethodMetadata::kInvalid:
       case HttpMethodMetadata::kGet:
         return Immediate(
-            ServerMetadataFromStatus(absl::UnknownError("Bad method header")));
+            ServerMetadataHandle(absl::UnknownError("Bad method header")));
     }
   } else {
     return Immediate(
-        ServerMetadataFromStatus(absl::UnknownError("Missing :method header")));
+        ServerMetadataHandle(absl::UnknownError("Missing :method header")));
   }
 
   auto te = md->Take(TeMetadata());
@@ -87,21 +87,21 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
     // Do nothing, ok.
   } else if (!te.has_value()) {
     return Immediate(
-        ServerMetadataFromStatus(absl::UnknownError("Missing :te header")));
+        ServerMetadataHandle(absl::UnknownError("Missing :te header")));
   } else {
     return Immediate(
-        ServerMetadataFromStatus(absl::UnknownError("Bad :te header")));
+        ServerMetadataHandle(absl::UnknownError("Bad :te header")));
   }
 
   auto scheme = md->Take(HttpSchemeMetadata());
   if (scheme.has_value()) {
     if (*scheme == HttpSchemeMetadata::kInvalid) {
       return Immediate(
-          ServerMetadataFromStatus(absl::UnknownError("Bad :scheme header")));
+          ServerMetadataHandle(absl::UnknownError("Bad :scheme header")));
     }
   } else {
     return Immediate(
-        ServerMetadataFromStatus(absl::UnknownError("Missing :scheme header")));
+        ServerMetadataHandle(absl::UnknownError("Missing :scheme header")));
   }
 
   md->Remove(ContentTypeMetadata());
@@ -109,7 +109,7 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   Slice* path_slice = md->get_pointer(HttpPathMetadata());
   if (path_slice == nullptr) {
     return Immediate(
-        ServerMetadataFromStatus(absl::UnknownError("Missing :path header")));
+        ServerMetadataHandle(absl::UnknownError("Missing :path header")));
   }
 
   if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
@@ -120,8 +120,8 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   }
 
   if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    return Immediate(ServerMetadataFromStatus(
-        absl::UnknownError("Missing :authority header")));
+    return Immediate(
+        ServerMetadataHandle(absl::UnknownError("Missing :authority header")));
   }
 
   if (!surface_user_agent_) {

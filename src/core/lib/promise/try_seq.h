@@ -69,7 +69,7 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(absl::StatusOr<T> prior,
                                             RunNext run_next) {
-    if (!prior.ok()) return StatusCast<Result>(prior.status());
+    if (!prior.ok()) return Result(prior.status());
     return run_next(std::move(prior));
   }
 };
@@ -105,7 +105,7 @@ struct TrySeqTraitsWithSfinae<absl::Status> {
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(absl::Status prior,
                                             RunNext run_next) {
-    if (!prior.ok()) return StatusCast<Result>(std::move(prior));
+    if (!prior.ok()) return Result(std::move(prior));
     return run_next(std::move(prior));
   }
 };

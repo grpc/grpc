@@ -71,8 +71,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
-                                    Arena::PooledDeleter(nullptr)),
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
                nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
@@ -82,8 +81,8 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
         seen = true;
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle(&trailing_metadata_batch,
-                                          Arena::PooledDeleter(nullptr));
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
             });
       });
   auto result = promise();
@@ -104,8 +103,7 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
-                                    Arena::PooledDeleter(nullptr)),
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
                nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
@@ -115,8 +113,8 @@ TEST(ClientAuthorityFilterTest,
         seen = true;
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle(&trailing_metadata_batch,
-                                          Arena::PooledDeleter(nullptr));
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
             });
       });
   auto result = promise();

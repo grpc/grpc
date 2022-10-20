@@ -22,7 +22,6 @@
 
 #include <stdlib.h>
 
-#include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
@@ -32,6 +31,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 /* -- Fake transport security credentials. -- */
