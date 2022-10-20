@@ -217,6 +217,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_route_config_resource_type_test",
+    srcs = ["xds_route_config_resource_type_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_xds_client",
+        "//src/proto/grpc/testing/xds/v3:fault_proto",
+        "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
+        "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:grpc_cli_utils",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_cluster_resource_type_test",
     srcs = ["xds_cluster_resource_type_test.cc"],
     external_deps = ["gtest"],
