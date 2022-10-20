@@ -120,12 +120,14 @@ void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) {
   }
 }
 
-void XdsHttpFilterRegistry::Init() {
+void XdsHttpFilterRegistry::Init(bool register_builtins) {
   g_filters = new FilterOwnerList;
   g_filter_registry = new FilterRegistryMap;
-  RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
-  RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
-  RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
+  if (register_builtins) {
+    RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+    RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
+    RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
+  }
 }
 
 void XdsHttpFilterRegistry::Shutdown() {

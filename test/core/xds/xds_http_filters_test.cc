@@ -54,7 +54,6 @@
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "test/core/util/test_config.h"
-#include "test/core/xds/no_op_http_filter.h"
 
 namespace grpc_core {
 namespace testing {
@@ -107,16 +106,18 @@ class XdsHttpFilterTest : public ::testing::Test {
 using XdsHttpFilterRegistryTest = XdsHttpFilterTest;
 
 TEST_F(XdsHttpFilterRegistryTest, Basic) {
-  constexpr char kFilterName[] = "package.MyFilter";
+  // Start with an empty registry.
+  XdsHttpFilterRegistry::Shutdown();
+  XdsHttpFilterRegistry::Init(/*register_builtins=*/false);
   // Returns null when a filter has not yet been registered.
-  EXPECT_EQ(XdsHttpFilterRegistry::GetFilterForType(kFilterName), nullptr);
+  XdsExtension extension = MakeXdsExtension(Router());
+  EXPECT_EQ(GetFilter(extension.type), nullptr);
   // Now register the filter.
-  auto filter =
-      std::make_unique<NoOpHttpFilter>(kFilterName, true, true, false);
+  auto filter = std::make_unique<XdsHttpRouterFilter>();
   auto* filter_ptr = filter.get();
   XdsHttpFilterRegistry::RegisterFilter(std::move(filter));
   // And check that it is now present.
-  EXPECT_EQ(XdsHttpFilterRegistry::GetFilterForType(kFilterName), filter_ptr);
+  EXPECT_EQ(GetFilter(extension.type), filter_ptr);
 }
 
 //

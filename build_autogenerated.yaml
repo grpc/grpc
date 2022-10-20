@@ -11414,7 +11414,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/xds/no_op_http_filter.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
