@@ -375,7 +375,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // the future, this maybe updated to a different function of the memory
       // pressure.
       UpdateSetting(
-          GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE,
+          GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
           &target_preferred_rx_frame_size_,
           static_cast<int32_t>(
               Clamp(static_cast<int>(target_frame_size_ * 2), 16384, 16777215)),

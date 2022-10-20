@@ -345,48 +345,49 @@ static void read_channel_args(grpc_chttp2_transport* t,
     int min;
     int max;
     bool availability[2] /* server, client */;
-  } settings_map[] = {{GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                       GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
-                       -1,
-                       0,
-                       INT32_MAX,
-                       {true, false}},
-                      {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
-                       GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
-                       -1,
-                       0,
-                       INT32_MAX,
-                       {true, true}},
-                      {GRPC_ARG_MAX_METADATA_SIZE,
-                       GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-                       -1,
-                       0,
-                       INT32_MAX,
-                       {true, true}},
-                      {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
-                       GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
-                       -1,
-                       16384,
-                       16777215,
-                       {true, true}},
-                      {GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY,
-                       GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA,
-                       1,
-                       0,
-                       1,
-                       {true, true}},
-                      {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
-                       GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                       -1,
-                       5,
-                       INT32_MAX,
-                       {true, true}},
-                      {GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE,
-                       GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE,
-                       -1,
-                       16384,
-                       16777215,
-                       {true, true}}};
+  } settings_map[] = {
+      {GRPC_ARG_MAX_CONCURRENT_STREAMS,
+       GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+       -1,
+       0,
+       INT32_MAX,
+       {true, false}},
+      {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
+       GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
+       -1,
+       0,
+       INT32_MAX,
+       {true, true}},
+      {GRPC_ARG_MAX_METADATA_SIZE,
+       GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+       -1,
+       0,
+       INT32_MAX,
+       {true, true}},
+      {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
+       GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+       -1,
+       16384,
+       16777215,
+       {true, true}},
+      {GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY,
+       GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA,
+       1,
+       0,
+       1,
+       {true, true}},
+      {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
+       GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+       -1,
+       5,
+       INT32_MAX,
+       {true, true}},
+      {GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE,
+       GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+       -1,
+       16384,
+       16777215,
+       {true, true}}};
 
   for (size_t i = 0; i < GPR_ARRAY_SIZE(settings_map); i++) {
     const auto& setting = settings_map[i];
@@ -395,7 +396,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
                             .value_or(setting.default_value);
       if (value >= 0) {
         if (setting.setting_id !=
-            GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE) {
+            GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE) {
           queue_setting_update(
               t, setting.setting_id,
               grpc_core::Clamp(value, setting.min, setting.max));
@@ -885,11 +886,13 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   void* cl = t->cl;
   t->cl = nullptr;
   // If the peer_state_based_framing experiment is set to true,
-  // choose max_frame_size as the prefered rx frame size indicated by the peer.
+  // choose max_frame_size as the prefered rx crypto frame size indicated by the
+  // peer.
   int max_frame_size =
       grpc_core::IsPeerStateBasedFramingEnabled()
-          ? t->settings[GRPC_PEER_SETTINGS]
-                       [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE]
+          ? t->settings
+                [GRPC_PEER_SETTINGS]
+                [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE]
           : INT_MAX;
   // Note: max frame size is 0 if the remote peer does not support adjusting the
   // sending frame size.
@@ -2321,12 +2324,13 @@ void grpc_chttp2_act_on_flowctl_action(
                                      action.max_frame_size());
               });
   if (t->enable_preferred_rx_frame_advertisement) {
-    WithUrgency(t, action.preferred_rx_frame_size_update(),
-                GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
-                  queue_setting_update(
-                      t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE,
-                      action.preferred_rx_frame_size());
-                });
+    WithUrgency(
+        t, action.preferred_rx_frame_size_update(),
+        GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
+          queue_setting_update(
+              t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+              action.preferred_rx_frame_size());
+        });
   }
 }
 
@@ -2446,16 +2450,16 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
   // Set min progress size on the read path iff we are able to advertise
-  // prefered rx frame sizes to the peer and the peer has also indicated that it
-  // can adjust sending frame sizes. (The peer would have informed us of this
-  // cabability by sending prefered rx frame sizes to us). Otherwise set
+  // prefered rx crypto frame sizes to the peer and the peer has also indicated
+  // that it can adjust sending frame sizes. (The peer would have informed us of
+  // this cabability by sending prefered rx frame sizes to us). Otherwise set
   // min_progress_size it to -1. The endpoints should ignore the
   // min_progress_size value if set to -1.
   int min_progress_size =
       t->enable_preferred_rx_frame_advertisement &&
               t->settings
                   [GRPC_PEER_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE]
+                  [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE]
           ? grpc_chttp2_min_read_progress_size(t)
           : -1;
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
