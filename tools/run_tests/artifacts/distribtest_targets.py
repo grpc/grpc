@@ -133,6 +133,7 @@ class CSharpDistribTest(object):
             return create_jobspec(
                 self.name,
                 ['bash', 'tools/run_tests/artifacts/run_distribtest_csharp.sh'],
+                environ={},
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")
@@ -410,7 +411,7 @@ def targets():
                           'dotnet5',
                           use_dotnet_cli=True,
                           presubmit=True),
-        CSharpDistribTest('macos', 'x64', presubmit=True),
+        CSharpDistribTest('macos', 'x64', use_dotnet_cli=True, presubmit=True),
         CSharpDistribTest('windows', 'x86', presubmit=True),
         CSharpDistribTest('windows', 'x64', presubmit=True),
         # Python
