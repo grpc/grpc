@@ -890,8 +890,8 @@ grpc_cc_library(
         "envoy_config_rbac_upb",
         "google_type_expr_upb",
         "gpr",
+        "grpc_mock_cel",
         "//src/core:grpc_authorization_base",
-        "//src/core:grpc_mock_cel",
     ],
 )
 
@@ -3214,6 +3214,29 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:upb_utils",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_mock_cel",
+    hdrs = [
+        "//src/core:lib/security/authorization/mock_cel/activation.h",
+        "//src/core:lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
+        "//src/core:lib/security/authorization/mock_cel/cel_expression.h",
+        "//src/core:lib/security/authorization/mock_cel/cel_value.h",
+        "//src/core:lib/security/authorization/mock_cel/evaluator_core.h",
+        "//src/core:lib/security/authorization/mock_cel/flat_expr_builder.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    language = "c++",
+    deps = [
+        "google_type_expr_upb",
+        "gpr_public_hdrs",
     ],
 )
 

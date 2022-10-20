@@ -2762,29 +2762,6 @@ grpc_cc_library(
     deps = ["//:gpr_platform"],
 )
 
-grpc_cc_library(
-    name = "grpc_mock_cel",
-    hdrs = [
-        "lib/security/authorization/mock_cel/activation.h",
-        "lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
-        "lib/security/authorization/mock_cel/cel_expression.h",
-        "lib/security/authorization/mock_cel/cel_value.h",
-        "lib/security/authorization/mock_cel/evaluator_core.h",
-        "lib/security/authorization/mock_cel/flat_expr_builder.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/types:span",
-    ],
-    language = "c++",
-    deps = [
-        "//:google_type_expr_upb",
-        "//:gpr_platform",
-    ],
-)
-
 # This target depends on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
     name = "grpc_matchers",
