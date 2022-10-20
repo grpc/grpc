@@ -2045,6 +2045,10 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/resource_quota/arena.h",
     ],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/utility",
+    ],
     deps = [
         "construct_destruct",
         "context",
@@ -3297,7 +3301,6 @@ grpc_cc_library(
         "//src/core:lib/surface/server.cc",
         "//src/core:lib/surface/validate_metadata.cc",
         "//src/core:lib/surface/version.cc",
-        "//src/core:lib/transport/call_fragments.cc",
         "//src/core:lib/transport/connectivity_state.cc",
         "//src/core:lib/transport/error_utils.cc",
         "//src/core:lib/transport/metadata_batch.cc",
@@ -3387,7 +3390,6 @@ grpc_cc_library(
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/transport/connectivity_state.h",
         "//src/core:lib/transport/metadata_batch.h",
-        "//src/core:lib/transport/call_fragments.h",
         "//src/core:lib/transport/parsed_metadata.h",
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
@@ -3481,6 +3483,7 @@ grpc_cc_library(
         "poll",
         "pollset_set",
         "promise",
+        "promise_status",
         "ref_counted",
         "ref_counted_ptr",
         "resolved_address",
