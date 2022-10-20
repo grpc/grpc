@@ -27,9 +27,11 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
