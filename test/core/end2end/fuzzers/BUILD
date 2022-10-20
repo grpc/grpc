@@ -56,8 +56,8 @@ grpc_fuzzer(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
 )
