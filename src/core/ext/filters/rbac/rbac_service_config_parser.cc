@@ -620,12 +620,6 @@ struct RbacConfig {
 
     absl::optional<Rules> rules;
 
-    RbacPolicy() = default;
-    RbacPolicy(const RbacPolicy&) = delete;
-    RbacPolicy& operator=(const RbacPolicy&) = delete;
-    RbacPolicy(RbacPolicy&&) = default;
-    RbacPolicy& operator=(RbacPolicy&&) = default;
-
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<RbacPolicy>()
@@ -645,12 +639,6 @@ struct RbacConfig {
   };
 
   std::vector<RbacPolicy> rbac_policies;
-
-  RbacConfig() = default;
-  RbacConfig(const RbacConfig&) = delete;
-  RbacConfig& operator=(const RbacConfig&) = delete;
-  RbacConfig(RbacConfig&&) = default;
-  RbacConfig& operator=(RbacConfig&&) = default;
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
