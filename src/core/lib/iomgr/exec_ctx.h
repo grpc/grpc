@@ -104,12 +104,7 @@ class ExecCtx {
   // that case we never want to finish because if we are, then we'd want to
   // offload work to another thread in the event engine, and probably it's
   // better just to do that work here.
-  ExecCtx()
-      : flags_(ExecCtx::Get() == nullptr &&
-                       grpc_event_engine::experimental::ThreadPool::
-                           IsCurrentThreadThreadPoolThread()
-                   ? 0
-                   : GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
     Fork::IncExecCtxCount();
     Set(this);
   }
