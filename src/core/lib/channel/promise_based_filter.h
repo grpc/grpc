@@ -108,6 +108,16 @@ class ChannelFilter {
   virtual bool GetChannelInfo(const grpc_channel_info*) { return false; }
 
   virtual ~ChannelFilter() = default;
+
+  grpc_event_engine::experimental::EventEngine*
+  hack_until_per_channel_stack_event_engines_land_get_event_engine() {
+    return event_engine_.get();
+  }
+
+ private:
+  // TODO(ctiller): remove once per-channel-stack event engines land
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 // Designator for whether a filter is client side or server side.
@@ -176,7 +186,7 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
           promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
-              call_data->event_engine_.get()) {}
+              call_data->event_engine_) {}
   };
 
   class Flusher {
@@ -283,7 +293,7 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  grpc_event_engine::experimental::EventEngine* event_engine_;
 };
 
 class ClientCallData : public BaseCallData {
