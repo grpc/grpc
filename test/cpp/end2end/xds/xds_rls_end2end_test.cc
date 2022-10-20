@@ -91,9 +91,7 @@ class RlsTest : public XdsEnd2endTest {
 // Test both with and without RDS.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, RlsTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
-                      // Also test with xDS v2.
-                      XdsTestType().set_enable_rds_testing().set_use_v2()),
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {

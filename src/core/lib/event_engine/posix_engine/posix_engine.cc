@@ -81,10 +81,7 @@ void PosixEnginePollerManager::TriggerShutdown() {
     poller_ = nullptr;
     return;
   }
-
-  if (poller_ != nullptr) {
-    poller_->Kick();
-  }
+  poller_->Kick();
 }
 
 PosixEnginePollerManager::~PosixEnginePollerManager() {

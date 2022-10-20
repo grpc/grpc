@@ -481,10 +481,8 @@ PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = (
-    "futures>=2.2.0; python_version<'3.2'",
-    "enum34>=1.0.4; python_version<'3.4'",
-)
+INSTALL_REQUIRES = ()
+
 EXTRAS_REQUIRES = {
     'protobuf': 'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 }
