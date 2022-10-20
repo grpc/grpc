@@ -156,7 +156,7 @@ class XdsHttpFilterRegistry {
   static void PopulateSymtab(upb_DefPool* symtab);
 
   // Global init and shutdown.
-  static void Init(bool register_builtins=true);
+  static void Init(bool register_builtins = true);
   static void Shutdown();
 };
 
