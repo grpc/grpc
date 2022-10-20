@@ -248,77 +248,6 @@ class RubyArtifact:
                               environ=environ)
 
 
-class CSharpExtArtifact:
-    """Builds C# native extension library"""
-
-    def __init__(self, platform, arch, arch_abi=None, presubmit=False):
-        self.name = 'csharp_ext_%s_%s' % (platform, arch)
-        self.platform = platform
-        self.arch = arch
-        self.arch_abi = arch_abi
-        self.labels = ['artifact', 'csharp', platform, arch]
-        if arch_abi:
-            self.name += '_%s' % arch_abi
-            self.labels.append(arch_abi)
-        if presubmit:
-            self.labels.append('presubmit')
-
-    def pre_build_jobspecs(self):
-        return []
-
-    def build_jobspec(self, inner_jobs=None):
-        environ = {}
-        if inner_jobs is not None:
-            # set number of parallel jobs when building native extension
-            environ['GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
-
-        if self.arch == 'android':
-            environ['ANDROID_ABI'] = self.arch_abi
-            return create_docker_jobspec(
-                self.name,
-                'tools/dockerfile/grpc_artifact_android_ndk',
-                'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
-                environ=environ)
-        elif self.arch == 'ios':
-            return create_jobspec(
-                self.name,
-                ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
-                timeout_seconds=60 * 60,
-                use_workspace=True,
-                environ=environ)
-        elif self.platform == 'windows':
-            return create_jobspec(self.name, [
-                'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
-                self.arch
-            ],
-                                  timeout_seconds=45 * 60,
-                                  use_workspace=True,
-                                  environ=environ)
-        else:
-            if self.platform == 'linux':
-                dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
-                    self.arch)
-                if self.arch == 'aarch64':
-                    # for aarch64, use a dockcross manylinux image that will
-                    # give us both ready to use crosscompiler and sufficient backward compatibility
-                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
-                return create_docker_jobspec(
-                    self.name,
-                    dockerfile_dir,
-                    'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ=environ)
-            else:
-                return create_jobspec(
-                    self.name,
-                    ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
-                    timeout_seconds=45 * 60,
-                    use_workspace=True,
-                    environ=environ)
-
-    def __str__(self):
-        return self.name
-
-
 class PHPArtifact:
     """Builds PHP PECL package"""
 
@@ -423,21 +352,6 @@ def targets():
         ProtocArtifact('macos', 'x64', presubmit=True),
         ProtocArtifact('windows', 'x64', presubmit=True),
         ProtocArtifact('windows', 'x86', presubmit=True),
-        CSharpExtArtifact('linux', 'x64', presubmit=True),
-        CSharpExtArtifact('linux', 'aarch64', presubmit=True),
-        CSharpExtArtifact('macos', 'x64', presubmit=True),
-        CSharpExtArtifact('windows', 'x64', presubmit=True),
-        CSharpExtArtifact('windows', 'x86', presubmit=True),
-        CSharpExtArtifact('linux',
-                          'android',
-                          arch_abi='arm64-v8a',
-                          presubmit=True),
-        CSharpExtArtifact('linux',
-                          'android',
-                          arch_abi='armeabi-v7a',
-                          presubmit=True),
-        CSharpExtArtifact('linux', 'android', arch_abi='x86', presubmit=True),
-        CSharpExtArtifact('macos', 'ios', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp38-cp38', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp39-cp39'),
