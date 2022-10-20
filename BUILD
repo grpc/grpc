@@ -7401,6 +7401,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
         "arena",
+        "channel_args_preconditioning",
         "channel_init",
         "channel_stack_type",
         "config",
@@ -7450,6 +7451,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
+        "absl/types:optional",
         "absl/memory",
         "upb_lib",
         "protobuf_headers",
@@ -7463,6 +7465,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "arena",
+        "channel_args_preconditioning",
         "channel_init",
         "config",
         "gpr",
