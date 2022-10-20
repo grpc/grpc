@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -63,7 +64,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/server/load_reporter/constants.h"

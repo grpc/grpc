@@ -1394,10 +1394,18 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/memory_allocator.cc \
+    src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
+    src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
+    src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
+    src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
+    src/core/lib/event_engine/posix_engine/lockfree_event.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
     src/core/lib/event_engine/posix_engine/timer_manager.cc \
+    src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
+    src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
+    src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
@@ -1602,7 +1610,6 @@ LIBGRPC_SRC = \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_fragments.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -1866,10 +1873,18 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/memory_allocator.cc \
+    src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
+    src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
+    src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
+    src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
+    src/core/lib/event_engine/posix_engine/lockfree_event.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
     src/core/lib/event_engine/posix_engine/timer_manager.cc \
+    src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
+    src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
+    src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
@@ -2034,7 +2049,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_fragments.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \

@@ -1381,7 +1381,7 @@ grpc_cc_library(
     public_hdrs = [
         "//src/core:lib/promise/context.h",
     ],
-    deps = ["gpr_platform"],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -2044,6 +2044,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "//src/core:lib/resource_quota/arena.h",
+    ],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/utility",
     ],
     deps = [
         "construct_destruct",
@@ -2727,6 +2731,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "gpr",
+        "iomgr_port",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
@@ -2874,12 +2879,17 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "event_engine_poller",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
+        "experiments",
         "gpr",
         "grpc_trace",
         "init_internally",
+        "iomgr_port",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_poller_posix_default",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "//src/core:event_engine_common",
@@ -3292,7 +3302,6 @@ grpc_cc_library(
         "//src/core:lib/surface/server.cc",
         "//src/core:lib/surface/validate_metadata.cc",
         "//src/core:lib/surface/version.cc",
-        "//src/core:lib/transport/call_fragments.cc",
         "//src/core:lib/transport/connectivity_state.cc",
         "//src/core:lib/transport/error_utils.cc",
         "//src/core:lib/transport/metadata_batch.cc",
@@ -3382,7 +3391,6 @@ grpc_cc_library(
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/transport/connectivity_state.h",
         "//src/core:lib/transport/metadata_batch.h",
-        "//src/core:lib/transport/call_fragments.h",
         "//src/core:lib/transport/parsed_metadata.h",
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
@@ -3476,6 +3484,7 @@ grpc_cc_library(
         "poll",
         "pollset_set",
         "promise",
+        "promise_status",
         "ref_counted",
         "ref_counted_ptr",
         "resolved_address",
