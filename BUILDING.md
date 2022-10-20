@@ -55,7 +55,7 @@ installed by `brew` is being used:
 ## Windows
 
 To prepare for CMake -and- Microsoft Visual C++ compiler build:
-- Install Visual Studio 2015/2017/2019/2022 (Visual C++).
+- Install Visual Studio 2015/2017/2019/2022 (i.e. Visual C++).
 - Install [Git](https://git-scm.com/).
 - Install [CMake](https://cmake.org/download/).
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*
@@ -85,6 +85,7 @@ to clone the gRPC repository at the [latest stable release tag](https://github.c
 
 > **Note**
 > The `bazel` build tool uses a different model for dependencies. You only need to worry about downloading submodules if you're building with something else than `bazel` (e.g. `cmake`).
+
 
 # Build from source
 
@@ -134,7 +135,7 @@ If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_S
 
 When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for
-every target defined in `CMakeLists.txt` (+ a few extra convenience projects
+every target defined in `CMakeLists.txt` (plus a few extra convenience projects
 added automatically by cmake). After opening the solution with Visual Studio
 you will be able to browse and build the code.
 
@@ -148,11 +149,11 @@ you will be able to browse and build the code.
 > cmake .. -G "Visual Studio 14 2015"
 > cmake --build . --config Release
 ```
-> **Note** Wikipedia details the [mapping between Visual Studio version number and product name](https://en.wikipedia.org/wiki/Microsoft_Visual_Studio) in the 'History' section.
+> **Note** If you need to figure our our Visual Studio version, Wikipedia details the [mapping between Visual Studio product name and version number](https://en.wikipedia.org/wiki/Microsoft_Visual_Studio) in the 'History' section (e.g. Visual Studio 2022 == Version 17.0).
 
 ### Windows, Using Visual Studio
 
-Technically, we'll use CMake here to generate Visual C++ projects as above but will perform the actual build using Visual Studio directly. The steps involved are detailed in the [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. This is subsequently used in the install step below. 
+You can build gRPC directly in Visual Studio. Technically, CMake is used to generate Visual C++ projects as above but you can perform the actual builds from inside Visual Studio . The steps below reference the  [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. 
 
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
@@ -160,11 +161,17 @@ Technically, we'll use CMake here to generate Visual C++ projects as above but w
 > cd .build
 > cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR  ../..
 ```
+> **Warning** Your Visual Studio instance needs to inherit the `$MY_INSTALL_DIR` environment variable. If you've only declared this in your local (e.g. Git Bash/CMD-prompt) then you'll need to start your Visual Studio instance from this shell in order to inherit the environment variable. Alternatively, set it globally using the Control Panel and restart Visual Studio.
 
-1. Ensure you have defined the `$MY_INSTALL_DIR` environment variable as outlined above and created the target location is references (See [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/)). 
-2. Start Visual Studio and open the `grpc.sln` solution file, ensuring your Visual Studio instance 'inherits' the `$MY_INSTALL_DIR` environment variable. If you've only declared the `$MY_INSTALL_DIR` environment variable in a shell (e.g. Git Bash/CMD-prompt) then you'll need to ensure you start Visual Studio from this shell in order to inherit the environment variable. Otherwise, you'll need to set it using the Control Panel and restart Visual Studio.
-3. Select a 'Release' build and build the `grpc` solution. Once complete, check the build output to confirm a clean build with no errors. 
-4. To install, build the `INSTALL` project. This will copy all the binaries, header files, etc. to the location specified by `$MY_INSTALL_DIR` (and is why it's important for your Visual Studio instance to inherit it).
+
+1. Ensure you have defined the `$MY_INSTALL_DIR` environment variable and have created the target path it references. 
+
+2. Start Visual Studio and open the `grpc.sln` solution file.
+
+3. Build the 'Release' version, taking care to ensure a clean build with no errors. 
+
+4. Install gRPC to the path specificed by `$MY_INSTALL_DIR` by building the `INSTALL` project. 
+
 
 
 
@@ -186,6 +193,9 @@ installed to be able to compile the C/C++ sources.
 
 **Building shared libs (DLLs)**
 
+> **Warning**
+> Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
+
 Windows DLL build is supported on a "best effort" basis and we don't recommend using gRPC C++ as a DLL as there are some known drawbacks around how C++ DLLs work on Windows. For example, there is no stable C++ ABI and you can't safely allocate memory in one DLL, and free it in another etc.
 
 That said, we don't actively prohibit building DLLs on windows (it can be enabled in cmake with `-DBUILD_SHARED_LIBS=ON`), and are free to use the DLL builds
@@ -193,12 +203,10 @@ at your own risk.
 - you've been warned that there are some important drawbacks and some things might not work at all or will be broken in interesting ways.
 - we don't have extensive testing for DLL builds in place (to avoid maintenance costs, increased test duration etc.) so regressions / build breakages might occur
 
-> **Warning**
-> Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
 
 **Debug/Release Installs**
 
-There are both Debug and Release builds and their respective installs differ slightly (e.g. debug/release verions of libs). If you want a 'complete' install that includes both Debug and Release artifacts, then you'll need to perform two builds to separate install target-locations and then merge the differences. 
+There are both Debug and Release builds and their respective installs differ slightly (e.g. debug/release verions of libs). If you want a 'complete' install that includes both Debug and Release artefacts, then you'll need to perform two builds to separate install target-locations and then merge the differences. 
 
 ### Dependency management
 
