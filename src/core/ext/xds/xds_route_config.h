@@ -43,6 +43,7 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -209,9 +210,10 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   }
   std::string ToString() const;
 
-  static absl::StatusOr<XdsRouteConfigResource> Parse(
+  static XdsRouteConfigResource Parse(
       const XdsResourceType::DecodeContext& context,
-      const envoy_config_route_v3_RouteConfiguration* route_config);
+      const envoy_config_route_v3_RouteConfiguration* route_config,
+      ValidationErrors* errors);
 };
 
 class XdsRouteConfigResourceType
