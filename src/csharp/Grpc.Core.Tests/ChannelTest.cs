@@ -129,7 +129,7 @@ namespace Grpc.Core.Tests
         {
             var compositeCredentials = ChannelCredentials.Create(
                 ChannelCredentials.Insecure,
-                CallCredentials.FromInterceptor((context, metadata) => Task.CompletedTask));
+                CallCredentials.FromInterceptor((context, metadata) => TaskUtils.CompletedTask));
             var ex = Assert.Throws(typeof(InvalidOperationException), () => new Channel("localhost", compositeCredentials));
             Assert.AreEqual("CallCredentials can't be composed with InsecureCredentials. " +
                 "CallCredentials must be used with secure channel credentials like SslCredentials.", ex.Message);
