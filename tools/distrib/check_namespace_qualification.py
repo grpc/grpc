@@ -35,6 +35,7 @@ def save(fpath, contents):
 
 
 class UnnecessaryQualificationValidator(object):
+
     def __init__(self):
         self.fully_qualified_re = re.compile(r'([ (<])::(grpc[A-Za-z_:])')
         self.using_re = re.compile(
@@ -65,9 +66,11 @@ class UnnecessaryQualificationValidator(object):
 
 
 class UsingStatementFullQualificationValidator(object):
+
     def __init__(self):
         self.fully_qualified_re = re.compile(r'[ (<]::grpc[A-Za-z_:]')
-        self.ignore_using_statement_re = re.compile(r'using namespace|using typename|using.*=')
+        self.ignore_using_statement_re = re.compile(
+            r'using namespace|using typename|using.*=')
         # self.using_re = re.compile(r'(.*using )([^:].*)\s*;\s*$')
         self.using_re = re.compile(r'(.*using )((grpc|google).*)\s*;\s*$')
 
@@ -138,7 +141,8 @@ except subprocess.CalledProcessError:
     sys.exit(0)
 
 unnecessary_qualification_validator = UnnecessaryQualificationValidator()
-using_statement_full_qualification_validator = UsingStatementFullQualificationValidator()
+using_statement_full_qualification_validator = UsingStatementFullQualificationValidator(
+)
 
 for filename in filename_list:
     # Skip check for upb generated code and ignored files.
@@ -147,7 +151,7 @@ for filename in filename_list:
             filename.endswith('.upbdefs.c') or filename in IGNORED_FILES):
         continue
     ok = unnecessary_qualification_validator.check(filename, args.fix) and ok
-    ok = using_statement_full_qualification_validator.check(
-        filename, args.fix) and ok
+    ok = using_statement_full_qualification_validator.check(filename,
+                                                            args.fix) and ok
 
 sys.exit(0 if ok else 1)
