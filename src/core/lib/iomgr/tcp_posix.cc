@@ -950,10 +950,12 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       /* 0 read size ==> end of stream */
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
       if (read_bytes == 0) {
-        *error = absl::InternalError("Socket closed");
+        *error = tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
       } else {
-        *error = absl::InternalError(
-            absl::StrCat("recvmsg:", grpc_core::StrError(errno)));
+        *error =
+            tcp_annotate_error(absl::InternalError(absl::StrCat(
+                                   "recvmsg:", grpc_core::StrError(errno))),
+                               tcp);
       }
       return true;
     }
