@@ -436,13 +436,14 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kForwardedBatch:
     case State::kCancelled:
       break;
-    case State::kGotBatch:
+    case State::kGotBatch: {
       state_ = State::kPushedToPipe;
-      message_.payload()->Swap(batch_->payload->send_message.send_message);
-      message_.mutable_flags() = batch_->payload->send_message.flags;
-      push_ = pipe_.sender.Push(
-          MessageHandle(&message_, Arena::PooledDeleter(nullptr)));
+      auto message = GetContext<Arena>()->MakePooled<Message>();
+      message->payload()->Swap(batch_->payload->send_message.send_message);
+      message->mutable_flags() = batch_->payload->send_message.flags;
+      push_ = pipe_.sender.Push(std::move(message));
       next_ = receiver_->Next();
+    }
       ABSL_FALLTHROUGH_INTENDED;
     case State::kPushedToPipe: {
       GPR_ASSERT(push_.has_value());
@@ -551,7 +552,7 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
   intercepted_slice_buffer_ = batch->payload->recv_message.recv_message;
   intercepted_flags_ = batch->payload->recv_message.flags;
   if (intercepted_flags_ == nullptr) {
-    intercepted_flags_ = &message_.mutable_flags();
+    intercepted_flags_ = &scratch_flags_;
     *intercepted_flags_ = 0;
   }
   intercepted_on_complete_ = std::exchange(
@@ -680,10 +681,10 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kBatchCompleted:
       if (completed_status_.ok() && intercepted_slice_buffer_->has_value()) {
         state_ = State::kPushedToPipe;
-        message_.payload()->Swap(&**intercepted_slice_buffer_);
-        message_.mutable_flags() = *intercepted_flags_;
-        push_ = sender_->Push(
-            MessageHandle(&message_, Arena::PooledDeleter(nullptr)));
+        auto message = GetContext<Arena>()->MakePooled<Message>();
+        message->payload()->Swap(&**intercepted_slice_buffer_);
+        message->mutable_flags() = *intercepted_flags_;
+        push_ = sender_->Push(std::move(message));
         next_ = pipe_.receiver.Next();
       } else {
         sender_->Close();
