@@ -55,8 +55,6 @@ namespace grpc_core {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EventEngine;
-
 // TODO(ctiller): The idle filter was disabled in client channel by default
 // due to b/143502997. Now the bug is fixed enable the filter by default.
 const auto kDefaultIdleTimeout = Duration::Infinity();
