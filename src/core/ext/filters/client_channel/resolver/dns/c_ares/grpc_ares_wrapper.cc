@@ -293,7 +293,7 @@ static void on_timeout(void* arg, grpc_error_handle error) {
       "request:%p ev_driver=%p on_timeout_locked. driver->shutting_down=%d. "
       "err=%s",
       driver->request, driver, driver->shutting_down,
-      grpc_error_std_string(error).c_str());
+      grpc_core::StatusToString(error).c_str());
   if (!driver->shutting_down && error.ok()) {
     grpc_ares_ev_driver_shutdown_locked(driver);
   }
@@ -319,7 +319,7 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
       "driver->shutting_down=%d. "
       "err=%s",
       driver->request, driver, driver->shutting_down,
-      grpc_error_std_string(error).c_str());
+      grpc_core::StatusToString(error).c_str());
   if (!driver->shutting_down && error.ok()) {
     fd_node* fdn = driver->fds;
     while (fdn != nullptr) {

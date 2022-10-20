@@ -25,9 +25,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 
@@ -163,7 +163,7 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
         GRPC_ERROR_CREATE_FROM_VECTOR("Fault injection parser", &error_list);
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing fault injection method parameters: ",
-                     grpc_error_std_string(error)));
+                     StatusToString(error)));
     return status;
   }
   if (fault_injection_policies.empty()) return nullptr;

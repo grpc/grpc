@@ -720,8 +720,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       "resource index ", idx, ": ",
       resource_name.empty() ? "" : absl::StrCat(resource_name, ": "));
   // Check the type_url of the resource.
-  bool is_v2 = false;
-  if (!result_.type->IsType(type_url, &is_v2)) {
+  if (result_.type_url != type_url) {
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, "incorrect resource type ", type_url,
                      " (should be ", result_.type_url, ")"));
@@ -732,7 +731,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
       xds_client()->symtab_.ptr(), arena};
   XdsResourceType::DecodeResult decode_result =
-      result_.type->Decode(context, serialized_resource, is_v2);
+      result_.type->Decode(context, serialized_resource);
   // If we didn't already have the resource name from the Resource
   // wrapper, try to get it from the decoding result.
   if (resource_name.empty()) {
@@ -873,11 +872,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GPR_ASSERT(xds_client() != nullptr);
   // Init the ADS call.
   const char* method =
-      chand()->server_.ShouldUseV3()
-          ? "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
-            "StreamAggregatedResources"
-          : "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
-            "StreamAggregatedResources";
+      "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
+      "StreamAggregatedResources";
   call_ = chand()->transport_->CreateStreamingCall(
       method, std::make_unique<StreamEventHandler>(
                   // Passing the initial ref here.  This ref will go away when
@@ -930,9 +926,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type];
   std::string serialized_message = xds_client()->api_.CreateAdsRequest(
-      chand()->server_,
-      chand()->server_.ShouldUseV3() ? type->type_url() : type->v2_type_url(),
-      chand()->resource_type_version_map_[type], state.nonce,
+      type->type_url(), chand()->resource_type_version_map_[type], state.nonce,
       ResourceNamesForRequest(type), state.status, !sent_initial_message_);
   sent_initial_message_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1005,8 +999,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     if (!IsCurrentCallOnChannel()) return;
     // Parse and validate the response.
     AdsResponseParser parser(this);
-    absl::Status status =
-        xds_client()->api_.ParseAdsResponse(chand()->server_, payload, &parser);
+    absl::Status status = xds_client()->api_.ParseAdsResponse(payload, &parser);
     if (!status.ok()) {
       // Ignore unparsable response.
       gpr_log(GPR_ERROR,
@@ -1262,11 +1255,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  const char* method = chand()->server_.ShouldUseV3()
-                           ? "/envoy.service.load_stats.v3."
-                             "LoadReportingService/StreamLoadStats"
-                           : "/envoy.service.load_stats.v2."
-                             "LoadReportingService/StreamLoadStats";
+  const char* method =
+      "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
   call_ = chand()->transport_->CreateStreamingCall(
       method, std::make_unique<StreamEventHandler>(
                   // Passing the initial ref here.  This ref will go away when
@@ -1282,8 +1272,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
             call_.get());
   }
   // Send the initial request.
-  std::string serialized_payload =
-      xds_client()->api_.CreateLrsInitialRequest(chand()->server_);
+  std::string serialized_payload = xds_client()->api_.CreateLrsInitialRequest();
   call_->SendMessage(std::move(serialized_payload));
   send_message_pending_ = true;
 }
@@ -1653,7 +1642,6 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
-  v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type);
   resource_type->InitUpbSymtab(this, symtab_.ptr());
 }
 
@@ -1661,8 +1649,6 @@ const XdsResourceType* XdsClient::GetResourceTypeLocked(
     absl::string_view resource_type) {
   auto it = resource_types_.find(resource_type);
   if (it != resource_types_.end()) return it->second;
-  auto it2 = v2_resource_types_.find(resource_type);
-  if (it2 != v2_resource_types_.end()) return it2->second;
   return nullptr;
 }
 
@@ -1680,7 +1666,7 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
   // Split the resource type off of the path to get the id.
   std::pair<absl::string_view, absl::string_view> path_parts = absl::StrSplit(
       absl::StripPrefix(uri->path(), "/"), absl::MaxSplits('/', 1));
-  if (!type->IsType(path_parts.first, nullptr)) {
+  if (type->type_url() != path_parts.first) {
     return absl::InvalidArgumentError(
         "xdstp URI path must indicate valid xDS resource type");
   }

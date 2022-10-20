@@ -30,6 +30,7 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/matchers/matchers.h"
@@ -594,9 +595,8 @@ RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
   grpc_error_handle error =
       GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
   if (!error.ok()) {
-    absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("error parsing RBAC method parameters: ",
-                     grpc_error_std_string(error)));
+    absl::Status status = absl::InvalidArgumentError(absl::StrCat(
+        "error parsing RBAC method parameters: ", StatusToString(error)));
     return status;
   }
   if (rbac_policies.empty()) return nullptr;

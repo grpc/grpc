@@ -47,8 +47,6 @@
 
 namespace grpc_core {
 
-bool XdsRbacEnabled();
-
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
@@ -223,13 +221,9 @@ class XdsRouteConfigResourceType
   absl::string_view type_url() const override {
     return "envoy.config.route.v3.RouteConfiguration";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.RouteConfiguration";
-  }
 
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource,
-                      bool /*is_v2*/) const override;
+                      absl::string_view serialized_resource) const override;
 
   void InitUpbSymtab(XdsClient* xds_client,
                      upb_DefPool* symtab) const override {

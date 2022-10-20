@@ -27,7 +27,8 @@
 #include "absl/strings/string_view.h"
 #include "upb/arena.h"
 #include "upb/def.h"
-#include "upb/upb.h"
+
+#include "src/core/ext/xds/xds_common_types.h"
 
 namespace grpc_core {
 
@@ -40,8 +41,7 @@ class XdsClusterSpecifierPluginImpl {
 
   // Returns the LB policy config in JSON form.
   virtual absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      upb_StringView serialized_plugin_config, upb_Arena* arena,
-      upb_DefPool* symtab) const = 0;
+      XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab) const = 0;
 };
 
 class XdsRouteLookupClusterSpecifierPlugin
@@ -49,7 +49,7 @@ class XdsRouteLookupClusterSpecifierPlugin
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
   absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      upb_StringView serialized_plugin_config, upb_Arena* arena,
+      XdsExtension extension, upb_Arena* arena,
       upb_DefPool* symtab) const override;
 };
 

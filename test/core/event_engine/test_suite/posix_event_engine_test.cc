@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
@@ -30,5 +31,10 @@ int main(int argc, char** argv) {
             grpc_event_engine::experimental::PosixEventEngine>();
       },
       nullptr);
-  return RUN_ALL_TESTS();
+  // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
+  // until we clear out the iomgr shutdown code.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

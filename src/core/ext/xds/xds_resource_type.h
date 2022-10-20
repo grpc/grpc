@@ -69,13 +69,9 @@ class XdsResourceType {
   // Returns v3 resource type.
   virtual absl::string_view type_url() const = 0;
 
-  // Returns v2 resource type.
-  virtual absl::string_view v2_type_url() const = 0;
-
   // Decodes and validates a serialized resource proto.
   virtual DecodeResult Decode(const DecodeContext& context,
-                              absl::string_view serialized_resource,
-                              bool is_v2) const = 0;
+                              absl::string_view serialized_resource) const = 0;
 
   // Returns true if r1 and r2 are equal.
   // Must be invoked only on resources returned by this object's Decode()
@@ -101,11 +97,6 @@ class XdsResourceType {
   // Any fields in textproto printing (internal b/178821188).
   virtual void InitUpbSymtab(XdsClient* xds_client,
                              upb_DefPool* symtab) const = 0;
-
-  // Convenience method for checking if resource_type matches this type.
-  // Checks against both type_url() and v2_type_url().
-  // If is_v2 is non-null, it will be set to true if matching v2_type_url().
-  bool IsType(absl::string_view resource_type, bool* is_v2) const;
 };
 
 }  // namespace grpc_core
