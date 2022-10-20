@@ -120,8 +120,7 @@ TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
   ASSERT_DEATH(
       // The router filter is already in the registry.
-      registry_.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()),
-      "");
+      registry_.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()), "");
 }
 
 //

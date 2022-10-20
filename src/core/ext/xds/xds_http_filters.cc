@@ -95,8 +95,7 @@ void XdsHttpFilterRegistry::RegisterFilter(
       registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
-    GPR_ASSERT(
-        registry_map_.emplace(override_proto_name, filter.get()).second);
+    GPR_ASSERT(registry_map_.emplace(override_proto_name, filter.get()).second);
   }
   owning_list_.push_back(std::move(filter));
 }
