@@ -11030,6 +11030,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/regex.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
+  - src/proto/grpc/testing/xds/v3/typed_struct.proto
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - grpc_test_util
@@ -11570,6 +11571,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
+  - src/proto/grpc/testing/xds/v3/typed_struct.proto
   - test/core/xds/xds_listener_resource_type_test.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
