@@ -31,18 +31,13 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/posix_engine/poll_strategy_config.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_poll_strategy, "all",
-    "Declares which polling engines to try when starting gRPC. "
-    "This is a comma-separated list of engines, which are tried in priority "
-    "order first -> last.")
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
     false, "polling"); /* Disabled by default */
@@ -170,12 +165,10 @@ const char* grpc_get_poll_strategy_name() { return g_event_engine->name; }
 
 void grpc_event_engine_init(void) {
   gpr_once_init(&g_choose_engine, []() {
-    grpc_core::UniquePtr<char> value =
-        GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-
+    const char* value = grpc_event_engine::posix_engine::PollStrategy();
     char** strings = nullptr;
     size_t nstrings = 0;
-    split(value.get(), &strings, &nstrings);
+    split(value, &strings, &nstrings);
 
     for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
       try_engine(strings[i]);
@@ -187,8 +180,7 @@ void grpc_event_engine_init(void) {
     gpr_free(strings);
 
     if (g_event_engine == nullptr) {
-      gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
-              value.get());
+      gpr_log(GPR_ERROR, "No event engine could be initialized from %s", value);
       abort();
     }
   });

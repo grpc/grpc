@@ -62,8 +62,6 @@
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
-
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
 static const int kPollinCheck = POLLIN | POLLHUP | POLLERR;

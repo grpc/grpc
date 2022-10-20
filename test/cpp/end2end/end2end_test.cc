@@ -42,6 +42,7 @@
 #include <grpcpp/test/channel_test_peer.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/event_engine/posix_engine/poll_strategy_config.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -911,8 +912,7 @@ TEST_P(End2endTest, ReconnectChannel) {
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
 #ifdef GRPC_POSIX_SOCKET_EV
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  if (0 == strcmp(poller.get(), "poll")) {
+  if (0 == strcmp(grpc_event_engine::posix_engine::PollStrategy(), "poll")) {
     poller_slowdown_factor = 2;
   }
 #endif  // GRPC_POSIX_SOCKET_EV

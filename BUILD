@@ -2729,9 +2729,24 @@ grpc_cc_library(
     deps = [
         "gpr",
         "iomgr_port",
+        "poll_strategy_config",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
+    ],
+)
+
+grpc_cc_library(
+    name = "poll_strategy_config",
+    srcs = [
+        "//src/core:lib/event_engine/posix_engine/poll_strategy_config.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/event_engine/posix_engine/poll_strategy_config.h",
+    ],
+    deps = [
+        "gpr",
+        "iomgr_port",
     ],
 )
 
@@ -3482,6 +3497,7 @@ grpc_cc_library(
         "packed_table",
         "pipe",
         "poll",
+        "poll_strategy_config",
         "pollset_set",
         "promise",
         "ref_counted",

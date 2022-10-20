@@ -30,8 +30,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
-
 extern grpc_core::DebugOnlyTraceFlag grpc_fd_trace; /* Disabled by default */
 extern grpc_core::DebugOnlyTraceFlag
     grpc_polling_trace; /* Disabled by default */

@@ -28,6 +28,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/lib/event_engine/posix_engine/poll_strategy_config.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -35,10 +36,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
-
-#ifdef GRPC_POSIX_SOCKET
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -178,9 +175,8 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
  * that the keepalive ping is never sent. */
 static void test_read_delays_keepalive(grpc_end2end_test_config config) {
 #ifdef GRPC_POSIX_SOCKET
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   /* It is hard to get the timing right for the polling engine poll. */
-  if ((0 == strcmp(poller.get(), "poll"))) {
+  if ((0 == strcmp(grpc_event_engine::posix_engine::PollStrategy(), "poll"))) {
     return;
   }
 #endif  // GRPC_POSIX_SOCKET
