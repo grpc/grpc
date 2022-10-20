@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
@@ -33,7 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -92,8 +90,8 @@ namespace posix_engine {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
@@ -1167,6 +1165,7 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
 PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
+                                     MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
@@ -1249,10 +1248,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
+    std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
+    const PosixTcpOptions& options) {
   GPR_DEBUG_ASSERT(handle != nullptr);
   return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
-                                         config);
+                                         std::move(allocator), options);
 }
 
 }  // namespace posix_engine
@@ -1268,7 +1268,8 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
-    std::shared_ptr<EventEngine> /*engine*/, const EndpointConfig& /*config*/) {
+    std::shared_ptr<EventEngine> /*engine*/,
+    const PosixTcpOptions& /*options*/) {
   GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
 }
 

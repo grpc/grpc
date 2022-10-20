@@ -73,7 +73,7 @@ bool HasContext() {
   return promise_detail::Context<T>::get() != nullptr;
 }
 
-// Retrieve the current value of a context.
+// Retrieve the current value of a context, or abort if the value is unset.
 template <typename T>
 T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
