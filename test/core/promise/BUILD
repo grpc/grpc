@@ -324,12 +324,12 @@ grpc_cc_test(
         "//:for_each",
         "//:join",
         "//:map",
+        "//:map_pipe",
         "//:observable",
         "//:pipe",
         "//:resource_quota",
         "//:seq",
         "//:try_seq",
-        "//:map_pipe",
     ],
 )
 
