@@ -16,7 +16,6 @@
  */
 
 #include <limits.h>
-#include <string.h>
 
 #include <algorithm>
 #include <atomic>
@@ -29,6 +28,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -69,6 +69,9 @@
 #include <grpcpp/support/status.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"

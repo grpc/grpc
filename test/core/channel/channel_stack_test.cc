@@ -18,15 +18,17 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#include <limits.h>
+
 #include <string>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"

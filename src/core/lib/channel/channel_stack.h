@@ -49,6 +49,7 @@
 #include <stddef.h>
 
 #include <functional>
+#include <memory>
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -61,7 +62,6 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

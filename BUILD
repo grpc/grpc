@@ -3823,6 +3823,7 @@ grpc_cc_library(
         "closure",
         "debug_location",
         "error",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr_platform",
         "grpc_backend_metric_data",
