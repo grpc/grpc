@@ -248,7 +248,10 @@ RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                             GlobalObjects* globals) {
-  ChannelArgs args = ChannelArgs().SetObject(ResourceQuota::Default());
+  ChannelArgs args =
+      ChannelArgs()
+          .SetObject(ResourceQuota::Default())
+          .SetObject(grpc_event_engine::experimental::GetDefaultEventEngine());
   for (const auto& arg : fuzz_args) {
     if (arg.key() == ResourceQuota::ChannelArgName()) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kResourceQuota) {
