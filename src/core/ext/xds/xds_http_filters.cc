@@ -38,12 +38,8 @@ namespace grpc_core {
 // XdsHttpRouterFilter
 //
 
-absl::string_view XdsHttpRouterFilter::StaticConfigName() {
-  return "envoy.extensions.filters.http.router.v3.Router";
-}
-
 absl::string_view XdsHttpRouterFilter::ConfigProtoName() const {
-  return StaticConfigName();
+  return "envoy.extensions.filters.http.router.v3.Router";
 }
 
 absl::string_view XdsHttpRouterFilter::OverrideConfigProtoName() const {

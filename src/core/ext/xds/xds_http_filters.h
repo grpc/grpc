@@ -122,9 +122,6 @@ class XdsHttpFilterImpl {
 
 class XdsHttpRouterFilter : public XdsHttpFilterImpl {
  public:
-  // FIXME: remove this when merging in removal of v2
-  static absl::string_view StaticConfigName();
-
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
