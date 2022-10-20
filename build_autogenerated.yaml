@@ -11589,7 +11589,6 @@ targets:
   run: false
   language: c++
   headers:
-  - test/core/xds/no_op_http_filter.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
