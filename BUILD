@@ -2805,6 +2805,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota",
         "slice",
+        "strerror",
         "time",
         "useful",
     ],
