@@ -647,8 +647,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& md,
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
-    case State::kCancelledWhilstForwarding:
       abort();
+    case State::kCancelledWhilstForwarding:
     case State::kCancelled:
       break;
   }
