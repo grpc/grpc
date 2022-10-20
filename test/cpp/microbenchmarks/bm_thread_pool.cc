@@ -19,7 +19,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "absl/debugging/leak_check.h"
 #include "absl/functional/any_invocable.h"
 
 #include <grpcpp/impl/grpc_library.h>
