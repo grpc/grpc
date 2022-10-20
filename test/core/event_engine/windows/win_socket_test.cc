@@ -63,6 +63,7 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
   ASSERT_TRUE(read_called);
   wrapped_client_socket.MaybeShutdown(absl::CancelledError("done"));
   wrapped_server_socket.MaybeShutdown(absl::CancelledError("done"));
+  executor.Quiesce();
 }
 
 TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
@@ -87,6 +88,7 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   }
   ASSERT_TRUE(read_called);
   closesocket(sockpair[1]);
+  executor.Quiesce();
 }
 
 int main(int argc, char** argv) {

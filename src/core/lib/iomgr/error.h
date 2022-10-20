@@ -42,122 +42,12 @@
 
 typedef absl::Status grpc_error_handle;
 
-/// TODO(veblush): Remove this enum once migration is done
-typedef enum {
-  /// 'errno' from the operating system
-  GRPC_ERROR_INT_ERRNO =
-      static_cast<int>(grpc_core::StatusIntProperty::kErrorNo),
-  /// __LINE__ from the call site creating the error
-  GRPC_ERROR_INT_FILE_LINE =
-      static_cast<int>(grpc_core::StatusIntProperty::kFileLine),
-  /// stream identifier: for errors that are associated with an individual
-  /// wire stream
-  GRPC_ERROR_INT_STREAM_ID =
-      static_cast<int>(grpc_core::StatusIntProperty::kStreamId),
-  /// grpc status code representing this error
-  GRPC_ERROR_INT_GRPC_STATUS =
-      static_cast<int>(grpc_core::StatusIntProperty::kRpcStatus),
-  /// offset into some binary blob (usually represented by
-  /// GRPC_ERROR_STR_RAW_BYTES) where the error occurred
-  GRPC_ERROR_INT_OFFSET =
-      static_cast<int>(grpc_core::StatusIntProperty::kOffset),
-  /// context sensitive index associated with the error
-  GRPC_ERROR_INT_INDEX = static_cast<int>(grpc_core::StatusIntProperty::kIndex),
-  /// context sensitive size associated with the error
-  GRPC_ERROR_INT_SIZE = static_cast<int>(grpc_core::StatusIntProperty::kSize),
-  /// http2 error code associated with the error (see the HTTP2 RFC)
-  GRPC_ERROR_INT_HTTP2_ERROR =
-      static_cast<int>(grpc_core::StatusIntProperty::kHttp2Error),
-  /// TSI status code associated with the error
-  GRPC_ERROR_INT_TSI_CODE =
-      static_cast<int>(grpc_core::StatusIntProperty::kTsiCode),
-  /// WSAGetLastError() reported when this error occurred
-  GRPC_ERROR_INT_WSA_ERROR =
-      static_cast<int>(grpc_core::StatusIntProperty::kWsaError),
-  /// File descriptor associated with this error
-  GRPC_ERROR_INT_FD = static_cast<int>(grpc_core::StatusIntProperty::kFd),
-  /// HTTP status (i.e. 404)
-  GRPC_ERROR_INT_HTTP_STATUS =
-      static_cast<int>(grpc_core::StatusIntProperty::kHttpStatus),
-  /// chttp2: did the error occur while a write was in progress
-  GRPC_ERROR_INT_OCCURRED_DURING_WRITE =
-      static_cast<int>(grpc_core::StatusIntProperty::kOccurredDuringWrite),
-  /// channel connectivity state associated with the error
-  GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE =
-      static_cast<int>(grpc_core::StatusIntProperty::ChannelConnectivityState),
-  /// LB policy drop
-  GRPC_ERROR_INT_LB_POLICY_DROP =
-      static_cast<int>(grpc_core::StatusIntProperty::kLbPolicyDrop),
-
-  /// Must always be last
-  GRPC_ERROR_INT_MAX,
-} grpc_error_ints;
-
-/// TODO(veblush): Remove this enum once migration is done
-typedef enum {
-  /// top-level textual description of this error
-  GRPC_ERROR_STR_DESCRIPTION =
-      static_cast<int>(grpc_core::StatusStrProperty::kDescription),
-  /// source file in which this error occurred
-  GRPC_ERROR_STR_FILE = static_cast<int>(grpc_core::StatusStrProperty::kFile),
-  /// operating system description of this error
-  GRPC_ERROR_STR_OS_ERROR =
-      static_cast<int>(grpc_core::StatusStrProperty::kOsError),
-  /// syscall that generated this error
-  GRPC_ERROR_STR_SYSCALL =
-      static_cast<int>(grpc_core::StatusStrProperty::kSyscall),
-  /// peer that we were trying to communicate when this error occurred
-  GRPC_ERROR_STR_TARGET_ADDRESS =
-      static_cast<int>(grpc_core::StatusStrProperty::kTargetAddress),
-  /// grpc status message associated with this error
-  GRPC_ERROR_STR_GRPC_MESSAGE =
-      static_cast<int>(grpc_core::StatusStrProperty::kGrpcMessage),
-  /// hex dump (or similar) with the data that generated this error
-  GRPC_ERROR_STR_RAW_BYTES =
-      static_cast<int>(grpc_core::StatusStrProperty::kRawBytes),
-  /// tsi error string associated with this error
-  GRPC_ERROR_STR_TSI_ERROR =
-      static_cast<int>(grpc_core::StatusStrProperty::kTsiError),
-  /// filename that we were trying to read/write when this error occurred
-  GRPC_ERROR_STR_FILENAME =
-      static_cast<int>(grpc_core::StatusStrProperty::kFilename),
-  /// key associated with the error
-  GRPC_ERROR_STR_KEY = static_cast<int>(grpc_core::StatusStrProperty::kKey),
-  /// value associated with the error
-  GRPC_ERROR_STR_VALUE = static_cast<int>(grpc_core::StatusStrProperty::kValue),
-
-  /// Must always be last
-  GRPC_ERROR_STR_MAX,
-} grpc_error_strs;
-
+// DEPRECATED: Use grpc_core::StatusToString instead
+// TODO(veblush): Remove this once migration is done
 std::string grpc_error_std_string(grpc_error_handle error);
-
-// debug only toggles that allow for a sanity to check that ensures we will
-// never create any errors in the per-RPC hotpath.
-void grpc_disable_error_creation();
-void grpc_enable_error_creation();
-
-#define GRPC_ERROR_NONE absl::OkStatus()
-#define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError(""))
-#define GRPC_ERROR_CANCELLED absl::CancelledError()
-
-// Deprecated: Please do not use these macros.
-// These will be removed once migration is done.
-#define GRPC_ERROR_REF(err) (err)
-#define GRPC_ERROR_UNREF(err) (void)(err)
-
-#define GRPC_ERROR_IS_NONE(err) (err).ok()
 
 #define GRPC_ERROR_CREATE(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
-
-// Deprecated: Please do not use these macros. begin
-// TODO(veblush): Remove this once migration is done.
-#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) GRPC_ERROR_CREATE(desc)
-#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) GRPC_ERROR_CREATE(desc)
-#define GRPC_ERROR_CREATE_FROM_CPP_STRING(desc) GRPC_ERROR_CREATE(desc)
-#define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) GRPC_ERROR_CREATE(desc)
-// Deprecated: end
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,
@@ -168,14 +58,6 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
 #define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)                      \
   grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, count, \
                      errs)
-
-// Deprecated: Please do not use these macros. begin
-// TODO(veblush): Remove this once migration is done.
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count) \
-  GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)
-#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count) \
-  GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)
-// Deprecated: end
 
 // Consumes all the errors in the vector and forms a referencing error from
 // them. If the vector is empty, return absl::OkStatus().
@@ -194,12 +76,6 @@ static absl::Status grpc_status_create_from_vector(
 
 #define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
   grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
-
-// Deprecated: Please do not use these macros. begin
-// TODO(veblush): Remove this once migration is done.
-#define GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(desc, error_list) \
-  GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list)
-// Deprecated: end
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;
@@ -233,32 +109,6 @@ grpc_error_handle grpc_error_set_str(
 /// Returns false if the specified string is not set.
 bool grpc_error_get_str(grpc_error_handle error,
                         grpc_core::StatusStrProperty which, std::string* str);
-
-/// TODO(veblush): Remove these functions once migration is done
-/// PLEASE DON'T USE: begin
-inline grpc_error_handle grpc_error_set_int(grpc_error_handle src,
-                                            grpc_error_ints which,
-                                            intptr_t value) {
-  return grpc_error_set_int(
-      src, static_cast<grpc_core::StatusIntProperty>(which), value);
-}
-inline bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
-                               intptr_t* p) {
-  return grpc_error_get_int(
-      error, static_cast<grpc_core::StatusIntProperty>(which), p);
-}
-inline grpc_error_handle grpc_error_set_str(grpc_error_handle src,
-                                            grpc_error_strs which,
-                                            absl::string_view str) {
-  return grpc_error_set_str(
-      src, static_cast<grpc_core::StatusStrProperty>(which), str);
-}
-inline bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
-                               std::string* str) {
-  return grpc_error_get_str(
-      error, static_cast<grpc_core::StatusStrProperty>(which), str);
-}
-/// PLEASE DON'T USE: end
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

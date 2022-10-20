@@ -1,4 +1,4 @@
-// Copyright 2017 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+#ifndef GRPC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H
+#define GRPC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H
 
-package grpc.core;
+#include <grpc/support/port_platform.h>
 
-message Bucket {
-  double start = 1;
-  uint64 count = 2;
-}
+#include <stdint.h>
 
-message Histogram {
-  repeated Bucket buckets = 1;
-}
+namespace grpc_core {
 
-message Metric {
-  string name = 1;
-  oneof value {
-    uint64 count = 10;
-    Histogram histogram = 11;
-  }
-}
+struct HistogramView {
+  int (*bucket_for)(int value);
+  const int* bucket_boundaries;
+  int num_buckets;
+  const uint64_t* buckets;
 
-message Stats {
-  repeated Metric metrics = 1;
-}
+  double Percentile(double p) const;
+  double Count() const;
+  double ThresholdForCountBelow(double count_below) const;
+};
+
+}  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H

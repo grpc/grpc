@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -223,7 +224,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
             "SubchannelStreamClient %p CallState %p: error creating "
             "stream on subchannel (%s); will retry",
             subchannel_stream_client_.get(), this,
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
     CallEndedLocked(/*retry=*/true);
     return;
   }

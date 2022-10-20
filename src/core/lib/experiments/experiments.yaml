@@ -50,7 +50,7 @@
   description:
     Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on
     malloc to recycle arbitrary large blocks.
-  default: false
+  default: debug
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
@@ -87,8 +87,8 @@
 - name: periodic_resource_quota_reclamation
   description:
     Periodically return memory to the resource quota
-  default: false
-  expiry: 2023/01/01
+  default: true
+  expiry: 2023/04/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test, promise_test, hpack_test]
 - name: unconstrained_max_quota_buffer_size

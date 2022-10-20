@@ -1,5 +1,5 @@
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,35 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_TEST_CORE_UTIL_SCOPED_ENV_VAR_H
+#define GRPC_TEST_CORE_UTIL_SCOPED_ENV_VAR_H
+
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
+namespace testing {
 
-bool XdsResourceType::IsType(absl::string_view resource_type,
-                             bool* is_v2) const {
-  if (resource_type == type_url()) return true;
-  if (resource_type == v2_type_url()) {
-    if (is_v2 != nullptr) *is_v2 = true;
-    return true;
+class ScopedEnvVar {
+ public:
+  ScopedEnvVar(const char* env_var, const char* value) : env_var_(env_var) {
+    SetEnv(env_var_, value);
   }
-  return false;
-}
 
+  virtual ~ScopedEnvVar() { UnsetEnv(env_var_); }
+
+ private:
+  const char* env_var_;
+};
+
+class ScopedExperimentalEnvVar : public ScopedEnvVar {
+ public:
+  explicit ScopedExperimentalEnvVar(const char* env_var)
+      : ScopedEnvVar(env_var, "true") {}
+};
+
+}  // namespace testing
 }  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_UTIL_SCOPED_ENV_VAR_H

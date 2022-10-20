@@ -44,9 +44,12 @@ namespace experimental {
 class ThreadPool final : public Forkable, public Executor {
  public:
   ThreadPool();
-  // Ensures the thread pool is empty before destroying it.
+  // Asserts Quiesce was called.
   ~ThreadPool() override;
 
+  void Quiesce();
+
+  // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
 
@@ -131,6 +134,7 @@ class ThreadPool final : public Forkable, public Executor {
   // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
   // current thread (with nullptr indicating not a threadpool thread).
   static thread_local bool g_threadpool_thread_;
+  std::atomic<bool> quiesced_{false};
 };
 
 }  // namespace experimental

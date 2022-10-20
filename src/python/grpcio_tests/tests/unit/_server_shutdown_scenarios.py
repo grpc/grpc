@@ -17,11 +17,11 @@ import argparse
 from concurrent import futures
 import logging
 import os
+import queue
 import threading
 import time
 
 import grpc
-from six.moves import queue
 
 from tests.unit import test_common
 

@@ -62,14 +62,14 @@ namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_read_chunks", description_tcp_read_chunks, false},
+    {"tcp_read_chunks", description_tcp_read_chunks, kDefaultForDebugOnly},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
     {"peer_state_based_framing", description_peer_state_based_framing, false},
     {"flow_control_fixes", description_flow_control_fixes, false},
     {"memory_pressure_controller", description_memory_pressure_controller,
      false},
     {"periodic_resource_quota_reclamation",
-     description_periodic_resource_quota_reclamation, false},
+     description_periodic_resource_quota_reclamation, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
