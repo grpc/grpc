@@ -45,7 +45,9 @@ def grpc_extra_deps(ignore_version_differences = False, go_version="1.18"):
     Args:
       ignore_version_differences: Plumbed directly to the invocation of
         apple_rules_dependencies.
-      go_version: Version of go toolchains to use. If set to None, Bazel will try to use local version instead.
+      go_version: Version of go toolchains to use.
+        If set to host, it will let Bazel provide it's own version.
+        It avoids providing multiple versions.
     """
     protobuf_deps()
 
@@ -54,7 +56,7 @@ def grpc_extra_deps(ignore_version_differences = False, go_version="1.18"):
     api_dependencies()
 
     go_rules_dependencies()
-    go_register_toolchains(version = go_version)
+    go_register_toolchains(version = go_version if go_version != "host" else None)
     gazelle_dependencies()
 
     # Pull-in the go 3rd party dependencies for protoc_gen_validate, which is
