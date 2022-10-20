@@ -19,7 +19,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-//using Grpc.Core;
+using Grpc.Core;
 using Helloworld;
 
 namespace TestGrpcPackage
@@ -29,14 +29,18 @@ namespace TestGrpcPackage
         public static void Main(string[] args)
         {
             CheckGreeterProtobufCodegenWorks();
+            CheckGreeterGrpcProtobufPluginCodegenWorks();
             CheckDuplicateProtoFilesAreOk();
-
-            // TODO: check grpc stubs
         }
 
         private static object CheckGreeterProtobufCodegenWorks()
         {
             return new HelloRequest { Name = "ABC" };
+        }
+
+        private static object CheckGreeterGrpcProtobufPluginCodegenWorks()
+        {
+            return typeof(GreeterImpl);
         }
 
         // Test that codegen works well in case the .csproj has .proto files
@@ -48,12 +52,12 @@ namespace TestGrpcPackage
         }
     }
 
-    // class GreeterImpl : Greeter.GreeterBase
-    // {
-    //     // Server side handler of the SayHello RPC
-    //     public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
-    //     {
-    //         return Task.FromResult(new HelloReply { Message = "Hello " + request.Name });
-    //     }
-    // }
+    class GreeterImpl : Greeter.GreeterBase
+    {
+        // Server side handler of the SayHello RPC
+        public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new HelloReply { Message = "Hello " + request.Name });
+        }
+    }
 }
