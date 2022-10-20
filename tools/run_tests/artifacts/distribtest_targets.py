@@ -119,25 +119,20 @@ class CSharpDistribTest(object):
                 self.script_suffix,
                 copy_rel_path='test/distrib')
         elif self.platform == 'macos':
-            return create_jobspec(
-                self.name,
-                ['tools/run_tests/artifacts/run_distribtest_csharp.sh'],
-                environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                use_workspace=True)
+            return create_jobspec(self.name, [
+                'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix
+            ],
+                                  environ={
+                                      'EXTERNAL_GIT_ROOT': '../../../..',
+                                      'SKIP_NETCOREAPP21_DISTRIBTEST': '1',
+                                      'SKIP_NET50_DISTRIBTEST': '1',
+                                  },
+                                  use_workspace=True)
         elif self.platform == 'windows':
-            if self.arch == 'x64':
-                # Use double leading / as the first occurrence gets removed by msys bash
-                # when invoking the .bat file (side-effect of posix path conversion)
-                environ = {
-                    'MSBUILD_EXTRA_ARGS': '//p:Platform=x64',
-                    'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\x64\\Debug'
-                }
-            else:
-                environ = {'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
+            # TODO(jtattermusch): re-enable windows distribtest
             return create_jobspec(
                 self.name,
                 ['bash', 'tools/run_tests/artifacts/run_distribtest_csharp.sh'],
-                environ=environ,
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")
