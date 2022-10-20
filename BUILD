@@ -1097,7 +1097,6 @@ grpc_cc_library(
         "absl/functional:any_invocable",
     ],
     tags = [
-        "avoid_dep",
         "nofixdeps",
     ],
     deps = [
@@ -1336,7 +1335,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
-    tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_stack_builder",
@@ -1566,7 +1564,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
         "config",
