@@ -120,6 +120,17 @@ TEST_F(XdsHttpFilterRegistryTest, Basic) {
   EXPECT_EQ(GetFilter(extension.type), filter_ptr);
 }
 
+using XdsHttpFilterRegistryDeathTest = XdsHttpFilterTest;
+
+TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  ASSERT_DEATH(
+      // The router filter is already in the registry.
+      XdsHttpFilterRegistry::RegisterFilter(
+          std::make_unique<XdsHttpRouterFilter>()),
+      "");
+}
+
 //
 // Router filter tests
 //
