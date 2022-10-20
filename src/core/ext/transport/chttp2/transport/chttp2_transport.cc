@@ -381,7 +381,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
                        5,
                        INT32_MAX,
                        {true, true}},
-                      {GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_FRAME_SIZE,
+                      {GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE,
                        GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_FRAME_SIZE,
                        -1,
                        16384,
@@ -400,7 +400,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
               t, setting.setting_id,
               grpc_core::Clamp(value, setting.min, setting.max));
         } else if (grpc_core::IsPeerStateBasedFramingEnabled() &&
-                   grpc_core::IsTcpFrameSizeTuningEnabled()) {
+                   grpc_core::IsTcpFrameSizeTuningEnabled() && value > 0) {
           t->enable_preferred_rx_frame_advertisement = true;
           queue_setting_update(
               t, setting.setting_id,

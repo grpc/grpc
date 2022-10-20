@@ -235,11 +235,11 @@ typedef struct {
 /** Should we allow receipt of true-binary data on http2 connections?
     Defaults to on (1) */
 #define GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY "grpc.http2.true_binary"
-/** An experimental channel arg which configures the perferred frame size http2
- * setting sent to the peer at startup. If set to -1 (default), the preferred
- * frame size is not sent to the peer. Otherwise it is clamps the specified
- * value between 16384 and 16777215. */
-#define GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_FRAME_SIZE \
+/** An experimental channel arg which configures the perferred crypto frame size
+ * http2 setting sent to the peer at startup. If set to negative or 0 (default),
+ * the preferred frame size is not sent to the peer. Otherwise it clamps the
+ * specified positive value between 16384 and 16777215. */
+#define GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE \
   "grpc.experimental.http2.enable_preferred_frame_size"
 /** After a duration of this time the client/server pings its peer to see if the
     transport is still alive. Int valued, milliseconds. */

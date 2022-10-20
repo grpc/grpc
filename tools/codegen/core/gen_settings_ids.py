@@ -93,8 +93,8 @@ print("#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H",
 print("#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H",
       file=H)
 print(file=H)
+print("#include <grpc/support/port_platform.h>", file=H)
 print("#include <stdint.h>", file=H)
-print("#include <stdbool.h>", file=H)
 print(file=H)
 
 print("#include \"src/core/ext/transport/chttp2/transport/http2_settings.h\"",
