@@ -63,10 +63,22 @@ grpc_cc_test(
         "absl/debugging:leak_check",
         "benchmark",
     ],
-    tags = [
-        "no_mac",
-        "no_windows",
+    uses_polling = False,
+    deps = [
+        ":helpers",
+        "//:common_event_engine_closures",
     ],
+)
+
+grpc_cc_test(
+    name = "bm_thread_pool",
+    size = "small",
+    srcs = ["bm_thread_pool.cc"],
+    args = ["--benchmark_min_time=0.1"],
+    external_deps = [
+        "benchmark",
+    ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":helpers",
