@@ -1079,6 +1079,9 @@ TEST_P(XdsFederationTest, FederationServer) {
   const char* kNewRouteConfigName =
       "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
+  const char* kNewServerRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_server_route_config_name";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "new_edsservice_name";
@@ -1107,7 +1110,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   new_cluster.mutable_eds_cluster_config()->set_service_name(
       kNewEdsServiceName);
   authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
+  // New RouteConfig
   RouteConfiguration new_route_config = default_route_config_;
   new_route_config.set_name(kNewRouteConfigName);
   new_route_config.mutable_virtual_hosts(0)
@@ -1119,6 +1122,9 @@ TEST_P(XdsFederationTest, FederationServer) {
   listener.set_name(kNewListenerName);
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
+  // New Server RouteConfig
+  RouteConfiguration new_server_route_config = default_server_route_config_;
+  new_server_route_config.set_name(kNewServerRouteConfigName);
   // New Server Listeners
   for (int port : GetBackendPorts()) {
     Listener server_listener = default_server_listener_;
@@ -1128,7 +1134,9 @@ TEST_P(XdsFederationTest, FederationServer) {
         "?psm_project_id=1234"));
     server_listener.mutable_address()->mutable_socket_address()->set_port_value(
         port);
-    authority_balancer_->ads_service()->SetLdsResource(server_listener);
+    SetListenerAndRouteConfiguration(authority_balancer_.get(), server_listener,
+                                     new_server_route_config,
+                                     ServerHcmAccessor());
   }
   WaitForAllBackends(DEBUG_LOCATION);
 }

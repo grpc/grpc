@@ -86,11 +86,6 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -105,7 +100,6 @@
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -131,8 +125,6 @@ using ::envoy::type::matcher::v3::StringMatcher;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
-
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
@@ -1827,7 +1819,16 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   }
 }
 
-using XdsServerFilterChainMatchTest = XdsServerSecurityTest;
+class XdsServerFilterChainMatchTest : public XdsServerSecurityTest {
+ public:
+  HttpConnectionManager GetHttpConnectionManager(const Listener& listener) {
+    HttpConnectionManager http_connection_manager =
+        ServerHcmAccessor().Unpack(listener);
+    *http_connection_manager.mutable_route_config() =
+        default_server_route_config_;
+    return http_connection_manager;
+  }
+};
 
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenNoFilterChainMentioned) {
@@ -1841,7 +1842,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add a filter chain that will never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
@@ -1858,7 +1859,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with destination port that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
@@ -1877,7 +1878,7 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   // Add filter chain with server name that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -1895,7 +1896,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with transport protocol "tls" that should never match
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_transport_protocol("tls");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -1913,7 +1914,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with application protocol that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -1931,14 +1932,14 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with "raw_buffer" transport protocol
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   // Add another filter chain with no transport protocol set but application
   // protocol set (fails match)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -1956,7 +1957,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -1970,7 +1971,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -1983,7 +1984,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // 30)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix("192.168.1.1");
@@ -1992,7 +1993,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add another filter chain with no prefix range mentioned
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -2009,7 +2010,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the local source type (best match)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   // Add filter chain with the external source type but bad source port.
@@ -2017,7 +2018,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // because it is already being used by a backend.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
@@ -2025,7 +2026,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the default source type (ANY) but bad source port.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   listener.clear_default_filter_chain();
@@ -2046,7 +2047,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // is already being used by a backend.
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2061,7 +2062,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // 24 is the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2074,7 +2075,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // length 30) and bad source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix("192.168.1.1");
@@ -2085,7 +2086,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   listener.clear_default_filter_chain();
@@ -2102,7 +2103,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   Listener listener = default_server_listener_;
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   // Since we don't know which port will be used by the channel, just add all
   // ports except for 0.
   for (int i = 1; i < 65536; i++) {
@@ -2112,7 +2113,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // DownstreamTlsContext configuration.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -2134,11 +2135,11 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   // Add filter chain
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   // Add a duplicate filter chain
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
                                              backends_[0]->port(),
                                              default_server_route_config_);
@@ -2156,7 +2157,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   // Add filter chain with prefix range
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2168,7 +2169,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   // Add a filter chain with a duplicate prefix range entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2205,14 +2206,14 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
   // Add filter chain with "raw_buffer" transport protocol
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   // Add a duplicate filter chain with the same "raw_buffer" transport
   // protocol entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -2232,13 +2233,13 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
   // Add filter chain with the local source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   // Add a duplicate filter chain with the same local source type entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -2259,13 +2260,13 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the external source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   // Add a duplicate filter chain with the same external source type entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -2286,7 +2287,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with source prefix range
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2298,7 +2299,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add a filter chain with a duplicate source prefix range entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2336,12 +2337,12 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   // Add filter chain with the external source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
   // Add a duplicate filter chain with the same source port entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
                                              backends_[0]->port(),
@@ -2355,12 +2356,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
                            "filter chain: {source_ports={8080}}"));
 }
 
-class XdsServerRdsTest : public XdsEnabledServerStatusNotificationTest {
- protected:
-  XdsServerRdsTest() : env_var_("GRPC_XDS_EXPERIMENTAL_RBAC") {}
-
-  ScopedExperimentalEnvVar env_var_;
-};
+using XdsServerRdsTest = XdsEnabledServerStatusNotificationTest;
 
 TEST_P(XdsServerRdsTest, Basic) {
   backends_[0]->Start();

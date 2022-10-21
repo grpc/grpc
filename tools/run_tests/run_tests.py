@@ -278,7 +278,8 @@ class CLanguage(object):
             self._cmake_architecture_windows = 'x64' if self.args.arch == 'x64' else 'Win32'
             # when builing with Ninja, the VS common tools need to be activated first
             self._activate_vs_tools_windows = activate_vs_tools
-            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x86'
+            # "x64_x86" means create 32bit binaries, but use 64bit toolkit to secure more memory for the build
+            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x64_x86'
 
         else:
             if self.platform == 'linux':
@@ -1021,17 +1022,6 @@ class ObjCLanguage(object):
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='tvos-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'TvTests',
-                                     'PLATFORM': 'tvos'
-                                 }))
-
         return sorted(out)
 
     def pre_build_steps(self):

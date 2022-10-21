@@ -23,6 +23,7 @@
 #include <new>
 
 #include "opencensus/tags/context_util.h"
+#include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/context_util.h"
 #include "opencensus/trace/propagation/grpc_trace_bin.h"
 

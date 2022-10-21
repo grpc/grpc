@@ -33,6 +33,7 @@ TEST(ThreadPoolTest, CanRunClosure) {
   grpc_core::Notification n;
   p.Run([&n] { n.Notify(); });
   n.WaitForNotification();
+  p.Quiesce();
 }
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
@@ -41,6 +42,7 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   p->Run([p, &n]() mutable {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     // This should delete the thread pool and not deadlock
+    p->Quiesce();
     p.reset();
     n.Notify();
   });
@@ -76,6 +78,7 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   });
   gpr_log(GPR_INFO, "wait for notification");
   n2.WaitForNotification();
+  p.Quiesce();
 }
 
 void ScheduleSelf(ThreadPool* p) {
@@ -110,6 +113,7 @@ TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   // Our first thread pool implementation tried to create ~1M threads for this
   // test.
   ScheduleTwiceUntilZero(&p, 20);
+  p.Quiesce();
 }
 
 }  // namespace experimental

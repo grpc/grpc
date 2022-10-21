@@ -25,7 +25,6 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
@@ -45,7 +44,9 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
       context_(args->context),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+      event_engine_(
+          static_cast<ChannelFilter*>(elem->channel_data)
+              ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
   if (flags & kFilterExaminesServerInitialMetadata) {
     server_initial_metadata_latch_ = arena_->New<Latch<ServerMetadata*>>();
   }
