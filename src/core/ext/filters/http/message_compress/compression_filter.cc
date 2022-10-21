@@ -110,8 +110,8 @@ CompressionFilter::CompressionFilter(const ChannelArgs& args)
 MessageHandle CompressionFilter::CompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-    gpr_log(GPR_ERROR, "CompressMessage: len=%d alg=%d flags=%d",
-            (int)message->payload()->Length(), algorithm, message->flags());
+    gpr_log(GPR_ERROR, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
+            message->payload()->Length(), algorithm, message->flags());
   }
   uint32_t& flags = message->mutable_flags();
   if (algorithm == GRPC_COMPRESS_NONE || !enable_compression_ ||
@@ -154,9 +154,8 @@ absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm,
     int max_recv_message_length) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-    gpr_log(GPR_ERROR, "DecompressMessage: len=%d max=%d alg=%d",
-            (int)message->payload()->Length(), max_recv_message_length,
-            algorithm);
+    gpr_log(GPR_ERROR, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
+            message->payload()->Length(), max_recv_message_length, algorithm);
   }
   if (max_recv_message_length > 0 &&
       message->payload()->Length() >
