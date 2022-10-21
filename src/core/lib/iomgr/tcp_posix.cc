@@ -21,6 +21,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -542,7 +543,6 @@ struct grpc_tcp {
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 
-  bool frame_size_tuning_enabled;
   int min_progress_size; /* A hint from upper layers specifying the minimum
                             number of bytes that need to be read to make
                             meaningful progress */
@@ -820,7 +820,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", dump);
+        gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
         gpr_free(dump);
       }
     }
@@ -928,38 +928,35 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    if (read_bytes < 0 && errno == EAGAIN) {
+      /* NB: After calling call_read_cb a parallel call of the read handler may
+       * be running. */
+      if (total_read_bytes > 0) {
+        break;
+      }
+      finish_estimate(tcp);
+      tcp->inq = 0;
+      return false;
+    }
+
     /* We have read something in previous reads. We need to deliver those
      * bytes to the upper layer. */
-    if (read_bytes <= 0 &&
-        total_read_bytes >= static_cast<size_t>(tcp->min_progress_size)) {
+    if (read_bytes <= 0 && total_read_bytes >= 1) {
       tcp->inq = 1;
       break;
     }
 
-    if (read_bytes < 0) {
-      /* NB: After calling call_read_cb a parallel call of the read handler may
-       * be running. */
-      if (errno == EAGAIN) {
-        if (total_read_bytes > 0) {
-          break;
-        }
-        finish_estimate(tcp);
-        tcp->inq = 0;
-        return false;
-      } else {
-        grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
-        return true;
-      }
-    }
-    if (read_bytes == 0) {
-      /* 0 read size ==> end of stream
-       *
-       * We may have read something, i.e., total_read_bytes > 0, but
-       * since the connection is closed we will drop the data here, because we
-       * can't call the callback multiple times. */
+    if (read_bytes <= 0) {
+      /* 0 read size ==> end of stream */
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-      *error = tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp);
+      if (read_bytes == 0) {
+        *error = tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
+      } else {
+        *error =
+            tcp_annotate_error(absl::InternalError(absl::StrCat(
+                                   "recvmsg:", grpc_core::StrError(errno))),
+                               tcp);
+      }
       return true;
     }
 
@@ -1015,7 +1012,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   *error = absl::OkStatus();
-  if (tcp->frame_size_tuning_enabled) {
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
     // this round.
     tcp->min_progress_size -= total_read_bytes;
@@ -1845,7 +1842,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", data);
+        gpr_log(GPR_DEBUG, "WRITE DATA: %s", data);
         gpr_free(data);
       }
     }
@@ -1988,7 +1985,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  tcp->frame_size_tuning_enabled = grpc_core::IsTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
   if (options.tcp_tx_zero_copy_enabled &&
       !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
