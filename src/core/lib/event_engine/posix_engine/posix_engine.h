@@ -80,7 +80,7 @@ class AsyncConnect {
 
   void OnWritable(absl::Status status) ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   grpc_event_engine::posix_engine::PosixEngineClosure* on_writable_ = nullptr;
   EventEngine::OnConnectCallback on_connect_;
   std::shared_ptr<EventEngine> engine_;
