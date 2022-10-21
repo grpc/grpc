@@ -92,6 +92,7 @@ void BM_ThreadPool_RunClosure(benchmark::State& state) {
   delete signal;
   state.SetItemsProcessed(cb_count * state.iterations());
   pool.Quiesce();
+  delete closure;
 }
 BENCHMARK(BM_ThreadPool_RunClosure)
     ->Range(100, 4096)
