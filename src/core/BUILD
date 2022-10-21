@@ -1313,7 +1313,9 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_thread_pool",
         "forkable",
+        "notification",
         "posix_event_engine_timer",
         "time",
         "//:event_engine_base_hdrs",
