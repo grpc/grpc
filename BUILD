@@ -3089,6 +3089,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3115,7 +3116,6 @@ grpc_cc_library(
         "//src/core:latch",
         "//src/core:map_pipe",
         "//src/core:percent_encoding",
-        "//src/core:pipe",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",

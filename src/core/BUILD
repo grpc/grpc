@@ -363,6 +363,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "map_pipe",
+    external_deps = ["absl/status"],
     language = "c++",
     public_hdrs = [
         "lib/promise/map_pipe.h",
@@ -755,6 +756,7 @@ grpc_cc_library(
         "lib/promise/pipe.h",
     ],
     external_deps = [
+        "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
     ],

@@ -16,10 +16,8 @@
 //
 //
 
-#include "src/core/lib/compression/compression_internal.h"
 #ifndef GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
-
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
@@ -31,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 
