@@ -28,14 +28,12 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
                                            grpc_channel_element_args* args) {
-  EXPECT_EQ(args->channel_args->num_args, 2);
   int test_value = grpc_channel_args_find_integer(args->channel_args,
                                                   "test_key", {-1, 0, INT_MAX});
   EXPECT_EQ(test_value, 42);
@@ -115,13 +113,9 @@ TEST(ChannelStackTest, CreateChannelStack) {
 
   ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "grpc_channel_stack_init",
-      grpc_channel_stack_init(
-          1, free_channel, channel_stack, &filters, 1,
-          grpc_core::ChannelArgs()
-              .Set("test_key", 42)
-              .SetObject<grpc_event_engine::experimental::EventEngine>(
-                  grpc_event_engine::experimental::GetDefaultEventEngine()),
-          "test", channel_stack)));
+      grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
+                              grpc_core::ChannelArgs().Set("test_key", 42),
+                              "test", channel_stack)));
   EXPECT_EQ(channel_stack->count, 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = static_cast<int*>(channel_elem->channel_data);

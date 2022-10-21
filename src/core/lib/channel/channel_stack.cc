@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/alloc.h"
 
 using grpc_event_engine::experimental::EventEngine;
@@ -117,8 +118,12 @@ grpc_error_handle grpc_channel_stack_init(
     }
   }
 
+  auto conditioned_channel_args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(channel_args);
   stack->on_destroy.Init([]() {});
-  stack->event_engine.Init(channel_args.GetObjectRef<EventEngine>());
+  stack->event_engine.Init(
+      conditioned_channel_args.GetObjectRef<EventEngine>());
 
   size_t call_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
@@ -138,7 +143,7 @@ grpc_error_handle grpc_channel_stack_init(
 
   /* init per-filter data */
   grpc_error_handle first_error;
-  auto c_channel_args = channel_args.ToC();
+  auto c_channel_args = conditioned_channel_args.ToC();
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
     args.channel_args = c_channel_args.get();
