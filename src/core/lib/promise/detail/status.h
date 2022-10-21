@@ -45,6 +45,29 @@ inline absl::Status IntoStatus(absl::Status* status) {
 // can participate in TrySeq as result types that affect control flow.
 inline bool IsStatusOk(const absl::Status& status) { return status.ok(); }
 
+template <typename To, typename From>
+struct StatusCastImpl;
+
+template <typename To>
+struct StatusCastImpl<To, To> {
+  static To Cast(To&& t) { return std::move(t); }
+};
+
+template <typename T>
+struct StatusCastImpl<absl::StatusOr<T>, absl::Status> {
+  static absl::StatusOr<T> Cast(absl::Status&& t) { return std::move(t); }
+};
+
+template <typename T>
+struct StatusCastImpl<absl::StatusOr<T>, const absl::Status&> {
+  static absl::StatusOr<T> Cast(const absl::Status& t) { return t; }
+};
+
+template <typename To, typename From>
+To StatusCast(From&& from) {
+  return StatusCastImpl<To, From>::Cast(std::forward<From>(from));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_PROMISE_DETAIL_STATUS_H
