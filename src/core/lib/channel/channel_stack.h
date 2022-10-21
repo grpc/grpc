@@ -72,7 +72,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_channel_element_args {

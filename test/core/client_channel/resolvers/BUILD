@@ -28,7 +28,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_resolver_binder",
+        "//src/core:grpc_resolver_binder",
         "//test/core/util:grpc_test_util",
     ],
 )

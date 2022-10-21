@@ -27,10 +27,10 @@ grpc_cc_test(
     srcs = ["work_queue_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:common_event_engine_closures",
-        "//:event_engine_work_queue",
         "//:exec_ctx",
         "//:gpr_platform",
+        "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_work_queue",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -45,7 +45,7 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:event_engine_work_queue",
+        "//src/core:event_engine_work_queue",
         "//test/core/util:grpc_test_util",
     ],
 )

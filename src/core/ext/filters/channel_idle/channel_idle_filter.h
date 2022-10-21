@@ -34,7 +34,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 

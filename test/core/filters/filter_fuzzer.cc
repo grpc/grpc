@@ -80,7 +80,6 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -590,7 +589,7 @@ class MainLoop {
     };
 
     template <typename R>
-    absl::optional<FragmentHandle<R>> LoadMetadata(
+    absl::optional<Arena::PoolPtr<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
       if (*out != nullptr) return absl::nullopt;
       *out = std::make_unique<R>(arena_.get());
@@ -598,7 +597,7 @@ class MainLoop {
         (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
                        [](absl::string_view, const Slice&) {});
       }
-      return FragmentHandle<R>::TestOnlyWrap(out->get());
+      return Arena::PoolPtr<R>(out->get(), Arena::PooledDeleter(nullptr));
     }
 
     void Step() {
@@ -612,8 +611,8 @@ class MainLoop {
 
     Poll<ServerMetadataHandle> CheckCompletion() {
       if (server_trailing_metadata_ != nullptr) {
-        return ServerMetadataHandle::TestOnlyWrap(
-            server_trailing_metadata_.get());
+        return ServerMetadataHandle(server_trailing_metadata_.get(),
+                                    Arena::PooledDeleter(nullptr));
       }
       server_trailing_metadata_waker_ = MakeOwningWaker();
       return Pending{};
