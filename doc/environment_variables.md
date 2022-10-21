@@ -159,6 +159,11 @@ some configuration as environment variables that can be set.
   - native - a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution
 
+  *NetBIOS and DNS*: If your network relies on NetBIOS name resolution or a mixture of
+  DNS and NetBIOS name resolution (e.g. in some Windows networks) then you should use
+  the '*native*' DNS resolver or make sure all NetBIOS names are
+  also configured in DNS. The '*ares*' DNS resolver only supports DNS name resolution.
+
 * GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS
   Default: 5000
   Declares the interval between two backup polls on client channels. These polls

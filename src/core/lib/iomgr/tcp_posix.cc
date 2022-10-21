@@ -21,7 +21,6 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -543,6 +542,7 @@ struct grpc_tcp {
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 
+  bool frame_size_tuning_enabled;
   int min_progress_size; /* A hint from upper layers specifying the minimum
                             number of bytes that need to be read to make
                             meaningful progress */
@@ -928,6 +928,14 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    /* We have read something in previous reads. We need to deliver those
+     * bytes to the upper layer. */
+    if (read_bytes <= 0 &&
+        total_read_bytes >= static_cast<size_t>(tcp->min_progress_size)) {
+      tcp->inq = 1;
+      break;
+    }
+
     if (read_bytes < 0) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
@@ -944,16 +952,12 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
         return true;
       }
     }
-
-    /* We have read something in previous reads. We need to deliver those
-     * bytes to the upper layer. */
-    if (read_bytes <= 0 && total_read_bytes >= 1) {
-      tcp->inq = 1;
-      break;
-    }
-
     if (read_bytes == 0) {
-      /* 0 read size ==> end of stream */
+      /* 0 read size ==> end of stream
+       *
+       * We may have read something, i.e., total_read_bytes > 0, but
+       * since the connection is closed we will drop the data here, because we
+       * can't call the callback multiple times. */
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
       *error = tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp);
       return true;
@@ -1011,7 +1015,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   *error = absl::OkStatus();
-  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
+  if (tcp->frame_size_tuning_enabled) {
     // Update min progress size based on the total number of bytes read in
     // this round.
     tcp->min_progress_size -= total_read_bytes;
@@ -1984,6 +1988,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
+  tcp->frame_size_tuning_enabled = grpc_core::IsTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
   if (options.tcp_tx_zero_copy_enabled &&
       !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
