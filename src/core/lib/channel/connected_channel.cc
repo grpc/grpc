@@ -67,7 +67,6 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
@@ -372,7 +371,7 @@ class ClientStream : public Orphanable {
       batch_payload_.send_initial_metadata.peer_string =
           GetContext<CallContext>()->peer_string_atm_ptr();
       server_initial_metadata_ =
-          GetContext<FragmentAllocator>()->MakeServerMetadata();
+          GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
       batch_payload_.recv_initial_metadata.recv_initial_metadata =
           server_initial_metadata_.get();
       batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
@@ -381,7 +380,7 @@ class ClientStream : public Orphanable {
           nullptr;
       batch_payload_.recv_initial_metadata.peer_string = nullptr;
       server_trailing_metadata_ =
-          GetContext<FragmentAllocator>()->MakeClientMetadata();
+          GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
           server_trailing_metadata_.get();
       batch_payload_.recv_trailing_metadata.collect_stats =
@@ -421,7 +420,8 @@ class ClientStream : public Orphanable {
         } else {
           GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
           client_trailing_metadata_ =
-              GetContext<FragmentAllocator>()->MakeClientMetadata();
+              GetContext<Arena>()->MakePooled<ClientMetadata>(
+                  GetContext<Arena>());
           send_message_state_ = Closed{};
           send_message_.send_trailing_metadata = true;
           batch_payload_.send_trailing_metadata.send_trailing_metadata =
@@ -446,7 +446,7 @@ class ClientStream : public Orphanable {
                     pending->payload->Length());
           }
           recv_message_state_ = server_to_client_messages_->Push(
-              GetContext<FragmentAllocator>()->MakeMessage(
+              GetContext<Arena>()->MakePooled<Message>(
                   std::move(*pending->payload), pending->flags));
         } else {
           if (grpc_call_trace.enabled()) {
