@@ -176,9 +176,11 @@ class GracefulShutdownTest : public ::testing::Test {
   // Waits for \a bytes to show up in read_bytes_
   void WaitForReadBytes(absl::string_view bytes) {
     std::atomic<bool> done{false};
+    auto start_time = absl::Now();
     {
       MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
+        ASSERT_LT(absl::Now() - start_time, absl::Seconds(60));
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }
     }
