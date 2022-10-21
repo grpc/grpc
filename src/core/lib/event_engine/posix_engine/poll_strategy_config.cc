@@ -16,6 +16,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/poll_strategy_config.h"
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
