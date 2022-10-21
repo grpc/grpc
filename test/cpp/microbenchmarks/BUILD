@@ -66,7 +66,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":helpers",
-        "//:common_event_engine_closures",
+        "//src/core:common_event_engine_closures",
     ],
 )
 
