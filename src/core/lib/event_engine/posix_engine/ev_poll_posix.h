@@ -31,6 +31,7 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -74,7 +75,7 @@ class PollPoller : public PosixEventPoller {
     PollEventHandle* next = nullptr;
     PollEventHandle* prev = nullptr;
   };
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   Scheduler* scheduler_;
   std::atomic<int> ref_count_{1};
   bool use_phony_poll_;

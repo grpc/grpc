@@ -197,7 +197,7 @@ class PollEventHandle : public EventHandle {
     }
   }
   ~PollEventHandle() override = default;
-  absl::Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
+  grpc_core::Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
   PollPoller::HandlesList& ForkFdListPos() { return fork_fd_list_; }
   PollPoller::HandlesList& PollerHandlesListPos() {
     return poller_handles_list_;
@@ -212,7 +212,7 @@ class PollEventHandle : public EventHandle {
   int NotifyOnLocked(PosixEngineClosure** st, PosixEngineClosure* closure);
   // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
   // required.
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   std::atomic<int> ref_count_{1};
   int fd_;
   int pending_actions_;

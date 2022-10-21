@@ -139,7 +139,7 @@ class Epoll1EventHandle : public EventHandle {
       error_closure_->SetReady();
     }
   }
-  absl::Mutex* mu() { return &mu_; }
+  grpc_core::Mutex* mu() { return &mu_; }
   LockfreeEvent* ReadClosure() { return read_closure_.get(); }
   LockfreeEvent* WriteClosure() { return write_closure_.get(); }
   LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
@@ -150,7 +150,7 @@ class Epoll1EventHandle : public EventHandle {
   void HandleShutdownInternal(absl::Status why, bool releasing_fd);
   // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
   // required.
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   int fd_;
   // See Epoll1Poller::SetPendingActions for explanation on why pending_<***>_
   // need to be atomic.
