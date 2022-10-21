@@ -44,6 +44,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
@@ -314,22 +315,15 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       read_bytes = recvmsg(fd_, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
-    if (read_bytes < 0) {
+    if (read_bytes < 0 && errno == EAGAIN) {
       // NB: After calling call_read_cb a parallel call of the read handler may
       // be running.
-      if (errno == EAGAIN) {
-        if (total_read_bytes > 0) {
-          break;
-        }
-        FinishEstimate();
-        inq_ = 0;
-        return false;
-      } else {
-        incoming_buffer_->Clear();
-        status =
-            absl::InternalError(absl::StrCat("recvmsg:", std::strerror(errno)));
-        return true;
+      if (total_read_bytes > 0) {
+        break;
       }
+      FinishEstimate();
+      inq_ = 0;
+      return false;
     }
 
     // We have read something in previous reads. We need to deliver those bytes
@@ -339,10 +333,15 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       break;
     }
 
-    if (read_bytes == 0) {
+    if (read_bytes <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      status = absl::InternalError("Socket closed");
+      if (read_bytes == 0) {
+        status = absl::InternalError("Socket closed");
+      } else {
+        status = absl::InternalError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno)));
+      }
       return true;
     }
 
