@@ -17,7 +17,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <memory>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"

@@ -58,13 +58,13 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-using grpc_event_engine::posix_engine::EventHandle;
-using grpc_event_engine::posix_engine::PosixEngineClosure;
-using grpc_event_engine::posix_engine::PosixEventPoller;
-using grpc_event_engine::posix_engine::PosixSocketWrapper;
-using grpc_event_engine::posix_engine::PosixTcpOptions;
-using grpc_event_engine::posix_engine::SockaddrToString;
-using grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig;
+using ::grpc_event_engine::posix_engine::EventHandle;
+using ::grpc_event_engine::posix_engine::PosixEngineClosure;
+using ::grpc_event_engine::posix_engine::PosixEventPoller;
+using ::grpc_event_engine::posix_engine::PosixSocketWrapper;
+using ::grpc_event_engine::posix_engine::PosixTcpOptions;
+using ::grpc_event_engine::posix_engine::SockaddrToString;
+using ::grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig;
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(
@@ -80,7 +80,7 @@ AsyncConnect ::~AsyncConnect() { delete on_writable_; }
 void AsyncConnect::OnTimeoutExpired(absl::Status status) {
   bool done = false;
   {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (fd_ != nullptr) {
       fd_->ShutdownHandle(std::move(status));
     }
@@ -153,8 +153,8 @@ void AsyncConnect::OnWritable(absl::Status status)
                      &so_error_size);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
-    status =
-        absl::InternalError(absl::StrCat("getsockopt: ", std::strerror(errno)));
+    status = absl::FailedPreconditionError(
+        absl::StrCat("getsockopt: ", std::strerror(errno)));
     return;
   }
 
@@ -187,13 +187,13 @@ void AsyncConnect::OnWritable(absl::Status status)
       return;
     case ECONNREFUSED:
       // This error shouldn't happen for anything other than connect().
-      status = absl::InternalError(
+      status = absl::FailedPreconditionError(
           absl::StrCat("connect: ", std::strerror(so_error)));
       break;
     default:
       // We don't really know which syscall triggered the problem here, so
       // punt by reporting getsockopt().
-      status = absl::InternalError(
+      status = absl::FailedPreconditionError(
           absl::StrCat("getsockopt(SO_ERROR): ", std::strerror(so_error)));
       break;
   }
@@ -213,7 +213,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   auto addr_uri = SockaddrToString(&addr, true);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
-         ep = absl::InternalError(absl::StrCat(
+         ep = absl::FailedPreconditionError(absl::StrCat(
              "connect failed: ", "invalid addr: ",
              addr_uri.value()))]() mutable { on_connect(std::move(ep)); });
     return {0, 0};
@@ -244,7 +244,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
     // attempts.
     handle->OrphanHandle(nullptr, nullptr, "tcp_client_connect_error");
     Run([on_connect = std::move(on_connect),
-         ep = absl::InternalError(
+         ep = absl::FailedPreconditionError(
              absl::StrCat("connect failed: ", "addr: ", addr_uri.value(),
                           " error: ", std::strerror(saved_errno)))]() mutable {
       on_connect(std::move(ep));
@@ -505,7 +505,8 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     // possible. We dont need to pass a custom error here because it wont be
     // used since the on_connect_closure is not run if connect cancellation is
     // successfull.
-    ac->fd_->ShutdownHandle(absl::InternalError("Connection cancelled"));
+    ac->fd_->ShutdownHandle(
+        absl::FailedPreconditionError("Connection cancelled"));
   }
   bool done = (--ac->refs_ == 0);
   ac->mu_.Unlock();

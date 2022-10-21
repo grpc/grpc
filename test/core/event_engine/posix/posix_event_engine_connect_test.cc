@@ -65,7 +65,7 @@ namespace {
 // up the kernel listen queue on the server socket. Any subsequent attempts to
 // connect to the server socket will be pending indefinitely. This can be used
 // to test Connection timeouts and cancellation attempts.
-absl::StatusOr<std::vector<int>> CreateConnectedSockets(
+std::vector<int> CreateConnectedSockets(
     EventEngine::ResolvedAddress resolved_addr) {
   int server_socket;
   int opt = -1;
@@ -75,31 +75,33 @@ absl::StatusOr<std::vector<int>> CreateConnectedSockets(
   std::vector<int> ret_sockets;
   // Creating a new socket file descriptor.
   if ((server_socket = socket(AF_INET6, SOCK_STREAM, 0)) <= 0) {
-    return absl::UnknownError(
-        absl::StrCat("Error creating socket: ", std::strerror(errno)));
+    gpr_log(GPR_ERROR, "Error creating socket: %s", std::strerror(errno));
+    abort();
   }
-  // MacOS biulds fail if SO_REUSEADDR and SO_REUSEPORT are set in the same
+  // MacOS builds fail if SO_REUSEADDR and SO_REUSEPORT are set in the same
   // setsockopt syscall. So they are set separately one after the other.
   if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-    return absl::UnknownError(
-        absl::StrCat("Error setsockopt(SO_REUSEADDR): ", std::strerror(errno)));
+    gpr_log(GPR_ERROR, "Error setsockopt(SO_REUSEADDR): %s",
+            std::strerror(errno));
+    abort();
   }
   if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
-    return absl::UnknownError(
-        absl::StrCat("Error setsockopt(SO_REUSEPORT): ", std::strerror(errno)));
+    gpr_log(GPR_ERROR, "Error setsockopt(SO_REUSEPORT): %s",
+            std::strerror(errno));
+    abort();
   }
 
-  // Forcefully bind the new socket.
+  // Bind the new socket to server address.
   if (bind(server_socket, resolved_addr.address(), resolved_addr.size()) < 0) {
-    return absl::UnknownError(
-        absl::StrCat("Error bind: ", std::strerror(errno)));
+    gpr_log(GPR_ERROR, "Error bind: %s", std::strerror(errno));
+    abort();
   }
   // Set the new socket to listen for one active connection at a time.
   // accept() is intentionally not called on the socket. This allows the
   // connection queue to build up.
   if (listen(server_socket, 1) < 0) {
-    return absl::UnknownError(
-        absl::StrCat("Error listen: ", std::strerror(errno)));
+    gpr_log(GPR_ERROR, "Error listen: %s", std::strerror(errno));
+    abort();
   }
   ret_sockets.push_back(server_socket);
   // Create and connect client sockets until the connection attempt times out.
@@ -155,42 +157,20 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
       SockaddrToString(&resolved_addr, true).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
   grpc_core::Notification signal;
-  ASSERT_TRUE(sockets.ok());
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   posix_ee->Connect(
-      [&signal, &resolved_addr_str](
-          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
-        ASSERT_FALSE(status.ok());
-        absl::Status deadline_exceeded_expected_status =
-            absl::CancelledError(absl::StrCat(
-                "Failed to connect to remote host: ", resolved_addr_str,
-                " with error: ",
-                absl::DeadlineExceededError("connect() timed out").ToString()));
-        absl::Status conn_reset_expected_status =
-            absl::CancelledError(absl::StrCat(
-                "Failed to connect to remote host: ", resolved_addr_str,
-                " with error: ",
-                absl::InternalError(absl::StrCat("getsockopt(SO_ERROR): ",
-                                                 std::strerror(ECONNRESET)))
-                    .ToString()));
-        // Most of the time, the attempt will fail with deadline exceeded error.
-        // Occasionally the kernel may send a RST to the connection attempt
-        // instead of simply dropping the SYN packet. The RST will cause
-        // the connection to fail before the timeout expires. The frequency
-        // threshold for the RST depends on the kernel version. We dont
-        // want to fail the test in both cases.
-        EXPECT_TRUE(status.status() == deadline_exceeded_expected_status ||
-                    status.status() == conn_reset_expected_status);
+      [&signal](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
+        EXPECT_EQ(status.status().code(), absl::StatusCode::kCancelled);
         signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 3s);
   signal.WaitForNotification();
-  for (auto sock : *sockets) {
+  for (auto sock : sockets) {
     close(sock);
   }
   WaitForSingleOwner(std::move(posix_ee));
@@ -204,7 +184,6 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   std::string resolved_addr_str =
       SockaddrToString(&resolved_addr, true).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
-  ASSERT_TRUE(sockets.ok());
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
@@ -217,8 +196,10 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
       },
       URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-2"), 3s);
-  ASSERT_TRUE(posix_ee->CancelConnect(connection_handle));
-  for (auto sock : *sockets) {
+  if (connection_handle.keys[0] > 0) {
+    ASSERT_TRUE(posix_ee->CancelConnect(connection_handle));
+  }
+  for (auto sock : sockets) {
     close(sock);
   }
   WaitForSingleOwner(std::move(posix_ee));

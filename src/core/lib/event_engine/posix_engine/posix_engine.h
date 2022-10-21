@@ -68,7 +68,8 @@ class AsyncConnect {
         allocator_(std::move(allocator)),
         options_(options),
         resolved_addr_str_(resolved_addr_str),
-        connection_handle_(connection_handle) {}
+        connection_handle_(connection_handle),
+        connect_cancelled_(false) {}
 
   void Start(EventEngine::Duration timeout);
   ~AsyncConnect();
@@ -90,8 +91,8 @@ class AsyncConnect {
   MemoryAllocator allocator_;
   grpc_event_engine::posix_engine::PosixTcpOptions options_;
   std::string resolved_addr_str_;
-  int64_t connection_handle_ = 0;
-  bool connect_cancelled_ = false;
+  int64_t connection_handle_;
+  bool connect_cancelled_;
 };
 
 // A helper class to manager lifetime of the poller associated with the
