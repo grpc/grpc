@@ -1496,8 +1496,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/version.cc )
   s.files += %w( src/core/lib/transport/bdp_estimator.cc )
   s.files += %w( src/core/lib/transport/bdp_estimator.h )
-  s.files += %w( src/core/lib/transport/call_fragments.cc )
-  s.files += %w( src/core/lib/transport/call_fragments.h )
   s.files += %w( src/core/lib/transport/connectivity_state.cc )
   s.files += %w( src/core/lib/transport/connectivity_state.h )
   s.files += %w( src/core/lib/transport/error_utils.cc )

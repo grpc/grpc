@@ -36,8 +36,8 @@ grpc_cc_test(
         "absl/container:btree",
     ],
     deps = [
-        "//:channel_args",
         "//:grpc++",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -82,7 +82,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":helpers",
-        "//:common_event_engine_closures",
+        "//src/core:common_event_engine_closures",
     ],
 )
 
@@ -447,9 +447,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:common_event_engine_closures",
-        "//:event_engine_work_queue",
         "//:gpr",
+        "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_work_queue",
         "//test/core/util:grpc_test_util",
     ],
 )
