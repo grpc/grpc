@@ -16,23 +16,24 @@
 
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
 
+#include <inttypes.h>
 #include <stdint.h>
 
 #include <functional>
 #include <memory>
 #include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/http/message_compress/compression_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -45,7 +46,6 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map_pipe.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_concurrently.h"

@@ -16,8 +16,10 @@
 
 #include "src/core/lib/channel/promise_based_filter.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
@@ -28,9 +30,7 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"

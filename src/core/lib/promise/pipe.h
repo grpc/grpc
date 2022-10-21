@@ -19,8 +19,10 @@
 
 #include <stdint.h>
 
+#include <string>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 

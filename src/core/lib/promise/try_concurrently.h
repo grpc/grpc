@@ -17,9 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <cstdint>
-#include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include "absl/types/variant.h"

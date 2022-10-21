@@ -29,14 +29,12 @@
  * configurations and assess whether such a change is correct and desirable.
  */
 
-#include <stdarg.h>
 #include <string.h>
 
 #include <algorithm>
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_join.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
