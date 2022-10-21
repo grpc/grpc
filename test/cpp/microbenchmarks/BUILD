@@ -60,6 +60,7 @@ grpc_cc_test(
     srcs = ["bm_event_engine_run.cc"],
     args = ["--benchmark_min_time=0.1"],
     external_deps = [
+        "absl/debugging:leak_check",
         "benchmark",
     ],
     tags = [

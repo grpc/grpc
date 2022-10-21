@@ -947,6 +947,10 @@ grpc_cc_library(
     hdrs = [
         "lib/resource_quota/arena.h",
     ],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/utility",
+    ],
     deps = [
         "construct_destruct",
         "context",
@@ -1309,7 +1313,9 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_thread_pool",
         "forkable",
+        "notification",
         "posix_event_engine_timer",
         "time",
         "//:event_engine_base_hdrs",
@@ -1520,6 +1526,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
+        "iomgr_port",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
@@ -1667,10 +1674,15 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_common",
+        "event_engine_poller",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
+        "experiments",
         "init_internally",
+        "iomgr_port",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_poller_posix_default",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "//:event_engine_base_hdrs",
