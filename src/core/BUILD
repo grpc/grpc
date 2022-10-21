@@ -1621,6 +1621,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "slice",
+        "strerror",
         "time",
         "useful",
         "//:event_engine_base_hdrs",
