@@ -69,8 +69,8 @@ void TimerHeap::AdjustDownwards(size_t i, Timer* t) {
 }
 
 void TimerHeap::NoteChangedPriority(Timer* timer) {
-  size_t i = timer->heap_index;
-  size_t parent = (i - 1) / 2;
+  uint32_t i = static_cast<uint32_t>(timer->heap_index);
+  uint32_t parent = static_cast<uint32_t>((static_cast<int>(i) - 1) / 2);
   if (timers_[parent]->deadline > timer->deadline) {
     AdjustUpwards(i, timer);
   } else {
