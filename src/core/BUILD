@@ -748,17 +748,17 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
+    srcs = [
+        "lib/promise/pipe.cc",
+    ],
+    hdrs = [
+        "lib/promise/pipe.h",
+    ],
     external_deps = [
         "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
-    hdrs = [
-        "lib/promise/pipe.h",
-    ],
-    srcs = [
-        "lib/promise/pipe.cc",
-    ],
     deps = [
         "activity",
         "arena",
