@@ -17,7 +17,6 @@
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
 
 #include <inttypes.h>
-#include <stdint.h>
 
 #include <functional>
 #include <memory>
