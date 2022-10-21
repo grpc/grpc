@@ -58,7 +58,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
