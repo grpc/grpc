@@ -106,6 +106,18 @@ void AsyncConnect::OnWritable(absl::Status status)
   GPR_ASSERT(fd_ != nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
+  if (fd->IsHandleShutdown() && status.ok()) {
+    if (!connect_cancelled) {
+      // status is OK and handle has been shutdown but the connect was not
+      // cancelled. This can happen if the timeout expired and the while the
+      // OnWritable just started executing.
+      status = absl::DeadlineExceededError("connect() timed out");
+    } else {
+      // This can happen if the connection was cancelled while the OnWritable
+      // just started executing.
+      status = absl::FailedPreconditionError("Connection cancelled");
+    }
+  }
   mu_.Unlock();
 
   if (engine_->Cancel(alarm_handle_)) {
