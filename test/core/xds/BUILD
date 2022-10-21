@@ -32,7 +32,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc_xds_client",
+        "//src/core:grpc_xds_client",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -69,7 +69,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_google_mesh_ca_certificate_provider_factory",
+        "//src/core:grpc_google_mesh_ca_certificate_provider_factory",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -85,7 +85,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base",
         "//:grpc_opencensus_plugin",
-        "//:grpc_xds_channel_stack_modifier",
+        "//src/core:grpc_xds_channel_stack_modifier",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -166,7 +166,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_xds_client",
+        "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
@@ -203,7 +203,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_xds_client",
+        "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
@@ -226,7 +226,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_xds_client",
+        "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
@@ -245,7 +245,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_xds_client",
+        "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//test/core/util:grpc_test_util",
     ],
