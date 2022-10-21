@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/bin/bash
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+set -ex
 
-licenses(["notice"])
-
-grpc_package(name = "test/core/ext/filters/rbac")
-
-grpc_cc_test(
-    name = "rbac_service_config_parser_test",
-    srcs = ["rbac_service_config_parser_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "c++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:grpc_rbac_filter",
-        "//test/core/util:grpc_test_util",
-    ],
-)
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).
