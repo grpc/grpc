@@ -451,7 +451,7 @@ def grpc_end2end_tests():
             "//test/core/util:test_lb_policies",
             "//:grpc_authorization_provider",
             "//:grpc_http_filters",
-            "//:event_log",
+            "//src/core:event_log",
         ],
         visibility = [
             "//src/objective-c/tests:__subpackages__",

@@ -314,6 +314,14 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       read_bytes = recvmsg(fd_, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    // We have read something in previous reads. We need to deliver those bytes
+    // to the upper layer.
+    if (read_bytes <= 0 &&
+        total_read_bytes >= static_cast<size_t>(min_progress_size_)) {
+      inq_ = 1;
+      break;
+    }
+
     if (read_bytes < 0) {
       // NB: After calling call_read_cb a parallel call of the read handler may
       // be running.
@@ -331,16 +339,12 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
         return true;
       }
     }
-
-    // We have read something in previous reads. We need to deliver those bytes
-    // to the upper layer.
-    if (read_bytes <= 0 && total_read_bytes >= 1) {
-      inq_ = 1;
-      break;
-    }
-
     if (read_bytes == 0) {
       // 0 read size ==> end of stream
+      //
+      // We may have read something, i.e., total_read_bytes > 0, but since the
+      // connection is closed we will drop the data here, because we can't call
+      // the callback multiple times.
       incoming_buffer_->Clear();
       status = absl::InternalError("Socket closed");
       return true;
@@ -397,7 +401,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   status = absl::OkStatus();
-  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
+  if (frame_size_tuning_enabled_) {
     // Update min progress size based on the total number of bytes read in
     // this round.
     min_progress_size_ -= total_read_bytes;
@@ -578,7 +582,7 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
   read_mu_.Unlock();
-  if (args != nullptr && grpc_core::IsTcpFrameSizeTuningEnabled()) {
+  if (args != nullptr && frame_size_tuning_enabled_) {
     min_progress_size_ = args->read_hint_bytes;
   } else {
     min_progress_size_ = 1;
@@ -1220,6 +1224,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   tcp_zerocopy_send_ctx_ = std::make_unique<TcpZerocopySendCtx>(
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
+  frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
 #ifdef GRPC_HAVE_TCP_INQ
   int one = 1;
   if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {

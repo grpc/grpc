@@ -576,6 +576,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   std::atomic<bool> stop_error_notification_{false};
   std::unique_ptr<TcpZerocopySendCtx> tcp_zerocopy_send_ctx_;
   TcpZerocopySendRecord* current_zerocopy_send_ = nullptr;
+  // If true, the size of buffers alloted for tcp reads will be based on the
+  // specified min_progress_size values conveyed by the upper layers.
+  bool frame_size_tuning_enabled_ = false;
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
   int min_progress_size_ = 1;
