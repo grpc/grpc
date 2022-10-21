@@ -134,6 +134,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   wrapped_server_socket->MaybeShutdown(absl::OkStatus());
   delete wrapped_client_socket;
   delete wrapped_server_socket;
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
@@ -198,6 +199,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   delete on_read;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
   delete wrapped_client_socket;
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, KickWorks) {
@@ -219,6 +221,7 @@ TEST_F(IOCPTest, KickWorks) {
   });
   // wait for the callbacks to run
   kicked.WaitForNotification();
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
@@ -245,6 +248,7 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
                      [&cb_invoked]() { cb_invoked = true; });
   ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
   ASSERT_FALSE(cb_invoked);
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
@@ -259,6 +263,7 @@ TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
             static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
       },
       "");
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, StressTestThousandsOfSockets) {
@@ -334,6 +339,7 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
         }
       }
       iocp_worker.join();
+      executor.Quiesce();
     });
   }
   for (auto& t : threads) {

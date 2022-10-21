@@ -126,15 +126,20 @@ std::list<Connection> CreateConnectedEndpoints(
     server_signal->WaitForNotification();
     EXPECT_NE(server_endpoint, nullptr);
     ++g_num_active_connections;
+    PosixTcpOptions options = TcpOptionsFromEndpointConfig(config);
     connections.push_back(Connection{
-        CreatePosixEndpoint(handle,
-                            PosixEngineClosure::TestOnlyToClosure(
-                                [&poller](absl::Status /*status*/) {
-                                  if (--g_num_active_connections == 0) {
-                                    poller.Kick();
-                                  }
-                                }),
-                            posix_ee, config),
+        CreatePosixEndpoint(
+            handle,
+            PosixEngineClosure::TestOnlyToClosure(
+                [&poller](absl::Status /*status*/) {
+                  if (--g_num_active_connections == 0) {
+                    poller.Kick();
+                  }
+                }),
+            posix_ee,
+            options.resource_quota->memory_quota()->CreateMemoryAllocator(
+                "test"),
+            options),
         std::move(server_endpoint)});
     delete server_signal;
     server_signal = new grpc_core::Notification();
@@ -196,12 +201,14 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   void SetUp() override {
     oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
-    posix_ee_ = std::make_shared<PosixEventEngine>();
     scheduler_ =
         std::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
-    poller_ = GetDefaultPoller(scheduler_.get());
+    poller_ = MakeDefaultPoller(scheduler_.get());
+    posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
+    EXPECT_NE(posix_ee_, nullptr);
+    scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
     if (poller_ != nullptr) {
       gpr_log(GPR_INFO, "Using poller: %s", poller_->Name().c_str());
     }

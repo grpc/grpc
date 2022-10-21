@@ -24,8 +24,8 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:channel_args",
         "//:grpc_client_channel",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )

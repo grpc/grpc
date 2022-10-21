@@ -43,7 +43,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/call_fragments.h"
+#include "src/core/lib/transport/transport.h"
 
 class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {
