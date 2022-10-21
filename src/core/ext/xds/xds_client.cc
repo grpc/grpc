@@ -132,6 +132,8 @@ class XdsClient::ChannelState::AdsCallState
 
   void MaybeCancelSeenResponseTimer()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+  void MaybeStartSeenResponseTimer()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
  private:
   class AdsResponseParser : public XdsApi::AdsResponseParserInterface {
@@ -460,9 +462,9 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
   absl::Status status;
   transport_ = xds_client_->transport_factory_->Create(
       server,
-      [self = WeakRef(DEBUG_LOCATION, "OnConnectivityFailure")](
+      [self = WeakRef(DEBUG_LOCATION, "OnConnectivityChange")](
           absl::Status status) {
-        self->OnConnectivityFailure(std::move(status));
+        self->OnConnectivityChange(std::move(status));
       },
       &status);
   GPR_ASSERT(transport_ != nullptr);
@@ -547,14 +549,25 @@ void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
   }
 }
 
-void XdsClient::ChannelState::OnConnectivityFailure(absl::Status status) {
+void XdsClient::ChannelState::OnConnectivityChange(absl::Status status) {
   {
     MutexLock lock(&xds_client_->mu_);
-    SetChannelStatusLocked(std::move(status));
+    // Start or stop the ADS stream's seen-response timer, depending on
+    // whether the transport is connected or failing.
     if (ads_calld_ != nullptr) {
       auto* calld = ads_calld_->calld();
-      if (calld != nullptr) calld->MaybeCancelSeenResponseTimer();
+      if (calld != nullptr) {
+        if (status.ok()) {
+          calld->MaybeStartSeenResponseTimer();
+        } else {
+          calld->MaybeCancelSeenResponseTimer();
+        }
+      }
     }
+    // Set the channel status only if not OK.
+    // (For OK, we wait until we actually get a response on the ADS
+    // stream to clear the status.)
+    if (!status.ok()) SetChannelStatusLocked(std::move(status));
   }
   xds_client_->work_serializer_.DrainQueue();
 }
@@ -941,16 +954,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   for (const auto& p : state_map_) {
     SendMessageLocked(p.first);
   }
-  // Start a timer to wait for ADS response.  This ensures that if we're
-  // talking to an xDS server that is not responding at the application level,
-  // we will cancel the call and restart it before too long.
-  seen_response_timer_handle_ = xds_client()->engine_->RunAfter(
-      xds_client()->seen_ads_response_timeout_,
-      [self = Ref(DEBUG_LOCATION, "SeenResponseTimer")]() {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        self->OnSeenResponseTimer();
-      });
+  // If the channel is healthy, start the ADS response timer.
+  if (chand()->status_.ok()) MaybeStartSeenResponseTimer();
 }
 
 void XdsClient::ChannelState::AdsCallState::Orphan() {
@@ -1022,6 +1027,20 @@ void XdsClient::ChannelState::AdsCallState::MaybeCancelSeenResponseTimer() {
       xds_client()->engine_->Cancel(*seen_response_timer_handle_)) {
     seen_response_timer_handle_.reset();
   }
+}
+
+void XdsClient::ChannelState::AdsCallState::MaybeStartSeenResponseTimer() {
+  if (seen_response_timer_handle_.has_value()) return;
+  // Start a timer to wait for ADS response.  This ensures that if we're
+  // talking to an xDS server that is not responding at the application level,
+  // we will cancel the call and restart it before too long.
+  seen_response_timer_handle_ = xds_client()->engine_->RunAfter(
+      xds_client()->seen_ads_response_timeout_,
+      [self = Ref(DEBUG_LOCATION, "SeenResponseTimer")]() {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        self->OnSeenResponseTimer();
+      });
 }
 
 void XdsClient::ChannelState::AdsCallState::OnSeenResponseTimer() {

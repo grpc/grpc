@@ -201,7 +201,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
-    void OnConnectivityFailure(absl::Status status);
+    void OnConnectivityChange(absl::Status status);
 
     // Enqueues error notifications to watchers.  Caller must drain
     // XdsClient::work_serializer_ after releasing the lock.

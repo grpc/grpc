@@ -110,8 +110,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   using XdsTransportFactory::Ref;  // Make it public.
 
-  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
-                                absl::Status status);
+  void TriggerConnectivityChange(const XdsBootstrap::XdsServer& server,
+                                 absl::Status status);
 
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServer& server, const char* method,
@@ -123,16 +123,16 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   class FakeXdsTransport : public XdsTransport {
    public:
     explicit FakeXdsTransport(
-        std::function<void(absl::Status)> on_connectivity_failure)
-        : on_connectivity_failure_(
-              MakeRefCounted<RefCountedOnConnectivityFailure>(
-                  std::move(on_connectivity_failure))) {}
+        std::function<void(absl::Status)> on_connectivity_change)
+        : on_connectivity_change_(
+              MakeRefCounted<RefCountedOnConnectivityChange>(
+                  std::move(on_connectivity_change))) {}
 
     void Orphan() override;
 
     using XdsTransport::Ref;  // Make it public.
 
-    void TriggerConnectionFailure(absl::Status status);
+    void TriggerConnectivityChange(absl::Status status);
 
     RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method,
                                                    absl::Duration timeout);
@@ -140,19 +140,19 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
    private:
-    class RefCountedOnConnectivityFailure
-        : public RefCounted<RefCountedOnConnectivityFailure> {
+    class RefCountedOnConnectivityChange
+        : public RefCounted<RefCountedOnConnectivityChange> {
      public:
-      explicit RefCountedOnConnectivityFailure(
-          std::function<void(absl::Status)> on_connectivity_failure)
-          : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
+      explicit RefCountedOnConnectivityChange(
+          std::function<void(absl::Status)> on_connectivity_change)
+          : on_connectivity_change_(std::move(on_connectivity_change)) {}
 
       void Run(absl::Status status) {
-        on_connectivity_failure_(std::move(status));
+        on_connectivity_change_(std::move(status));
       }
 
      private:
-      std::function<void(absl::Status)> on_connectivity_failure_;
+      std::function<void(absl::Status)> on_connectivity_change_;
     };
 
     OrphanablePtr<StreamingCall> CreateStreamingCall(
@@ -163,7 +163,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     Mutex mu_;
     CondVar cv_;
-    RefCountedPtr<RefCountedOnConnectivityFailure> on_connectivity_failure_
+    RefCountedPtr<RefCountedOnConnectivityChange> on_connectivity_change_
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
@@ -171,7 +171,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   OrphanablePtr<XdsTransport> Create(
       const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
+      std::function<void(absl::Status)> on_connectivity_change,
       absl::Status* status) override;
 
   RefCountedPtr<FakeXdsTransport> GetTransport(
