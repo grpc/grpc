@@ -82,7 +82,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "//:posix_event_engine",
+        "//src/core:posix_event_engine",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
@@ -97,7 +97,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "//:windows_event_engine",
+        "//src/core:windows_event_engine",
         "//test/core/event_engine/test_suite:timer",
     ],
 )

@@ -34,10 +34,10 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "create_sockpair",
-        "//:common_event_engine_closures",
-        "//:event_engine_utils",
         "//:gpr_platform",
-        "//:windows_iocp",
+        "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_utils",
+        "//src/core:windows_iocp",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -57,9 +57,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "create_sockpair",
-        "//:common_event_engine_closures",
         "//:gpr_platform",
-        "//:windows_event_engine",
+        "//src/core:common_event_engine_closures",
+        "//src/core:windows_event_engine",
         "//test/core/util:grpc_test_util",
     ],
 )
