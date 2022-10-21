@@ -173,9 +173,6 @@ bool grpc_error_get_str(grpc_error_handle error,
           case absl::StatusCode::kOk:
             *s = "";
             return true;
-          case absl::StatusCode::kResourceExhausted:
-            *s = "RESOURCE_EXHAUSTED";
-            return true;
           case absl::StatusCode::kCancelled:
             *s = "CANCELLED";
             return true;
