@@ -319,15 +319,13 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(std::make_shared<ThreadPool>()),
-      timer_manager_(executor_) {
+      executor_(std::make_shared<ThreadPool>()) {
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 }
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(std::make_shared<ThreadPool>()),
-      timer_manager_(executor_) {
+      executor_(std::make_shared<ThreadPool>()) {
   if (grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
     poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
     if (poller_manager_->Poller() != nullptr) {
@@ -405,7 +403,6 @@ PosixEventEngine::~PosixEventEngine() {
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
-  timer_manager_.Shutdown();
 #ifdef GRPC_POSIX_SOCKET_TCP
   if (poller_manager_ != nullptr) {
     poller_manager_->TriggerShutdown();
