@@ -156,11 +156,11 @@ class TryConcurrently {
       : done_bits_(0),
         pre_main_(std::move(other.pre_main_)),
         post_main_(std::move(other.post_main_)) {
-    GPR_ASSERT(other.done_bits_ == 0);
+    GPR_DEBUG_ASSERT(other.done_bits_ == 0);
     Construct(&main_, std::move(other.main_));
   }
   TryConcurrently& operator=(TryConcurrently&& other) noexcept {
-    GPR_ASSERT(other.done_bits_ == 0);
+    GPR_DEBUG_ASSERT(other.done_bits_ == 0);
     done_bits_ = 0;
     pre_main_ = std::move(other.pre_main_);
     post_main_ = std::move(other.post_main_);
@@ -184,7 +184,7 @@ class TryConcurrently {
   Poll<Result> operator()() {
     auto r = pre_main_.template Run<Result, 1>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
-      GPR_ASSERT(!IsStatusOk(*status));
+      GPR_DEBUG_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
     }
     if ((done_bits_ & 1) == 0) {
@@ -197,7 +197,7 @@ class TryConcurrently {
     }
     r = post_main_.template Run<Result, 1 + PreMain::Size()>(done_bits_);
     if (auto* status = absl::get_if<Result>(&r)) {
-      GPR_ASSERT(!IsStatusOk(*status));
+      GPR_DEBUG_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
     }
     static const uint8_t kNecessaryBits =
