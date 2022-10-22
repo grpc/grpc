@@ -99,12 +99,14 @@ const Vtable<T> Inlined<T, Callable>::vtable = {
 // (this comes up often when the promise only accesses context data from the
 // containing activity).
 template <typename T, typename Callable>
-inline const Vtable<T>* shared_callable_impl(Callable&& callable) {
-  static Callable instance = std::forward<Callable>(callable);
-  static const Vtable<T> vtable = {[](void**) -> Poll<T> { return instance(); },
-                                   [](void**) {}};
-  return &vtable;
-}
+struct SharedCallable {
+  static const Vtable<T> vtable;
+};
+
+template <typename T, typename Callable>
+const Vtable<T> SharedCallable<T, Callable>::vtable = {
+    [](void** arg) -> Poll<T> { return (*static_cast<Callable*>(*arg))(); },
+    [](void**) {}};
 
 // Redirector type: given a callable type, expose a Make() function that creates
 // the appropriate underlying implementation.
@@ -137,9 +139,8 @@ struct ChooseImplForCallable<
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable, absl::enable_if_t<std::is_empty<Callable>::value>> {
-  static void Make(Callable&& callable, VtableAndArg<T>* out) {
-    out->vtable =
-        shared_callable_impl<T, Callable>(std::forward<Callable>(callable));
+  static void Make(Callable&&, VtableAndArg<T>* out) {
+    out->vtable = &SharedCallable<T, Callable>::vtable;
   }
 };
 
