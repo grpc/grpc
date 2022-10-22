@@ -362,6 +362,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "map_pipe",
+    external_deps = ["absl/status"],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/map_pipe.h",
+    ],
+    deps = [
+        "for_each",
+        "map",
+        "pipe",
+        "promise_factory",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "call_push_pull",
     hdrs = ["lib/promise/call_push_pull.h"],
     external_deps = ["absl/types:variant"],
@@ -738,8 +754,11 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
-    public_hdrs = [
+    hdrs = [
         "lib/promise/pipe.h",
+    ],
+    srcs = [
+        "lib/promise/pipe.cc",
     ],
     deps = [
         "arena",
