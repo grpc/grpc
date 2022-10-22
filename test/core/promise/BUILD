@@ -384,8 +384,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "call_push_pull_test",
-    srcs = ["call_push_pull_test.cc"],
+    name = "try_concurrently_test",
+    srcs = ["try_concurrently_test.cc"],
     external_deps = [
         "gtest",
         "absl/status",
@@ -395,6 +395,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:call_push_pull",
+        "//src/core:try_concurrently",
     ],
 )

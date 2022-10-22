@@ -362,16 +362,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "call_push_pull",
-    hdrs = ["lib/promise/call_push_pull.h"],
+    name = "try_concurrently",
+    hdrs = ["lib/promise/try_concurrently.h"],
     external_deps = ["absl/types:variant"],
     language = "c++",
     deps = [
-        "bitset",
         "construct_destruct",
         "poll",
         "promise_like",
         "promise_status",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
