@@ -94,7 +94,7 @@ class Combiner;
 ///               since that implies a core re-entry outside of application
 ///               callbacks.
 ///
-class ExecCtx {
+class GRPC_DLL ExecCtx {
  public:
   /// Default Constructor
 
@@ -262,7 +262,7 @@ class ExecCtx {
 ///
 ///
 
-class ApplicationCallbackExecCtx {
+class GRPC_DLL ApplicationCallbackExecCtx {
  public:
   /// Default Constructor
   ApplicationCallbackExecCtx() { Set(this, flags_); }

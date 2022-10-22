@@ -19,8 +19,8 @@ extern "C" {
 
 typedef struct grpc_health_v1_HealthCheckRequest grpc_health_v1_HealthCheckRequest;
 typedef struct grpc_health_v1_HealthCheckResponse grpc_health_v1_HealthCheckResponse;
-extern const upb_MiniTable grpc_health_v1_HealthCheckRequest_msg_init;
-extern const upb_MiniTable grpc_health_v1_HealthCheckResponse_msg_init;
+extern const GRPC_DLL upb_MiniTable grpc_health_v1_HealthCheckRequest_msg_init;
+extern const GRPC_DLL upb_MiniTable grpc_health_v1_HealthCheckResponse_msg_init;
 
 typedef enum {
   grpc_health_v1_HealthCheckResponse_UNKNOWN = 0,
