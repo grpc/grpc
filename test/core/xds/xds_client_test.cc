@@ -164,6 +164,10 @@ class XdsClientTest : public ::testing::Test {
         authorities_[std::move(name)] = std::move(authority);
         return *this;
       }
+      Builder& set_ignore_resource_deletion(bool ignore_resource_deletion) {
+        server_.set_ignore_resource_deletion(ignore_resource_deletion);
+        return *this;
+      }
       std::unique_ptr<XdsBootstrap> Build() {
         auto bootstrap = std::make_unique<FakeXdsBootstrap>();
         bootstrap->server_ = std::move(server_);
@@ -1543,6 +1547,104 @@ TEST_F(XdsClientTest, ResourceDoesNotExistWhenRemovedByServerInUpdate) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"wc1"});
   // Server sends the resource again.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("3")
+          .set_nonce("C")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 7))
+          .Serialize());
+  // XdsClient should have delivered the response to the watchers.
+  resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 7);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 7);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"3", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Cancel watch.
+  CancelWildcardCapableWatch(watcher.get(), "wc1");
+  CancelWildcardCapableWatch(watcher2.get(), "wc1");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = WaitForRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+                 /*version_info=*/"3", /*response_nonce=*/"C",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
+// This tests that when we ignore resource deletions from the server
+// when configured to do so.
+TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
+  InitXdsClient(FakeXdsBootstrap::Builder().set_ignore_resource_deletion(true));
+  // Start a watch for "wc1".
+  auto watcher = StartWildcardCapableWatch("wc1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Server sends a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Server now sends a response without the resource, thus indicating
+  // it's been deleted.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .Serialize());
+  // Watcher should not see any update, since we should have ignored the
+  // deletion.
+  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
+  // Start a new watcher for the same resource.  It should immediately
+  // receive the cached resource.
+  auto watcher2 = StartWildcardCapableWatch("wc1");
+  resource = watcher2->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"2", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Server sends a new value for the resource.
   stream->SendMessageToClient(
       ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
           .set_version_info("3")
