@@ -70,12 +70,9 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
   // Assumes all 'done_bits' are 0
   FusedSet(FusedSet&& other) noexcept : FusedSet<Ts...>(std::move(other)) {
     Construct(&wrapper_, std::move(other.wrapper_));
+    other.DestroyAll();
   }
-  FusedSet& operator=(FusedSet&& other) noexcept {
-    FusedSet<Ts...>::operator=(std::move(other));
-    wrapper_ = std::move(other.wrapper_);
-    return *this;
-  }
+  FusedSet& operator=(FusedSet&& other) noexcept = delete;
 
   static constexpr size_t Size() { return 1 + sizeof...(Ts); }
 
@@ -90,6 +87,11 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
       Destruct(&wrapper_);
     }
     FusedSet<Ts...>::template Destroy<kDoneBit + 1>(done_bits);
+  }
+
+  void DestroyAll() {
+    Destruct(&wrapper_);
+    FusedSet<Ts...>::DestroyAll();
   }
 
   template <typename Result, int kDoneBit>
@@ -130,6 +132,7 @@ class FusedSet<> {
   }
   template <int kDoneBit>
   void Destroy(uint8_t) {}
+  void DestroyAll() {}
 
   template <typename P>
   FusedSet<P> With(P x) {
