@@ -53,37 +53,43 @@ struct VtableAndArg {
 // from. Since in either case these objects should not be polled, we simply
 // crash if it is.
 template <typename T>
-inline const Vtable<T>* null_impl() {
-  static const Vtable<T> vtable = {[](void**) -> Poll<T> {
+struct Null {
+  static const Vtable<T> vtable;
+};
+
+template <typename T>
+const Vtable<T> Null<T>::vtable = {[](void**) -> Poll<T> {
                                      abort();
                                      GPR_UNREACHABLE_CODE(return Pending{});
                                    },
                                    [](void**) {}};
-  return &vtable;
-}
 
 // Implementation of ImplInterface for a callable object.
 template <typename T, typename Callable>
-inline const Vtable<T>* allocated_callable_impl() {
-  static const Vtable<T> vtable = {
-      [](void** arg) -> Poll<T> {
-        return poll_cast<T>((*static_cast<Callable*>(*arg))());
-      },
-      [](void** arg) { static_cast<Callable*>(*arg)->~Callable(); }};
-  return &vtable;
-}
+struct AllocatedCallable {
+  static const Vtable<T> vtable;
+};
+
+template <typename T, typename Callable>
+const Vtable<T> AllocatedCallable<T, Callable>::vtable = {
+    [](void** arg) -> Poll<T> {
+      return poll_cast<T>((*static_cast<Callable*>(*arg))());
+    },
+    [](void** arg) { static_cast<Callable*>(*arg)->~Callable(); }};
 
 // Implementation of ImplInterface for a small callable object (one that fits
 // within the void* arg)
 template <typename T, typename Callable>
-inline const Vtable<T>* inlined_callable_impl() {
-  static const Vtable<T> vtable = {
-      [](void** arg) -> Poll<T> {
-        return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
-      },
-      [](void** arg) { reinterpret_cast<Callable*>(arg)->~Callable(); }};
-  return &vtable;
-}
+struct Inlined {
+  static const Vtable<T> vtable;
+};
+
+template <typename T, typename Callable>
+const Vtable<T> Inlined<T, Callable>::vtable = {
+    [](void** arg) -> Poll<T> {
+      return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
+    },
+    [](void** arg) { reinterpret_cast<Callable*>(arg)->~Callable(); }};
 
 // If a callable object is empty we can substitute any instance of that callable
 // for the one we call (for how could we tell the difference)?
@@ -111,7 +117,7 @@ struct ChooseImplForCallable<
     absl::enable_if_t<!std::is_empty<Callable>::value &&
                       (sizeof(Callable) > sizeof(void*))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
-    *out = {allocated_callable_impl<T, Callable>(),
+    *out = {&AllocatedCallable<T, Callable>::vtable,
             GetContext<Arena>()->template New<Callable>(
                 std::forward<Callable>(callable))};
   }
@@ -123,7 +129,7 @@ struct ChooseImplForCallable<
     absl::enable_if_t<!std::is_empty<Callable>::value &&
                       (sizeof(Callable) <= sizeof(void*))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
-    out->vtable = inlined_callable_impl<T, Callable>();
+    out->vtable = &Inlined<T, Callable>::vtable;
     new (&out->arg) Callable(std::forward<Callable>(callable));
   }
 };
@@ -169,12 +175,12 @@ class ArenaPromise {
   // ArenaPromise is movable.
   ArenaPromise(ArenaPromise&& other) noexcept
       : vtable_and_arg_(other.vtable_and_arg_) {
-    other.vtable_and_arg_.vtable = arena_promise_detail::null_impl<T>();
+    other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
     vtable_and_arg_.vtable->destroy(&vtable_and_arg_.arg);
     vtable_and_arg_ = other.vtable_and_arg_;
-    other.vtable_and_arg_.vtable = arena_promise_detail::null_impl<T>();
+    other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
     return *this;
   }
 
@@ -187,13 +193,13 @@ class ArenaPromise {
   }
 
   bool has_value() const {
-    return vtable_and_arg_.vtable != arena_promise_detail::null_impl<T>();
+    return vtable_and_arg_.vtable != &arena_promise_detail::Null<T>::vtable;
   }
 
  private:
   // Underlying impl object.
   arena_promise_detail::VtableAndArg<T> vtable_and_arg_ = {
-      arena_promise_detail::null_impl<T>(), nullptr};
+      &arena_promise_detail::Null<T>::vtable, nullptr};
 };
 
 }  // namespace grpc_core
