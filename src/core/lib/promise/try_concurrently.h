@@ -269,6 +269,37 @@ auto TryConcurrently<Main, PreMain, PostMain>::Pull(P p) {
 
 }  // namespace promise_detail
 
+// TryConcurrently runs a set of promises concurrently.
+// There is a structure to the promises:
+//  - A 'main' promise dominates the others - it must complete before the
+//    overall promise successfully completes. Its result is chosen in the event
+//    of successful completion.
+//  - A set of (optional) push and pull promises to aid main. Push promises are
+//    polled before main, pull promises are polled after. In this way we can
+//    avoid overall wakeup churn - sending a message will tend to push things
+//    down the promise tree as its polled, so that send should be in a push
+//    promise - then as the main promise is polled and it calls into things
+//    lower in the stack they'll already see things there (this reasoning holds
+//    for receiving things and the pull promises too!).
+//  - Each push and pull promise is either necessary or optional.
+//    Necessary promises must complete successfully before the overall promise
+//    completes. Optional promises will just be cancelled once the main promise
+//    completes and any necessary helpers.
+//  - If any of the promises fail, the overall promise fails immediately.
+// API:
+//  This function, TryConcurrently, is used to create a TryConcurrently promise.
+//  It takes a single argument, being the main promise. That promise also has
+//  a set of methods for attaching push and pull promises. The act of attachment
+//  returns a new TryConcurrently promise with previous contained promises moved
+//  out.
+//  The methods exposed:
+//  - Push, NecessaryPush: attach a push promise (with the first variant being
+//                         optional, the second necessary).
+//  - Pull, NecessaryPull: attach a pull promise, with variants as above.
+// Example:
+//  TryConcurrently(call_next_filter(std::move(call_args)))
+//     .Push(send_messages_promise)
+//     .Pull(recv_messages_promise)
 template <typename Main>
 auto TryConcurrently(Main main) {
   return promise_detail::MakeTryConcurrently(std::move(main),
