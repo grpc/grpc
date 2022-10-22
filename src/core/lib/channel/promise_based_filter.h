@@ -36,6 +36,8 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -58,8 +60,10 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -130,6 +134,8 @@ enum class FilterEndpoint {
 // Flags for MakePromiseBasedFilter.
 static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 static constexpr uint8_t kFilterIsLast = 2;
+static constexpr uint8_t kFilterExaminesOutboundMessages = 4;
+static constexpr uint8_t kFilterExaminesInboundMessages = 8;
 
 namespace promise_filter_detail {
 
@@ -263,6 +269,92 @@ class BaseCallData : public Activity, private Wakeable {
     return p.release();
   }
 
+  class SendMessage {
+   public:
+    explicit SendMessage(BaseCallData* base)
+        : base_(base), pipe_(base->arena()) {}
+    PipeReceiver<MessageHandle>* outgoing_pipe() { return &pipe_.receiver; }
+
+    void StartOp(CapturedBatch batch);
+    void GotPipe(PipeReceiver<MessageHandle>* receiver);
+    void WakeInsideCombiner(Flusher* flusher);
+    void Done(const ServerMetadata& metadata);
+    bool HaveCapturedBatch() const { return batch_.is_captured(); }
+    bool IsIdle() const;
+
+   private:
+    enum class State : uint8_t {
+      kInitial,
+      kIdle,
+      kGotBatchNoPipe,
+      kGotBatch,
+      kPushedToPipe,
+      kForwardedBatch,
+      kBatchCompleted,
+      kCancelled,
+    };
+    static const char* StateString(State);
+
+    void OnComplete(absl::Status status);
+
+    BaseCallData* const base_;
+    State state_ = State::kInitial;
+    Pipe<MessageHandle> pipe_;
+    PipeReceiver<MessageHandle>* receiver_ = nullptr;
+    absl::optional<PipeSender<MessageHandle>::PushType> push_;
+    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    absl::optional<NextResult<MessageHandle>> next_result_;
+    CapturedBatch batch_;
+    grpc_closure* intercepted_on_complete_;
+    grpc_closure on_complete_ =
+        MakeMemberClosure<SendMessage, &SendMessage::OnComplete>(this);
+    absl::Status completed_status_;
+  };
+
+  class ReceiveMessage {
+   public:
+    explicit ReceiveMessage(BaseCallData* base)
+        : base_(base), pipe_(base->arena()) {}
+    PipeSender<MessageHandle>* incoming_pipe() { return &pipe_.sender; }
+
+    void StartOp(CapturedBatch& batch);
+    void GotPipe(PipeSender<MessageHandle>* sender);
+    void WakeInsideCombiner(Flusher* flusher);
+    void Done(const ServerMetadata& metadata, Flusher* flusher);
+
+   private:
+    enum class State : uint8_t {
+      kInitial,
+      kIdle,
+      kForwardedBatchNoPipe,
+      kForwardedBatch,
+      kBatchCompletedNoPipe,
+      kBatchCompleted,
+      kPushedToPipe,
+      kPulledFromPipe,
+      kCancelled,
+      kCancelledWhilstForwarding,
+      kBatchCompletedButCancelled,
+    };
+    static const char* StateString(State);
+
+    void OnComplete(absl::Status status);
+
+    BaseCallData* const base_;
+    Pipe<MessageHandle> pipe_;
+    PipeSender<MessageHandle>* sender_;
+    State state_ = State::kInitial;
+    uint32_t scratch_flags_;
+    absl::optional<SliceBuffer>* intercepted_slice_buffer_;
+    uint32_t* intercepted_flags_;
+    absl::optional<PipeSender<MessageHandle>::PushType> push_;
+    absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
+    absl::Status completed_status_;
+    grpc_closure* intercepted_on_complete_;
+    grpc_closure on_complete_ =
+        MakeMemberClosure<ReceiveMessage, &ReceiveMessage::OnComplete>(this);
+  };
+
   Arena* arena() { return arena_; }
   grpc_call_element* elem() const { return elem_; }
   CallCombiner* call_combiner() const { return call_combiner_; }
@@ -271,11 +363,25 @@ class BaseCallData : public Activity, private Wakeable {
   Latch<ServerMetadata*>* server_initial_metadata_latch() const {
     return server_initial_metadata_latch_;
   }
+  PipeReceiver<MessageHandle>* outgoing_messages_pipe() const {
+    return send_message_ == nullptr ? nullptr : send_message_->outgoing_pipe();
+  }
+  PipeSender<MessageHandle>* incoming_messages_pipe() const {
+    return receive_message_ == nullptr ? nullptr
+                                       : receive_message_->incoming_pipe();
+  }
+  SendMessage* send_message() const { return send_message_; }
+  ReceiveMessage* receive_message() const { return receive_message_; }
 
   bool is_last() const {
     return grpc_call_stack_element(call_stack_, call_stack_->count - 1) ==
            elem_;
   }
+
+  virtual void WakeInsideCombiner(Flusher* flusher) = 0;
+
+  virtual absl::string_view ClientOrServerString() const = 0;
+  std::string LogTag() const;
 
  private:
   // Wakeable implementation.
@@ -292,7 +398,9 @@ class BaseCallData : public Activity, private Wakeable {
   CallFinalization finalization_;
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
-  Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
+  Latch<ServerMetadata*>* const server_initial_metadata_latch_;
+  SendMessage* const send_message_;
+  ReceiveMessage* const receive_message_;
   grpc_event_engine::experimental::EventEngine* event_engine_;
 };
 
@@ -341,11 +449,15 @@ class ClientCallData : public BaseCallData {
     kCancelled
   };
 
+  static const char* StateString(SendInitialState);
+  static const char* StateString(RecvTrailingState);
+  std::string DebugString() const;
+
   struct RecvInitialMetadata;
   class PollContext;
 
   // Handle cancellation.
-  void Cancel(grpc_error_handle error);
+  void Cancel(grpc_error_handle error, Flusher* flusher);
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
   void StartPromise(Flusher* flusher);
@@ -371,8 +483,10 @@ class ClientCallData : public BaseCallData {
   void SetStatusFromError(grpc_metadata_batch* metadata,
                           grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner(Flusher* flusher);
+  void WakeInsideCombiner(Flusher* flusher) override;
   void OnWakeup() override;
+
+  absl::string_view ClientOrServerString() const override { return "CLI"; }
 
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
@@ -380,6 +494,9 @@ class ClientCallData : public BaseCallData {
   CapturedBatch send_initial_metadata_batch_;
   // Pointer to where trailing metadata will be stored.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  // Trailing metadata as returned by the promise, if we hadn't received
+  // trailing metadata from below yet (so we can substitute it in).
+  ServerMetadataHandle cancelling_metadata_;
   // State tracking recv initial metadata for filters that care about it.
   RecvInitialMetadata* recv_initial_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.
@@ -407,6 +524,9 @@ class ServerCallData : public BaseCallData {
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) override;
 
+ protected:
+  absl::string_view ClientOrServerString() const override { return "SVR"; }
+
  private:
   // At what stage is our handling of recv initial metadata?
   enum class RecvInitialState {
@@ -425,6 +545,10 @@ class ServerCallData : public BaseCallData {
   enum class SendTrailingState {
     // Start state: no op seen
     kInitial,
+    // We saw the op, but it was with a send message op (or one was in progress)
+    // - so we'll wait for that to complete before processing the trailing
+    // metadata.
+    kQueuedBehindSendMessage,
     // We saw the op, and are waiting for the promise to complete
     // to forward it.
     kQueued,
@@ -433,6 +557,10 @@ class ServerCallData : public BaseCallData {
     // We were cancelled.
     kCancelled
   };
+
+  static const char* StateString(RecvInitialState state);
+  static const char* StateString(SendTrailingState state);
+  std::string DebugString() const;
 
   class PollContext;
   struct SendInitialMetadata;
@@ -451,20 +579,29 @@ class ServerCallData : public BaseCallData {
   static void RecvInitialMetadataReadyCallback(void* arg,
                                                grpc_error_handle error);
   void RecvInitialMetadataReady(grpc_error_handle error);
+  static void RecvTrailingMetadataReadyCallback(void* arg,
+                                                grpc_error_handle error);
+  void RecvTrailingMetadataReady(grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner(Flusher* flusher);
+  void WakeInsideCombiner(Flusher* flusher) override;
   void OnWakeup() override;
 
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  // Pointer to where trailing metadata will be stored.
+  grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   // State for sending initial metadata.
   SendInitialMetadata* send_initial_metadata_ = nullptr;
-  // Closure to call when we're done with the trailing metadata.
+  // Closure to call when we're done with the initial metadata.
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
+  // Closure to call when we're done with the trailing metadata.
+  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
+  // Our closure pointing to RecvTrailingMetadataReadyCallback.
+  grpc_closure recv_trailing_metadata_ready_;
   // Error received during cancellation.
   grpc_error_handle cancelled_error_;
   // Trailing metadata batch
