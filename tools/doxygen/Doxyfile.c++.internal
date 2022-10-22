@@ -2266,7 +2266,6 @@ src/core/lib/matchers/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
-src/core/lib/promise/call_push_pull.h \
 src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
@@ -2284,6 +2283,7 @@ src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
 src/core/lib/promise/sleep.cc \
 src/core/lib/promise/sleep.h \
+src/core/lib/promise/try_concurrently.h \
 src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
