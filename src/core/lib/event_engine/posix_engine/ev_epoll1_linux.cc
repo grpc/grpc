@@ -522,6 +522,7 @@ Poller::WorkResult Epoll1Poller::Work(
     EventEngine::Duration timeout,
     absl::FunctionRef<void()> schedule_poll_again) {
   Events pending_events;
+  bool was_kicked_ext = false;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
     if (DoEpollWait(timeout) == 0) {
       return Poller::WorkResult::kDeadlineExceeded;
@@ -534,6 +535,7 @@ Poller::WorkResult Epoll1Poller::Work(
             was_kicked_ ? INT_MAX : MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION,
             pending_events)) {
       was_kicked_ = false;
+      was_kicked_ext = true;
     }
     if (pending_events.empty()) {
       return Poller::WorkResult::kKicked;
@@ -545,7 +547,7 @@ Poller::WorkResult Epoll1Poller::Work(
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
   }
-  return Poller::WorkResult::kOk;
+  return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 
 void Epoll1Poller::Kick() {

@@ -362,7 +362,7 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
 }
 
 void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
-                                   absl::string_view /* reason */) {
+                                   absl::string_view reason) {
   ForkFdListRemoveHandle(this);
   ForceRemoveHandleFromPoller();
   {
@@ -650,6 +650,7 @@ Poller::WorkResult PollPoller::Work(
   bool was_kicked_ext = false;
   PollEventHandle* watcher_space[inline_elements];
   Events pending_events;
+  pending_events.clear();
   int timeout_ms =
       static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
   mu_.Lock();
@@ -829,7 +830,7 @@ Poller::WorkResult PollPoller::Work(
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
   }
-  return Poller::WorkResult::kOk;
+  return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 
 void PollPoller::Shutdown() {
