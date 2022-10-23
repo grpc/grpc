@@ -376,10 +376,11 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // pressure.
       UpdateSetting(
           GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
-          &target_preferred_rx_frame_size_,
+          &target_preferred_rx_crypto_frame_size_,
           static_cast<int32_t>(
               Clamp(static_cast<int>(target_frame_size_ * 2), 16384, 16777215)),
-          &action, &FlowControlAction::set_preferred_rx_frame_size_update);
+          &action,
+          &FlowControlAction::set_preferred_rx_crypto_frame_size_update);
     }
   }
   return UpdateAction(action);

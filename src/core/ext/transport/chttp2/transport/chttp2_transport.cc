@@ -326,7 +326,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
   // Only send the prefered rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust
   // sending frame size.
-  t->enable_preferred_rx_frame_advertisement = false;
+  t->enable_preferred_rx_crypto_frame_advertisement = false;
 
   if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -400,9 +400,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
           queue_setting_update(
               t, setting.setting_id,
               grpc_core::Clamp(value, setting.min, setting.max));
-        } else if (grpc_core::IsPeerStateBasedFramingEnabled() &&
-                   grpc_core::IsTcpFrameSizeTuningEnabled() && value > 0) {
-          t->enable_preferred_rx_frame_advertisement = true;
+        } else if (value > 0) {
+          t->enable_preferred_rx_crypto_frame_advertisement = true;
           queue_setting_update(
               t, setting.setting_id,
               grpc_core::Clamp(value, setting.min, setting.max));
@@ -2323,13 +2322,13 @@ void grpc_chttp2_act_on_flowctl_action(
                 queue_setting_update(t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
                                      action.max_frame_size());
               });
-  if (t->enable_preferred_rx_frame_advertisement) {
+  if (t->enable_preferred_rx_crypto_frame_advertisement) {
     WithUrgency(
-        t, action.preferred_rx_frame_size_update(),
+        t, action.preferred_rx_crypto_frame_size_update(),
         GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
           queue_setting_update(
               t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
-              action.preferred_rx_frame_size());
+              action.preferred_rx_crypto_frame_size());
         });
   }
 }
@@ -2456,10 +2455,10 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
   // min_progress_size it to -1. The endpoints should ignore the
   // min_progress_size value if set to -1.
   int min_progress_size =
-      t->enable_preferred_rx_frame_advertisement &&
-              t->settings
-                  [GRPC_PEER_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE]
+      (t->enable_preferred_rx_crypto_frame_advertisement &&
+       t->settings
+           [GRPC_PEER_SETTINGS]
+           [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE])
           ? grpc_chttp2_min_read_progress_size(t)
           : -1;
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
