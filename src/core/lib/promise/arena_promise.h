@@ -105,7 +105,7 @@ struct SharedCallable {
 
 template <typename T, typename Callable>
 const Vtable<T> SharedCallable<T, Callable>::vtable = {
-    [](void** arg) -> Poll<T> { return (*static_cast<Callable*>(*arg))(); },
+    [](void** arg) -> Poll<T> { return (*reinterpret_cast<Callable*>(arg))(); },
     [](void**) {}};
 
 // Redirector type: given a callable type, expose a Make() function that creates
