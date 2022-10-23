@@ -1462,7 +1462,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
     ],
     deps = [
         "event_engine_poller",
@@ -1496,7 +1495,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
     ],
     deps = [
         "common_event_engine_closures",
@@ -1675,7 +1673,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
     ],
     deps = [
         "event_engine_common",
