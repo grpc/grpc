@@ -1676,6 +1676,7 @@ grpc_cc_library(
     deps = [
         "iomgr_port",
         "posix_event_engine_tcp_socket_utils",
+        "socket_mutator",
         "status_helper",
         "//:event_engine_base_hdrs",
         "//:gpr",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -22,11 +22,9 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -66,7 +64,7 @@ class TestListenerSocketsContainer : public ListenerSocketsContainer {
     }
     return absl::NotFoundError("Socket not found!");
   }
-  
+
   int Size() { return static_cast<int>(sockets_.size()); }
 
   std::list<ListenerSocket>::const_iterator begin() { return sockets_.begin(); }

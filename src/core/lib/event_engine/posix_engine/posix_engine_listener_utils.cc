@@ -16,6 +16,9 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <cstring>
@@ -24,15 +27,20 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
-#include <ifaddrs.h>
-#include <sys/socket.h>
+#include <errno.h>       // IWYU pragma: keep
+#include <ifaddrs.h>     // IWYU pragma: keep
+#include <netinet/in.h>  // IWYU pragma: keep
+#include <sys/socket.h>  // IWYU pragma: keep
 
 #include "absl/strings/str_cat.h"
 #endif
@@ -45,7 +53,7 @@ namespace posix_engine {
 namespace {
 
 using ResolvedAddress =
-    ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
 
 #ifdef GRPC_HAVE_IFADDRS
@@ -258,8 +266,8 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",
             ifa_name, ifa_it->ifa_flags, addr_str.c_str());
-    // We could have multiple interfaces with the same address (e.g., bonding),
-    // so look for duplicates.
+    // We could have multiple interfaces with the same address (e.g.,
+    // bonding), so look for duplicates.
     if (listener_sockets.Find(addr).ok()) {
       gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
               addr_str.c_str(), ifa_name);
@@ -324,10 +332,10 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   }
   if (assigned_port > 0) {
     if (!v6_sock.ok()) {
-      gpr_log(
-          GPR_INFO,
-          "Failed to add :: listener, the environment may not support IPv6: %s",
-          v6_sock.status().ToString().c_str());
+      gpr_log(GPR_INFO,
+              "Failed to add :: listener, the environment may not support "
+              "IPv6: %s",
+              v6_sock.status().ToString().c_str());
     }
     if (!v4_sock.ok()) {
       gpr_log(GPR_INFO,

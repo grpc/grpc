@@ -16,16 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-#include <string>
-#include <utility>
-
 #include "absl/status/statusor.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
