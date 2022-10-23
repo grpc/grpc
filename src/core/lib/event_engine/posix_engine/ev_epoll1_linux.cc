@@ -40,8 +40,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/synchronization/mutex.h"
-
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"

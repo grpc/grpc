@@ -49,8 +49,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/synchronization/mutex.h"
-
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
@@ -362,7 +360,7 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
 }
 
 void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
-                                   absl::string_view reason) {
+                                   absl::string_view /*reason*/) {
   ForkFdListRemoveHandle(this);
   ForceRemoveHandleFromPoller();
   {

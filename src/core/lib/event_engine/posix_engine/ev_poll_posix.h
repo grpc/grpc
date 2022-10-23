@@ -24,7 +24,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/event_engine.h>
 
