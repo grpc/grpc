@@ -75,6 +75,36 @@ TEST(TryConcurrentlyTest, OneFailed) {
   EXPECT_EQ(c(), Poll<absl::Status>(absl::UnknownError("wha")));
 }
 
+// A pointer to an int designed to cause a double free if it's double destructed
+// (to flush out bugs)
+class ProblematicPointer {
+ public:
+  ProblematicPointer() : p_(new int(0)) {}
+  ~ProblematicPointer() { delete p_; }
+  ProblematicPointer(const ProblematicPointer&) = delete;
+  ProblematicPointer& operator=(const ProblematicPointer&) = delete;
+  // NOLINTNEXTLINE: we want to allocate during move
+  ProblematicPointer(ProblematicPointer&& other) : p_(new int(*other.p_ + 1)) {}
+  ProblematicPointer& operator=(ProblematicPointer&& other) = delete;
+
+ private:
+  int* p_;
+};
+
+TEST(TryConcurrentlyTest, MoveItMoveIt) {
+  auto a =
+      TryConcurrently([x = ProblematicPointer()]() { return absl::OkStatus(); })
+          .NecessaryPull(
+              [x = ProblematicPointer()]() { return absl::OkStatus(); })
+          .NecessaryPush(
+              [x = ProblematicPointer()]() { return absl::OkStatus(); })
+          .Push([x = ProblematicPointer()]() { return absl::OkStatus(); })
+          .Pull([x = ProblematicPointer()]() { return absl::OkStatus(); });
+  auto b = std::move(a);
+  auto c = std::move(b);
+  c();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

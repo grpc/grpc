@@ -47,6 +47,13 @@ struct Helper {
   static constexpr bool must_complete() { return false; }
 };
 
+// A set of promises that can be polled concurrently.
+// Fuses them when completed (that is, destroys the promise and records it
+// completed).
+// Relies on an external bit field to handle the recording: this saves a bunch
+// of space, but means the implementation of this type is weird: it's really
+// super tied to TryConcurrently and no attempt should be made to use this
+// independently.
 template <typename... Ts>
 class FusedSet;
 
@@ -67,12 +74,11 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
   FusedSet(const FusedSet&) = delete;
   FusedSet& operator=(const FusedSet&) = delete;
 
-  // Assumes all 'done_bits' are 0
+  // Assumes all 'done_bits' for other are 0 and will be set to 1
   FusedSet(FusedSet&& other) noexcept : FusedSet<Ts...>(std::move(other)) {
     Construct(&wrapper_, std::move(other.wrapper_));
-    other.DestroyAll();
+    Destruct(&other.wrapper_);
   }
-  FusedSet& operator=(FusedSet&& other) noexcept = delete;
 
   static constexpr size_t Size() { return 1 + sizeof...(Ts); }
 
@@ -87,11 +93,6 @@ class FusedSet<T, Ts...> : public FusedSet<Ts...> {
       Destruct(&wrapper_);
     }
     FusedSet<Ts...>::template Destroy<kDoneBit + 1>(done_bits);
-  }
-
-  void DestroyAll() {
-    Destruct(&wrapper_);
-    FusedSet<Ts...>::DestroyAll();
   }
 
   template <typename Result, int kDoneBit>
@@ -132,7 +133,6 @@ class FusedSet<> {
   }
   template <int kDoneBit>
   void Destroy(uint8_t) {}
-  void DestroyAll() {}
 
   template <typename P>
   FusedSet<P> With(P x) {
@@ -157,11 +157,13 @@ class TryConcurrently {
         pre_main_(std::move(other.pre_main_)),
         post_main_(std::move(other.post_main_)) {
     GPR_DEBUG_ASSERT(other.done_bits_ == 0);
+    other.done_bits_ = HelperBits();
     Construct(&main_, std::move(other.main_));
   }
   TryConcurrently& operator=(TryConcurrently&& other) noexcept {
     GPR_DEBUG_ASSERT(other.done_bits_ == 0);
     done_bits_ = 0;
+    other.done_bits_ = HelperBits();
     pre_main_ = std::move(other.pre_main_);
     post_main_ = std::move(other.post_main_);
     Construct(&main_, std::move(other.main_));
@@ -200,10 +202,7 @@ class TryConcurrently {
       GPR_DEBUG_ASSERT(!IsStatusOk(*status));
       return std::move(*status);
     }
-    static const uint8_t kNecessaryBits =
-        1 | (PreMain::NecessaryBits() << 1) |
-        (PostMain::NecessaryBits() << (1 + PreMain::Size()));
-    if ((done_bits_ & kNecessaryBits) == kNecessaryBits) {
+    if ((done_bits_ & NecessaryBits()) == NecessaryBits()) {
       return std::move(result_);
     }
     return Pending{};
@@ -219,6 +218,14 @@ class TryConcurrently {
   auto Pull(P p);
 
  private:
+  constexpr uint8_t NecessaryBits() {
+    return 1 | (PreMain::NecessaryBits() << 1) |
+           (PostMain::NecessaryBits() << (1 + PreMain::Size()));
+  }
+  constexpr uint8_t AllBits() {
+    return (1 << (1 + PreMain::Size() + PostMain::Size())) - 1;
+  }
+  constexpr uint8_t HelperBits() { return AllBits() ^ 1; }
   uint8_t done_bits_;
   PreMain pre_main_;
   union {
@@ -240,6 +247,7 @@ template <typename Main, typename PreMain, typename PostMain>
 template <typename P>
 auto TryConcurrently<Main, PreMain, PostMain>::NecessaryPush(P p) {
   GPR_DEBUG_ASSERT(done_bits_ == 0);
+  done_bits_ = HelperBits();
   return MakeTryConcurrently(std::move(main_),
                              pre_main_.With(Necessary<P>{std::move(p)}),
                              std::move(post_main_));
@@ -249,6 +257,7 @@ template <typename Main, typename PreMain, typename PostMain>
 template <typename P>
 auto TryConcurrently<Main, PreMain, PostMain>::NecessaryPull(P p) {
   GPR_DEBUG_ASSERT(done_bits_ == 0);
+  done_bits_ = HelperBits();
   return MakeTryConcurrently(std::move(main_), std::move(pre_main_),
                              post_main_.With(Necessary<P>{std::move(p)}));
 }
@@ -257,6 +266,7 @@ template <typename Main, typename PreMain, typename PostMain>
 template <typename P>
 auto TryConcurrently<Main, PreMain, PostMain>::Push(P p) {
   GPR_DEBUG_ASSERT(done_bits_ == 0);
+  done_bits_ = HelperBits();
   return MakeTryConcurrently(std::move(main_),
                              pre_main_.With(Helper<P>{std::move(p)}),
                              std::move(post_main_));
@@ -266,6 +276,7 @@ template <typename Main, typename PreMain, typename PostMain>
 template <typename P>
 auto TryConcurrently<Main, PreMain, PostMain>::Pull(P p) {
   GPR_DEBUG_ASSERT(done_bits_ == 0);
+  done_bits_ = HelperBits();
   return MakeTryConcurrently(std::move(main_), std::move(pre_main_),
                              post_main_.With(Helper<P>{std::move(p)}));
 }
