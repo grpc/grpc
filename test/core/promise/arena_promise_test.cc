@@ -14,6 +14,7 @@
 
 #include "src/core/lib/promise/arena_promise.h"
 
+#include <array>
 #include <memory>
 
 #include "absl/types/variant.h"

@@ -19,11 +19,12 @@
 
 #include <stdlib.h>
 
-#include <new>
+#include <memory>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
 
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
