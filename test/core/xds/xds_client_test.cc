@@ -2043,7 +2043,7 @@ TEST_F(XdsClientTest, StreamResponseTimeout) {
 }
 
 TEST_F(XdsClientTest, StreamResponseTimeoutAfterConnectionFailure) {
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(15),
+  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(10),
                 Duration::Seconds(5));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
@@ -2072,19 +2072,17 @@ TEST_F(XdsClientTest, StreamResponseTimeoutAfterConnectionFailure) {
             "connection failed (node ID:xds_client_test)")
       << *error;
   // The connection failure should cause us to cancel the ADS response
-  // timer, so there should be no more errors reported to the watcher.
-// FIXME: this will still trigger the resource-does-not-exist timeouts!
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(20)));
+  // timer and the resource does-not-exist timers, so there should be no
+  // more events reported to the watcher.
+  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(12)));
   // Channel connectivity is restored.
   TriggerConnectivityChange(xds_client_->bootstrap().server(),
                             absl::OkStatus());
   // The ADS stream uses wait_for_ready inside the XdsTransport interface,
   // so when the channel reconnects, the already-started stream will proceed.
-  // However, in this case, the server does not send any response.
-  // XdsClient should report error to watcher upon timeout.
-  // We wait 10s here to ensure we trigger the response-seen timeout (5s)
-  // but not the resources-does-not-exist timeout (15s).
-  error = watcher->WaitForNextError(absl::Seconds(10));
+  // We wait 7s here to ensure we trigger the response-seen timeout (5s)
+  // but not the resources-does-not-exist timeout (10s).
+  error = watcher->WaitForNextError(absl::Seconds(7));
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
   EXPECT_EQ(error->message(),
