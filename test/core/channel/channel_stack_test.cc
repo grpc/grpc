@@ -25,7 +25,6 @@
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
