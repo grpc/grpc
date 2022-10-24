@@ -248,7 +248,7 @@ RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                             GlobalObjects* globals) {
-  ChannelArgs args = grpc_core::CoreConfiguration::Get()
+  ChannelArgs args = CoreConfiguration::Get()
                          .channel_args_preconditioning()
                          .PreconditionChannelArgs(nullptr);
   for (const auto& arg : fuzz_args) {
