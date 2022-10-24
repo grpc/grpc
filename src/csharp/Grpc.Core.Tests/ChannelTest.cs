@@ -123,5 +123,16 @@ namespace Grpc.Core.Tests
             // check that Channel.ShutdownAsync has run
             Assert.AreEqual(ChannelState.Shutdown, channel.State);
         }
+
+        [Test]
+        public void CompositeCredentialsWithInsecureThrow()
+        {
+            var compositeCredentials = ChannelCredentials.Create(
+                ChannelCredentials.Insecure,
+                CallCredentials.FromInterceptor((context, metadata) => TaskUtils.CompletedTask));
+            var ex = Assert.Throws(typeof(InvalidOperationException), () => new Channel("localhost", compositeCredentials));
+            Assert.AreEqual("CallCredentials can't be composed with InsecureCredentials. " +
+                "CallCredentials must be used with secure channel credentials like SslCredentials.", ex.Message);
+        }
     }
 }

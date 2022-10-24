@@ -25,18 +25,6 @@ namespace Grpc.Core.Tests
     public class ChannelCredentialsTest
     {
         [Test]
-        public void InsecureCredentials_IsNonComposable()
-        {
-            Assert.IsFalse(ChannelCredentials.Insecure.IsComposable);
-        }
-
-        [Test]
-        public void SecureCredentials_IsComposable()
-        {
-            Assert.IsTrue(ChannelCredentials.SecureSsl.IsComposable);
-        }
-
-        [Test]
         public void ChannelCredentials_CreateComposite()
         {
             var composite = ChannelCredentials.Create(new FakeChannelCredentials(true), new FakeCallCredentials());
@@ -44,10 +32,6 @@ namespace Grpc.Core.Tests
 
             Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(null, new FakeCallCredentials()));
             Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(new FakeChannelCredentials(true), null));
-
-            // forbid composing non-composable
-            var ex = Assert.Throws(typeof(ArgumentException), () => ChannelCredentials.Create(new FakeChannelCredentials(false), new FakeCallCredentials()));
-            Assert.AreEqual("CallCredentials can't be composed with FakeChannelCredentials. CallCredentials must be used with secure channel credentials like SslCredentials.", ex.Message);
         }
 
         [Test]
@@ -62,6 +46,17 @@ namespace Grpc.Core.Tests
             var nativeCreds3 = ChannelCredentials.SecureSsl.ToNativeCredentials();
             var nativeCreds4 = ChannelCredentials.SecureSsl.ToNativeCredentials();
             Assert.AreSame(nativeCreds3, nativeCreds4);
+        }
+
+        [Test]
+        public void ChannelCredentials_MalformedSslCredentialsCanStillCreateNativeCredentials()
+        {
+            // pass malformed root pem certs, but creation of native credentials still passes,
+            // since the credentials are parsed lazily by the C core.
+            using (var nativeCreds = new SslCredentials("MALFORMED_ROOT_CERTS_THAT_WILL_THROW_WHEN_CREATING_NATIVE_CREDENTIALS").ToNativeCredentials())
+            {
+                Assert.IsFalse(nativeCreds.IsInvalid);
+            }
         }
     }
 }

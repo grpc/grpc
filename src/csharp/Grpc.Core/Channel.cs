@@ -69,20 +69,29 @@ namespace Grpc.Core
             EnsureUserAgentChannelOption(this.options);
             this.environment = GrpcEnvironment.AddRef();
 
-            this.completionQueue = this.environment.PickCompletionQueue();
-            using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
+            try
             {
-                var nativeCredentials = credentials.ToNativeCredentials();
-                if (nativeCredentials != null)
+                this.completionQueue = this.environment.PickCompletionQueue();
+                using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
                 {
-                    this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
+                    var nativeCredentials = credentials.ToNativeCredentials();
+                    if (nativeCredentials != null)
+                    {
+                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
+                    }
+                    else
+                    {
+                        this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
+                    }
                 }
-                else
-                {
-                    this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
-                }
+                GrpcEnvironment.RegisterChannel(this);
             }
-            GrpcEnvironment.RegisterChannel(this);
+            catch (Exception)
+            {
+                // Constructor can't be async.
+                _ = Task.Run(async () => await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false));
+                throw;
+            }
         }
 
         /// <summary>
