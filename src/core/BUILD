@@ -427,6 +427,7 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "construct_destruct",
         "context",
         "poll",
         "//:gpr_platform",
