@@ -1129,6 +1129,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
     ],
     tags = [
+        "internally_modified",
         "nofixdeps",
     ],
     deps = [
