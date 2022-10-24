@@ -662,10 +662,10 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   socket_stress_thread.join();
 }
 
-TEST(ResolverComponentTest, TestResolvesRelevantRecordsWith1MsTimeout) {
+TEST(ResolverComponentTest, TestDoesntCrashOrHangWith1MsTimeout) {
   // Queries in this test could either complete successfully or time out
-  // show cancellation. This test doesn't care - we just care that the
-  // query completes and doesn't crash, leak, etc.
+  // and show cancellation. This test doesn't care - we just care that the
+  // query completes and doesn't crash, hang, leak, etc.
   RunResolvesRelevantRecordsTest(
       ResultHandler::Create,
       grpc_core::ChannelArgs().Set(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS, 1));
