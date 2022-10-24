@@ -80,15 +80,15 @@ namespace Grpc.Core.Internal
 
         private ChannelCredentialsSafeHandle CreateNativeCompositeCredentials(ChannelCredentials channelCredentials, CallCredentials callCredentials)
         {
-            var nativeChannelCredentials = channelCredentials.ToNativeCredentials();
-            if (nativeChannelCredentials == null)
-            {
-                throw new InvalidOperationException($"CallCredentials can't be composed with {channelCredentials.GetType().Name}. " +
-                    $"CallCredentials must be used with secure channel credentials like SslCredentials.");
-            }
-
             using (var callCreds = callCredentials.ToNativeCredentials())
             {
+                var nativeChannelCredentials = channelCredentials.ToNativeCredentials();
+                if (nativeChannelCredentials == null)
+                {
+                    throw new InvalidOperationException($"CallCredentials can't be composed with {channelCredentials.GetType().Name}. " +
+                        $"CallCredentials must be used with secure channel credentials like SslCredentials.");
+                }
+                
                 var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(nativeChannelCredentials, callCreds);
                 if (nativeComposite.IsInvalid)
                 {
