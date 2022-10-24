@@ -43,6 +43,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+#include "call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -2358,6 +2359,10 @@ void CallContext::IncrementRefCount(const char* reason) {
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
 
+gpr_atm* CallContext::peer_string_atm_ptr() {
+  return call_->peer_string_atm_ptr();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
 
@@ -2854,9 +2859,30 @@ bool ClientPromiseBasedCall::Completed() {
   return completed_;
 }
 
-gpr_atm* CallContext::peer_string_atm_ptr() {
-  return call_->peer_string_atm_ptr();
-}
+///////////////////////////////////////////////////////////////////////////////
+// ServerPromiseBasedCall
+
+class ServerPromiseBasedCall final : public PromiseBasedCall {
+ public:
+  ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
+      : PromiseBasedCall(arena, *args) {
+    global_stats().IncrementServerCallsCreated();
+  }
+
+  void Orphan() override { abort(); }
+
+  void CancelWithError(grpc_error_handle error) override { abort(); }
+  bool Completed() override { abort(); }
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override {
+    abort();
+  }
+  bool failed_before_recv_message() const override { abort(); }
+  bool is_trailers_only() const override { abort(); }
+  absl::string_view GetServerAuthority() const override { abort(); }
+
+  void UpdateOnce() override { abort(); }
+};
 
 }  // namespace grpc_core
 
@@ -2875,11 +2901,14 @@ size_t grpc_call_get_initial_size_estimate() {
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
   if (grpc_core::IsPromiseBasedClientCallEnabled() &&
-      args->channel->is_promising()) {
-    if (args->server_transport_data == nullptr) {
-      return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
-          args, out_call);
-    }
+      args->server_transport_data == nullptr && args->channel->is_promising()) {
+    return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
+        args, out_call);
+  }
+  if (grpc_core::IsPromiseBasedServerCallEnabled() &&
+      args->server_transport_data != nullptr && args->channel->is_promising()) {
+    return grpc_core::MakePromiseBasedCall<grpc_core::ServerPromiseBasedCall>(
+        args, out_call);
   }
   return grpc_core::FilterStackCall::Create(args, out_call);
 }
