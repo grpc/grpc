@@ -35,7 +35,7 @@ TEST(Notification, Waits) {
   Notification n;
   auto start = absl::Now();
   std::thread t([&n] {
-    absl::SleepFor(absl::Seconds(5));
+    absl::SleepFor(absl::Seconds(6));
     n.Notify();
   });
   n.WaitForNotification();
@@ -48,7 +48,7 @@ TEST(Notification, WaitsWithTimeout) {
   Notification n;
   auto start = absl::Now();
   std::thread t([&n] {
-    absl::SleepFor(absl::Seconds(5));
+    absl::SleepFor(absl::Seconds(6));
     n.Notify();
   });
   EXPECT_TRUE(n.WaitForNotificationWithTimeout(absl::Seconds(10)));
@@ -62,7 +62,7 @@ TEST(Notification, WaitWithTimeoutCanFinishEarly) {
   Notification n;
   auto start = absl::Now();
   std::thread t([&n] {
-    absl::SleepFor(absl::Seconds(5));
+    absl::SleepFor(absl::Seconds(6));
     n.Notify();
   });
   EXPECT_FALSE(n.WaitForNotificationWithTimeout(absl::Seconds(1)));

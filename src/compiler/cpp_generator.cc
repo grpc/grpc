@@ -152,7 +152,7 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/server_context.h",
         "grpcpp/impl/service_type.h",
         "grpcpp/impl/codegen/status.h",
-        "grpcpp/impl/codegen/stub_options.h",
+        "grpcpp/support/stub_options.h",
         "grpcpp/support/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));

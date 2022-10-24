@@ -42,8 +42,8 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:chttp2_flow_control",
         "//:gpr",
+        "//src/core:chttp2_flow_control",
     ],
 )
 
@@ -58,8 +58,8 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:decode_huff",
-        "//:huffsyms",
+        "//src/core:decode_huff",
+        "//src/core:huffsyms",
     ],
 )
 
@@ -74,9 +74,9 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:decode_huff",
         "//:grpc",
-        "//:huffsyms",
+        "//src/core:decode_huff",
+        "//src/core:huffsyms",
     ],
 )
 
@@ -148,8 +148,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:chttp2_flow_control",
-        "//:resource_quota",
+        "//src/core:chttp2_flow_control",
+        "//src/core:resource_quota",
     ],
 )
 

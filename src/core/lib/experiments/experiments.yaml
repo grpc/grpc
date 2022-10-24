@@ -50,7 +50,7 @@
   description:
     Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on
     malloc to recycle arbitrary large blocks.
-  default: false
+  default: debug
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
@@ -127,3 +127,10 @@
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
+- name: posix_event_engine_enable_polling
+  description:
+    If set, enables polling on the default posix event engine.
+  default: debug
+  expiry: 2023/01/01
+  owner: vigneshbabu@google.com
+  test_tags: ["event_engine_client_test"]

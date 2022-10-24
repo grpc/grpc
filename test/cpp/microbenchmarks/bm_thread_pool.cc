@@ -19,14 +19,12 @@
 
 #include <benchmark/benchmark.h>
 
-#include "absl/debugging/leak_check.h"
 #include "absl/functional/any_invocable.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
@@ -36,7 +34,7 @@ namespace {
 
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::ThreadPool;
 
 struct FanoutParameters {
   int depth;
@@ -44,8 +42,8 @@ struct FanoutParameters {
   int limit;
 };
 
-void BM_EventEngine_RunSmallLambda(benchmark::State& state) {
-  auto engine = GetDefaultEventEngine();
+void BM_ThreadPool_RunSmallLambda(benchmark::State& state) {
+  ThreadPool pool;
   const int cb_count = state.range(0);
   std::atomic_int count{0};
   for (auto _ : state) {
@@ -56,63 +54,33 @@ void BM_EventEngine_RunSmallLambda(benchmark::State& state) {
     };
     state.ResumeTiming();
     for (int i = 0; i < cb_count; i++) {
-      engine->Run(cb);
+      pool.Run(cb);
     }
     signal.WaitForNotification();
     count.store(0);
   }
   state.SetItemsProcessed(cb_count * state.iterations());
+  pool.Quiesce();
 }
-BENCHMARK(BM_EventEngine_RunSmallLambda)
+BENCHMARK(BM_ThreadPool_RunSmallLambda)
     ->Range(100, 4096)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
 
-void BM_EventEngine_RunLargeLambda(benchmark::State& state) {
-  int cb_count = state.range(0);
-  // large lambdas require an extra allocation
-  std::string extra = "12345678";
-  auto engine = GetDefaultEventEngine();
-  std::atomic_int count{0};
-  for (auto _ : state) {
-    state.PauseTiming();
-    grpc_core::Notification signal;
-    auto cb = [&signal, &count, cb_count, extra]() {
-      (void)extra;
-      if (++count == cb_count) signal.Notify();
-    };
-    state.ResumeTiming();
-    for (int i = 0; i < cb_count; i++) {
-      engine->Run(cb);
-    }
-    signal.WaitForNotification();
-    count.store(0);
-  }
-  state.SetItemsProcessed(cb_count * state.iterations());
-}
-BENCHMARK(BM_EventEngine_RunLargeLambda)
-    ->Range(100, 4096)
-    ->MeasureProcessCPUTime()
-    ->UseRealTime();
-
-void BM_EventEngine_RunClosure(benchmark::State& state) {
+void BM_ThreadPool_RunClosure(benchmark::State& state) {
   int cb_count = state.range(0);
   grpc_core::Notification* signal = new grpc_core::Notification();
   std::atomic_int count{0};
-  // Ignore leaks from this closure. For simplicty, this closure is not deleted
-  // because the closure may still be executing after the event engine is
-  // destroyed. This is because the default posix event engine's thread pool may
-  // get destroyed separately from the event engine.
-  AnyInvocableClosure* closure = absl::IgnoreLeak(
+  AnyInvocableClosure* closure =
       new AnyInvocableClosure([signal_holder = &signal, cb_count, &count]() {
         if (++count == cb_count) {
           (*signal_holder)->Notify();
         }
-      }));
-  auto engine = GetDefaultEventEngine();
+      });
+  ThreadPool pool;
   for (auto _ : state) {
     for (int i = 0; i < cb_count; i++) {
-      engine->Run(closure);
+      pool.Run(closure);
     }
     signal->WaitForNotification();
     state.PauseTiming();
@@ -123,8 +91,10 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
   }
   delete signal;
   state.SetItemsProcessed(cb_count * state.iterations());
+  pool.Quiesce();
+  delete closure;
 }
-BENCHMARK(BM_EventEngine_RunClosure)
+BENCHMARK(BM_ThreadPool_RunClosure)
     ->Range(100, 4096)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
@@ -162,14 +132,14 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
   return params;
 }
 
-// EventEngine callback for Lambda FanOut tests
+// Callback for Lambda FanOut tests
 //
 // Note that params are copied each time for 2 reasons: 1) callbacks will
 // inevitably continue to shut down after the end of the test, so a reference
 // parameter will become invalid and crash some callbacks, and 2) in my RBE
 // tests, copies are slightly faster than a shared_ptr<FanoutParams>
 // alternative.
-void FanOutCallback(std::shared_ptr<EventEngine> engine,
+void FanOutCallback(std::shared_ptr<ThreadPool> pool,
                     const FanoutParameters params,
                     grpc_core::Notification& signal, std::atomic_int& count,
                     int processing_layer) {
@@ -181,29 +151,30 @@ void FanOutCallback(std::shared_ptr<EventEngine> engine,
   GPR_DEBUG_ASSERT(local_cnt < params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
-    engine->Run([engine, params, processing_layer, &count, &signal]() {
-      FanOutCallback(engine, params, signal, count, processing_layer + 1);
+    pool->Run([pool, params, processing_layer, &count, &signal]() {
+      FanOutCallback(pool, params, signal, count, processing_layer + 1);
     });
   }
 }
 
-void BM_EventEngine_Lambda_FanOut(benchmark::State& state) {
+void BM_ThreadPool_Lambda_FanOut(benchmark::State& state) {
   auto params = GetFanoutParameters(state);
-  auto engine = GetDefaultEventEngine();
+  auto pool = std::make_shared<ThreadPool>();
   for (auto _ : state) {
     std::atomic_int count{0};
     grpc_core::Notification signal;
-    FanOutCallback(engine, params, signal, count, /*processing_layer=*/0);
+    FanOutCallback(pool, params, signal, count, /*processing_layer=*/0);
     do {
       signal.WaitForNotification();
     } while (count.load() != params.limit);
   }
   state.SetItemsProcessed(params.limit * state.iterations());
+  pool->Quiesce();
 }
-BENCHMARK(BM_EventEngine_Lambda_FanOut)->Apply(FanoutTestArguments);
+BENCHMARK(BM_ThreadPool_Lambda_FanOut)->Apply(FanoutTestArguments);
 
 void ClosureFanOutCallback(EventEngine::Closure* child_closure,
-                           std::shared_ptr<EventEngine> engine,
+                           std::shared_ptr<ThreadPool> pool,
                            grpc_core::Notification** signal_holder,
                            std::atomic_int& count,
                            const FanoutParameters params) {
@@ -218,13 +189,13 @@ void ClosureFanOutCallback(EventEngine::Closure* child_closure,
   }
   if (child_closure == nullptr) return;
   for (int i = 0; i < params.fanout; i++) {
-    engine->Run(child_closure);
+    pool->Run(child_closure);
   }
 }
 
-void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
+void BM_ThreadPool_Closure_FanOut(benchmark::State& state) {
   auto params = GetFanoutParameters(state);
-  auto engine = GetDefaultEventEngine();
+  auto pool = std::make_shared<ThreadPool>();
   std::vector<EventEngine::Closure*> closures;
   closures.reserve(params.depth + 2);
   closures.push_back(nullptr);
@@ -235,14 +206,14 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
     // call the previous closure (e.g., closures[2] calls closures[1] during
     // fanout)
     closures.push_back(new AnyInvocableClosure(
-        [i, engine, &closures, params, signal_holder = &signal, &count]() {
-          ClosureFanOutCallback(closures[i], engine, signal_holder, count,
+        [i, pool, &closures, params, signal_holder = &signal, &count]() {
+          ClosureFanOutCallback(closures[i], pool, signal_holder, count,
                                 params);
         }));
   }
   for (auto _ : state) {
     GPR_DEBUG_ASSERT(count.load(std::memory_order_relaxed) == 0);
-    engine->Run(closures[params.depth + 1]);
+    pool->Run(closures[params.depth + 1]);
     do {
       signal->WaitForNotification();
     } while (count.load() != params.limit);
@@ -256,8 +227,9 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
   delete signal;
   state.SetItemsProcessed(params.limit * state.iterations());
   for (auto i : closures) delete i;
+  pool->Quiesce();
 }
-BENCHMARK(BM_EventEngine_Closure_FanOut)->Apply(FanoutTestArguments);
+BENCHMARK(BM_ThreadPool_Closure_FanOut)->Apply(FanoutTestArguments);
 
 }  // namespace
 

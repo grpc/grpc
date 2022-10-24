@@ -27,13 +27,25 @@ class TestScheduler : public Scheduler {
  public:
   explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
       : engine_(engine) {}
-  void Run(
-      grpc_event_engine::experimental::EventEngine::Closure* closure) override {
-    engine_->Run(closure);
+  TestScheduler() : engine_(nullptr){};
+  void ChangeCurrentEventEngine(
+      grpc_event_engine::experimental::EventEngine* engine) {
+    engine_ = engine;
+  }
+  void Run(experimental::EventEngine::Closure* closure) override {
+    if (engine_ != nullptr) {
+      engine_->Run(closure);
+    } else {
+      closure->Run();
+    }
   }
 
   void Run(absl::AnyInvocable<void()> cb) override {
-    engine_->Run(std::move(cb));
+    if (engine_ != nullptr) {
+      engine_->Run(std::move(cb));
+    } else {
+      cb();
+    }
   }
 
  private:
