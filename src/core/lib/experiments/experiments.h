@@ -45,8 +45,11 @@ inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(10); }
 inline bool IsPromiseBasedClientCallEnabled() {
   return IsExperimentEnabled(11);
 }
-inline bool IsPosixEventEngineEnablePollingEnabled() {
+inline bool IsPromiseBasedServerCallEnabled() {
   return IsExperimentEnabled(12);
+}
+inline bool IsPosixEventEngineEnablePollingEnabled() {
+  return IsExperimentEnabled(13);
 }
 
 struct ExperimentMetadata {
@@ -55,7 +58,7 @@ struct ExperimentMetadata {
   bool default_value;
 };
 
-constexpr const size_t kNumExperiments = 13;
+constexpr const size_t kNumExperiments = 14;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core

@@ -51,6 +51,9 @@ const char* const description_monitoring_experiment =
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
+const char* const description_promise_based_server_call =
+    "If set, use the new gRPC promise based call code when it's appropriate "
+    "(ie when all filters in a stack are promise based)";
 const char* const description_posix_event_engine_enable_polling =
     "If set, enables polling on the default posix event engine.";
 #ifdef NDEBUG
@@ -79,6 +82,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_client", description_event_engine_client, false},
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
+    {"promise_based_server_call", description_promise_based_server_call, false},
     {"posix_event_engine_enable_polling",
      description_posix_event_engine_enable_polling, kDefaultForDebugOnly},
 };
