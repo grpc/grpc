@@ -119,7 +119,7 @@ absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
       auto principal_names_or = ParsePrincipalsArray(object.second);
       if (!principal_names_or.ok()) return principal_names_or.status();
       if (!principal_names_or.value().principals.empty()) {
-        peer.push_back(absl::make_unique<Rbac::Principal>(
+        peer.push_back(std::make_unique<Rbac::Principal>(
             std::move(principal_names_or.value())));
       }
     } else {
@@ -241,7 +241,7 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
       if (!paths_or.ok()) return paths_or.status();
       if (!paths_or.value().permissions.empty()) {
         request.push_back(
-            absl::make_unique<Rbac::Permission>(std::move(paths_or.value())));
+            std::make_unique<Rbac::Permission>(std::move(paths_or.value())));
       }
     } else if (object.first == "headers") {
       if (object.second.type() != Json::Type::ARRAY) {
@@ -251,7 +251,7 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
       if (!headers_or.ok()) return headers_or.status();
       if (!headers_or.value().permissions.empty()) {
         request.push_back(
-            absl::make_unique<Rbac::Permission>(std::move(headers_or.value())));
+            std::make_unique<Rbac::Permission>(std::move(headers_or.value())));
       }
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
