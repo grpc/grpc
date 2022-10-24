@@ -64,9 +64,14 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
     std::string private_key = ReadFile(kServerKeyPath);
     std::vector<experimental::IdentityKeyCertPair>
         server_identity_key_cert_pairs = {{private_key, identity_cert}};
+    auto server_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    GPR_ASSERT(server_certificate_provider->SetRootCertificate(root_cert).ok());
+    GPR_ASSERT(server_certificate_provider
+                   ->SetKeyCertificatePairs(server_identity_key_cert_pairs)
+                   .ok());
     grpc::experimental::TlsServerCredentialsOptions server_options(
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            root_cert, server_identity_key_cert_pairs));
+        std::move(server_certificate_provider));
     server_options.watch_root_certs();
     server_options.watch_identity_key_cert_pairs();
     server_options.set_cert_request_type(
@@ -76,9 +81,15 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
         channel_identity_key_cert_pairs = {
             {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
     grpc::experimental::TlsChannelCredentialsOptions channel_options;
+    auto channel_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    GPR_ASSERT(
+        channel_certificate_provider->SetRootCertificate(root_cert).ok());
+    GPR_ASSERT(channel_certificate_provider
+                   ->SetKeyCertificatePairs(channel_identity_key_cert_pairs)
+                   .ok());
     channel_options.set_certificate_provider(
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            ReadFile(kCaCertPath), channel_identity_key_cert_pairs));
+        std::move(channel_certificate_provider));
     channel_options.watch_identity_key_cert_pairs();
     channel_options.watch_root_certs();
     channel_creds_ = grpc::experimental::TlsCredentials(channel_options);

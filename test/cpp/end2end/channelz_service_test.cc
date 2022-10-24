@@ -148,9 +148,14 @@ std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
       {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
   grpc::experimental::TlsChannelCredentialsOptions options;
-  options.set_certificate_provider(
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), identity_key_cert_pairs));
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  GPR_ASSERT(
+      certificate_provider->SetRootCertificate(ReadFile(kCaCertPath)).ok());
+  GPR_ASSERT(
+      certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+          .ok());
+  options.set_certificate_provider(std::move(certificate_provider));
   if (type == CredentialsType::kMtls) {
     options.watch_identity_key_cert_pairs();
   }
@@ -166,8 +171,12 @@ std::shared_ptr<grpc::ServerCredentials> GetServerCredentials(
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
       {ReadFile(kServerKeyPath), ReadFile(kServerCertPath)}};
   auto certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), identity_key_cert_pairs);
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  GPR_ASSERT(
+      certificate_provider->SetRootCertificate(ReadFile(kCaCertPath)).ok());
+  GPR_ASSERT(
+      certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+          .ok());
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_root_certs();
   options.watch_identity_key_cert_pairs();

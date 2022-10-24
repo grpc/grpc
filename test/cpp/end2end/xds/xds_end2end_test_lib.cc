@@ -59,7 +59,7 @@ using ::envoy::extensions::filters::network::http_connection_manager::v3::
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
-using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::experimental::InMemoryCertificateProvider;
 
 //
 // XdsEnd2endTest::ServerThread::XdsServingStatusNotifier
@@ -235,8 +235,9 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
       std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
           {private_key, identity_cert}};
       auto certificate_provider =
-          std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-              root_cert, identity_key_cert_pairs);
+          std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+      GPR_ASSERT(certificate_provider->SetRootCertificate(root_cert).ok());
+      GPR_ASSERT(certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs).ok());
       grpc::experimental::TlsServerCredentialsOptions options(
           certificate_provider);
       options.watch_root_certs();
@@ -1049,8 +1050,9 @@ XdsEnd2endTest::CreateTlsFallbackCredentials() {
   key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
   std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
-  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-      ReadFile(kCaCertPath), identity_key_cert_pairs);
+  auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
+  GPR_ASSERT(certificate_provider->SetRootCertificate(ReadFile(kCaCertPath)).ok());
+  GPR_ASSERT(certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs).ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(std::move(certificate_provider));
   options.watch_root_certs();

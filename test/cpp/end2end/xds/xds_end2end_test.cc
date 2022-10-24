@@ -122,14 +122,14 @@ using ::envoy::type::matcher::v3::StringMatcher;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
-using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::experimental::InMemoryCertificateProvider;
 
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
-// Based on StaticDataCertificateProvider, but provides alternate certificates
+// Based on InMemoryCertificateProvider, but provides alternate certificates
 // if the certificate name is not empty.
 class FakeCertificateProvider final : public grpc_tls_certificate_provider {
  public:
@@ -887,8 +887,12 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
     std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
     identity_key_cert_pairs.emplace_back(key_cert_pair);
-    auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-        ReadFile(kCaCertPath), identity_key_cert_pairs);
+    auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
+    GPR_ASSERT(
+        certificate_provider->SetRootCertificate(ReadFile(kCaCertPath)).ok());
+    GPR_ASSERT(
+        certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+            .ok());
     grpc::experimental::TlsChannelCredentialsOptions options;
     options.set_certificate_provider(std::move(certificate_provider));
     options.watch_root_certs();
@@ -910,8 +914,9 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
-    auto certificate_provider =
-        std::make_shared<StaticDataCertificateProvider>(ReadFile(kCaCertPath));
+    auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
+    GPR_ASSERT(
+        certificate_provider->SetRootCertificate(ReadFile(kCaCertPath)).ok());
     grpc::experimental::TlsChannelCredentialsOptions options;
     options.set_certificate_provider(std::move(certificate_provider));
     options.watch_root_certs();

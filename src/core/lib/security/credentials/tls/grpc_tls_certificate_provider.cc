@@ -37,6 +37,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/stat.h"
@@ -50,18 +51,15 @@
 
 namespace grpc_core {
 
-StaticDataCertificateProvider::StaticDataCertificateProvider(
-    std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      root_certificate_(std::move(root_certificate)),
-      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
+SingleCertificateCache::SingleCertificateCache()
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
     absl::optional<std::string> root_certificate;
     absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
+    SingleCertificateCache::WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
       root_certificate = root_certificate_;
@@ -98,144 +96,41 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   });
 }
 
-StaticDataCertificateProvider::~StaticDataCertificateProvider() {
-  // Reset distributor's callback to make sure the callback won't be invoked
-  // again after this object(provider) is destroyed.
-  distributor_->SetWatchStatusCallback(nullptr);
+std::string SingleCertificateCache::root_certificate() {
+  MutexLock lock(&mu_);
+  return root_certificate_;
 }
 
-UniqueTypeName StaticDataCertificateProvider::type() const {
-  static UniqueTypeName::Factory kFactory("StaticData");
-  return kFactory.Create();
+PemKeyCertPairList SingleCertificateCache::pem_key_cert_pairs() {
+  MutexLock lock(&mu_);
+  return pem_key_cert_pairs_;
 }
 
-namespace {
-
-gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
-  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+void SingleCertificateCache::SetRootCertificate(std::string root_certificate) {
+  SetRootCertificateAndKeyCertificatePairs(std::move(root_certificate),
+                                           absl::nullopt);
 }
 
-}  // namespace
-
-FileWatcherCertificateProvider::FileWatcherCertificateProvider(
-    std::string private_key_path, std::string identity_certificate_path,
-    std::string root_cert_path, int64_t refresh_interval_sec)
-    : private_key_path_(std::move(private_key_path)),
-      identity_certificate_path_(std::move(identity_certificate_path)),
-      root_cert_path_(std::move(root_cert_path)),
-      refresh_interval_sec_(refresh_interval_sec),
-      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
-  // Private key and identity cert files must be both set or both unset.
-  GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
-  // Must be watching either root or identity certs.
-  GPR_ASSERT(!private_key_path_.empty() || !root_cert_path_.empty());
-  gpr_event_init(&shutdown_event_);
-  ForceUpdate();
-  auto thread_lambda = [](void* arg) {
-    FileWatcherCertificateProvider* provider =
-        static_cast<FileWatcherCertificateProvider*>(arg);
-    GPR_ASSERT(provider != nullptr);
-    while (true) {
-      void* value = gpr_event_wait(
-          &provider->shutdown_event_,
-          TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
-      if (value != nullptr) {
-        return;
-      };
-      provider->ForceUpdate();
-    }
-  };
-  refresh_thread_ = Thread("FileWatcherCertificateProvider_refreshing_thread",
-                           thread_lambda, this);
-  refresh_thread_.Start();
-  distributor_->SetWatchStatusCallback([this](std::string cert_name,
-                                              bool root_being_watched,
-                                              bool identity_being_watched) {
-    MutexLock lock(&mu_);
-    absl::optional<std::string> root_certificate;
-    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    FileWatcherCertificateProvider::WatcherInfo& info =
-        watcher_info_[cert_name];
-    if (!info.root_being_watched && root_being_watched &&
-        !root_certificate_.empty()) {
-      root_certificate = root_certificate_;
-    }
-    info.root_being_watched = root_being_watched;
-    if (!info.identity_being_watched && identity_being_watched &&
-        !pem_key_cert_pairs_.empty()) {
-      pem_key_cert_pairs = pem_key_cert_pairs_;
-    }
-    info.identity_being_watched = identity_being_watched;
-    if (!info.root_being_watched && !info.identity_being_watched) {
-      watcher_info_.erase(cert_name);
-    }
-    ExecCtx exec_ctx;
-    if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
-      distributor_->SetKeyMaterials(cert_name, root_certificate,
-                                    pem_key_cert_pairs);
-    }
-    grpc_error_handle root_cert_error;
-    grpc_error_handle identity_cert_error;
-    if (root_being_watched && !root_certificate.has_value()) {
-      root_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
-    }
-    if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
-      identity_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
-    }
-    if (!root_cert_error.ok() || !identity_cert_error.ok()) {
-      distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                    identity_cert_error);
-    }
-  });
+void SingleCertificateCache::SetKeyCertificatePairs(
+    PemKeyCertPairList pem_key_cert_pairs) {
+  SetRootCertificateAndKeyCertificatePairs(absl::nullopt,
+                                           std::move(pem_key_cert_pairs));
 }
 
-FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
-  // Reset distributor's callback to make sure the callback won't be invoked
-  // again after this object(provider) is destroyed.
-  distributor_->SetWatchStatusCallback(nullptr);
-  gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
-  refresh_thread_.Join();
-}
-
-UniqueTypeName FileWatcherCertificateProvider::type() const {
-  static UniqueTypeName::Factory kFactory("FileWatcher");
-  return kFactory.Create();
-}
-
-void FileWatcherCertificateProvider::ForceUpdate() {
-  absl::optional<std::string> root_certificate;
-  absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
-  if (!root_cert_path_.empty()) {
-    root_certificate = ReadRootCertificatesFromFile(root_cert_path_);
-  }
-  if (!private_key_path_.empty()) {
-    pem_key_cert_pairs = ReadIdentityKeyCertPairFromFiles(
-        private_key_path_, identity_certificate_path_);
-  }
+void SingleCertificateCache::SetRootCertificateAndKeyCertificatePairs(
+    absl::optional<std::string> root_certificate,
+    absl::optional<PemKeyCertPairList> pem_key_cert_pairs) {
   MutexLock lock(&mu_);
   const bool root_cert_changed =
-      (!root_certificate.has_value() && !root_certificate_.empty()) ||
       (root_certificate.has_value() && root_certificate_ != *root_certificate);
   if (root_cert_changed) {
-    if (root_certificate.has_value()) {
-      root_certificate_ = std::move(*root_certificate);
-    } else {
-      root_certificate_ = "";
-    }
+    root_certificate_ = std::move(*root_certificate);
   }
   const bool identity_cert_changed =
-      (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
-    if (pem_key_cert_pairs.has_value()) {
-      pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
-    } else {
-      pem_key_cert_pairs_ = {};
-    }
+    pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
   }
   if (root_cert_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
@@ -275,6 +170,123 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   }
 }
 
+SingleCertificateCache::~SingleCertificateCache() {
+  // Reset distributor's callback to make sure the callback won't be invoked
+  // again after this object is destroyed.
+  distributor_->SetWatchStatusCallback(nullptr);
+}
+
+absl::Status InMemoryCertificateProvider::SetRootCertificate(
+    std::string root_certificate) {
+  if (single_certificate_cache_.root_certificate() == root_certificate) {
+    gpr_log(GPR_INFO, "The root certs have not changed.");
+    return absl::OkStatus();
+  }
+  single_certificate_cache_.SetRootCertificate(std::move(root_certificate));
+  return absl::OkStatus();
+}
+
+absl::Status InMemoryCertificateProvider::SetKeyCertificatePairs(
+    PemKeyCertPairList pem_key_cert_pairs) {
+  {
+    if (single_certificate_cache_.pem_key_cert_pairs() == pem_key_cert_pairs) {
+      gpr_log(GPR_INFO, "The key-cert pair list has not changed.");
+      return absl::OkStatus();
+    }
+    absl::StatusOr<bool> match_result =
+        PrivateKeyAndCertificateMatch(pem_key_cert_pairs);
+    if (!match_result.ok()) {
+      gpr_log(GPR_ERROR, "The key-cert match check failed: %s",
+              std::string(match_result.status().message()).c_str());
+      return match_result.status();
+    }
+    if (!(*match_result)) {
+      std::string error_message =
+          "the key-cert pair list contains invalid pair(s)";
+      gpr_log(GPR_ERROR, "The key-cert match check failed: %s",
+              error_message.c_str());
+      return absl::InvalidArgumentError(error_message);
+    }
+  }
+  single_certificate_cache_.SetKeyCertificatePairs(std::move(pem_key_cert_pairs));
+  return absl::OkStatus();
+}
+
+UniqueTypeName InMemoryCertificateProvider::type() const {
+  static UniqueTypeName::Factory kFactory("StaticData");
+  return kFactory.Create();
+}
+
+namespace {
+gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
+  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+}
+
+}  // namespace
+
+FileWatcherCertificateProvider::FileWatcherCertificateProvider(
+    std::string private_key_path, std::string identity_certificate_path,
+    std::string root_cert_path, int64_t refresh_interval_sec)
+    : private_key_path_(std::move(private_key_path)),
+      identity_certificate_path_(std::move(identity_certificate_path)),
+      root_cert_path_(std::move(root_cert_path)),
+      refresh_interval_sec_(refresh_interval_sec) {
+  // Private key and identity cert files must be both set or both unset.
+  GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
+  // Must be watching either root or identity certs.
+  GPR_ASSERT(!private_key_path_.empty() || !root_cert_path_.empty());
+  gpr_event_init(&shutdown_event_);
+  ForceUpdate();
+  auto thread_lambda = [](void* arg) {
+    FileWatcherCertificateProvider* provider =
+        static_cast<FileWatcherCertificateProvider*>(arg);
+    GPR_ASSERT(provider != nullptr);
+    while (true) {
+      void* value = gpr_event_wait(
+          &provider->shutdown_event_,
+          TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
+      if (value != nullptr) {
+        return;
+      };
+      provider->ForceUpdate();
+    }
+  };
+  refresh_thread_ = Thread("FileWatcherCertificateProvider_refreshing_thread",
+                           thread_lambda, this);
+  refresh_thread_.Start();
+}
+
+FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
+  gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
+  refresh_thread_.Join();
+}
+
+UniqueTypeName FileWatcherCertificateProvider::type() const {
+  static UniqueTypeName::Factory kFactory("FileWatcher");
+  return kFactory.Create();
+}
+
+void FileWatcherCertificateProvider::ForceUpdate() {
+  absl::optional<std::string> root_certificate;
+  absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
+  if (!root_cert_path_.empty()) {
+    root_certificate = ReadRootCertificatesFromFile(root_cert_path_);
+  }
+  if (!private_key_path_.empty()) {
+    pem_key_cert_pairs = ReadIdentityKeyCertPairFromFiles(
+        private_key_path_, identity_certificate_path_);
+  }
+  if (!root_certificate.has_value()) {
+    root_certificate = "";
+  }
+  if (!pem_key_cert_pairs.has_value()) {
+    pem_key_cert_pairs = PemKeyCertPairList();
+  }
+  single_certificate_cache_.SetRootCertificateAndKeyCertificatePairs(
+      root_certificate, pem_key_cert_pairs);
+}
+
 absl::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
@@ -293,9 +305,8 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
 }
 
 namespace {
-
-// This helper function gets the last-modified time of |filename|. When failed,
-// it logs the error and returns 0.
+// This helper function gets the last-modified time of |filename|. When
+// failed, it logs the error and returns 0.
 time_t GetModificationTime(const char* filename) {
   time_t ts = 0;
   absl::Status status = GetFileModificationTime(filename, &ts);
@@ -431,25 +442,65 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   return result;
 }
 
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    const PemKeyCertPairList& pair_list) {
+  for (const auto& key_cert_pair: pair_list) {
+    absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
+        key_cert_pair.private_key(), key_cert_pair.cert_chain());
+    if (!matched_or.ok() || !*matched_or) return matched_or;
+  }
+  return true;
+}
+
 }  // namespace grpc_core
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
-  GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
-  grpc_core::ExecCtx exec_ctx;
+namespace {
+
+grpc_core::PemKeyCertPairList ConvertKeyCertPairListToCoreType(
+    grpc_tls_identity_pairs* pem_key_cert_pairs) {
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
     identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
     delete pem_key_cert_pairs;
   }
-  std::string root_cert_core;
-  if (root_certificate != nullptr) {
-    root_cert_core = root_certificate;
+  return identity_pairs_core;
+}
+
+}  // namespace
+
+grpc_tls_certificate_provider* grpc_tls_certificate_provider_in_memory_create() {
+  grpc_core::ExecCtx exec_ctx;
+  return new grpc_core::InMemoryCertificateProvider();
+}
+
+grpc_status_code grpc_tls_certificate_provider_in_memory_set_root_cert(
+    grpc_tls_certificate_provider* provider, const char* root_certificate,
+    const char** error_details) {
+  GPR_ASSERT(provider != nullptr && root_certificate != nullptr);
+  grpc_core::InMemoryCertificateProvider* data_provider =
+      static_cast<grpc_core::InMemoryCertificateProvider*>(provider);
+  absl::Status status = data_provider->SetRootCertificate(
+      root_certificate == nullptr ? "" : root_certificate);
+  if (!status.ok()) {
+    *error_details = gpr_strdup(std::string(status.message()).c_str());
   }
-  return new grpc_core::StaticDataCertificateProvider(
-      std::move(root_cert_core), std::move(identity_pairs_core));
+  return static_cast<grpc_status_code>(status.code());
+}
+
+grpc_status_code grpc_tls_certificate_provider_in_memory_set_key_cert_pairs(
+    grpc_tls_certificate_provider* provider,
+    grpc_tls_identity_pairs* pem_key_cert_pairs, const char** error_details) {
+  GPR_ASSERT(provider != nullptr && pem_key_cert_pairs != nullptr);
+  grpc_core::InMemoryCertificateProvider* data_provider =
+      static_cast<grpc_core::InMemoryCertificateProvider*>(provider);
+  absl::Status status = data_provider->SetKeyCertificatePairs(
+      ConvertKeyCertPairListToCoreType(pem_key_cert_pairs));
+  if (!status.ok()) {
+    *error_details = gpr_strdup(std::string(status.message()).c_str());
+  }
+  return static_cast<grpc_status_code>(status.code());
 }
 
 grpc_tls_certificate_provider*

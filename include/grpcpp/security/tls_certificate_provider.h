@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
 
 namespace grpc {
 namespace experimental {
@@ -47,23 +48,18 @@ struct IdentityKeyCertPair {
   std::string certificate_chain;
 };
 
-// A basic CertificateProviderInterface implementation that will load credential
-// data from static string during initialization. This provider will always
-// return the same cert data for all cert names, and reloading is not supported.
-class StaticDataCertificateProvider : public CertificateProviderInterface {
+// A in-memory CertificateProviderInterface implementation that will allow
+// application to specify credential data.
+class InMemoryCertificateProvider : public CertificateProviderInterface {
  public:
-  StaticDataCertificateProvider(
-      const std::string& root_certificate,
-      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+  InMemoryCertificateProvider();
 
-  explicit StaticDataCertificateProvider(const std::string& root_certificate)
-      : StaticDataCertificateProvider(root_certificate, {}) {}
+  ~InMemoryCertificateProvider() override;
 
-  explicit StaticDataCertificateProvider(
-      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
-      : StaticDataCertificateProvider("", identity_key_cert_pairs) {}
+  grpc::Status SetRootCertificate(std::string root_certificate);
 
-  ~StaticDataCertificateProvider() override;
+  grpc::Status SetKeyCertificatePairs(
+      std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 

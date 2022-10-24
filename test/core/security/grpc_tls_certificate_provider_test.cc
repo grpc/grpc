@@ -26,9 +26,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
@@ -202,9 +199,13 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   Mutex mu_;
 };
 
-TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
-  StaticDataCertificateProvider provider(
-      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+TEST_F(GrpcTlsCertificateProviderTest, InMemoryCertificateProviderSucceeds) {
+  InMemoryCertificateProvider provider;
+  ASSERT_TRUE(provider.SetRootCertificate(root_cert_).ok());
+  ASSERT_TRUE(provider
+                  .SetKeyCertificatePairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                           cert_chain_.c_str()))
+                  .ok());
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
@@ -227,6 +228,96 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
       ::testing::ElementsAre(CredentialInfo(
           "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       InMemoryCertificateProviderSetRootCertificateSucceeds) {
+  InMemoryCertificateProvider provider;
+  ASSERT_TRUE(provider.SetRootCertificate(root_cert_).ok());
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  ASSERT_TRUE(provider.SetRootCertificate(root_cert_2_).ok());
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_2_, {})));
+  CancelWatch(watcher_state_2);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_2_, {})));
+  CancelWatch(watcher_state_1);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       InMemoryCertificateProviderSetKeyCertificatePairSucceeds) {
+  auto pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
+  InMemoryCertificateProvider provider;
+  ASSERT_TRUE(provider.SetKeyCertificatePairs(pem_key_cert_pair_list).ok());
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str());
+  ASSERT_TRUE(provider.SetKeyCertificatePairs(pem_key_cert_pair_list).ok());
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_2->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_2);
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_1);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       InMemoryCertificateProviderCreationFailsOnInvalidIdentityCerts) {
+  InMemoryCertificateProvider provider;
+  ASSERT_TRUE(provider.SetRootCertificate(root_cert_).ok());
+  EXPECT_FALSE(
+      provider
+          .SetKeyCertificatePairs(MakeCertKeyPairs(
+              private_key_2_.c_str(), (cert_chain_ + cert_chain_2_).c_str()))
+          .ok());
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
+              ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_1);
+}
+
+TEST_F(
+    GrpcTlsCertificateProviderTest,
+    InMemoryCertificateProviderSetKeyCertificatePairFailsOnInvalidPairsOnInitialSetting) {
+  auto pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
+  InMemoryCertificateProvider provider;
+  ASSERT_TRUE(provider.SetRootCertificate(root_cert_).ok());
+  ASSERT_TRUE(provider.SetKeyCertificatePairs(pem_key_cert_pair_list).ok());
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(
+                  CredentialInfo(root_cert_, pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_1);
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  absl::Status status = provider.SetKeyCertificatePairs(
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_2_.c_str()));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "the key-cert pair list contains invalid pair(s)");
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(
+                  CredentialInfo(root_cert_, pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_2);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -487,7 +578,14 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
+TEST_F(GrpcTlsCertificateProviderTest, KeyCertMatchSucceeds) {
+  absl::StatusOr<bool> matched_result = PrivateKeyAndCertificateMatch(
+      private_key_2_, /*cert_chain=*/cert_chain_2_ + cert_chain_);
+  ASSERT_TRUE(matched_result.ok());
+  EXPECT_TRUE(*matched_result);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, KeyCertMatchFailsOnEmptyPrivateKey) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(/*private_key=*/"", cert_chain_);
   EXPECT_FALSE(status.ok());
@@ -495,7 +593,7 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
   EXPECT_EQ(status.status().message(), "Private key string is empty.");
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyCertificate) {
+TEST_F(GrpcTlsCertificateProviderTest, KeyCertMatchFailsOnEmptyCertificate) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(private_key_2_, /*cert_chain=*/"");
   EXPECT_FALSE(status.ok());
@@ -503,7 +601,7 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyCertificate) {
   EXPECT_EQ(status.status().message(), "Certificate string is empty.");
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidCertFormat) {
+TEST_F(GrpcTlsCertificateProviderTest, KeyCertMatchFailsOnInvalidCertFormat) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(private_key_2_, "invalid_certificate");
   EXPECT_FALSE(status.ok());
@@ -513,7 +611,7 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidCertFormat) {
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
-       FailedKeyCertMatchOnInvalidPrivateKeyFormat) {
+       KeyCertMatchFailsOnInvalidPrivateKeyFormat) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch("invalid_private_key", cert_chain_2_);
   EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
@@ -521,14 +619,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
             "Conversion from PEM string to EVP_PKEY failed.");
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
-  absl::StatusOr<bool> status =
-      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);
-  EXPECT_TRUE(status.ok());
-  EXPECT_TRUE(*status);
-}
-
-TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
+TEST_F(GrpcTlsCertificateProviderTest, KeyCertMatchFailsOnInvalidPair) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
   EXPECT_TRUE(status.ok());

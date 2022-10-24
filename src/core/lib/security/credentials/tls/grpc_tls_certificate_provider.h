@@ -96,21 +96,31 @@ struct grpc_tls_certificate_provider
 
 namespace grpc_core {
 
-// A basic provider class that will get credentials from string during
-// initialization.
-class StaticDataCertificateProvider final
-    : public grpc_tls_certificate_provider {
+class SingleCertificateCache {
  public:
-  StaticDataCertificateProvider(std::string root_certificate,
-                                PemKeyCertPairList pem_key_cert_pairs);
+  SingleCertificateCache();
 
-  ~StaticDataCertificateProvider() override;
+  ~SingleCertificateCache();
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  // Updates the root certificate.
+  void SetRootCertificate(std::string root_certificate);
+  // Updates the pem key-cert pair list.
+  void SetKeyCertificatePairs(PemKeyCertPairList pem_key_cert_pairs);
+  // Updates the root certificate and/or the pem key-cert pair list, only if the
+  // corresponding given parameter has value.
+  void SetRootCertificateAndKeyCertificatePairs(
+      absl::optional<std::string> root_certificate,
+      absl::optional<PemKeyCertPairList> pem_key_cert_pairs);
+
+  // Gets the cached root certificate.
+  std::string root_certificate();
+
+  // Gets the cached pem key-cert pair list.
+  PemKeyCertPairList pem_key_cert_pairs();
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const {
     return distributor_;
   }
-
-  UniqueTypeName type() const override;
 
  private:
   struct WatcherInfo {
@@ -118,20 +128,44 @@ class StaticDataCertificateProvider final
     bool identity_being_watched = false;
   };
 
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  // Guards members below.
+  Mutex mu_;
+  std::string root_certificate_ ABSL_GUARDED_BY(mu_);
+  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+};
+
+// A basic provider class that will get credentials from string during
+// initialization.
+class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
+ public:
+  InMemoryCertificateProvider() = default;
+
+  ~InMemoryCertificateProvider() override = default;
+
+  // Sets the root_certificate and updates the distributor.
+  absl::Status SetRootCertificate(std::string root_certificate);
+
+  // Sets the key-cert pair list and updates the distributor.
+  absl::Status SetKeyCertificatePairs(PemKeyCertPairList pem_key_cert_pairs);
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+    return single_certificate_cache_.distributor();
+  }
+
+  UniqueTypeName type() const override;
+
+ private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);
   }
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  std::string root_certificate_;
-  PemKeyCertPairList pem_key_cert_pairs_;
-  // Guards members below.
-  Mutex mu_;
-  // Stores each cert_name we get from the distributor callback and its watcher
-  // information.
-  std::map<std::string, WatcherInfo> watcher_info_;
+  SingleCertificateCache single_certificate_cache_;
 };
 
 // A provider class that will watch the credential changes on the file system.
@@ -146,17 +180,12 @@ class FileWatcherCertificateProvider final
   ~FileWatcherCertificateProvider() override;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
-    return distributor_;
+    return single_certificate_cache_.distributor();
   }
 
   UniqueTypeName type() const override;
 
  private:
-  struct WatcherInfo {
-    bool root_being_watched = false;
-    bool identity_being_watched = false;
-  };
-
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
@@ -180,19 +209,10 @@ class FileWatcherCertificateProvider final
   std::string root_cert_path_;
   int64_t refresh_interval_sec_ = 0;
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   Thread refresh_thread_;
   gpr_event shutdown_event_;
 
-  // Guards members below.
-  Mutex mu_;
-  // The most-recent credential data. It will be empty if the most recent read
-  // attempt failed.
-  std::string root_certificate_ ABSL_GUARDED_BY(mu_);
-  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
-  // Stores each cert_name we get from the distributor callback and its watcher
-  // information.
-  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+  SingleCertificateCache single_certificate_cache_;
 };
 
 //  Checks if the private key matches the certificate's public key.
@@ -200,6 +220,12 @@ class FileWatcherCertificateProvider final
 //  whether the key/cert pair matches.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain);
+
+//  Checks if the private key and the certificate chain for all pairs in the
+//  list match. Returns an OK status if matched, or |pair_list| is empty.
+//  Otherwise, an error status is returned.
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    const PemKeyCertPairList& pair_list);
 
 }  // namespace grpc_core
 
