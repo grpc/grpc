@@ -665,7 +665,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
 TEST(ResolverComponentTest, TestDoesntCrashOrHangWith1MsTimeout) {
   // Queries in this test could either complete successfully or time out
   // and show cancellation. This test doesn't care - we just care that the
-  // query completes and doesn't crash, hang, leak, etc.
+  // query completes and doesn't crash, get stuck, leak, etc.
   RunResolvesRelevantRecordsTest(
       ResultHandler::Create,
       grpc_core::ChannelArgs().Set(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS, 1));
