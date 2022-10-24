@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
@@ -33,7 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -46,6 +44,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
@@ -92,8 +91,8 @@ namespace posix_engine {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
@@ -316,22 +315,15 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       read_bytes = recvmsg(fd_, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
-    if (read_bytes < 0) {
+    if (read_bytes < 0 && errno == EAGAIN) {
       // NB: After calling call_read_cb a parallel call of the read handler may
       // be running.
-      if (errno == EAGAIN) {
-        if (total_read_bytes > 0) {
-          break;
-        }
-        FinishEstimate();
-        inq_ = 0;
-        return false;
-      } else {
-        incoming_buffer_->Clear();
-        status =
-            absl::InternalError(absl::StrCat("recvmsg:", std::strerror(errno)));
-        return true;
+      if (total_read_bytes > 0) {
+        break;
       }
+      FinishEstimate();
+      inq_ = 0;
+      return false;
     }
 
     // We have read something in previous reads. We need to deliver those bytes
@@ -341,10 +333,15 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       break;
     }
 
-    if (read_bytes == 0) {
+    if (read_bytes <= 0) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
-      status = absl::InternalError("Socket closed");
+      if (read_bytes == 0) {
+        status = absl::InternalError("Socket closed");
+      } else {
+        status = absl::InternalError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno)));
+      }
       return true;
     }
 
@@ -1167,6 +1164,7 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
 PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
+                                     MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
@@ -1249,10 +1247,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
+    std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
+    const PosixTcpOptions& options) {
   GPR_DEBUG_ASSERT(handle != nullptr);
   return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
-                                         config);
+                                         std::move(allocator), options);
 }
 
 }  // namespace posix_engine
@@ -1268,7 +1267,8 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
-    std::shared_ptr<EventEngine> /*engine*/, const EndpointConfig& /*config*/) {
+    std::shared_ptr<EventEngine> /*engine*/,
+    const PosixTcpOptions& /*options*/) {
   GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
 }
 
