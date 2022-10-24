@@ -44,7 +44,7 @@ constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::FileWatcherCertificateProvider;
-using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::experimental::InMemoryCertificateProvider;
 
 }  // namespace
 
@@ -54,14 +54,15 @@ namespace {
 
 TEST(
     CredentialsTest,
-    TlsServerCredentialsWithStaticDataCertificateProviderLoadingRootAndIdentity) {
+    TlsServerCredentialsWithInMemoryCertificateProviderLoadingRootAndIdentity) {
   experimental::IdentityKeyCertPair key_cert_pair;
   key_cert_pair.private_key = kIdentityCertPrivateKey;
   key_cert_pair.certificate_chain = kIdentityCertContents;
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
-  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-      kRootCertContents, identity_key_cert_pairs);
+  auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
+  certificate_provider->SetRootCertificate(kRootCertContents);
+  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_root_certs();
   options.set_root_cert_name(kRootCertName);
@@ -76,7 +77,7 @@ TEST(
 // ServerCredentials should always have identity credential presented.
 // Otherwise gRPC stack will fail.
 TEST(CredentialsTest,
-     TlsServerCredentialsWithStaticDataCertificateProviderLoadingIdentityOnly) {
+     TlsServerCredentialsWithInMemoryCertificateProviderLoadingIdentityOnly) {
   experimental::IdentityKeyCertPair key_cert_pair;
   key_cert_pair.private_key = kIdentityCertPrivateKey;
   key_cert_pair.certificate_chain = kIdentityCertContents;
@@ -84,8 +85,8 @@ TEST(CredentialsTest,
   // Adding two key_cert_pair(s) should still work.
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   identity_key_cert_pairs.emplace_back(key_cert_pair);
-  auto certificate_provider =
-      std::make_shared<StaticDataCertificateProvider>(identity_key_cert_pairs);
+  auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
+  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name(kIdentityCertName);

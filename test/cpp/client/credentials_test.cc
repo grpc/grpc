@@ -49,7 +49,7 @@ constexpr const char* kIdentityCertContents = "identity_cert_contents";
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::HostNameCertificateVerifier;
-using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::experimental::InMemoryCertificateProvider;
 
 }  // namespace
 
@@ -280,8 +280,9 @@ TEST(
   key_cert_pair.certificate_chain = kIdentityCertContents;
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
-  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-      kRootCertContents, identity_key_cert_pairs);
+  auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
+  certificate_provider->SetRootCertificate(kRootCertContents);
+  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
   options.watch_root_certs();
@@ -294,10 +295,10 @@ TEST(
 
 TEST(CredentialsTest,
      TlsChannelCredentialsWithStaticDataCertificateProviderLoadingRootOnly) {
-  auto certificate_provider =
-      std::make_shared<StaticDataCertificateProvider>(kRootCertContents);
+  auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
   GPR_ASSERT(certificate_provider != nullptr);
   GPR_ASSERT(certificate_provider->c_provider() != nullptr);
+  certificate_provider->SetRootCertificate(kRootCertContents);
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
   options.watch_root_certs();
@@ -314,8 +315,8 @@ TEST(
   key_cert_pair.certificate_chain = kIdentityCertContents;
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
-  auto certificate_provider =
-      std::make_shared<StaticDataCertificateProvider>(identity_key_cert_pairs);
+  auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
+  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
   options.watch_identity_key_cert_pairs();
