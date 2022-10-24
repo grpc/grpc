@@ -192,9 +192,9 @@ gpr_timespec TestDeadline(void) {
 
 struct ArgsStruct {
   gpr_event ev;
-  gpr_atm done_atm;
   gpr_mu* mu;
-  grpc_pollset* pollset;
+  bool done;              // guarded by mu
+  grpc_pollset* pollset;  // guarded by mu
   grpc_pollset_set* pollset_set;
   std::shared_ptr<grpc_core::WorkSerializer> lock;
   grpc_channel_args* channel_args;
@@ -211,7 +211,7 @@ void ArgsInit(ArgsStruct* args) {
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->lock = std::make_shared<grpc_core::WorkSerializer>();
-  gpr_atm_rel_store(&args->done_atm, 0);
+  args->done = false;
   args->channel_args = nullptr;
 }
 
@@ -243,24 +243,22 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   // for that server before succeeding with the healthy one).
   gpr_timespec deadline = NSecondDeadline(20);
   while (true) {
-    bool done = gpr_atm_acq_load(&args->done_atm) != 0;
-    if (done) {
+    grpc_core::MutexLockForGprMu lock(args->mu);
+    if (args->done) {
       break;
     }
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", args->done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
-    gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(
             args->pollset, &worker,
             grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
-    gpr_mu_unlock(args->mu);
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
@@ -432,11 +430,11 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 
   void ReportResult(grpc_core::Resolver::Result result) override {
     CheckResult(result);
-    gpr_atm_rel_store(&args_->done_atm, 1);
-    gpr_mu_lock(args_->mu);
+    grpc_core::MutexLockForGprMu lock(args_->mu);
+    GPR_ASSERT(!args_->done);
+    args_->done = true;
     GRPC_LOG_IF_ERROR("pollset_kick",
                       grpc_pollset_kick(args_->pollset, nullptr));
-    gpr_mu_unlock(args_->mu);
   }
 
   virtual void CheckResult(const grpc_core::Resolver::Result& /*result*/) {}
@@ -566,7 +564,8 @@ void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }
 
 void RunResolvesRelevantRecordsTest(
     std::unique_ptr<grpc_core::Resolver::ResultHandler> (*CreateResultHandler)(
-        ArgsStruct* args)) {
+        ArgsStruct* args),
+    grpc_core::ChannelArgs resolver_args) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -605,7 +604,6 @@ void RunResolvesRelevantRecordsTest(
   }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
           absl::GetFlag(FLAGS_enable_srv_queries).c_str());
-  grpc_core::ChannelArgs resolver_args;
   // By default, SRV queries are disabled, so tests that expect no SRV query
   // should avoid setting any channel arg. Test cases that do rely on the SRV
   // query must explicitly enable SRV though.
@@ -645,7 +643,8 @@ void RunResolvesRelevantRecordsTest(
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create);
+  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create,
+                                 grpc_core::ChannelArgs());
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
@@ -656,10 +655,20 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, phony_port,
                                    &done_ev);
   // Run the resolver test
-  RunResolvesRelevantRecordsTest(ResultHandler::Create);
+  RunResolvesRelevantRecordsTest(ResultHandler::Create,
+                                 grpc_core::ChannelArgs());
   // Shutdown and join stress thread
   gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
   socket_stress_thread.join();
+}
+
+TEST(ResolverComponentTest, TestResolvesRelevantRecordsWith1MsTimeout) {
+  // Queries in this test could either complete successfully or time out
+  // show cancellation. This test doesn't care - we just care that the
+  // query completes and doesn't crash, leak, etc.
+  RunResolvesRelevantRecordsTest(
+      ResultHandler::Create,
+      grpc_core::ChannelArgs().Set(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS, 1));
 }
 
 }  // namespace
