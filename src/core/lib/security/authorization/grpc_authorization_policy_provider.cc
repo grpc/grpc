@@ -29,6 +29,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
@@ -65,8 +66,7 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_error_handle error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
   if (!error.ok()) {
-    absl::Status status =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
+    absl::Status status = absl::InvalidArgumentError(StatusToString(error));
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));

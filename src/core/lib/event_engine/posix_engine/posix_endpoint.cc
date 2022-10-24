@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
@@ -33,7 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -46,6 +44,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
@@ -92,8 +91,8 @@ namespace posix_engine {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
@@ -316,39 +315,33 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       read_bytes = recvmsg(fd_, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    if (read_bytes < 0 && errno == EAGAIN) {
+      // NB: After calling call_read_cb a parallel call of the read handler may
+      // be running.
+      if (total_read_bytes > 0) {
+        break;
+      }
+      FinishEstimate();
+      inq_ = 0;
+      return false;
+    }
+
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
-    if (read_bytes <= 0 &&
-        total_read_bytes >= static_cast<size_t>(min_progress_size_)) {
+    if (read_bytes <= 0 && total_read_bytes >= 1) {
       inq_ = 1;
       break;
     }
 
-    if (read_bytes < 0) {
-      // NB: After calling call_read_cb a parallel call of the read handler may
-      // be running.
-      if (errno == EAGAIN) {
-        if (total_read_bytes > 0) {
-          break;
-        }
-        FinishEstimate();
-        inq_ = 0;
-        return false;
-      } else {
-        incoming_buffer_->Clear();
-        status =
-            absl::InternalError(absl::StrCat("recvmsg:", std::strerror(errno)));
-        return true;
-      }
-    }
-    if (read_bytes == 0) {
+    if (read_bytes <= 0) {
       // 0 read size ==> end of stream
-      //
-      // We may have read something, i.e., total_read_bytes > 0, but since the
-      // connection is closed we will drop the data here, because we can't call
-      // the callback multiple times.
       incoming_buffer_->Clear();
-      status = absl::InternalError("Socket closed");
+      if (read_bytes == 0) {
+        status = absl::InternalError("Socket closed");
+      } else {
+        status = absl::InternalError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno)));
+      }
       return true;
     }
 
@@ -403,7 +396,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   status = absl::OkStatus();
-  if (frame_size_tuning_enabled_) {
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
     // this round.
     min_progress_size_ -= total_read_bytes;
@@ -584,7 +577,7 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
   read_mu_.Unlock();
-  if (args != nullptr && frame_size_tuning_enabled_) {
+  if (args != nullptr && grpc_core::IsTcpFrameSizeTuningEnabled()) {
     min_progress_size_ = args->read_hint_bytes;
   } else {
     min_progress_size_ = 1;
@@ -1171,6 +1164,7 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
 PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
+                                     MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
@@ -1225,7 +1219,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   tcp_zerocopy_send_ctx_ = std::make_unique<TcpZerocopySendCtx>(
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
-  frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
 #ifdef GRPC_HAVE_TCP_INQ
   int one = 1;
   if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
@@ -1254,10 +1247,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
+    std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
+    const PosixTcpOptions& options) {
   GPR_DEBUG_ASSERT(handle != nullptr);
   return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
-                                         config);
+                                         std::move(allocator), options);
 }
 
 }  // namespace posix_engine
@@ -1273,7 +1267,8 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
-    std::shared_ptr<EventEngine> /*engine*/, const EndpointConfig& /*config*/) {
+    std::shared_ptr<EventEngine> /*engine*/,
+    const PosixTcpOptions& /*options*/) {
   GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
 }
 

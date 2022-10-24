@@ -1,4 +1,3 @@
-//
 // Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
+
+#ifndef GRPC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H
+#define GRPC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_resource_type.h"
+#include <stdint.h>
 
 namespace grpc_core {
 
-bool XdsResourceType::IsType(absl::string_view resource_type,
-                             bool* is_v2) const {
-  if (resource_type == type_url()) return true;
-  if (resource_type == v2_type_url()) {
-    if (is_v2 != nullptr) *is_v2 = true;
-    return true;
-  }
-  return false;
-}
+struct HistogramView {
+  int (*bucket_for)(int value);
+  const int* bucket_boundaries;
+  int num_buckets;
+  const uint64_t* buckets;
+
+  double Percentile(double p) const;
+  double Count() const;
+  double ThresholdForCountBelow(double count_below) const;
+};
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H

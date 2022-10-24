@@ -1,3 +1,4 @@
+//
 // Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,26 +12,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPCPP_EXT_GCP_OBSERVABILITY_H
+#define GRPCPP_EXT_GCP_OBSERVABILITY_H
 
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
+#include "absl/status/status.h"
 
-#include <utility>
-
-namespace grpc_event_engine {
+namespace grpc {
 namespace experimental {
 
-ThreadedExecutor::ThreadedExecutor(int reserve_threads)
-    : thread_pool_(reserve_threads){};
-
-void ThreadedExecutor::Run(EventEngine::Closure* closure) {
-  thread_pool_.Add([closure]() { closure->Run(); });
-}
-
-void ThreadedExecutor::Run(absl::AnyInvocable<void()> closure) {
-  thread_pool_.Add(std::move(closure));
-}
+// Initialize GCP Observability for gRPC.
+absl::Status GcpObservabilityInit();
 
 }  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc
+
+#endif  // GRPCPP_EXT_GCP_OBSERVABILITY_H

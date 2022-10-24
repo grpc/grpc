@@ -16,14 +16,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/gcp/observability.h"
-
 #include <stdint.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
@@ -34,6 +33,7 @@
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
+#include <grpcpp/ext/gcp_observability.h>
 #include <grpcpp/opencensus.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -74,6 +74,10 @@ absl::Status GcpObservabilityInit() {
   if (!config.ok()) {
     return config.status();
   }
+  if (!config->cloud_trace.has_value() &&
+      !config->cloud_monitoring.has_value()) {
+    return absl::OkStatus();
+  }
   grpc::RegisterOpenCensusPlugin();
   RegisterOpenCensusViewsForGcpObservability();
   ChannelArguments args;
@@ -91,6 +95,9 @@ absl::Status GcpObservabilityInit() {
                                 GoogleDefaultCredentials(), args));
     opencensus::exporters::trace::StackdriverExporter::Register(
         std::move(trace_opts));
+  } else {
+    // Disable OpenCensus tracing
+    EnableOpenCensusTracing(false);
   }
   if (config->cloud_monitoring.has_value()) {
     opencensus::exporters::stats::StackdriverOptions stats_opts;
@@ -100,8 +107,11 @@ absl::Status GcpObservabilityInit() {
             kGoogleStackdriverStatsAddress, GoogleDefaultCredentials(), args));
     opencensus::exporters::stats::StackdriverExporter::Register(
         std::move(stats_opts));
+  } else {
+    // Disable OpenCensus stats
+    EnableOpenCensusStats(false);
   }
-  return absl::Status();
+  return absl::OkStatus();
 }
 
 }  // namespace experimental

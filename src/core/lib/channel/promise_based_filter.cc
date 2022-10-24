@@ -25,7 +25,6 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
@@ -45,7 +44,9 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
       context_(args->context),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+      event_engine_(
+          static_cast<ChannelFilter*>(elem->channel_data)
+              ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
   if (flags & kFilterExaminesServerInitialMetadata) {
     server_initial_metadata_latch_ = arena_->New<Latch<ServerMetadata*>>();
   }
@@ -354,8 +355,7 @@ class ClientCallData::PollContext {
             GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
                        GRPC_STATUS_OK);
             grpc_error_handle error = grpc_error_set_int(
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "early return from promise based filter"),
+                GRPC_ERROR_CREATE("early return from promise based filter"),
                 StatusIntProperty::kRpcStatus,
                 *md->get_pointer(GrpcStatusMetadata()));
             if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
@@ -885,7 +885,7 @@ void ClientCallData::SetStatusFromError(grpc_metadata_batch* metadata,
   metadata->Set(GrpcStatusMetadata(), status_code);
   metadata->Set(GrpcMessageMetadata(), Slice::FromCopiedString(status_details));
   metadata->GetOrCreatePointer(GrpcStatusContext())
-      ->emplace_back(grpc_error_std_string(error));
+      ->emplace_back(StatusToString(error));
 }
 
 // Wakeup and poll the promise if appropriate.
@@ -1256,11 +1256,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          grpc_error_handle error =
-              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "early return from promise based filter"),
-                                 StatusIntProperty::kRpcStatus,
-                                 *md->get_pointer(GrpcStatusMetadata()));
+          grpc_error_handle error = grpc_error_set_int(
+              GRPC_ERROR_CREATE("early return from promise based filter"),
+              StatusIntProperty::kRpcStatus,
+              *md->get_pointer(GrpcStatusMetadata()));
           if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
             error = grpc_error_set_str(error, StatusStrProperty::kGrpcMessage,
                                        message->as_string_view());

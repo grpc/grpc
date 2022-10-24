@@ -28,17 +28,21 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/surface/init_internally.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class WindowsEventEngine : public EventEngine {
+// TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
+// event engine is shut down before we shut down iomgr.
+class WindowsEventEngine : public EventEngine,
+                           public grpc_core::KeepsGrpcInitialized {
  public:
   class WindowsEndpoint : public EventEngine::Endpoint {
    public:
@@ -108,7 +112,7 @@ class WindowsEventEngine : public EventEngine {
   std::atomic<intptr_t> aba_token_{0};
 
   posix_engine::TimerManager timer_manager_;
-  ThreadedExecutor executor_{2};
+  ThreadPool executor_;
   IOCP iocp_;
 };
 

@@ -29,18 +29,20 @@ namespace grpc_event_engine {
 namespace experimental {
 
 TEST(ThreadPoolTest, CanRunClosure) {
-  ThreadPool p(1);
+  ThreadPool p;
   grpc_core::Notification n;
-  p.Add([&n] { n.Notify(); });
+  p.Run([&n] { n.Notify(); });
   n.WaitForNotification();
+  p.Quiesce();
 }
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
-  auto p = std::make_shared<ThreadPool>(1);
+  auto p = std::make_shared<ThreadPool>();
   grpc_core::Notification n;
-  p->Add([p, &n]() mutable {
+  p->Run([p, &n]() mutable {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     // This should delete the thread pool and not deadlock
+    p->Quiesce();
     p.reset();
     n.Notify();
   });
@@ -50,13 +52,13 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
 }
 
 TEST(ThreadPoolTest, CanSurviveFork) {
-  ThreadPool p(1);
+  ThreadPool p;
   grpc_core::Notification n;
-  gpr_log(GPR_INFO, "add callback 1");
-  p.Add([&n, &p] {
+  gpr_log(GPR_INFO, "run callback 1");
+  p.Run([&n, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    gpr_log(GPR_INFO, "add callback 2");
-    p.Add([&n] {
+    gpr_log(GPR_INFO, "run callback 2");
+    p.Run([&n] {
       std::this_thread::sleep_for(std::chrono::seconds(1));
       gpr_log(GPR_INFO, "notify");
       n.Notify();
@@ -69,24 +71,25 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   gpr_log(GPR_INFO, "postfork child");
   p.PostforkChild();
   grpc_core::Notification n2;
-  gpr_log(GPR_INFO, "add callback 3");
-  p.Add([&n2] {
+  gpr_log(GPR_INFO, "run callback 3");
+  p.Run([&n2] {
     gpr_log(GPR_INFO, "notify");
     n2.Notify();
   });
   gpr_log(GPR_INFO, "wait for notification");
   n2.WaitForNotification();
+  p.Quiesce();
 }
 
 void ScheduleSelf(ThreadPool* p) {
-  p->Add([p] { ScheduleSelf(p); });
+  p->Run([p] { ScheduleSelf(p); });
 }
 
 TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
   ASSERT_DEATH_IF_SUPPORTED(
       [] {
         gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
-        ThreadPool p(1);
+        ThreadPool p;
         ScheduleSelf(&p);
         std::thread terminator([] {
           std::this_thread::sleep_for(std::chrono::seconds(10));
@@ -99,17 +102,18 @@ TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
 
 void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
   if (n == 0) return;
-  p->Add([p, n] {
+  p->Run([p, n] {
     ScheduleTwiceUntilZero(p, n - 1);
     ScheduleTwiceUntilZero(p, n - 1);
   });
 }
 
 TEST(ThreadPoolTest, CanStartLotsOfClosures) {
-  ThreadPool p(1);
-  // Our first thread pool implementation tried to create ~256k threads for this
+  ThreadPool p;
+  // Our first thread pool implementation tried to create ~1M threads for this
   // test.
-  ScheduleTwiceUntilZero(&p, 18);
+  ScheduleTwiceUntilZero(&p, 20);
+  p.Quiesce();
 }
 
 }  // namespace experimental

@@ -24,8 +24,8 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:channel_args",
         "//:grpc_client_channel",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -84,5 +84,20 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "outlier_detection_lb_config_parser_test",
+    srcs = ["outlier_detection_lb_config_parser_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_test_ios"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )

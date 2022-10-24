@@ -26,6 +26,7 @@
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -35,6 +36,8 @@ namespace {
 
 using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
 using ::grpc::lookup::v1::RouteLookupConfig;
+
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 constexpr char kRlsTestKey[] = "test_key";
 constexpr char kRlsTestKey1[] = "key1";
@@ -88,9 +91,7 @@ class RlsTest : public XdsEnd2endTest {
 // Test both with and without RDS.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, RlsTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
-                      // Also test with xDS v2.
-                      XdsTestType().set_enable_rds_testing().set_use_v2()),
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {

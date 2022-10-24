@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -109,9 +110,9 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     ChannelStackBuilder* builder) {
   auto channel_args = builder->channel_args();
   if (builder->channel_stack_type() == GRPC_SERVER_CHANNEL) {
-    GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
+    global_stats().IncrementServerChannelsCreated();
   } else {
-    GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
+    global_stats().IncrementClientChannelsCreated();
   }
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder->Build();
   if (!r.ok()) {
@@ -429,8 +430,7 @@ void grpc_channel_destroy_internal(grpc_channel* c_channel) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   grpc_channel_element* elem;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (c_channel));
-  op->disconnect_with_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
+  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   elem = grpc_channel_stack_element(channel->channel_stack(), 0);
   elem->filter->start_transport_op(elem, op);
 }

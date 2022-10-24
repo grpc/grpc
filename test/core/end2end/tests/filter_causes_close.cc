@@ -209,7 +209,7 @@ static void recv_im_ready(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_core::Closure::Run(
       DEBUG_LOCATION, calld->recv_im_ready,
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING(
                              "Failure that's not preventable.", &error, 1),
                          grpc_core::StatusIntProperty::kRpcStatus,
                          GRPC_STATUS_PERMISSION_DENIED));

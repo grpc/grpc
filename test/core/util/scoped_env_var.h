@@ -1,3 +1,4 @@
+//
 // Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,35 +12,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+
+#ifndef GRPC_TEST_CORE_UTIL_SCOPED_ENV_VAR_H
+#define GRPC_TEST_CORE_UTIL_SCOPED_ENV_VAR_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/call_fragments.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
+namespace testing {
 
-FragmentAllocator::Node* FragmentAllocator::AllocateNode() {
-  if (free_list_ != nullptr) {
-    Node* node = free_list_;
-    free_list_ = free_list_->next_free;
-    return node;
+class ScopedEnvVar {
+ public:
+  ScopedEnvVar(const char* env_var, const char* value) : env_var_(env_var) {
+    SetEnv(env_var_, value);
   }
-  return static_cast<Node*>(GetContext<Arena>()->Alloc(sizeof(Node)));
-}
 
-void FragmentAllocator::FreeNode(Node* node) {
-  node->next_free = free_list_;
-  free_list_ = node;
-}
+  virtual ~ScopedEnvVar() { UnsetEnv(env_var_); }
 
-void FragmentAllocator::Delete(grpc_metadata_batch* p) {
-  p->~grpc_metadata_batch();
-  FreeNode(reinterpret_cast<Node*>(p));
-}
+ private:
+  const char* env_var_;
+};
 
-void FragmentAllocator::Delete(Message* m) {
-  m->~Message();
-  FreeNode(reinterpret_cast<Node*>(m));
-}
+class ScopedExperimentalEnvVar : public ScopedEnvVar {
+ public:
+  explicit ScopedExperimentalEnvVar(const char* env_var)
+      : ScopedEnvVar(env_var, "true") {}
+};
 
+}  // namespace testing
 }  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_UTIL_SCOPED_ENV_VAR_H
