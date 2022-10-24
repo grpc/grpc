@@ -15,13 +15,17 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
 #include <atomic>
+#include <cstdint>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -38,10 +42,58 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/init_internally.h"
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#endif  // GRPC_POSIX_SOCKET_TCP
+
 namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+// A helper class to handle asynchronous connect operations.
+class AsyncConnect {
+ public:
+  AsyncConnect(EventEngine::OnConnectCallback on_connect,
+               std::shared_ptr<EventEngine> engine, ThreadPool* executor,
+               grpc_event_engine::posix_engine::EventHandle* fd,
+               MemoryAllocator&& allocator,
+               const grpc_event_engine::posix_engine::PosixTcpOptions& options,
+               std::string resolved_addr_str, int64_t connection_handle)
+      : on_connect_(std::move(on_connect)),
+        engine_(engine),
+        executor_(executor),
+        fd_(fd),
+        allocator_(std::move(allocator)),
+        options_(options),
+        resolved_addr_str_(resolved_addr_str),
+        connection_handle_(connection_handle),
+        connect_cancelled_(false) {}
+
+  void Start(EventEngine::Duration timeout);
+  ~AsyncConnect();
+
+ private:
+  friend class PosixEventEngine;
+  void OnTimeoutExpired(absl::Status status);
+
+  void OnWritable(absl::Status status) ABSL_NO_THREAD_SAFETY_ANALYSIS;
+
+  grpc_core::Mutex mu_;
+  grpc_event_engine::posix_engine::PosixEngineClosure* on_writable_ = nullptr;
+  EventEngine::OnConnectCallback on_connect_;
+  std::shared_ptr<EventEngine> engine_;
+  ThreadPool* executor_;
+  EventEngine::TaskHandle alarm_handle_;
+  int refs_{2};
+  grpc_event_engine::posix_engine::EventHandle* fd_;
+  MemoryAllocator allocator_;
+  grpc_event_engine::posix_engine::PosixTcpOptions options_;
+  std::string resolved_addr_str_;
+  int64_t connection_handle_;
+  bool connect_cancelled_;
+};
+
 // A helper class to manager lifetime of the poller associated with the
 // posix event engine.
 class PosixEnginePollerManager
@@ -153,8 +205,28 @@ class PosixEventEngine final : public EventEngine,
                                            absl::AnyInvocable<void()> cb);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+  friend class AsyncConnect;
+  struct ConnectionShard {
+    grpc_core::Mutex mu;
+    absl::flat_hash_map<int64_t, AsyncConnect*> pending_connections
+        ABSL_GUARDED_BY(&mu);
+  };
+
   static void PollerWorkInternal(
       std::shared_ptr<PosixEnginePollerManager> poller_manager);
+
+  ConnectionHandle ConnectInternal(
+      grpc_event_engine::posix_engine::PosixSocketWrapper sock,
+      OnConnectCallback on_connect, ResolvedAddress addr,
+      MemoryAllocator&& allocator,
+      const grpc_event_engine::posix_engine::PosixTcpOptions& options,
+      Duration timeout);
+
+  void OnConnectFinishInternal(int connection_handle);
+
+  std::vector<ConnectionShard> connection_shards_;
+  std::atomic<int64_t> last_connection_id_{1};
+
 #endif  // GRPC_POSIX_SOCKET_TCP
 
   grpc_core::Mutex mu_;
