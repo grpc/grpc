@@ -55,7 +55,7 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
           std::move(policies.allow_policy))),
       deny_engine_(policies.deny_policy.has_value()
                        ? MakeRefCounted<GrpcAuthorizationEngine>(
-                             std::move(policies.deny_policy.value()))
+                             std::move(*policies.deny_policy))
                        : nullptr) {}
 
 namespace {
@@ -163,7 +163,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
       std::move(rbac_policies_or->allow_policy));
   if (rbac_policies_or->deny_policy.has_value()) {
     deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-        std::move(rbac_policies_or->deny_policy.value()));
+        std::move(*rbac_policies_or->deny_policy));
   } else {
     deny_engine_.reset();
   }

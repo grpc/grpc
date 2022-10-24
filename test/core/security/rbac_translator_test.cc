@@ -107,7 +107,7 @@ TEST(GenerateRbacPoliciesTest, MissingDenyRules) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
-  EXPECT_FALSE(rbac_policies.value().deny_policy.has_value());
+  EXPECT_FALSE(rbac_policies->deny_policy.has_value());
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectAllowRulesType) {
