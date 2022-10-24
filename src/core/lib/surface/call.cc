@@ -2864,10 +2864,7 @@ bool ClientPromiseBasedCall::Completed() {
 
 class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
-  ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
-      : PromiseBasedCall(arena, *args) {
-    global_stats().IncrementServerCallsCreated();
-  }
+  ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args);
 
   void Orphan() override { abort(); }
 
@@ -2882,7 +2879,18 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   absl::string_view GetServerAuthority() const override { abort(); }
 
   void UpdateOnce() override { abort(); }
+
+ private:
+  ArenaPromise<ServerMetadataHandle> promise_;
 };
+
+ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
+                                               grpc_call_create_args* args)
+    : PromiseBasedCall(arena, *args),
+      promise_(channel()->channel_stack()->MakeServerCallPromise(
+          CallArgs{nullptr, nullptr, nullptr, nullptr})) {
+  global_stats().IncrementServerCallsCreated();
+}
 
 }  // namespace grpc_core
 

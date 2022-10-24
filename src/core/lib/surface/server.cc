@@ -492,7 +492,7 @@ class ChannelBroadcaster {
 
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
-    nullptr,
+    Server::ChannelData::MakeCallPromise,
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,
@@ -1099,15 +1099,24 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
-  grpc_call_element* elem =
-      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
-  auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (!error.ok()) {
-    calld->FailCallCreation();
+  grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
+  if (call_stack == nullptr) {  // Promise based calls do not have a call stack
+    GPR_ASSERT(IsPromiseBasedServerCallEnabled());
     return;
+  } else {
+    grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);
+    auto* calld = static_cast<Server::CallData*>(elem->call_data);
+    if (!error.ok()) {
+      calld->FailCallCreation();
+      return;
+    }
+    calld->Start(elem);
   }
-  calld->Start(elem);
 }
+
+ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
+    grpc_channel_element* elem, grpc_core::CallArgs call_args,
+    grpc_core::NextPromiseFactory) {}
 
 void Server::ChannelData::FinishDestroy(void* arg,
                                         grpc_error_handle /*error*/) {
@@ -1238,7 +1247,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       }
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
   grpc_cq_end_op(cq_new_, rc->tag, absl::OkStatus(), Server::DoneRequestEvent,
                  rc, &rc->completion, true);
