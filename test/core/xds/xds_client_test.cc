@@ -450,7 +450,7 @@ class XdsClientTest : public ::testing::Test {
 
     XdsWildcardCapableResource() = default;
     XdsWildcardCapableResource(std::string name, uint32_t value)
-        : name(std::move(name)), value(std::move(value)) {}
+        : name(std::move(name)), value(value) {}
 
     bool operator==(const XdsWildcardCapableResource& other) const {
       return name == other.name && value == other.value;
@@ -1606,7 +1606,7 @@ TEST_F(XdsClientTest,
 // This tests resource removal triggered by the server when using a
 // resource type that requires all resources to be present in every
 // response, similar to LDS and CDS.
-TEST_F(XdsClientTest, ResourceDoesNotExistWhenRemovedByServerInUpdate) {
+TEST_F(XdsClientTest, ResourceDeletion) {
   InitXdsClient();
   // Start a watch for "wc1".
   auto watcher = StartWildcardCapableWatch("wc1");

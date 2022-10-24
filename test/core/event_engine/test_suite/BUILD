@@ -80,8 +80,11 @@ grpc_cc_test(
     tags = [
         "no_windows",
     ],
-    uses_polling = False,
+    uses_event_engine = True,
+    uses_polling = True,
     deps = [
+        ":client",
+        ":oracle_event_engine_posix",
         "//src/core:posix_event_engine",
         "//test/core/event_engine/test_suite:timer",
     ],
