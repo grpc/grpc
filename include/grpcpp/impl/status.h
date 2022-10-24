@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_STATUS_H
 #define GRPCPP_IMPL_STATUS_H
 
+// IWYU pragma: private, include <grpcpp/support/status.h>
+
 #include <grpc/support/port_platform.h>
 
 #include <grpc/status.h>
