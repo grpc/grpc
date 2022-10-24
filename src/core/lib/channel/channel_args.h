@@ -46,6 +46,11 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
+// TODO(hork): When we're ready to allow setting via a channel arg from the
+// application, replace this with a macro in
+// include/grpc/impl/codegen/grpc_types.h.
+#define GRPC_INTERNAL_ARG_EVENT_ENGINE "grpc.internal.event_engine"
+
 // Channel args are intentionally immutable, to avoid the need for locking.
 
 namespace grpc_core {
@@ -221,10 +226,7 @@ struct ChannelArgNameTraits<std::shared_ptr<T>> {
 template <>
 struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
   static absl::string_view ChannelArgName() {
-    // TODO(hork): When we're ready to allow setting via a channel arg
-    // from the application, replace this with a macro in
-    // include/grpc/impl/codegen/grpc_types.h.
-    return "grpc.internal.event_engine";
+    return GRPC_INTERNAL_ARG_EVENT_ENGINE;
   }
 };
 class ChannelArgs {

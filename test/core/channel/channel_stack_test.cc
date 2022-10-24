@@ -27,6 +27,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
@@ -39,7 +40,7 @@ static grpc_error_handle channel_init_func(grpc_channel_element* elem,
   // TODO(hork): replace the string with a macro. See TODO in channel_args.h
   auto* ee = grpc_channel_args_find_pointer<
       grpc_event_engine::experimental::EventEngine>(
-      args->channel_args, "grpc.internal.event_engine");
+      args->channel_args, GRPC_INTERNAL_ARG_EVENT_ENGINE);
   EXPECT_NE(ee, nullptr);
   EXPECT_TRUE(args->is_first);
   EXPECT_TRUE(args->is_last);
