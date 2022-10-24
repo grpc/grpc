@@ -28,6 +28,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
@@ -37,7 +38,6 @@ static grpc_error_handle channel_init_func(grpc_channel_element* elem,
   int test_value = grpc_channel_args_find_integer(args->channel_args,
                                                   "test_key", {-1, 0, INT_MAX});
   EXPECT_EQ(test_value, 42);
-  // TODO(hork): replace the string with a macro. See TODO in channel_args.h
   auto* ee = grpc_channel_args_find_pointer<
       grpc_event_engine::experimental::EventEngine>(
       args->channel_args, GRPC_INTERNAL_ARG_EVENT_ENGINE);
@@ -110,12 +110,14 @@ TEST(ChannelStackTest, CreateChannelStack) {
 
   channel_stack = static_cast<grpc_channel_stack*>(
       gpr_malloc(grpc_channel_stack_size(&filters, 1)));
-
+  auto channel_args = grpc_core::CoreConfiguration::Get()
+                          .channel_args_preconditioning()
+                          .PreconditionChannelArgs(nullptr)
+                          .Set("test_key", 42);
   ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "grpc_channel_stack_init",
       grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
-                              grpc_core::ChannelArgs().Set("test_key", 42),
-                              "test", channel_stack)));
+                              channel_args, "test", channel_stack)));
   EXPECT_EQ(channel_stack->count, 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = static_cast<int*>(channel_elem->channel_data);

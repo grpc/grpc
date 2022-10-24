@@ -129,16 +129,17 @@ int main(int argc, char** argv) {
 static int check_stack(const char* file, int line, const char* transport_name,
                        grpc_channel_args* init_args,
                        unsigned channel_stack_type, ...) {
+  grpc_core::ChannelArgs channel_args =
+      grpc_core::ChannelArgs::FromC(init_args);
   // create phony channel stack
   grpc_core::ChannelStackBuilderImpl builder(
-      "test", static_cast<grpc_channel_stack_type>(channel_stack_type));
+      "test", static_cast<grpc_channel_stack_type>(channel_stack_type),
+      channel_args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
   grpc_transport fake_transport = {&fake_transport_vtable};
-  grpc_core::ChannelArgs channel_args =
-      grpc_core::ChannelArgs::FromC(init_args);
-  builder.SetTarget("foo.test.google.fr").SetChannelArgs(channel_args);
+  builder.SetTarget("foo.test.google.fr");
   if (transport_name != nullptr) {
     builder.SetTransport(&fake_transport);
   }

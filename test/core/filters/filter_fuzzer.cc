@@ -679,8 +679,8 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
 
   grpc_core::ChannelStackBuilderImpl builder(
       msg.stack_name().c_str(),
-      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
-  builder.SetChannelArgs(channel_args);
+      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()),
+      channel_args);
   builder.AppendFilter(filter);
   const bool is_client =
       grpc_channel_stack_type_is_client(builder.channel_stack_type());

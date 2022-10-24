@@ -119,7 +119,8 @@ bool AddOriginalFilter(ChannelStackBuilder* builder) {
 }
 
 TEST(ChannelStackBuilder, UnknownTarget) {
-  ChannelStackBuilderImpl builder("alpha-beta-gamma", GRPC_CLIENT_CHANNEL);
+  ChannelStackBuilderImpl builder("alpha-beta-gamma", GRPC_CLIENT_CHANNEL,
+                                  ChannelArgs());
   EXPECT_EQ(builder.target(), "unknown");
 }
 

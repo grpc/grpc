@@ -934,9 +934,9 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL);
-  builder.SetChannelArgs(connecting_result_.channel_args)
-      .SetTransport(connecting_result_.transport);
+  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
+                                  connecting_result_.channel_args);
+  builder.SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
