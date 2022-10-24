@@ -86,10 +86,10 @@ namespace Grpc.Core
                 }
                 GrpcEnvironment.RegisterChannel(this);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Task.Run(async () => await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false));
-                throw e;
+                throw;
             }
         }
 
