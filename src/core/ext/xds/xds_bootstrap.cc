@@ -267,13 +267,7 @@ const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
 
 bool XdsBootstrap::XdsServerExists(
     const XdsBootstrap::XdsServer& server) const {
-  if (server == servers_[0]) return true;
-  for (auto& authority : authorities_) {
-    for (auto& xds_server : authority.second.xds_servers) {
-      if (server == xds_server) return true;
-    }
-  }
-  return false;
+  return;
 }
 
 grpc_error_handle XdsBootstrap::ParseXdsServerList(
