@@ -1813,8 +1813,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Cancel watches.
-  CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
-  CancelFooWatch(watcher2.get(), "foo2");
+  CancelFooWatch(watcher.get(), "foo1");
+  CancelFooWatch(watcher2.get(), "foo1");
   // The XdsClient may or may not send an unsubscription message
   // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
