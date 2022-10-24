@@ -145,17 +145,20 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
 
 FakeXdsTransportFactory::FakeXdsTransport::FakeXdsTransport(
     std::function<void(absl::Status)> on_connectivity_change,
-    bool auto_complete_messages_from_client)
+    bool auto_complete_messages_from_client,
+    bool auto_report_transport_connected)
     : auto_complete_messages_from_client_(auto_complete_messages_from_client),
       on_connectivity_change_(MakeRefCounted<RefCountedOnConnectivityChange>(
           std::move(on_connectivity_change))) {
-  // Send connectivity change update indicating the channel is connected.
-  GetDefaultEventEngine()->Run(
-      [on_connectivity_change = on_connectivity_change_]() mutable {
-        ExecCtx exec_ctx;
-        on_connectivity_change->Run(absl::OkStatus());
-        on_connectivity_change.reset();
-      });
+  if (auto_report_transport_connected) {
+    // Send connectivity change update indicating the channel is connected.
+    GetDefaultEventEngine()->Run(
+        [on_connectivity_change = on_connectivity_change_]() mutable {
+          ExecCtx exec_ctx;
+          on_connectivity_change->Run(absl::OkStatus());
+          on_connectivity_change.reset();
+        });
+  }
 }
 
 void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectivityChange(
@@ -237,7 +240,8 @@ FakeXdsTransportFactory::Create(
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
-      std::move(on_connectivity_change), auto_complete_messages_from_client_);
+      std::move(on_connectivity_change), auto_complete_messages_from_client_,
+      auto_report_transport_connected_);
   entry = transport->Ref();
   return transport;
 }
@@ -251,6 +255,11 @@ void FakeXdsTransportFactory::TriggerConnectivityChange(
 void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
   MutexLock lock(&mu_);
   auto_complete_messages_from_client_ = value;
+}
+
+void FakeXdsTransportFactory::SetAutoReportTransportConnected(bool value) {
+  MutexLock lock(&mu_);
+  auto_report_transport_connected_ = value;
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>

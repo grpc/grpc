@@ -1887,6 +1887,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Lower resources-does-not-exist timeout, to make sure that we're not
   // triggering that here.
   InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  // Tell transport not to immediately report that it is connected.
+  transport_factory_->SetAutoReportTransportConnected(false);
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -1928,7 +1930,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
       << *error;
   // Second watcher should not see resource-does-not-exist either.
   EXPECT_FALSE(watcher2->HasEvent());
-  // Transport connectivity is restored.
+  // Report channel as having become connected.
   TriggerConnectivityChange(xds_client_->bootstrap().server(),
                             absl::OkStatus());
   // The ADS stream uses wait_for_ready inside the XdsTransport interface,

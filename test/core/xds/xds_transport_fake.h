@@ -134,6 +134,17 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   // will not be affected.
   void SetAutoCompleteMessagesFromClient(bool value);
 
+  // By default, FakeTransport will immediately report to the XdsClient
+  // that it is connected as soon as it is created.  If this is set to
+  // false, that behavior will be inhibited, and the test must invoke
+  // TriggerConnectivityChange() to explicitly report the connectivity
+  // state to the XdsClient.
+  //
+  // This value affects all transports created after this call is
+  // complete.  Any transport that already exists prior to this call
+  // will not be affected.
+  void SetAutoReportTransportConnected(bool value);
+
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServer& server, const char* method,
       absl::Duration timeout);
@@ -144,7 +155,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   class FakeXdsTransport : public XdsTransport {
    public:
     FakeXdsTransport(std::function<void(absl::Status)> on_connectivity_change,
-                     bool auto_complete_messages_from_client);
+                     bool auto_complete_messages_from_client,
+                     bool auto_report_transport_connected);
 
     void Orphan() override;
 
@@ -205,6 +217,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
+  bool auto_report_transport_connected_ ABSL_GUARDED_BY(&mu_) = true;
 };
 
 }  // namespace grpc_core
