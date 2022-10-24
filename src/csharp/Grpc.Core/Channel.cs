@@ -88,7 +88,8 @@ namespace Grpc.Core
             }
             catch (Exception)
             {
-                Task.Run(async () => await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false));
+                // Constructor can't be async.
+                _ = Task.Run(async () => await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false));
                 throw;
             }
         }
