@@ -53,6 +53,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -109,8 +110,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
   if (!address.ok()) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(address.status().ToString());
+    grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
     return;
   }
@@ -144,7 +144,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     MutexLock lock(&self->mu_);
     if (!error.ok() || self->shutdown_) {
       if (error.ok()) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
+        error = GRPC_ERROR_CREATE("connector shutdown");
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
         if (args->endpoint != nullptr) {
@@ -209,7 +209,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
     } else {
       // OnTimeout() was already invoked. Call Notify() again so that notify_
       // can be invoked.
-      self->MaybeNotify(GRPC_ERROR_NONE);
+      self->MaybeNotify(absl::OkStatus());
     }
   }
   self->Unref();
@@ -228,12 +228,12 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
       // SubchannelConnector::Result::Reset()
       grpc_transport_destroy(self->result_->transport);
       self->result_->Reset();
-      self->MaybeNotify(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      self->MaybeNotify(GRPC_ERROR_CREATE(
           "connection attempt timed out before receiving SETTINGS frame"));
     } else {
       // OnReceiveSettings() was already invoked. Call Notify() again so that
       // notify_ can be invoked.
-      self->MaybeNotify(GRPC_ERROR_NONE);
+      self->MaybeNotify(absl::OkStatus());
     }
   }
   self->Unref();
@@ -344,7 +344,7 @@ grpc_channel* grpc_channel_create(const char* target,
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
                  (target, (void*)creds, (void*)c_args));
   grpc_channel* channel = nullptr;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.
@@ -366,7 +366,8 @@ grpc_channel* grpc_channel_create(const char* target,
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                           &integer)) {
       status = static_cast<grpc_status_code>(integer);
     }
     channel = grpc_lame_client_channel_create(

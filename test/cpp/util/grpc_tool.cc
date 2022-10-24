@@ -537,7 +537,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   if (!absl::GetFlag(FLAGS_binary_input) ||
       !absl::GetFlag(FLAGS_binary_output)) {
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {
@@ -562,7 +562,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     request_text = argv[2];
   }
 
-  if (parser->IsStreaming(method_name, true /* is_request */)) {
+  if (parser != nullptr &&
+      parser->IsStreaming(method_name, true /* is_request */)) {
     std::istream* input_stream;
     std::ifstream input_file;
 
@@ -666,7 +667,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   } else {  // parser->IsStreaming(method_name, true /* is_request */)
     if (absl::GetFlag(FLAGS_batch)) {
-      if (parser->IsStreaming(method_name, false /* is_request */)) {
+      if (parser != nullptr &&
+          parser->IsStreaming(method_name, false /* is_request */)) {
         fprintf(stderr, "Batch mode for streaming RPC is not supported.\n");
         return false;
       }
@@ -923,7 +925,7 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
       !absl::GetFlag(FLAGS_binary_output)) {
     std::shared_ptr<grpc::Channel> channel =
         CreateCliChannel(server_address, cred, grpc::ChannelArguments());
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {

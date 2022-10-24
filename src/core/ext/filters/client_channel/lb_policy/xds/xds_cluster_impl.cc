@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -39,7 +38,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -418,7 +417,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     }
     // Inject subchannel call tracker to record call completion.
     complete_pick->subchannel_call_tracker =
-        absl::make_unique<SubchannelCallTracker>(
+        std::make_unique<SubchannelCallTracker>(
             std::move(complete_pick->subchannel_call_tracker),
             std::move(locality_stats),
             call_counter_->Ref(DEBUG_LOCATION, "SubchannelCallTracker"));
@@ -531,7 +530,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (config_->drop_config() != nullptr && config_->drop_config()->drop_all()) {
-    auto drop_picker = absl::make_unique<Picker>(this, picker_);
+    auto drop_picker = std::make_unique<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
@@ -544,7 +543,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   }
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
-    auto drop_picker = absl::make_unique<Picker>(this, picker_);
+    auto drop_picker = std::make_unique<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
@@ -563,7 +562,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_impl_lb_trace);
@@ -794,7 +793,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsClusterImplLbFactory>());
+      std::make_unique<XdsClusterImplLbFactory>());
 }
 
 }  // namespace grpc_core

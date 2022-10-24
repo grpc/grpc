@@ -225,7 +225,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
           "localhost:" + to_string(backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        GetServerCredentials(GetParam()));
-      backends_[i].service = absl::make_unique<TestServiceImpl>();
+      backends_[i].service = std::make_unique<TestServiceImpl>();
       // ensure that the backend itself has channelz disabled.
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
       backend_builder.RegisterService(backends_[i].service.get());

@@ -23,7 +23,6 @@
 
 #include <algorithm>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -58,7 +57,6 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
@@ -195,7 +193,7 @@ class XdsClient::ChannelState::AdsCallState
       if (state.resource != nullptr) return;
       // Start timer.
       ads_calld_ = std::move(ads_calld);
-      timer_handle_ = GetDefaultEventEngine()->RunAfter(
+      timer_handle_ = ads_calld_->xds_client()->engine()->RunAfter(
           ads_calld_->xds_client()->request_timeout_,
           [self = Ref(DEBUG_LOCATION, "timer")]() {
             ApplicationCallbackExecCtx callback_exec_ctx;
@@ -218,7 +216,7 @@ class XdsClient::ChannelState::AdsCallState
       // TODO(roth): Find a way to write a test for this case.
       timer_start_needed_ = false;
       if (timer_handle_.has_value()) {
-        GetDefaultEventEngine()->Cancel(*timer_handle_);
+        ads_calld_->xds_client()->engine()->Cancel(*timer_handle_);
         timer_handle_.reset();
       }
     }
@@ -592,7 +590,7 @@ void XdsClient::ChannelState::RetryableCall<T>::Orphan() {
   shutting_down_ = true;
   calld_.reset();
   if (timer_handle_.has_value()) {
-    GetDefaultEventEngine()->Cancel(*timer_handle_);
+    chand()->xds_client()->engine()->Cancel(*timer_handle_);
     timer_handle_.reset();
   }
   this->Unref(DEBUG_LOCATION, "RetryableCall+orphaned");
@@ -635,7 +633,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
             chand()->xds_client(), chand()->server_.server_uri().c_str(),
             timeout.millis());
   }
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(
+  timer_handle_ = chand()->xds_client()->engine()->RunAfter(
       timeout,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
@@ -722,8 +720,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       "resource index ", idx, ": ",
       resource_name.empty() ? "" : absl::StrCat(resource_name, ": "));
   // Check the type_url of the resource.
-  bool is_v2 = false;
-  if (!result_.type->IsType(type_url, &is_v2)) {
+  if (result_.type_url != type_url) {
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, "incorrect resource type ", type_url,
                      " (should be ", result_.type_url, ")"));
@@ -734,7 +731,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
       xds_client()->symtab_.ptr(), arena};
   XdsResourceType::DecodeResult decode_result =
-      result_.type->Decode(context, serialized_resource, is_v2);
+      result_.type->Decode(context, serialized_resource);
   // If we didn't already have the resource name from the Resource
   // wrapper, try to get it from the decoding result.
   if (resource_name.empty()) {
@@ -875,13 +872,10 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GPR_ASSERT(xds_client() != nullptr);
   // Init the ADS call.
   const char* method =
-      chand()->server_.ShouldUseV3()
-          ? "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
-            "StreamAggregatedResources"
-          : "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
-            "StreamAggregatedResources";
+      "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
+      "StreamAggregatedResources";
   call_ = chand()->transport_->CreateStreamingCall(
-      method, absl::make_unique<StreamEventHandler>(
+      method, std::make_unique<StreamEventHandler>(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<AdsCallState>(this)));
@@ -932,9 +926,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type];
   std::string serialized_message = xds_client()->api_.CreateAdsRequest(
-      chand()->server_,
-      chand()->server_.ShouldUseV3() ? type->type_url() : type->v2_type_url(),
-      chand()->resource_type_version_map_[type], state.nonce,
+      type->type_url(), chand()->resource_type_version_map_[type], state.nonce,
       ResourceNamesForRequest(type), state.status, !sent_initial_message_);
   sent_initial_message_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1007,8 +999,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     if (!IsCurrentCallOnChannel()) return;
     // Parse and validate the response.
     AdsResponseParser parser(this);
-    absl::Status status =
-        xds_client()->api_.ParseAdsResponse(chand()->server_, payload, &parser);
+    absl::Status status = xds_client()->api_.ParseAdsResponse(payload, &parser);
     if (!status.ok()) {
       // Ignore unparsable response.
       gpr_log(GPR_ERROR,
@@ -1157,7 +1148,7 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
 
 void XdsClient::ChannelState::LrsCallState::Reporter::Orphan() {
   if (timer_handle_.has_value() &&
-      GetDefaultEventEngine()->Cancel(*timer_handle_)) {
+      xds_client()->engine()->Cancel(*timer_handle_)) {
     timer_handle_.reset();
     Unref(DEBUG_LOCATION, "Orphan");
   }
@@ -1165,7 +1156,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::Orphan() {
 
 void XdsClient::ChannelState::LrsCallState::Reporter::
     ScheduleNextReportLocked() {
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(report_interval_, [this]() {
+  timer_handle_ = xds_client()->engine()->RunAfter(report_interval_, [this]() {
     ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     if (OnNextReportTimer()) {
@@ -1264,13 +1255,10 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  const char* method = chand()->server_.ShouldUseV3()
-                           ? "/envoy.service.load_stats.v3."
-                             "LoadReportingService/StreamLoadStats"
-                           : "/envoy.service.load_stats.v2."
-                             "LoadReportingService/StreamLoadStats";
+  const char* method =
+      "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
   call_ = chand()->transport_->CreateStreamingCall(
-      method, absl::make_unique<StreamEventHandler>(
+      method, std::make_unique<StreamEventHandler>(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<LrsCallState>(this)));
@@ -1284,8 +1272,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
             call_.get());
   }
   // Send the initial request.
-  std::string serialized_payload =
-      xds_client()->api_.CreateLrsInitialRequest(chand()->server_);
+  std::string serialized_payload = xds_client()->api_.CreateLrsInitialRequest();
   call_->SendMessage(std::move(serialized_payload));
   send_message_pending_ = true;
 }
@@ -1436,7 +1423,8 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_) {
+      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1654,7 +1642,6 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
-  v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type);
   resource_type->InitUpbSymtab(symtab_.ptr());
 }
 
@@ -1662,8 +1649,6 @@ const XdsResourceType* XdsClient::GetResourceTypeLocked(
     absl::string_view resource_type) {
   auto it = resource_types_.find(resource_type);
   if (it != resource_types_.end()) return it->second;
-  auto it2 = v2_resource_types_.find(resource_type);
-  if (it2 != v2_resource_types_.end()) return it2->second;
   return nullptr;
 }
 
@@ -1681,7 +1666,7 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
   // Split the resource type off of the path to get the id.
   std::pair<absl::string_view, absl::string_view> path_parts = absl::StrSplit(
       absl::StripPrefix(uri->path(), "/"), absl::MaxSplits('/', 1));
-  if (!type->IsType(path_parts.first, nullptr)) {
+  if (type->type_url() != path_parts.first) {
     return absl::InvalidArgumentError(
         "xdstp URI path must indicate valid xDS resource type");
   }

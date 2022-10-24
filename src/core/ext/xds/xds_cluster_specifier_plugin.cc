@@ -24,9 +24,9 @@
 #include <map>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/variant.h"
 #include "upb/json_encode.h"
 #include "upb/status.h"
 #include "upb/upb.hpp"
@@ -51,10 +51,15 @@ void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
 
 absl::StatusOr<std::string>
 XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
-    upb_StringView serialized_plugin_config, upb_Arena* arena,
-    upb_DefPool* symtab) const {
+    XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab) const {
+  absl::string_view* serialized_plugin_config =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_plugin_config == nullptr) {
+    return absl::InvalidArgumentError("could not parse plugin config");
+  }
   const auto* specifier = grpc_lookup_v1_RouteLookupClusterSpecifier_parse(
-      serialized_plugin_config.data, serialized_plugin_config.size, arena);
+      serialized_plugin_config->data(), serialized_plugin_config->size(),
+      arena);
   if (specifier == nullptr) {
     return absl::InvalidArgumentError("Could not parse plugin config");
   }
@@ -140,7 +145,7 @@ void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
 
 void XdsClusterSpecifierPluginRegistry::Init() {
   g_plugin_registry = new PluginRegistryMap;
-  RegisterPlugin(absl::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
+  RegisterPlugin(std::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
                  kXdsRouteLookupClusterSpecifierPluginConfigName);
 }
 

@@ -30,6 +30,7 @@
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -57,7 +58,13 @@ class Epoll1Poller : public PosixEventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
-  bool CanTrackErrors() const override { return true; }
+  bool CanTrackErrors() const override {
+#ifdef GRPC_POSIX_SOCKET_TCP
+    return KernelSupportsErrqueue();
+#else
+    return false;
+#endif
+  }
   ~Epoll1Poller() override;
 
  private:
@@ -114,7 +121,7 @@ class Epoll1Poller : public PosixEventPoller {
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
-Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler);
+Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

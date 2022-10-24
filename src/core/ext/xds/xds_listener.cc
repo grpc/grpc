@@ -23,7 +23,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -58,9 +57,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -291,8 +290,7 @@ absl::StatusOr<XdsListenerResource::HttpConnectionManager>
 HttpConnectionManagerParse(
     bool is_client, const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
-        http_connection_manager_proto,
-    bool is_v2) {
+        http_connection_manager_proto) {
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
   std::vector<std::string> errors;
   XdsListenerResource::HttpConnectionManager http_connection_manager;
@@ -315,162 +313,157 @@ HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
+      ValidationErrors validation_errors;
       http_connection_manager.http_max_stream_duration =
-          ParseDuration(duration);
+          ParseDuration(duration, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status("max_stream_duration").message());
+      }
     }
   }
   // Parse filters.
-  if (!is_v2) {
-    size_t num_filters = 0;
-    const auto* http_filters =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
-            http_connection_manager_proto, &num_filters);
-    std::set<absl::string_view> names_seen;
-    for (size_t i = 0; i < num_filters; ++i) {
-      const auto* http_filter = http_filters[i];
-      absl::string_view name = UpbStringToAbsl(
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
-              http_filter));
-      if (name.empty()) {
-        errors.emplace_back(absl::StrCat("empty filter name at index ", i));
-        continue;
+  size_t num_filters = 0;
+  const auto* http_filters =
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
+          http_connection_manager_proto, &num_filters);
+  std::set<absl::string_view> names_seen;
+  for (size_t i = 0; i < num_filters; ++i) {
+    const auto* http_filter = http_filters[i];
+    absl::string_view name = UpbStringToAbsl(
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
+            http_filter));
+    if (name.empty()) {
+      errors.emplace_back(absl::StrCat("empty filter name at index ", i));
+      continue;
+    }
+    if (names_seen.find(name) != names_seen.end()) {
+      errors.emplace_back(absl::StrCat("duplicate HTTP filter name: ", name));
+      continue;
+    }
+    names_seen.insert(name);
+    const bool is_optional =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
+            http_filter);
+    const google_protobuf_Any* any =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
+            http_filter);
+    if (any == nullptr) {
+      if (!is_optional) {
+        errors.emplace_back(
+            absl::StrCat("no filter config specified for filter name ", name));
       }
-      if (names_seen.find(name) != names_seen.end()) {
-        errors.emplace_back(absl::StrCat("duplicate HTTP filter name: ", name));
-        continue;
-      }
-      names_seen.insert(name);
-      const bool is_optional =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
-              http_filter);
-      const google_protobuf_Any* any =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
-              http_filter);
-      if (any == nullptr) {
-        if (!is_optional) {
-          errors.emplace_back(absl::StrCat(
-              "no filter config specified for filter name ", name));
-        }
-        continue;
-      }
-      auto filter_type = ExtractExtensionTypeName(context, any);
-      if (!filter_type.ok()) {
-        errors.emplace_back(absl::StrCat("filter name ", name, ": ",
-                                         filter_type.status().message()));
-        continue;
-      }
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
-      if (filter_impl == nullptr) {
-        if (!is_optional) {
-          errors.emplace_back(absl::StrCat(
-              "no filter registered for config type ", filter_type->type));
-        }
-        continue;
-      }
-      if ((is_client && !filter_impl->IsSupportedOnClients()) ||
-          (!is_client && !filter_impl->IsSupportedOnServers())) {
-        if (!is_optional) {
-          errors.emplace_back(absl::StrFormat(
-              "Filter %s is not supported on %s", filter_type->type,
-              is_client ? "clients" : "servers"));
-        }
-        continue;
-      }
-      absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-          filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
-                                            context.arena);
-      if (!filter_config.ok()) {
+      continue;
+    }
+    ValidationErrors validation_errors;
+    ValidationErrors::ScopedField field(
+        &validation_errors,
+        absl::StrCat(".http_filters[", i, "].typed_config"));
+    auto extension = ExtractXdsExtension(context, any, &validation_errors);
+    if (!validation_errors.ok()) {
+      errors.emplace_back(
+          validation_errors.status(absl::StrCat("filter name ", name))
+              .message());
+      continue;
+    }
+    GPR_ASSERT(extension.has_value());
+    const XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(extension->type);
+    if (filter_impl == nullptr) {
+      if (!is_optional) {
         errors.emplace_back(absl::StrCat(
-            "filter config for type ", filter_type->type,
-            " failed to parse: ", StatusToString(filter_config.status())));
-        continue;
+            "no filter registered for config type ", extension->type));
       }
-      http_connection_manager.http_filters.emplace_back(
-          XdsListenerResource::HttpConnectionManager::HttpFilter{
-              std::string(name), std::move(*filter_config)});
+      continue;
     }
-    if (http_connection_manager.http_filters.empty()) {
-      errors.emplace_back("Expected at least one HTTP filter");
-    }
-    // Make sure that the last filter is terminal and non-last filters are
-    // non-terminal. Note that this check is being performed in a separate loop
-    // to take care of the case where there are two terminal filters in the list
-    // out of which only one gets added in the final list.
-    for (const auto& http_filter : http_connection_manager.http_filters) {
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(
-              http_filter.config.config_proto_type_name);
-      if (&http_filter != &http_connection_manager.http_filters.back()) {
-        // Filters before the last filter must not be terminal.
-        if (filter_impl->IsTerminalFilter()) {
-          errors.emplace_back(
-              absl::StrCat("terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " must be the last filter in the chain"));
-        }
-      } else {
-        // The last filter must be terminal.
-        if (!filter_impl->IsTerminalFilter()) {
-          errors.emplace_back(
-              absl::StrCat("non-terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " is the last filter in the chain"));
-        }
+    if ((is_client && !filter_impl->IsSupportedOnClients()) ||
+        (!is_client && !filter_impl->IsSupportedOnServers())) {
+      if (!is_optional) {
+        errors.emplace_back(absl::StrFormat("Filter %s is not supported on %s",
+                                            extension->type,
+                                            is_client ? "clients" : "servers"));
       }
+      continue;
     }
-  } else {
-    // If using a v2 config, we just hard-code a list containing only the
-    // router filter without actually looking at the config.  This ensures
-    // that the right thing happens in the xds resolver without having
-    // to expose whether the resource we received was v2 or v3.
+    absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+        filter_impl->GenerateFilterConfig(std::move(*extension), context.arena);
+    if (!filter_config.ok()) {
+      errors.emplace_back(absl::StrCat(
+          "filter config for type ", extension->type,
+          " failed to parse: ", StatusToString(filter_config.status())));
+      continue;
+    }
     http_connection_manager.http_filters.emplace_back(
         XdsListenerResource::HttpConnectionManager::HttpFilter{
-            "router", {kXdsHttpRouterFilterConfigName, Json()}});
+            std::string(name), std::move(*filter_config)});
   }
-  // Guarding parsing of RouteConfig on the server side with the environmental
-  // variable since that's the first feature on the server side that will be
-  // using this.
-  if (is_client || XdsRbacEnabled()) {
-    // Found inlined route_config. Parse it to find the cluster_name.
-    if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
-            http_connection_manager_proto)) {
-      const envoy_config_route_v3_RouteConfiguration* route_config =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
-              http_connection_manager_proto);
-      auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
-      if (!rds_update.ok()) {
-        errors.emplace_back(rds_update.status().message());
-      } else {
-        http_connection_manager.rds_update = std::move(*rds_update);
+  if (http_connection_manager.http_filters.empty()) {
+    errors.emplace_back("Expected at least one HTTP filter");
+  }
+  // Make sure that the last filter is terminal and non-last filters are
+  // non-terminal. Note that this check is being performed in a separate loop
+  // to take care of the case where there are two terminal filters in the list
+  // out of which only one gets added in the final list.
+  for (const auto& http_filter : http_connection_manager.http_filters) {
+    const XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(
+            http_filter.config.config_proto_type_name);
+    if (&http_filter != &http_connection_manager.http_filters.back()) {
+      // Filters before the last filter must not be terminal.
+      if (filter_impl->IsTerminalFilter()) {
+        errors.emplace_back(
+            absl::StrCat("terminal filter for config type ",
+                         http_filter.config.config_proto_type_name,
+                         " must be the last filter in the chain"));
       }
     } else {
-      // Validate that RDS must be used to get the route_config dynamically.
-      const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
-              http_connection_manager_proto);
-      if (rds == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "HttpConnectionManager neither has inlined route_config nor RDS.");
-      }
-      // Check that the ConfigSource specifies ADS.
-      const envoy_config_core_v3_ConfigSource* config_source =
-          envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
-              rds);
-      if (config_source == nullptr) {
+      // The last filter must be terminal.
+      if (!filter_impl->IsTerminalFilter()) {
         errors.emplace_back(
-            "HttpConnectionManager missing config_source for RDS.");
-      } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
-                 !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
-        errors.emplace_back(
-            "HttpConnectionManager ConfigSource for RDS does not specify ADS "
-            "or SELF.");
-      } else {
-        // Get the route_config_name.
-        http_connection_manager.route_config_name = UpbStringToStdString(
-            envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-                rds));
+            absl::StrCat("non-terminal filter for config type ",
+                         http_filter.config.config_proto_type_name,
+                         " is the last filter in the chain"));
       }
+    }
+  }
+  // Found inlined route_config. Parse it to find the cluster_name.
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
+          http_connection_manager_proto)) {
+    const envoy_config_route_v3_RouteConfiguration* route_config =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
+            http_connection_manager_proto);
+    auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
+    if (!rds_update.ok()) {
+      errors.emplace_back(rds_update.status().message());
+    } else {
+      http_connection_manager.rds_update = std::move(*rds_update);
+    }
+  } else {
+    // Validate that RDS must be used to get the route_config dynamically.
+    const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+            http_connection_manager_proto);
+    if (rds == nullptr) {
+      return GRPC_ERROR_CREATE(
+          "HttpConnectionManager neither has inlined route_config nor RDS.");
+    }
+    // Check that the ConfigSource specifies ADS.
+    const envoy_config_core_v3_ConfigSource* config_source =
+        envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
+            rds);
+    if (config_source == nullptr) {
+      errors.emplace_back(
+          "HttpConnectionManager missing config_source for RDS.");
+    } else if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
+               !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
+      errors.emplace_back(
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS "
+          "or SELF.");
+    } else {
+      // Get the route_config_name.
+      http_connection_manager.route_config_name = UpbStringToStdString(
+          envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+              rds));
     }
   }
   // Return result.
@@ -484,7 +477,7 @@ HttpConnectionManagerParse(
 
 absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2) {
+    const envoy_config_listener_v3_ApiListener* api_listener) {
   const upb_StringView encoded_api_listener = google_protobuf_Any_value(
       envoy_config_listener_v3_ApiListener_api_listener(api_listener));
   const auto* http_connection_manager =
@@ -495,7 +488,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
         "Could not parse HttpConnectionManager config from ApiListener");
   }
   auto hcm = HttpConnectionManagerParse(true /* is_client */, context,
-                                        http_connection_manager, is_v2);
+                                        http_connection_manager);
   if (!hcm.ok()) return hcm.status();
   XdsListenerResource lds_update;
   lds_update.type = XdsListenerResource::ListenerType::kHttpApiListener;
@@ -535,11 +528,12 @@ DownstreamTlsContextParse(
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
           downstream_tls_context_proto);
   if (common_tls_context != nullptr) {
-    auto common_context = CommonTlsContext::Parse(context, common_tls_context);
-    if (!common_context.ok()) {
-      errors.emplace_back(common_context.status().message());
-    } else {
-      downstream_tls_context.common_tls_context = std::move(*common_context);
+    ValidationErrors validation_errors;
+    downstream_tls_context.common_tls_context = CommonTlsContext::Parse(
+        context, common_tls_context, &validation_errors);
+    if (!validation_errors.ok()) {
+      errors.emplace_back(
+          validation_errors.status("errors in common_tls_context").message());
     }
   }
   auto* require_client_certificate =
@@ -684,8 +678,7 @@ absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
 
 absl::StatusOr<FilterChain> FilterChainParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_FilterChain* filter_chain_proto,
-    bool is_v2) {
+    const envoy_config_listener_v3_FilterChain* filter_chain_proto) {
   FilterChain filter_chain;
   std::vector<std::string> errors;
   auto* filter_chain_match =
@@ -735,7 +728,7 @@ absl::StatusOr<FilterChain> FilterChainParse(
               "typed_config");
         } else {
           auto hcm = HttpConnectionManagerParse(
-              /*is_client=*/false, context, http_connection_manager, is_v2);
+              /*is_client=*/false, context, http_connection_manager);
           if (!hcm.ok()) {
             errors.emplace_back(hcm.status().message());
           } else {
@@ -978,7 +971,7 @@ absl::StatusOr<XdsListenerResource::FilterChainMap> BuildFilterChainMap(
 
 absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_Listener* listener, bool is_v2) {
+    const envoy_config_listener_v3_Listener* listener) {
   XdsListenerResource lds_update;
   lds_update.type = XdsListenerResource::ListenerType::kTcpListener;
   auto address =
@@ -999,7 +992,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
   std::vector<FilterChain> parsed_filter_chains;
   parsed_filter_chains.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    auto filter_chain = FilterChainParse(context, filter_chains[i], is_v2);
+    auto filter_chain = FilterChainParse(context, filter_chains[i]);
     if (!filter_chain.ok()) return filter_chain.status();
     parsed_filter_chains.push_back(std::move(*filter_chain));
   }
@@ -1009,7 +1002,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
   auto* default_filter_chain =
       envoy_config_listener_v3_Listener_default_filter_chain(listener);
   if (default_filter_chain != nullptr) {
-    auto filter_chain = FilterChainParse(context, default_filter_chain, is_v2);
+    auto filter_chain = FilterChainParse(context, default_filter_chain);
     if (!filter_chain.ok()) return filter_chain.status();
     if (filter_chain->filter_chain_data != nullptr) {
       lds_update.default_filter_chain =
@@ -1024,7 +1017,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
 
 absl::StatusOr<XdsListenerResource> LdsResourceParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_Listener* listener, bool is_v2) {
+    const envoy_config_listener_v3_Listener* listener) {
   // Check whether it's a client or server listener.
   const envoy_config_listener_v3_ApiListener* api_listener =
       envoy_config_listener_v3_Listener_api_listener(listener);
@@ -1043,9 +1036,9 @@ absl::StatusOr<XdsListenerResource> LdsResourceParse(
   // If api_listener is present, it's for a client; otherwise, it's
   // for a server.
   if (api_listener != nullptr) {
-    return LdsResourceParseClient(context, api_listener, is_v2);
+    return LdsResourceParseClient(context, api_listener);
   }
-  return LdsResourceParseServer(context, listener, is_v2);
+  return LdsResourceParseServer(context, listener);
 }
 
 void MaybeLogListener(const XdsResourceType::DecodeContext& context,
@@ -1064,7 +1057,7 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
 
 XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_resource, bool is_v2) const {
+    absl::string_view serialized_resource) const {
   DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
@@ -1078,7 +1071,7 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
   // Validate resource.
   result.name =
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
-  auto listener = LdsResourceParse(context, resource, is_v2);
+  auto listener = LdsResourceParse(context, resource);
   if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
@@ -1092,9 +1085,8 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
               context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*listener);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsListenerResource>(std::move(*listener));
   }
   return result;
 }

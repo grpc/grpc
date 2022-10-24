@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -201,7 +202,7 @@ class ChannelData {
   /// Initializes the channel data.
   virtual grpc_error_handle Init(grpc_channel_element* /*elem*/,
                                  grpc_channel_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   // Called before destruction.
@@ -224,7 +225,7 @@ class CallData {
   /// Initializes the call data.
   virtual grpc_error_handle Init(grpc_call_element* /*elem*/,
                                  const grpc_call_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   // Called before destruction.

@@ -47,8 +47,6 @@
 namespace grpc_core {
 namespace {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 class NativeDNSRequest {
  public:
   NativeDNSRequest(
@@ -57,7 +55,7 @@ class NativeDNSRequest {
           on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
-    Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
+    Executor::Run(&request_closure_, absl::OkStatus(), ExecutorType::RESOLVER);
   }
 
  private:
@@ -80,11 +78,6 @@ class NativeDNSRequest {
 };
 
 }  // namespace
-
-NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
-  static NativeDNSResolver* instance = new NativeDNSResolver();
-  return instance;
-}
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -112,16 +105,14 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   // parse name, splitting it into host and port parts
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    err = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
+                             StatusStrProperty::kTargetAddress, name);
     goto done;
   }
   if (port.empty()) {
     if (default_port.empty()) {
-      err = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, name);
+      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
+                               StatusStrProperty::kTargetAddress, name);
       goto done;
     }
     port = std::string(default_port);
@@ -150,12 +141,11 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     err = grpc_error_set_str(
         grpc_error_set_str(
             grpc_error_set_str(
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
-                    GRPC_ERROR_INT_ERRNO, s),
-                GRPC_ERROR_STR_OS_ERROR, gai_strerror(s)),
-            GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+                grpc_error_set_int(GRPC_ERROR_CREATE(gai_strerror(s)),
+                                   StatusIntProperty::kErrorNo, s),
+                StatusStrProperty::kOsError, gai_strerror(s)),
+            StatusStrProperty::kSyscall, "getaddrinfo"),
+        StatusStrProperty::kTargetAddress, name);
     goto done;
   }
   // Success path: fill in addrs
@@ -165,7 +155,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     addr.len = resp->ai_addrlen;
     addresses.push_back(addr);
   }
-  err = GRPC_ERROR_NONE;
+  err = absl::OkStatus();
 done:
   if (result) {
     freeaddrinfo(result);
@@ -183,7 +173,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  GetDefaultEventEngine()->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
@@ -198,7 +188,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  GetDefaultEventEngine()->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(

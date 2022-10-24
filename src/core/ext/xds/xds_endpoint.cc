@@ -19,11 +19,13 @@
 #include "src/core/ext/xds/xds_endpoint.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
+#include <limits>
+#include <set>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -44,6 +46,7 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -212,7 +215,7 @@ absl::optional<ServerAddress> ServerAddressParse(
   std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
       attributes;
   attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
-      absl::make_unique<ServerAddressWeightAttribute>(weight);
+      std::make_unique<ServerAddressWeightAttribute>(weight);
   return ServerAddress(grpc_address, ChannelArgs(), std::move(attributes));
 }
 
@@ -221,9 +224,19 @@ struct ParsedLocality {
   XdsEndpointResource::Priority::Locality locality;
 };
 
+struct ResolvedAddressLessThan {
+  bool operator()(const grpc_resolved_address& a1,
+                  const grpc_resolved_address& a2) const {
+    if (a1.len != a2.len) return a1.len < a2.len;
+    return memcmp(a1.addr, a2.addr, a1.len) < 0;
+  }
+};
+using ResolvedAddressSet =
+    std::set<grpc_resolved_address, ResolvedAddressLessThan>;
+
 absl::optional<ParsedLocality> LocalityParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
-    ValidationErrors* errors) {
+    ResolvedAddressSet* address_set, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
   ParsedLocality parsed_locality;
   // load_balancing_weight
@@ -265,6 +278,13 @@ absl::optional<ParsedLocality> LocalityParse(
                                         absl::StrCat(".lb_endpoints[", i, "]"));
     auto address = ServerAddressParse(lb_endpoints[i], errors);
     if (address.has_value()) {
+      bool inserted = address_set->insert(address->address()).second;
+      if (!inserted) {
+        errors->AddError(absl::StrCat(
+            "duplicate endpoint address \"",
+            grpc_sockaddr_to_uri(&address->address()).value_or("<unknown>"),
+            "\""));
+      }
       parsed_locality.locality.endpoints.push_back(std::move(*address));
     }
   }
@@ -335,13 +355,14 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
   // endpoints
   {
     ValidationErrors::ScopedField field(&errors, "endpoints");
+    ResolvedAddressSet address_set;
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
             cluster_load_assignment, &locality_size);
     for (size_t i = 0; i < locality_size; ++i) {
       ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
-      auto parsed_locality = LocalityParse(endpoints[i], &errors);
+      auto parsed_locality = LocalityParse(endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
         GPR_ASSERT(parsed_locality->locality.lb_weight != 0);
         // Make sure prorities is big enough. Note that they might not
@@ -367,6 +388,19 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
       const auto& priority = eds_resource.priorities[i];
       if (priority.localities.empty()) {
         errors.AddError(absl::StrCat("priority ", i, " empty"));
+      } else {
+        // Check that the sum of the locality weights in this priority
+        // does not exceed the max value for a uint32.
+        uint64_t total_weight = 0;
+        for (const auto& p : priority.localities) {
+          total_weight += p.second.lb_weight;
+          if (total_weight > std::numeric_limits<uint32_t>::max()) {
+            errors.AddError(
+                absl::StrCat("sum of locality weights for priority ", i,
+                             " exceeds uint32 max"));
+            break;
+          }
+        }
       }
     }
   }
@@ -396,7 +430,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
 
 XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_resource, bool /*is_v2*/) const {
+    absl::string_view serialized_resource) const {
   DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
@@ -424,9 +458,8 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
               context.client, result.name->c_str(),
               eds_resource->ToString().c_str());
     }
-    auto resource = absl::make_unique<ResourceDataSubclass>();
-    resource->resource = std::move(*eds_resource);
-    result.resource = std::move(resource);
+    result.resource =
+        std::make_unique<XdsEndpointResource>(std::move(*eds_resource));
   }
   return result;
 }

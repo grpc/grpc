@@ -146,7 +146,7 @@ static void read_and_write_test_read_handler(void* data,
      * read_handler are both run inline, we might end up growing the stack
      * beyond the limit. Schedule the read on ExecCtx to avoid this. */
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->read_scheduler,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
@@ -179,7 +179,7 @@ static void read_and_write_test_write_handler(void* data,
        * the write_handler are both run inline, we might end up growing the
        * stack beyond the limit. Schedule the write on ExecCtx to avoid this. */
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->write_scheduler,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
       gpr_free(slices);
       return;
     }
@@ -247,18 +247,16 @@ static void read_and_write_test(grpc_endpoint_test_config config,
      for the first iteration as for later iterations. It does the right thing
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
-  read_and_write_test_write_handler(&state, GRPC_ERROR_NONE);
+  read_and_write_test_write_handler(&state, absl::OkStatus());
   grpc_core::ExecCtx::Get()->Flush();
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
   if (shutdown) {
     gpr_log(GPR_DEBUG, "shutdown read");
-    grpc_endpoint_shutdown(
-        state.read_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+    grpc_endpoint_shutdown(state.read_ep, GRPC_ERROR_CREATE("Test Shutdown"));
     gpr_log(GPR_DEBUG, "shutdown write");
-    grpc_endpoint_shutdown(
-        state.write_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+    grpc_endpoint_shutdown(state.write_ep, GRPC_ERROR_CREATE("Test Shutdown"));
   }
   grpc_core::ExecCtx::Get()->Flush();
 
@@ -318,8 +316,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                                          grpc_schedule_on_exec_ctx),
                      /*urgent=*/false, /*min_progress_size=*/1);
   wait_for_fail_count(&fail_count, 0);
-  grpc_endpoint_shutdown(f.client_ep,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("Test Shutdown"));
   wait_for_fail_count(&fail_count, 1);
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
@@ -332,8 +329,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                                           grpc_schedule_on_exec_ctx),
                       nullptr, /*max_frame_size=*/INT_MAX);
   wait_for_fail_count(&fail_count, 3);
-  grpc_endpoint_shutdown(f.client_ep,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("Test Shutdown"));
   wait_for_fail_count(&fail_count, 3);
 
   grpc_slice_buffer_destroy(&slice_buffer);

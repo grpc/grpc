@@ -46,7 +46,6 @@
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -60,6 +59,7 @@
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
@@ -706,7 +706,14 @@ Poller::WorkResult PollPoller::Work(
     }
     mu_.Unlock();
 
-    if (!use_phony_poll_ || timeout_ms == 0) {
+    if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
+      // If use_phony_poll is true and pfd_count == 1, it implies only the
+      // wakeup_fd is present. Allow the call to get blocked in this case as
+      // well instead of crashing. This is because the poller::Work is called
+      // right after an event enging is constructed. Even if phony poll is
+      // expected to be used, we dont want to check for it until some actual
+      // event handles are registered. Otherwise the event engine construction
+      // may crash.
       r = poll(pfds, pfd_count, timeout_ms);
     } else {
       gpr_log(GPR_ERROR,
@@ -719,7 +726,7 @@ Poller::WorkResult PollPoller::Work(
         // Abort fail here.
         gpr_log(GPR_ERROR,
                 "(event_engine) PollPoller:%p encountered poll error: %s", this,
-                strerror(errno));
+                grpc_core::StrError(errno).c_str());
         GPR_ASSERT(false);
       }
 
@@ -829,7 +836,7 @@ void PollPoller::Shutdown() {
   Unref();
 }
 
-PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
+PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
     return new PollPoller(scheduler, use_phony_poll);
@@ -871,7 +878,8 @@ void PollPoller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-PollPoller* GetPollPoller(Scheduler* /*scheduler*/, bool /* use_phony_poll */) {
+PollPoller* MakePollPoller(Scheduler* /*scheduler*/,
+                           bool /* use_phony_poll */) {
   return nullptr;
 }
 

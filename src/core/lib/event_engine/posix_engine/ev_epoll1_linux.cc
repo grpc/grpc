@@ -20,7 +20,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -37,7 +36,6 @@
 #ifdef GRPC_LINUX_EPOLL
 #include <errno.h>
 #include <limits.h>
-#include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -50,6 +48,7 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/strerror.h"
 
 using ::grpc_event_engine::posix_engine::LockfreeEvent;
 using ::grpc_event_engine::posix_engine::WakeupFd;
@@ -70,11 +69,10 @@ class Epoll1EventHandle : public EventHandle {
       : fd_(fd),
         list_(this),
         poller_(poller),
-        read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
-        write_closure_(
-            absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        read_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        write_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
         error_closure_(
-            absl::make_unique<LockfreeEvent>(poller->GetScheduler())) {
+            std::make_unique<LockfreeEvent>(poller->GetScheduler())) {
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();
@@ -339,7 +337,8 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
       epoll_event phony_event;
       if (epoll_ctl(poller_->g_epoll_set_.epfd, EPOLL_CTL_DEL, fd_,
                     &phony_event) != 0) {
-        gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+        gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
+                grpc_core::StrError(errno).c_str());
       }
     }
     write_closure_->SetShutdown(why);
@@ -410,7 +409,8 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
   ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_handle) |
                                         (track_err ? 1 : 0));
   if (epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
+            grpc_core::StrError(errno).c_str());
   }
 
   return new_handle;
@@ -471,7 +471,7 @@ int Epoll1Poller::DoEpollWait(EventEngine::Duration timeout) {
   if (r < 0) {
     gpr_log(GPR_ERROR,
             "(event_engine) Epoll1Poller:%p encountered epoll_wait error: %s",
-            this, strerror(errno));
+            this, grpc_core::StrError(errno).c_str());
     GPR_ASSERT(false);
   }
   g_epoll_set_.num_events = r;
@@ -556,7 +556,7 @@ void Epoll1Poller::Kick() {
   GPR_ASSERT(wakeup_fd_->Wakeup().ok());
 }
 
-Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler) {
+Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
   static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
   if (kEpoll1PollerSupported) {
     return new Epoll1Poller(scheduler);
@@ -608,7 +608,7 @@ void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-Epoll1Poller* GetEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
+Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
@@ -103,7 +104,7 @@ class CallData {
                       ForwardSendMessageBatch, elem, grpc_schedule_on_exec_ctx);
   }
 
-  ~CallData() { GRPC_ERROR_UNREF(cancel_error_); }
+  ~CallData() {}
 
   void CompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
@@ -122,7 +123,7 @@ class CallData {
 
   grpc_core::CallCombiner* call_combiner_;
   grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error_;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
   grpc_closure forward_send_message_batch_in_call_combiner_;
@@ -256,7 +257,8 @@ void CallData::CompressStartTransportStreamOpBatch(
     if (send_message_batch_ != nullptr) {
       GRPC_CALL_COMBINER_START(
           call_combiner_, &forward_send_message_batch_in_call_combiner_,
-          GRPC_ERROR_NONE, "starting send_message after send_initial_metadata");
+          absl::OkStatus(),
+          "starting send_message after send_initial_metadata");
     }
   }
   // Handle send_message.
@@ -288,7 +290,7 @@ void CompressStartTransportStreamOpBatch(
 grpc_error_handle CompressInitCallElem(grpc_call_element* elem,
                                        const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for call_data */
@@ -303,7 +305,7 @@ void CompressDestroyCallElem(grpc_call_element* elem,
 grpc_error_handle CompressInitChannelElem(grpc_channel_element* elem,
                                           grpc_channel_element_args* args) {
   new (elem->channel_data) ChannelData(args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for channel data */

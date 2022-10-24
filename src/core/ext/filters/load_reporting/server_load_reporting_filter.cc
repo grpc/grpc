@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 

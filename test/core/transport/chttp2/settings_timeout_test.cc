@@ -24,7 +24,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -87,7 +87,7 @@ class ServerThread {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
     thread_ =
-        absl::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
+        std::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
     grpc_resource_quota_unref(
         static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
   }
@@ -147,7 +147,7 @@ class Client {
         grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
         addresses_or->data(), Timestamp::Now() + Duration::Seconds(1));
     ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
-    ASSERT_EQ(GRPC_ERROR_NONE, state.error());
+    ASSERT_EQ(absl::OkStatus(), state.error());
     grpc_pollset_set_destroy(pollset_set);
     grpc_endpoint_add_to_pollset(endpoint_, pollset_);
   }
@@ -170,12 +170,11 @@ class Client {
         retval = false;
         break;
       }
-      if (state.error() != GRPC_ERROR_NONE) break;
+      if (state.error() != absl::OkStatus()) break;
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_,
-                           GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
+    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE("shutdown"));
     grpc_slice_buffer_destroy(&read_buffer);
     return retval;
   }
@@ -197,7 +196,7 @@ class Client {
                         grpc_schedule_on_exec_ctx);
     }
 
-    ~EventState() { GRPC_ERROR_UNREF(error_); }
+    ~EventState() {}
 
     grpc_closure* closure() { return &closure_; }
 
@@ -208,8 +207,7 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s",
-              grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "OnEventDone(): %s", StatusToString(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
@@ -217,7 +215,7 @@ class Client {
 
     grpc_closure closure_;
     gpr_atm done_atm_ = 0;
-    grpc_error_handle error_ = GRPC_ERROR_NONE;
+    grpc_error_handle error_;
   };
 
   // Returns true if done, or false if deadline exceeded.

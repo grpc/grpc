@@ -23,7 +23,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
@@ -111,7 +110,7 @@ void DefaultHealthCheckService::UnregisterWatch(
 DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService() {
   GPR_ASSERT(impl_ == nullptr);
-  impl_ = absl::make_unique<HealthCheckServiceImpl>(this);
+  impl_ = std::make_unique<HealthCheckServiceImpl>(this);
   return impl_.get();
 }
 

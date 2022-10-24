@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -42,6 +43,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/parser.h"
@@ -181,7 +183,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error);
 static void proxy_connection_failed(proxy_connection* conn,
                                     failure_type failure, const char* prefix,
                                     grpc_error_handle error) {
-  gpr_log(GPR_INFO, "%s: %s", prefix, grpc_error_std_string(error).c_str());
+  gpr_log(GPR_INFO, "%s: %s", prefix, grpc_core::StatusToString(error).c_str());
   // Decide whether we should shut down the client and server.
   bool shutdown_client = false;
   bool shutdown_server = false;
@@ -472,7 +474,7 @@ static bool proxy_auth_header_matches(char* proxy_auth_header_val,
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn,
-          grpc_error_std_string(error).c_str());
+          grpc_core::StatusToString(error).c_str());
   if (!error.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             error);
@@ -502,8 +504,8 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   }
   // Make sure we got a CONNECT request.
   if (strcmp(conn->http_request.method, "CONNECT") != 0) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "HTTP proxy got request method ", conn->http_request.method));
+    error = GRPC_ERROR_CREATE(absl::StrCat("HTTP proxy got request method ",
+                                           conn->http_request.method));
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             error);
     return;
@@ -523,7 +525,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     }
     if (!client_authenticated) {
       const char* msg = "HTTP Connect could not verify authentication";
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(msg);
+      error = GRPC_ERROR_CREATE(msg);
       proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                               error);
       return;

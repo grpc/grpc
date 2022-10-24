@@ -48,7 +48,7 @@ namespace testing {
 static grpc_completion_queue* g_cq;
 
 static void pollset_shutdown(grpc_pollset* /*ps*/, grpc_closure* closure) {
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
 }
 
 static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
@@ -60,7 +60,7 @@ static void pollset_destroy(grpc_pollset* ps) { gpr_mu_destroy(&ps->mu); }
 
 static grpc_error_handle pollset_kick(grpc_pollset* /*p*/,
                                       grpc_pollset_worker* /*worker*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Callback when the tag is dequeued from the completion queue. Does nothing */
@@ -75,7 +75,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
     gpr_log(GPR_DEBUG, "no-op");
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   gpr_mu_unlock(&ps->mu);
@@ -83,11 +83,11 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
   void* tag = reinterpret_cast<void*>(10);  // Some random number
   GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
-      g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
+      g_cq, tag, absl::OkStatus(), cq_done_cb, nullptr,
       static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&ps->mu);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_event_engine_vtable make_engine_vtable(const char* name) {
@@ -174,17 +174,12 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   }
   gpr_mu_unlock(&g_mu);
 
-  // Use a TrackCounters object to monitor the gRPC performance statistics
-  // (optionally including low-level counters) before and after the test
-  TrackCounters track_counters;
-
   for (auto _ : state) {
     GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
                GRPC_OP_COMPLETE);
   }
 
   state.SetItemsProcessed(state.iterations());
-  track_counters.Finish(state);
 
   gpr_mu_lock(&g_mu);
   g_threads_active--;

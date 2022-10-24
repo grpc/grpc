@@ -134,7 +134,7 @@ grpc_error_handle grpc_channel_stack_init(
                                              sizeof(grpc_channel_element));
 
   /* init per-filter data */
-  grpc_error_handle first_error = GRPC_ERROR_NONE;
+  grpc_error_handle first_error;
   auto c_channel_args = channel_args.ToC();
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
@@ -194,7 +194,7 @@ grpc_error_handle grpc_call_stack_init(
               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
-  grpc_error_handle first_error = GRPC_ERROR_NONE;
+  grpc_error_handle first_error;
   for (size_t i = 0; i < count; i++) {
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
@@ -299,12 +299,12 @@ grpc_core::NextPromiseFactory ServerNext(grpc_channel_element* elem) {
 }  // namespace
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-grpc_channel_stack::MakeCallPromise(grpc_core::CallArgs call_args) {
-  if (is_client) {
-    return ClientNext(grpc_channel_stack_element(this, 0))(
-        std::move(call_args));
-  } else {
-    return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
-        std::move(call_args));
-  }
+grpc_channel_stack::MakeClientCallPromise(grpc_core::CallArgs call_args) {
+  return ClientNext(grpc_channel_stack_element(this, 0))(std::move(call_args));
+}
+
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+grpc_channel_stack::MakeServerCallPromise(grpc_core::CallArgs call_args) {
+  return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
+      std::move(call_args));
 }

@@ -22,13 +22,13 @@
 #include <functional>
 
 #include <grpcpp/client_context.h>
-#include <grpcpp/impl/codegen/stub_options.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/status.h>
+#include <grpcpp/support/stub_options.h>
 
 namespace grpc {
 

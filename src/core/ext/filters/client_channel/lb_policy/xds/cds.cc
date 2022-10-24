@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -505,27 +504,15 @@ void CdsLb::OnClusterChanged(const std::string& name,
     // underlying cluster that we may be processing an update for.
     auto it = watchers_.find(config_->cluster());
     GPR_ASSERT(it != watchers_.end());
-    const std::string& lb_policy = it->second.update->lb_policy;
     // Construct config for child policy.
-    Json::Object xds_lb_policy;
-    if (lb_policy == "RING_HASH") {
-      xds_lb_policy["RING_HASH"] = Json::Object{
-          {"min_ring_size", cluster_data.min_ring_size},
-          {"max_ring_size", cluster_data.max_ring_size},
-      };
-    } else {
-      xds_lb_policy["ROUND_ROBIN"] = Json::Object();
-    }
-    Json::Object child_config = {
-        {"xdsLbPolicy",
-         Json::Array{
-             xds_lb_policy,
-         }},
-        {"discoveryMechanisms", std::move(discovery_mechanisms)},
-    };
     Json json = Json::Array{
         Json::Object{
-            {"xds_cluster_resolver_experimental", std::move(child_config)},
+            {"xds_cluster_resolver_experimental",
+             Json::Object{
+                 {"xdsLbPolicy",
+                  std::move(it->second.update->lb_policy_config)},
+                 {"discoveryMechanisms", std::move(discovery_mechanisms)},
+             }},
         },
     };
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
@@ -533,7 +520,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
       gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
               this, json_str.c_str());
     }
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     auto config =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             json);
@@ -546,7 +533,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
       LoadBalancingPolicy::Args args;
       args.work_serializer = work_serializer();
       args.args = args_;
-      args.channel_control_helper = absl::make_unique<Helper>(Ref());
+      args.channel_control_helper = std::make_unique<Helper>(Ref());
       child_policy_ =
           CoreConfiguration::Get()
               .lb_policy_registry()
@@ -600,7 +587,7 @@ void CdsLb::OnError(const std::string& name, absl::Status status) {
   if (child_policy_ == nullptr) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(absl::UnavailableError(
+        std::make_unique<TransientFailurePicker>(absl::UnavailableError(
             absl::StrCat(name, ": ", status.ToString()))));
   }
 }
@@ -614,7 +601,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
       absl::StrCat("CDS resource \"", config_->cluster(), "\" does not exist"));
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-      absl::make_unique<TransientFailurePicker>(status));
+      std::make_unique<TransientFailurePicker>(status));
   MaybeDestroyChildPolicyLocked();
 }
 
@@ -766,7 +753,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<CdsLbFactory>());
+      std::make_unique<CdsLbFactory>());
 }
 
 }  // namespace grpc_core

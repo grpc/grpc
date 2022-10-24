@@ -21,7 +21,6 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -113,7 +113,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
       state_(std::make_shared<State>()) {
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
-      absl::make_unique<ServerConfigSelectorWatcher>(state_);
+      std::make_unique<ServerConfigSelectorWatcher>(state_);
   auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
   MutexLock lock(&state_->mu);
@@ -132,12 +132,12 @@ ServerConfigSelectorFilter::~ServerConfigSelectorFilter() {
 ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto sel = config_selector();
-  if (!sel.ok()) return Immediate(ServerMetadataHandle(sel.status()));
+  if (!sel.ok()) return Immediate(ServerMetadataFromStatus(sel.status()));
   auto call_config =
       sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
   if (!call_config.error.ok()) {
-    auto r = Immediate(ServerMetadataHandle(
-        absl::UnavailableError(grpc_error_std_string(call_config.error))));
+    auto r = Immediate(ServerMetadataFromStatus(
+        absl::UnavailableError(StatusToString(call_config.error))));
     return std::move(r);
   }
   auto& ctx = GetContext<

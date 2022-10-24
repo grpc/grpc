@@ -24,6 +24,7 @@
 #include <deque>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -239,8 +240,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
-  const ChannelArgs& channel_args() const { return args_; }
-
   channelz::SubchannelNode* channelz_node();
 
   // Starts watching the subchannel's connectivity state.
@@ -428,6 +427,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Data producer map.
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

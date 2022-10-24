@@ -25,7 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -46,6 +45,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/http/httpcli.h"
@@ -88,7 +88,7 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     static void OnHttpRequestDone(void* arg, grpc_error_handle error);
 
-    // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
+    // If error is not absl::OkStatus(), then it's not safe to look at response.
     virtual void OnDone(GoogleCloud2ProdResolver* resolver,
                         const grpc_http_response* response,
                         grpc_error_handle error) = 0;
@@ -212,9 +212,8 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     grpc_error_handle error) {
   absl::StatusOr<std::string> zone;
   if (!error.ok()) {
-    zone = absl::UnknownError(
-        absl::StrCat("error fetching zone from metadata server: ",
-                     grpc_error_std_string(error)));
+    zone = absl::UnknownError(absl::StrCat(
+        "error fetching zone from metadata server: ", StatusToString(error)));
   } else if (response->status != 200) {
     zone = absl::UnknownError(absl::StrFormat(
         "zone query received non-200 status: %d", response->status));
@@ -253,7 +252,7 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     grpc_error_handle error) {
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
   }
   resolver->IPv6QueryDone(error.ok() && response->status == 200);
 }
@@ -453,9 +452,9 @@ class ExperimentalGoogleCloud2ProdResolverFactory : public ResolverFactory {
 
 void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<GoogleCloud2ProdResolverFactory>());
+      std::make_unique<GoogleCloud2ProdResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<ExperimentalGoogleCloud2ProdResolverFactory>());
+      std::make_unique<ExperimentalGoogleCloud2ProdResolverFactory>());
 }
 
 }  // namespace grpc_core

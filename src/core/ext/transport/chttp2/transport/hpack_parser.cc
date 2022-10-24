@@ -49,10 +49,11 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/transport.h"
@@ -586,7 +587,7 @@ class HPackParser::Input {
   // Extract the parse error, leaving the current error as NONE.
   grpc_error_handle TakeError() {
     grpc_error_handle out = error_;
-    error_ = GRPC_ERROR_NONE;
+    error_ = absl::OkStatus();
     return out;
   }
 
@@ -632,7 +633,7 @@ class HPackParser::Input {
                                                  uint8_t last_byte) {
     return MaybeSetErrorAndReturn(
         [value, last_byte] {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+          return GRPC_ERROR_CREATE(absl::StrFormat(
               "integer overflow in hpack integer decoding: have 0x%08x, "
               "got byte 0x%02x on byte 5",
               value, last_byte));
@@ -649,7 +650,7 @@ class HPackParser::Input {
   // Frontier denotes the first byte past successfully processed input
   const uint8_t* frontier_;
   // Current error
-  grpc_error_handle error_ = GRPC_ERROR_NONE;
+  grpc_error_handle error_;
   // If the error was EOF, we flag it here..
   bool eof_error_ = false;
 };
@@ -830,10 +831,7 @@ class HPackParser::String {
     }
     if (!result.has_value()) {
       return input->MaybeSetErrorAndReturn(
-          [] {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "illegal base64 encoding");
-          },
+          [] { return GRPC_ERROR_CREATE("illegal base64 encoding"); },
           absl::optional<String>());
     }
     return String(std::move(*result));
@@ -1015,11 +1013,7 @@ class HPackParser::Parser {
         if (cur == 0x80) {
           // illegal value.
           return input_->MaybeSetErrorAndReturn(
-              [] {
-                return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "Illegal hpack op code");
-              },
-              false);
+              [] { return GRPC_ERROR_CREATE("Illegal hpack op code"); }, false);
         }
         ABSL_FALLTHROUGH_INTENDED;
       case 9:
@@ -1171,7 +1165,7 @@ class HPackParser::Parser {
     if (*dynamic_table_updates_allowed_ == 0) {
       return input_->MaybeSetErrorAndReturn(
           [] {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            return GRPC_ERROR_CREATE(
                 "More than two max table size changes in a single frame");
           },
           false);
@@ -1192,11 +1186,10 @@ class HPackParser::Parser {
     return input_->MaybeSetErrorAndReturn(
         [this, index] {
           return grpc_error_set_int(
-              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Invalid HPACK index received"),
-                                 GRPC_ERROR_INT_INDEX,
-                                 static_cast<intptr_t>(index)),
-              GRPC_ERROR_INT_SIZE,
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE("Invalid HPACK index received"),
+                  StatusIntProperty::kIndex, static_cast<intptr_t>(index)),
+              StatusIntProperty::kSize,
               static_cast<intptr_t>(this->table_->num_entries()));
         },
         std::move(result));
@@ -1213,9 +1206,8 @@ class HPackParser::Parser {
     return input_->MaybeSetErrorAndReturn(
         [] {
           return grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "received initial metadata size exceeds limit"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+              GRPC_ERROR_CREATE("received initial metadata size exceeds limit"),
+              StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
         },
         false);
   }
@@ -1258,6 +1250,9 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
                              uint32_t metadata_size_limit, Boundary boundary,
                              Priority priority, LogInfo log_info) {
   metadata_buffer_ = metadata_buffer;
+  if (metadata_buffer != nullptr) {
+    metadata_buffer->Set(GrpcStatusFromWire(), true);
+  }
   boundary_ = boundary;
   priority_ = priority;
   dynamic_table_updates_allowed_ = 2;
@@ -1281,15 +1276,15 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
 
 grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
   if (ParseInputInner(&input)) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   if (input.eof_error()) {
     if (GPR_UNLIKELY(is_last && is_boundary())) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return GRPC_ERROR_CREATE(
           "Incomplete header at the end of a header/continuation sequence");
     }
     unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   return input.TakeError();
 }
@@ -1337,7 +1332,7 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
     grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                              &s->stats.outgoing);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM);
-    grpc_chttp2_mark_stream_closed(t, s, true, true, GRPC_ERROR_NONE);
+    grpc_chttp2_mark_stream_closed(t, s, true, true, absl::OkStatus());
   }
   GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
 }
@@ -1361,8 +1356,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     if (s != nullptr) {
       if (parser->is_boundary()) {
         if (s->header_frames_received == 2) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Too many trailer frames");
+          return GRPC_ERROR_CREATE("Too many trailer frames");
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;
@@ -1378,12 +1372,12 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
           t->combiner->FinallyRun(
               GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
-              GRPC_ERROR_NONE);
+              absl::OkStatus());
         }
-        grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+        grpc_chttp2_mark_stream_closed(t, s, true, false, absl::OkStatus());
       }
     }
     parser->FinishFrame();
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

@@ -77,9 +77,12 @@ grpc_cc_library(
 grpc_cc_test(
     name = "posix_event_engine_test",
     srcs = ["posix_event_engine_test.cc"],
+    tags = [
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [
-        "//:posix_event_engine",
+        "//src/core:posix_event_engine",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
@@ -94,7 +97,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "//:windows_event_engine",
+        "//src/core:windows_event_engine",
         "//test/core/event_engine/test_suite:timer",
     ],
 )

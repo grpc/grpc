@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <functional>
+#include <memory>
 #include <type_traits>  // IWYU pragma: keep
 #include <utility>
 

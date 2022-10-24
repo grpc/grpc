@@ -739,10 +739,10 @@ static void test_peer_alpn_check(void) {
       tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, alpn,
                                          strlen(alpn), &peer.properties[0]),
       TSI_OK);
-  ASSERT_EQ(grpc_ssl_check_alpn(&peer), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_ssl_check_alpn(&peer), absl::OkStatus());
   tsi_peer_destruct(&peer);
 #else
-  ASSERT_EQ(grpc_ssl_check_alpn(nullptr), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_ssl_check_alpn(nullptr), absl::OkStatus());
 #endif
 }
 

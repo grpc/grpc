@@ -114,7 +114,7 @@ grpc_error_handle ServiceConfigChannelArgInitCallElem(
   }
   new (calld) ServiceConfigChannelArgCallData(std::move(service_config),
                                               method_config, args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void ServiceConfigChannelArgDestroyCallElem(
@@ -130,7 +130,7 @@ grpc_error_handle ServiceConfigChannelArgInitChannelElem(
   ServiceConfigChannelArgChannelData* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
   new (chand) ServiceConfigChannelArgChannelData(args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void ServiceConfigChannelArgDestroyChannelElem(grpc_channel_element* elem) {

@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -421,7 +420,7 @@ void PriorityLb::ChoosePriorityLocked() {
         absl::UnavailableError("priority policy has empty priority list");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     return;
   }
   // Iterate through priorities, searching for one in READY or IDLE,
@@ -687,10 +686,10 @@ void PriorityLb::ChildPriority::Orphan() {
 std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>
 PriorityLb::ChildPriority::GetPicker() {
   if (picker_wrapper_ == nullptr) {
-    return absl::make_unique<QueuePicker>(
+    return std::make_unique<QueuePicker>(
         priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"));
   }
-  return absl::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
+  return std::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
 }
 
 absl::Status PriorityLb::ChildPriority::UpdateLocked(
@@ -731,7 +730,7 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(const ChannelArgs& args) {
   lb_policy_args.work_serializer = priority_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_priority_trace);
@@ -944,7 +943,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<PriorityLbFactory>());
+      std::make_unique<PriorityLbFactory>());
 }
 
 }  // namespace grpc_core

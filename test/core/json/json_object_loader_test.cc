@@ -14,12 +14,12 @@
 
 #include "src/core/lib/json/json_object_loader.h"
 
+#include <algorithm>
 #include <cstdint>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/strings/str_join.h"
+#include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -419,6 +419,12 @@ TEST(JsonObjectLoader, DurationFields) {
             "field:optional_value error:"
             "Not a duration (not a number of seconds); "
             "field:value error:Not a duration (no s suffix)]")
+      << test_struct.status();
+  test_struct = Parse<TestStruct>("{\"value\": \"315576000001s\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:value error:seconds must be in the range [0, 315576000000]]")
       << test_struct.status();
   test_struct = Parse<TestStruct>("{\"value\": \"3.xs\"}");
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);

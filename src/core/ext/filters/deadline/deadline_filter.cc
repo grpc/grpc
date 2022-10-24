@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -82,10 +83,10 @@ class TimerState {
     TimerState* self = static_cast<TimerState*>(arg);
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
-    if (error != GRPC_ERROR_CANCELLED) {
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
+    if (error != absl::CancelledError()) {
+      error = grpc_error_set_int(GRPC_ERROR_CREATE("Deadline Exceeded"),
+                                 StatusIntProperty::kRpcStatus,
+                                 GRPC_STATUS_DEADLINE_EXCEEDED);
       deadline_state->call_combiner->Cancel(error);
       GRPC_CLOSURE_INIT(&self->closure_, SendCancelOpInCallCombiner, self,
                         nullptr);
@@ -211,7 +212,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
         new start_timer_after_init_state(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, absl::OkStatus());
   }
 }
 
@@ -248,7 +249,7 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
 static grpc_error_handle deadline_init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for channel_data.  Used for both client and server filters.
@@ -275,7 +276,7 @@ typedef struct server_call_data {
 static grpc_error_handle deadline_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) grpc_deadline_state(elem, *args, args->deadline);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for call_data.  Used for both client and server filters.

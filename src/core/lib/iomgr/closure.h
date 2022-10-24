@@ -45,7 +45,7 @@ typedef struct grpc_closure_list {
 /** gRPC Callback definition.
  *
  * \param arg Arbitrary input.
- * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
+ * \param error absl::OkStatus() if no error occurred, otherwise some grpc_error
  *              describing what went wrong.
  *              Error contract: it is not the cb's job to unref this error;
  *              the closure scheduler will do that after the cb returns */
@@ -117,6 +117,54 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
 #define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
   grpc_closure_init(closure, cb, cb_arg)
 #endif
+
+namespace grpc_core {
+template <typename T, void (T::*cb)(grpc_error_handle)>
+grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
+  grpc_closure out;
+  GRPC_CLOSURE_INIT(
+      &out, [](void* p, grpc_error_handle e) { (static_cast<T*>(p)->*cb)(e); },
+      p, nullptr);
+#ifndef NDEBUG
+  out.file_created = location.file();
+  out.line_created = location.line();
+#else
+  (void)location;
+#endif
+  return out;
+}
+
+template <typename T, void (T::*cb)()>
+grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
+  grpc_closure out;
+  GRPC_CLOSURE_INIT(
+      &out, [](void* p, grpc_error_handle) { (static_cast<T*>(p)->*cb)(); }, p,
+      nullptr);
+#ifndef NDEBUG
+  out.file_created = location.file();
+  out.line_created = location.line();
+#else
+  (void)location;
+#endif
+  return out;
+}
+
+template <typename F>
+grpc_closure* NewClosure(F f) {
+  struct Closure : public grpc_closure {
+    explicit Closure(F f) : f(std::move(f)) {}
+    F f;
+    static void Run(void* arg, grpc_error_handle error) {
+      auto self = static_cast<Closure*>(arg);
+      self->f(error);
+      delete self;
+    }
+  };
+  Closure* c = new Closure(std::move(f));
+  GRPC_CLOSURE_INIT(c, Closure::Run, c, nullptr);
+  return c;
+}
+}  // namespace grpc_core
 
 namespace closure_impl {
 

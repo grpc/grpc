@@ -23,13 +23,11 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
-
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/util/slice_splitter.h"
@@ -57,10 +55,10 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
 
   for (i = 0; i < num_slices; i++) {
     ASSERT_EQ(grpc_http_parser_parse(&parser, slices[i], nullptr),
-              GRPC_ERROR_NONE);
+              absl::OkStatus());
     grpc_slice_unref(slices[i]);
   }
-  ASSERT_EQ(grpc_http_parser_eof(&parser), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_http_parser_eof(&parser), absl::OkStatus());
 
   ASSERT_EQ(GRPC_HTTP_REQUEST, parser.type);
   ASSERT_STREQ(expect_method, request.method);
@@ -115,10 +113,10 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
 
   for (i = 0; i < num_slices; i++) {
     ASSERT_EQ(grpc_http_parser_parse(&parser, slices[i], nullptr),
-              GRPC_ERROR_NONE);
+              absl::OkStatus());
     grpc_slice_unref(slices[i]);
   }
-  ASSERT_EQ(grpc_http_parser_eof(&parser), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_http_parser_eof(&parser), absl::OkStatus());
 
   ASSERT_EQ(GRPC_HTTP_RESPONSE, parser.type);
   ASSERT_EQ(expect_status, response.status);
@@ -158,7 +156,7 @@ static void test_fails(grpc_slice_split_mode split_mode,
   size_t num_slices;
   size_t i;
   grpc_slice* slices;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_http_response response;
   response = {};
 
@@ -168,12 +166,12 @@ static void test_fails(grpc_slice_split_mode split_mode,
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
   for (i = 0; i < num_slices; i++) {
-    if (GRPC_ERROR_NONE == error) {
+    if (absl::OkStatus() == error) {
       error = grpc_http_parser_parse(&parser, slices[i], nullptr);
     }
     grpc_slice_unref(slices[i]);
   }
-  if (GRPC_ERROR_NONE == error) {
+  if (absl::OkStatus() == error) {
     error = grpc_http_parser_eof(&parser);
   }
   ASSERT_FALSE(error.ok());
@@ -190,7 +188,7 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
   size_t num_slices;
   size_t i;
   grpc_slice* slices;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
 

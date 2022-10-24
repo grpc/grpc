@@ -16,14 +16,15 @@
  *
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/security/credentials/credentials.h"
 
 bool squelch = true;
 

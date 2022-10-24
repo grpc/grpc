@@ -48,6 +48,11 @@ const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
+const char* const description_promise_based_client_call =
+    "If set, use the new gRPC promise based call code when it's appropriate "
+    "(ie when all filters in a stack are promise based)";
+const char* const description_posix_event_engine_enable_polling =
+    "If set, enables polling on the default posix event engine.";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -59,20 +64,23 @@ namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_read_chunks", description_tcp_read_chunks, false},
+    {"tcp_read_chunks", description_tcp_read_chunks, kDefaultForDebugOnly},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
     {"peer_state_based_framing", description_peer_state_based_framing, false},
     {"flow_control_fixes", description_flow_control_fixes, false},
     {"memory_pressure_controller", description_memory_pressure_controller,
      false},
     {"periodic_resource_quota_reclamation",
-     description_periodic_resource_quota_reclamation, false},
+     description_periodic_resource_quota_reclamation, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
      kDefaultForDebugOnly},
     {"event_engine_client", description_event_engine_client, false},
     {"monitoring_experiment", description_monitoring_experiment, true},
+    {"promise_based_client_call", description_promise_based_client_call, false},
+    {"posix_event_engine_enable_polling",
+     description_posix_event_engine_enable_polling, kDefaultForDebugOnly},
 };
 
 }  // namespace grpc_core

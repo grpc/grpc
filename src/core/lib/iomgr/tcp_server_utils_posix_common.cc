@@ -94,7 +94,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   GPR_ASSERT(port > 0);
   absl::StatusOr<std::string> addr_str = grpc_sockaddr_to_string(addr, true);
   if (!addr_str.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
+    return GRPC_ERROR_CREATE(addr_str.status().ToString());
   }
   std::string name = absl::StrCat("tcp-server-listener:", addr_str.value());
   gpr_mu_lock(&s->mu);
@@ -152,7 +152,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
     grpc_tcp_server* s, int fd, const grpc_resolved_address* addr,
     bool so_reuseport, int* port) {
   grpc_resolved_address sockname_temp;
-  grpc_error_handle err = GRPC_ERROR_NONE;
+  grpc_error_handle err;
 
   GPR_ASSERT(fd >= 0);
 
@@ -208,17 +208,16 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
   }
 
   *port = grpc_sockaddr_get_port(&sockname_temp);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 
 error:
   GPR_ASSERT(!err.ok());
   if (fd >= 0) {
     close(fd);
   }
-  grpc_error_handle ret =
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Unable to configure socket", &err, 1),
-                         GRPC_ERROR_INT_FD, fd);
+  grpc_error_handle ret = grpc_error_set_int(
+      GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
+      grpc_core::StatusIntProperty::kFd, fd);
   return ret;
 }
 

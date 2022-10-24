@@ -24,9 +24,11 @@
 #include <stddef.h>
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
@@ -259,7 +261,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
-  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
+  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
+  std::shared_ptr<DNSResolver> resolver_;
   absl::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };

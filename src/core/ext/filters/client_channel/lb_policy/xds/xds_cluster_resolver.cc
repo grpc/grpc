@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -41,9 +40,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
-#include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -79,8 +76,6 @@
 namespace grpc_core {
 
 TraceFlag grpc_lb_xds_cluster_resolver_trace(false, "xds_cluster_resolver_lb");
-
-const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
 
 namespace {
 
@@ -149,7 +144,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
 
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
-  Json xds_lb_policy_ = Json::Object{{"ROUND_ROBIN", Json::Object()}};
+  Json xds_lb_policy_;
 };
 
 // Xds Cluster Resolver LB policy.
@@ -515,7 +510,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       target.c_str(), args, parent()->interested_parties(),
       parent()->work_serializer(),
-      absl::make_unique<ResolverResultHandler>(
+      std::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
   if (resolver_ == nullptr) {
     parent()->OnResourceDoesNotExist(
@@ -840,12 +835,12 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
                       kHierarchicalPathAttributeKey,
                       MakeHierarchicalPathAttribute(hierarchical_path))
                   .WithAttribute(kXdsLocalityNameAttributeKey,
-                                 absl::make_unique<XdsLocalityAttribute>(
-                                     locality_name->Ref()))
+                                 std::make_unique<XdsLocalityAttribute>(
+                                     locality_name->Ref(), locality.lb_weight))
                   .WithAttribute(
                       ServerAddressWeightAttribute::
                           kServerAddressWeightAttributeKey,
-                      absl::make_unique<ServerAddressWeightAttribute>(weight)));
+                      std::make_unique<ServerAddressWeightAttribute>(weight)));
         }
       }
     }
@@ -872,60 +867,13 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     for (size_t priority = 0;
          priority < discovery_entry.latest_update->priorities.size();
          ++priority) {
-      const auto& priority_entry =
-          discovery_entry.latest_update->priorities[priority];
       Json child_policy;
       if (!discovery_entry.discovery_mechanism->override_child_policy()
                .empty()) {
         child_policy =
             discovery_entry.discovery_mechanism->override_child_policy();
       } else {
-        const auto& xds_lb_policy = config_->xds_lb_policy().object_value();
-        if (xds_lb_policy.find("ROUND_ROBIN") != xds_lb_policy.end()) {
-          const auto& localities = priority_entry.localities;
-          Json::Object weighted_targets;
-          for (const auto& p : localities) {
-            XdsLocalityName* locality_name = p.first;
-            const auto& locality = p.second;
-            // Add weighted target entry.
-            weighted_targets[locality_name->AsHumanReadableString()] =
-                Json::Object{
-                    {"weight", locality.lb_weight},
-                    {"childPolicy",
-                     Json::Array{
-                         Json::Object{
-                             {"round_robin", Json::Object()},
-                         },
-                     }},
-                };
-          }
-          // Construct locality-picking policy.
-          // Start with field from our config and add the "targets" field.
-          child_policy = Json::Array{
-              Json::Object{
-                  {"weighted_target_experimental",
-                   Json::Object{
-                       {"targets", Json::Object()},
-                   }},
-              },
-          };
-          Json::Object& config =
-              *(*child_policy.mutable_array())[0].mutable_object();
-          auto it = config.begin();
-          GPR_ASSERT(it != config.end());
-          (*it->second.mutable_object())["targets"] =
-              std::move(weighted_targets);
-        } else {
-          auto it = xds_lb_policy.find("RING_HASH");
-          GPR_ASSERT(it != xds_lb_policy.end());
-          Json::Object ring_hash_experimental_policy =
-              it->second.object_value();
-          child_policy = Json::Array{
-              Json::Object{
-                  {"ring_hash_experimental", ring_hash_experimental_policy},
-              },
-          };
-        }
+        child_policy = config_->xds_lb_policy();
       }
       // Wrap it in the drop policy.
       Json::Array drop_categories;
@@ -952,27 +900,18 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
             discovery_config.lrs_load_reporting_server->ToJson();
       }
-      Json locality_picking_policy;
-      if (XdsOutlierDetectionEnabled()) {
-        Json::Object outlier_detection_config;
-        if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
-          outlier_detection_config =
-              discovery_entry.config().outlier_detection_lb_config.value();
-        }
-        outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
-            {"xds_cluster_impl_experimental",
-             std::move(xds_cluster_impl_config)},
-        }};
-        locality_picking_policy = Json::Array{Json::Object{
-            {"outlier_detection_experimental",
-             std::move(outlier_detection_config)},
-        }};
-      } else {
-        locality_picking_policy = Json::Array{Json::Object{
-            {"xds_cluster_impl_experimental",
-             std::move(xds_cluster_impl_config)},
-        }};
+      Json::Object outlier_detection_config;
+      if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
+        outlier_detection_config =
+            discovery_entry.config().outlier_detection_lb_config.value();
       }
+      outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
+          {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
+      }};
+      Json locality_picking_policy = Json::Array{Json::Object{
+          {"outlier_detection_experimental",
+           std::move(outlier_detection_config)},
+      }};
       // Add priority entry, with the appropriate child name.
       std::string child_name = discovery_entry.GetChildPolicyName(priority);
       priority_priorities.emplace_back(child_name);
@@ -1015,7 +954,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "config");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     return nullptr;
   }
   return std::move(*config);
@@ -1052,7 +991,7 @@ XdsClusterResolverLb::CreateChildPolicyLocked(const ChannelArgs& args) {
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "priority_experimental", std::move(lb_policy_args));
@@ -1090,8 +1029,7 @@ XdsClusterResolverLbConfig::DiscoveryMechanism::JsonLoader(const JsonArgs&) {
           .OptionalField("max_concurrent_requests",
                          &DiscoveryMechanism::max_concurrent_requests)
           .OptionalField("outlierDetection",
-                         &DiscoveryMechanism::outlier_detection_lb_config,
-                         "outlier_detection")
+                         &DiscoveryMechanism::outlier_detection_lb_config)
           .Finish();
   return loader;
 }
@@ -1140,8 +1078,7 @@ const JsonLoaderInterface* XdsClusterResolverLbConfig::JsonLoader(
   return loader;
 }
 
-void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json,
-                                              const JsonArgs& args,
+void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                               ValidationErrors* errors) {
   // Validate discoveryMechanisms.
   {
@@ -1154,37 +1091,14 @@ void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json,
   {
     ValidationErrors::ScopedField field(errors, ".xdsLbPolicy");
     auto it = json.object_value().find("xdsLbPolicy");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
-        errors->AddError("is not an array");
-      } else {
-        const Json::Array& array = it->second.array_value();
-        for (size_t i = 0; i < array.size(); ++i) {
-          ValidationErrors::ScopedField field(errors,
-                                              absl::StrCat("[", i, "]"));
-          if (array[i].type() != Json::Type::OBJECT) {
-            errors->AddError("is not an object");
-            continue;
-          }
-          const Json::Object& policy = array[i].object_value();
-          auto policy_it = policy.find("ROUND_ROBIN");
-          if (policy_it != policy.end()) {
-            ValidationErrors::ScopedField field(errors, "[\"ROUND_ROBIN\"]");
-            if (policy_it->second.type() != Json::Type::OBJECT) {
-              errors->AddError("is not an object");
-            }
-            break;
-          }
-          {
-            ValidationErrors::ScopedField field(errors, "[\"RING_HASH\"]");
-            policy_it = policy.find("RING_HASH");
-            if (policy_it != policy.end()) {
-              LoadFromJson<RingHashConfig>(policy_it->second, args, errors);
-              xds_lb_policy_ = array[i];
-            }
-          }
-        }
-      }
+    if (it == json.object_value().end()) {
+      errors->AddError("field not present");
+    } else {
+      auto lb_config = CoreConfiguration::Get()
+                           .lb_policy_registry()
+                           .ParseLoadBalancingConfig(it->second);
+      if (!lb_config.ok()) errors->AddError(lb_config.status().message());
+      xds_lb_policy_ = it->second;
     }
   }
 }
@@ -1217,15 +1131,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
     }
-    class XdsJsonArgs : public JsonArgs {
-     public:
-      bool IsEnabled(absl::string_view key) const override {
-        if (key == "outlier_detection") return XdsOutlierDetectionEnabled();
-        return true;
-      }
-    };
     return LoadRefCountedFromJson<XdsClusterResolverLbConfig>(
-        json, XdsJsonArgs(),
+        json, JsonArgs(),
         "errors validating xds_cluster_resolver LB policy config");
   }
 
@@ -1294,7 +1201,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsClusterResolverLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsClusterResolverLbFactory>());
+      std::make_unique<XdsClusterResolverLbFactory>());
 }
 
 }  // namespace grpc_core

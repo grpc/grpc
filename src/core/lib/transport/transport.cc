@@ -22,20 +22,25 @@
 
 #include <string.h>
 
+#include <memory>
 #include <new>
 
+#include "absl/status/status.h"
+
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
                                                          "stream_refcount");
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount) {
-  if (!grpc_iomgr_is_any_background_poller_thread() &&
-      (grpc_core::ExecCtx::Get()->flags() &
+  if ((grpc_core::ExecCtx::Get()->flags() &
        GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP)) {
     /* Ick.
        The thread we're running on MAY be owned (indirectly) by a call-stack.
@@ -44,10 +49,15 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        cope with.
        Throw this over to the executor (on a core-owned thread) and process it
        there. */
-    grpc_core::Executor::Run(&refcount->destroy, GRPC_ERROR_NONE);
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run([refcount] {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
+                              absl::OkStatus());
+    });
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
@@ -183,6 +193,32 @@ void grpc_transport_stream_op_batch_queue_finish_with_failure(
   }
 }
 
+void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error) {
+  if (batch->cancel_stream) {
+  }
+  // Construct a list of closures to execute.
+  if (batch->recv_initial_metadata) {
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        error);
+  }
+  if (batch->recv_message) {
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, batch->payload->recv_message.recv_message_ready, error);
+  }
+  if (batch->recv_trailing_metadata) {
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+        error);
+  }
+  if (batch->on_complete != nullptr) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, batch->on_complete, error);
+  }
+}
+
 struct made_transport_op {
   grpc_closure outer_on_complete;
   grpc_closure* inner_on_complete = nullptr;
@@ -233,3 +269,17 @@ grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
   op->op.on_complete = &op->outer_on_complete;
   return &op->op;
 }
+
+namespace grpc_core {
+
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status) {
+  auto hdl =
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  hdl->Set(GrpcStatusMetadata(), static_cast<grpc_status_code>(status.code()));
+  if (!status.ok()) {
+    hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(status.message()));
+  }
+  return hdl;
+}
+
+}  // namespace grpc_core

@@ -137,7 +137,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref(status_details_);
+  CSliceUnref(status_details_);
   GPR_ASSERT(call_ != nullptr);
   grpc_call_unref(call_);
 }
@@ -158,7 +158,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   // Create payload.
   grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
   send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref(slice);
+  CSliceUnref(slice);
   // Send the message.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -199,7 +199,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(self->recv_message_payload_);
   self->recv_message_payload_ = nullptr;
   self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-  grpc_slice_unref(response_slice);
+  CSliceUnref(response_slice);
   // Keep reading.
   grpc_op op;
   memset(&op, 0, sizeof(op));

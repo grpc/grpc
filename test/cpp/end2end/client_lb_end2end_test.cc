@@ -411,7 +411,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       grpc_core::MutexLock lock(&mu_);
       started_ = true;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host));
       while (!server_ready_) {
         cond_.Wait(&mu_);
@@ -552,6 +552,17 @@ class ClientLbEnd2endTest : public ::testing::Test {
         }
       }
     }
+  }
+
+  static std::string MakeConnectionFailureRegex(absl::string_view prefix) {
+    return absl::StrCat(
+        prefix,
+        "; last error: (UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+        "Failed to connect to remote host: Connection refused|"
+        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+        "Failed to connect to remote host: FD shutdown|"
+        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+        "(Socket closed|Connection reset by peer))");
   }
 
   const std::string server_host_;
@@ -1196,12 +1207,9 @@ TEST_F(PickFirstTest, ReresolutionNoSelected) {
   response_generator.SetNextResolution(dead_ports);
   gpr_log(GPR_INFO, "****** INITIAL RESOLUTION SET *******");
   for (size_t i = 0; i < 10; ++i) {
-    CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                        "failed to connect to all addresses; last error: "
-                        "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                        "Failed to connect to remote host: Connection refused|"
-                        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                        "Failed to connect to remote host: FD shutdown)");
+    CheckRpcSendFailure(
+        DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+        MakeConnectionFailureRegex("failed to connect to all addresses"));
   }
   // Set a re-resolution result that contains reachable ports, so that the
   // pick_first LB policy can recover soon.
@@ -1210,12 +1218,8 @@ TEST_F(PickFirstTest, ReresolutionNoSelected) {
   WaitForServer(DEBUG_LOCATION, stub, 0, [](const Status& status) {
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
     EXPECT_THAT(status.error_message(),
-                ::testing::ContainsRegex(
-                    "failed to connect to all addresses; last error: "
-                    "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                    "Failed to connect to remote host: Connection refused|"
-                    "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                    "Failed to connect to remote host: FD shutdown)"));
+                ::testing::ContainsRegex(MakeConnectionFailureRegex(
+                    "failed to connect to all addresses")));
   });
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
@@ -1440,12 +1444,9 @@ TEST_F(PickFirstTest,
   response_generator.SetNextResolution(ports);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(false));
   // Send an RPC, which should fail.
-  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "failed to connect to all addresses; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      MakeConnectionFailureRegex("failed to connect to all addresses"));
   // Channel should be in TRANSIENT_FAILURE.
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(false));
   // Now start a server on the last port.
@@ -1721,12 +1722,9 @@ TEST_F(RoundRobinTest, TransientFailure) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
   EXPECT_TRUE(WaitForChannelState(channel.get(), predicate));
-  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      MakeConnectionFailureRegex("connections to all backends failing"));
 }
 
 TEST_F(RoundRobinTest, TransientFailureAtStartup) {
@@ -1747,12 +1745,9 @@ TEST_F(RoundRobinTest, TransientFailureAtStartup) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
   EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, true));
-  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      MakeConnectionFailureRegex("connections to all backends failing"));
 }
 
 TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
@@ -1784,12 +1779,9 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
   // new picker, in case it was going to incorrectly do so.
   gpr_log(GPR_INFO, "=== EXPECTING RPCs TO FAIL ===");
   for (size_t i = 0; i < 5; ++i) {
-    CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                        "connections to all backends failing; last error: "
-                        "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                        "Failed to connect to remote host: Connection refused|"
-                        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                        "Failed to connect to remote host: FD shutdown)");
+    CheckRpcSendFailure(
+        DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+        MakeConnectionFailureRegex("connections to all backends failing"));
   }
   // Clean up.
   hold->Resume();
@@ -1808,12 +1800,9 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   response_generator.SetNextResolution(ports);
   // Allow first connection attempts to fail normally, and check that
   // the RPC fails with the right status message.
-  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing; last error: "
-                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: Connection refused|"
-                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      MakeConnectionFailureRegex("connections to all backends failing"));
   // Now intercept the next connection attempt for each port.
   auto hold1 = injector.AddHold(ports[0]);
   auto hold2 = injector.AddHold(ports[1]);
@@ -1821,7 +1810,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   hold2->Wait();
   // Inject a custom failure message.
   hold1->Wait();
-  hold1->Fail(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Survey says... Bzzzzt!"));
+  hold1->Fail(GRPC_ERROR_CREATE("Survey says... Bzzzzt!"));
   // Wait until RPC fails with the right message.
   absl::Time deadline =
       absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
@@ -1835,12 +1824,8 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
       break;
     }
     EXPECT_THAT(status.error_message(),
-                ::testing::MatchesRegex(
-                    "connections to all backends failing; last error: "
-                    "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                    "Failed to connect to remote host: Connection refused|"
-                    "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                    "Failed to connect to remote host: FD shutdown)"));
+                ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                    "connections to all backends failing")));
     EXPECT_LT(absl::Now(), deadline);
     if (absl::Now() >= deadline) break;
   }
@@ -2570,7 +2555,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
     explicit Attribute(const std::string& str) : str_(str) {}
 
     std::unique_ptr<AttributeInterface> Copy() const override {
-      return absl::make_unique<Attribute>(str_);
+      return std::make_unique<Attribute>(str_);
     }
 
     int Cmp(const AttributeInterface* other) const override {
@@ -2633,7 +2618,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Addresses returned by the resolver will have attached attributes.
   response_generator.SetNextResolution(GetServersPorts(), nullptr,
                                        kAttributeKey,
-                                       absl::make_unique<Attribute>("foo"));
+                                       std::make_unique<Attribute>("foo"));
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   // Check LB policy name for the channel.
   EXPECT_EQ("address_test_lb", channel->GetLoadBalancingPolicyName());

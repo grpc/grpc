@@ -29,8 +29,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -127,7 +125,7 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
   uint32_t weight() const { return weight_; }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
-    return absl::make_unique<ServerAddressWeightAttribute>(weight_);
+    return std::make_unique<ServerAddressWeightAttribute>(weight_);
   }
 
   int Cmp(const AttributeInterface* other) const override {

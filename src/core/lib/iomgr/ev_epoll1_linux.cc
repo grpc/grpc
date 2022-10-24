@@ -47,9 +47,11 @@
 #include <grpc/support/cpu.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -242,7 +244,7 @@ static bool append_error(grpc_error_handle* composite, grpc_error_handle error,
                          const char* desc) {
   if (error.ok()) return true;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
+    *composite = GRPC_ERROR_CREATE(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
   return false;
@@ -368,7 +370,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_fd) |
                                         (track_err ? 1 : 0));
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
+            grpc_core::StrError(errno).c_str());
   }
 
   return new_fd;
@@ -389,7 +392,8 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
       epoll_event phony_event;
       if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_DEL, fd->fd, &phony_event) !=
           0) {
-        gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+        gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
+                grpc_core::StrError(errno).c_str());
       }
     }
     fd->write_closure->SetShutdown(why);
@@ -404,12 +408,11 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   bool is_release_fd = (release_fd != nullptr);
 
   if (!fd->read_closure->IsShutdown()) {
-    fd_shutdown_internal(fd, GRPC_ERROR_CREATE_FROM_COPIED_STRING(reason),
-                         is_release_fd);
+    fd_shutdown_internal(fd, GRPC_ERROR_CREATE(reason), is_release_fd);
   }
 
   /* If release_fd is not NULL, we should be relinquishing control of the file
@@ -529,7 +532,7 @@ static grpc_error_handle pollset_global_init(void) {
   for (size_t i = 0; i < g_num_neighborhoods; i++) {
     gpr_mu_init(&g_neighborhoods[i].mu);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void pollset_global_shutdown(void) {
@@ -583,7 +586,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
 }
 
 static grpc_error_handle pollset_kick_all(grpc_pollset* pollset) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (pollset->root_worker != nullptr) {
     grpc_pollset_worker* worker = pollset->root_worker;
     do {
@@ -615,7 +618,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
   if (pollset->shutdown_closure != nullptr && pollset->root_worker == nullptr &&
       pollset->begin_refs == 0) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_closure,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
     pollset->shutdown_closure = nullptr;
   }
 }
@@ -651,7 +654,7 @@ static int poll_deadline_to_millis_timeout(grpc_core::Timestamp millis) {
    when accessing fields in g_epoll_set */
 static grpc_error_handle process_epoll_events(grpc_pollset* /*pollset*/) {
   static const char* err_desc = "process_events";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   long num_events = gpr_atm_acq_load(&g_epoll_set.num_events);
   long cursor = gpr_atm_acq_load(&g_epoll_set.cursor);
   for (int idx = 0;
@@ -723,7 +726,7 @@ static grpc_error_handle do_epoll_wait(grpc_pollset* ps,
   gpr_atm_rel_store(&g_epoll_set.num_events, r);
   gpr_atm_rel_store(&g_epoll_set.cursor, 0);
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
@@ -992,11 +995,11 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** worker_hdl,
                                       grpc_core::Timestamp deadline) {
   grpc_pollset_worker worker;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   static const char* err_desc = "pollset_work";
   if (ps->kicked_without_poller) {
     ps->kicked_without_poller = false;
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   if (begin_worker(ps, &worker, worker_hdl, deadline)) {
@@ -1040,7 +1043,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
 
 static grpc_error_handle pollset_kick(grpc_pollset* pollset,
                                       grpc_pollset_worker* specific_worker) {
-  grpc_error_handle ret_err = GRPC_ERROR_NONE;
+  grpc_error_handle ret_err;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     std::vector<std::string> log;
     log.push_back(absl::StrFormat(

@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -440,7 +440,8 @@ static void close_fd_locked(grpc_fd* fd) {
   if (!fd->released) {
     close(fd->fd);
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure,
+                          absl::OkStatus());
 }
 
 static int fd_wrapped_fd(grpc_fd* fd) {
@@ -489,12 +490,11 @@ static void fd_unref(grpc_fd* fd) { unref_by(fd, 2); }
 
 static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   } else {
-    return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                  "FD shutdown", &fd->shutdown_error, 1),
-                              GRPC_ERROR_INT_GRPC_STATUS,
-                              GRPC_STATUS_UNAVAILABLE);
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1),
+        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   }
 }
 
@@ -503,8 +503,8 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+        grpc_error_set_int(GRPC_ERROR_CREATE("FD shutdown"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
@@ -577,7 +577,7 @@ static void fd_notify_on_error(grpc_fd* /*fd*/, grpc_closure* closure) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::CancelledError());
 }
 
 static void fd_set_readable(grpc_fd* fd) {
@@ -756,7 +756,7 @@ static void kick_append_error(grpc_error_handle* composite,
                               grpc_error_handle error) {
   if (error.ok()) return;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Kick Failure");
+    *composite = GRPC_ERROR_CREATE("Kick Failure");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -764,7 +764,7 @@ static void kick_append_error(grpc_error_handle* composite,
 static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
                                           grpc_pollset_worker* specific_worker,
                                           uint32_t flags) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   /* pollset->mu already held */
   if (specific_worker != nullptr) {
@@ -826,7 +826,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
 
 /* global state management */
 
-static grpc_error_handle pollset_global_init(void) { return GRPC_ERROR_NONE; }
+static grpc_error_handle pollset_global_init(void) { return absl::OkStatus(); }
 
 /* main interface */
 
@@ -885,14 +885,14 @@ static void finish_shutdown(grpc_pollset* pollset) {
   }
   pollset->fd_count = 0;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_done,
-                          GRPC_ERROR_NONE);
+                          absl::OkStatus());
 }
 
 static void work_combine_error(grpc_error_handle* composite,
                                grpc_error_handle error) {
   if (error.ok()) return;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("pollset_work");
+    *composite = GRPC_ERROR_CREATE("pollset_work");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -902,7 +902,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_core::Timestamp deadline) {
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   /* Avoid malloc for small number of elements. */
   enum { inline_elements = 96 };

@@ -145,7 +145,7 @@ void XdsEnd2endTest::ServerThread::Start() {
   // by ServerThread::Serve from firing before the wait below is hit.
   grpc_core::MutexLock lock(&mu);
   grpc_core::CondVar cond;
-  thread_ = absl::make_unique<std::thread>(
+  thread_ = std::make_unique<std::thread>(
       std::bind(&ServerThread::Serve, this, &mu, &cond));
   cond.Wait(&mu);
   gpr_log(GPR_INFO, "%s server startup complete", Type());
@@ -183,7 +183,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     if (GetParam().bootstrap_source() ==
         XdsTestType::kBootstrapFromChannelArg) {
       builder.SetOption(
-          absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
+          std::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
     }
     builder.set_status_notifier(&notifier_);
     builder.experimental().set_drain_grace_time(
@@ -283,10 +283,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
-  builder->RegisterService(ads_service_->v2_rpc_service());
-  builder->RegisterService(ads_service_->v3_rpc_service());
-  builder->RegisterService(lrs_service_->v2_rpc_service());
-  builder->RegisterService(lrs_service_->v3_rpc_service());
+  builder->RegisterService(ads_service_.get());
+  builder->RegisterService(lrs_service_.get());
 }
 
 void XdsEnd2endTest::BalancerServerThread::StartAllServices() {
@@ -337,7 +335,6 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeXdsServersText(
       "        }\n"
       "      ]";
   std::vector<std::string> server_features;
-  if (!v2_) server_features.push_back("\"xds_v3\"");
   if (ignore_resource_deletion_) {
     server_features.push_back("\"ignore_resource_deletion\"");
   }
@@ -470,12 +467,10 @@ XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
   // Construct LDS resource.
   default_listener_.set_name(kServerName);
   HttpConnectionManager http_connection_manager;
-  if (!GetParam().use_v2()) {
-    auto* filter = http_connection_manager.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
-  }
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
   default_listener_.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   // Construct RDS resource.
@@ -533,7 +528,7 @@ void XdsEnd2endTest::TearDown() {
 std::unique_ptr<XdsEnd2endTest::BalancerServerThread>
 XdsEnd2endTest::CreateAndStartBalancer() {
   std::unique_ptr<BalancerServerThread> balancer =
-      absl::make_unique<BalancerServerThread>(this);
+      std::make_unique<BalancerServerThread>(this);
   balancer->Start();
   return balancer;
 }
@@ -748,7 +743,6 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   xds_channel_args_.args = xds_channel_args_to_add_.data();
   // Initialize XdsClient state.
   builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
-  if (GetParam().use_v2()) builder.SetV2();
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());

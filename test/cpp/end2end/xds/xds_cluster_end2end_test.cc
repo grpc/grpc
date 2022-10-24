@@ -60,16 +60,20 @@ TEST_P(CdsTest, Vanilla) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that CDS client should send a NACK if the cluster type in CDS
-// response is unsupported.
-TEST_P(CdsTest, UnsupportedClusterType) {
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsClusterResourceType have exhaustive tests for all
+// of the invalid cases.
+TEST_P(CdsTest, InvalidClusterResource) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
   const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("DiscoveryType is not valid."));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors validating Cluster resource: ["
+            "field:type error:unknown discovery type]]");
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource
@@ -88,63 +92,11 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(response_state->error_message,
-            "xDS response validation errors: [resource index 0: cluster_name: "
-            "INVALID_ARGUMENT: errors parsing CDS resource: ["
-            "DiscoveryType is not valid.]]");
+            "xDS response validation errors: ["
+            "resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors validating Cluster resource: ["
+            "field:type error:unknown discovery type]]");
   CheckRpcSendOk(DEBUG_LOCATION);
-}
-
-// Tests that CDS client should send a NACK if the eds_config in CDS response
-// is other than ADS or SELF.
-TEST_P(CdsTest, EdsConfigSourceDoesNotSpecifyAdsOrSelf) {
-  auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->set_path(
-      "/foo/bar");
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("EDS ConfigSource is not ADS or SELF."));
-}
-
-// Tests that CDS client accepts an eds_config of type ADS.
-TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
-  CreateAndStartBackends(1);
-  auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
-                     /*check_status=*/nullptr, WaitForBackendOptions(),
-                     RpcOptions().set_timeout_ms(5000));
-  auto response_state = balancer_->ads_service()->cds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Tests that CDS client should send a NACK if the lb_policy in CDS response
-// is other than ROUND_ROBIN.
-TEST_P(CdsTest, WrongLbPolicy) {
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::LEAST_REQUEST);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LB policy is not supported."));
-}
-
-// Tests that CDS client should send a NACK if the lrs_server in CDS response
-// is other than SELF.
-TEST_P(CdsTest, WrongLrsServer) {
-  auto cluster = default_cluster_;
-  cluster.mutable_lrs_server()->mutable_ads();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LRS ConfigSource is not self."));
 }
 
 // Tests round robin is not implacted by the endpoint weight, and that the
@@ -469,27 +421,6 @@ TEST_P(EdsTest, IgnoresUnhealthyEndpoints) {
   }
 }
 
-// Tests that subchannel sharing works when the same backend is listed
-// multiple times.
-TEST_P(EdsTest, SameBackendListedMultipleTimes) {
-  CreateAndStartBackends(1);
-  // Same backend listed twice.
-  auto endpoints = CreateEndpointsForBackends();
-  endpoints.push_back(endpoints.front());
-  EdsResourceArgs args({{"locality0", endpoints}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // We need to wait for the backend to come online.
-  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
-                     /*check_status=*/nullptr, WaitForBackendOptions(),
-                     RpcOptions().set_timeout_ms(2000));
-  // Send kNumRpcsPerAddress RPCs per server.
-  const size_t kNumRpcsPerAddress = 10;
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * endpoints.size());
-  // Backend should have gotten 20 requests.
-  EXPECT_EQ(kNumRpcsPerAddress * endpoints.size(),
-            backends_[0]->backend_service()->request_count());
-}
-
 TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   CreateAndStartBackends(1);
   // Initial EDS resource has one locality with no endpoints.
@@ -498,8 +429,9 @@ TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      "empty address list: EDS resource eds_service_name contains empty "
-      "localities: \\[\\{region=\"xds_default_locality_region\", "
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name contains empty localities: "
+      "\\[\\{region=\"xds_default_locality_region\", "
       "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send EDS resource that has an endpoint.
@@ -697,6 +629,45 @@ TEST_P(EdsTest, WeightedRoundRobin) {
               ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
 }
 
+// Tests that we don't suffer from integer overflow in locality weights.
+TEST_P(EdsTest, NoIntegerOverflowInLocalityWeights) {
+  CreateAndStartBackends(2);
+  const uint32_t kLocalityWeight1 = std::numeric_limits<uint32_t>::max() / 3;
+  const uint32_t kLocalityWeight0 =
+      std::numeric_limits<uint32_t>::max() - kLocalityWeight1;
+  const uint64_t kTotalLocalityWeight =
+      static_cast<uint64_t>(kLocalityWeight0) +
+      static_cast<uint64_t>(kLocalityWeight1);
+  const double kLocalityWeightRate0 =
+      static_cast<double>(kLocalityWeight0) / kTotalLocalityWeight;
+  const double kLocalityWeightRate1 =
+      static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kLocalityWeightRate0, kErrorTolerance);
+  // ADS response contains 2 localities, each of which contains 1 backend.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1), kLocalityWeight0},
+      {"locality1", CreateEndpointsForBackends(1, 2), kLocalityWeight1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait for both backends to be ready.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
+  // The locality picking rates should be roughly equal to the expectation.
+  const double locality_picked_rate_0 =
+      static_cast<double>(backends_[0]->backend_service()->request_count()) /
+      kNumRpcs;
+  const double locality_picked_rate_1 =
+      static_cast<double>(backends_[1]->backend_service()->request_count()) /
+      kNumRpcs;
+  EXPECT_THAT(locality_picked_rate_0,
+              ::testing::DoubleNear(kLocalityWeightRate0, kErrorTolerance));
+  EXPECT_THAT(locality_picked_rate_1,
+              ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
+}
+
 // Tests that we correctly handle a locality containing no endpoints.
 TEST_P(EdsTest, LocalityContainingNoEndpoints) {
   CreateAndStartBackends(2);
@@ -721,28 +692,31 @@ TEST_P(EdsTest, LocalityContainingNoEndpoints) {
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
 TEST_P(EdsTest, ManyLocalitiesStressTest) {
-  CreateAndStartBackends(2);
-  const size_t kNumLocalities = 100;
+  const size_t kNumLocalities = 50;
+  CreateAndStartBackends(kNumLocalities + 1);
   const uint32_t kRpcTimeoutMs = 5000;
   // The first ADS response contains kNumLocalities localities, each of which
-  // contains backend 0.
+  // contains its own backend.
   EdsResourceArgs args;
   for (size_t i = 0; i < kNumLocalities; ++i) {
     std::string name = absl::StrCat("locality", i);
-    EdsResourceArgs::Locality locality(name, CreateEndpointsForBackends(0, 1));
+    EdsResourceArgs::Locality locality(name,
+                                       CreateEndpointsForBackends(i, i + 1));
     args.locality_list.emplace_back(std::move(locality));
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until backend 0 is ready.
-  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_reset_counters(false),
-                 RpcOptions().set_timeout_ms(kRpcTimeoutMs));
-  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  // The second ADS response contains 1 locality, which contains backend 1.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  // Wait until all backends are ready.
+  WaitForAllBackends(DEBUG_LOCATION, 0, kNumLocalities,
+                     /*check_status=*/nullptr,
+                     WaitForBackendOptions().set_reset_counters(false),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  // The second ADS response contains 1 locality, which contains backend 50.
+  args =
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(
+                                         kNumLocalities, kNumLocalities + 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until backend 1 is ready.
-  WaitForBackend(DEBUG_LOCATION, 1);
+  // Wait until backend 50 is ready.
+  WaitForBackend(DEBUG_LOCATION, kNumLocalities);
 }
 
 // Tests that the localities in a locality map are picked correctly after
@@ -1005,7 +979,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
         seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
         return seen_drop_rate < kDropRateThreshold;
       },
-      /*timeout_ms=*/20000);
+      /*timeout_ms=*/40000);
   // Send kNumRpcsBoth RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,

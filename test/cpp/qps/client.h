@@ -19,6 +19,8 @@
 #ifndef TEST_QPS_CLIENT_H
 #define TEST_QPS_CLIENT_H
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <condition_variable>
@@ -38,7 +40,6 @@
 #include <grpcpp/support/slice.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/cpp/util/core_stats.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "test/cpp/qps/histogram.h"
@@ -206,9 +207,6 @@ class Client {
       }
     }
 
-    grpc_stats_data core_stats;
-    grpc_stats_collect(&core_stats);
-
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
     for (StatusHistogram::const_iterator it = statuses.begin();
@@ -221,7 +219,6 @@ class Client {
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
     stats.set_cq_poll_count(poll_count);
-    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 
@@ -370,8 +367,8 @@ class Client {
         // Closed-loop doesn't use random dist at all
         break;
       case LoadParams::kPoisson:
-        random_dist = absl::make_unique<ExpDist>(load.poisson().offered_load() /
-                                                 num_threads);
+        random_dist = std::make_unique<ExpDist>(load.poisson().offered_load() /
+                                                num_threads);
         break;
       default:
         GPR_ASSERT(false);

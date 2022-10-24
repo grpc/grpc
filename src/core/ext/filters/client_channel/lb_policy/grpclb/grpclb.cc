@@ -69,7 +69,6 @@
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -113,6 +112,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -160,7 +160,6 @@ const char kGrpcLbAddressAttributeKey[] = "grpclb";
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr absl::string_view kGrpclb = "grpclb";
 
@@ -304,6 +303,7 @@ class GrpcLb : public LoadBalancingPolicy {
     bool client_load_report_is_due_ = false;
     // The closure used for the completion of sending the load report.
     grpc_closure client_load_report_done_closure_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
   };
 
   class SubchannelWrapper : public DelegatingSubchannel {
@@ -340,8 +340,8 @@ class GrpcLb : public LoadBalancingPolicy {
           client_stats_(std::move(client_stats)) {}
 
     std::unique_ptr<AttributeInterface> Copy() const override {
-      return absl::make_unique<TokenAndClientStatsAttribute>(lb_token_,
-                                                             client_stats_);
+      return std::make_unique<TokenAndClientStatsAttribute>(lb_token_,
+                                                            client_stats_);
     }
 
     int Cmp(const AttributeInterface* other_base) const override {
@@ -707,8 +707,8 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
     std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
         attributes;
     attributes[kGrpcLbAddressAttributeKey] =
-        absl::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
-                                                        stats);
+        std::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
+                                                       stats);
     // Add address.
     addresses.emplace_back(addr, ChannelArgs(), std::move(attributes));
   }
@@ -762,7 +762,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     GrpcLbClientStats* client_stats = subchannel_wrapper->client_stats();
     if (client_stats != nullptr) {
       complete_pick->subchannel_call_tracker =
-          absl::make_unique<SubchannelCallTracker>(
+          std::make_unique<SubchannelCallTracker>(
               client_stats->Ref(),
               std::move(complete_pick->subchannel_call_tracker));
       // The metadata value is a hack: we pretend the pointer points to
@@ -852,8 +852,8 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   parent_->channel_control_helper()->UpdateState(
       state, status,
-      absl::make_unique<Picker>(std::move(serverlist), std::move(picker),
-                                std::move(client_stats)));
+      std::make_unique<Picker>(std::move(serverlist), std::move(picker),
+                               std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -887,7 +887,8 @@ GrpcLb::BalancerCallState::BalancerCallState(
     : InternallyRefCounted<BalancerCallState>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace) ? "BalancerCallState"
                                                      : nullptr),
-      grpclb_policy_(std::move(parent_grpclb_policy)) {
+      grpclb_policy_(std::move(parent_grpclb_policy)),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   GPR_ASSERT(grpclb_policy_ != nullptr);
   GPR_ASSERT(!grpclb_policy()->shutting_down_);
   // Init the LB call. Note that the LB call will progress every time there's
@@ -921,7 +922,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
       arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref(request_payload_slice);
+  CSliceUnref(request_payload_slice);
   // Init other data associated with the LB call.
   grpc_metadata_array_init(&lb_initial_metadata_recv_);
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
@@ -934,7 +935,7 @@ GrpcLb::BalancerCallState::~BalancerCallState() {
   grpc_metadata_array_destroy(&lb_trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref(lb_call_status_details_);
+  CSliceUnref(lb_call_status_details_);
 }
 
 void GrpcLb::BalancerCallState::Orphan() {
@@ -945,7 +946,7 @@ void GrpcLb::BalancerCallState::Orphan() {
   // call, then the following cancellation will be a no-op.
   grpc_call_cancel_internal(lb_call_);
   if (client_load_report_handle_.has_value() &&
-      GetDefaultEventEngine()->Cancel(client_load_report_handle_.value())) {
+      engine_->Cancel(client_load_report_handle_.value())) {
     Unref(DEBUG_LOCATION, "client_load_report cancelled");
   }
   // Note that the initial ref is hold by lb_on_balancer_status_received_
@@ -1031,7 +1032,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_handle_ =
-      GetDefaultEventEngine()->RunAfter(client_stats_report_interval_, [this] {
+      engine_->RunAfter(client_stats_report_interval_, [this] {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         grpclb_policy()->work_serializer()->Run(
@@ -1089,7 +1090,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
       num_calls_finished_known_received, drop_token_counts.get(), arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref(request_payload_slice);
+  CSliceUnref(request_payload_slice);
   // Send the report.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -1290,7 +1291,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
       }
     }
   }
-  grpc_slice_unref(response_slice);
+  CSliceUnref(response_slice);
   if (!grpclb_policy()->shutting_down_) {
     // Keep listening for serverlist updates.
     grpc_op op;
@@ -1325,7 +1326,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
             "[grpclb %p] lb_calld=%p: Status from LB server received. "
             "Status = %d, details = '%s', (lb_call: %p), error '%s'",
             grpclb_policy(), this, lb_call_status_, status_details, lb_call_,
-            grpc_error_std_string(error).c_str());
+            StatusToString(error).c_str());
     gpr_free(status_details);
   }
   // If this lb_calld is still in use, this call ended because of a failure so
@@ -1565,7 +1566,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
     for (ServerAddress& address : *fallback_backend_addresses_) {
       address = address.WithAttribute(
           kGrpcLbAddressAttributeKey,
-          absl::make_unique<TokenAndClientStatsAttribute>("", nullptr));
+          std::make_unique<TokenAndClientStatsAttribute>("", nullptr));
     }
   }
   resolution_note_ = std::move(args.resolution_note);
@@ -1776,7 +1777,7 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper = absl::make_unique<Helper>(Ref());
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(Ref());
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_glb_trace);
@@ -1911,7 +1912,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 namespace grpc_core {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<GrpcLbFactory>());
+      std::make_unique<GrpcLbFactory>());
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {

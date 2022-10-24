@@ -48,7 +48,7 @@ namespace grpc_core {
 
 // TODO(roth): When we can use absl::variant<>, consider using that
 // here, to enforce the fact that only one of the two fields can be set.
-struct XdsListenerResource {
+struct XdsListenerResource : public XdsResourceType::ResourceData {
   struct DownstreamTlsContext {
     CommonTlsContext common_tls_context;
     bool require_client_certificate = false;
@@ -205,13 +205,9 @@ class XdsListenerResourceType
   absl::string_view type_url() const override {
     return "envoy.config.listener.v3.Listener";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.Listener";
-  }
 
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource,
-                      bool is_v2) const override;
+                      absl::string_view serialized_resource) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 

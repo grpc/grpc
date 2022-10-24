@@ -38,7 +38,7 @@ package(
 
 load(":address_sorting.bzl", "address_sorting_cc_library")
 
-licenses(["notice"])  # BSD
+licenses(["notice"])
 
 exports_files(["LICENSE"])
 

@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -125,7 +126,7 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
       Seq(next_promise_factory(std::move(call_args)),
           [](ServerMetadataHandle md) -> ServerMetadataHandle {
             auto r = CheckServerMetadata(md.get());
-            if (!r.ok()) return ServerMetadataHandle(r);
+            if (!r.ok()) return ServerMetadataFromStatus(r);
             return md;
           }),
       []() { return absl::OkStatus(); },

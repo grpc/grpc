@@ -46,7 +46,6 @@ class XdsBootstrap {
     virtual ~XdsServer() = default;
 
     virtual const std::string& server_uri() const = 0;
-    virtual bool ShouldUseV3() const = 0;
     virtual bool IgnoreResourceDeletion() const = 0;
 
     virtual bool Equals(const XdsServer& other) const = 0;

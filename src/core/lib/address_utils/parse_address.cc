@@ -36,6 +36,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -53,7 +54,7 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
   grpc_error_handle error =
       grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
     return false;
   }
   return true;
@@ -69,7 +70,7 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
   grpc_error_handle error =
       grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
     return false;
   }
   return true;
@@ -84,14 +85,14 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+    return GRPC_ERROR_CREATE(absl::StrCat(
         "Path name should not have more than ", maxlen, " characters"));
   }
   un->sun_family = AF_UNIX;
   path.copy(un->sun_path, path.size());
   un->sun_path[path.size()] = '\0';
   resolved_addr->len = static_cast<socklen_t>(sizeof(*un));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle UnixAbstractSockaddrPopulate(
@@ -101,7 +102,7 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+    return GRPC_ERROR_CREATE(absl::StrCat(
         "Path name should not have more than ", maxlen, " characters"));
   }
   un->sun_family = AF_UNIX;
@@ -109,7 +110,7 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
   path.copy(un->sun_path + 1, path.size());
   resolved_addr->len =
       static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 }  // namespace grpc_core
