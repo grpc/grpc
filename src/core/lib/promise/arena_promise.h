@@ -32,10 +32,11 @@ namespace grpc_core {
 
 namespace arena_promise_detail {
 
-using ArgType = std::aligned_storage_t< sizeof(void*)>;
+using ArgType = std::aligned_storage_t<sizeof(void*)>;
 template <typename T>
 T*& ArgAsPtr(ArgType* arg) {
-  static_assert(sizeof(ArgType) >= sizeof(T**), "Must have ArgType of at least one pointer size");
+  static_assert(sizeof(ArgType) >= sizeof(T**),
+                "Must have ArgType of at least one pointer size");
   return *reinterpret_cast<T**>(arg);
 }
 
@@ -139,9 +140,8 @@ struct ChooseImplForCallable<
                       (sizeof(Callable) > sizeof(ArgType))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
     out->vtable = &AllocatedCallable<T, Callable>::vtable;
-   ArgAsPtr<Callable>(&out->arg)=
-        GetContext<Arena>()->template New<Callable>(
-            std::forward<Callable>(callable));
+    ArgAsPtr<Callable>(&out->arg) = GetContext<Arena>()->template New<Callable>(
+        std::forward<Callable>(callable));
   }
 };
 
@@ -152,7 +152,8 @@ struct ChooseImplForCallable<
                       (sizeof(Callable) <= sizeof(ArgType))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
     out->vtable = &Inlined<T, Callable>::vtable;
-    Construct(reinterpret_cast<Callable*>(&out->arg), std::forward<Callable>(callable));
+    Construct(reinterpret_cast<Callable*>(&out->arg),
+              std::forward<Callable>(callable));
   }
 };
 
@@ -186,8 +187,8 @@ class ArenaPromise {
                 absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
   // NOLINTNEXTLINE(google-explicit-constructor)
   ArenaPromise(Callable&& callable) {
-    arena_promise_detail::MakeImplForCallable(
-        std::forward<Callable>(callable), &vtable_and_arg_);
+    arena_promise_detail::MakeImplForCallable(std::forward<Callable>(callable),
+                                              &vtable_and_arg_);
   }
 
   // ArenaPromise is not copyable.
