@@ -226,6 +226,7 @@ class XdsClientTest : public ::testing::Test {
         : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
                                      ResourceStruct>::WatcherInterface {
      public:
+      // Returns true if no event is received during the timeout period.
       bool ExpectNoEvent(absl::Duration timeout) {
         MutexLock lock(&mu_);
         return !WaitForEventLocked(timeout);
@@ -313,6 +314,8 @@ class XdsClientTest : public ::testing::Test {
         cv_.Signal();
       }
 
+      // Returns true if an event was received, or false if the timeout
+      // expires before any event is received.
       bool WaitForEventLocked(absl::Duration timeout)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
         while (queue_.empty()) {
@@ -507,13 +510,12 @@ class XdsClientTest : public ::testing::Test {
   // specified bootstrap config.
   void InitXdsClient(
       FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
-      Duration resource_request_timeout = Duration::Seconds(15) *
-                                          grpc_test_slowdown_factor()) {
+      Duration resource_request_timeout = Duration::Seconds(15)) {
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
     transport_factory_ = transport_factory->Ref();
-    xds_client_ = MakeRefCounted<XdsClient>(bootstrap_builder.Build(),
-                                            std::move(transport_factory),
-                                            resource_request_timeout);
+    xds_client_ = MakeRefCounted<XdsClient>(
+        bootstrap_builder.Build(), std::move(transport_factory),
+        resource_request_timeout * grpc_test_slowdown_factor());
   }
 
   // Starts and cancels a watch for a Foo resource.
@@ -554,11 +556,11 @@ class XdsClientTest : public ::testing::Test {
         timeout * grpc_test_slowdown_factor());
   }
 
-  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
-                                absl::Status status) {
+  void TriggerConnectivityChange(const XdsBootstrap::XdsServer& server,
+                                 absl::Status status) {
     const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
     GPR_ASSERT(xds_server != nullptr);
-    transport_factory_->TriggerConnectionFailure(*xds_server, status);
+    transport_factory_->TriggerConnectivityChange(*xds_server, status);
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
@@ -1736,7 +1738,9 @@ TEST_F(XdsClientTest, StreamClosedByServerAndResourcesNotResentOnNewStream) {
 }
 
 TEST_F(XdsClientTest, ConnectionFails) {
-  InitXdsClient();
+  // Lower resources-does-not-exist timeout, to make sure that we're not
+  // triggering that here.
+  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -1753,8 +1757,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Transport reports connection failure.
-  TriggerConnectionFailure(xds_client_->bootstrap().server(),
-                           absl::UnavailableError("connection failed"));
+  TriggerConnectivityChange(xds_client_->bootstrap().server(),
+                            absl::UnavailableError("connection failed"));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
@@ -1763,6 +1767,9 @@ TEST_F(XdsClientTest, ConnectionFails) {
             "xDS channel for server default_xds_server: "
             "connection failed (node ID:xds_client_test)")
       << *error;
+  // We should not see a resource-does-not-exist event, because the
+  // timer should not be running while the channel is disconnected.
+  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
   // Start a new watch.  This watcher should be given the same error,
   // since we have not yet recovered.
   auto watcher2 = StartFooWatch("foo1");
@@ -1773,11 +1780,10 @@ TEST_F(XdsClientTest, ConnectionFails) {
             "xDS channel for server default_xds_server: "
             "connection failed (node ID:xds_client_test)")
       << *error;
-  // Inside the XdsTransport interface, the channel will eventually
-  // reconnect, and the call will proceed.  None of that will be visible
-  // to the XdsClient, because the call uses wait_for_ready.  So here,
-  // to simulate the connection being established, all we need to do is
-  // allow the stream to proceed.
+  // Second watcher should not see resource-does-not-exist either.
+  EXPECT_FALSE(watcher2->HasEvent());
+  // The ADS stream uses wait_for_ready inside the XdsTransport interface,
+  // so when the channel reconnects, the already-started stream will proceed.
   // Server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2315,8 +2321,8 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{kXdstpResourceName});
   // Now cause a channel failure on the stream to the authority's xDS server.
-  TriggerConnectionFailure(authority_server,
-                           absl::UnavailableError("connection failed"));
+  TriggerConnectivityChange(authority_server,
+                            absl::UnavailableError("connection failed"));
   // The watcher for the xdstp resource name should see the error.
   auto error = watcher2->WaitForNextError();
   ASSERT_TRUE(error.has_value());

@@ -229,20 +229,22 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(
-      std::function<void(absl::Status)> on_connectivity_failure)
-      : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
+      std::function<void(absl::Status)> on_connectivity_change)
+      : on_connectivity_change_(std::move(on_connectivity_change)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      on_connectivity_failure_(absl::Status(
+      on_connectivity_change_(absl::Status(
           status.code(),
           absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
+    } else if (new_state == GRPC_CHANNEL_READY) {
+      on_connectivity_change_(absl::OkStatus());
     }
   }
 
-  std::function<void(absl::Status)> on_connectivity_failure_;
+  std::function<void(absl::Status)> on_connectivity_change_;
 };
 
 //
@@ -270,7 +272,7 @@ bool IsLameChannel(grpc_channel* channel) {
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     GrpcXdsTransportFactory* factory, const XdsBootstrap::XdsServer& server,
-    std::function<void(absl::Status)> on_connectivity_failure,
+    std::function<void(absl::Status)> on_connectivity_change,
     absl::Status* status)
     : factory_(factory) {
   channel_ = CreateXdsChannel(
@@ -283,7 +285,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     ClientChannel* client_channel =
         ClientChannel::GetFromChannel(Channel::FromC(channel_));
     GPR_ASSERT(client_channel != nullptr);
-    watcher_ = new StateWatcher(std::move(on_connectivity_failure));
+    watcher_ = new StateWatcher(std::move(on_connectivity_change));
     client_channel->AddConnectivityWatcher(
         GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
@@ -347,10 +349,10 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 OrphanablePtr<XdsTransportFactory::XdsTransport>
 GrpcXdsTransportFactory::Create(
     const XdsBootstrap::XdsServer& server,
-    std::function<void(absl::Status)> on_connectivity_failure,
+    std::function<void(absl::Status)> on_connectivity_change,
     absl::Status* status) {
   return MakeOrphanable<GrpcXdsTransport>(
-      this, server, std::move(on_connectivity_failure), status);
+      this, server, std::move(on_connectivity_change), status);
 }
 
 }  // namespace grpc_core

@@ -138,29 +138,44 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
 // FakeXdsTransportFactory::FakeXdsTransport
 //
 
-void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
+FakeXdsTransportFactory::FakeXdsTransport::FakeXdsTransport(
+    std::function<void(absl::Status)> on_connectivity_change,
+    bool auto_complete_messages_from_client)
+    : auto_complete_messages_from_client_(auto_complete_messages_from_client),
+      on_connectivity_change_(MakeRefCounted<RefCountedOnConnectivityChange>(
+          std::move(on_connectivity_change))) {
+  // Send connectivity change update indicating the channel is connected.
+  GetDefaultEventEngine()->Run(
+      [on_connectivity_change = on_connectivity_change_]() mutable {
+        ExecCtx exec_ctx;
+        on_connectivity_change->Run(absl::OkStatus());
+        on_connectivity_change.reset();
+      });
+}
+
+void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectivityChange(
     absl::Status status) {
-  RefCountedPtr<RefCountedOnConnectivityFailure> on_connectivity_failure;
+  RefCountedPtr<RefCountedOnConnectivityChange> on_connectivity_change;
   {
     MutexLock lock(&mu_);
-    on_connectivity_failure = on_connectivity_failure_->Ref();
+    on_connectivity_change = on_connectivity_change_->Ref();
   }
   ExecCtx exec_ctx;
-  if (on_connectivity_failure != nullptr) {
-    on_connectivity_failure->Run(std::move(status));
+  if (on_connectivity_change != nullptr) {
+    on_connectivity_change->Run(std::move(status));
   }
 }
 
 void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
   {
     MutexLock lock(&mu_);
-    // Can't destroy on_connectivity_failure_ synchronously, since that
+    // Can't destroy on_connectivity_change_ synchronously, since that
     // operation will trigger code in XdsClient that acquires its mutex, but
     // it was already holding its mutex when it called us, so it would deadlock.
-    GetDefaultEventEngine()->Run([on_connectivity_failure = std::move(
-                                      on_connectivity_failure_)]() mutable {
+    GetDefaultEventEngine()->Run([on_connectivity_change = std::move(
+                                      on_connectivity_change_)]() mutable {
       ExecCtx exec_ctx;
-      on_connectivity_failure.reset();
+      on_connectivity_change.reset();
     });
   }
   Unref();
@@ -211,21 +226,21 @@ constexpr char FakeXdsTransportFactory::kAdsV2Method[];
 OrphanablePtr<XdsTransportFactory::XdsTransport>
 FakeXdsTransportFactory::Create(
     const XdsBootstrap::XdsServer& server,
-    std::function<void(absl::Status)> on_connectivity_failure,
+    std::function<void(absl::Status)> on_connectivity_change,
     absl::Status* /*status*/) {
   MutexLock lock(&mu_);
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
-      std::move(on_connectivity_failure), auto_complete_messages_from_client_);
+      std::move(on_connectivity_change), auto_complete_messages_from_client_);
   entry = transport->Ref();
   return transport;
 }
 
-void FakeXdsTransportFactory::TriggerConnectionFailure(
+void FakeXdsTransportFactory::TriggerConnectivityChange(
     const XdsBootstrap::XdsServer& server, absl::Status status) {
   auto transport = GetTransport(server);
-  transport->TriggerConnectionFailure(std::move(status));
+  transport->TriggerConnectivityChange(std::move(status));
 }
 
 void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
