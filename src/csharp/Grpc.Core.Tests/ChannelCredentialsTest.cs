@@ -47,5 +47,16 @@ namespace Grpc.Core.Tests
             var nativeCreds4 = ChannelCredentials.SecureSsl.ToNativeCredentials();
             Assert.AreSame(nativeCreds3, nativeCreds4);
         }
+
+        [Test]
+        public void ChannelCredentials_MalformedSslCredentialsCanStillCreateNativeCredentials()
+        {
+            // pass malformed root pem certs, but creation of native credentials still passes,
+            // since the credentials are parsed lazily by the C core.
+            using (var nativeCreds = new SslCredentials("MALFORMED_ROOT_CERTS_THAT_WILL_THROW_WHEN_CREATING_NATIVE_CREDENTIALS").ToNativeCredentials())
+            {
+                Assert.IsFalse(nativeCreds.IsInvalid);
+            }
+        }
     }
 }

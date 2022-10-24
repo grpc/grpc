@@ -83,6 +83,7 @@ namespace Grpc.Core.Internal
             using (var callCreds = callCredentials.ToNativeCredentials())
             {
                 var nativeChannelCredentials = channelCredentials.ToNativeCredentials();
+                // nativeChannelCredentials == null means insecure channel credentials were used.
                 if (nativeChannelCredentials == null)
                 {
                     throw new InvalidOperationException($"CallCredentials can't be composed with {channelCredentials.GetType().Name}. " +
