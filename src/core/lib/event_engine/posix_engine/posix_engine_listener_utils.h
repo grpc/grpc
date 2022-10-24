@@ -26,7 +26,7 @@ namespace grpc_event_engine {
 namespace posix_engine {
 
 // This interface exists to allow different Event Engines to implement different
-// custom interception operations while a socket is Appended/Erased. The
+// custom interception operations while a socket is Appended. The
 // listener util functions are defined over this interface and thus can be
 // shared across multiple event engines.
 class ListenerSocketsContainer {
@@ -55,9 +55,11 @@ class ListenerSocketsContainer {
   virtual ~ListenerSocketsContainer() = default;
 };
 
-// If successful, add a socket to ListenerSocketsContainer for \a addr, set \a
-// dsmode for the socket, and return the error handle and listening port
-// assigned for the socket.
+// Creates and configures a socket to be used by the Event Engine Listener. The
+// type of the socket to create is determined by the by the passed address. The
+// socket configuration is specified by passed tcp options. If successful, it
+// returns a ListenerSocketsContainer::ListenerSocket type which holds the
+// socket fd and its dsmode. If unsuccessful, it returns a Not-OK status.
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(
     const PosixTcpOptions& options,
@@ -65,16 +67,20 @@ CreateAndPrepareListenerSocket(
 
 // Instead of creating and adding a socket bound to specific address, this
 // function creates and adds a socket bound to the wildcard address on the
-// server. Returns the port at which the created socket listens for incoming
+// server. The newly created socket is configured according to the passed
+// options and added to the passed ListenerSocketsContainer object. The function
+// returns the port at which the created socket listens for incoming
 // connections.
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
 
-// Get all addresses assigned to network interfaces on the machine and create a
-// socket for each. requested_port is the port to use for every socket, or 0 to
-// select one random port that will be used for every socket. Return
-// assigned_port.
+// Get all addresses assigned to network interfaces on the machine and create
+// and add a socket for each local address. Each newly created socket is
+// configured according to the passed options and added to the passed
+// ListenerSocketsContainer object. The requested_port is the port to use for
+// every socket. If set to 0, a random port will be used for every socket.
+// The function returns the chosen port number for all created sockets.
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port);
