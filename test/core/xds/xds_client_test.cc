@@ -447,7 +447,7 @@ class XdsClientTest : public ::testing::Test {
 
     XdsWildcardCapableResource() = default;
     XdsWildcardCapableResource(std::string name, uint32_t value)
-        : name(std::move(name)), value(std::move(value)) {}
+        : name(std::move(name)), value(value) {}
 
     bool operator==(const XdsWildcardCapableResource& other) const {
       return name == other.name && value == other.value;
