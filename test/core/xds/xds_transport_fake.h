@@ -144,12 +144,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   class FakeXdsTransport : public XdsTransport {
    public:
     FakeXdsTransport(std::function<void(absl::Status)> on_connectivity_change,
-                     bool auto_complete_messages_from_client)
-        : auto_complete_messages_from_client_(
-              auto_complete_messages_from_client),
-          on_connectivity_change_(
-              MakeRefCounted<RefCountedOnConnectivityChange>(
-                  std::move(on_connectivity_change))) {}
+                     bool auto_complete_messages_from_client);
 
     void Orphan() override;
 

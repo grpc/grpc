@@ -1884,7 +1884,9 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
 }
 
 TEST_F(XdsClientTest, ConnectionFails) {
-  InitXdsClient();
+  // Lower resources-does-not-exist timeout, to make sure that we're not
+  // triggering that here.
+  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -1911,6 +1913,9 @@ TEST_F(XdsClientTest, ConnectionFails) {
             "xDS channel for server default_xds_server: "
             "connection failed (node ID:xds_client_test)")
       << *error;
+  // We should not see a resource-does-not-exist event, because the
+  // timer should not be running while the channel is disconnected.
+  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
   // Start a new watch.  This watcher should be given the same error,
   // since we have not yet recovered.
   auto watcher2 = StartFooWatch("foo1");
@@ -1921,6 +1926,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
             "xDS channel for server default_xds_server: "
             "connection failed (node ID:xds_client_test)")
       << *error;
+  // Second watcher should not see resource-does-not-exist either.
+  EXPECT_FALSE(watcher2->HasEvent());
   // Transport connectivity is restored.
   TriggerConnectivityChange(xds_client_->bootstrap().server(),
                             absl::OkStatus());
@@ -1949,8 +1956,9 @@ TEST_F(XdsClientTest, ConnectionFails) {
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
-  // Cancel watch.
-  CancelFooWatch(watcher.get(), "foo1");
+  // Cancel watches.
+  CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher2.get(), "foo2");
   // The XdsClient may or may not send an unsubscription message
   // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());

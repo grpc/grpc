@@ -135,6 +135,9 @@ class XdsClient::ChannelState::AdsCallState
   void MaybeStartSeenResponseTimer()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
+  void ChannelConnected() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+  void ChannelDisconnected() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+
  private:
   class AdsResponseParser : public XdsApi::AdsResponseParserInterface {
    public:
@@ -182,8 +185,8 @@ class XdsClient::ChannelState::AdsCallState
 
     bool present_at_stream_start() const { return present_at_stream_start_; }
 
-    bool seen() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
-      return seen_;
+    bool resource_seen() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
+      return resource_seen_;
     }
 
     // Disable thread-safety analysis because this method is called via
@@ -194,15 +197,28 @@ class XdsClient::ChannelState::AdsCallState
       Unref(DEBUG_LOCATION, "Orphan");
     }
 
+    void MarkSubscriptionSent(RefCountedPtr<AdsCallState> ads_calld)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
+      subscription_sent_ = true;
+      MaybeStartTimer(std::move(ads_calld));
+    }
+
     void MarkSeen() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
-      seen_ = true;
+      resource_seen_ = true;
       MaybeCancelTimer();
     }
 
     void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
-      if (!timer_start_needed_) return;
-      timer_start_needed_ = false;
+      // Don't start timer if we've already either seen the resource or
+      // marked it as non-existing.
+      if (resource_seen_) return;
+      // Don't start timer if we haven't yet sent the resource.
+      if (!subscription_sent_) return;
+      // Don't start timer if the channel is not connected.
+      if (!ads_calld->chand()->channel_connected_) return;
+      // Don't start timer if it's already running.
+      if (timer_handle_.has_value()) return;
       // Check if we already have a cached version of this resource
       // (i.e., if this is the initial request for the resource after an
       // ADS stream restart).  If so, we don't start the timer, because
@@ -224,48 +240,35 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void MaybeCancelTimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
-      // If the timer hasn't been started yet, make sure we don't start
-      // it later.  This can happen if the last watch for a resource is
-      // cancelled and then restarted, both while an ADS request is
-      // being sent (causing the unsubscription and then resubscription
-      // requests to be queued), and then we get a response that
-      // contains that resource.  In that case, we would call
-      // MaybeCancelTimer() when we receive the response and then
-      // MaybeStartTimer() when we finally send the new request, thus
-      // causing the timer to fire when it shouldn't.  For details,
-      // see https://github.com/grpc/grpc/issues/29583.
-      timer_start_needed_ = false;
-      if (timer_handle_.has_value()) {
-        ads_calld_->xds_client()->engine_->Cancel(*timer_handle_);
+      if (timer_handle_.has_value() &&
+          ads_calld_->xds_client()->engine_->Cancel(*timer_handle_)) {
         timer_handle_.reset();
       }
     }
 
    private:
     void OnTimer() {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] xds server %s: timeout obtaining resource "
+                "{type=%s name=%s} from xds server",
+                ads_calld_->xds_client(),
+                ads_calld_->chand()->server_.server_uri().c_str(),
+                std::string(type_->type_url()).c_str(),
+                XdsClient::ConstructFullXdsResourceName(
+                    name_.authority, type_->type_url(), name_.key)
+                    .c_str());
+      }
       {
         MutexLock lock(&ads_calld_->xds_client()->mu_);
-        if (timer_handle_.has_value()) {
-          timer_handle_.reset();
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-            gpr_log(GPR_INFO,
-                    "[xds_client %p] xds server %s: timeout obtaining resource "
-                    "{type=%s name=%s} from xds server",
-                    ads_calld_->xds_client(),
-                    ads_calld_->chand()->server_.server_uri().c_str(),
-                    std::string(type_->type_url()).c_str(),
-                    XdsClient::ConstructFullXdsResourceName(
-                        name_.authority, type_->type_url(), name_.key)
-                        .c_str());
-          }
-          auto& authority_state =
-              ads_calld_->xds_client()->authority_state_map_[name_.authority];
-          ResourceState& state = authority_state.resource_map[type_][name_.key];
-          state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          ads_calld_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
-              state.watchers);
-          seen_ = true;  // Consider it seen on this stream.
-        }
+        timer_handle_.reset();
+        resource_seen_ = true;
+        auto& authority_state =
+            ads_calld_->xds_client()->authority_state_map_[name_.authority];
+        ResourceState& state = authority_state.resource_map[type_][name_.key];
+        state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
+        ads_calld_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
+            state.watchers);
       }
       ads_calld_->xds_client()->work_serializer_.DrainQueue();
       ads_calld_.reset();
@@ -275,10 +278,14 @@ class XdsClient::ChannelState::AdsCallState
     const XdsResourceName name_;
     const bool present_at_stream_start_;
 
-    bool seen_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
-
     RefCountedPtr<AdsCallState> ads_calld_;
-    bool timer_start_needed_ ABSL_GUARDED_BY(&XdsClient::mu_) = true;
+    // True if we have sent the initial subscription request for this
+    // resource on this ADS stream.
+    bool subscription_sent_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
+    // True if we have either (a) seen the resource in a response on this
+    // stream or (b) declared the resource to not exist due to the timer
+    // firing.
+    bool resource_seen_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
     absl::optional<EventEngine::TaskHandle> timer_handle_
         ABSL_GUARDED_BY(&XdsClient::mu_);
   };
@@ -549,17 +556,26 @@ void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
 }
 
 void XdsClient::ChannelState::OnConnectivityChange(absl::Status status) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[xds_client %p] xds channel %p for server %s: connectivity status: %s",
+        xds_client(), this, server_.server_uri().c_str(),
+        status.ToString().c_str());
+  }
   {
     MutexLock lock(&xds_client_->mu_);
-    // Start or stop the ADS stream's seen-response timer, depending on
-    // whether the transport is connected or failing.
+    // Notify the ADS call of the connectivity state, so that it can
+    // start or stop timers as needed.
     if (ads_calld_ != nullptr) {
       auto* calld = ads_calld_->calld();
       if (calld != nullptr) {
         if (status.ok()) {
-          calld->MaybeStartSeenResponseTimer();
+          channel_connected_ = true;
+          calld->ChannelConnected();
         } else {
-          calld->MaybeCancelSeenResponseTimer();
+          channel_connected_ = false;
+          calld->ChannelDisconnected();
         }
       }
     }
@@ -1029,6 +1045,7 @@ void XdsClient::ChannelState::AdsCallState::MaybeCancelSeenResponseTimer() {
 }
 
 void XdsClient::ChannelState::AdsCallState::MaybeStartSeenResponseTimer() {
+  if (!chand()->channel_connected_) return;
   if (seen_response_timer_handle_.has_value()) return;
   // Start a timer to wait for ADS response.  This ensures that if we're
   // talking to an xDS server that is not responding at the application level,
@@ -1054,6 +1071,32 @@ void XdsClient::ChannelState::AdsCallState::OnSeenResponseTimer() {
   if (call_ != nullptr) {
     call_->CancelWithStatus(
         absl::UnavailableError("timed out waiting for ADS response"));
+  }
+}
+
+void XdsClient::ChannelState::AdsCallState::ChannelConnected() {
+  // Start seen-response timer if needed.
+  MaybeStartSeenResponseTimer();
+  // Start resource does-not-exist timers if needed.
+  for (const auto& p : state_map_) {
+    for (const auto& q : p.second.subscribed_resources) {
+      for (auto& r : q.second) {
+        r.second->MaybeStartTimer(Ref(DEBUG_LOCATION, "ResourceTimer"));
+      }
+    }
+  }
+}
+
+void XdsClient::ChannelState::AdsCallState::ChannelDisconnected() {
+  // Cancel seen-response timer if needed.
+  MaybeCancelSeenResponseTimer();
+  // Cancel resource does-not-exist timers if needed.
+  for (const auto& p : state_map_) {
+    for (const auto& q : p.second.subscribed_resources) {
+      for (auto& r : q.second) {
+        r.second->MaybeCancelTimer();
+      }
+    }
   }
 }
 
@@ -1204,7 +1247,7 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
               for (const auto& q : p.second.subscribed_resources) {
                 for (const auto& r : q.second) {
                   if (r.second->present_at_stream_start() &&
-                      !r.second->seen()) {
+                      !r.second->resource_seen()) {
                     return false;
                   }
                 }
@@ -1245,7 +1288,8 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
         resource_names.emplace_back(XdsClient::ConstructFullXdsResourceName(
             authority, type->type_url(), resource_key));
         OrphanablePtr<ResourceTimer>& resource_timer = p.second;
-        resource_timer->MaybeStartTimer(Ref(DEBUG_LOCATION, "ResourceTimer"));
+        resource_timer->MarkSubscriptionSent(
+            Ref(DEBUG_LOCATION, "ResourceTimer"));
       }
     }
   }

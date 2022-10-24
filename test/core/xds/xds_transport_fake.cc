@@ -143,6 +143,21 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
 // FakeXdsTransportFactory::FakeXdsTransport
 //
 
+FakeXdsTransportFactory::FakeXdsTransport::FakeXdsTransport(
+    std::function<void(absl::Status)> on_connectivity_change,
+    bool auto_complete_messages_from_client)
+    : auto_complete_messages_from_client_(auto_complete_messages_from_client),
+      on_connectivity_change_(MakeRefCounted<RefCountedOnConnectivityChange>(
+          std::move(on_connectivity_change))) {
+  // Send connectivity change update indicating the channel is connected.
+  GetDefaultEventEngine()->Run(
+      [on_connectivity_change = on_connectivity_change_]() mutable {
+        ExecCtx exec_ctx;
+        on_connectivity_change->Run(absl::OkStatus());
+        on_connectivity_change.reset();
+      });
+}
+
 void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectivityChange(
     absl::Status status) {
   RefCountedPtr<RefCountedOnConnectivityChange> on_connectivity_change;

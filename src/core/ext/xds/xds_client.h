@@ -222,6 +222,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
 
     absl::Status status_;
+    bool channel_connected_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
   };
 
   struct ResourceState {
