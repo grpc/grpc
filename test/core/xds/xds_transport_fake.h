@@ -71,6 +71,13 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     absl::optional<std::string> WaitForMessageFromClient(
         absl::Duration timeout);
 
+    // If FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient()
+    // was called to set the value to false before the creation of the
+    // transport that underlies this stream, then this must be called
+    // to invoke EventHandler::OnRequestSent() for every message read
+    // via WaitForMessageFromClient().
+    void CompleteSendMessageFromClient(bool ok = true);
+
     void SendMessageToClient(absl::string_view payload);
     void MaybeSendStatusToClient(absl::Status status);
 
@@ -96,6 +103,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void SendMessage(std::string payload) override;
     void CancelWithStatus(absl::Status status) override;
 
+    void CompleteSendMessageFromClientLocked(bool ok)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
     RefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;
 
@@ -113,6 +123,17 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   void TriggerConnectivityChange(const XdsBootstrap::XdsServer& server,
                                  absl::Status status);
 
+  // By default, FakeStreamingCall will automatically invoke
+  // EventHandler::OnRequestSent() upon reading a request from the client.
+  // If this is set to false, that behavior will be inhibited, and
+  // EventHandler::OnRequestSent() will not be called until the test
+  // expicitly calls FakeStreamingCall::CompleteSendMessageFromClient().
+  //
+  // This value affects all transports created after this call is
+  // complete.  Any transport that already exists prior to this call
+  // will not be affected.
+  void SetAutoCompleteMessagesFromClient(bool value);
+
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServer& server, const char* method,
       absl::Duration timeout);
@@ -122,13 +143,19 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
  private:
   class FakeXdsTransport : public XdsTransport {
    public:
-    explicit FakeXdsTransport(
-        std::function<void(absl::Status)> on_connectivity_change)
-        : on_connectivity_change_(
+    FakeXdsTransport(std::function<void(absl::Status)> on_connectivity_change,
+                     bool auto_complete_messages_from_client)
+        : auto_complete_messages_from_client_(
+              auto_complete_messages_from_client),
+          on_connectivity_change_(
               MakeRefCounted<RefCountedOnConnectivityChange>(
                   std::move(on_connectivity_change))) {}
 
     void Orphan() override;
+
+    bool auto_complete_messages_from_client() const {
+      return auto_complete_messages_from_client_;
+    }
 
     using XdsTransport::Ref;  // Make it public.
 
@@ -161,6 +188,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void ResetBackoff() override {}
 
+    const bool auto_complete_messages_from_client_;
+
     Mutex mu_;
     CondVar cv_;
     RefCountedPtr<RefCountedOnConnectivityChange> on_connectivity_change_
@@ -180,6 +209,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   Mutex mu_;
   std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
+  bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
 };
 
 }  // namespace grpc_core

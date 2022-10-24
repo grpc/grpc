@@ -53,15 +53,9 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
   MutexLock lock(&mu_);
   from_client_messages_.push_back(std::move(payload));
   cv_.Signal();
-  // Can't call event_handler_->OnRequestSent() synchronously, since that
-  // operation will trigger code in XdsClient that acquires its mutex, but it
-  // was already holding its mutex when it called us, so it would deadlock.
-  GetDefaultEventEngine()->Run(
-      [event_handler = event_handler_->Ref()]() mutable {
-        ExecCtx exec_ctx;
-        event_handler->OnRequestSent(/*ok=*/true);
-        event_handler.reset();
-      });
+  if (transport_->auto_complete_messages_from_client()) {
+    CompleteSendMessageFromClientLocked(/*ok=*/true);
+  }
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::CancelWithStatus(
@@ -99,6 +93,26 @@ FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient(
   std::string payload = from_client_messages_.front();
   from_client_messages_.pop_front();
   return payload;
+}
+
+void FakeXdsTransportFactory::FakeStreamingCall::
+    CompleteSendMessageFromClientLocked(bool ok) {
+  // Can't call event_handler_->OnRequestSent() synchronously, since that
+  // operation will trigger code in XdsClient that acquires its mutex, but it
+  // was already holding its mutex when it called us, so it would deadlock.
+  GetDefaultEventEngine()->Run(
+      [event_handler = event_handler_->Ref(), ok]() mutable {
+        ExecCtx exec_ctx;
+        event_handler->OnRequestSent(ok);
+        event_handler.reset();
+      });
+}
+
+void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
+    bool ok) {
+  GPR_ASSERT(!transport_->auto_complete_messages_from_client());
+  MutexLock lock(&mu_);
+  CompleteSendMessageFromClientLocked(ok);
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessageToClient(
@@ -204,11 +218,11 @@ FakeXdsTransportFactory::Create(
     const XdsBootstrap::XdsServer& server,
     std::function<void(absl::Status)> on_connectivity_change,
     absl::Status* /*status*/) {
-  auto transport =
-      MakeOrphanable<FakeXdsTransport>(std::move(on_connectivity_change));
   MutexLock lock(&mu_);
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
+  auto transport = MakeOrphanable<FakeXdsTransport>(
+      std::move(on_connectivity_change), auto_complete_messages_from_client_);
   entry = transport->Ref();
   return transport;
 }
@@ -217,6 +231,11 @@ void FakeXdsTransportFactory::TriggerConnectivityChange(
     const XdsBootstrap::XdsServer& server, absl::Status status) {
   auto transport = GetTransport(server);
   transport->TriggerConnectivityChange(std::move(status));
+}
+
+void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
+  MutexLock lock(&mu_);
+  auto_complete_messages_from_client_ = value;
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
