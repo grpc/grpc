@@ -1156,6 +1156,8 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                 }
               } else {
                 resource_state.resource.reset();
+                resource_state.meta.client_status =
+                    XdsApi::ResourceMetadata::DOES_NOT_EXIST;
                 xds_client()->NotifyWatchersOnResourceDoesNotExist(
                     resource_state.watchers);
               }
@@ -1163,8 +1165,8 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
           }
         }
       }
-      // If we had valid resources, update the version.
-      if (result.have_valid_resources) {
+      // If we had valid resources or the update was empty, update the version.
+      if (result.have_valid_resources || result.errors.empty()) {
         state.version = std::move(result.version);
         // Start load reporting if needed.
         auto& lrs_call = chand()->lrs_calld_;

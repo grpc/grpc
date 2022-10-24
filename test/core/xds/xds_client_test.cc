@@ -164,6 +164,10 @@ class XdsClientTest : public ::testing::Test {
         authorities_[std::move(name)] = std::move(authority);
         return *this;
       }
+      Builder& set_ignore_resource_deletion(bool ignore_resource_deletion) {
+        server_.set_ignore_resource_deletion(ignore_resource_deletion);
+        return *this;
+      }
       std::unique_ptr<XdsBootstrap> Build() {
         auto bootstrap = std::make_unique<FakeXdsBootstrap>();
         bootstrap->server_ = std::move(server_);
@@ -210,21 +214,27 @@ class XdsClientTest : public ::testing::Test {
 
   // A template for a test xDS resource type with an associated watcher impl.
   // For simplicity, we use JSON instead of proto for serialization.
+  //
   // The specified ResourceStruct must provide the following:
   // - a static JsonLoader() method, as described in json_object_loader.h
   // - an AsJsonString() method that returns the object in JSON string form
   // - a static TypeUrl() method that returns the resource type
-  template <typename ResourceStruct>
+  //
+  // The all_resources_required_in_sotw parameter indicates the value
+  // that should be returned by the AllResourcesRequiredInSotW() method.
+  template <typename ResourceStruct, bool all_resources_required_in_sotw>
   class XdsTestResourceType
-      : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
-                                   ResourceStruct> {
+      : public XdsResourceTypeImpl<
+            XdsTestResourceType<ResourceStruct, all_resources_required_in_sotw>,
+            ResourceStruct> {
    public:
     using ResourceStructType = ResourceStruct;
 
     // A watcher implementation that queues delivered watches.
-    class Watcher
-        : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
-                                     ResourceStruct>::WatcherInterface {
+    class Watcher : public XdsResourceTypeImpl<
+                        XdsTestResourceType<ResourceStruct,
+                                            all_resources_required_in_sotw>,
+                        ResourceStruct>::WatcherInterface {
      public:
       // Returns true if no event is received during the timeout period.
       bool ExpectNoEvent(absl::Duration timeout) {
@@ -358,6 +368,9 @@ class XdsClientTest : public ::testing::Test {
       }
       return result;
     }
+    bool AllResourcesRequiredInSotW() const override {
+      return all_resources_required_in_sotw;
+    }
     void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
 
     static google::protobuf::Any EncodeAsAny(const ResourceStruct& resource) {
@@ -396,7 +409,7 @@ class XdsClientTest : public ::testing::Test {
 
     static absl::string_view TypeUrl() { return "test.v3.foo"; }
   };
-  using XdsFooResourceType = XdsTestResourceType<XdsFooResource>;
+  using XdsFooResourceType = XdsTestResourceType<XdsFooResource, false>;
 
   // A fake "Bar" xDS resource type.
   struct XdsBarResource : public XdsResourceType::ResourceData {
@@ -426,7 +439,42 @@ class XdsClientTest : public ::testing::Test {
 
     static absl::string_view TypeUrl() { return "test.v3.bar"; }
   };
-  using XdsBarResourceType = XdsTestResourceType<XdsBarResource>;
+  using XdsBarResourceType = XdsTestResourceType<XdsBarResource, false>;
+
+  // A fake "WildcardCapable" xDS resource type.
+  // This resource type return true for AllResourcesRequiredInSotW(),
+  // just like LDS and CDS.
+  struct XdsWildcardCapableResource : public XdsResourceType::ResourceData {
+    std::string name;
+    uint32_t value;
+
+    XdsWildcardCapableResource() = default;
+    XdsWildcardCapableResource(std::string name, uint32_t value)
+        : name(std::move(name)), value(std::move(value)) {}
+
+    bool operator==(const XdsWildcardCapableResource& other) const {
+      return name == other.name && value == other.value;
+    }
+
+    std::string AsJsonString() const {
+      return absl::StrCat("{\"name\":\"", name, "\",\"value\":\"", value,
+                          "\"}");
+    }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<XdsWildcardCapableResource>()
+              .Field("name", &XdsWildcardCapableResource::name)
+              .Field("value", &XdsWildcardCapableResource::value)
+              .Finish();
+      return loader;
+    }
+
+    static absl::string_view TypeUrl() { return "test.v3.wildcard_capable"; }
+  };
+  using XdsWildcardCapableResourceType =
+      XdsTestResourceType<XdsWildcardCapableResource,
+                          /*all_resources_required_in_sotw=*/true>;
 
   // A helper class to build and serialize a DiscoveryResponse.
   class ResponseBuilder {
@@ -467,6 +515,13 @@ class XdsClientTest : public ::testing::Test {
     ResponseBuilder& AddBarResource(const XdsBarResource& resource,
                                     bool in_resource_wrapper = false) {
       return AddResource<XdsBarResourceType>(resource, in_resource_wrapper);
+    }
+
+    ResponseBuilder& AddWildcardCapableResource(
+        const XdsWildcardCapableResource& resource,
+        bool in_resource_wrapper = false) {
+      return AddResource<XdsWildcardCapableResourceType>(resource,
+                                                         in_resource_wrapper);
     }
 
     ResponseBuilder& AddInvalidResource(
@@ -546,6 +601,21 @@ class XdsClientTest : public ::testing::Test {
                       bool delay_unsubscription = false) {
     XdsBarResourceType::CancelWatch(xds_client_.get(), resource_name, watcher,
                                     delay_unsubscription);
+  }
+
+  // Starts and cancels a watch for a WildcardCapable resource.
+  RefCountedPtr<XdsWildcardCapableResourceType::Watcher>
+  StartWildcardCapableWatch(absl::string_view resource_name) {
+    auto watcher = MakeRefCounted<XdsWildcardCapableResourceType::Watcher>();
+    XdsWildcardCapableResourceType::StartWatch(xds_client_.get(), resource_name,
+                                               watcher);
+    return watcher;
+  }
+  void CancelWildcardCapableWatch(
+      XdsWildcardCapableResourceType::Watcher* watcher,
+      absl::string_view resource_name, bool delay_unsubscription = false) {
+    XdsWildcardCapableResourceType::CancelWatch(
+        xds_client_.get(), resource_name, watcher, delay_unsubscription);
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
@@ -1361,7 +1431,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   }
 }
 
-TEST_F(XdsClientTest, ResourceDoesNotExist) {
+TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
@@ -1529,6 +1599,199 @@ TEST_F(XdsClientTest,
   if (request.has_value()) {
     CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                  /*version_info=*/"1", /*response_nonce=*/"B",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
+// This tests resource removal triggered by the server when using a
+// resource type that requires all resources to be present in every
+// response, similar to LDS and CDS.
+TEST_F(XdsClientTest, ResourceDoesNotExistWhenRemovedByServerInUpdate) {
+  InitXdsClient();
+  // Start a watch for "wc1".
+  auto watcher = StartWildcardCapableWatch("wc1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Server sends a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Server now sends a response without the resource, thus indicating
+  // it's been deleted.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .Serialize());
+  // Watcher should see the does-not-exist event.
+  EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(1)));
+  // Start a new watcher for the same resource.  It should immediately
+  // receive the same does-not-exist notification.
+  auto watcher2 = StartWildcardCapableWatch("wc1");
+  EXPECT_TRUE(watcher2->WaitForDoesNotExist(absl::Seconds(1)));
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"2", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Server sends the resource again.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("3")
+          .set_nonce("C")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 7))
+          .Serialize());
+  // XdsClient should have delivered the response to the watchers.
+  resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 7);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 7);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"3", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Cancel watch.
+  CancelWildcardCapableWatch(watcher.get(), "wc1");
+  CancelWildcardCapableWatch(watcher2.get(), "wc1");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = WaitForRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+                 /*version_info=*/"3", /*response_nonce=*/"C",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
+// This tests that when we ignore resource deletions from the server
+// when configured to do so.
+TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
+  InitXdsClient(FakeXdsBootstrap::Builder().set_ignore_resource_deletion(true));
+  // Start a watch for "wc1".
+  auto watcher = StartWildcardCapableWatch("wc1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Server sends a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Server now sends a response without the resource, thus indicating
+  // it's been deleted.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .Serialize());
+  // Watcher should not see any update, since we should have ignored the
+  // deletion.
+  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
+  // Start a new watcher for the same resource.  It should immediately
+  // receive the cached resource.
+  auto watcher2 = StartWildcardCapableWatch("wc1");
+  resource = watcher2->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"2", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Server sends a new value for the resource.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsWildcardCapableResourceType::Get()->type_url())
+          .set_version_info("3")
+          .set_nonce("C")
+          .AddWildcardCapableResource(XdsWildcardCapableResource("wc1", 7))
+          .Serialize());
+  // XdsClient should have delivered the response to the watchers.
+  resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 7);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "wc1");
+  EXPECT_EQ(resource->value, 7);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+               /*version_info=*/"3", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"wc1"});
+  // Cancel watch.
+  CancelWildcardCapableWatch(watcher.get(), "wc1");
+  CancelWildcardCapableWatch(watcher2.get(), "wc1");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = WaitForRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsWildcardCapableResourceType::Get()->type_url(),
+                 /*version_info=*/"3", /*response_nonce=*/"C",
                  /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   }
 }
