@@ -237,7 +237,9 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
       auto certificate_provider =
           std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
       GPR_ASSERT(certificate_provider->SetRootCertificate(root_cert).ok());
-      GPR_ASSERT(certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs).ok());
+      GPR_ASSERT(
+          certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+              .ok());
       grpc::experimental::TlsServerCredentialsOptions options(
           certificate_provider);
       options.watch_root_certs();
@@ -1051,8 +1053,11 @@ XdsEnd2endTest::CreateTlsFallbackCredentials() {
   std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
-  GPR_ASSERT(certificate_provider->SetRootCertificate(ReadFile(kCaCertPath)).ok());
-  GPR_ASSERT(certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs).ok());
+  GPR_ASSERT(
+      certificate_provider->SetRootCertificate(ReadFile(kCaCertPath)).ok());
+  GPR_ASSERT(
+      certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+          .ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(std::move(certificate_provider));
   options.watch_root_certs();

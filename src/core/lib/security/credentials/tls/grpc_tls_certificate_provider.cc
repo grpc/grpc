@@ -36,8 +36,8 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/stat.h"
@@ -208,7 +208,8 @@ absl::Status InMemoryCertificateProvider::SetKeyCertificatePairs(
       return absl::InvalidArgumentError(error_message);
     }
   }
-  single_certificate_cache_.SetKeyCertificatePairs(std::move(pem_key_cert_pairs));
+  single_certificate_cache_.SetKeyCertificatePairs(
+      std::move(pem_key_cert_pairs));
   return absl::OkStatus();
 }
 
@@ -444,7 +445,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     const PemKeyCertPairList& pair_list) {
-  for (const auto& key_cert_pair: pair_list) {
+  for (const auto& key_cert_pair : pair_list) {
     absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
         key_cert_pair.private_key(), key_cert_pair.cert_chain());
     if (!matched_or.ok() || !*matched_or) return matched_or;
@@ -470,7 +471,8 @@ grpc_core::PemKeyCertPairList ConvertKeyCertPairListToCoreType(
 
 }  // namespace
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_in_memory_create() {
+grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_in_memory_create() {
   grpc_core::ExecCtx exec_ctx;
   return new grpc_core::InMemoryCertificateProvider();
 }
