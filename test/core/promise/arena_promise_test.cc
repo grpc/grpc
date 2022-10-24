@@ -71,6 +71,20 @@ TEST(ArenaPromiseTest, MoveAssignmentWorks) {
   p = ArenaPromise<int>();
 }
 
+TEST(ArenaPromiseTest, AllocatedUniquePtrWorks) {
+  ExecCtx exec_ctx;
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  TestContext<Arena> context(arena.get());
+  auto freer = [payload = 123](int* p) { free(p); };
+  using Ptr = std::unique_ptr<int, decltype(freer)>;
+  Ptr x(new int(42), freer);
+  static_assert(sizeof(x) > sizeof(arena_promise_detail::ArgType), "This test assumes the unique ptr will go down the allocated path for ArenaPromise");
+  ArenaPromise<Ptr> initial_promise(
+      [x = std::move(x)]() mutable { return Poll<Ptr>(std::move(x)); });
+  ArenaPromise<Ptr> p(std::move(initial_promise));
+  EXPECT_EQ(*absl::get<Ptr>(p()), 42);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

@@ -32,20 +32,27 @@ namespace grpc_core {
 
 namespace arena_promise_detail {
 
+using ArgType = std::aligned_storage_t< sizeof(void*)>;
+template <typename T>
+T*& ArgAsPtr(ArgType* arg) {
+  static_assert(sizeof(ArgType) >= sizeof(T**), "Must have ArgType of at least one pointer size");
+  return *reinterpret_cast<T**>(arg);
+}
+
 template <typename T>
 struct Vtable {
   // Poll the promise, once.
-  Poll<T> (*poll_once)(void** arg);
+  Poll<T> (*poll_once)(ArgType* arg);
   // Destroy the underlying callable object if there is one.
   // Since we don't delete (the arena owns the memory) but we may need to call a
   // destructor, we expose this for when the ArenaPromise object is destroyed.
-  void (*destroy)(void** arg);
+  void (*destroy)(ArgType* arg);
 };
 
 template <typename T>
 struct VtableAndArg {
   const Vtable<T>* vtable;
-  void* arg;
+  ArgType arg;
 };
 
 // Implementation of Vtable for an empty object.
@@ -55,41 +62,50 @@ struct VtableAndArg {
 template <typename T>
 struct Null {
   static const Vtable<T> vtable;
+
+  static Poll<T> PollOnce(ArgType*) {
+    abort();
+    GPR_UNREACHABLE_CODE(return Pending{});
+  }
+
+  static void Destroy(ArgType*) {}
 };
 
 template <typename T>
-const Vtable<T> Null<T>::vtable = {[](void**) -> Poll<T> {
-                                     abort();
-                                     GPR_UNREACHABLE_CODE(return Pending{});
-                                   },
-                                   [](void**) {}};
+const Vtable<T> Null<T>::vtable = {PollOnce, Destroy};
 
 // Implementation of ImplInterface for a callable object.
 template <typename T, typename Callable>
 struct AllocatedCallable {
   static const Vtable<T> vtable;
+
+  static Poll<T> PollOnce(ArgType* arg) {
+    return poll_cast<T>((*ArgAsPtr<Callable>(arg))());
+  }
+
+  static void Destroy(ArgType* arg) { Destruct(ArgAsPtr<Callable>(arg)); }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> AllocatedCallable<T, Callable>::vtable = {
-    [](void** arg) -> Poll<T> {
-      return poll_cast<T>((*static_cast<Callable*>(*arg))());
-    },
-    [](void** arg) { static_cast<Callable*>(*arg)->~Callable(); }};
+const Vtable<T> AllocatedCallable<T, Callable>::vtable = {PollOnce, Destroy};
 
 // Implementation of ImplInterface for a small callable object (one that fits
-// within the void* arg)
+// within the ArgType arg)
 template <typename T, typename Callable>
 struct Inlined {
   static const Vtable<T> vtable;
+
+  static Poll<T> PollOnce(ArgType* arg) {
+    return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
+  }
+
+  static void Destroy(ArgType* arg) {
+    Destruct(reinterpret_cast<Callable*>(arg));
+  }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> Inlined<T, Callable>::vtable = {
-    [](void** arg) -> Poll<T> {
-      return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
-    },
-    [](void** arg) { reinterpret_cast<Callable*>(arg)->~Callable(); }};
+const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Destroy};
 
 // If a callable object is empty we can substitute any instance of that callable
 // for the one we call (for how could we tell the difference)?
@@ -101,12 +117,15 @@ const Vtable<T> Inlined<T, Callable>::vtable = {
 template <typename T, typename Callable>
 struct SharedCallable {
   static const Vtable<T> vtable;
+
+  static Poll<T> PollOnce(ArgType* arg) {
+    return (*reinterpret_cast<Callable*>(arg))();
+  }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> SharedCallable<T, Callable>::vtable = {
-    [](void** arg) -> Poll<T> { return (*reinterpret_cast<Callable*>(arg))(); },
-    [](void**) {}};
+const Vtable<T> SharedCallable<T, Callable>::vtable = {PollOnce,
+                                                       Null<T>::Destroy};
 
 // Redirector type: given a callable type, expose a Make() function that creates
 // the appropriate underlying implementation.
@@ -117,11 +136,12 @@ template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable,
     absl::enable_if_t<!std::is_empty<Callable>::value &&
-                      (sizeof(Callable) > sizeof(void*))>> {
+                      (sizeof(Callable) > sizeof(ArgType))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
-    *out = {&AllocatedCallable<T, Callable>::vtable,
-            GetContext<Arena>()->template New<Callable>(
-                std::forward<Callable>(callable))};
+    out->vtable = &AllocatedCallable<T, Callable>::vtable;
+   ArgAsPtr<Callable>(&out->arg)=
+        GetContext<Arena>()->template New<Callable>(
+            std::forward<Callable>(callable));
   }
 };
 
@@ -129,10 +149,10 @@ template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable,
     absl::enable_if_t<!std::is_empty<Callable>::value &&
-                      (sizeof(Callable) <= sizeof(void*))>> {
+                      (sizeof(Callable) <= sizeof(ArgType))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
     out->vtable = &Inlined<T, Callable>::vtable;
-    new (&out->arg) Callable(std::forward<Callable>(callable));
+    Construct(reinterpret_cast<Callable*>(&out->arg), std::forward<Callable>(callable));
   }
 };
 
@@ -166,7 +186,7 @@ class ArenaPromise {
                 absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
   // NOLINTNEXTLINE(google-explicit-constructor)
   ArenaPromise(Callable&& callable) {
-    arena_promise_detail::MakeImplForCallable<T>(
+    arena_promise_detail::MakeImplForCallable(
         std::forward<Callable>(callable), &vtable_and_arg_);
   }
 
@@ -200,7 +220,7 @@ class ArenaPromise {
  private:
   // Underlying impl object.
   arena_promise_detail::VtableAndArg<T> vtable_and_arg_ = {
-      &arena_promise_detail::Null<T>::vtable, nullptr};
+      &arena_promise_detail::Null<T>::vtable, {}};
 };
 
 }  // namespace grpc_core
