@@ -208,7 +208,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
    public:
     // A status notifier for xDS-enabled servers.
     class XdsServingStatusNotifier
-        : public grpc::experimental::XdsServerServingStatusNotifierInterface {
+        : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
