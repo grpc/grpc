@@ -36,9 +36,9 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -162,7 +162,7 @@ TEST_F(XdsRouteConfigTest, MinimumValidConfig) {
 // cluster type tests
 //
 
-//using ClusterTypeTest = XdsRouteConfigTest;
+// using ClusterTypeTest = XdsRouteConfigTest;
 
 }  // namespace
 }  // namespace testing

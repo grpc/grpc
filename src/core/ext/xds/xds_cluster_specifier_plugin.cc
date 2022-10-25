@@ -83,9 +83,8 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   size_t json_size = upb_JsonEncode(plugin_config, msg_type, symtab, 0, nullptr,
                                     0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
-    errors->AddError(
-        absl::StrCat("failed to dump proto to JSON: ",
-                     upb_Status_ErrorMessage(status.ptr())));
+    errors->AddError(absl::StrCat("failed to dump proto to JSON: ",
+                                  upb_Status_ErrorMessage(status.ptr())));
     return {};
   }
   void* buf = upb_Arena_Malloc(arena, json_size + 1);
@@ -93,14 +92,14 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   auto json = Json::Parse(reinterpret_cast<char*>(buf));
   GPR_ASSERT(json.ok());
-  return Json::Array{
-      Json::Object{
-          {"rls_experimental", Json::Object{
-              {"routeLookupConfig", std::move(*json)},
-              {"childPolicy",
-               Json::Array{Json::Object{{"cds_experimental", Json::Object()}}}},
-              {"childPolicyConfigTargetFieldName", "cluster"},
-          }}}};
+  return Json::Array{Json::Object{
+      {"rls_experimental",
+       Json::Object{
+           {"routeLookupConfig", std::move(*json)},
+           {"childPolicy",
+            Json::Array{Json::Object{{"cds_experimental", Json::Object()}}}},
+           {"childPolicyConfigTargetFieldName", "cluster"},
+       }}}};
 }
 
 //

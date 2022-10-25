@@ -327,8 +327,7 @@ std::string XdsRouteConfigResource::ToString() const {
 
 namespace {
 
-XdsRouteConfigResource::ClusterSpecifierPluginMap
-ClusterSpecifierPluginParse(
+XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     ValidationErrors* errors) {
@@ -400,8 +399,7 @@ ClusterSpecifierPluginParse(
 }
 
 absl::optional<StringMatcher> RoutePathMatchParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    ValidationErrors* errors) {
+    const envoy_config_route_v3_RouteMatch* match, ValidationErrors* errors) {
   bool case_sensitive = true;
   auto* case_sensitive_ptr =
       envoy_config_route_v3_RouteMatch_case_sensitive(match);
@@ -461,22 +459,22 @@ absl::optional<StringMatcher> RoutePathMatchParse(
   absl::StatusOr<StringMatcher> string_matcher =
       StringMatcher::Create(type, match_string, case_sensitive);
   if (!string_matcher.ok()) {
-    errors->AddError(absl::StrCat(
-        "error creating path matcher: ", string_matcher.status().message()));
+    errors->AddError(absl::StrCat("error creating path matcher: ",
+                                  string_matcher.status().message()));
     return absl::nullopt;
   }
   return std::move(*string_matcher);
 }
 
-void RouteHeaderMatchersParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    XdsRouteConfigResource::Route* route, ValidationErrors* errors) {
+void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
+                              XdsRouteConfigResource::Route* route,
+                              ValidationErrors* errors) {
   size_t size;
   const envoy_config_route_v3_HeaderMatcher* const* headers =
       envoy_config_route_v3_RouteMatch_headers(match, &size);
   for (size_t i = 0; i < size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".headers[", i, "]"));
+    ValidationErrors::ScopedField field(errors,
+                                        absl::StrCat(".headers[", i, "]"));
     const envoy_config_route_v3_HeaderMatcher* header = headers[i];
     GPR_ASSERT(header != nullptr);
     const std::string name =
@@ -529,17 +527,17 @@ void RouteHeaderMatchersParse(
         HeaderMatcher::Create(name, type, match_string, range_start, range_end,
                               present_match, invert_match);
     if (!header_matcher.ok()) {
-      errors->AddError(absl::StrCat(
-          "cannot create header matcher: ", header_matcher.status().message()));
+      errors->AddError(absl::StrCat("cannot create header matcher: ",
+                                    header_matcher.status().message()));
     } else {
       route->matchers.header_matchers.emplace_back(std::move(*header_matcher));
     }
   }
 }
 
-void RouteRuntimeFractionParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    XdsRouteConfigResource::Route* route, ValidationErrors* errors) {
+void RouteRuntimeFractionParse(const envoy_config_route_v3_RouteMatch* match,
+                               XdsRouteConfigResource::Route* route,
+                               ValidationErrors* errors) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
       envoy_config_route_v3_RouteMatch_runtime_fraction(match);
   if (runtime_fraction != nullptr) {
@@ -743,8 +741,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
   const envoy_config_route_v3_RouteAction_HashPolicy* const* hash_policies =
       envoy_config_route_v3_RouteAction_hash_policy(route_action_proto, &size);
   for (size_t i = 0; i < size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".hash_policy[", i, "]"));
+    ValidationErrors::ScopedField field(errors,
+                                        absl::StrCat(".hash_policy[", i, "]"));
     const auto* hash_policy = hash_policies[i];
     XdsRouteConfigResource::Route::RouteAction::HashPolicy policy;
     policy.terminal =
@@ -787,8 +785,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
         RE2::Options options;
         policy.regex = std::make_unique<RE2>(regex, options);
         if (!policy.regex->ok()) {
-          errors->AddError(absl::StrCat(
-              "errors compiling regex: ", policy.regex->error()));
+          errors->AddError(
+              absl::StrCat("errors compiling regex: ", policy.regex->error()));
           continue;
         }
         policy.regex_substitution = UpbStringToStdString(
@@ -844,8 +842,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
         envoy_config_route_v3_WeightedCluster_clusters(weighted_clusters_proto,
                                                        &clusters_size);
     for (size_t j = 0; j < clusters_size; ++j) {
-      ValidationErrors::ScopedField field(
-          errors, absl::StrCat(".clusters[", j, "]"));
+      ValidationErrors::ScopedField field(errors,
+                                          absl::StrCat(".clusters[", j, "]"));
       const auto* cluster_proto = clusters[j];
       XdsRouteConfigResource::Route::RouteAction::ClusterWeight cluster;
       // name
@@ -898,8 +896,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     }
     auto it = cluster_specifier_plugin_map.find(plugin_name);
     if (it == cluster_specifier_plugin_map.end()) {
-      errors->AddError(absl::StrCat(
-          "unknown cluster specifier plugin name \"", plugin_name, "\""));
+      errors->AddError(absl::StrCat("unknown cluster specifier plugin name \"",
+                                    plugin_name, "\""));
     } else {
       // If the cluster specifier config is empty, that means that the
       // plugin was unsupported but optional.  In that case, skip this route.
@@ -951,8 +949,8 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
     for (size_t j = 0; j < domain_size; ++j) {
       std::string domain_pattern = UpbStringToStdString(domains[j]);
       if (!XdsRouting::IsValidDomainPattern(domain_pattern)) {
-        ValidationErrors::ScopedField field(
-            errors, absl::StrCat(".domains[", j, "]"));
+        ValidationErrors::ScopedField field(errors,
+                                            absl::StrCat(".domains[", j, "]"));
         errors->AddError(
             absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
       }
@@ -1019,9 +1017,9 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
         const envoy_config_route_v3_RouteAction* route_action_proto =
             envoy_config_route_v3_Route_route(route_proto);
         GPR_ASSERT(route_action_proto != nullptr);
-        auto route_action = RouteActionParse(
-            context, route_action_proto,
-            rds_update.cluster_specifier_plugin_map, errors);
+        auto route_action =
+            RouteActionParse(context, route_action_proto,
+                             rds_update.cluster_specifier_plugin_map, errors);
         if (!route_action.has_value()) continue;
         // If the route does not have a retry policy but the vhost does,
         // use the vhost retry policy for this route.
