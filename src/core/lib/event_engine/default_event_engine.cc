@@ -23,6 +23,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -72,6 +75,20 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   GRPC_EVENT_ENGINE_TRACE("Created DefaultEventEngine::%p", engine.get());
   *g_event_engine = engine;
   return engine;
+}
+
+namespace {
+grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
+    grpc_core::ChannelArgs args) {
+  if (args.ContainsObject<EventEngine>()) return args;
+  return args.SetObject<EventEngine>(GetDefaultEventEngine());
+}
+}  // namespace
+
+void RegisterEventEngineChannelArgPreconditioning(
+    grpc_core::CoreConfiguration::Builder* builder) {
+  builder->channel_args_preconditioning()->RegisterStage(
+      grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
 }
 
 }  // namespace experimental

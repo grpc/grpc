@@ -140,8 +140,7 @@ namespace {
 
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
     const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters) {
-  ChannelStackBuilderImpl builder("DynamicFilters", GRPC_CLIENT_DYNAMIC);
-  builder.SetChannelArgs(args);
+  ChannelStackBuilderImpl builder("DynamicFilters", GRPC_CLIENT_DYNAMIC, args);
   for (auto filter : filters) {
     builder.AppendFilter(filter);
   }

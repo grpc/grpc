@@ -23,7 +23,6 @@
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
-#include <google/protobuf/message.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
@@ -35,6 +34,7 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
@@ -55,6 +55,8 @@
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "test/core/util/test_config.h"
 
+// IWYU pragma: no_include <google/protobuf/message.h>
+
 namespace grpc_core {
 namespace testing {
 namespace {
@@ -70,15 +72,17 @@ using ::envoy::extensions::filters::http::router::v3::Router;
 
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
-  XdsExtension MakeXdsExtension(const google::protobuf::Message& message) {
-    any_storage_.PackFrom(message);
-    absl::string_view type =
-        absl::StripPrefix(any_storage_.type_url(), "type.googleapis.com/");
+  XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
+    google::protobuf::Any any;
+    any.PackFrom(message);
+    type_url_storage_ =
+        std::string(absl::StripPrefix(any.type_url(), "type.googleapis.com/"));
+    serialized_storage_ = std::string(any.value());
     ValidationErrors::ScopedField field(
-        &errors_, absl::StrCat("http_filter.value[", type, "]"));
+        &errors_, absl::StrCat("http_filter.value[", type_url_storage_, "]"));
     XdsExtension extension;
-    extension.type = type;
-    extension.value = absl::string_view(any_storage_.value());
+    extension.type = absl::string_view(type_url_storage_);
+    extension.value = absl::string_view(serialized_storage_);
     extension.validation_fields.push_back(std::move(field));
     return extension;
   }
@@ -91,7 +95,8 @@ class XdsHttpFilterTest : public ::testing::Test {
   XdsHttpFilterRegistry registry_;
   ValidationErrors errors_;
   upb::Arena arena_;
-  google::protobuf::Any any_storage_;
+  std::string type_url_storage_;
+  std::string serialized_storage_;
 };
 
 //
