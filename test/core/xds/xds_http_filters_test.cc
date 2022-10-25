@@ -23,7 +23,6 @@
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
-#include <google/protobuf/message.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
@@ -54,6 +53,8 @@
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "test/core/util/test_config.h"
+
+// IWYU pragma: no_include <google/protobuf/message.h>
 
 namespace grpc_core {
 namespace testing {
