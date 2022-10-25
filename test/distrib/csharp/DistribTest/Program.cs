@@ -20,7 +20,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
-using Helloworld;
+using GrpcCsharpDistribtest.Helloworld;
 
 namespace TestGrpcPackage
 {
@@ -48,7 +48,7 @@ namespace TestGrpcPackage
         // This method doesn't need to be used, it is enough to check that it builds.
         private static object CheckDuplicateProtoFilesAreOk()
         {
-            return new DuplicateProto.MessageFromDuplicateProto();
+            return new GrpcCsharpDistribtest.DuplicateProto.MessageFromDuplicateProto();
         }
     }
 

@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package helloworld;
+package grpc_csharp_distribtest.helloworld;
 
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {}
