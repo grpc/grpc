@@ -123,9 +123,6 @@ namespace Grpc.Core.Internal
                             catch (Exception e)
                             {
                                 Logger.Error(e, "Exception occurred while invoking completion delegate.");
-                                unaryResponseTcs.SetException(new RpcException(
-                                    new Status(StatusCode.Internal,
-                                        "Exception occurred while invoking completion delegate", e)));
                             }
                         }
                         finally
