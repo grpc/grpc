@@ -34,10 +34,6 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 
-// Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
-  "grpc.internal.parse_fault_injection_method_config"
-
 namespace grpc_core {
 
 // This channel filter is intended to be used by the dynamic filters, instead

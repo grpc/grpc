@@ -1293,6 +1293,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/latch.h )
   s.files += %w( src/core/lib/promise/loop.h )
   s.files += %w( src/core/lib/promise/map.h )
+  s.files += %w( src/core/lib/promise/pipe.cc )
   s.files += %w( src/core/lib/promise/pipe.h )
   s.files += %w( src/core/lib/promise/poll.h )
   s.files += %w( src/core/lib/promise/promise.h )

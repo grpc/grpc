@@ -53,6 +53,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -335,6 +336,7 @@ class RlsLb : public LoadBalancingPolicy {
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -913,6 +915,11 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
 
 absl::string_view RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetAuthority() {
   return wrapper_->lb_policy_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine*
+RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetEventEngine() {
+  return wrapper_->lb_policy_->channel_control_helper()->GetEventEngine();
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
