@@ -1274,6 +1274,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/pipe.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/poll.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/promise.h" role="src" />

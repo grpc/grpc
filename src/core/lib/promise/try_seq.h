@@ -37,9 +37,8 @@ struct TrySeqTraitsWithSfinae {
   using UnwrappedType = T;
   using WrappedType = absl::StatusOr<T>;
   template <typename Next>
-  static auto CallFactory(Next* next, T&& value)
-      -> decltype(next->Once(std::forward<T>(value))) {
-    return next->Once(std::forward<T>(value));
+  static auto CallFactory(Next* next, T&& value) {
+    return next->Make(std::forward<T>(value));
   }
   template <typename F, typename Elem>
   static auto CallSeqFactory(F& f, Elem&& elem, T&& value)
@@ -57,9 +56,8 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   using UnwrappedType = T;
   using WrappedType = absl::StatusOr<T>;
   template <typename Next>
-  static auto CallFactory(Next* next, absl::StatusOr<T>&& status)
-      -> decltype(next->Once(std::move(*status))) {
-    return next->Once(std::move(*status));
+  static auto CallFactory(Next* next, absl::StatusOr<T>&& status) {
+    return next->Make(std::move(*status));
   }
   template <typename F, typename Elem>
   static auto CallSeqFactory(F& f, Elem&& elem, absl::StatusOr<T> value)
@@ -84,8 +82,8 @@ struct TrySeqTraitsWithSfinae<
   using UnwrappedType = void;
   using WrappedType = T;
   template <typename Next>
-  static auto CallFactory(Next* next, T&&) -> decltype(next->Once()) {
-    return next->Once();
+  static auto CallFactory(Next* next, T&&) {
+    return next->Make();
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
@@ -98,9 +96,8 @@ struct TrySeqTraitsWithSfinae<absl::Status> {
   using UnwrappedType = void;
   using WrappedType = absl::Status;
   template <typename Next>
-  static auto CallFactory(Next* next, absl::Status&&)
-      -> decltype(next->Once()) {
-    return next->Once();
+  static auto CallFactory(Next* next, absl::Status&&) {
+    return next->Make();
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(absl::Status prior,
