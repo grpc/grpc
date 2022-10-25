@@ -806,7 +806,8 @@ class ClientConnectedCallPromise {
   }
 
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
-                                                 CallArgs call_args) {
+                                                 CallArgs call_args,
+                                                 NextPromiseFactory) {
     return ClientConnectedCallPromise(transport, std::move(call_args));
   }
 
@@ -816,8 +817,55 @@ class ClientConnectedCallPromise {
   OrphanablePtr<ClientStream> impl_;
 };
 
+class ServerStream final : public Orphanable {
+ public:
+  ServerStream(grpc_transport* transport, CallArgs call_args);
+
+  void Orphan() override;
+
+  absl::Status PrePoll();
+  absl::Status PostPoll();
+};
+
+class ServerConnectedCallPromise {
+ public:
+  ServerConnectedCallPromise(grpc_transport* transport, CallArgs call_args)
+      : impl_(GetContext<Arena>()->New<ServerStream>(transport,
+                                                     std::move(call_args))) {}
+
+  ServerConnectedCallPromise(const ServerConnectedCallPromise&) = delete;
+  ServerConnectedCallPromise& operator=(const ServerConnectedCallPromise&) =
+      delete;
+  ServerConnectedCallPromise(ServerConnectedCallPromise&& other) noexcept
+      : impl_(std::exchange(other.impl_, nullptr)) {}
+  ServerConnectedCallPromise& operator=(
+      ServerConnectedCallPromise&& other) noexcept {
+    impl_ = std::move(other.impl_);
+    return *this;
+  }
+
+  static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
+                                                 CallArgs call_args,
+                                                 NextPromiseFactory next) {
+    return ServerConnectedCallPromise(transport, std::move(call_args));
+  }
+
+  Poll<ServerMetadataHandle> operator()() {
+    auto status = impl_->PrePoll();
+    if (!status.ok()) return ServerMetadataFromStatus(status);
+    auto result = next_();
+    status = impl_->PostPoll();
+    if (!status.ok()) return ServerMetadataFromStatus(status);
+    return result;
+  }
+
+ private:
+  OrphanablePtr<ServerStream> impl_;
+  ArenaPromise<ServerMetadataHandle> next_;
+};
+
 template <ArenaPromise<ServerMetadataHandle> (*make_call_promise)(
-    grpc_transport*, CallArgs)>
+    grpc_transport*, CallArgs, NextPromiseFactory)>
 grpc_channel_filter MakeConnectedFilter() {
   // Create a vtable that contains both the legacy call methods (for filter
   // stack based calls) and the new promise based method for creating promise
@@ -826,15 +874,14 @@ grpc_channel_filter MakeConnectedFilter() {
   // and only if all the filters in the stack are promise based will the call
   // be promise based.
   return {
-    connected_channel_start_transport_stream_op_batch,
-        make_call_promise == nullptr
-            ? nullptr
-            : +[](grpc_channel_element* elem, CallArgs call_args,
-                 NextPromiseFactory) {
-                grpc_transport* transport =
-                    static_cast<channel_data*>(elem->channel_data)->transport;
-                return make_call_promise(transport, std::move(call_args));
-              },
+      connected_channel_start_transport_stream_op_batch,
+      [](grpc_channel_element* elem, CallArgs call_args,
+         NextPromiseFactory next) {
+        grpc_transport* transport =
+            static_cast<channel_data*>(elem->channel_data)->transport;
+        return make_call_promise(transport, std::move(call_args),
+                                 std::move(next));
+      },
       connected_channel_start_transport_op,
       sizeof(call_data),
       connected_channel_init_call_elem,
@@ -859,7 +906,7 @@ grpc_channel_filter MakeConnectedFilter() {
 }
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
-    grpc_transport* transport, CallArgs call_args) {
+    grpc_transport* transport, CallArgs call_args, NextPromiseFactory) {
   return transport->vtable->make_call_promise(transport, std::move(call_args));
 }
 
@@ -869,7 +916,8 @@ const grpc_channel_filter kPromiseBasedTransportFilter =
 const grpc_channel_filter kClientEmulatedFilter =
     MakeConnectedFilter<ClientConnectedCallPromise::Make>();
 
-const grpc_channel_filter kNoPromiseFilter = MakeConnectedFilter<nullptr>();
+const grpc_channel_filter kServerEmulatedFilter =
+    MakeConnectedFilter<ServerConnectedCallPromise::Make>();
 
 }  // namespace
 }  // namespace grpc_core
@@ -894,8 +942,8 @@ bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
     builder->AppendFilter(&grpc_core::kClientEmulatedFilter);
   } else {
     // Option 3: the transport does not support promise based calls, and we're
-    // on the server so we can't construct promise based calls just yet.
-    builder->AppendFilter(&grpc_core::kNoPromiseFilter);
+    // on the server so we use the server filter.
+    builder->AppendFilter(&grpc_core::kServerEmulatedFilter);
   }
   return true;
 }
