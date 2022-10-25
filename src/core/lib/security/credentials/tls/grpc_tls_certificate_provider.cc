@@ -38,6 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <grpc/status.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/stat.h"

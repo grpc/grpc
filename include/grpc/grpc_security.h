@@ -782,8 +782,7 @@ grpc_tls_certificate_provider_in_memory_create();
  *   grpc_tls_certificate_provider_data_watcher_create(), otherwise the result
  *   is undefined.
  */
-GRPCAPI grpc_status_code
-grpc_tls_certificate_provider_in_memory_set_root_cert(
+GRPCAPI grpc_status_code grpc_tls_certificate_provider_in_memory_set_root_cert(
     grpc_tls_certificate_provider* provider, const char* root_certificate,
     const char** error_details);
 

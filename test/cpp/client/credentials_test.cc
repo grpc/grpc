@@ -281,8 +281,10 @@ TEST(
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
-  certificate_provider->SetRootCertificate(kRootCertContents);
-  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
+  GPR_ASSERT(certificate_provider->SetRootCertificate(kRootCertContents).ok());
+  GPR_ASSERT(
+      !certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+           .ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
   options.watch_root_certs();
@@ -298,7 +300,7 @@ TEST(CredentialsTest,
   auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
   GPR_ASSERT(certificate_provider != nullptr);
   GPR_ASSERT(certificate_provider->c_provider() != nullptr);
-  certificate_provider->SetRootCertificate(kRootCertContents);
+  GPR_ASSERT(certificate_provider->SetRootCertificate(kRootCertContents).ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
   options.watch_root_certs();
@@ -316,7 +318,9 @@ TEST(
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
-  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
+  GPR_ASSERT(
+      !certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+           .ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
   options.watch_identity_key_cert_pairs();

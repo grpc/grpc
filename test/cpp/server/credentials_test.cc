@@ -61,8 +61,10 @@ TEST(
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
-  certificate_provider->SetRootCertificate(kRootCertContents);
-  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
+  GPR_ASSERT(certificate_provider->SetRootCertificate(kRootCertContents).ok());
+  GPR_ASSERT(
+      !certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+           .ok());
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_root_certs();
   options.set_root_cert_name(kRootCertName);
@@ -86,7 +88,9 @@ TEST(CredentialsTest,
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider = std::make_shared<InMemoryCertificateProvider>();
-  certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs);
+  GPR_ASSERT(
+      !certificate_provider->SetKeyCertificatePairs(identity_key_cert_pairs)
+           .ok());
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name(kIdentityCertName);
