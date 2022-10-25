@@ -86,6 +86,23 @@ namespace Grpc.Core.Internal
             return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
         }
 
+        // Gets data of recv_initial_metadata completion without throwing an
+        // exception if the data is corrupt. This is to stop UnaryCall from hanging
+        // if there is some internal problem.
+        // See https://github.com/grpc/grpc/issues/29854
+        public Metadata TryGetReceivedInitialMetadata()
+        {
+            try
+            {
+                return GetReceivedInitialMetadata();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to read initial metadata");
+                return Metadata.Empty;
+            }
+        }
+
         // Gets data of recv_status_on_client completion.
         public ClientSideStatus GetReceivedStatusOnClient()
         {
@@ -99,6 +116,24 @@ namespace Grpc.Core.Internal
             var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
 
             return new ClientSideStatus(status, metadata);
+        }
+
+        // Gets data of recv_status_on_client completion without throwing an
+        // exception if the data is corrupt. This is to stop UnaryCall from hanging
+        // if there is some internal problem.
+        // See https://github.com/grpc/grpc/issues/29854
+        public ClientSideStatus TryGetReceivedStatusOnClient()
+        {
+            try
+            {
+                return GetReceivedStatusOnClient();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to read client status");
+                Status status = new Status(StatusCode.Internal, "Failed to read client status", e);
+                return new ClientSideStatus(status, Metadata.Empty);
+            }
         }
 
         public IBufferReader GetReceivedMessageReader()
