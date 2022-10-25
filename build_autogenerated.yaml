@@ -10267,6 +10267,21 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: tls_creds_options_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/tls_creds_options_test.cc
+  deps:
+  - grpc++_test_util
 - name: tls_key_export_test
   gtest: true
   build: test
