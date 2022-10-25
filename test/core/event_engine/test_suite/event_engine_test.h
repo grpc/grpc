@@ -14,19 +14,21 @@
 
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
-#include <functional>
 #include <memory>
+#include <utility>
 
 #include <gtest/gtest.h>
+
+#include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-extern std::function<
+extern absl::AnyInvocable<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_ee_factory;
 
-extern std::function<
+extern absl::AnyInvocable<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_oracle_ee_factory;
 
@@ -34,13 +36,14 @@ extern std::function<
 class EventEngineTestEnvironment : public testing::Environment {
  public:
   EventEngineTestEnvironment(
-      std::function<
+      absl::AnyInvocable<
           std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
           factory,
-      std::function<
+      absl::AnyInvocable<
           std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
           oracle_factory)
-      : factory_(factory), oracle_factory_(oracle_factory) {}
+      : factory_(std::move(factory)),
+        oracle_factory_(std::move(oracle_factory)) {}
 
   void SetUp() override {
     g_ee_factory = &factory_;
@@ -53,9 +56,11 @@ class EventEngineTestEnvironment : public testing::Environment {
   }
 
  private:
-  std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+  absl::AnyInvocable<
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
       factory_;
-  std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+  absl::AnyInvocable<
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
       oracle_factory_;
 };
 
@@ -77,10 +82,10 @@ class EventEngineTest : public testing::Test {
 // Set a custom factory for the EventEngine test suite. An optional oracle
 // EventEngine can additionally be specified here.
 void SetEventEngineFactories(
-    std::function<
+    absl::AnyInvocable<
         std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
         ee_factory,
-    std::function<
+    absl::AnyInvocable<
         std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
         oracle_ee_factory);
 

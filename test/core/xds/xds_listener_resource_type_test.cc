@@ -182,15 +182,32 @@ TEST_F(XdsListenerTest, DISABLED_BothAddressAndApiListener) {
 // HttpConnectionManager tests
 //
 
+struct HttpConnectionManagerLocation {
+  bool in_api_listener = false;
+
+  explicit HttpConnectionManagerLocation(bool in_api_listener)
+      : in_api_listener(in_api_listener) {}
+
+  // For use as the final parameter in INSTANTIATE_TEST_SUITE_P().
+  static std::string Name(
+      const ::testing::TestParamInfo<HttpConnectionManagerLocation>& info) {
+    return info.param.in_api_listener ? "ApiListener" : "TcpListener";
+  }
+};
+
 // These tests cover common behavior for both API listeners and TCP
 // listeners, so we run them in both contexts.
-class HttpConnectionManagerTest : public XdsListenerTest,
-                                  public ::testing::WithParamInterface<bool> {
+class HttpConnectionManagerTest
+    : public XdsListenerTest,
+      public ::testing::WithParamInterface<HttpConnectionManagerLocation> {
  protected:
   static Listener MakeListener(HttpConnectionManager hcm) {
     Listener listener;
     listener.set_name("foo");
-    if (GetParam()) {
+    if (GetParam().in_api_listener) {
+      // Client.
+      listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
+    } else {
       // Server.
       listener.mutable_default_filter_chain()
           ->add_filters()
@@ -199,46 +216,47 @@ class HttpConnectionManagerTest : public XdsListenerTest,
       auto* address = listener.mutable_address()->mutable_socket_address();
       address->set_address("127.0.0.1");
       address->set_port_value(443);
-    } else {
-      // Client.
-      listener.mutable_api_listener()->mutable_api_listener()->PackFrom(hcm);
     }
     return listener;
   }
 
   static absl::optional<XdsListenerResource::HttpConnectionManager>
   GetHCMConfig(const XdsListenerResource& resource) {
-    if (GetParam()) {
-      // Server.
-      auto* tcp_listener =
-          absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
-      if (tcp_listener == nullptr) return absl::nullopt;
-      if (!tcp_listener->default_filter_chain.has_value()) return absl::nullopt;
-      return tcp_listener->default_filter_chain->http_connection_manager;
+    if (GetParam().in_api_listener) {
+      // Client.
+      auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+          &resource.listener);
+      if (hcm == nullptr) return absl::nullopt;
+      return *hcm;
     }
-    // Client.
-    auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
-        &resource.listener);
-    if (hcm == nullptr) return absl::nullopt;
-    return *hcm;
+    // Server.
+    auto* tcp_listener =
+        absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
+    if (tcp_listener == nullptr) return absl::nullopt;
+    if (!tcp_listener->default_filter_chain.has_value()) return absl::nullopt;
+    return tcp_listener->default_filter_chain->http_connection_manager;
   }
 
   static absl::string_view ErrorPrefix() {
-    // Server.
-    if (GetParam()) return "errors validating server Listener: ";
     // Client.
-    return "errors validating ApiListener: ";
+    if (GetParam().in_api_listener) return "errors validating ApiListener: ";
+    // Server.
+    return "errors validating server Listener: ";
   }
 
   static absl::string_view FieldPrefix() {
-    // Server.
-    if (GetParam()) return "default_filter_chain.filters[0].typed_config";
     // Client.
-    return "api_listener.api_listener";
+    if (GetParam().in_api_listener) return "api_listener.api_listener";
+    // Server.
+    return "default_filter_chain.filters[0].typed_config";
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(XdsHcm, HttpConnectionManagerTest, ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(
+    XdsHcm, HttpConnectionManagerTest,
+    ::testing::Values(HttpConnectionManagerLocation(true),
+                      HttpConnectionManagerLocation(false)),
+    &HttpConnectionManagerLocation::Name);
 
 TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   HttpConnectionManager hcm;
@@ -680,14 +698,14 @@ TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
   filter->set_name("router");
   filter->mutable_typed_config()->PackFrom(Router());
   filter = hcm.add_http_filters();
-  if (GetParam()) {
-    // Server.
-    filter->set_name("rbac");
-    filter->mutable_typed_config()->PackFrom(RBAC());
-  } else {
+  if (GetParam().in_api_listener) {
     // Client.
     filter->set_name("fault");
     filter->mutable_typed_config()->PackFrom(HTTPFault());
+  } else {
+    // Server.
+    filter->set_name("rbac");
+    filter->mutable_typed_config()->PackFrom(RBAC());
   }
   auto* rds = hcm.mutable_rds();
   rds->set_route_config_name("rds_name");
@@ -702,18 +720,18 @@ TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-          ErrorPrefix(), "[field:", FieldPrefix(),
-          ".value["
-          "envoy.extensions.filters.network.http_connection_manager.v3"
-          ".HttpConnectionManager].http_filters errors:["
-          "terminal filter for config type "
-          "envoy.extensions.filters.http.router.v3.Router must be the "
-          "last filter in the chain; "
-          "non-terminal filter for config type ",
-          (GetParam() ? "envoy.extensions.filters.http.rbac.v3.RBAC"
-                      : "envoy.extensions.filters.http.fault.v3.HTTPFault"),
-          " is the last filter in the chain]]"))
+      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
+                   ".value["
+                   "envoy.extensions.filters.network.http_connection_manager.v3"
+                   ".HttpConnectionManager].http_filters errors:["
+                   "terminal filter for config type "
+                   "envoy.extensions.filters.http.router.v3.Router must be the "
+                   "last filter in the chain; "
+                   "non-terminal filter for config type ",
+                   (GetParam().in_api_listener
+                        ? "envoy.extensions.filters.http.fault.v3.HTTPFault"
+                        : "envoy.extensions.filters.http.rbac.v3.RBAC"),
+                   " is the last filter in the chain]]"))
       << decode_result.resource.status();
 }
 
