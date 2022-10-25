@@ -105,6 +105,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -302,6 +303,7 @@ class GrpcLb : public LoadBalancingPolicy {
     bool client_load_report_is_due_ = false;
     // The closure used for the completion of sending the load report.
     grpc_closure client_load_report_done_closure_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
   };
 
   class SubchannelWrapper : public DelegatingSubchannel {
@@ -467,7 +469,6 @@ class GrpcLb : public LoadBalancingPolicy {
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -871,10 +872,6 @@ absl::string_view GrpcLb::Helper::GetAuthority() {
   return parent_->channel_control_helper()->GetAuthority();
 }
 
-grpc_event_engine::experimental::EventEngine* GrpcLb::Helper::GetEventEngine() {
-  return parent_->channel_control_helper()->GetEventEngine();
-}
-
 void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,
                                    absl::string_view message) {
   if (parent_->shutting_down_) return;
@@ -890,7 +887,8 @@ GrpcLb::BalancerCallState::BalancerCallState(
     : InternallyRefCounted<BalancerCallState>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace) ? "BalancerCallState"
                                                      : nullptr),
-      grpclb_policy_(std::move(parent_grpclb_policy)) {
+      grpclb_policy_(std::move(parent_grpclb_policy)),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   GPR_ASSERT(grpclb_policy_ != nullptr);
   GPR_ASSERT(!grpclb_policy()->shutting_down_);
   // Init the LB call. Note that the LB call will progress every time there's
@@ -948,8 +946,7 @@ void GrpcLb::BalancerCallState::Orphan() {
   // call, then the following cancellation will be a no-op.
   grpc_call_cancel_internal(lb_call_);
   if (client_load_report_handle_.has_value() &&
-      grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
-          client_load_report_handle_.value())) {
+      engine_->Cancel(client_load_report_handle_.value())) {
     Unref(DEBUG_LOCATION, "client_load_report cancelled");
   }
   // Note that the initial ref is hold by lb_on_balancer_status_received_
@@ -1035,13 +1032,12 @@ void GrpcLb::BalancerCallState::StartQuery() {
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_handle_ =
-      grpclb_policy()->channel_control_helper()->GetEventEngine()->RunAfter(
-          client_stats_report_interval_, [this] {
-            ApplicationCallbackExecCtx callback_exec_ctx;
-            ExecCtx exec_ctx;
-            grpclb_policy()->work_serializer()->Run(
-                [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
-          });
+      engine_->RunAfter(client_stats_report_interval_, [this] {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        grpclb_policy()->work_serializer()->Run(
+            [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
+      });
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
@@ -1907,10 +1903,13 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
+}  // namespace grpc_core
+
 //
 // Plugin registration
 //
 
+namespace grpc_core {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<GrpcLbFactory>());
@@ -1929,5 +1928,4 @@ void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
         return true;
       });
 }
-
 }  // namespace grpc_core

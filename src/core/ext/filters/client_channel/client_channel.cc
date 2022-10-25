@@ -37,7 +37,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -914,10 +913,6 @@ class ClientChannel::ClientChannelControlHelper
 
   absl::string_view GetAuthority() override {
     return chand_->default_authority_;
-  }
-
-  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-    return chand_->owning_stack_->EventEngine();
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
