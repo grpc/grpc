@@ -35,10 +35,10 @@
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/status.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/stat.h"
