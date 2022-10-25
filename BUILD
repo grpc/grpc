@@ -1412,6 +1412,7 @@ grpc_cc_library(
         "//src/core:iomgr_port",
         "//src/core:json",
         "//src/core:latch",
+        "//src/core:map",
         "//src/core:match",
         "//src/core:memory_quota",
         "//src/core:no_destruct",
@@ -1434,6 +1435,8 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:transport_fwd",
+        "//src/core:try_join",
+        "//src/core:try_seq",
         "//src/core:useful",
     ],
 )

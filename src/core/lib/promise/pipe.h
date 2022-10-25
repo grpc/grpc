@@ -50,6 +50,7 @@ struct Pipe;
 template <typename T>
 class NextResult final {
  public:
+  NextResult() : center_(nullptr) {}
   explicit NextResult(pipe_detail::Center<T>* center) : center_(center) {}
   ~NextResult();
   NextResult(const NextResult&) = delete;

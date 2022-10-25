@@ -51,6 +51,10 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -1135,17 +1139,25 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
   auto* server = chand->server_.get();
   if (server->ShutdownCalled()) {
-    return Immediate(absl::InternalError("Server shutdown"));
+    return [] {
+      return ServerMetadataFromStatus(absl::InternalError("Server shutdown"));
+    };
   }
   absl::optional<Slice> path =
       call_args.client_initial_metadata->Take(HttpPathMetadata());
   if (!path.has_value()) {
-    return Immediate(absl::InternalError("Missing :path header"));
+    return [] {
+      return ServerMetadataFromStatus(
+          absl::InternalError("Missing :path header"));
+    };
   }
   auto host_ptr =
       call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
   if (host_ptr == nullptr) {
-    return Immediate(absl::InternalError("Missing :authority header"));
+    return [] {
+      return ServerMetadataFromStatus(
+          absl::InternalError("Missing :authority header"));
+    };
   }
   // TODO(ctiller): deadline handling
   Timestamp deadline = Timestamp::InfFuture();
@@ -1153,17 +1165,22 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   RequestMatcherInterface* matcher;
   ChannelRegisteredMethod* rm =
       chand->GetRegisteredMethod(host_ptr->c_slice(), path->c_slice());
-  ArenaPromise<absl::optional<Message>> maybe_read_first_message(
-      [] { return absl::nullopt; });
+  ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
+      maybe_read_first_message([] { return NextResult<MessageHandle>(); });
   if (rm != nullptr) {
     matcher = rm->server_registered_method->matcher.get();
     switch (rm->server_registered_method->payload_handling) {
       case GRPC_SRM_PAYLOAD_NONE:
         break;
       case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
-        maybe_read_first_message = GetContext<ServerCallContext>()
-                                       ->TopLevelIncomingMessageReceiver()
-                                       ->Next();
+        maybe_read_first_message =
+            Map(GetContext<ServerCallContext>()
+                    ->TopLevelIncomingMessageReceiver()
+                    ->Next(),
+                [](NextResult<MessageHandle> msg)
+                    -> absl::StatusOr<NextResult<MessageHandle>> {
+                  return std::move(msg);
+                });
     }
   } else {
     matcher = server->unregistered_request_matcher_.get();
@@ -1174,15 +1191,12 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
       [path = std::move(*path), host = std::move(*host_ptr), deadline, server,
        call_args = std::move(call_args)](
           std::tuple<RequestMatcherInterface::MatchResult,
-                     absl::optional<Message>>
+                     NextResult<MessageHandle>>
               match_result_and_payload) mutable {
         auto& mr = std::get<0>(match_result_and_payload);
         auto& payload = std::get<1>(match_result_and_payload);
         auto* rc = mr.requested_call;
-        grpc_call_set_completion_queue(call_, rc->cq_bound_to_call);
-        *rc->call = call_;
         auto* cq_for_new_request = server->cqs_[mr.cq_idx];
-        std::swap(*rc->initial_metadata, initial_metadata_);
         switch (rc->type) {
           case RequestedCall::Type::BATCH_CALL:
             GPR_ASSERT(!payload.has_value());
@@ -1196,7 +1210,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
                 deadline.as_timespec(GPR_CLOCK_MONOTONIC);
             if (rc->data.registered.optional_payload != nullptr) {
               if (payload.has_value()) {
-                auto* sb = payload->payload()->c_slice_buffer();
+                auto* sb = payload.value()->payload()->c_slice_buffer();
                 *rc->data.registered.optional_payload =
                     grpc_raw_byte_buffer_create(sb->slices, sb->count);
               } else {
@@ -1205,12 +1219,16 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
             }
             break;
           default:
-            GPR_UNREACHABLE_CODE(return);
+            GPR_UNREACHABLE_CODE(abort());
         }
-        grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
-                       Server::DoneRequestEvent, rc, &rc->completion, true);
-        return GetContext<ServerCallContext>()->Run(std::move(call_args),
-                                                    rc->cq_bound_to_call);
+        return GetContext<ServerCallContext>()->Run(
+            std::move(call_args), rc->cq_bound_to_call, rc->initial_metadata,
+            [rc, cq_for_new_request](grpc_call* call) {
+              *rc->call = call;
+              grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
+                             Server::DoneRequestEvent, rc, &rc->completion,
+                             true);
+            });
       });
 }
 

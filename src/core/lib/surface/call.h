@@ -113,10 +113,15 @@ struct ContextType<CallContext> {};
 
 class ServerCallContext {
  public:
-  ArenaPromise<ServerMetadataHandle> Run(CallArgs call_args,
-                                         grpc_completion_queue* cq);
-  PipeReceiver<Message>* TopLevelIncomingMessageReceiver();
+  ArenaPromise<ServerMetadataHandle> Run(
+      CallArgs call_args, grpc_completion_queue* cq,
+      grpc_metadata_array* publish_initial_metadata,
+      absl::FunctionRef<void(grpc_call* call)> publish);
+  PipeReceiver<MessageHandle>* TopLevelIncomingMessageReceiver();
 };
+
+template <>
+struct ContextType<ServerCallContext> {};
 }  // namespace grpc_core
 
 /* Create a new call based on \a args.
