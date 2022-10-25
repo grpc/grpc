@@ -282,14 +282,14 @@ absl::StatusOr<Rbac::Policy> ParseRule(const Json& json,
       }
       auto peer_or = ParsePeer(object.second);
       if (!peer_or.ok()) return peer_or.status();
-      principals = std::move(peer_or.value());
+      principals = std::move(*peer_or);
     } else if (object.first == "request") {
       if (object.second.type() != Json::Type::OBJECT) {
         return absl::InvalidArgumentError("\"request\" is not an object.");
       }
       auto request_or = ParseRequest(object.second);
       if (!request_or.ok()) return request_or.status();
-      permissions = std::move(request_or.value());
+      permissions = std::move(*request_or);
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
           "policy contains unknown field \"%s\" in \"rule\".", object.first));
@@ -369,7 +369,6 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
   }
   absl::string_view name = it->second.string_value();
   RbacPolicies rbacs;
-  Rbac allow_rbac;
   bool has_allow_rbac = false;
   for (const auto& object : json->object_value()) {
     if (object.first == "name") {
@@ -384,7 +383,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
             deny_policy_or.status().code(),
             absl::StrCat("deny_", deny_policy_or.status().message()));
       }
-      rbacs.deny_policy = std::move(deny_policy_or.value());
+      rbacs.deny_policy = std::move(*deny_policy_or);
     } else if (object.first == "allow_rules") {
       if (object.second.type() != Json::Type::ARRAY) {
         return absl::InvalidArgumentError("\"allow_rules\" is not an array.");
@@ -395,7 +394,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
             allow_policy_or.status().code(),
             absl::StrCat("allow_", allow_policy_or.status().message()));
       }
-      allow_rbac = std::move(allow_policy_or.value());
+      rbacs.allow_policy = std::move(*allow_policy_or);
       has_allow_rbac = true;
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
@@ -405,7 +404,6 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
   if (!has_allow_rbac) {
     return absl::InvalidArgumentError("\"allow_rules\" is not present.");
   }
-  rbacs.allow_policy = std::move(allow_rbac);
   return std::move(rbacs);
 }
 
