@@ -39,10 +39,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
-// Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
-  "grpc.internal.parse_fault_injection_method_config"
-
 namespace grpc_core {
 
 class FaultInjectionMethodParsedConfig
