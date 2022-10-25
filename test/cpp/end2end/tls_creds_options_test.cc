@@ -140,7 +140,8 @@ TEST_F(TlsCredentialsOptionsEnd2EndTest, ServerSideTlsWithTls1_3) {
   TlsChannelCredentialsOptions channel_options;
   channel_options.set_certificate_provider(
       std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), std::vector<experimental::IdentityKeyCertPair>()));
+          ReadFile(kCaCertPath),
+          std::vector<experimental::IdentityKeyCertPair>()));
   channel_options.watch_root_certs();
   channel_options.set_min_tls_version(grpc_tls_version::TLS1_3);
   channel_options.set_max_tls_version(grpc_tls_version::TLS1_3);
