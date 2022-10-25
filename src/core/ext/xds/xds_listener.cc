@@ -393,10 +393,9 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
                 http_filter);
         auto extension = ExtractXdsExtension(context, typed_config, errors);
-        const XdsHttpFilterImpl* filter_impl = nullptr;
-        if (extension.has_value()) {
-          filter_impl = http_filter_registry.GetFilterForType(extension->type);
-        }
+        if (!extension.has_value()) continue;
+        const XdsHttpFilterImpl* filter_impl =
+            http_filter_registry.GetFilterForType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
