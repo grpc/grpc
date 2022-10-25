@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/atm.h>
@@ -109,6 +110,13 @@ class CallContext {
 
 template <>
 struct ContextType<CallContext> {};
+
+class ServerCallContext {
+ public:
+  ArenaPromise<ServerMetadataHandle> Run(CallArgs call_args,
+                                         grpc_completion_queue* cq);
+  PipeReceiver<Message>* TopLevelIncomingMessageReceiver();
+};
 }  // namespace grpc_core
 
 /* Create a new call based on \a args.

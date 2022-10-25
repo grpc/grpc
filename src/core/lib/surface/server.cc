@@ -32,6 +32,7 @@
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
+#include "call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -175,6 +176,20 @@ class Server::RequestMatcherInterface {
   // and notify the CQ).
   virtual void RequestCallWithPossiblePublish(size_t request_queue_index,
                                               RequestedCall* call) = 0;
+
+  struct MatchResult {
+    size_t cq_idx;
+    RequestedCall* requested_call;
+  };
+
+  // This function is invoked on an incoming promise based RPC.
+  // The RequestMatcher will try to match it against an application-requested
+  // RPC if possible or will place it in the pending queue otherwise. To enable
+  // some measure of fairness between server CQs, the match is done starting at
+  // the start_request_queue_index parameter in a cyclic order rather than
+  // always starting at 0.
+  virtual ArenaPromise<absl::StatusOr<MatchResult>> Match(
+      size_t start_request_queue_index) = 0;
 
   // This function is invoked on an incoming RPC, represented by the calld
   // object. The RequestMatcher will try to match it against an
@@ -1116,7 +1131,88 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
 
 ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     grpc_channel_element* elem, grpc_core::CallArgs call_args,
-    grpc_core::NextPromiseFactory) {}
+    grpc_core::NextPromiseFactory) {
+  auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
+  auto* server = chand->server_.get();
+  if (server->ShutdownCalled()) {
+    return Immediate(absl::InternalError("Server shutdown"));
+  }
+  absl::optional<Slice> path =
+      call_args.client_initial_metadata->Take(HttpPathMetadata());
+  if (!path.has_value()) {
+    return Immediate(absl::InternalError("Missing :path header"));
+  }
+  auto host_ptr =
+      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
+  if (host_ptr == nullptr) {
+    return Immediate(absl::InternalError("Missing :authority header"));
+  }
+  // TODO(ctiller): deadline handling
+  Timestamp deadline = Timestamp::InfFuture();
+  // Find request matcher.
+  RequestMatcherInterface* matcher;
+  ChannelRegisteredMethod* rm =
+      chand->GetRegisteredMethod(host_ptr->c_slice(), path->c_slice());
+  ArenaPromise<absl::optional<Message>> maybe_read_first_message(
+      [] { return absl::nullopt; });
+  if (rm != nullptr) {
+    matcher = rm->server_registered_method->matcher.get();
+    switch (rm->server_registered_method->payload_handling) {
+      case GRPC_SRM_PAYLOAD_NONE:
+        break;
+      case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
+        maybe_read_first_message = GetContext<ServerCallContext>()
+                                       ->TopLevelIncomingMessageReceiver()
+                                       ->Next();
+    }
+  } else {
+    matcher = server->unregistered_request_matcher_.get();
+  }
+  return TrySeq(
+      TryJoin(matcher->Match(chand->cq_idx()),
+              std::move(maybe_read_first_message)),
+      [path = std::move(*path), host = std::move(*host_ptr), deadline, server,
+       call_args = std::move(call_args)](
+          std::tuple<RequestMatcherInterface::MatchResult,
+                     absl::optional<Message>>
+              match_result_and_payload) mutable {
+        auto& mr = std::get<0>(match_result_and_payload);
+        auto& payload = std::get<1>(match_result_and_payload);
+        auto* rc = mr.requested_call;
+        grpc_call_set_completion_queue(call_, rc->cq_bound_to_call);
+        *rc->call = call_;
+        auto* cq_for_new_request = server->cqs_[mr.cq_idx];
+        std::swap(*rc->initial_metadata, initial_metadata_);
+        switch (rc->type) {
+          case RequestedCall::Type::BATCH_CALL:
+            GPR_ASSERT(!payload.has_value());
+            rc->data.batch.details->host = CSliceRef(host.c_slice());
+            rc->data.batch.details->method = CSliceRef(path.c_slice());
+            rc->data.batch.details->deadline =
+                deadline.as_timespec(GPR_CLOCK_MONOTONIC);
+            break;
+          case RequestedCall::Type::REGISTERED_CALL:
+            *rc->data.registered.deadline =
+                deadline.as_timespec(GPR_CLOCK_MONOTONIC);
+            if (rc->data.registered.optional_payload != nullptr) {
+              if (payload.has_value()) {
+                auto* sb = payload->payload()->c_slice_buffer();
+                *rc->data.registered.optional_payload =
+                    grpc_raw_byte_buffer_create(sb->slices, sb->count);
+              } else {
+                *rc->data.registered.optional_payload = nullptr;
+              }
+            }
+            break;
+          default:
+            GPR_UNREACHABLE_CODE(return);
+        }
+        grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
+                       Server::DoneRequestEvent, rc, &rc->completion, true);
+        return GetContext<ServerCallContext>()->Run(std::move(call_args),
+                                                    rc->cq_bound_to_call);
+      });
+}
 
 void Server::ChannelData::FinishDestroy(void* arg,
                                         grpc_error_handle /*error*/) {
@@ -1281,6 +1377,7 @@ void Server::CallData::KillZombie() {
   ExecCtx::Run(DEBUG_LOCATION, &kill_zombie_closure_, absl::OkStatus());
 }
 
+// If this changes, change MakeCallPromise too.
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->ShutdownCalled()) {
