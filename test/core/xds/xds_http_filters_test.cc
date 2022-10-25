@@ -53,6 +53,7 @@
 #include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/config_grpc_cli.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 
@@ -77,7 +78,7 @@ class XdsHttpFilterTest : public ::testing::Test {
     XdsHttpFilterRegistry::Init();
   }
 
-  XdsExtension MakeXdsExtension(const google::protobuf::Message& message) {
+  XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
     any_storage_.PackFrom(message);
     absl::string_view type =
         absl::StripPrefix(any_storage_.type_url(), "type.googleapis.com/");
