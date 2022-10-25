@@ -3507,6 +3507,7 @@ grpc_cc_library(
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "iomgr_fwd",
+        "match",
         "resolved_address",
         "slice_refcount",
         "status_helper",

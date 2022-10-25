@@ -638,14 +638,13 @@ ParseTypedPerFilterConfig(
       return absl::InvalidArgumentError(absl::StrCat(
           "no filter registered for config type ", extension->type));
     }
-    absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+    absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(std::move(*extension),
-                                                  context.arena);
-    if (!filter_config.ok()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("filter config for type ", extension->type,
-                       " failed to parse: ", filter_config.status().message()));
+                                                  context.arena, &errors);
+    if (!errors.ok()) {
+      return errors.status("errors validation extension");
     }
+    GPR_ASSERT(filter_config.has_value());
     typed_per_filter_config[std::string(key)] = std::move(*filter_config);
   }
   return typed_per_filter_config;
