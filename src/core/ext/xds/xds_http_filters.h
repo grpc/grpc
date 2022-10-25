@@ -19,8 +19,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
