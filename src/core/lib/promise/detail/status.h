@@ -53,6 +53,11 @@ struct StatusCastImpl<To, To> {
   static To Cast(To&& t) { return std::move(t); }
 };
 
+template <typename To>
+struct StatusCastImpl<To, const To&> {
+  static To Cast(const To& t) { return t; }
+};
+
 template <typename T>
 struct StatusCastImpl<absl::StatusOr<T>, absl::Status> {
   static absl::StatusOr<T> Cast(absl::Status&& t) { return std::move(t); }
