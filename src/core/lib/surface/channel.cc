@@ -204,9 +204,11 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
       const bool is_internal_channel =
           args.GetBool(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL).value_or(false);
       // Create the channelz node.
+      std::string channelz_node_target{target == nullptr ? "unknown" : target};
       RefCountedPtr<channelz::ChannelNode> channelz_node =
-          MakeRefCounted<channelz::ChannelNode>(
-              target, channel_tracer_max_memory, is_internal_channel);
+          MakeRefCounted<channelz::ChannelNode>(channelz_node_target,
+                                                channel_tracer_max_memory,
+                                                is_internal_channel);
       channelz_node->AddTraceEvent(
           channelz::ChannelTrace::Severity::Info,
           grpc_slice_from_static_string("Channel created"));
