@@ -102,9 +102,9 @@ _DATA_MEMBERS = [
         '(certificate_provider_ == other.certificate_provider_ || (certificate_provider_ != nullptr && other.certificate_provider_ != nullptr && certificate_provider_->Compare(other.certificate_provider_.get()) == 0))',
         test_name="DifferentCertificateProvider",
         test_value_1=
-        "MakeRefCounted<StaticDataCertificateProvider>(\"root_cert_1\", PemKeyCertPairList())",
+        "MakeRefCounted<InMemoryCertificateProvider>()",
         test_value_2=
-        "MakeRefCounted<StaticDataCertificateProvider>(\"root_cert_2\", PemKeyCertPairList())"
+        "MakeRefCounted<InMemoryCertificateProvider>()"
     ),
     DataMember(
         name='watch_root_cert',
