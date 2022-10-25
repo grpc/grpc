@@ -40,12 +40,6 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   return *this;
 }
 
-ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(
-    const ChannelArgs& args) {
-  args_ = args;
-  return *this;
-}
-
 void ChannelStackBuilder::PrependFilter(const grpc_channel_filter* filter) {
   stack_.insert(stack_.begin(), filter);
 }

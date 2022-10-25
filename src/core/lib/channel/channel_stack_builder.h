@@ -63,10 +63,6 @@ class ChannelStackBuilder {
   // Query the transport.
   grpc_transport* transport() const { return transport_; }
 
-  // Set channel args.
-  // args *must be* preconditioned already.
-  ChannelStackBuilder& SetChannelArgs(const ChannelArgs& args);
-
   // Query the channel args.
   const ChannelArgs& channel_args() const { return args_; }
 

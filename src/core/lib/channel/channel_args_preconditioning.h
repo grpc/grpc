@@ -53,9 +53,6 @@ class ChannelArgsPreconditioning {
   // Returns a new channel args object that is owned by the caller.
   ChannelArgs PreconditionChannelArgs(const grpc_channel_args* args) const;
 
-  // Take channel args and precondition them.
-  ChannelArgs PreconditionChannelArgs(const ChannelArgs& args) const;
-
  private:
   std::vector<Stage> stages_;
 };
