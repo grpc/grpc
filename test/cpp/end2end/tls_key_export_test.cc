@@ -106,8 +106,8 @@ std::string TestScenarioName(
   return info.param.AsString();
 }
 
-int CountOccurrencesInFileContents(std::string file_contents,
-                                   std::string search_string) {
+int CountOccurrencesInFileContents(const std::string& file_contents,
+                                   const std::string& search_string) {
   int occurrences = 0;
   std::string::size_type pos = 0;
   while ((pos = file_contents.find(search_string, pos)) != std::string::npos) {
