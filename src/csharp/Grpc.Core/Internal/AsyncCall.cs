@@ -116,15 +116,13 @@ namespace Grpc.Core.Internal
                             {
                                 using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
                                 {
-                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessageReader(), ctx.GetReceivedInitialMetadata());
+                                    HandleUnaryResponse(success, ctx.TryGetReceivedStatusOnClient(),
+                                        ctx.GetReceivedMessageReader(), ctx.TryGetReceivedInitialMetadata());
                                 }
                             }
                             catch (Exception e)
                             {
                                 Logger.Error(e, "Exception occurred while invoking completion delegate.");
-                                unaryResponseTcs.SetException(new RpcException(
-                                    new Status(StatusCode.Internal,
-                                        "Exception occurred while invoking completion delegate", e)));
                             }
                         }
                         finally
