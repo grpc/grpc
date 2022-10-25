@@ -49,9 +49,7 @@
 #include <stddef.h>
 
 #include <functional>
-#include <memory>
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
@@ -213,14 +211,6 @@ struct grpc_channel_stack {
   // promise conversion continues, we'll reconsider what grpc_channel_stack
   // should look like and this can go.
   grpc_core::ManualConstructor<std::function<void()>> on_destroy;
-
-  grpc_core::ManualConstructor<
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>>
-      event_engine;
-
-  grpc_event_engine::experimental::EventEngine* EventEngine() const {
-    return event_engine->get();
-  }
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.

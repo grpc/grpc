@@ -43,13 +43,11 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
@@ -249,9 +247,7 @@ RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                             GlobalObjects* globals) {
-  ChannelArgs args = CoreConfiguration::Get()
-                         .channel_args_preconditioning()
-                         .PreconditionChannelArgs(nullptr);
+  ChannelArgs args = ChannelArgs().SetObject(ResourceQuota::Default());
   for (const auto& arg : fuzz_args) {
     if (arg.key() == ResourceQuota::ChannelArgName()) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kResourceQuota) {
@@ -679,8 +675,8 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
 
   grpc_core::ChannelStackBuilderImpl builder(
       msg.stack_name().c_str(),
-      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()),
-      channel_args);
+      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
+  builder.SetChannelArgs(channel_args);
   builder.AppendFilter(filter);
   const bool is_client =
       grpc_channel_stack_type_is_client(builder.channel_stack_type());

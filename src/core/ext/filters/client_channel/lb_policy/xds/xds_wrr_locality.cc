@@ -28,7 +28,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -130,7 +129,6 @@ class XdsWrrLocalityLb : public LoadBalancingPolicy {
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -267,7 +265,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   auto lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "weighted_target_experimental", std::move(lb_policy_args));
@@ -313,11 +311,6 @@ void XdsWrrLocalityLb::Helper::RequestReresolution() {
 
 absl::string_view XdsWrrLocalityLb::Helper::GetAuthority() {
   return xds_wrr_locality_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsWrrLocalityLb::Helper::GetEventEngine() {
-  return xds_wrr_locality_->channel_control_helper()->GetEventEngine();
 }
 
 void XdsWrrLocalityLb::Helper::AddTraceEvent(TraceSeverity severity,

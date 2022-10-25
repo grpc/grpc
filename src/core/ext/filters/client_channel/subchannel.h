@@ -427,7 +427,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Data producer map.
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -68,6 +69,7 @@ TraceFlag grpc_xds_cluster_manager_lb_trace(false, "xds_cluster_manager_lb");
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
 constexpr absl::string_view kXdsClusterManager =
@@ -195,7 +197,6 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
-      EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -223,6 +224,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     // States for delayed removal.
     absl::optional<EventEngine::TaskHandle> delayed_removal_timer_handle_;
     bool shutdown_ = false;
+    std::shared_ptr<EventEngine> engine_;
   };
 
   ~XdsClusterManagerLb() override;
@@ -428,7 +430,8 @@ XdsClusterManagerLb::ClusterChild::ClusterChild(
     RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy,
     const std::string& name)
     : xds_cluster_manager_policy_(std::move(xds_cluster_manager_policy)),
-      name_(name) {
+      name_(name),
+      engine_(GetDefaultEventEngine()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_manager_lb %p] created ClusterChild %p for %s",
@@ -463,9 +466,7 @@ void XdsClusterManagerLb::ClusterChild::Orphan() {
   // the child.
   picker_wrapper_.reset();
   if (delayed_removal_timer_handle_.has_value()) {
-    xds_cluster_manager_policy_->channel_control_helper()
-        ->GetEventEngine()
-        ->Cancel(*delayed_removal_timer_handle_);
+    engine_->Cancel(*delayed_removal_timer_handle_);
   }
   shutdown_ = true;
   Unref();
@@ -508,9 +509,7 @@ absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
   // Update child weight.
   // Reactivate if needed.
   if (delayed_removal_timer_handle_.has_value() &&
-      xds_cluster_manager_policy_->channel_control_helper()
-          ->GetEventEngine()
-          ->Cancel(*delayed_removal_timer_handle_)) {
+      engine_->Cancel(*delayed_removal_timer_handle_)) {
     delayed_removal_timer_handle_.reset();
   }
   // Create child policy if needed.
@@ -545,21 +544,17 @@ void XdsClusterManagerLb::ClusterChild::ResetBackoffLocked() {
 void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   // If already deactivated, don't do that again.
   if (delayed_removal_timer_handle_.has_value()) return;
+  // Set the child weight to 0 so that future picker won't contain this child.
   // Start a timer to delete the child.
-  delayed_removal_timer_handle_ =
-      xds_cluster_manager_policy_->channel_control_helper()
-          ->GetEventEngine()
-          ->RunAfter(
-              kChildRetentionInterval,
-              [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
-                ApplicationCallbackExecCtx application_exec_ctx;
-                ExecCtx exec_ctx;
-                self->xds_cluster_manager_policy_->work_serializer()->Run(
-                    [self = std::move(self)]() {
-                      self->OnDelayedRemovalTimerLocked();
-                    },
-                    DEBUG_LOCATION);
-              });
+  delayed_removal_timer_handle_ = engine_->RunAfter(
+      kChildRetentionInterval,
+      [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
+        ApplicationCallbackExecCtx application_exec_ctx;
+        ExecCtx exec_ctx;
+        self->xds_cluster_manager_policy_->work_serializer()->Run(
+            [self = std::move(self)]() { self->OnDelayedRemovalTimerLocked(); },
+            DEBUG_LOCATION);
+      });
 }
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked() {
@@ -628,12 +623,6 @@ absl::string_view XdsClusterManagerLb::ClusterChild::Helper::GetAuthority() {
   return xds_cluster_manager_child_->xds_cluster_manager_policy_
       ->channel_control_helper()
       ->GetAuthority();
-}
-
-EventEngine* XdsClusterManagerLb::ClusterChild::Helper::GetEventEngine() {
-  return xds_cluster_manager_child_->xds_cluster_manager_policy_
-      ->channel_control_helper()
-      ->GetEventEngine();
 }
 
 void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(

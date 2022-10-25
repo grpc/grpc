@@ -30,7 +30,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -177,7 +176,6 @@ class CdsLb : public LoadBalancingPolicy {
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -263,10 +261,6 @@ void CdsLb::Helper::RequestReresolution() {
 
 absl::string_view CdsLb::Helper::GetAuthority() {
   return parent_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine* CdsLb::Helper::GetEventEngine() {
-  return parent_->channel_control_helper()->GetEventEngine();
 }
 
 void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,

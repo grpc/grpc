@@ -25,7 +25,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -106,10 +105,6 @@ class ChildPolicyHandler::Helper
 
   absl::string_view GetAuthority() override {
     return parent_->channel_control_helper()->GetAuthority();
-  }
-
-  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-    return parent_->channel_control_helper()->GetEventEngine();
   }
 
   void AddTraceEvent(TraceSeverity severity,

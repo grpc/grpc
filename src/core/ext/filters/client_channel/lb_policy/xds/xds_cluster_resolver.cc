@@ -34,7 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -379,7 +378,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // client, which is a watch-based API.
     void RequestReresolution() override {}
     absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -454,12 +452,6 @@ void XdsClusterResolverLb::Helper::UpdateState(
 
 absl::string_view XdsClusterResolverLb::Helper::GetAuthority() {
   return xds_cluster_resolver_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsClusterResolverLb::Helper::GetEventEngine() {
-  return xds_cluster_resolver_policy_->channel_control_helper()
-      ->GetEventEngine();
 }
 
 void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
