@@ -79,14 +79,16 @@ class XdsHttpFilterTest : public ::testing::Test {
   }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
-    any_storage_.PackFrom(message);
-    absl::string_view type =
-        absl::StripPrefix(any_storage_.type_url(), "type.googleapis.com/");
+    google::protobuf::Any any;
+    any.PackFrom(message);
+    type_url_storage_ =
+        std::string(absl::StripPrefix(any.type_url(), "type.googleapis.com/"));
+    serialized_storage_ = std::string(any.value());
     ValidationErrors::ScopedField field(
-        &errors_, absl::StrCat("http_filter.value[", type, "]"));
+        &errors_, absl::StrCat("http_filter.value[", type_url_storage_, "]"));
     XdsExtension extension;
-    extension.type = type;
-    extension.value = absl::string_view(any_storage_.value());
+    extension.type = absl::string_view(type_url_storage_);
+    extension.value = absl::string_view(serialized_storage_);
     extension.validation_fields.push_back(std::move(field));
     return extension;
   }
@@ -98,7 +100,8 @@ class XdsHttpFilterTest : public ::testing::Test {
 
   ValidationErrors errors_;
   upb::Arena arena_;
-  google::protobuf::Any any_storage_;
+  std::string type_url_storage_;
+  std::string serialized_storage_;
 };
 
 //
