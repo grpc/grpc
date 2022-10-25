@@ -17,10 +17,10 @@ import logging
 import time
 from typing import Any, AnyStr, Callable, Optional
 
-from _typing import DeserializingFunction
-from _typing import SerializingFunction
 import grpc
 from grpc._cython import cygrpc
+from grpc._typing import DeserializingFunction
+from grpc._typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,8 +95,7 @@ def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
     return _transform(message, serializer, 'Exception serializing message!')
 
 
-def deserialize(serialized_message: bytes,
-                deserializer: Optional[DeserializingFunction]) -> Any:
+def deserialize(serialized_message: bytes, deserializer: Optional[DeserializingFunction]) -> Any:
     return _transform(serialized_message, deserializer,
                       'Exception deserializing message!')
 

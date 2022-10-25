@@ -28,12 +28,12 @@ from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 
-from ._typing import ChannelArgumentType
-from ._typing import DeserializingFunction
-from ._typing import DoneCallbackType
-from ._typing import MetadataType
-from ._typing import RequestIterableType
-from ._typing import SerializingFunction
+from grpc._typing import ChannelArgumentType
+from grpc._typing import DeserializingFunction
+from grpc._typing import DoneCallbackType
+from grpc._typing import MetadataType
+from grpc._typing import RequestIterableType
+from grpc._typing import SerializingFunction
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
