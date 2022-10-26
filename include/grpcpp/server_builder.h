@@ -30,12 +30,12 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/server_interceptor.h>
 
 struct grpc_resource_quota;
 

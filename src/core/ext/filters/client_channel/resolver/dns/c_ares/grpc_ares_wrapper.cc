@@ -743,7 +743,6 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
             r, srv_it->host, htons(srv_it->port), true /* is_balancer */, "A");
         ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
                            on_hostbyname_done_locked, hr);
-        grpc_ares_notify_on_event_locked(r->ev_driver);
       }
     }
     if (reply != nullptr) {

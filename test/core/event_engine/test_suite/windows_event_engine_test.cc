@@ -11,8 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
+
+#include <grpc/grpc.h>
+
+#include "src/core/lib/event_engine/windows/windows_engine.h"
+#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
@@ -22,7 +29,12 @@ int main(int argc, char** argv) {
         grpc_event_engine::experimental::WindowsEventEngine>();
   };
   SetEventEngineFactories(factory, factory);
-  return RUN_ALL_TESTS();
+  // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
+  // until we clear out the iomgr shutdown code.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }
 
 #else  // not GPR_WINDOWS
