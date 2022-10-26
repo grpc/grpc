@@ -193,7 +193,7 @@ class Server::RequestMatcherInterface {
   // some measure of fairness between server CQs, the match is done starting at
   // the start_request_queue_index parameter in a cyclic order rather than
   // always starting at 0.
-  virtual ArenaPromise<absl::StatusOr<MatchResult>> Match(
+  virtual ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t start_request_queue_index) = 0;
 
   // This function is invoked on an incoming RPC, represented by the calld
@@ -227,7 +227,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   void ZombifyPending() override {
     while (!pending_.empty()) {
-      grpc_core::Match(
+      Match(
           pending_.front(),
           [](CallData* calld) {
             calld->SetState(CallData::CallState::ZOMBIED);
@@ -282,7 +282,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         NextPendingCall next_pending = pop_next_pending();
         if (next_pending.rc == nullptr) break;
         auto mr = MatchResult{request_queue_index, next_pending.rc};
-        grpc_core::Match(
+        Match(
             next_pending.pending,
             [mr](CallData* calld) {
               if (!calld->MaybeActivate()) {
@@ -337,7 +337,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     calld->Publish(cq_idx, rc);
   }
 
-  ArenaPromise<absl::StatusOr<MatchResult>> Match(
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t start_request_queue_index) override {
     for (size_t i = 0; i < requests_per_cq_.size(); i++) {
       size_t cq_idx = (start_request_queue_index + i) % requests_per_cq_.size();
@@ -475,7 +475,7 @@ class Server::AllocatingRequestMatcherBatch
     }
   }
 
-  ArenaPromise<absl::StatusOr<MatchResult>> Match(
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
     const bool still_running = server()->ShutdownRefOnRequest();
     auto cleanup_ref =
@@ -528,7 +528,7 @@ class Server::AllocatingRequestMatcherRegistered
     server()->ShutdownUnrefOnRequest();
   }
 
-  ArenaPromise<absl::StatusOr<MatchResult>> Match(
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t start_request_queue_index) override {
     const bool still_running = server()->ShutdownRefOnRequest();
     auto cleanup_ref =
@@ -1294,7 +1294,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     matcher = server->unregistered_request_matcher_.get();
   }
   return TrySeq(
-      TryJoin(matcher->Match(chand->cq_idx()),
+      TryJoin(matcher->MatchRequest(chand->cq_idx()),
               std::move(maybe_read_first_message)),
       [path = std::move(*path), host = std::move(*host_ptr), deadline, server,
        call_args = std::move(call_args)](
@@ -1469,7 +1469,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       }
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
   grpc_cq_end_op(cq_new_, rc->tag, absl::OkStatus(), Server::DoneRequestEvent,
                  rc, &rc->completion, true);
