@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "call.h"
@@ -47,6 +48,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -226,9 +228,15 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   void ZombifyPending() override {
     while (!pending_.empty()) {
-      CallData* calld = pending_.front();
-      calld->SetState(CallData::CallState::ZOMBIED);
-      calld->KillZombie();
+      grpc_core::Match(
+          pending_.front(),
+          [](CallData* calld) {
+            calld->SetState(CallData::CallState::ZOMBIED);
+            calld->KillZombie();
+          },
+          [](const std::shared_ptr<ActivityWaiter>& w) {
+            w->Finish(absl::InternalError("Server closed"));
+          });
       pending_.pop();
     }
   }
@@ -252,19 +260,19 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
       /* this was the first queued request: we need to lock and start
          matching calls */
-      struct PendingCall {
+      struct NextPendingCall {
         RequestedCall* rc = nullptr;
-        CallData* calld;
+        PendingCall pending;
       };
       auto pop_next_pending = [this, request_queue_index] {
-        PendingCall pending_call;
+        NextPendingCall pending_call;
         {
           MutexLock lock(&server_->mu_call_);
           if (!pending_.empty()) {
             pending_call.rc = reinterpret_cast<RequestedCall*>(
                 requests_per_cq_[request_queue_index].Pop());
             if (pending_call.rc != nullptr) {
-              pending_call.calld = pending_.front();
+              pending_call.pending = std::move(pending_.front());
               pending_.pop();
             }
           }
@@ -272,14 +280,20 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         return pending_call;
       };
       while (true) {
-        PendingCall next_pending = pop_next_pending();
+        NextPendingCall next_pending = pop_next_pending();
         if (next_pending.rc == nullptr) break;
-        if (!next_pending.calld->MaybeActivate()) {
-          // Zombied Call
-          next_pending.calld->KillZombie();
-        } else {
-          next_pending.calld->Publish(request_queue_index, next_pending.rc);
-        }
+        auto mr = MatchResult{request_queue_index, next_pending.rc};
+        grpc_core::Match(
+            next_pending.pending,
+            [mr](CallData* calld) {
+              if (!calld->MaybeActivate()) {
+                // Zombied Call
+                calld->KillZombie();
+              } else {
+                calld->Publish(mr.cq_idx, mr.requested_call);
+              }
+            },
+            [mr](const std::shared_ptr<ActivityWaiter>& w) { w->Finish(mr); });
       }
     }
   }
@@ -324,11 +338,66 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     calld->Publish(cq_idx, rc);
   }
 
+  ArenaPromise<absl::StatusOr<MatchResult>> Match(
+      size_t start_request_queue_index) override {
+    for (size_t i = 0; i < requests_per_cq_.size(); i++) {
+      size_t cq_idx = (start_request_queue_index + i) % requests_per_cq_.size();
+      RequestedCall* rc =
+          reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
+      if (rc != nullptr) {
+        return Immediate(MatchResult{cq_idx, rc});
+      }
+    }
+    // No cq to take the request found; queue it on the slow list.
+    // We need to ensure that all the queues are empty.  We do this under
+    // the server mu_call_ lock to ensure that if something is added to
+    // an empty request queue, it will block until the call is actually
+    // added to the pending list.
+    RequestedCall* rc = nullptr;
+    size_t cq_idx = 0;
+    size_t loop_count;
+    {
+      MutexLock lock(&server_->mu_call_);
+      for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
+        cq_idx =
+            (start_request_queue_index + loop_count) % requests_per_cq_.size();
+        rc = reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].Pop());
+        if (rc != nullptr) {
+          break;
+        }
+      }
+      if (rc == nullptr) {
+        auto w = std::make_shared<ActivityWaiter>(
+            Activity::current()->MakeNonOwningWaker());
+        pending_.push(w);
+        return [w]() -> Poll<absl::StatusOr<MatchResult>> {
+          std::unique_ptr<absl::StatusOr<MatchResult>> r(
+              w->result.exchange(nullptr, std::memory_order_acq_rel));
+          if (r == nullptr) return Pending{};
+          return std::move(*r);
+        };
+      }
+    }
+    return Immediate(MatchResult{cq_idx, rc});
+  }
+
   Server* server() const override { return server_; }
 
  private:
   Server* const server_;
-  std::queue<CallData*> pending_;
+  struct ActivityWaiter {
+    explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
+    ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
+    void Finish(absl::StatusOr<MatchResult> r) {
+      result.store(new absl::StatusOr<MatchResult>(std::move(r)),
+                   std::memory_order_release);
+      waker.Wakeup();
+    }
+    Waker waker;
+    std::atomic<absl::StatusOr<MatchResult>*> result{nullptr};
+  };
+  using PendingCall = absl::variant<CallData*, std::shared_ptr<ActivityWaiter>>;
+  std::queue<PendingCall> pending_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
 };
 
@@ -389,7 +458,10 @@ class Server::AllocatingRequestMatcherBatch
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
-    if (server()->ShutdownRefOnRequest()) {
+    const bool still_running = server()->ShutdownRefOnRequest();
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
+    if (still_running) {
       BatchCallAllocation call_info = allocator_();
       GPR_ASSERT(server()->ValidateServerRequest(
                      cq(), static_cast<void*>(call_info.tag), nullptr,
@@ -402,7 +474,25 @@ class Server::AllocatingRequestMatcherBatch
     } else {
       calld->FailCallCreation();
     }
-    server()->ShutdownUnrefOnRequest();
+  }
+
+  ArenaPromise<absl::StatusOr<MatchResult>> Match(
+      size_t /*start_request_queue_index*/) override {
+    const bool still_running = server()->ShutdownRefOnRequest();
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
+    if (still_running) {
+      BatchCallAllocation call_info = allocator_();
+      GPR_ASSERT(server()->ValidateServerRequest(
+                     cq(), static_cast<void*>(call_info.tag), nullptr,
+                     nullptr) == GRPC_CALL_OK);
+      RequestedCall* rc = new RequestedCall(
+          static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
+          call_info.initial_metadata, call_info.details);
+      return Immediate(MatchResult{cq_idx(), rc});
+    } else {
+      return Immediate(absl::InternalError("Server shutdown"));
+    }
   }
 
  private:
@@ -437,6 +527,26 @@ class Server::AllocatingRequestMatcherRegistered
       calld->FailCallCreation();
     }
     server()->ShutdownUnrefOnRequest();
+  }
+
+  ArenaPromise<absl::StatusOr<MatchResult>> Match(
+      size_t start_request_queue_index) override {
+    const bool still_running = server()->ShutdownRefOnRequest();
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
+    if (still_running) {
+      RegisteredCallAllocation call_info = allocator_();
+      GPR_ASSERT(server()->ValidateServerRequest(
+                     cq(), call_info.tag, call_info.optional_payload,
+                     registered_method_) == GRPC_CALL_OK);
+      RequestedCall* rc =
+          new RequestedCall(call_info.tag, call_info.cq, call_info.call,
+                            call_info.initial_metadata, registered_method_,
+                            call_info.deadline, call_info.optional_payload);
+      return Immediate(MatchResult{cq_idx(), rc});
+    } else {
+      return Immediate(absl::InternalError("Server shutdown"));
+    }
   }
 
  private:
