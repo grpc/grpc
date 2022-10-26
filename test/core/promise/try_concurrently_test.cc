@@ -14,7 +14,11 @@
 
 #include "src/core/lib/promise/try_concurrently.h"
 
+#include <algorithm>
+#include <iosfwd>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
