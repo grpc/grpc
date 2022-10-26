@@ -364,14 +364,39 @@ grpc_cc_library(
 grpc_cc_library(
     name = "try_concurrently",
     hdrs = ["lib/promise/try_concurrently.h"],
-    external_deps = ["absl/types:variant"],
+    external_deps = [
+        "absl/status",
+        "absl/types:variant",
+    ],
     language = "c++",
+    public_hdrs = [
+        "lib/promise/map_pipe.h",
+    ],
     deps = [
         "construct_destruct",
+        "for_each",
+        "map",
+        "pipe",
         "poll",
+        "promise_factory",
         "promise_like",
         "promise_status",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "map_pipe",
+    external_deps = ["absl/status"],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/map_pipe.h",
+    ],
+    deps = [
+        "for_each",
+        "map",
+        "pipe",
+        "promise_factory",
         "//:gpr_platform",
     ],
 )
@@ -427,6 +452,7 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "construct_destruct",
         "context",
         "poll",
         "//:gpr_platform",
@@ -733,20 +759,26 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
+    srcs = [
+        "lib/promise/pipe.cc",
+    ],
+    hdrs = [
+        "lib/promise/pipe.h",
+    ],
     external_deps = [
+        "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
-    public_hdrs = [
-        "lib/promise/pipe.h",
-    ],
     deps = [
+        "activity",
         "arena",
         "context",
         "intra_activity_waiter",
         "poll",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -3501,6 +3533,7 @@ grpc_cc_library(
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "iomgr_fwd",
+        "match",
         "resolved_address",
         "slice_refcount",
         "status_helper",

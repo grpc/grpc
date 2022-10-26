@@ -31,6 +31,8 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -148,6 +150,13 @@ class GrpcXdsBootstrap : public XdsBootstrap {
       const {
     return certificate_providers_;
   }
+  const XdsHttpFilterRegistry& http_filter_registry() const {
+    return http_filter_registry_;
+  }
+  const XdsClusterSpecifierPluginRegistry& cluster_specifier_plugin_registry()
+      const {
+    return cluster_specifier_plugin_registry_;
+  }
 
   // Exposed for testing purposes only.
   const std::map<std::string, GrpcAuthority>& authorities() const {
@@ -161,6 +170,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   std::string server_listener_resource_name_template_;
   std::map<std::string, GrpcAuthority> authorities_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
+  XdsHttpFilterRegistry http_filter_registry_;
+  XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
 };
 
 }  // namespace grpc_core

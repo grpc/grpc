@@ -405,7 +405,7 @@ template <class F, class WakeupScheduler, class OnDone, typename... Contexts>
 class PromiseActivity final : public FreestandingActivity,
                               private ActivityContexts<Contexts...> {
  public:
-  using Factory = PromiseFactory<void, F>;
+  using Factory = OncePromiseFactory<void, F>;
   using ResultType = typename Factory::Promise::Result;
 
   PromiseActivity(F promise_factory, WakeupScheduler wakeup_scheduler,
@@ -533,7 +533,7 @@ class PromiseActivity final : public FreestandingActivity,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
-    Construct(&promise_holder_.promise, promise_factory.Once());
+    Construct(&promise_holder_.promise, promise_factory.Make());
     return StepLoop();
   }
 
