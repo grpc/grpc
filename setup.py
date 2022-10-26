@@ -133,11 +133,22 @@ BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM = os.environ.get(
 # present, then it will still attempt to use Cython.
 BUILD_WITH_CYTHON = _env_bool_value('GRPC_PYTHON_BUILD_WITH_CYTHON', 'False')
 
+# Currently, boringssl does not support macOS arm64, so we try to use the system
+# installation of openssl to build gRPC locally by default.
+if "darwin" in sys.platform and "arm64" == platform.machine().lower():
+    sys.stderr.write(
+        "Boringssl currently does not support macOS arm64, so we'll try to use the system installation "
+        "of 'openssl' to build by default, make sure you have 'openssl' installed in this case\n"
+    )
+    BUILD_WITH_SYSTEM_OPENSSL_DEFAULT_ENV = "True"
+else:
+    BUILD_WITH_SYSTEM_OPENSSL_DEFAULT_ENV = "False"
+
 # Export this variable to use the system installation of openssl. You need to
 # have the header files installed (in /usr/include/openssl) and during
 # runtime, the shared library must be installed
-BUILD_WITH_SYSTEM_OPENSSL = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_OPENSSL',
-                                            'False')
+BUILD_WITH_SYSTEM_OPENSSL = _env_bool_value(
+    'GRPC_PYTHON_BUILD_SYSTEM_OPENSSL', BUILD_WITH_SYSTEM_OPENSSL_DEFAULT_ENV)
 
 # Export this variable to use the system installation of zlib. You need to
 # have the header files installed (in /usr/include/) and during
@@ -481,19 +492,14 @@ PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = (
-    "six>=1.5.2",
-    "futures>=2.2.0; python_version<'3.2'",
-    "enum34>=1.0.4; python_version<'3.4'",
-)
+INSTALL_REQUIRES = ()
+
 EXTRAS_REQUIRES = {
     'protobuf': 'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 }
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
-    'Sphinx~=1.8.1',
-    'six>=1.10',
-) if ENABLE_DOCUMENTATION_BUILD else ()
+    'Sphinx~=1.8.1',) if ENABLE_DOCUMENTATION_BUILD else ()
 
 try:
     import Cython

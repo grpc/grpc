@@ -60,7 +60,6 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -108,6 +107,16 @@ class ChannelFilter {
   virtual bool GetChannelInfo(const grpc_channel_info*) { return false; }
 
   virtual ~ChannelFilter() = default;
+
+  grpc_event_engine::experimental::EventEngine*
+  hack_until_per_channel_stack_event_engines_land_get_event_engine() {
+    return event_engine_.get();
+  }
+
+ private:
+  // TODO(ctiller): remove once per-channel-stack event engines land
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 // Designator for whether a filter is client side or server side.
@@ -176,7 +185,7 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
           promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
-              call_data->event_engine_.get()) {}
+              call_data->event_engine_) {}
   };
 
   class Flusher {
@@ -243,14 +252,15 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* batch_;
   };
 
-  static FragmentHandle<grpc_metadata_batch> WrapMetadata(
+  static Arena::PoolPtr<grpc_metadata_batch> WrapMetadata(
       grpc_metadata_batch* p) {
-    return FragmentHandle<grpc_metadata_batch>(p, false);
+    return Arena::PoolPtr<grpc_metadata_batch>(p,
+                                               Arena::PooledDeleter(nullptr));
   }
 
   static grpc_metadata_batch* UnwrapMetadata(
-      FragmentHandle<grpc_metadata_batch> p) {
-    return p.Unwrap();
+      Arena::PoolPtr<grpc_metadata_batch> p) {
+    return p.release();
   }
 
   Arena* arena() { return arena_; }
@@ -283,7 +293,7 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  grpc_event_engine::experimental::EventEngine* event_engine_;
 };
 
 class ClientCallData : public BaseCallData {

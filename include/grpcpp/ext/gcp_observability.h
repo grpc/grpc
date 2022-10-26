@@ -1,5 +1,5 @@
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,18 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPCPP_EXT_GCP_OBSERVABILITY_H
+#define GRPCPP_EXT_GCP_OBSERVABILITY_H
 
-#include "src/core/ext/xds/xds_resource_type.h"
+#include "absl/status/status.h"
 
-namespace grpc_core {
+namespace grpc {
+namespace experimental {
 
-bool XdsResourceType::IsType(absl::string_view resource_type,
-                             bool* is_v2) const {
-  if (resource_type == type_url()) return true;
-  if (resource_type == v2_type_url()) {
-    if (is_v2 != nullptr) *is_v2 = true;
-    return true;
-  }
-  return false;
-}
+// Initialize GCP Observability for gRPC.
+absl::Status GcpObservabilityInit();
 
-}  // namespace grpc_core
+}  // namespace experimental
+}  // namespace grpc
+
+#endif  // GRPCPP_EXT_GCP_OBSERVABILITY_H

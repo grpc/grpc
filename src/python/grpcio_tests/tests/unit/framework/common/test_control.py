@@ -17,8 +17,6 @@ import abc
 import contextlib
 import threading
 
-import six
-
 
 class Defect(Exception):
     """Simulates a programming defect raised into in a system under test.

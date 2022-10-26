@@ -43,7 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gpr/useful.h"

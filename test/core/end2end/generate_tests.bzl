@@ -452,7 +452,7 @@ def grpc_end2end_tests():
             "//:grpc_authorization_provider",
             "//test/core/compression:args_utils",
             "//:grpc_http_filters",
-            "//:event_log",
+            "//src/core:event_log",
         ],
         visibility = [
             "//src/objective-c/tests:__subpackages__",
