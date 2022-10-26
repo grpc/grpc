@@ -72,6 +72,12 @@ using ::envoy::extensions::filters::http::router::v3::Router;
 
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
+  XdsHttpFilterTest() {
+    // Start with a clean registry for each test.
+    XdsHttpFilterRegistry::Shutdown();
+    XdsHttpFilterRegistry::Init();
+  }
+
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
     google::protobuf::Any any;
     any.PackFrom(message);
@@ -87,12 +93,11 @@ class XdsHttpFilterTest : public ::testing::Test {
     return extension;
   }
 
-  const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
-    return registry_.GetFilterForType(
+  static const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
+    return XdsHttpFilterRegistry::GetFilterForType(
         absl::StripPrefix(type, "type.googleapis.com/"));
   }
 
-  XdsHttpFilterRegistry registry_;
   ValidationErrors errors_;
   upb::Arena arena_;
   std::string type_url_storage_;
@@ -107,14 +112,15 @@ using XdsHttpFilterRegistryTest = XdsHttpFilterTest;
 
 TEST_F(XdsHttpFilterRegistryTest, Basic) {
   // Start with an empty registry.
-  registry_ = XdsHttpFilterRegistry(/*register_builtins=*/false);
+  XdsHttpFilterRegistry::Shutdown();
+  XdsHttpFilterRegistry::Init(/*register_builtins=*/false);
   // Returns null when a filter has not yet been registered.
   XdsExtension extension = MakeXdsExtension(Router());
   EXPECT_EQ(GetFilter(extension.type), nullptr);
   // Now register the filter.
   auto filter = std::make_unique<XdsHttpRouterFilter>();
   auto* filter_ptr = filter.get();
-  registry_.RegisterFilter(std::move(filter));
+  XdsHttpFilterRegistry::RegisterFilter(std::move(filter));
   // And check that it is now present.
   EXPECT_EQ(GetFilter(extension.type), filter_ptr);
 }
@@ -125,7 +131,9 @@ TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
   ASSERT_DEATH(
       // The router filter is already in the registry.
-      registry_.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()), "");
+      XdsHttpFilterRegistry::RegisterFilter(
+          std::make_unique<XdsHttpRouterFilter>()),
+      "");
 }
 
 //

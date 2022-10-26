@@ -19,12 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <algorithm>
-#include <map>
 #include <memory>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -149,32 +145,16 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
 
 class XdsHttpFilterRegistry {
  public:
-  explicit XdsHttpFilterRegistry(bool register_builtins = true);
+  static void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
 
-  // Not copyable.
-  XdsHttpFilterRegistry(const XdsHttpFilterRegistry&) = delete;
-  XdsHttpFilterRegistry& operator=(const XdsHttpFilterRegistry&) = delete;
+  static const XdsHttpFilterImpl* GetFilterForType(
+      absl::string_view proto_type_name);
 
-  // Movable.
-  XdsHttpFilterRegistry(XdsHttpFilterRegistry&& other) noexcept
-      : owning_list_(std::move(other.owning_list_)),
-        registry_map_(std::move(other.registry_map_)) {}
-  XdsHttpFilterRegistry& operator=(XdsHttpFilterRegistry&& other) noexcept {
-    owning_list_ = std::move(other.owning_list_);
-    registry_map_ = std::move(other.registry_map_);
-    return *this;
-  }
+  static void PopulateSymtab(upb_DefPool* symtab);
 
-  void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
-
-  const XdsHttpFilterImpl* GetFilterForType(
-      absl::string_view proto_type_name) const;
-
-  void PopulateSymtab(upb_DefPool* symtab) const;
-
- private:
-  std::vector<std::unique_ptr<XdsHttpFilterImpl>> owning_list_;
-  std::map<absl::string_view, XdsHttpFilterImpl*> registry_map_;
+  // Global init and shutdown.
+  static void Init(bool register_builtins = true);
+  static void Shutdown();
 };
 
 }  // namespace grpc_core

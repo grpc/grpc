@@ -354,9 +354,6 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   // http_filters
   {
     ValidationErrors::ScopedField field(errors, ".http_filters");
-    const auto& http_filter_registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .http_filter_registry();
     size_t num_filters = 0;
     const auto* http_filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
@@ -399,7 +396,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto extension = ExtractXdsExtension(context, typed_config, errors);
         const XdsHttpFilterImpl* filter_impl = nullptr;
         if (extension.has_value()) {
-          filter_impl = http_filter_registry.GetFilterForType(extension->type);
+          filter_impl =
+              XdsHttpFilterRegistry::GetFilterForType(extension->type);
         }
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
@@ -433,7 +431,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     // out of which only one gets added in the final list.
     for (const auto& http_filter : http_connection_manager.http_filters) {
       const XdsHttpFilterImpl* filter_impl =
-          http_filter_registry.GetFilterForType(
+          XdsHttpFilterRegistry::GetFilterForType(
               http_filter.config.config_proto_type_name);
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.

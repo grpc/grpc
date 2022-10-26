@@ -36,8 +36,6 @@
 #include "re2/re2.h"
 #include "upb/def.h"
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
@@ -226,13 +224,9 @@ class XdsRouteConfigResourceType
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
                       absl::string_view serialized_resource) const override;
 
-  void InitUpbSymtab(XdsClient* xds_client,
-                     upb_DefPool* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
-    const auto& cluster_specifier_plugin_registry =
-        static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
-            .cluster_specifier_plugin_registry();
-    cluster_specifier_plugin_registry.PopulateSymtab(symtab);
+    XdsClusterSpecifierPluginRegistry::PopulateSymtab(symtab);
   }
 };
 

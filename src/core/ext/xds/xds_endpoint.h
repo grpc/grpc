@@ -32,7 +32,6 @@
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "upb/def.h"
 
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -129,7 +128,7 @@ class XdsEndpointResourceType
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
                       absl::string_view serialized_resource) const override;
 
-  void InitUpbSymtab(XdsClient*, upb_DefPool* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
   }
 };

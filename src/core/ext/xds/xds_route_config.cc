@@ -333,9 +333,6 @@ ClusterSpecifierPluginParse(
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   XdsRouteConfigResource::ClusterSpecifierPluginMap
       cluster_specifier_plugin_map;
-  const auto& cluster_specifier_plugin_registry =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-          .cluster_specifier_plugin_registry();
   size_t num_cluster_specifier_plugins;
   const envoy_config_route_v3_ClusterSpecifierPlugin* const*
       cluster_specifier_plugin =
@@ -371,7 +368,7 @@ ClusterSpecifierPluginParse(
     bool is_optional = envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(
         cluster_specifier_plugin[i]);
     const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
-        cluster_specifier_plugin_registry.GetPluginForType(extension->type);
+        XdsClusterSpecifierPluginRegistry::GetPluginForType(extension->type);
     std::string lb_policy_config;
     if (cluster_specifier_plugin_impl == nullptr) {
       if (!is_optional) {
@@ -634,11 +631,8 @@ ParseTypedPerFilterConfig(
       return errors.status("could not determine extension type");
     }
     GPR_ASSERT(extension.has_value());
-    const auto& http_filter_registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(extension->type);
+        XdsHttpFilterRegistry::GetFilterForType(extension->type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
       return absl::InvalidArgumentError(absl::StrCat(
