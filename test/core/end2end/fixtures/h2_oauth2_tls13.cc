@@ -19,13 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <string>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
-#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
