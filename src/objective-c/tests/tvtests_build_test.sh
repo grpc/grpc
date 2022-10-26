@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
-
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop_matrix.sh"
-timeout_mins: 600
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "--language=all --release=all --allow_flakes --report_file=sponge_log.xml"
-}
+# //src/objective-c/tests:TvTests is set as "data"
+# for this test. Check that it's there.
+test -f src/objective-c/tests/TvTests

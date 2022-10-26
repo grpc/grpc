@@ -16,17 +16,20 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "gmock/gmock.h"
+#include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
@@ -36,6 +39,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -44,15 +48,18 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/proto/grpc/testing/xds/v3/regex.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
+#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/config_grpc_cli.h"
 
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
+using xds::type::v3::TypedStruct;
 
 namespace grpc_core {
 namespace testing {
@@ -69,7 +76,6 @@ class XdsCommonTypesTest : public ::testing::Test {
                         upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
-    grpc_error_handle error;
     auto bootstrap = GrpcXdsBootstrap::Create(
         "{\n"
         "  \"xds_servers\": [\n"
@@ -519,6 +525,321 @@ TEST_F(CommonTlsConfigTest, ValidationContextUnsupportedFields) {
             "field:validation_context.verify_certificate_spki "
             "error:feature unsupported]")
       << common_tls_context.status();
+}
+
+//
+// ExtractXdsExtension() tests
+//
+
+using ExtractXdsExtensionTest = XdsCommonTypesTest;
+
+TEST_F(ExtractXdsExtensionTest, Basic) {
+  constexpr absl::string_view kTypeUrl = "type.googleapis.com/MyType";
+  constexpr absl::string_view kValue = "foobar";
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(any_proto, StdStringToUpbString(kTypeUrl));
+  google_protobuf_Any_set_value(any_proto, StdStringToUpbString(kValue));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(extension.has_value());
+  EXPECT_EQ(extension->type, "MyType");
+  ASSERT_TRUE(absl::holds_alternative<absl::string_view>(extension->value));
+  EXPECT_EQ(absl::get<absl::string_view>(extension->value), kValue);
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStruct) {
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("type.googleapis.com/MyType");
+  auto* fields = typed_struct.mutable_value()->mutable_fields();
+  (*fields)["foo"].set_string_value("bar");
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(extension.has_value());
+  EXPECT_EQ(extension->type, "MyType");
+  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(absl::get<Json>(extension->value).Dump(), "{\"foo\":\"bar\"}");
+}
+
+TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
+  udpa::type::v1::TypedStruct typed_struct;
+  typed_struct.set_type_url("type.googleapis.com/MyType");
+  auto* fields = typed_struct.mutable_value()->mutable_fields();
+  (*fields)["foo"].set_string_value("bar");
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(extension.has_value());
+  EXPECT_EQ(extension->type, "MyType");
+  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(absl::get<Json>(extension->value).Dump(), "{\"foo\":\"bar\"}");
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("type.googleapis.com/MyType");
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(extension.has_value());
+  EXPECT_EQ(extension->type, "MyType");
+  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(absl::get<Json>(extension->value).Dump(), "{}");
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
+  TypedStruct typed_struct;
+  ASSERT_TRUE(grpc::protobuf::TextFormat::ParseFromString(
+      R"pb(
+        type_url: "type.googleapis.com/envoy.ExtensionType"
+        value {
+          fields {
+            key: "key"
+            value { null_value: NULL_VALUE }
+          }
+          fields {
+            key: "number"
+            value { number_value: 123 }
+          }
+          fields {
+            key: "string"
+            value { string_value: "value" }
+          }
+          fields {
+            key: "struct"
+            value {
+              struct_value {
+                fields {
+                  key: "key"
+                  value { null_value: NULL_VALUE }
+                }
+              }
+            }
+          }
+          fields {
+            key: "list"
+            value {
+              list_value {
+                values { null_value: NULL_VALUE }
+                values { number_value: 234 }
+              }
+            }
+          }
+        }
+      )pb",
+      &typed_struct));
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(extension.has_value());
+  EXPECT_EQ(extension->type, "envoy.ExtensionType");
+  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(absl::get<Json>(extension->value).Dump(),
+            "{"
+            "\"key\":null,"
+            "\"list\":[null,234],"
+            "\"number\":123,"
+            "\"string\":\"value\","
+            "\"struct\":{\"key\":null}"
+            "}");
+}
+
+TEST_F(ExtractXdsExtensionTest, FieldMissing) {
+  ValidationErrors errors;
+  ValidationErrors::ScopedField field(&errors, "any");
+  auto extension = ExtractXdsExtension(decode_context_, nullptr, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: [field:any error:field not present]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypeUrlMissing) {
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: [field:type_url error:field not present]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlMissing) {
+  TypedStruct typed_struct;
+  auto* fields = typed_struct.mutable_value()->mutable_fields();
+  (*fields)["foo"].set_string_value("bar");
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: ["
+            "field:value[xds.type.v3.TypedStruct].type_url "
+            "error:field not present]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypeUrlNoSlash) {
+  constexpr absl::string_view kTypeUrl = "MyType";
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(any_proto, StdStringToUpbString(kTypeUrl));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: ["
+            "field:type_url error:invalid value \"MyType\"]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNoSlash) {
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("MyType");
+  auto* fields = typed_struct.mutable_value()->mutable_fields();
+  (*fields)["foo"].set_string_value("bar");
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: ["
+            "field:value[xds.type.v3.TypedStruct].type_url "
+            "error:invalid value \"MyType\"]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypeUrlNothingAfterSlash) {
+  constexpr absl::string_view kTypeUrl = "type.googleapi.com/";
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(any_proto, StdStringToUpbString(kTypeUrl));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: ["
+            "field:type_url error:invalid value \"type.googleapi.com/\"]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNothingAfterSlash) {
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("type.googleapis.com/");
+  auto* fields = typed_struct.mutable_value()->mutable_fields();
+  (*fields)["foo"].set_string_value("bar");
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: ["
+            "field:value[xds.type.v3.TypedStruct].type_url "
+            "error:invalid value \"type.googleapis.com/\"]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStructParseFailure) {
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  std::string serialized_type_struct("\0", 1);
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_type_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: ["
+            "field:value[xds.type.v3.TypedStruct] error:could not parse]")
+      << status;
+}
+
+TEST_F(ExtractXdsExtensionTest, TypedStructWithInvalidProtobufStruct) {
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("type.googleapis.com/xds.MyType");
+  auto* fields = typed_struct.mutable_value()->mutable_fields();
+  (*fields)["foo"].mutable_list_value()->add_values();
+  std::string serialized_typed_struct = typed_struct.SerializeAsString();
+  google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
+  google_protobuf_Any_set_type_url(
+      any_proto, StdStringToUpbString(absl::string_view(
+                     "type.googleapis.com/xds.type.v3.TypedStruct")));
+  google_protobuf_Any_set_value(any_proto,
+                                StdStringToUpbString(serialized_typed_struct));
+  ValidationErrors errors;
+  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  ASSERT_FALSE(errors.ok());
+  absl::Status status = errors.status("validation errors");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "validation errors: ["
+            "field:value[xds.type.v3.TypedStruct].value[xds.MyType] "
+            "error:error encoding google::Protobuf::Struct as JSON: "
+            "No value set in Value proto]")
+      << status;
 }
 
 }  // namespace

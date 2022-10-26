@@ -15,13 +15,13 @@
 from __future__ import absolute_import
 
 import collections
+import io
 import itertools
 import traceback
 import unittest
 from xml.etree import ElementTree
 
 import coverage
-from six import moves
 
 from tests import _loader
 
@@ -338,7 +338,7 @@ def _traceback_string(type, value, trace):
   Returns:
     str: Formatted exception descriptive string.
   """
-    buffer = moves.cStringIO()
+    buffer = io.StringIO()
     traceback.print_exception(type, value, trace, file=buffer)
     return buffer.getvalue()
 
