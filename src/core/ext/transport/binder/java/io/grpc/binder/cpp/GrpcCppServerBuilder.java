@@ -27,7 +27,9 @@ public class GrpcCppServerBuilder {
       String path = uri.substring(scheme.length());
       // TODO(mingcl): Consider if we would like to make sure the path only contain valid
       // characters here
-      return GetEndpointBinderInternal(path);
+      IBinder ibinder = GetEndpointBinderInternal(path);
+      Log.e(logTag, "Returning binder=" + ibinder + " for URI=" + uri);
+      return ibinder;
     } else {
       Log.e(logTag, "URI " + uri + " does not start with 'binder:'");
       return null;

@@ -26,55 +26,20 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "opencensus/tags/tag_map.h"
-#include "opencensus/trace/attribute_value_ref.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc {
 
-// Thread compatible.
-class CensusContext {
- public:
-  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()), tags_({}) {}
-
-  explicit CensusContext(absl::string_view name,
-                         const ::opencensus::tags::TagMap& tags)
-      : span_(::opencensus::trace::Span::StartSpan(name)), tags_(tags) {}
-
-  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent,
-                const ::opencensus::tags::TagMap& tags)
-      : span_(::opencensus::trace::Span::StartSpan(name, parent)),
-        tags_(tags) {}
-
-  CensusContext(absl::string_view name,
-                const ::opencensus::trace::SpanContext& parent_ctxt)
-      : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
-            name, parent_ctxt)),
-        tags_({}) {}
-
-  void AddSpanAttribute(absl::string_view key,
-                        opencensus::trace::AttributeValueRef attribute) {
-    span_.AddAttribute(key, attribute);
-  }
-
-  const ::opencensus::trace::Span& Span() const { return span_; }
-  const ::opencensus::tags::TagMap& tags() const { return tags_; }
-
-  ::opencensus::trace::SpanContext Context() const { return Span().context(); }
-  void EndSpan() { Span().End(); }
-
- private:
-  ::opencensus::trace::Span span_;
-  ::opencensus::tags::TagMap tags_;
-};
+using experimental::CensusContext;
 
 // Serializes the outgoing trace context. tracing_buf must be
 // opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.

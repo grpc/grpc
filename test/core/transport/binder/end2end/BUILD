@@ -35,7 +35,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc++_binder",
     ],
 )
@@ -79,8 +79,14 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
+    flaky = True,
     language = "C++",
     tags = [
+        # Flaky on windows
+        "no_windows",
+        "no_mac",
+        "no_test_ios",
+
         # Known race between stream creation and cancellation
         "notsan",
     ],

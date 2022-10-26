@@ -24,8 +24,8 @@
 #include <stddef.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/connectivity_state.h>  // IWYU pragma: export
+#include <grpc/impl/codegen/grpc_types.h>          // IWYU pragma: export
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -47,16 +47,6 @@ GRPCAPI void grpc_metadata_array_destroy(grpc_metadata_array* array);
 
 GRPCAPI void grpc_call_details_init(grpc_call_details* details);
 GRPCAPI void grpc_call_details_destroy(grpc_call_details* details);
-
-/** Registers a plugin to be initialized and destroyed with the library.
-
-    The \a init and \a destroy functions will be invoked as part of
-    \a grpc_init() and \a grpc_shutdown(), respectively.
-    Note that these functions can be invoked an arbitrary number of times
-    (and hence so will \a init and \a destroy).
-    It is safe to pass NULL to either argument. Plugins are destroyed in
-    the reverse order they were initialized. */
-GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 
 /** Initialize the grpc library.
 
@@ -542,7 +532,7 @@ GRPCAPI void grpc_resource_quota_set_max_threads(
 
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */
-GRPCAPI grpc_slice grpc_dump_xds_configs();
+GRPCAPI grpc_slice grpc_dump_xds_configs(void);
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */

@@ -46,6 +46,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -60,6 +61,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -74,6 +76,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -102,12 +105,14 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -115,6 +120,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -131,5 +137,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

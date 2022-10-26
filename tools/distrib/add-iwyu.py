@@ -25,7 +25,7 @@ def to_inc(filename):
     return '"%s"' % filename
 
 
-def set_pragma(filename, pragma):
+def set_pragmas(filename, pragmas):
     """Set the file-level IWYU pragma in filename"""
     lines = []
     saw_first_define = False
@@ -36,7 +36,8 @@ def set_pragma(filename, pragma):
         if not saw_first_define and line.startswith('#define '):
             saw_first_define = True
             lines.append('')
-            lines.append('// IWYU pragma: %s' % pragma)
+            for pragma in pragmas:
+                lines.append('// IWYU pragma: %s' % pragma)
             lines.append('')
     open(filename, 'w').write('\n'.join(lines) + '\n')
 
@@ -53,12 +54,16 @@ def set_exports(pub, cg):
 
 
 CG_ROOTS_GRPC = (
-    (r'sync', 'grpc/support/sync.h'),
-    (r'atm', 'grpc/support/atm.h'),
+    (r'sync', 'grpc/support/sync.h', False),
+    (r'atm', 'grpc/support/atm.h', False),
+    (r'grpc_types', 'grpc/grpc.h', True),
+    (r'gpr_types', 'grpc/grpc.h', True),
+    (r'compression_types', 'grpc/compression.h', True),
+    (r'connectivity_state', 'grpc/grpc.h', True),
 )
 
 CG_ROOTS_GRPCPP = [
-    (r'status_code_enum', 'grpcpp/support/status.h'),
+    (r'status_code_enum', 'grpcpp/support/status.h', False),
 ]
 
 
@@ -78,13 +83,15 @@ def fix_tree(tree, cg_roots):
         # Exclude non-headers
         if not filename.endswith('.h'):
             continue
-        pragma = None
+        pragmas = []
         # Check for our 'special' headers: if we see one of these, we just
         # hardcode where they go to because there's some complicated rules.
-        for root, target in cg_roots:
-            print(root, target)
+        for root, target, friend in cg_roots:
+            print(root, target, friend)
             if filename.startswith(root):
-                pragma = 'private, include <%s>' % target
+                pragmas = ['private, include <%s>' % target]
+                if friend:
+                    pragmas.append('friend "src/.*"')
                 if len(paths) == 1:
                     path = paths[0]
                     if filename.startswith(root + '.'):
@@ -93,7 +100,7 @@ def fix_tree(tree, cg_roots):
                         set_exports(path + '/' + root + '.h',
                                     path + '/' + filename)
         # If the path for a file in /impl/codegen is ambiguous, just don't bother
-        if not pragma and len(paths) == 1:
+        if not pragmas and len(paths) == 1:
             path = paths[0]
             # Check if we have an exporting candidate
             if filename in reverse_map:
@@ -106,16 +113,16 @@ def fix_tree(tree, cg_roots):
                     # And see if the public file actually includes the /impl/codegen file
                     if ('#include %s' % to_inc(cg)) in open(pub).read():
                         # Finally, if it does, we'll set that pragma
-                        pragma = 'private, include %s' % to_inc(pub)
+                        pragmas = ['private, include %s' % to_inc(pub)]
                         # And mark the export
                         set_exports(pub, cg)
         # If we can't find a good alternative include to point people to,
         # mark things private anyway... we don't want to recommend people include
         # from impl/codegen
-        if not pragma:
-            pragma = 'private'
+        if not pragmas:
+            pragmas = ['private']
         for path in paths:
-            set_pragma(path + '/' + filename, pragma)
+            set_pragmas(path + '/' + filename, pragmas)
 
 
 fix_tree('include/grpc', CG_ROOTS_GRPC)

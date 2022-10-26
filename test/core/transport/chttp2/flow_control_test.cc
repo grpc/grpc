@@ -14,8 +14,11 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
-#include <gtest/gtest.h>
+#include <memory>
 
+#include "gtest/gtest.h"
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
@@ -32,13 +35,11 @@ TEST(FlowControl, NoOp) {
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
   // Check initial values are per http2 spec
-  EXPECT_EQ(tfc.sent_init_window(), 65535);
   EXPECT_EQ(tfc.acked_init_window(), 65535);
   EXPECT_EQ(tfc.remote_window(), 65535);
   EXPECT_EQ(tfc.target_frame_size(), 16384);
   EXPECT_EQ(sfc.remote_window_delta(), 0);
   EXPECT_EQ(sfc.min_progress_size(), 0);
-  EXPECT_EQ(sfc.local_window_delta(), 0);
   EXPECT_EQ(sfc.announced_window_delta(), 0);
 }
 
@@ -46,7 +47,10 @@ TEST(FlowControl, SendData) {
   ExecCtx exec_ctx;
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
-  sfc.SentData(1024);
+  {
+    StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SentData(1024);
+  }
   EXPECT_EQ(sfc.remote_window_delta(), -1024);
   EXPECT_EQ(tfc.remote_window(), 65535 - 1024);
 }
@@ -54,38 +58,62 @@ TEST(FlowControl, SendData) {
 TEST(FlowControl, InitialTransportUpdate) {
   ExecCtx exec_ctx;
   TransportFlowControl tfc("test", true, g_memory_owner);
-  EXPECT_EQ(tfc.MakeAction(), FlowControlAction());
+  EXPECT_EQ(TransportFlowControl::IncomingUpdateContext(&tfc).MakeAction(),
+            FlowControlAction());
 }
 
 TEST(FlowControl, InitialStreamUpdate) {
   ExecCtx exec_ctx;
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
-  EXPECT_EQ(sfc.MakeAction(), FlowControlAction());
+  EXPECT_EQ(StreamFlowControl::IncomingUpdateContext(&sfc).MakeAction(),
+            FlowControlAction());
 }
 
 TEST(FlowControl, RecvData) {
   ExecCtx exec_ctx;
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
-  EXPECT_EQ(absl::OkStatus(), sfc.RecvData(1024));
+  StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+  EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(1024));
+  sfc_upd.MakeAction();
   EXPECT_EQ(tfc.announced_window(), 65535 - 1024);
-  EXPECT_EQ(sfc.local_window_delta(), -1024);
+  EXPECT_EQ(sfc.announced_window_delta(), -1024);
 }
 
 TEST(FlowControl, TrackMinProgressSize) {
   ExecCtx exec_ctx;
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
-  sfc.UpdateProgress(5);
+  {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SetMinProgressSize(5);
+    sfc_upd.MakeAction();
+  }
   EXPECT_EQ(sfc.min_progress_size(), 5);
-  sfc.UpdateProgress(10);
+  {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SetMinProgressSize(10);
+    sfc_upd.MakeAction();
+  }
   EXPECT_EQ(sfc.min_progress_size(), 10);
-  EXPECT_EQ(absl::OkStatus(), sfc.RecvData(5));
+  {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
+    sfc_upd.MakeAction();
+  }
   EXPECT_EQ(sfc.min_progress_size(), 5);
-  EXPECT_EQ(absl::OkStatus(), sfc.RecvData(5));
+  {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
+    sfc_upd.MakeAction();
+  }
   EXPECT_EQ(sfc.min_progress_size(), 0);
-  EXPECT_EQ(absl::OkStatus(), sfc.RecvData(5));
+  {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
+    sfc_upd.MakeAction();
+  }
   EXPECT_EQ(sfc.min_progress_size(), 0);
 }
 
@@ -94,16 +122,47 @@ TEST(FlowControl, NoUpdateWithoutReader) {
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
   for (int i = 0; i < 65535; i++) {
-    EXPECT_EQ(sfc.RecvData(1), absl::OkStatus());
-    EXPECT_EQ(sfc.MakeAction().send_stream_update(),
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    EXPECT_EQ(sfc_upd.RecvData(1), absl::OkStatus());
+    EXPECT_EQ(sfc_upd.MakeAction().send_stream_update(),
               FlowControlAction::Urgency::NO_ACTION_NEEDED);
   }
   // Empty window needing 1 byte to progress should trigger an immediate read.
-  sfc.UpdateProgress(1);
-  EXPECT_EQ(sfc.min_progress_size(), 1);
-  EXPECT_EQ(sfc.MakeAction().send_stream_update(),
-            FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+  {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SetMinProgressSize(1);
+    EXPECT_EQ(sfc.min_progress_size(), 1);
+    EXPECT_EQ(sfc_upd.MakeAction().send_stream_update(),
+              FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+  }
+  EXPECT_GT(tfc.MaybeSendUpdate(false), 0);
   EXPECT_GT(sfc.MaybeSendUpdate(), 0);
+}
+
+TEST(FlowControl, GradualReadsUpdate) {
+  ExecCtx exec_ctx;
+  TransportFlowControl tfc("test", true, g_memory_owner);
+  StreamFlowControl sfc(&tfc);
+  int immediate_updates = 0;
+  int queued_updates = 0;
+  for (int i = 0; i < 65535; i++) {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    EXPECT_EQ(sfc_upd.RecvData(1), absl::OkStatus());
+    sfc_upd.SetPendingSize(0);
+    switch (sfc_upd.MakeAction().send_stream_update()) {
+      case FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
+        immediate_updates++;
+        break;
+      case FlowControlAction::Urgency::QUEUE_UPDATE:
+        queued_updates++;
+        break;
+      case FlowControlAction::Urgency::NO_ACTION_NEEDED:
+        break;
+    }
+  }
+  EXPECT_GE(immediate_updates, 0);
+  EXPECT_GT(queued_updates, 0);
+  EXPECT_EQ(immediate_updates + queued_updates, 65535);
 }
 
 }  // namespace chttp2

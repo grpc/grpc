@@ -61,11 +61,15 @@ UPB_INLINE udpa_annotations_StatusAnnotation* udpa_annotations_StatusAnnotation_
   return ret;
 }
 UPB_INLINE char* udpa_annotations_StatusAnnotation_serialize(const udpa_annotations_StatusAnnotation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &udpa_annotations_StatusAnnotation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &udpa_annotations_StatusAnnotation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* udpa_annotations_StatusAnnotation_serialize_ex(const udpa_annotations_StatusAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &udpa_annotations_StatusAnnotation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &udpa_annotations_StatusAnnotation_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void udpa_annotations_StatusAnnotation_clear_work_in_progress(const udpa_annotations_StatusAnnotation* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
@@ -100,7 +104,7 @@ UPB_INLINE const udpa_annotations_StatusAnnotation* udpa_annotations_file_status
 }
 UPB_INLINE void udpa_annotations_set_file_status(struct google_protobuf_FileOptions* msg, const udpa_annotations_StatusAnnotation* ext, upb_Arena* arena) {
   const upb_Message_Extension* msg_ext =
-      _upb_Message_Getorcreateext(msg, &udpa_annotations_file_status_ext, arena);
+      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_file_status_ext, arena);
   UPB_ASSERT(msg_ext);
   *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_StatusAnnotation*) = ext;
 }

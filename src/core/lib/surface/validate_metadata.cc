@@ -20,6 +20,7 @@
 
 #include "src/core/lib/surface/validate_metadata.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -27,15 +28,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-
-#if __cplusplus > 201103l
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_FN constexpr
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE constexpr
-#else
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_FN
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE const
-#endif
 
 static grpc_error_handle conforms_to(const grpc_slice& slice,
                                      const grpc_core::BitSet<256>& legal_bits,
@@ -49,26 +43,26 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
           reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
           GRPC_SLICE_LENGTH(slice), GPR_DUMP_HEX | GPR_DUMP_ASCII, &len));
       grpc_error_handle error = grpc_error_set_str(
-          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
-                             GRPC_ERROR_INT_OFFSET,
+          grpc_error_set_int(GRPC_ERROR_CREATE(err_desc),
+                             grpc_core::StatusIntProperty::kOffset,
                              p - GRPC_SLICE_START_PTR(slice)),
-          GRPC_ERROR_STR_RAW_BYTES, absl::string_view(ptr.get(), len));
+          grpc_core::StatusStrProperty::kRawBytes,
+          absl::string_view(ptr.get(), len));
       return error;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static int error2int(grpc_error_handle error) {
-  int r = (error == GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
+  int r = (error.ok());
   return r;
 }
 
 namespace {
 class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
  public:
-  GRPC_VALIDATE_METADATA_CONSTEXPR_FN LegalHeaderKeyBits() {
+  constexpr LegalHeaderKeyBits() {
     for (int i = 'a'; i <= 'z'; i++) set(i);
     for (int i = '0'; i <= '9'; i++) set(i);
     set('-');
@@ -76,22 +70,18 @@ class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
     set('.');
   }
 };
-GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderKeyBits
-    g_legal_header_key_bits;
+constexpr LegalHeaderKeyBits g_legal_header_key_bits;
 }  // namespace
 
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
   if (GRPC_SLICE_LENGTH(slice) == 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot be zero length");
+    return GRPC_ERROR_CREATE("Metadata keys cannot be zero length");
   }
   if (GRPC_SLICE_LENGTH(slice) > UINT32_MAX) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot be larger than UINT32_MAX");
+    return GRPC_ERROR_CREATE("Metadata keys cannot be larger than UINT32_MAX");
   }
   if (GRPC_SLICE_START_PTR(slice)[0] == ':') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot start with :");
+    return GRPC_ERROR_CREATE("Metadata keys cannot start with :");
   }
   return conforms_to(slice, g_legal_header_key_bits, "Illegal header key");
 }
@@ -103,14 +93,13 @@ int grpc_header_key_is_legal(grpc_slice slice) {
 namespace {
 class LegalHeaderNonBinValueBits : public grpc_core::BitSet<256> {
  public:
-  GRPC_VALIDATE_METADATA_CONSTEXPR_FN LegalHeaderNonBinValueBits() {
+  constexpr LegalHeaderNonBinValueBits() {
     for (int i = 32; i <= 126; i++) {
       set(i);
     }
   }
 };
-GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderNonBinValueBits
-    g_legal_header_non_bin_value_bits;
+constexpr LegalHeaderNonBinValueBits g_legal_header_non_bin_value_bits;
 }  // namespace
 
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(

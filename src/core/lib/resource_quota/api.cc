@@ -44,7 +44,16 @@ ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(
       ->Ref();
 }
 
-ChannelArgs EnsureResourceQuotaInChannelArgs(ChannelArgs args) {
+ResourceQuotaRefPtr ResourceQuotaFromEndpointConfig(
+    const grpc_event_engine::experimental::EndpointConfig& config) {
+  void* value = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
+  if (value != nullptr) {
+    return reinterpret_cast<ResourceQuota*>(value)->Ref();
+  }
+  return nullptr;
+}
+
+ChannelArgs EnsureResourceQuotaInChannelArgs(const ChannelArgs& args) {
   if (args.GetObject<ResourceQuota>() != nullptr) return args;
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not

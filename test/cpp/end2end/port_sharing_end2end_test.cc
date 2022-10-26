@@ -34,7 +34,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -166,7 +166,7 @@ class TestTcpServer {
   }
 
   void OnFdReleased(grpc_error_handle err) {
-    EXPECT_EQ(GRPC_ERROR_NONE, err);
+    EXPECT_EQ(absl::OkStatus(), err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.listener_fd = listener_fd_;
     p.fd = fd_;
@@ -313,7 +313,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();

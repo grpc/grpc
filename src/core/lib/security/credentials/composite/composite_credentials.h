@@ -21,12 +21,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/transport.h"
 
 /* -- Composite channel credentials. -- */
 
@@ -48,12 +61,11 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char* target, grpc_core::ChannelArgs* args) override;
 
   grpc_core::ChannelArgs update_arguments(
       grpc_core::ChannelArgs args) override {
-    return inner_creds_->update_arguments(args);
+    return inner_creds_->update_arguments(std::move(args));
   }
 
   grpc_core::UniqueTypeName type() const override;
@@ -81,7 +93,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:
   using CallCredentialsList =
-      absl::InlinedVector<grpc_core::RefCountedPtr<grpc_call_credentials>, 2>;
+      std::vector<grpc_core::RefCountedPtr<grpc_call_credentials>>;
 
   grpc_composite_call_credentials(
       grpc_core::RefCountedPtr<grpc_call_credentials> creds1,

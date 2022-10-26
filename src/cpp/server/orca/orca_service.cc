@@ -17,6 +17,7 @@
 #include <stddef.h>
 
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -29,6 +30,7 @@
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
@@ -42,16 +44,17 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/timer.h"
 
 namespace grpc {
 namespace experimental {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 //
 // OrcaService::Reactor
@@ -61,8 +64,9 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
                              public grpc_core::RefCounted<Reactor> {
  public:
   explicit Reactor(OrcaService* service, const ByteBuffer* request_buffer)
-      : service_(service) {
-    GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
+      : RefCounted("OrcaService::Reactor"),
+        service_(service),
+        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
     // Get slice from request.
     Slice slice;
     GPR_ASSERT(request_buffer->DumpToSingleSlice(&slice).ok());
@@ -96,17 +100,20 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
       return;
     }
     response_.Clear();
-    ScheduleTimer();
+    if (!MaybeScheduleTimer()) {
+      Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
+    }
   }
 
   void OnCancel() override {
-    MaybeCancelTimer();
-    Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
+    if (MaybeCancelTimer()) {
+      Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
+    }
   }
 
   void OnDone() override {
     // Free the initial ref from instantiation.
-    Unref();
+    Unref(DEBUG_LOCATION, "OnDone");
   }
 
  private:
@@ -117,45 +124,43 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     StartWrite(&response_);
   }
 
-  void ScheduleTimer() {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    Ref().release();  // Ref held by timer.
+  bool MaybeScheduleTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
-    timer_pending_ = true;
-    grpc_timer_init(&timer_, exec_ctx.Now() + report_interval_, &on_timer_);
+    if (cancelled_) return false;
+    timer_handle_ = engine_->RunAfter(
+        report_interval_,
+        [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
+    return true;
   }
 
-  void MaybeCancelTimer() {
+  bool MaybeCancelTimer() {
+    grpc::internal::MutexLock lock(&timer_mu_);
+    cancelled_ = true;
+    if (timer_handle_.has_value() && engine_->Cancel(*timer_handle_)) {
+      timer_handle_.reset();
+      return true;
+    }
+    return false;
+  }
+
+  void OnTimer() {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc::internal::MutexLock lock(&timer_mu_);
-    if (timer_pending_) {
-      timer_pending_ = false;
-      grpc_timer_cancel(&timer_);
-    }
-  }
-
-  static void OnTimer(void* arg, grpc_error_handle error) {
-    grpc_core::RefCountedPtr<Reactor> self(static_cast<Reactor*>(arg));
-    grpc::internal::MutexLock lock(&self->timer_mu_);
-    if (error == GRPC_ERROR_NONE && self->timer_pending_) {
-      self->timer_pending_ = false;
-      self->SendResponse();
-    }
+    timer_handle_.reset();
+    SendResponse();
   }
 
   OrcaService* service_;
 
-  // TODO(roth): Change this to use the EventEngine API once it becomes
-  // available.
   grpc::internal::Mutex timer_mu_;
-  bool timer_pending_ ABSL_GUARDED_BY(&timer_mu_) = false;
-  grpc_timer timer_ ABSL_GUARDED_BY(&timer_mu_);
-  grpc_closure on_timer_;
+  absl::optional<EventEngine::TaskHandle> timer_handle_
+      ABSL_GUARDED_BY(&timer_mu_);
+  bool cancelled_ ABSL_GUARDED_BY(&timer_mu_) = false;
 
   grpc_core::Duration report_interval_;
   ByteBuffer response_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 //

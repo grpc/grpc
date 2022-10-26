@@ -31,7 +31,7 @@ static const upb_MiniTable_Field envoy_config_trace_v3_SkyWalkingConfig__fields[
 const upb_MiniTable envoy_config_trace_v3_SkyWalkingConfig_msginit = {
   &envoy_config_trace_v3_SkyWalkingConfig_submsgs[0],
   &envoy_config_trace_v3_SkyWalkingConfig__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_trace_v3_ClientConfig_submsgs[1] = {
@@ -48,7 +48,7 @@ static const upb_MiniTable_Field envoy_config_trace_v3_ClientConfig__fields[4] =
 const upb_MiniTable envoy_config_trace_v3_ClientConfig_msginit = {
   &envoy_config_trace_v3_ClientConfig_submsgs[0],
   &envoy_config_trace_v3_ClientConfig__fields[0],
-  UPB_SIZE(36, 72), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

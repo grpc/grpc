@@ -16,6 +16,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -23,16 +24,18 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -234,7 +237,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture f, size_t index) {
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -258,10 +261,9 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   extra_metadata[2].value =
       grpc_slice_from_static_string(dragons[index % GPR_ARRAY_SIZE(dragons)]);
 
-  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -301,8 +303,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -328,9 +330,9 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify(grpc_core::Duration::Seconds(120));
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -345,8 +347,6 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 }
 
 static void test_size(grpc_end2end_test_config config, int encode_size,

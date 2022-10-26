@@ -56,11 +56,15 @@ UPB_INLINE envoy_type_matcher_v3_MetadataMatcher* envoy_type_matcher_v3_Metadata
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_serialize(const envoy_type_matcher_v3_MetadataMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_serialize_ex(const envoy_type_matcher_v3_MetadataMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_clear_filter(const envoy_type_matcher_v3_MetadataMatcher* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -150,11 +154,15 @@ UPB_INLINE envoy_type_matcher_v3_MetadataMatcher_PathSegment* envoy_type_matcher
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_PathSegment_serialize(const envoy_type_matcher_v3_MetadataMatcher_PathSegment* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_PathSegment_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_PathSegment_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_MetadataMatcher_PathSegment_serialize_ex(const envoy_type_matcher_v3_MetadataMatcher_PathSegment* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_PathSegment_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_MetadataMatcher_PathSegment_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_type_matcher_v3_MetadataMatcher_PathSegment_segment_key = 1,

@@ -23,14 +23,15 @@
 #include <map>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
+#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -192,10 +193,10 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
           continue;
         }
         std::vector<grpc_error_handle> permission_error_list;
-        permissions.emplace_back(absl::make_unique<Rbac::Permission>(
+        permissions.emplace_back(std::make_unique<Rbac::Permission>(
             ParsePermission(*permission_json, &permission_error_list)));
         if (!permission_error_list.empty()) {
-          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
               absl::StrFormat("rules[%d]", i), &permission_error_list));
         }
       }
@@ -306,8 +307,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
           "requestedServerName", &req_server_name_error_list));
     }
   } else {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid rule found"));
+    error_list->push_back(GRPC_ERROR_CREATE("No valid rule found"));
   }
   return permission;
 }
@@ -328,10 +328,10 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
           continue;
         }
         std::vector<grpc_error_handle> principal_error_list;
-        principals.emplace_back(absl::make_unique<Rbac::Principal>(
+        principals.emplace_back(std::make_unique<Rbac::Principal>(
             ParsePrincipal(*principal_json, &principal_error_list)));
         if (!principal_error_list.empty()) {
-          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
               absl::StrFormat("ids[%d]", i), &principal_error_list));
         }
       }
@@ -467,8 +467,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
           GRPC_ERROR_CREATE_FROM_VECTOR("notId", &not_rule_error_list));
     }
   } else {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid id found"));
+    error_list->push_back(GRPC_ERROR_CREATE("No valid id found"));
   }
   return principal;
 }
@@ -488,10 +487,10 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
         continue;
       }
       std::vector<grpc_error_handle> permission_error_list;
-      permissions.emplace_back(absl::make_unique<Rbac::Permission>(
+      permissions.emplace_back(std::make_unique<Rbac::Permission>(
           ParsePermission(*permission_json, &permission_error_list)));
       if (!permission_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
             absl::StrFormat("permissions[%d]", i), &permission_error_list));
       }
     }
@@ -508,10 +507,10 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
         continue;
       }
       std::vector<grpc_error_handle> principal_error_list;
-      principals.emplace_back(absl::make_unique<Rbac::Principal>(
+      principals.emplace_back(std::make_unique<Rbac::Principal>(
           ParsePrincipal(*principal_json, &principal_error_list)));
       if (!principal_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
             absl::StrFormat("principals[%d]", i), &principal_error_list));
       }
     }
@@ -535,8 +534,7 @@ Rbac ParseRbac(const Json::Object& rbac_json,
   int action;
   if (ParseJsonObjectField(*rules_json, "action", &action, error_list)) {
     if (action > 1) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown action"));
+      error_list->push_back(GRPC_ERROR_CREATE("Unknown action"));
     }
   }
   rbac.action = static_cast<Rbac::Action>(action);
@@ -549,7 +547,7 @@ Rbac ParseRbac(const Json::Object& rbac_json,
           entry.first,
           ParsePolicy(entry.second.object_value(), &policy_error_list));
       if (!policy_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
             absl::StrFormat("policies key:'%s'", entry.first.c_str()),
             &policy_error_list));
       }
@@ -571,7 +569,7 @@ std::vector<Rbac> ParseRbacArray(const Json::Array& policies_json_array,
     std::vector<grpc_error_handle> rbac_policy_error_list;
     policies.emplace_back(ParseRbac(*rbac_json, &rbac_policy_error_list));
     if (!rbac_policy_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
           absl::StrFormat("rbacPolicy[%d]", i), &rbac_policy_error_list));
     }
   }
@@ -580,14 +578,11 @@ std::vector<Rbac> ParseRbacArray(const Json::Array& policies_json_array,
 
 }  // namespace
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RbacServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
-                                              const Json& json,
-                                              grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
+                                              const Json& json) {
   // Only parse rbac policy if the channel arg is present
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_PARSE_RBAC_METHOD_CONFIG,
-                                   false)) {
+  if (!args.GetBool(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG).value_or(false)) {
     return nullptr;
   }
   std::vector<Rbac> rbac_policies;
@@ -597,16 +592,20 @@ RbacServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
                            &policies_json_array, &error_list)) {
     rbac_policies = ParseRbacArray(*policies_json_array, &error_list);
   }
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
-  if (*error != GRPC_ERROR_NONE || rbac_policies.empty()) {
-    return nullptr;
+  grpc_error_handle error =
+      GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
+  if (!error.ok()) {
+    absl::Status status = absl::InvalidArgumentError(absl::StrCat(
+        "error parsing RBAC method parameters: ", StatusToString(error)));
+    return status;
   }
-  return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
+  if (rbac_policies.empty()) return nullptr;
+  return std::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
 }
 
 void RbacServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<RbacServiceConfigParser>());
+      std::make_unique<RbacServiceConfigParser>());
 }
 
 size_t RbacServiceConfigParser::ParserIndex() {

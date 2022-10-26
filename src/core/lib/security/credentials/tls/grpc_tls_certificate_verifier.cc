@@ -18,14 +18,21 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 
+#include <string.h>
+
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
@@ -80,7 +87,7 @@ void ExternalCertificateVerifier::OnVerifyDone(
     }
   }
   if (callback != nullptr) {
-    absl::Status return_status = absl::OkStatus();
+    absl::Status return_status;
     if (status != GRPC_STATUS_OK) {
       return_status =
           absl::Status(static_cast<absl::StatusCode>(status), error_details);

@@ -22,6 +22,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
@@ -58,10 +59,12 @@ class ChannelIdleFilter : public ChannelFilter {
   using SingleSetActivityPtr =
       SingleSetPtr<Activity, typename ActivityPtr::deleter_type>;
 
-  ChannelIdleFilter(grpc_channel_stack* channel_stack,
-                    Duration client_idle_timeout)
+  ChannelIdleFilter(
+      grpc_channel_stack* channel_stack, Duration client_idle_timeout,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
       : channel_stack_(channel_stack),
-        client_idle_timeout_(client_idle_timeout) {}
+        client_idle_timeout_(client_idle_timeout),
+        engine_(engine) {}
 
   grpc_channel_stack* channel_stack() { return channel_stack_; };
 
@@ -87,6 +90,7 @@ class ChannelIdleFilter : public ChannelFilter {
       std::make_shared<IdleFilterState>(false)};
 
   SingleSetActivityPtr activity_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 class ClientIdleFilter final : public ChannelIdleFilter {
@@ -94,7 +98,7 @@ class ClientIdleFilter final : public ChannelIdleFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientIdleFilter> Create(
-      ChannelArgs args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 
  private:
   using ChannelIdleFilter::ChannelIdleFilter;
@@ -105,7 +109,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   static const grpc_channel_filter kFilter;
   struct Config;
 
-  static absl::StatusOr<MaxAgeFilter> Create(ChannelArgs args,
+  static absl::StatusOr<MaxAgeFilter> Create(const ChannelArgs& args,
                                              ChannelFilter::Args filter_args);
 
   void PostInit() override;
@@ -127,13 +131,16 @@ class MaxAgeFilter final : public ChannelIdleFilter {
     MaxAgeFilter* filter_;
   };
 
-  MaxAgeFilter(grpc_channel_stack* channel_stack, const Config& max_age_config);
+  MaxAgeFilter(
+      grpc_channel_stack* channel_stack, const Config& max_age_config,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine);
 
   void Shutdown() override;
 
   SingleSetActivityPtr max_age_activity_;
   Duration max_connection_age_;
   Duration max_connection_age_grace_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

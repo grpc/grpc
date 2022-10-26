@@ -20,20 +20,20 @@
 
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <utility>
 
-#include "src/core/lib/channel/channel_args.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target_name, const grpc_channel_args* args,
-    grpc_channel_args** /*new_args*/) {
+    const char* target_name, grpc_core::ChannelArgs* args) {
   return grpc_local_channel_security_connector_create(
-      this->Ref(), std::move(request_metadata_creds), args, target_name);
+      this->Ref(), std::move(request_metadata_creds), *args, target_name);
 }
 
 grpc_core::UniqueTypeName grpc_local_credentials::type() const {
@@ -43,7 +43,7 @@ grpc_core::UniqueTypeName grpc_local_credentials::type() const {
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_credentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    const grpc_core::ChannelArgs& /* args */) {
   return grpc_local_server_security_connector_create(this->Ref());
 }
 

@@ -62,14 +62,19 @@ class ChannelStackBuilder {
   // Query the transport.
   grpc_transport* transport() const { return transport_; }
 
-  // Set channel args (takes a copy of them).
-  ChannelStackBuilder& SetChannelArgs(ChannelArgs args);
+  // Set channel args.
+  ChannelStackBuilder& SetChannelArgs(const ChannelArgs& args);
 
   // Query the channel args.
   const ChannelArgs& channel_args() const { return args_; }
 
   // Mutable vector of proposed stack entries.
   std::vector<const grpc_channel_filter*>* mutable_stack() { return &stack_; }
+
+  // Immutable vector of proposed stack entries.
+  const std::vector<const grpc_channel_filter*>& stack() const {
+    return stack_;
+  }
 
   // The type of channel stack being built.
   grpc_channel_stack_type channel_stack_type() const { return type_; }
@@ -79,6 +84,11 @@ class ChannelStackBuilder {
 
   // Helper to add a filter to the end of the stack.
   void AppendFilter(const grpc_channel_filter* filter);
+
+  // Determine whether a promise-based call stack is able to be built.
+  // Iterates each filter and ensures that there's a promise factory there.
+  // This will go away once the promise conversion is completed.
+  virtual bool IsPromising() const = 0;
 
   // Build the channel stack.
   // After success, *result holds the new channel stack,

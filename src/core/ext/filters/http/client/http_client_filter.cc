@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +32,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -43,7 +43,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
@@ -121,13 +120,13 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
 
   auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
   auto* write_latch =
-      absl::exchange(call_args.server_initial_metadata, read_latch);
+      std::exchange(call_args.server_initial_metadata, read_latch);
 
   return CallPushPull(
       Seq(next_promise_factory(std::move(call_args)),
           [](ServerMetadataHandle md) -> ServerMetadataHandle {
             auto r = CheckServerMetadata(md.get());
-            if (!r.ok()) return ServerMetadataHandle(r);
+            if (!r.ok()) return ServerMetadataFromStatus(r);
             return md;
           }),
       []() { return absl::OkStatus(); },
@@ -147,8 +146,8 @@ HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
       user_agent_(std::move(user_agent)),
       test_only_use_put_requests_(test_only_use_put_requests) {}
 
-absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(ChannelArgs args,
-                                                          ChannelFilter::Args) {
+absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
   auto* transport = args.GetObject<grpc_transport>();
   if (transport == nullptr) {
     return absl::InvalidArgumentError("HttpClientFilter needs a transport");

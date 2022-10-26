@@ -20,11 +20,9 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -68,7 +66,7 @@ Interceptor* OrcaServerInterceptorFactory::CreateServerInterceptor(
 
 void OrcaServerInterceptorFactory::Register(grpc::ServerBuilder* builder) {
   builder->internal_interceptor_creators_.push_back(
-      absl::make_unique<OrcaServerInterceptorFactory>());
+      std::make_unique<OrcaServerInterceptorFactory>());
 }
 
 void EnableCallMetricRecording(grpc::ServerBuilder* builder) {

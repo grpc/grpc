@@ -21,8 +21,32 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <atomic>
+#include <string>
+#include <utility>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
@@ -57,8 +81,8 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
     ~PendingRequest() override {
       grpc_auth_metadata_context_reset(&context_);
       for (size_t i = 0; i < metadata_.size(); i++) {
-        grpc_slice_unref_internal(metadata_[i].key);
-        grpc_slice_unref_internal(metadata_[i].value);
+        grpc_core::CSliceUnref(metadata_[i].key);
+        grpc_core::CSliceUnref(metadata_[i].value);
       }
     }
 

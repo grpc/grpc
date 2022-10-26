@@ -308,6 +308,8 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
     # Silences thousands of trucation warnings
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
+    # Tell MSVC to build grpc using utf-8
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -496,7 +498,7 @@
            --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
            <%text>${_protobuf_include_path}</%text>
            <%text>${REL_FIL}</%text>
-      DEPENDS <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
+      DEPENDS <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
       WORKING_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}</%text>
       COMMENT "Running gRPC C++ protocol buffer compiler for <%text>${IMPORT_PATH}</%text>"
       VERBATIM)
@@ -688,7 +690,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if lib.build in ['test', 'private'] and lib.language == 'c++':
+  % if (lib.build in ['test', 'private'] and lib.language == 'c++') or lib.name == 'end2end_tests':
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
@@ -850,7 +852,7 @@
       "<%text>${output_filepath}</%text>"
       @ONLY)
     install(FILES "<%text>${output_filepath}</%text>"
-      DESTINATION "lib/pkgconfig/")
+      DESTINATION "<%text>${gRPC_INSTALL_LIBDIR}/pkgconfig</%text>")
   endfunction()
 
   # gpr .pc file

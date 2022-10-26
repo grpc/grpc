@@ -19,7 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
-// IWYU pragma: private
+// IWYU pragma: private, include <grpc/grpc.h>
+// IWYU pragma: friend "src/.*"
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -281,11 +282,7 @@ typedef struct {
 #define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
 /** If non-zero, it will determine the maximum frame size used by TSI's frame
  *  protector.
- *
- *  NOTE: Be aware that using a large "max_frame_size" is memory inefficient
- *        for non-zerocopy protectors. Also, increasing this value above 1MiB
- *        can break old binaries that don't support larger than 1MiB frame
- *        size. */
+ */
 #define GRPC_ARG_TSI_MAX_FRAME_SIZE "grpc.tsi.max_frame_size"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
@@ -367,6 +364,12 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
+/* Experimental Arg. Channel args to be used for the control-plane channel
+ * created to the grpclb load balancers. This is a pointer arg whose value is a
+ * grpc_channel_args object. If unset, most channel args from the parent channel
+ * will be propagated to the grpclb channel. */
+#define GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS \
+  "grpc.experimental.grpclb_channel_args"
 /* Timeout in milliseconds to wait for the child of a specific priority to
    complete its initial connection attempt before the priority LB policy fails
    over to the next priority. Default value is 10 seconds. */
@@ -523,14 +526,11 @@ typedef enum grpc_call_error {
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
-/** Signal that the initial metadata should be corked */
-#define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK                                  \
-  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET |                 \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY | GRPC_INITIAL_METADATA_CORKED | \
-   GRPC_WRITE_THROUGH)
+#define GRPC_INITIAL_METADATA_USED_MASK                  \
+  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY | GRPC_WRITE_THROUGH)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
@@ -585,8 +585,6 @@ typedef struct {
   grpc_slice method;
   grpc_slice host;
   gpr_timespec deadline;
-  uint32_t flags;
-  void* reserved;
 } grpc_call_details;
 
 typedef enum {

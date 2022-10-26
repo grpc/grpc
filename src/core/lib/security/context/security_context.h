@@ -21,11 +21,24 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
@@ -52,6 +65,11 @@ struct grpc_auth_context
     : public grpc_core::RefCounted<grpc_auth_context,
                                    grpc_core::NonPolymorphicRefCount> {
  public:
+  // Base class for all extensions to inherit from.
+  class Extension {
+   public:
+    virtual ~Extension() = default;
+  };
   explicit grpc_auth_context(
       grpc_core::RefCountedPtr<grpc_auth_context> chained)
       : grpc_core::RefCounted<grpc_auth_context,
@@ -93,6 +111,9 @@ struct grpc_auth_context
   void set_peer_identity_property_name(const char* name) {
     peer_identity_property_name_ = name;
   }
+  void set_extension(std::unique_ptr<Extension> extension) {
+    extension_ = std::move(extension);
+  }
 
   void ensure_capacity();
   void add_property(const char* name, const char* value, size_t value_length);
@@ -102,6 +123,7 @@ struct grpc_auth_context
   grpc_core::RefCountedPtr<grpc_auth_context> chained_;
   grpc_auth_property_array properties_;
   const char* peer_identity_property_name_ = nullptr;
+  std::unique_ptr<Extension> extension_;
 };
 
 /* --- grpc_security_context_extension ---

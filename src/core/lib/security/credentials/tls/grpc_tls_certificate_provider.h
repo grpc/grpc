@@ -19,20 +19,27 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <stdint.h>
 
-#include "absl/container/inlined_vector.h"
+#include <map>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
@@ -73,6 +80,12 @@ struct grpc_tls_certificate_provider
   // should use a unique string instance, which should be returned by all
   // instances of that provider implementation.
   virtual grpc_core::UniqueTypeName type() const = 0;
+
+  static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const grpc_tls_certificate_provider* a,
+                                const grpc_tls_certificate_provider* b) {
+    return a->Compare(b);
+  }
 
  private:
   // Implementation for `Compare` method intended to be overridden by
@@ -128,7 +141,7 @@ class FileWatcherCertificateProvider final
   FileWatcherCertificateProvider(std::string private_key_path,
                                  std::string identity_certificate_path,
                                  std::string root_cert_path,
-                                 unsigned int refresh_interval_sec);
+                                 int64_t refresh_interval_sec);
 
   ~FileWatcherCertificateProvider() override;
 
@@ -165,7 +178,7 @@ class FileWatcherCertificateProvider final
   std::string private_key_path_;
   std::string identity_certificate_path_;
   std::string root_cert_path_;
-  unsigned int refresh_interval_sec_ = 0;
+  int64_t refresh_interval_sec_ = 0;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   Thread refresh_thread_;

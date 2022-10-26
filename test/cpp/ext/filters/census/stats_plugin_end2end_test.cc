@@ -29,15 +29,29 @@
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+#include "opencensus/trace/exporter/span_exporter.h"
 
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+namespace opencensus {
+namespace trace {
+namespace exporter {
+class SpanExporterTestPeer {
+ public:
+  static constexpr auto& ExportForTesting = SpanExporter::ExportForTesting;
+};
+}  // namespace exporter
+}  // namespace trace
+}  // namespace opencensus
 
 namespace grpc {
 namespace testing {
@@ -85,9 +99,58 @@ class EchoServer final : public TestServiceImpl {
   }
 };
 
+// A handler that records exported traces. Traces can later be retrieved and
+// inspected.
+class ExportedTracesRecorder
+    : public ::opencensus::trace::exporter::SpanExporter::Handler {
+ public:
+  ExportedTracesRecorder() : is_recording_(false) {}
+  void Export(const std::vector<::opencensus::trace::exporter::SpanData>& spans)
+      override {
+    absl::MutexLock lock(&mutex_);
+    if (is_recording_) {
+      for (auto const& span : spans) {
+        recorded_spans_.push_back(span);
+      }
+    }
+  }
+
+  void StartRecording() {
+    absl::MutexLock lock(&mutex_);
+    ASSERT_FALSE(is_recording_);
+    is_recording_ = true;
+  }
+
+  void StopRecording() {
+    absl::MutexLock lock(&mutex_);
+    ASSERT_TRUE(is_recording_);
+    is_recording_ = false;
+  }
+
+  std::vector<::opencensus::trace::exporter::SpanData> GetAndClearSpans() {
+    absl::MutexLock lock(&mutex_);
+    return std::move(recorded_spans_);
+  }
+
+ private:
+  // This mutex is necessary as the SpanExporter runs a loop on a separate
+  // thread which periodically exports spans.
+  absl::Mutex mutex_;
+  bool is_recording_ ABSL_GUARDED_BY(mutex_);
+  std::vector<::opencensus::trace::exporter::SpanData> recorded_spans_
+      ABSL_GUARDED_BY(mutex_);
+};
+
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { RegisterOpenCensusPlugin(); }
+  static void SetUpTestCase() {
+    RegisterOpenCensusPlugin();
+    // OpenCensus C++ has no API to unregister a previously-registered handler,
+    // therefore we register this handler once, and enable/disable recording in
+    // the individual tests.
+    ::opencensus::trace::exporter::SpanExporter::RegisterHandler(
+        absl::WrapUnique(traces_recorder_));
+  }
 
   void SetUp() override {
     // Set up a synchronous server on a different thread to avoid the asynch
@@ -106,6 +169,9 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 
     stub_ = EchoTestService::NewStub(grpc::CreateChannel(
         server_address_, grpc::InsecureChannelCredentials()));
+
+    // Clear out any previous spans
+    ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   }
 
   void ResetStub(std::shared_ptr<Channel> channel) {
@@ -128,7 +194,11 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
   std::thread server_thread_;
 
   std::unique_ptr<EchoTestService::Stub> stub_;
+  static ExportedTracesRecorder* traces_recorder_;
 };
+
+ExportedTracesRecorder* StatsPluginEnd2EndTest::traces_recorder_ =
+    new ExportedTracesRecorder();
 
 TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
   const auto client_method_descriptor =
@@ -176,7 +246,7 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
       grpc::Status status = stub_->Echo(&context, request, &response);
     }
   }
-  absl::SleepFor(absl::Milliseconds(500));
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
   TestUtils::Flush();
 
   // Client side views can be tagged with custom tags.
@@ -263,7 +333,7 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedBytesPerRpc) {
     ASSERT_TRUE(status.ok());
     EXPECT_EQ("foo", response.message());
   }
-  absl::SleepFor(absl::Milliseconds(500));
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
   TestUtils::Flush();
 
   EXPECT_THAT(client_received_bytes_per_rpc_view.GetData().distribution_data(),
@@ -311,7 +381,7 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   // entire time spent making the RPC.
   const double max_time = absl::ToDoubleMilliseconds(absl::Now() - start_time);
 
-  absl::SleepFor(absl::Milliseconds(500));
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
   TestUtils::Flush();
 
   EXPECT_THAT(
@@ -355,6 +425,54 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
                                   ::testing::DoubleEq(client_elapsed_time))))));
 }
 
+TEST_F(StatsPluginEnd2EndTest, StartedRpcs) {
+  View client_started_rpcs_view(ClientStartedRpcsCumulative());
+  View server_started_rpcs_view(ServerStartedRpcsCumulative());
+
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  const int count = 5;
+  for (int i = 0; i < count; ++i) {
+    {
+      grpc::ClientContext context;
+      grpc::Status status = stub_->Echo(&context, request, &response);
+      ASSERT_TRUE(status.ok());
+      EXPECT_EQ("foo", response.message());
+    }
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+    TestUtils::Flush();
+
+    EXPECT_THAT(client_started_rpcs_view.GetData().int_data(),
+                ::testing::UnorderedElementsAre(::testing::Pair(
+                    ::testing::ElementsAre(client_method_name_), i + 1)));
+    EXPECT_THAT(server_started_rpcs_view.GetData().int_data(),
+                ::testing::UnorderedElementsAre(::testing::Pair(
+                    ::testing::ElementsAre(server_method_name_), i + 1)));
+  }
+
+  // Client should see started calls that are not yet completed.
+  {
+    ClientContext ctx;
+    auto stream = stub_->BidiStream(&ctx);
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+    TestUtils::Flush();
+    EXPECT_THAT(
+        client_started_rpcs_view.GetData().int_data(),
+        ::testing::Contains(::testing::Pair(
+            ::testing::ElementsAre("grpc.testing.EchoTestService/BidiStream"),
+            1)));
+    EXPECT_THAT(
+        server_started_rpcs_view.GetData().int_data(),
+        ::testing::Contains(::testing::Pair(
+            ::testing::ElementsAre("grpc.testing.EchoTestService/BidiStream"),
+            1)));
+    ctx.TryCancel();
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+}
+
 TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
   View client_completed_rpcs_view(ClientCompletedRpcsCumulative());
   View server_completed_rpcs_view(ServerCompletedRpcsCumulative());
@@ -370,7 +488,7 @@ TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
-    absl::SleepFor(absl::Milliseconds(500));
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
     TestUtils::Flush();
 
     EXPECT_THAT(client_completed_rpcs_view.GetData().int_data(),
@@ -387,7 +505,7 @@ TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
     auto stream = stub_->BidiStream(&ctx);
     ctx.TryCancel();
   }
-  absl::SleepFor(absl::Milliseconds(500));
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
   TestUtils::Flush();
   EXPECT_THAT(client_completed_rpcs_view.GetData().int_data(),
               ::testing::Contains(::testing::Pair(
@@ -418,7 +536,7 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
-    absl::SleepFor(absl::Milliseconds(500));
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
     TestUtils::Flush();
 
     EXPECT_THAT(
@@ -468,7 +586,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
-    absl::SleepFor(absl::Milliseconds(500));
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
     TestUtils::Flush();
     EXPECT_THAT(
         client_retries_cumulative_view.GetData().int_data(),
@@ -522,7 +640,7 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
       grpc::Status status = stub_->Echo(&context, request, &response);
       EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
     }
-    absl::SleepFor(absl::Milliseconds(500));
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
     TestUtils::Flush();
     EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(
@@ -544,7 +662,9 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
             ::testing::ElementsAre(client_method_name_),
             ::testing::Property(
                 &Distribution::mean,
-                ::testing::AllOf(::testing::Ge(50), ::testing::Le(300))))));
+                ::testing::AllOf(
+                    ::testing::Ge(50),
+                    ::testing::Le(500 * grpc_test_slowdown_factor()))))));
   }
 }
 
@@ -565,7 +685,269 @@ TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
   EXPECT_TRUE(status.ok());
 }
 
+TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+    ResetStub(channel);
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  auto GetSpanByName = [&recorded_spans](absl::string_view name) {
+    return std::find_if(
+        recorded_spans.begin(), recorded_spans.end(),
+        [name](auto const& span_data) { return span_data.name() == name; });
+  };
+  // We never ended the two spans created in the scope above, so we don't
+  // expect them to be exported.
+  ASSERT_EQ(3, recorded_spans.size());
+  auto sent_span_data =
+      GetSpanByName(absl::StrCat("Sent.", client_method_name_));
+  ASSERT_NE(sent_span_data, recorded_spans.end());
+  auto attempt_span_data =
+      GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_EQ(sent_span_data->context().span_id(),
+            attempt_span_data->parent_span_id());
+  auto recv_span_data =
+      GetSpanByName(absl::StrCat("Recv.", server_method_name_));
+  ASSERT_NE(recv_span_data, recorded_spans.end());
+  EXPECT_EQ(attempt_span_data->context().span_id(),
+            recv_span_data->parent_span_id());
+}
+
+// Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
+TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    ChannelArguments args;
+    args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+    auto channel = CreateCustomChannel(server_address_,
+                                       InsecureChannelCredentials(), args);
+    ResetStub(channel);
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  auto GetSpanByName = [&recorded_spans](absl::string_view name) {
+    return std::find_if(
+        recorded_spans.begin(), recorded_spans.end(),
+        [name](auto const& span_data) { return span_data.name() == name; });
+  };
+
+  // The size might be 0 or 1, depending on whether the server-side ends up
+  // getting sampled or not.
+  ASSERT_LE(recorded_spans.size(), 1);
+  // Make sure that the client-side traces are not collected.
+  auto sent_span_data =
+      GetSpanByName(absl::StrCat("Sent.", client_method_name_));
+  ASSERT_EQ(sent_span_data, recorded_spans.end());
+  auto attempt_span_data =
+      GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_EQ(attempt_span_data, recorded_spans.end());
+}
+
+// Test the working of EnableOpenCensusStats.
+TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
+  EnableOpenCensusStats(false);
+
+  View client_started_rpcs_view(ClientStartedRpcsCumulative());
+  View server_started_rpcs_view(ServerStartedRpcsCumulative());
+  View client_completed_rpcs_view(ClientCompletedRpcsCumulative());
+  View server_completed_rpcs_view(ServerCompletedRpcsCumulative());
+
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  {
+    grpc::ClientContext context;
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    ASSERT_TRUE(status.ok());
+    EXPECT_EQ("foo", response.message());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+
+  EXPECT_TRUE(client_started_rpcs_view.GetData().int_data().empty());
+  EXPECT_TRUE(server_started_rpcs_view.GetData().int_data().empty());
+  EXPECT_TRUE(client_completed_rpcs_view.GetData().int_data().empty());
+  EXPECT_TRUE(server_completed_rpcs_view.GetData().int_data().empty());
+
+  EnableOpenCensusStats(true);
+}
+
+// Test the working of EnableOpenCensusTracing.
+TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
+  EnableOpenCensusTracing(false);
+
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // No span should be exported
+  ASSERT_EQ(0, recorded_spans.size());
+
+  EnableOpenCensusTracing(true);
+}
+
+// This test verifies that users depending on src/cpp/ext/filters/census header
+// files can continue using the non-experimental names.
+TEST(StatsPluginDeclarationTest, Declarations) {
+  gpr_log(GPR_INFO, "%p", ClientMethodTagKey);
+  gpr_log(GPR_INFO, "%p", ClientStatusTagKey);
+  gpr_log(GPR_INFO, "%p", ServerMethodTagKey);
+  gpr_log(GPR_INFO, "%p", ServerStatusTagKey);
+
+  gpr_log(GPR_INFO, "%p", kRpcClientReceivedBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientReceivedMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientRetriesPerCallMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientRetryDelayPerCallMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientRoundtripLatencyMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientSentBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientSentMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientServerLatencyMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcClientStartedRpcsMeasureName.data());
+  gpr_log(GPR_INFO, "%p",
+          kRpcClientTransparentRetriesPerCallMeasureName.data());
+
+  gpr_log(GPR_INFO, "%p", kRpcServerReceivedBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerReceivedMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerSentBytesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerSentMessagesPerRpcMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerServerLatencyMeasureName.data());
+  gpr_log(GPR_INFO, "%p", kRpcServerStartedRpcsMeasureName.data());
+
+  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsCumulative);
+  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRetriesCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallCumulative);
+  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyCumulative);
+  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ClientServerLatencyCumulative);
+  gpr_log(GPR_INFO, "%p", ClientStartedRpcsCumulative);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesCumulative);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallCumulative);
+
+  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsCumulative);
+  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcCumulative);
+  gpr_log(GPR_INFO, "%p", ServerServerLatencyCumulative);
+  gpr_log(GPR_INFO, "%p", ServerStartedRpcsCumulative);
+
+  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsMinute);
+  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientRetriesMinute);
+  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallMinute);
+  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallMinute);
+  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyMinute);
+  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ClientServerLatencyMinute);
+  gpr_log(GPR_INFO, "%p", ClientStartedRpcsMinute);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesMinute);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallMinute);
+
+  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsMinute);
+  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcMinute);
+  gpr_log(GPR_INFO, "%p", ServerServerLatencyMinute);
+  gpr_log(GPR_INFO, "%p", ServerStartedRpcsMinute);
+
+  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsHour);
+  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientRetriesHour);
+  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallHour);
+  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallHour);
+  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyHour);
+  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ClientServerLatencyHour);
+  gpr_log(GPR_INFO, "%p", ClientStartedRpcsHour);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesHour);
+  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallHour);
+
+  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsHour);
+  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcHour);
+  gpr_log(GPR_INFO, "%p", ServerServerLatencyHour);
+  gpr_log(GPR_INFO, "%p", ServerStartedRpcsHour);
+}
+
 }  // namespace
+
 }  // namespace testing
 }  // namespace grpc
 

@@ -29,6 +29,7 @@ grpc_cc_test(
         "opencensus-tags",
         "opencensus-with-tag-map",
     ],
+    flaky = True,
     language = "C++",
     linkstatic = True,
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows

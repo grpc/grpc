@@ -14,28 +14,20 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -118,7 +110,7 @@ static void test_retry_transparent_max_concurrent_streams(
       begin_test(config, "retry_transparent_max_concurrent_streams", nullptr,
                  &server_args);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
 
@@ -172,10 +164,9 @@ static void test_retry_transparent_max_concurrent_streams(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&request_metadata_recv);
 
@@ -256,10 +247,10 @@ static void test_retry_transparent_max_concurrent_streams(
 
   // Server completes first call and shutdown.
   // Client completes first call.
-  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(103), true);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   // Clean up from first call.
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
@@ -290,10 +281,9 @@ static void test_retry_transparent_max_concurrent_streams(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(201), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(201), true);
+  cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   grpc_call_details_destroy(&call_details);
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.
@@ -333,9 +323,9 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Second call completes.
-  CQ_EXPECT_COMPLETION(cqv, tag(202), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(202), true);
+  cqv.Expect(tag(2), true);
+  cqv.Verify();
 
   // Clean up from second call.
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
@@ -353,8 +343,6 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(0 == grpc_slice_str_cmp(details2, "xyz"));
   grpc_slice_unref(details2);
   grpc_call_unref(c2);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

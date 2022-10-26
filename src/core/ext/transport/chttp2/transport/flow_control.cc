@@ -35,8 +35,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
@@ -46,8 +47,6 @@ namespace chttp2 {
 
 TestOnlyTransportTargetWindowEstimatesMocker*
     g_test_only_transport_target_window_estimates_mocker;
-
-bool g_test_only_transport_flow_control_window_check;
 
 namespace {
 
@@ -114,7 +113,7 @@ TransportFlowControl::TransportFlowControl(const char* name,
                           .set_min_control_value(-1)
                           .set_max_control_value(25)
                           .set_integral_range(10)),
-      last_pid_update_(ExecCtx::Get()->Now()) {}
+      last_pid_update_(Timestamp::Now()) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   const uint32_t target_announced_window =
@@ -130,87 +129,39 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   return 0;
 }
 
-absl::Status TransportFlowControl::ValidateRecvData(
-    int64_t incoming_frame_size) {
-  if (incoming_frame_size > announced_window_) {
-    return absl::InternalError(absl::StrFormat(
-        "frame of size %" PRId64 " overflows local window of %" PRId64,
-        incoming_frame_size, announced_window_));
-  }
-  return absl::OkStatus();
-}
-
-void TransportFlowControl::CommitRecvData(int64_t incoming_frame_size) {
-  announced_window_ -= incoming_frame_size;
-}
-
 StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc) : tfc_(tfc) {}
 
-absl::Status StreamFlowControl::RecvData(int64_t incoming_frame_size) {
-  absl::Status error = tfc_->ValidateRecvData(incoming_frame_size);
-  if (!error.ok()) return error;
+absl::Status StreamFlowControl::IncomingUpdateContext::RecvData(
+    int64_t incoming_frame_size) {
+  return tfc_upd_.RecvData(incoming_frame_size, [this, incoming_frame_size]() {
+    int64_t acked_stream_window =
+        sfc_->announced_window_delta_ + sfc_->tfc_->acked_init_window();
+    if (incoming_frame_size > acked_stream_window) {
+      return absl::InternalError(absl::StrFormat(
+          "frame of size %" PRId64 " overflows local window of %" PRId64,
+          incoming_frame_size, acked_stream_window));
+    }
 
-  int64_t acked_stream_window =
-      announced_window_delta_ + tfc_->acked_init_window();
-  if (incoming_frame_size > acked_stream_window) {
+    tfc_upd_.UpdateAnnouncedWindowDelta(&sfc_->announced_window_delta_,
+                                        -incoming_frame_size);
+    sfc_->min_progress_size_ -=
+        std::min(sfc_->min_progress_size_, incoming_frame_size);
+    return absl::OkStatus();
+  });
+}
+
+absl::Status TransportFlowControl::IncomingUpdateContext::RecvData(
+    int64_t incoming_frame_size, absl::FunctionRef<absl::Status()> stream) {
+  if (incoming_frame_size > tfc_->announced_window_) {
     return absl::InternalError(absl::StrFormat(
         "frame of size %" PRId64 " overflows local window of %" PRId64,
-        incoming_frame_size, acked_stream_window));
+        incoming_frame_size, tfc_->announced_window_));
   }
-
-  UpdateAnnouncedWindowDelta(tfc_, -incoming_frame_size);
-  local_window_delta_ -= incoming_frame_size;
-  min_progress_size_ -=
-      std::min(static_cast<int64_t>(min_progress_size_), incoming_frame_size);
-  tfc_->CommitRecvData(incoming_frame_size);
+  absl::Status error = stream();
+  if (!error.ok()) return error;
+  tfc_->announced_window_ -= incoming_frame_size;
   return absl::OkStatus();
 }
-
-uint32_t StreamFlowControl::MaybeSendUpdate() {
-  // If a recently sent settings frame caused the stream's flow control window
-  // to go in the negative (or < min_progress_size_), update the delta.
-  // In this case, we want to make sure that bytes are still flowing.
-  UpdateProgress(min_progress_size_);
-  if (local_window_delta_ > announced_window_delta_) {
-    uint32_t announce = static_cast<uint32_t>(
-        Clamp(local_window_delta_ - announced_window_delta_, int64_t(0),
-              kMaxWindowUpdateSize));
-    UpdateAnnouncedWindowDelta(tfc_, announce);
-    return announce;
-  }
-  return 0;
-}
-
-void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
-  uint32_t max_recv_bytes;
-
-  min_progress_size_ = min_progress_size;
-
-  /* clamp max recv hint to an allowable size */
-  if (min_progress_size >= kMaxWindowDelta) {
-    max_recv_bytes = kMaxWindowDelta;
-  } else {
-    max_recv_bytes = static_cast<uint32_t>(min_progress_size);
-  }
-
-  /* add some small lookahead to keep pipelines flowing */
-  GPR_DEBUG_ASSERT(max_recv_bytes <=
-                   kMaxWindowUpdateSize - tfc_->sent_init_window());
-  if (local_window_delta_ < max_recv_bytes) {
-    uint32_t add_max_recv_bytes =
-        static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
-    local_window_delta_ += add_max_recv_bytes;
-  }
-}
-
-absl::Status TransportFlowControl::RecvData(int64_t incoming_frame_size) {
-  absl::Status error = ValidateRecvData(incoming_frame_size);
-  if (error.ok()) return error;
-  CommitRecvData(incoming_frame_size);
-  return absl::OkStatus();
-}
-
-void TransportFlowControl::RecvUpdate(uint32_t size) { remote_window_ += size; }
 
 int64_t TransportFlowControl::target_window() const {
   // See comment above announced_stream_total_over_incoming_window_ for the
@@ -248,12 +199,14 @@ static double AdjustForMemoryPressure(double memory_pressure, double target) {
 
 double TransportFlowControl::TargetLogBdp() {
   return AdjustForMemoryPressure(
-      memory_owner_->is_valid() ? memory_owner_->InstantaneousPressure() : 0.0,
+      memory_owner_->is_valid()
+          ? memory_owner_->GetPressureInfo().pressure_control_value
+          : 0.0,
       1 + log2(bdp_estimator_.EstimateBdp()));
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (now - last_pid_update_).seconds();
   last_pid_update_ = now;
@@ -262,80 +215,227 @@ double TransportFlowControl::SmoothLogBdp(double value) {
   return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
 }
 
+double
+TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+    const {
+  const double bdp = bdp_estimator_.EstimateBdp() * 2.0;
+  const double memory_pressure =
+      memory_owner_->GetPressureInfo().pressure_control_value;
+  // Linear interpolation between two values.
+  // Given a line segment between the two points (t_min, a), and (t_max, b),
+  // and a value t such that t_min <= t <= t_max, return the value on the line
+  // segment at t.
+  auto lerp = [](double t, double t_min, double t_max, double a, double b) {
+    return a + (b - a) * (t - t_min) / (t_max - t_min);
+  };
+  // We split memory pressure into three broad regions:
+  // 1. Low memory pressure, the "anything goes" case - we assume no memory
+  //    pressure concerns and advertise a huge window to keep things flowing.
+  // 2. Moderate memory pressure, the "adjust to BDP" case - we linearly ramp
+  //    down window size to 2*BDP - which should still allow bytes to flow, but
+  //    is arguably more considered.
+  // 3. High memory pressure - past 50% we linearly ramp down window size from
+  //    BDP to 0 - at which point senders effectively must request to send bytes
+  //    to us.
+  //
+  //          ▲
+  //          │
+  // 16mb ────┤---------x----
+  //          │              -----
+  //  BDP ────┤                   ----x---
+  //          │                           ----
+  //          │                               -----
+  //          │                                    ----
+  //          │                                        -----
+  //          │                                             ---x
+  //          ├─────────┬─────────────┬────────────────────────┬─────►
+  //          │Anything │Adjust to    │Drop to zero            │
+  //          │Goes     │BDP          │                        │
+  //          0%        20%           50%                      100% memory
+  //                                                                pressure
+  const double kAnythingGoesPressure = 0.2;
+  const double kAdjustedToBdpPressure = 0.5;
+  const double kAnythingGoesWindow = std::max(double(1 << 24), bdp);
+  if (memory_pressure < kAnythingGoesPressure) {
+    return kAnythingGoesWindow;
+  } else if (memory_pressure < kAdjustedToBdpPressure) {
+    return lerp(memory_pressure, kAnythingGoesPressure, kAdjustedToBdpPressure,
+                kAnythingGoesWindow, bdp);
+  } else if (memory_pressure < 1.0) {
+    return lerp(memory_pressure, kAdjustedToBdpPressure, 1.0, bdp, 0);
+  } else {
+    return 0;
+  }
+}
+
 void TransportFlowControl::UpdateSetting(
-    int64_t* desired_value, int64_t new_desired_value,
-    FlowControlAction* action,
+    grpc_chttp2_setting_id id, int64_t* desired_value,
+    uint32_t new_desired_value, FlowControlAction* action,
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
-  int64_t delta = new_desired_value - *desired_value;
-  // TODO(ncteisen): tune this
-  if (delta != 0 &&
-      (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
-    *desired_value = new_desired_value;
-    (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+  if (IsFlowControlFixesEnabled()) {
+    new_desired_value =
+        Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
+              grpc_chttp2_settings_parameters[id].max_value);
+    if (new_desired_value != *desired_value) {
+      *desired_value = new_desired_value;
+      // Reaching zero can only happen for initial window size, and if it occurs
+      // we really want to wake up writes and ensure all the queued stream
+      // window updates are flushed, since stream flow control operates
+      // differently at zero window size.
+      FlowControlAction::Urgency urgency =
+          FlowControlAction::Urgency::QUEUE_UPDATE;
+      if (new_desired_value == 0) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      }
+      (action->*set)(urgency, *desired_value);
+    }
+  } else {
+    int64_t delta = new_desired_value - *desired_value;
+    // TODO(ncteisen): tune this
+    if (delta != 0 &&
+        (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
+      *desired_value = new_desired_value;
+      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE,
+                     static_cast<uint32_t>(*desired_value));
+    }
   }
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
   FlowControlAction action;
   if (enable_bdp_probe_) {
-    // get bdp estimate and update initial_window accordingly.
-    // target might change based on how much memory pressure we are under
-    // TODO(ncteisen): experiment with setting target to be huge under low
-    // memory pressure.
-    double target = pow(2, SmoothLogBdp(TargetLogBdp()));
-    if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
-      // Hook for simulating unusual flow control situations in tests.
-      target = g_test_only_transport_target_window_estimates_mocker
-                   ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
-                       target_initial_window_size_ /* current target */);
+    if (IsFlowControlFixesEnabled()) {
+      // get bdp estimate and update initial_window accordingly.
+      // target might change based on how much memory pressure we are under
+      // TODO(ncteisen): experiment with setting target to be huge under low
+      // memory pressure.
+      uint32_t target = static_cast<uint32_t>(RoundUpToPowerOf2(
+          Clamp(IsMemoryPressureControllerEnabled()
+                    ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+                    : pow(2, SmoothLogBdp(TargetLogBdp())),
+                0.0, static_cast<double>(kMaxInitialWindowSize))));
+      if (target < kMinPositiveInitialWindowSize) target = 0;
+      if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
+        // Hook for simulating unusual flow control situations in tests.
+        target = g_test_only_transport_target_window_estimates_mocker
+                     ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
+                         target_initial_window_size_ /* current target */);
+      }
+      // Though initial window 'could' drop to 0, we keep the floor at
+      // kMinInitialWindowSize
+      UpdateSetting(GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+                    &target_initial_window_size_, target, &action,
+                    &FlowControlAction::set_send_initial_window_update);
+      // we target the max of BDP or bandwidth in microseconds.
+      UpdateSetting(GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
+                    target, &action,
+                    &FlowControlAction::set_send_max_frame_size_update);
+    } else {
+      // get bdp estimate and update initial_window accordingly.
+      // target might change based on how much memory pressure we are under
+      // TODO(ncteisen): experiment with setting target to be huge under low
+      // memory pressure.
+      double target = IsMemoryPressureControllerEnabled()
+                          ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+                          : pow(2, SmoothLogBdp(TargetLogBdp()));
+      if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
+        // Hook for simulating unusual flow control situations in tests.
+        target = g_test_only_transport_target_window_estimates_mocker
+                     ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
+                         target_initial_window_size_ /* current target */);
+      }
+      // Though initial window 'could' drop to 0, we keep the floor at
+      // kMinInitialWindowSize
+      UpdateSetting(
+          GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+          &target_initial_window_size_,
+          static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
+                                     double(kMaxInitialWindowSize))),
+          &action, &FlowControlAction::set_send_initial_window_update);
+      // get bandwidth estimate and update max_frame accordingly.
+      double bw_dbl = bdp_estimator_.EstimateBandwidth();
+      // we target the max of BDP or bandwidth in microseconds.
+      UpdateSetting(
+          GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
+          static_cast<int32_t>(Clamp(
+              std::max(
+                  static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) /
+                      1000,
+                  static_cast<int32_t>(target_initial_window_size_)),
+              16384, 16777215)),
+          &action, &FlowControlAction::set_send_max_frame_size_update);
     }
-    // Though initial window 'could' drop to 0, we keep the floor at
-    // kMinInitialWindowSize
-    UpdateSetting(
-        &target_initial_window_size_,
-        static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
-                                   double(kMaxInitialWindowSize))),
-        &action, &FlowControlAction::set_send_initial_window_update);
-
-    // get bandwidth estimate and update max_frame accordingly.
-    double bw_dbl = bdp_estimator_.EstimateBandwidth();
-    // we target the max of BDP or bandwidth in microseconds.
-    UpdateSetting(
-        &target_frame_size_,
-        static_cast<int32_t>(Clamp(
-            std::max(static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) /
-                         1000,
-                     static_cast<int32_t>(target_initial_window_size_)),
-            16384, 16777215)),
-        &action, &FlowControlAction::set_send_max_frame_size_update);
   }
   return UpdateAction(action);
 }
 
-FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
-  const uint32_t sent_init_window = tfc_->sent_init_window();
-  if (local_window_delta_ > announced_window_delta_ &&
-      announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
-    action.set_send_stream_update(
-        FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-  } else if (local_window_delta_ > announced_window_delta_) {
-    action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
-  }
+uint32_t StreamFlowControl::MaybeSendUpdate() {
+  TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
+  const int64_t announce = DesiredAnnounceSize();
+  pending_size_ = absl::nullopt;
+  tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
+  GPR_ASSERT(DesiredAnnounceSize() == 0);
+  tfc_upd.MakeAction();
+  return static_cast<uint32_t>(announce);
+}
 
+int64_t StreamFlowControl::DesiredAnnounceSize() const {
+  int64_t desired_window_delta = [this]() {
+    if (min_progress_size_ == 0) {
+      if (pending_size_.has_value() &&
+          announced_window_delta_ < -*pending_size_) {
+        return -*pending_size_;
+      } else {
+        return announced_window_delta_;
+      }
+    } else {
+      return std::min(min_progress_size_, kMaxWindowDelta);
+    }
+  }();
+  return Clamp(desired_window_delta - announced_window_delta_, int64_t(0),
+               kMaxWindowUpdateSize);
+}
+
+FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
+  const int64_t desired_announce_size = DesiredAnnounceSize();
+  if (desired_announce_size > 0) {
+    FlowControlAction::Urgency urgency =
+        FlowControlAction::Urgency::QUEUE_UPDATE;
+    // Size at which we probably want to wake up and write regardless of whether
+    // we *have* to.
+    // Currently set at half the initial window size or 8kb (whichever is
+    // greater). 8kb means we don't send rapidly unnecessarily when the initial
+    // window size is small.
+    const int64_t hurry_up_size =
+        std::max(static_cast<int64_t>(tfc_->sent_init_window()) / 2,
+                 static_cast<int64_t>(8192));
+    if (desired_announce_size > hurry_up_size) {
+      urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+    }
+    // min_progress_size_ > 0 means we have a reader ready to read.
+    if (min_progress_size_ > 0) {
+      // If we're into initial window to receive that data we should wake up and
+      // send an update.
+      if (announced_window_delta_ < 0) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      } else if (announced_window_delta_ == 0 &&
+                 tfc_->sent_init_window() == 0) {
+        // Special case when initial window size is zero, meaning that
+        // announced_window_delta cannot become negative (it may already be so
+        // however).
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      }
+    }
+    action.set_send_stream_update(urgency);
+  }
   return action;
 }
 
-void StreamFlowControl::UpdateAnnouncedWindowDelta(TransportFlowControl* tfc,
-                                                   int64_t change) {
-  tfc->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
-  announced_window_delta_ += change;
-  tfc->PostUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
-}
-
-void StreamFlowControl::SentData(int64_t outgoing_frame_size) {
-  tfc_->StreamSentData(outgoing_frame_size);
-  remote_window_delta_ -= outgoing_frame_size;
+void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
+    int64_t pending_size) {
+  GPR_ASSERT(pending_size >= 0);
+  sfc_->pending_size_ = pending_size;
 }
 
 }  // namespace chttp2

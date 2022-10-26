@@ -33,6 +33,7 @@
 
 #include <netinet/in.h>
 
+#import "../Common/TestUtils.h"
 #import "../version.h"
 
 #define TEST_TIMEOUT 16
@@ -41,7 +42,6 @@
 // in turn derived from environment variable of the same name.
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
-static NSString *const kHostAddress = NSStringize(HOST_PORT_LOCAL);
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
 
@@ -108,10 +108,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 - (void)setUp {
   // Add a custom user agent prefix and suffix that will be used in test
-  [GRPCCall setUserAgentPrefix:@"Foo" forHost:kHostAddress];
-  [GRPCCall setUserAgentSuffix:@"Suffix" forHost:kHostAddress];
+  [GRPCCall setUserAgentPrefix:@"Foo" forHost:GRPCGetLocalInteropTestServerAddressPlainText()];
+  [GRPCCall setUserAgentSuffix:@"Suffix" forHost:GRPCGetLocalInteropTestServerAddressPlainText()];
   // Register test server as non-SSL.
-  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+  [GRPCCall useInsecureConnectionsForHost:GRPCGetLocalInteropTestServerAddressPlainText()];
 
   // This method isn't implemented by the remote server.
   kInexistentMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
@@ -131,7 +131,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 - (void)testConnectionToRemoteServer {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kInexistentMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
@@ -155,7 +155,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
       [self expectationWithDescription:@"Empty response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
@@ -185,7 +185,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   request.fillOauthScope = YES;
   GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
@@ -215,7 +215,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
   __weak XCTestExpectation *metadata = [self expectationWithDescription:@"Metadata changed."];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
@@ -249,7 +249,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
       [self expectationWithDescription:@"Empty response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   // Setting this special key in the header will cause the interop server to echo back the
@@ -309,7 +309,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
       [self expectationWithDescription:@"Empty response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   // Setting this special key in the header will cause the interop server to echo back the
@@ -350,7 +350,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   GRXWriter *requestsWriter = [GRXWriter emptyWriter];
   [requestsWriter finishWithError:nil];
   @try {
-    (void)[[GRPCCall alloc] initWithHost:kHostAddress
+    (void)[[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                     path:kUnaryCallMethod.HTTPPath
                           requestsWriter:requestsWriter];
     XCTFail(@"Did not receive an exception when GRXWriter has incorrect state.");
@@ -373,7 +373,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   GRXWriter *requestsWriter1 = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call1 = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call1 = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                               path:kUnaryCallMethod.HTTPPath
                                     requestsWriter:requestsWriter1];
 
@@ -401,7 +401,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   GRXWriter *requestsWriter2 = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call2 = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call2 = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                               path:kUnaryCallMethod.HTTPPath
                                     requestsWriter:requestsWriter2];
 
@@ -427,7 +427,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
   GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kFullDuplexCallMethod.HTTPPath
                                    requestsWriter:pipe];
 

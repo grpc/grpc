@@ -16,25 +16,27 @@
  *
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <string.h>
+
+#include <grpc/grpc.h>
+
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+
 #ifdef GRPC_POSIX_SOCKET
 #include <unistd.h>
 #endif
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <string>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/connected_channel.h"
+#include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

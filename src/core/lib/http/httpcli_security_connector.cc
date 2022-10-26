@@ -20,24 +20,38 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
 
@@ -71,7 +85,7 @@ class grpc_httpcli_ssl_channel_security_connector final
         &options, &handshaker_factory_);
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        HandshakeManager* handshake_mgr) override {
     tsi_handshaker* handshaker = nullptr;
@@ -92,24 +106,23 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
 
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&
         !tsi_ssl_peer_matches_name(&peer, secure_peer_name_)) {
-      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "Peer name ", secure_peer_name_, " is not in peer certificate"));
+      error = GRPC_ERROR_CREATE(absl::StrCat("Peer name ", secure_peer_name_,
+                                             " is not in peer certificate"));
     }
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
@@ -155,8 +168,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> /*call_creds*/, const char* target,
-      const grpc_channel_args* args,
-      grpc_channel_args** /*new_args*/) override {
+      ChannelArgs* args) override {
     const char* pem_root_certs = DefaultSslRootStore::GetPemRootCerts();
     const tsi_ssl_root_certs_store* root_store =
         DefaultSslRootStore::GetRootStore();
@@ -164,13 +176,11 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       return nullptr;
     }
-    const char* ssl_host_override =
-        grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-    if (ssl_host_override != nullptr) {
-      target = ssl_host_override;
-    }
-    return httpcli_ssl_channel_security_connector_create(pem_root_certs,
-                                                         root_store, target);
+    absl::optional<std::string> target_string =
+        args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
+            .value_or(target);
+    return httpcli_ssl_channel_security_connector_create(
+        pem_root_certs, root_store, target_string->c_str());
   }
 
   RefCountedPtr<grpc_channel_credentials> duplicate_without_call_credentials()

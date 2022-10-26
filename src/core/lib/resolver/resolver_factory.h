@@ -19,11 +19,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resolver/resolver.h"
@@ -39,7 +41,7 @@ struct ResolverArgs {
   /// The parsed URI to resolve.
   URI uri;
   /// Channel args to be included in resolver results.
-  const grpc_channel_args* args = nullptr;
+  ChannelArgs args;
   /// Used to drive I/O in the name resolution process.
   grpc_pollset_set* pollset_set = nullptr;
   /// The work_serializer under which all resolver calls will be run.

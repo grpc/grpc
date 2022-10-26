@@ -26,6 +26,7 @@
 
 #include <atomic>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -34,6 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -44,6 +46,7 @@
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -141,6 +144,7 @@ class Channel : public RefCounted<Channel>,
   absl::string_view target() const { return target_; }
   MemoryAllocator* allocator() { return &allocator_; }
   bool is_client() const { return is_client_; }
+  bool is_promising() const { return is_promising_; }
   RegisteredCall* RegisterCall(const char* method, const char* host);
 
   int TestOnlyRegisteredCalls() {
@@ -153,12 +157,18 @@ class Channel : public RefCounted<Channel>,
     return registration_table_.method_registration_attempts;
   }
 
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
+    return event_engine_.get();
+  }
+
  private:
-  Channel(bool is_client, std::string target, ChannelArgs channel_args,
+  Channel(bool is_client, bool is_promising, std::string target,
+          const ChannelArgs& channel_args,
           grpc_compression_options compression_options,
           RefCountedPtr<grpc_channel_stack> channel_stack);
 
   const bool is_client_;
+  const bool is_promising_;
   const grpc_compression_options compression_options_;
   std::atomic<size_t> call_size_estimate_;
   CallRegistrationTable registration_table_;
@@ -166,6 +176,8 @@ class Channel : public RefCounted<Channel>,
   MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 }  // namespace grpc_core

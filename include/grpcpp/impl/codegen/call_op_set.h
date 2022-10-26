@@ -27,7 +27,7 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
@@ -41,6 +41,7 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 
@@ -383,11 +384,7 @@ Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
   // Serialize immediately since we do not have access to the message pointer
   bool own_buf;
-  // TODO(vjpai): Remove the void below when possible
-  // The void in the template parameter below should not be needed
-  // (since it should be implicit) but is needed due to an observed
-  // difference in behavior between clang and gcc for certain internal users
-  Status result = SerializationTraits<M, void>::Serialize(
+  Status result = SerializationTraits<M>::Serialize(
       message, send_buf_.bbuf_ptr(), &own_buf);
   if (!own_buf) {
     send_buf_.Duplicate();
@@ -412,7 +409,7 @@ Status CallOpSendMessage::SendMessagePtr(const M* message,
     // The void in the template parameter below should not be needed
     // (since it should be implicit) but is needed due to an observed
     // difference in behavior between clang and gcc for certain internal users
-    Status result = SerializationTraits<M, void>::Serialize(
+    Status result = SerializationTraits<M>::Serialize(
         *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
     if (!own_buf) {
       send_buf_.Duplicate();
@@ -980,8 +977,8 @@ class CallOpSet : public CallOpSetInterface,
       // A failure here indicates an API misuse; for example, doing a Write
       // while another Write is already pending on the same RPC or invoking
       // WritesDone multiple times
-      // gpr_log(GPR_ERROR, "API misuse of type %s observed",
-      //        g_core_codegen_interface->grpc_call_error_to_string(err));
+      gpr_log(GPR_ERROR, "API misuse of type %s observed",
+              g_core_codegen_interface->grpc_call_error_to_string(err));
       GPR_CODEGEN_ASSERT(false);
     }
   }

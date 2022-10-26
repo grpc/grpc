@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -41,7 +41,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 /// from the caller; if the caller still needs the resource_user after creating
 /// a transport, the caller must take another ref.
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client);
+    const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
+    bool is_client);
 
 grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
 grpc_chttp2_transport_get_socket_node(grpc_transport* transport);

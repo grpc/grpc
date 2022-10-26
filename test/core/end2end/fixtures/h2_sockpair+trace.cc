@@ -17,31 +17,40 @@
  */
 
 #include <string.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
+#include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
+
 #ifdef GRPC_POSIX_SOCKET
 #include <unistd.h>
 #endif
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
-#include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
-#include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 
 /* chttp2 transport that is immediately available (used for testing
    connected_channel without a client_channel */
@@ -59,10 +68,9 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_core::Server* core_server = grpc_core::Server::FromC(f->server);
   grpc_error_handle error = core_server->SetupTransport(
       transport, nullptr, core_server->channel_args(), nullptr);
-  if (error == GRPC_ERROR_NONE) {
+  if (error.ok()) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
-    GRPC_ERROR_UNREF(error);
     grpc_transport_destroy(transport);
   }
 }
@@ -111,13 +119,11 @@ static void chttp2_init_client_socketpair(
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  client_args = grpc_core::CoreConfiguration::Get()
-                    .channel_args_preconditioning()
-                    .PreconditionChannelArgs(client_args)
-                    .ToC();
-  transport =
-      grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
-  grpc_channel_args_destroy(client_args);
+  auto client_channel_args = grpc_core::CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(client_args);
+  transport = grpc_create_chttp2_transport(client_channel_args,
+                                           fixture_data->ep.client, true);
   client_setup_transport(&cs, transport);
   GPR_ASSERT(f->client);
 }
@@ -131,13 +137,11 @@ static void chttp2_init_server_socketpair(
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  server_args = grpc_core::CoreConfiguration::Get()
-                    .channel_args_preconditioning()
-                    .PreconditionChannelArgs(server_args)
-                    .ToC();
-  transport =
-      grpc_create_chttp2_transport(server_args, fixture_data->ep.server, false);
-  grpc_channel_args_destroy(server_args);
+  auto server_channel_args = grpc_core::CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(server_args);
+  transport = grpc_create_chttp2_transport(server_channel_args,
+                                           fixture_data->ep.server, false);
   server_setup_transport(f, transport);
 }
 

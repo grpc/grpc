@@ -31,12 +31,12 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/time_averaged_stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 
@@ -60,7 +60,7 @@ grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
  */
 struct timer_shard {
   gpr_mu mu;
-  grpc_time_averaged_stats stats;
+  grpc_core::ManualConstructor<grpc_core::TimeAveragedStats> stats;
   /* All and only timers with deadlines < this will be in the heap. */
   grpc_core::Timestamp queue_deadline_cap;
   /* The deadline of the next timer due in this shard. */
@@ -215,7 +215,7 @@ static void validate_non_pending_timer(grpc_timer* t) {
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
  * an expensive operation) */
-static GPR_THREAD_LOCAL(int64_t) g_last_seen_min_timer;
+static thread_local int64_t g_last_seen_min_timer;
 
 struct shared_mutables {
   /* The deadline of the next timer due across all timer shards */
@@ -252,15 +252,14 @@ static void timer_list_init() {
   g_shared_mutables.initialized = true;
   g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
-  g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
+  g_shared_mutables.min_timer = grpc_core::Timestamp::Now();
 
   g_last_seen_min_timer = 0;
 
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
     gpr_mu_init(&shard->mu);
-    grpc_time_averaged_stats_init(&shard->stats, 1.0 / ADD_DEADLINE_SCALE, 0.1,
-                                  0.5);
+    shard->stats.Init(1.0 / ADD_DEADLINE_SCALE, 0.1, 0.5);
     shard->queue_deadline_cap = g_shared_mutables.min_timer;
     shard->shard_queue_index = i;
     grpc_timer_heap_init(&shard->heap);
@@ -274,9 +273,8 @@ static void timer_list_init() {
 
 static void timer_list_shutdown() {
   size_t i;
-  run_some_expired_timers(
-      grpc_core::Timestamp::InfFuture(), nullptr,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timer list shutdown"));
+  run_some_expired_timers(grpc_core::Timestamp::InfFuture(), nullptr,
+                          GRPC_ERROR_CREATE("Timer list shutdown"));
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
@@ -343,7 +341,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
     gpr_log(GPR_INFO, "TIMER %p: SET %" PRId64 " now %" PRId64 " call %p[%p]",
             timer, deadline.milliseconds_after_process_epoch(),
-            grpc_core::ExecCtx::Get()->Now().milliseconds_after_process_epoch(),
+            grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
             closure, closure->cb);
   }
 
@@ -351,24 +349,22 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
     timer->pending = false;
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, timer->closure,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Attempt to create timer before initialization"));
+        GRPC_ERROR_CREATE("Attempt to create timer before initialization"));
     return;
   }
 
   gpr_mu_lock(&shard->mu);
   timer->pending = true;
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   if (deadline <= now) {
     timer->pending = false;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, absl::OkStatus());
     gpr_mu_unlock(&shard->mu);
     /* early out */
     return;
   }
 
-  grpc_time_averaged_stats_add_sample(&shard->stats,
-                                      (deadline - now).millis() / 1000.0);
+  shard->stats->AddSample((deadline - now).millis() / 1000.0);
 
   ADD_TO_HASH_TABLE(timer);
 
@@ -452,7 +448,7 @@ static void timer_cancel(grpc_timer* timer) {
     REMOVE_FROM_HASH_TABLE(timer);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_CANCELLED);
+                            absl::CancelledError());
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -473,8 +469,7 @@ static void timer_cancel(grpc_timer* timer) {
 static bool refill_heap(timer_shard* shard, grpc_core::Timestamp now) {
   /* Compute the new queue window width and bound by the limits: */
   double computed_deadline_delta =
-      grpc_time_averaged_stats_update_average(&shard->stats) *
-      ADD_DEADLINE_SCALE;
+      shard->stats->UpdateAverage() * ADD_DEADLINE_SCALE;
   double deadline_delta =
       grpc_core::Clamp(computed_deadline_delta, MIN_QUEUE_WINDOW_DURATION,
                        MAX_QUEUE_WINDOW_DURATION);
@@ -553,8 +548,7 @@ static size_t pop_timers(timer_shard* shard, grpc_core::Timestamp now,
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
     REMOVE_FROM_HASH_TABLE(timer);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, error);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -660,14 +654,12 @@ static grpc_timer_check_result run_some_expired_timers(
     gpr_spinlock_unlock(&g_shared_mutables.checker_mu);
   }
 
-  GRPC_ERROR_UNREF(error);
-
   return result;
 }
 
 static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
   // prelude
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
 
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */
@@ -689,8 +681,8 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
 
   grpc_error_handle shutdown_error =
       now != grpc_core::Timestamp::InfFuture()
-          ? GRPC_ERROR_NONE
-          : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");
+          ? absl::OkStatus()
+          : GRPC_ERROR_CREATE("Shutting down timer system");
 
   // tracing
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {

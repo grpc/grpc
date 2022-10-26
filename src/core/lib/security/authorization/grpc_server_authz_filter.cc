@@ -16,10 +16,22 @@
 
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
-#include "absl/strings/str_join.h"
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
 
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -35,7 +47,7 @@ GrpcServerAuthzFilter::GrpcServerAuthzFilter(
       provider_(std::move(provider)) {}
 
 absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
-    ChannelArgs args, ChannelFilter::Args) {
+    const ChannelArgs& args, ChannelFilter::Args) {
   auto* auth_context = args.GetObject<grpc_auth_context>();
   auto* provider = args.GetObject<grpc_authorization_policy_provider>();
   if (provider == nullptr) {
@@ -96,8 +108,9 @@ bool GrpcServerAuthzFilter::IsAuthorized(
 ArenaPromise<ServerMetadataHandle> GrpcServerAuthzFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   if (!IsAuthorized(call_args.client_initial_metadata)) {
-    return ArenaPromise<ServerMetadataHandle>(Immediate(ServerMetadataHandle(
-        absl::PermissionDeniedError("Unauthorized RPC request rejected."))));
+    return ArenaPromise<ServerMetadataHandle>(
+        Immediate(ServerMetadataFromStatus(absl::PermissionDeniedError(
+            "Unauthorized RPC request rejected."))));
   }
   return next_promise_factory(std::move(call_args));
 }

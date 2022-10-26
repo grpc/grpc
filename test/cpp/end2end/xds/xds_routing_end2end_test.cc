@@ -21,16 +21,13 @@
 #include <gtest/gtest.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using std::chrono::system_clock;
 
 using LdsTest = XdsEnd2endTest;
@@ -38,9 +35,10 @@ using LdsTest = XdsEnd2endTest;
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(XdsTestType()),
                          &XdsTestType::Name);
 
-// Tests that LDS client should send a NACK if there is no API listener in the
-// Listener in the LDS response.
-TEST_P(LdsTest, NoApiListener) {
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsListenerResourceType have exhaustive tests for all
+// of the invalid cases.
+TEST_P(LdsTest, NacksInvalidListener) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
@@ -51,418 +49,90 @@ TEST_P(LdsTest, NoApiListener) {
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
-// Tests that LDS client should send a NACK if the route_specifier in the
-// http_connection_manager is neither inlined route_config nor RDS.
-TEST_P(LdsTest, WrongRouteSpecifier) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.mutable_scoped_routes();
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "HttpConnectionManager neither has inlined route_config nor RDS."));
-}
+class LdsDeletionTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {}  // Individual tests call InitClient().
+};
 
-// Tests that LDS client should send a NACK if the rds message in the
-// http_connection_manager is missing the config_source field.
-TEST_P(LdsTest, RdsMissingConfigSource) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.mutable_rds()->set_route_config_name(
-      kDefaultRouteConfigurationName);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "HttpConnectionManager missing config_source for RDS."));
-}
+INSTANTIATE_TEST_SUITE_P(XdsTest, LdsDeletionTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests that LDS client should send a NACK if the rds message in the
-// http_connection_manager has a config_source field that does not specify
-// ADS or SELF.
-TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* rds = http_connection_manager.mutable_rds();
-  rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->set_path("/foo/bar");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
-                                   "RDS does not specify ADS or SELF."));
-}
-
-// Tests that LDS client accepts the rds message in the
-// http_connection_manager with a config_source field that specifies ADS.
-TEST_P(LdsTest, AcceptsRdsConfigSourceOfTypeAds) {
+// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted.
+TEST_P(LdsDeletionTest, ListenerDeleted) {
+  InitClient();
   CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* rds = http_connection_manager.mutable_rds();
-  rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_ads();
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // We need to wait for all backends to come online.
   WaitForAllBackends(DEBUG_LOCATION);
+  // Unset LDS resource.
+  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  // Wait for RPCs to start failing.
+  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
+    if (result.status.ok()) return true;  // Keep going.
+    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_EQ(result.status.error_message(),
+              absl::StrCat("empty address list: ", kServerName,
+                           ": xDS listener resource does not exist"));
+    return false;
+  });
+  // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that we NACK non-terminal filters at the end of the list.
-TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.client_only_http_filter");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "non-terminal filter for config type grpc.testing"
-                  ".client_only_http_filter is the last filter in the chain"));
-}
-
-// Test that we NACK terminal filters that are not at the end of the list.
-TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  // The default_listener_ has a terminal router filter by default. Add an
-  // additional filter.
-  auto* filter = http_connection_manager.add_http_filters();
-  filter->set_name("grpc.testing.terminal_http_filter");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.terminal_http_filter");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "terminal filter for config type envoy.extensions.filters.http"
-          ".router.v3.Router must be the last filter in the chain"));
-}
-
-// Test that we NACK empty filter names.
-TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->Clear();
-  filter->mutable_typed_config()->PackFrom(Listener());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("empty filter name at index 0"));
-}
-
-// Test that we NACK duplicate HTTP filter names.
-TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  http_connection_manager.mutable_http_filters(0)
-      ->mutable_typed_config()
-      ->PackFrom(HTTPFault());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("duplicate HTTP filter name: router"));
-}
-
-// Test that we NACK unknown filter types.
-TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(Listener());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "envoy.config.listener.v3.Listener"));
-}
-
-// Test that we ignore optional unknown filter types.
-TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(Listener());
-  filter->set_is_optional(true);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+// Tests that we ignore Listener deletions if configured to do so.
+TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
+  InitClient(BootstrapBuilder().SetIgnoreResourceDeletion());
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  // Make sure we ACKed the LDS update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK filters without configs.
-TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->Clear();
-  filter->set_name("unknown");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we ignore optional filters without configs.
-TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->Clear();
-  filter->set_name("unknown");
-  filter->set_is_optional(true);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
+  // Unset LDS resource and wait for client to ACK the update.
+  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  const auto deadline = absl::Now() + absl::Seconds(30);
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
+    response_state = balancer_->ads_service()->lds_response_state();
+    if (response_state.has_value()) break;
+  }
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK unparseable filter configs.
-TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(listener);
-  filter->mutable_typed_config()->set_type_url(
-      "type.googleapis.com/envoy.extensions.filters.http.fault.v3.HTTPFault");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "filter config for type "
-          "envoy.extensions.filters.http.fault.v3.HTTPFault failed to parse"));
-}
-
-// Test that we NACK HTTP filters unsupported on client-side.
-TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("grpc.testing.server_only_http_filter");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.server_only_http_filter");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Filter grpc.testing.server_only_http_filter is not "
-                           "supported on clients"));
-}
-
-// Test that we ignore optional HTTP filters unsupported on client-side.
-TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("grpc.testing.server_only_http_filter");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.server_only_http_filter");
-  filter->set_is_optional(true);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK non-zero xff_num_trusted_hops
-TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.set_xff_num_trusted_hops(1);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
-}
-
-// Test that we NACK non-empty original_ip_detection_extensions
-TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.add_original_ip_detection_extensions();
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
-}
-
-using LdsV2Test = XdsEnd2endTest;
-
-INSTANTIATE_TEST_SUITE_P(XdsTest, LdsV2Test,
-                         ::testing::Values(XdsTestType().set_use_v2()),
-                         &XdsTestType::Name);
-
-// Tests that we ignore the HTTP filter list in v2.
-// TODO(roth): The test framework is not set up to allow us to test
-// the server sending v2 resources when the client requests v3, so this
-// just tests a pure v2 setup.  When we have time, fix this.
-TEST_P(LdsV2Test, IgnoresHttpFilters) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(Listener());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Make sure we can still send RPCs.
   CheckRpcSendOk(DEBUG_LOCATION);
+  // Now recreate the LDS resource pointing to a different CDS and EDS
+  // resource, pointing to backend 1, and make sure the client uses it.
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Wait for client to start using backend 1.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
 }
 
 using LdsRdsTest = XdsEnd2endTest;
 
 // Test with and without RDS.
-// Also test with v2 and RDS to ensure that we handle those cases.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, LdsRdsTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
-                      XdsTestType().set_enable_rds_testing().set_use_v2()),
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
 MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
@@ -476,18 +146,6 @@ MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
   ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
   ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);
   return ok;
-}
-
-// Tests that XdsClient sends an ACK for the RouteConfiguration, whether or
-// not it was inlined into the LDS response.
-TEST_P(LdsRdsTest, Vanilla) {
-  (void)SendRpc();
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Make sure we actually used the RPC service for the right version of xDS.
-  EXPECT_EQ(balancer_->ads_service()->seen_v2_client(), GetParam().use_v2());
-  EXPECT_NE(balancer_->ads_service()->seen_v3_client(), GetParam().use_v2());
 }
 
 TEST_P(LdsRdsTest, DefaultRouteSpecifiesSlashPrefix) {
@@ -505,27 +163,6 @@ TEST_P(LdsRdsTest, DefaultRouteSpecifiesSlashPrefix) {
   WaitForAllBackends(DEBUG_LOCATION);
 }
 
-// Tests that we go into TRANSIENT_FAILURE if the Listener is removed.
-TEST_P(LdsRdsTest, ListenerRemoved) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(DEBUG_LOCATION);
-  // Unset LDS resource.
-  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  // Wait for RPCs to start failing.
-  do {
-  } while (SendRpc(RpcOptions(), nullptr).ok());
-  // Make sure RPCs are still failing.
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_times(1000));
-  // Make sure we ACK'ed the update.
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
 // Tests that LDS client ACKs but fails if matching domain can't be found in
 // the LDS response.
 TEST_P(LdsRdsTest, NoMatchedDomain) {
@@ -533,7 +170,13 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   SetRouteConfiguration(balancer_.get(), route_config);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat(
+          (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
+                                           : kServerName),
+          ": UNAVAILABLE: could not find VirtualHost for ", kServerName,
+          " in RouteConfiguration"));
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -746,9 +389,8 @@ TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
   route->mutable_match()->set_prefix("");
   route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_expected_error_code(
-                          StatusCode::UNAVAILABLE));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "Matching route has inappropriate action");
 }
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
@@ -955,7 +597,9 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
                  RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
@@ -1324,7 +968,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
                      RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
@@ -1494,12 +1139,17 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
-                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
-                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
+  WaitForAllBackends(
+      DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr, WaitForBackendOptions(),
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_timeout_ms(5000));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_timeout_ms(5000));
+  CheckRpcSendOk(
+      DEBUG_LOCATION, kNumEcho1Rpcs7525,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_timeout_ms(5000));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -1526,10 +1176,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(DEBUG_LOCATION, 3, 4);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs5050,
-                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(DEBUG_LOCATION, 3, 4, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_timeout_ms(5000));
+  CheckRpcSendOk(
+      DEBUG_LOCATION, kNumEcho1Rpcs5050,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_timeout_ms(5000));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -1626,7 +1280,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForBackend(DEBUG_LOCATION, 0);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
@@ -1654,7 +1309,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr,
+                 WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs5050,
@@ -1682,7 +1338,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
+                 WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
@@ -1744,17 +1401,31 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
-  CreateAndStartBackends(2);
+  // Start with only backend 1 up, but the default cluster pointing to
+  // backend 0, which is down.
+  CreateBackends(2);
+  StartBackend(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Start an RPC with wait_for_ready=true and no deadline.  This will
+  // stay pending until backend 0 is reachable.
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(),
+               RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
+  // Send a non-wait_for_ready RPC, which should fail.  This tells us
+  // that the client has received the update and attempted to connect.
+  constexpr char kErrorMessageRegex[] =
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: FD shutdown)";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      kErrorMessageRegex);
+  // Now create a new cluster, pointing to backend 1.
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName));
   // Populate new CDS resources.
@@ -1763,24 +1434,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   new_cluster.mutable_eds_cluster_config()->set_service_name(
       kNewEdsServiceName);
   balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Bring down the current backend: 0, this will delay route picking time,
-  // resulting in un-committed RPCs.
-  ShutdownBackend(0);
-  // Send a RouteConfiguration with a default route that points to
-  // backend 0.
-  RouteConfiguration new_route_config = default_route_config_;
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Send exactly one RPC with no deadline and with wait_for_ready=true.
-  // This RPC will not complete until after backend 0 is started.
-  std::thread sending_rpc([this]() {
-    CheckRpcSendOk(DEBUG_LOCATION, 1,
-                   RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
-  });
-  // Send a non-wait_for_ready RPC which should fail, this will tell us
-  // that the client has received the update and attempted to connect.
-  const Status status = SendRpc(RpcOptions().set_timeout_ms(0));
-  EXPECT_FALSE(status.ok());
   // Send a update RouteConfiguration to use backend 1.
+  RouteConfiguration new_route_config = default_route_config_;
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
@@ -1789,24 +1444,32 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   // has processed the update.
   WaitForBackend(
       DEBUG_LOCATION, 1,
-      WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-          true));
-  // Bring up the previous backend: 0, this will allow the delayed RPC to
-  // finally call on_call_committed upon completion.
+      [&](const RpcResult& result) {
+        if (!result.status.ok()) {
+          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+          EXPECT_THAT(result.status.error_message(),
+                      ::testing::MatchesRegex(kErrorMessageRegex));
+        }
+      },
+      WaitForBackendOptions().set_reset_counters(false));
+  // Bring up the backend 0.  Yhis will allow the delayed RPC to finally
+  // complete.
   StartBackend(0);
-  sending_rpc.join();
-  // Make sure RPCs go to the correct backend:
+  Status status = rpc.GetStatus();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Make sure RPCs went to the correct backends.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  const int64_t kTimeoutMillis = 500;
-  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
-  const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
-  const int64_t kTimeoutMaxStreamDurationSecond = 2;
-  const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
-  const int64_t kTimeoutApplicationSecond = 4;
+  const auto kTimeoutGrpcHeaderMax = grpc_core::Duration::Milliseconds(1500);
+  const auto kTimeoutMaxStreamDuration =
+      grpc_core::Duration::Milliseconds(2500);
+  const auto kTimeoutHttpMaxStreamDuration =
+      grpc_core::Duration::Milliseconds(3500);
+  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -1847,11 +1510,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
   // Set up HTTP max_stream_duration of 3.5 seconds
-  auto* duration =
+  SetProtoDuration(
+      kTimeoutHttpMaxStreamDuration,
       http_connection_manager.mutable_common_http_protocol_options()
-          ->mutable_max_stream_duration();
-  duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
-  duration->set_nanos(kTimeoutNano);
+          ->mutable_max_stream_duration());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   // Construct route config.
@@ -1863,20 +1525,17 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto* max_stream_duration =
       route1->mutable_route()->mutable_max_stream_duration();
-  duration = max_stream_duration->mutable_max_stream_duration();
-  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
-  duration->set_nanos(kTimeoutNano);
-  duration = max_stream_duration->mutable_grpc_timeout_header_max();
-  duration->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
-  duration->set_nanos(kTimeoutNano);
+  SetProtoDuration(kTimeoutMaxStreamDuration,
+                   max_stream_duration->mutable_max_stream_duration());
+  SetProtoDuration(kTimeoutGrpcHeaderMax,
+                   max_stream_duration->mutable_grpc_timeout_header_max());
   // route 2: Set max_stream_duration of 2.5 seconds
   auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   max_stream_duration = route2->mutable_route()->mutable_max_stream_duration();
-  duration = max_stream_duration->mutable_max_stream_duration();
-  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
-  duration->set_nanos(kTimeoutNano);
+  SetProtoDuration(kTimeoutMaxStreamDuration,
+                   max_stream_duration->mutable_max_stream_duration());
   // route 3: No timeout values in route configuration
   auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
@@ -1887,61 +1546,45 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // Test grpc_timeout_header_max of 1.5 seconds applied
   grpc_core::Timestamp t0 = NowFromCycleCounter();
   grpc_core::Timestamp t1 =
-      t0 + grpc_core::Duration::Seconds(kTimeoutGrpcTimeoutHeaderMaxSecond) +
-      grpc_core::Duration::Milliseconds(kTimeoutMillis);
+      t0 + (kTimeoutGrpcHeaderMax * grpc_test_slowdown_factor());
   grpc_core::Timestamp t2 =
-      t0 + grpc_core::Duration::Seconds(kTimeoutMaxStreamDurationSecond) +
-      grpc_core::Duration::Milliseconds(kTimeoutMillis);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions()
-                               .set_rpc_service(SERVICE_ECHO1)
-                               .set_rpc_method(METHOD_ECHO1)
-                               .set_wait_for_ready(true)
-                               .set_timeout_ms(grpc_core::Duration::Seconds(
-                                                   kTimeoutApplicationSecond)
-                                                   .millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      t0 + (kTimeoutMaxStreamDuration * grpc_test_slowdown_factor());
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO1)
+                          .set_rpc_method(METHOD_ECHO1)
+                          .set_wait_for_ready(true)
+                          .set_timeout(kTimeoutApplication));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
-  t1 = t0 + grpc_core::Duration::Seconds(kTimeoutMaxStreamDurationSecond) +
-       grpc_core::Duration::Milliseconds(kTimeoutMillis);
-  t2 = t0 + grpc_core::Duration::Seconds(kTimeoutHttpMaxStreamDurationSecond) +
-       grpc_core::Duration::Milliseconds(kTimeoutMillis);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions()
-                               .set_rpc_service(SERVICE_ECHO2)
-                               .set_rpc_method(METHOD_ECHO2)
-                               .set_wait_for_ready(true)
-                               .set_timeout_ms(grpc_core::Duration::Seconds(
-                                                   kTimeoutApplicationSecond)
-                                                   .millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  t1 = t0 + (kTimeoutMaxStreamDuration * grpc_test_slowdown_factor());
+  t2 = t0 + (kTimeoutHttpMaxStreamDuration * grpc_test_slowdown_factor());
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO2)
+                          .set_rpc_method(METHOD_ECHO2)
+                          .set_wait_for_ready(true)
+                          .set_timeout(kTimeoutApplication));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
-  t1 = t0 + grpc_core::Duration::Seconds(kTimeoutHttpMaxStreamDurationSecond) +
-       grpc_core::Duration::Milliseconds(kTimeoutMillis);
-  t2 = t0 + grpc_core::Duration::Seconds(kTimeoutApplicationSecond) +
-       grpc_core::Duration::Milliseconds(kTimeoutMillis);
+  t1 = t0 + (kTimeoutHttpMaxStreamDuration * grpc_test_slowdown_factor());
+  t2 = t0 + (kTimeoutApplication * grpc_test_slowdown_factor());
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_wait_for_ready(true).set_timeout(kTimeoutApplication));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
 }
 
-TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
-  const int64_t kTimeoutNano = 500000000;
-  const int64_t kTimeoutMaxStreamDurationSecond = 2;
-  const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
-  const int64_t kTimeoutApplicationSecond = 4;
+TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {
+  const auto kTimeoutMaxStreamDuration =
+      grpc_core::Duration::Milliseconds(2500);
+  const auto kTimeoutHttpMaxStreamDuration =
+      grpc_core::Duration::Milliseconds(3500);
+  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -1972,11 +1615,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
   // Set up HTTP max_stream_duration of 3.5 seconds
-  auto* duration =
+  SetProtoDuration(
+      kTimeoutHttpMaxStreamDuration,
       http_connection_manager.mutable_common_http_protocol_options()
-          ->mutable_max_stream_duration();
-  duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
-  duration->set_nanos(kTimeoutNano);
+          ->mutable_max_stream_duration());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   // Construct route config.
@@ -1988,60 +1630,53 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto* max_stream_duration =
       route1->mutable_route()->mutable_max_stream_duration();
-  duration = max_stream_duration->mutable_max_stream_duration();
-  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
-  duration->set_nanos(kTimeoutNano);
-  duration = max_stream_duration->mutable_grpc_timeout_header_max();
-  duration->set_seconds(0);
-  duration->set_nanos(0);
+  SetProtoDuration(kTimeoutMaxStreamDuration,
+                   max_stream_duration->mutable_max_stream_duration());
+  SetProtoDuration(grpc_core::Duration::Zero(),
+                   max_stream_duration->mutable_grpc_timeout_header_max());
   // route 2: Set max_stream_duration to 0
   auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   max_stream_duration = route2->mutable_route()->mutable_max_stream_duration();
-  duration = max_stream_duration->mutable_max_stream_duration();
-  duration->set_seconds(0);
-  duration->set_nanos(0);
+  SetProtoDuration(grpc_core::Duration::Zero(),
+                   max_stream_duration->mutable_max_stream_duration());
   // Set listener and route config.
   SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
                                    new_route_config);
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions()
-                  .set_rpc_service(SERVICE_ECHO1)
-                  .set_rpc_method(METHOD_ECHO1)
-                  .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  auto ellapsed_nano_seconds =
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO1)
+                          .set_rpc_method(METHOD_ECHO1)
+                          .set_wait_for_ready(true)
+                          .set_timeout(kTimeoutApplication));
+  auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  EXPECT_GT(
+      elapsed_nano_seconds.count(),
+      (kTimeoutApplication * grpc_test_slowdown_factor()).millis() * 1000);
   // Test application timeout is applied for route 2
   t0 = system_clock::now();
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions()
-                  .set_rpc_service(SERVICE_ECHO2)
-                  .set_rpc_method(METHOD_ECHO2)
-                  .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO2)
+                          .set_rpc_method(METHOD_ECHO2)
+                          .set_wait_for_ready(true)
+                          .set_timeout(kTimeoutApplication));
+  elapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  EXPECT_GT(
+      elapsed_nano_seconds.count(),
+      (kTimeoutApplication * grpc_test_slowdown_factor()).millis() * 1000);
 }
 
-TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
-  const int64_t kTimeoutApplicationSecond = 4;
+TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit) {
+  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   // Populate new EDS resources.
   EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -2063,37 +1698,33 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  auto ellapsed_nano_seconds =
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_wait_for_ready(true).set_timeout(kTimeoutApplication));
+  auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  EXPECT_GT(
+      elapsed_nano_seconds.count(),
+      (kTimeoutApplication * grpc_test_slowdown_factor()).millis() * 1000);
 }
 
 // Test to ensure application-specified deadline won't be affected when
 // the xDS config does not specify a timeout.
 TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
-  const int64_t kTimeoutApplicationSecond = 4;
+  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   // Populate new EDS resources.
   EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  auto ellapsed_nano_seconds =
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_wait_for_ready(true).set_timeout(kTimeoutApplication));
+  auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  EXPECT_GT(
+      elapsed_nano_seconds.count(),
+      (kTimeoutApplication * grpc_test_slowdown_factor()).millis() * 1000);
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
@@ -2115,52 +1746,34 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Ensure we retried the correct number of times on all supported status.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::CANCELLED));
+      DEBUG_LOCATION, StatusCode::CANCELLED, "",
+      RpcOptions().set_server_expected_error(StatusCode::CANCELLED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+      RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
-          .set_expected_error_code(StatusCode::INTERNAL));
+      DEBUG_LOCATION, StatusCode::INTERNAL, "",
+      RpcOptions().set_server_expected_error(StatusCode::INTERNAL));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::RESOURCE_EXHAUSTED))
-          .set_expected_error_code(StatusCode::RESOURCE_EXHAUSTED));
+      DEBUG_LOCATION, StatusCode::RESOURCE_EXHAUSTED, "",
+      RpcOptions().set_server_expected_error(StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
-          .set_expected_error_code(StatusCode::UNAVAILABLE));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE, "",
+      RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   // Ensure we don't retry on an unsupported status.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::UNAUTHENTICATED))
-          .set_expected_error_code(StatusCode::UNAUTHENTICATED));
+      DEBUG_LOCATION, StatusCode::UNAUTHENTICATED, "",
+      RpcOptions().set_server_expected_error(StatusCode::UNAUTHENTICATED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2182,11 +1795,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Ensure we retried the correct number of times on a supported status.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+      RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2208,21 +1818,17 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
   // Set backoff to 1 second, 1/2 of rpc timeout of 2 second.
-  base_interval->set_seconds(1 * grpc_test_slowdown_factor());
-  base_interval->set_nanos(0);
+  SetProtoDuration(
+      grpc_core::Duration::Seconds(1),
+      retry_policy->mutable_retry_back_off()->mutable_base_interval());
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // No need to set max interval and just let it be the default of 10x of base.
   // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_timeout_ms(2500).set_server_expected_error(
-                  StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_timeout_ms(2500).set_server_expected_error(
+          StatusCode::CANCELLED));
   EXPECT_EQ(1 + 1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2244,28 +1850,27 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
   // Set backoff to 1 second.
-  base_interval->set_seconds(1 * grpc_test_slowdown_factor());
-  base_interval->set_nanos(0);
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  SetProtoDuration(
+      grpc_core::Duration::Seconds(1),
+      retry_policy->mutable_retry_back_off()->mutable_base_interval());
   // Set max interval to be the same as base, so 2 retries will take 2 seconds
   // and both retries will take place before the 2.5 seconds rpc timeout.
   // Tested to ensure if max is not set, this test will be the same as
   // XdsRetryPolicyLongBackOff and we will only see 1 retry in that case.
-  max_interval->set_seconds(1 * grpc_test_slowdown_factor());
-  max_interval->set_nanos(0);
+  SetProtoDuration(
+      grpc_core::Duration::Seconds(1),
+      retry_policy->mutable_retry_back_off()->mutable_max_interval());
   SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Send an initial RPC to make sure we get connected (we don't want
+  // the channel startup time to affect the retry timing).
+  CheckRpcSendOk(DEBUG_LOCATION);
+  ResetBackendCounters();
   // We expect 2 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_timeout_ms(2500).set_server_expected_error(
-                  StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_timeout_ms(2500).set_server_expected_error(
+          StatusCode::CANCELLED));
   EXPECT_EQ(2 + 1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2286,11 +1891,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect no retry.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+      RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2319,11 +1921,8 @@ TEST_P(LdsRdsTest,
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect no retry.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+      RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2364,10 +1963,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   retry_policy->set_retry_on("deadline-exceeded");
   retry_policy->mutable_num_retries()->set_value(1);
   // RetryBackoff is there but base interval is missing.
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(0);
-  max_interval->set_nanos(250000000);
+  SetProtoDuration(
+      grpc_core::Duration::Milliseconds(250),
+      retry_policy->mutable_retry_back_off()->mutable_max_interval());
   SetRouteConfiguration(balancer_.get(), new_route_config);
   const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
@@ -2447,8 +2045,8 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
                                             .set_metadata(std::move(metadata));
   // Make sure all backends are up.
   WaitForBackend(DEBUG_LOCATION, 0);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
-                 header_match_rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), header_match_rpc_options);
   // Send RPCs.
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs, header_match_rpc_options);
@@ -2744,12 +2342,12 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   SetRouteConfiguration(balancer_.get(), route_config);
   // Make sure all backends are up and that requests for each RPC
   // service go to the right backends.
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
-  WaitForBackend(DEBUG_LOCATION, 1,
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo2 should have gone to backend 0.
@@ -2764,16 +2362,17 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   // different RPC service, and wait for the client to make the change.
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Now repeat the earlier test, making sure all traffic goes to the
   // right place.
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(DEBUG_LOCATION, 1,
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo1 should have gone to backend 0.
@@ -2788,7 +2387,6 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
 
 // Test that we NACK unknown filter types in VirtualHost.
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -2805,7 +2403,6 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
 // Test that we ignore optional unknown filter types in VirtualHost.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   CreateAndStartBackends(1);
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -2825,7 +2422,6 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
 
 // Test that we NACK filters without configs in VirtualHost.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -2841,7 +2437,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
 
 // Test that we NACK filters without configs in FilterConfig in VirtualHost.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -2858,7 +2453,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
 
 // Test that we ignore optional filters without configs in VirtualHost.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
@@ -2880,7 +2474,6 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
 
 // Test that we NACK unparseable filter types in VirtualHost.
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -2897,7 +2490,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
 
 // Test that we NACK unknown filter types in Route.
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -2914,7 +2506,6 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
 
 // Test that we ignore optional unknown filter types in Route.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
@@ -2936,7 +2527,6 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
 
 // Test that we NACK filters without configs in Route.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -2953,7 +2543,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
 
 // Test that we NACK filters without configs in FilterConfig in Route.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -2971,7 +2560,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
 
 // Test that we ignore optional filters without configs in Route.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
@@ -2992,7 +2580,6 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
 
 // Test that we NACK unparseable filter types in Route.
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -3010,7 +2597,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
 
 // Test that we NACK unknown filter types in ClusterWeight.
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -3032,7 +2618,6 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
 
 // Test that we ignore optional unknown filter types in ClusterWeight.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
@@ -3059,7 +2644,6 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
 
 // Test that we NACK filters without configs in ClusterWeight.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -3082,7 +2666,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
 // Test that we NACK filters without configs in FilterConfig in ClusterWeight.
 TEST_P(LdsRdsTest,
        RejectsHttpFilterWithoutConfigInFilterConfigInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -3105,7 +2688,6 @@ TEST_P(LdsRdsTest,
 
 // Test that we ignore optional filters without configs in ClusterWeight.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
@@ -3131,7 +2713,6 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
 
 // Test that we NACK unparseable filter types in ClusterWeight.
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -3164,27 +2745,9 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.client_only_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ false,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.client_only_http_filter"});
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.server_only_http_filter",
-          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.server_only_http_filter"});
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.terminal_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ true),
-      {"grpc.testing.terminal_http_filter"});
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

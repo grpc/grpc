@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
@@ -38,15 +40,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/murmur_hash.h"
-#include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/profiling/timers.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
@@ -358,11 +358,8 @@ static void unref_by(grpc_fd* fd, int n) {
     grpc_iomgr_unregister_object(&fd->iomgr_object);
     fork_fd_list_remove_node(fd->fork_fd_list);
     if (fd->shutdown) {
-      GRPC_ERROR_UNREF(fd->shutdown_error);
     }
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     fd->shutdown_error.~Status();
-#endif
     gpr_free(fd);
   } else {
     GPR_ASSERT(old > n);
@@ -377,9 +374,7 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   gpr_mu_init(&r->mu);
   gpr_atm_rel_store(&r->refst, 1);
   r->shutdown = 0;
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   new (&r->shutdown_error) absl::Status();
-#endif
   r->read_closure = CLOSURE_NOT_READY;
   r->write_closure = CLOSURE_NOT_READY;
   r->fd = fd;
@@ -445,7 +440,8 @@ static void close_fd_locked(grpc_fd* fd) {
   if (!fd->released) {
     close(fd->fd);
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure,
+                          absl::OkStatus());
 }
 
 static int fd_wrapped_fd(grpc_fd* fd) {
@@ -494,12 +490,11 @@ static void fd_unref(grpc_fd* fd) { unref_by(fd, 2); }
 
 static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   } else {
-    return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                  "FD shutdown", &fd->shutdown_error, 1),
-                              GRPC_ERROR_INT_GRPC_STATUS,
-                              GRPC_STATUS_UNAVAILABLE);
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1),
+        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   }
 }
 
@@ -508,8 +503,8 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+        grpc_error_set_int(GRPC_ERROR_CREATE("FD shutdown"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
@@ -555,8 +550,6 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
     shutdown(fd->fd, SHUT_RDWR);
     set_ready_locked(fd, &fd->read_closure);
     set_ready_locked(fd, &fd->write_closure);
-  } else {
-    GRPC_ERROR_UNREF(why);
   }
   gpr_mu_unlock(&fd->mu);
 }
@@ -584,7 +577,7 @@ static void fd_notify_on_error(grpc_fd* /*fd*/, grpc_closure* closure) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::CancelledError());
 }
 
 static void fd_set_readable(grpc_fd* fd) {
@@ -619,7 +612,6 @@ static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
 
   /* if we are shutdown, then don't add to the watcher set */
   if (fd->shutdown) {
-    watcher->fd = nullptr;
     watcher->pollset = nullptr;
     watcher->worker = nullptr;
     gpr_mu_unlock(&fd->mu);
@@ -660,12 +652,17 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
   int was_polling = 0;
   int kick = 0;
   grpc_fd* fd = watcher->fd;
-
   if (fd == nullptr) {
     return;
   }
 
   gpr_mu_lock(&fd->mu);
+  if (watcher->pollset == nullptr) {
+    watcher->fd = nullptr;
+    gpr_mu_unlock(&fd->mu);
+    GRPC_FD_UNREF(fd, "multipoller_start");
+    return;
+  }
 
   if (watcher == fd->read_watcher) {
     /* remove read watcher, kick if we still need a read */
@@ -713,8 +710,8 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
  * pollset_posix.c
  */
 
-static GPR_THREAD_LOCAL(grpc_pollset*) g_current_thread_poller;
-static GPR_THREAD_LOCAL(grpc_pollset_worker*) g_current_thread_worker;
+static thread_local grpc_pollset* g_current_thread_poller;
+static thread_local grpc_pollset_worker* g_current_thread_worker;
 
 static void remove_worker(grpc_pollset* /*p*/, grpc_pollset_worker* worker) {
   worker->prev->next = worker->next;
@@ -757,9 +754,9 @@ static void push_front_worker(grpc_pollset* p, grpc_pollset_worker* worker) {
 
 static void kick_append_error(grpc_error_handle* composite,
                               grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Kick Failure");
+  if (error.ok()) return;
+  if (composite->ok()) {
+    *composite = GRPC_ERROR_CREATE("Kick Failure");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -767,14 +764,11 @@ static void kick_append_error(grpc_error_handle* composite,
 static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
                                           grpc_pollset_worker* specific_worker,
                                           uint32_t flags) {
-  GPR_TIMER_SCOPE("pollset_kick_ext", 0);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  GRPC_STATS_INC_POLLSET_KICK();
+  grpc_error_handle error;
 
   /* pollset->mu already held */
   if (specific_worker != nullptr) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
-      GPR_TIMER_SCOPE("pollset_kick_ext.broadcast", 0);
       GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
       for (specific_worker = p->root_worker.next;
            specific_worker != &p->root_worker;
@@ -784,7 +778,6 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
       }
       p->kicked_without_pollers = true;
     } else if (g_current_thread_worker != specific_worker) {
-      GPR_TIMER_MARK("different_thread_worker", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = true;
       }
@@ -792,7 +785,6 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
       kick_append_error(&error,
                         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
     } else if ((flags & GRPC_POLLSET_CAN_KICK_SELF) != 0) {
-      GPR_TIMER_MARK("kick_yoself", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = true;
       }
@@ -802,11 +794,9 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
     }
   } else if (g_current_thread_poller != p) {
     GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
-    GPR_TIMER_MARK("kick_anonymous", 0);
     specific_worker = pop_front_worker(p);
     if (specific_worker != nullptr) {
       if (g_current_thread_worker == specific_worker) {
-        GPR_TIMER_MARK("kick_anonymous_not_self", 0);
         push_back_worker(p, specific_worker);
         specific_worker = pop_front_worker(p);
         if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 &&
@@ -816,18 +806,16 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
         }
       }
       if (specific_worker != nullptr) {
-        GPR_TIMER_MARK("finally_kick", 0);
         push_back_worker(p, specific_worker);
         kick_append_error(
             &error, grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
       }
     } else {
-      GPR_TIMER_MARK("kicked_no_pollers", 0);
       p->kicked_without_pollers = true;
     }
   }
 
-  GRPC_LOG_IF_ERROR("pollset_kick_ext", GRPC_ERROR_REF(error));
+  GRPC_LOG_IF_ERROR("pollset_kick_ext", error);
   return error;
 }
 
@@ -838,9 +826,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
 
 /* global state management */
 
-static grpc_error_handle pollset_global_init(void) { return GRPC_ERROR_NONE; }
-
-static void pollset_global_shutdown(void) {}
+static grpc_error_handle pollset_global_init(void) { return absl::OkStatus(); }
 
 /* main interface */
 
@@ -899,14 +885,14 @@ static void finish_shutdown(grpc_pollset* pollset) {
   }
   pollset->fd_count = 0;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_done,
-                          GRPC_ERROR_NONE);
+                          absl::OkStatus());
 }
 
 static void work_combine_error(grpc_error_handle* composite,
                                grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("pollset_work");
+  if (error.ok()) return;
+  if (composite->ok()) {
+    *composite = GRPC_ERROR_CREATE("pollset_work");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -914,10 +900,9 @@ static void work_combine_error(grpc_error_handle* composite,
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker_hdl,
                                       grpc_core::Timestamp deadline) {
-  GPR_TIMER_SCOPE("pollset_work", 0);
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   /* Avoid malloc for small number of elements. */
   enum { inline_elements = 96 };
@@ -940,15 +925,14 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         gpr_malloc(sizeof(*worker.wakeup_fd)));
     error = grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
     fork_fd_list_add_wakeup_fd(worker.wakeup_fd);
-    if (error != GRPC_ERROR_NONE) {
-      GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
+    if (!error.ok()) {
+      GRPC_LOG_IF_ERROR("pollset_work", error);
       return error;
     }
   }
   worker.kicked_specifically = 0;
   /* If we're shutting down then we don't execute any extended work */
   if (pollset->shutting_down) {
-    GPR_TIMER_MARK("pollset_work.shutting_down", 0);
     goto done;
   }
   /* Start polling, and keep doing so while we're being asked to
@@ -959,13 +943,12 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   while (keep_polling) {
     keep_polling = 0;
     if (!pollset->kicked_without_pollers ||
-        deadline <= grpc_core::ExecCtx::Get()->Now()) {
+        deadline <= grpc_core::Timestamp::Now()) {
       if (!added_worker) {
         push_front_worker(pollset, &worker);
         added_worker = 1;
         g_current_thread_worker = &worker;
       }
-      GPR_TIMER_SCOPE("maybe_work_and_unlock", 0);
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
 #define POLLIN_CHECK (POLLIN | POLLHUP | POLLERR)
 
@@ -1016,13 +999,14 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         grpc_fd* fd = watchers[i].fd;
         pfds[i].events = static_cast<short>(
             fd_begin_poll(fd, pollset, &worker, POLLIN, POLLOUT, &watchers[i]));
-        GRPC_FD_UNREF(fd, "multipoller_start");
+        if (watchers[i].pollset != nullptr) {
+          GRPC_FD_UNREF(fd, "multipoller_start");
+        }
       }
 
       /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
          even going into the blocking annotation if possible */
       GRPC_SCHEDULING_START_BLOCKING_REGION;
-      GRPC_STATS_INC_SYSCALL_POLL();
       r = grpc_poll_function(pfds, pfd_count, timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
@@ -1036,7 +1020,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
 
         for (i = 1; i < pfd_count; i++) {
-          if (watchers[i].fd == nullptr) {
+          if (watchers[i].pollset == nullptr) {
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             // Wake up all the file descriptors, if we have an invalid one
@@ -1057,7 +1041,11 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }
         for (i = 1; i < pfd_count; i++) {
-          if (watchers[i].fd == nullptr) {
+          if (watchers[i].pollset == nullptr) {
+            grpc_fd* fd = watchers[i].fd;
+            if (pfds[i].revents & POLLHUP) {
+              gpr_atm_no_barrier_store(&fd->pollhup, 1);
+            }
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
@@ -1084,7 +1072,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 
       locked = 0;
     } else {
-      GPR_TIMER_MARK("pollset_work.kicked_without_pollers", 0);
       pollset->kicked_without_pollers = 0;
     }
   /* Finished execution - start cleaning up.
@@ -1100,7 +1087,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     /* If we're forced to re-evaluate polling (via pollset_kick with
        GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) then we land here and force
        a loop */
-    if (worker.reevaluate_polling_on_wakeup && error == GRPC_ERROR_NONE) {
+    if (worker.reevaluate_polling_on_wakeup && error.ok()) {
       worker.reevaluate_polling_on_wakeup = 0;
       pollset->kicked_without_pollers = 0;
       if (queued_work || worker.kicked_specifically) {
@@ -1136,7 +1123,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     }
   }
   if (worker_hdl) *worker_hdl = nullptr;
-  GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
+  GRPC_LOG_IF_ERROR("pollset_work", error);
   return error;
 }
 
@@ -1154,7 +1141,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 static int poll_deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) return -1;
   if (deadline.is_process_epoch()) return 0;
-  int64_t n = (deadline - grpc_core::ExecCtx::Get()->Now()).millis();
+  int64_t n = (deadline - grpc_core::Timestamp::Now()).millis();
   if (n < 0) return 0;
   if (n > INT_MAX) return -1;
   return static_cast<int>(n);
@@ -1340,15 +1327,29 @@ static bool add_closure_to_background_poller(grpc_closure* /*closure*/,
   return false;
 }
 
-static void shutdown_engine(void) {
-  pollset_global_shutdown();
-  if (track_fds_for_fork) {
-    gpr_mu_destroy(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
+/* Called by the child process's post-fork handler to close open fds, including
+ * worker wakeup fds. This allows gRPC to shutdown in the child process without
+ * interfering with connections or RPCs ongoing in the parent. */
+static void reset_event_manager_on_fork() {
+  gpr_mu_lock(&fork_fd_list_mu);
+  while (fork_fd_list_head != nullptr) {
+    if (fork_fd_list_head->fd != nullptr) {
+      if (!fork_fd_list_head->fd->closed) {
+        close(fork_fd_list_head->fd->fd);
+      }
+      fork_fd_list_head->fd->fd = -1;
+    } else {
+      close(fork_fd_list_head->cached_wakeup_fd->fd.read_fd);
+      fork_fd_list_head->cached_wakeup_fd->fd.read_fd = -1;
+      close(fork_fd_list_head->cached_wakeup_fd->fd.write_fd);
+      fork_fd_list_head->cached_wakeup_fd->fd.write_fd = -1;
+    }
+    fork_fd_list_head = fork_fd_list_head->next;
   }
+  gpr_mu_unlock(&fork_fd_list_mu);
 }
 
-static const grpc_event_engine_vtable vtable = {
+const grpc_event_engine_vtable grpc_ev_poll_posix = {
     sizeof(grpc_pollset),
     false,
     false,
@@ -1382,49 +1383,62 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_del_fd,
 
     is_any_background_poller_thread,
-    shutdown_background_closure,
-    shutdown_engine,
+    /* name = */ "poll",
+    /* check_engine_available = */
+    [](bool) {
+      if (!grpc_has_wakeup_fd()) {
+        gpr_log(GPR_ERROR, "Skipping poll because of no wakeup fd.");
+        return false;
+      }
+      if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
+        return false;
+      }
+      if (grpc_core::Fork::Enabled()) {
+        track_fds_for_fork = true;
+        gpr_mu_init(&fork_fd_list_mu);
+        grpc_core::Fork::SetResetChildPollingEngineFunc(
+            reset_event_manager_on_fork);
+      }
+      return true;
+    },
+    /* init_engine = */ []() {},
+    /* shutdown_engine = */ shutdown_background_closure,
+    []() {},
     add_closure_to_background_poller,
 };
 
-/* Called by the child process's post-fork handler to close open fds, including
- * worker wakeup fds. This allows gRPC to shutdown in the child process without
- * interfering with connections or RPCs ongoing in the parent. */
-static void reset_event_manager_on_fork() {
-  gpr_mu_lock(&fork_fd_list_mu);
-  while (fork_fd_list_head != nullptr) {
-    if (fork_fd_list_head->fd != nullptr) {
-      if (!fork_fd_list_head->fd->closed) {
-        close(fork_fd_list_head->fd->fd);
-      }
-      fork_fd_list_head->fd->fd = -1;
-    } else {
-      close(fork_fd_list_head->cached_wakeup_fd->fd.read_fd);
-      fork_fd_list_head->cached_wakeup_fd->fd.read_fd = -1;
-      close(fork_fd_list_head->cached_wakeup_fd->fd.write_fd);
-      fork_fd_list_head->cached_wakeup_fd->fd.write_fd = -1;
-    }
-    fork_fd_list_head = fork_fd_list_head->next;
+namespace {
+
+grpc_poll_function_type real_poll_function;
+
+int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
+  if (timeout == 0) {
+    return real_poll_function(fds, nfds, 0);
+  } else {
+    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
+    GPR_ASSERT(false);
+    return -1;
   }
-  gpr_mu_unlock(&fork_fd_list_mu);
 }
 
-const grpc_event_engine_vtable* grpc_init_poll_posix(
-    bool /*explicit_request*/) {
-  if (!grpc_has_wakeup_fd()) {
-    gpr_log(GPR_ERROR, "Skipping poll because of no wakeup fd.");
-    return nullptr;
-  }
-  if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
-    return nullptr;
-  }
-  if (grpc_core::Fork::Enabled()) {
-    track_fds_for_fork = true;
-    gpr_mu_init(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(
-        reset_event_manager_on_fork);
-  }
-  return &vtable;
-}
+}  // namespace
+
+const grpc_event_engine_vtable grpc_ev_none_posix = []() {
+  grpc_event_engine_vtable v = grpc_ev_poll_posix;
+  v.check_engine_available = [](bool explicit_request) {
+    if (!explicit_request) return false;
+    // return the simplest engine as a phony but also override the poller
+    if (!grpc_ev_poll_posix.check_engine_available(explicit_request)) {
+      return false;
+    }
+    real_poll_function = grpc_poll_function;
+    grpc_poll_function = phony_poll;
+    return true;
+  };
+  v.name = "none";
+  v.init_engine = []() {};
+  v.shutdown_engine = []() {};
+  return v;
+}();
 
 #endif /* GRPC_POSIX_SOCKET_EV_POLL */

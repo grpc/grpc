@@ -17,35 +17,28 @@
  */
 
 #include <inttypes.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <string>
+#include <utility>
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 struct fullstack_fixture_data {
   std::string localaddr;
 };
 
-static int unique = 1;
+static std::atomic<int> unique{1};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_base(
     std::string addr) {
@@ -67,17 +60,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   const std::string localaddr = absl::StrFormat(
       "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d", getpid(),
       now.tv_sec, now.tv_nsec, unique++);
-  return chttp2_create_fixture_fullstack_base(localaddr);
-}
-
-static grpc_end2end_test_fixture
-chttp2_create_fixture_fullstack_abstract_namespace(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/) {
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-  const std::string localaddr = absl::StrFormat(
-      "unix-abstract:grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d",
-      getpid(), now.tv_sec, now.tv_nsec, unique++);
   return chttp2_create_fixture_fullstack_base(localaddr);
 }
 
@@ -121,15 +103,6 @@ static grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      nullptr, chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
-#ifndef GPR_APPLE  // Apple doesn't support an abstract socket
-    {"chttp2/fullstack_uds_abstract_namespace",
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     nullptr, chttp2_create_fixture_fullstack_abstract_namespace,
-     chttp2_init_client_fullstack, chttp2_init_server_fullstack,
-     chttp2_tear_down_fullstack},
-#endif
 };
 
 int main(int argc, char** argv) {

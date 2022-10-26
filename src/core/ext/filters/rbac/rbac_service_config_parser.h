@@ -26,12 +26,11 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
@@ -55,8 +54,8 @@ class RbacMethodParsedConfig : public ServiceConfigParser::ParsedConfig {
   // a connection on the server, multiple RBAC policies might be active. The
   // RBAC filter uses this method to get the RBAC policy configured for a
   // instance at a particular instance.
-  const GrpcAuthorizationEngine* authorization_engine(int index) const {
-    if (static_cast<size_t>(index) >= authorization_engines_.size()) {
+  const GrpcAuthorizationEngine* authorization_engine(size_t index) const {
+    if (index >= authorization_engines_.size()) {
       return nullptr;
     }
     return &authorization_engines_[index];
@@ -70,9 +69,8 @@ class RbacServiceConfigParser : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for rbac filter.
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error) override;
+  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+  ParsePerMethodParams(const ChannelArgs& args, const Json& json) override;
   // Returns the parser index for RbacServiceConfigParser.
   static size_t ParserIndex();
   // Registers RbacServiceConfigParser to ServiceConfigParser.

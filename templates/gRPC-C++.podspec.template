@@ -146,6 +146,7 @@
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
     }
 
     s.libraries = 'c++'
@@ -168,7 +169,7 @@
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', version
-      abseil_version = '1.20211102.0'
+      abseil_version = '1.20220623.0'
       % for abseil_spec in grpcpp_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

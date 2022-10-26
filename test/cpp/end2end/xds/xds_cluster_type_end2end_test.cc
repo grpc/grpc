@@ -21,14 +21,16 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/endpoint_config.h>
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -61,7 +63,8 @@ class ClusterTypeTest : public XdsEnd2endTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len, nullptr);
+      addresses.emplace_back(address.addr, address.len,
+                             grpc_core::ChannelArgs());
     }
     return addresses;
   }
@@ -105,175 +108,6 @@ TEST_P(LogicalDNSClusterTest, Basic) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(LogicalDNSClusterTest, MissingLoadAssignment) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "load_assignment not present for LOGICAL_DNS cluster"));
-}
-
-TEST_P(LogicalDNSClusterTest, MissingLocalities) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
-                           "exactly one locality, found 0"));
-}
-
-TEST_P(LogicalDNSClusterTest, MultipleLocalities) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* load_assignment = cluster.mutable_load_assignment();
-  load_assignment->add_endpoints();
-  load_assignment->add_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
-                           "exactly one locality, found 2"));
-}
-
-TEST_P(LogicalDNSClusterTest, MissingEndpoints) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "locality for LOGICAL_DNS cluster must have exactly one "
-                  "endpoint, found 0"));
-}
-
-TEST_P(LogicalDNSClusterTest, MultipleEndpoints) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* locality = cluster.mutable_load_assignment()->add_endpoints();
-  locality->add_lb_endpoints();
-  locality->add_lb_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "locality for LOGICAL_DNS cluster must have exactly one "
-                  "endpoint, found 2"));
-}
-
-TEST_P(LogicalDNSClusterTest, EmptyEndpoint) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LbEndpoint endpoint field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, EndpointMissingAddress) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Endpoint address field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, AddressMissingSocketAddress) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Address socket_address field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, SocketAddressHasResolverName) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address()
-      ->mutable_socket_address()
-      ->set_resolver_name("foo");
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
-                                   "custom resolver name set"));
-}
-
-TEST_P(LogicalDNSClusterTest, SocketAddressMissingAddress) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address()
-      ->mutable_socket_address();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("SocketAddress address field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, SocketAddressMissingPort) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address()
-      ->mutable_socket_address()
-      ->set_address(kServerName);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("SocketAddress port_value field not set"));
-}
-
 //
 // aggregate cluster tests
 //
@@ -286,7 +120,7 @@ using AggregateClusterTest = ClusterTypeTest;
 INSTANTIATE_TEST_SUITE_P(XdsTest, AggregateClusterTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-TEST_P(AggregateClusterTest, ) {
+TEST_P(AggregateClusterTest, Basic) {
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -326,13 +160,13 @@ TEST_P(AggregateClusterTest, ) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Bring backend 0 back and ensure all traffic go back to it.
+  // Bring backend 0 back and ensure all traffic goes back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -386,13 +220,13 @@ TEST_P(AggregateClusterTest, DiamondDependency) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -433,104 +267,40 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   cluster_config.add_clusters(kClusterName2);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
-  // This class injects itself into all TCP connection attempts made
-  // against iomgr.  It intercepts the attempts for the P0 and P1
-  // backends and allows them to proceed as desired to simulate the case
-  // being tested.
-  class ConnectionInjector : public ConnectionAttemptInjector {
-   public:
-    ConnectionInjector(int p0_port, int p1_port)
-        : p0_port_(p0_port), p1_port_(p1_port) {}
-
-    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                          grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
-                          const grpc_resolved_address* addr,
-                          grpc_core::Timestamp deadline) override {
-      {
-        grpc_core::MutexLock lock(&mu_);
-        const int port = grpc_sockaddr_get_port(addr);
-        gpr_log(GPR_INFO, "==> HandleConnection(): state_=%d, port=%d", state_,
-                port);
-        switch (state_) {
-          case kInit:
-            // Make P0 report TF, which should trigger us to try to connect to
-            // P1.
-            if (port == p0_port_) {
-              gpr_log(GPR_INFO, "*** INJECTING FAILURE FOR P0 ENDPOINT");
-              grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
-                                      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                          "injected connection failure"));
-              state_ = kP0Failed;
-              return;
-            }
-            break;
-          case kP0Failed:
-            // Hold connection attempt to P1 so that it stays in CONNECTING.
-            if (port == p1_port_) {
-              gpr_log(GPR_INFO,
-                      "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
-              queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
-                  closure, ep, interested_parties, channel_args, addr,
-                  deadline);
-              state_ = kDone;
-              return;
-            }
-            break;
-          case kDone:
-            // P0 should attempt reconnection.  Log it to make the test
-            // easier to debug, but allow it to complete, so that the
-            // priority policy deactivates P1.
-            if (port == p0_port_) {
-              gpr_log(GPR_INFO,
-                      "*** INTERCEPTING CONNECTION ATTEMPT FOR P0 ENDPOINT");
-            }
-            break;
-        }
-      }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
-                        deadline);
-    }
-
-    // Invoked by the test when the RPC to the P0 backend has succeeded
-    // and it's ready to allow the P1 connection attempt to proceed.
-    void CompletePriority1Connection() {
-      grpc_core::ExecCtx exec_ctx;
-      std::unique_ptr<QueuedAttempt> attempt;
-      {
-        grpc_core::MutexLock lock(&mu_);
-        GPR_ASSERT(state_ == kDone);
-        attempt = std::move(queued_p1_attempt_);
-      }
-      attempt->Resume();
-    }
-
-   private:
-    const int p0_port_;
-    const int p1_port_;
-
-    grpc_core::Mutex mu_;
-    enum {
-      kInit,
-      kP0Failed,
-      kDone,
-    } state_ ABSL_GUARDED_BY(mu_) = kInit;
-    std::unique_ptr<QueuedAttempt> queued_p1_attempt_ ABSL_GUARDED_BY(mu_);
-  };
-  ConnectionInjector connection_attempt_injector(backends_[0]->port(),
-                                                 backends_[1]->port());
-  connection_attempt_injector.Start();
-  // Wait for P0 backend.
+  // Start connection injector.
+  ConnectionAttemptInjector injector;
+  auto hold0 = injector.AddHold(backends_[0]->port());
+  auto hold1 = injector.AddHold(backends_[1]->port());
+  // Start long-running RPC in the background.
+  // This will trigger the channel to start connecting.
   // Increase timeout to account for subchannel connection delays.
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(),
-                 RpcOptions().set_timeout_ms(2000));
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(2000));
+  // Tell channel to start connecting.
+  channel_->GetState(/*try_to_connect=*/true);
+  // Wait for backend 0 connection attempt to start, then fail it.
+  hold0->Wait();
+  hold0->Fail(GRPC_ERROR_CREATE("injected connection failure"));
+  // The channel should trigger a connection attempt for backend 1 now,
+  // but we've added a hold for that, so it will not complete yet.
+  // Meanwhile, the channel will also start a second attempt for backend
+  // 0, which we have NOT held, so it will complete normally, and the
+  // RPC will finish on backend 0.
+  gpr_log(GPR_INFO, "=== WAITING FOR RPC TO FINISH === ");
+  Status status = rpc.GetStatus();
+  gpr_log(GPR_INFO, "=== RPC FINISHED === ");
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  // Wait for backend 1 connection attempt to start.
+  hold1->Wait();
   // Send GOAWAY from the P0 backend.
   // We don't actually shut it down here to avoid flakiness caused by
   // failing an RPC after the client has already sent it but before the
   // server finished processing it.
   backends_[0]->StopListeningAndSendGoaways();
   // Allow the connection attempt to the P1 backend to resume.
-  connection_attempt_injector.CompletePriority1Connection();
+  hold1->Resume();
   // Wait for P1 backend to start getting traffic.
   WaitForBackend(DEBUG_LOCATION, 1);
 }
@@ -583,13 +353,13 @@ TEST_P(AggregateClusterTest, EdsToLogicalDns) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -644,13 +414,13 @@ TEST_P(AggregateClusterTest, LogicalDnsToEds) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -713,7 +483,10 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
         std::move(result));
   }
   // When an RPC fails, we know the channel has seen the update.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  constexpr char kErrorMessage[] =
+      "empty address list: DNS resolution failed for server.example.com:443 "
+      "\\(UNAVAILABLE: injected error\\)";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -723,8 +496,13 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
-  WaitForBackend(DEBUG_LOCATION, 0,
-                 WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
+    }
+  });
 }
 
 TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
@@ -836,7 +614,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();

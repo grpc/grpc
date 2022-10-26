@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -30,21 +31,39 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
+bool ChannelStackBuilderImpl::IsPromising() const {
+  for (const auto* filter : stack()) {
+    if (filter->make_call_promise == nullptr) return false;
+  }
+  return true;
+}
+
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>>
 ChannelStackBuilderImpl::Build() {
-  auto* stack = mutable_stack();
+  std::vector<const grpc_channel_filter*> stack;
+  const bool is_promising = IsPromising();
+
+  for (const auto* filter : this->stack()) {
+    if (is_promising && grpc_call_trace.enabled()) {
+      stack.push_back(PromiseTracingFilterFor(filter));
+    }
+    stack.push_back(filter);
+  }
 
   // calculate the size of the channel stack
   size_t channel_stack_size =
-      grpc_channel_stack_size(stack->data(), stack->size());
+      grpc_channel_stack_size(stack.data(), stack.size());
 
   // allocate memory
   auto* channel_stack =
@@ -65,7 +84,6 @@ ChannelStackBuilderImpl::Build() {
   }
 
   // and initialize it
-  const grpc_channel_args* c_args = final_args.ToC();
   grpc_error_handle error = grpc_channel_stack_init(
       1,
       [](void* p, grpc_error_handle) {
@@ -73,20 +91,18 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, stack->data(), stack->size(), c_args, name(),
+      channel_stack, stack.data(), stack.size(), final_args, name(),
       channel_stack);
-  grpc_channel_args_destroy(c_args);
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);
     gpr_free(channel_stack);
     auto status = grpc_error_to_absl_status(error);
-    GRPC_ERROR_UNREF(error);
     return status;
   }
 
   // run post-initialization functions
-  for (size_t i = 0; i < stack->size(); i++) {
+  for (size_t i = 0; i < stack.size(); i++) {
     auto* elem = grpc_channel_stack_element(channel_stack, i);
     elem->filter->post_init_channel_elem(channel_stack, elem);
   }

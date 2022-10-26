@@ -60,11 +60,15 @@ UPB_INLINE envoy_config_trace_v3_LightstepConfig* envoy_config_trace_v3_Lightste
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_LightstepConfig_serialize(const envoy_config_trace_v3_LightstepConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_LightstepConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_LightstepConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_LightstepConfig_serialize_ex(const envoy_config_trace_v3_LightstepConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_LightstepConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_LightstepConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_clear_collector_cluster(const envoy_config_trace_v3_LightstepConfig* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

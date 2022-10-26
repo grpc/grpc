@@ -21,7 +21,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 
 #include <algorithm>
-#include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
 
@@ -38,8 +37,9 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   return *this;
 }
 
-ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(ChannelArgs args) {
-  args_ = std::move(args);
+ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(
+    const ChannelArgs& args) {
+  args_ = args;
   return *this;
 }
 

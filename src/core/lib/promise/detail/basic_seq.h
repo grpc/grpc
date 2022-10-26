@@ -17,11 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <array>
 #include <cassert>
 #include <new>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -31,11 +32,28 @@
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 namespace promise_detail {
+
+// Given f0, ..., fn, call function idx and return the result.
+template <typename R, typename A, R (*... f)(A* arg)>
+class JumpTable {
+ public:
+  JumpTable() = delete;
+  JumpTable(const JumpTable&) = delete;
+
+  static R Run(size_t idx, A* arg) { return fs_[idx](arg); }
+
+ private:
+  using Fn = R (*)(A* arg);
+  static const Fn fs_[sizeof...(f)];
+};
+
+template <typename R, typename A, R (*... f)(A* arg)>
+const typename JumpTable<R, A, f...>::Fn
+    JumpTable<R, A, f...>::fs_[sizeof...(f)] = {f...};
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -50,7 +68,7 @@ struct SeqStateTypes {
   // Wrap the factory callable in our factory wrapper to deal with common edge
   // cases. We use the 'unwrapped type' from the traits, so for instance, TrySeq
   // can pass back a T from a StatusOr<T>.
-  using Next = promise_detail::PromiseFactory<
+  using Next = promise_detail::OncePromiseFactory<
       typename PromiseResultTraits::UnwrappedType, FNext>;
 };
 
@@ -335,16 +353,14 @@ class BasicSeq {
   // parameter unpacking can work.
   template <char I>
   struct RunStateStruct {
-    BasicSeq* s;
-    Poll<Result> operator()() { return s->RunState<I>(); }
+    static Poll<Result> Run(BasicSeq* s) { return s->RunState<I>(); }
   };
 
   // Similarly placate those compilers for
   // DestructCurrentPromiseAndSubsequentFactories
   template <char I>
   struct DestructCurrentPromiseAndSubsequentFactoriesStruct {
-    BasicSeq* s;
-    void operator()() {
+    static void Run(BasicSeq* s) {
       return s->DestructCurrentPromiseAndSubsequentFactories<I>();
     }
   };
@@ -357,7 +373,8 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return Switch<Poll<Result>>(state_, RunStateStruct<I>{this}...);
+    return JumpTable<Poll<Result>, BasicSeq, RunStateStruct<I>::Run...>::Run(
+        state_, this);
   }
 
   // Run the appropriate destructors for a given state.
@@ -367,8 +384,9 @@ class BasicSeq {
   // which can choose the correct instance at runtime to destroy everything.
   template <char... I>
   void RunDestruct(absl::integer_sequence<char, I...>) {
-    Switch<void>(
-        state_, DestructCurrentPromiseAndSubsequentFactoriesStruct<I>{this}...);
+    JumpTable<void, BasicSeq,
+              DestructCurrentPromiseAndSubsequentFactoriesStruct<I>::Run...>::
+        Run(state_, this);
   }
 
  public:
@@ -403,20 +421,22 @@ class BasicSeq {
 
 // As above, but models a sequence of unknown size
 // At each element, the accumulator A and the current value V is passed to some
-// function of type F as f(V, A); f is expected to return a promise that
-// resolves to Traits::WrappedType.
-template <template <typename Wrapped> class Traits, typename F, typename Arg,
-          typename Iter>
+// function of type IterTraits::Factory as f(V, IterTraits::Argument); f is
+// expected to return a promise that resolves to IterTraits::Wrapped.
+template <class IterTraits>
 class BasicSeqIter {
  private:
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
+  using Traits = typename IterTraits::Traits;
+  using Iter = typename IterTraits::Iter;
+  using Factory = typename IterTraits::Factory;
+  using Argument = typename IterTraits::Argument;
+  using IterValue = typename IterTraits::IterValue;
+  using StateCreated = typename IterTraits::StateCreated;
+  using State = typename IterTraits::State;
+  using Wrapped = typename IterTraits::Wrapped;
 
  public:
-  BasicSeqIter(Iter begin, Iter end, F f, Arg arg)
+  BasicSeqIter(Iter begin, Iter end, Factory f, Argument arg)
       : cur_(begin), end_(end), f_(std::move(f)) {
     if (cur_ == end_) {
       Construct(&result_, std::move(arg));
@@ -466,7 +486,7 @@ class BasicSeqIter {
   Poll<Wrapped> PollNonEmpty() {
     Poll<Wrapped> r = state_();
     if (absl::holds_alternative<Pending>(r)) return r;
-    return Traits<Wrapped>::template CheckResultAndRunNext<Wrapped>(
+    return Traits::template CheckResultAndRunNext<Wrapped>(
         std::move(absl::get<Wrapped>(r)), [this](Wrapped arg) -> Poll<Wrapped> {
           auto next = cur_;
           ++next;
@@ -476,17 +496,17 @@ class BasicSeqIter {
           cur_ = next;
           state_.~State();
           Construct(&state_,
-                    Traits<Wrapped>::CallSeqFactory(f_, *cur_, std::move(arg)));
+                    Traits::template CallSeqFactory(f_, *cur_, std::move(arg)));
           return PollNonEmpty();
         });
   }
 
   Iter cur_;
   const Iter end_;
-  GPR_NO_UNIQUE_ADDRESS F f_;
+  GPR_NO_UNIQUE_ADDRESS Factory f_;
   union {
     GPR_NO_UNIQUE_ADDRESS State state_;
-    GPR_NO_UNIQUE_ADDRESS Arg result_;
+    GPR_NO_UNIQUE_ADDRESS Argument result_;
   };
 };
 

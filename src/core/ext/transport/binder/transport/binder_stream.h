@@ -68,10 +68,9 @@ struct grpc_binder_stream {
   }
 
   ~grpc_binder_stream() {
-    GRPC_ERROR_UNREF(cancel_self_error);
     if (destroy_stream_then_closure != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_then_closure,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
     }
   }
 
@@ -88,7 +87,7 @@ struct grpc_binder_stream {
   grpc_closure destroy_stream;
 
   // The reason why this stream is cancelled and closed.
-  grpc_error_handle cancel_self_error = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_self_error;
 
   grpc_closure recv_initial_metadata_closure;
   RecvInitialMetadataArgs recv_initial_metadata_args;

@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -35,6 +37,93 @@
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
+
+#define TSI_FAKE_FRAME_HEADER_SIZE 4
+
+typedef struct intercept_endpoint {
+  grpc_endpoint base;
+  grpc_endpoint* wrapped_ep;
+  grpc_slice_buffer staging_buffer;
+} intercept_endpoint;
+
+static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                    grpc_closure* cb, bool urgent, int min_progress_size) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  grpc_endpoint_read(m->wrapped_ep, slices, cb, urgent, min_progress_size);
+}
+
+static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                     grpc_closure* cb, void* arg, int max_frame_size) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  int remaining = slices->length;
+  while (remaining > 0) {
+    // Estimate the frame size of the next frame.
+    int next_frame_size =
+        tsi_fake_zero_copy_grpc_protector_next_frame_size(slices);
+    ASSERT_GT(next_frame_size, TSI_FAKE_FRAME_HEADER_SIZE);
+    // Ensure the protected data size does not exceed the max_frame_size.
+    ASSERT_LE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE, max_frame_size);
+    // Move this frame into a staging buffer and repeat.
+    grpc_slice_buffer_move_first(slices, next_frame_size, &m->staging_buffer);
+    remaining -= next_frame_size;
+  }
+  grpc_slice_buffer_swap(&m->staging_buffer, slices);
+  grpc_endpoint_write(m->wrapped_ep, slices, cb, arg, max_frame_size);
+}
+
+static void me_add_to_pollset(grpc_endpoint* /*ep*/,
+                              grpc_pollset* /*pollset*/) {}
+
+static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
+                                  grpc_pollset_set* /*pollset*/) {}
+
+static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
+                                       grpc_pollset_set* /*pollset*/) {}
+
+static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  grpc_endpoint_shutdown(m->wrapped_ep, why);
+}
+
+static void me_destroy(grpc_endpoint* ep) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  grpc_endpoint_destroy(m->wrapped_ep);
+  grpc_slice_buffer_destroy(&m->staging_buffer);
+  gpr_free(m);
+}
+
+static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
+  return "fake:intercept-endpoint";
+}
+
+static absl::string_view me_get_local_address(grpc_endpoint* /*ep*/) {
+  return "fake:intercept-endpoint";
+}
+
+static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
+
+static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
+
+static const grpc_endpoint_vtable vtable = {me_read,
+                                            me_write,
+                                            me_add_to_pollset,
+                                            me_add_to_pollset_set,
+                                            me_delete_from_pollset_set,
+                                            me_shutdown,
+                                            me_destroy,
+                                            me_get_peer,
+                                            me_get_local_address,
+                                            me_get_fd,
+                                            me_can_track_err};
+
+grpc_endpoint* wrap_with_intercept_endpoint(grpc_endpoint* wrapped_ep) {
+  intercept_endpoint* m =
+      static_cast<intercept_endpoint*>(gpr_malloc(sizeof(*m)));
+  m->base.vtable = &vtable;
+  m->wrapped_ep = wrapped_ep;
+  grpc_slice_buffer_init(&m->staging_buffer);
+  return &m->base;
+}
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, grpc_slice* leftover_slices, size_t leftover_nslices,
@@ -68,6 +157,13 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, g_pollset);
 
+  // TODO(vigneshbabu): Extend the intercept endpoint logic to cover non-zero
+  // copy based frame protectors as well.
+  if (use_zero_copy_protector && leftover_nslices == 0) {
+    tcp.client = wrap_with_intercept_endpoint(tcp.client);
+    tcp.server = wrap_with_intercept_endpoint(tcp.server);
+  }
+
   if (leftover_nslices == 0) {
     f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
                                               fake_read_zero_copy_protector,
@@ -91,11 +187,11 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
         result = tsi_frame_protector_protect(
             fake_write_protector, message_bytes, &processed_message_size, cur,
             &protected_buffer_size_to_send);
-        GPR_ASSERT(result == TSI_OK);
+        EXPECT_EQ(result, TSI_OK);
         message_bytes += processed_message_size;
         message_size -= processed_message_size;
         cur += protected_buffer_size_to_send;
-        GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
+        EXPECT_GE(buffer_size, protected_buffer_size_to_send);
         buffer_size -= protected_buffer_size_to_send;
       }
       grpc_slice_unref(plain);
@@ -105,9 +201,9 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
       result = tsi_frame_protector_protect_flush(fake_write_protector, cur,
                                                  &protected_buffer_size_to_send,
                                                  &still_pending_size);
-      GPR_ASSERT(result == TSI_OK);
+      EXPECT_EQ(result, TSI_OK);
       cur += protected_buffer_size_to_send;
-      GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
+      EXPECT_GE(buffer_size, protected_buffer_size_to_send);
       buffer_size -= protected_buffer_size_to_send;
     } while (still_pending_size > 0);
     encrypted_leftover = grpc_slice_from_copied_buffer(
@@ -125,7 +221,6 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
                                             tcp.server, nullptr, &args, 0);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
-
   return f;
 }
 
@@ -193,19 +288,17 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
                      /*min_progress_size=*/1);
 
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(n == 1);
-  GPR_ASSERT(incoming.count == 1);
-  GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
+  ASSERT_EQ(n, 1);
+  ASSERT_EQ(incoming.count, 1);
+  ASSERT_TRUE(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(
-      f.client_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
-  grpc_endpoint_shutdown(
-      f.server_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
+  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("test_leftover end"));
+  grpc_endpoint_shutdown(f.server_ep, GRPC_ERROR_CREATE("test_leftover end"));
   grpc_endpoint_destroy(f.client_ep);
   grpc_endpoint_destroy(f.server_ep);
 
-  grpc_slice_unref_internal(s);
-  grpc_slice_buffer_destroy_internal(&incoming);
+  grpc_slice_unref(s);
+  grpc_slice_buffer_destroy(&incoming);
 
   clean_up();
 }
@@ -214,9 +307,8 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
-int main(int argc, char** argv) {
+TEST(SecureEndpointTest, MainTest) {
   grpc_closure destroyed;
-  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   {
@@ -235,6 +327,10 @@ int main(int argc, char** argv) {
   grpc_shutdown();
 
   gpr_free(g_pollset);
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

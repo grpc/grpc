@@ -89,15 +89,15 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     GRPC_CLOSURE_INIT(
         &on_alarm_,
         [](void* arg, grpc_error_handle error) {
-          grpc_core::Executor::Run(
-              GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error_handle error) {
-                    AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                    alarm->callback_(error == GRPC_ERROR_NONE);
-                    alarm->Unref();
-                  },
-                  arg, nullptr),
-              error);
+          grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(
+                                       [](void* arg, grpc_error_handle error) {
+                                         AlarmImpl* alarm =
+                                             static_cast<AlarmImpl*>(arg);
+                                         alarm->callback_(error.ok());
+                                         alarm->Unref();
+                                       },
+                                       arg, nullptr),
+                                   error);
         },
         this, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&timer_,

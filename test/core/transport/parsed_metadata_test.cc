@@ -16,10 +16,14 @@
 
 #include "src/core/lib/transport/parsed_metadata.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <memory>
 
-#include "src/core/lib/slice/slice_internal.h"
+#include "absl/strings/numbers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
 
@@ -204,8 +208,8 @@ INSTANTIATE_TYPED_TEST_SUITE_P(My, TraitSpecializedTest, InterestingTraits);
 TEST(KeyValueTest, Simple) {
   using PM = ParsedMetadata<grpc_metadata_batch>;
   using PMPtr = std::unique_ptr<PM>;
-  PMPtr p = absl::make_unique<PM>(Slice::FromCopiedString("key"),
-                                  Slice::FromCopiedString("value"));
+  PMPtr p = std::make_unique<PM>(Slice::FromCopiedString("key"),
+                                 Slice::FromCopiedString("value"));
   EXPECT_EQ(p->DebugString(), "key: value");
   EXPECT_EQ(p->transport_size(), 40);
   PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
@@ -228,8 +232,8 @@ TEST(KeyValueTest, Simple) {
 TEST(KeyValueTest, LongKey) {
   using PM = ParsedMetadata<grpc_metadata_batch>;
   using PMPtr = std::unique_ptr<PM>;
-  PMPtr p = absl::make_unique<PM>(Slice::FromCopiedString(std::string(60, 'a')),
-                                  Slice::FromCopiedString("value"));
+  PMPtr p = std::make_unique<PM>(Slice::FromCopiedString(std::string(60, 'a')),
+                                 Slice::FromCopiedString("value"));
   EXPECT_EQ(
       p->DebugString(),
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");

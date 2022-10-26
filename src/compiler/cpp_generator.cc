@@ -137,23 +137,23 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
     }
     static const char* headers_strs[] = {
         "functional",
-        "grpcpp/impl/codegen/async_generic_service.h",
-        "grpcpp/impl/codegen/async_stream.h",
-        "grpcpp/impl/codegen/async_unary_call.h",
-        "grpcpp/impl/codegen/client_callback.h",
-        "grpcpp/impl/codegen/client_context.h",
-        "grpcpp/impl/codegen/completion_queue.h",
-        "grpcpp/impl/codegen/message_allocator.h",
-        "grpcpp/impl/codegen/method_handler.h",
+        "grpcpp/generic/async_generic_service.h",
+        "grpcpp/support/async_stream.h",
+        "grpcpp/support/async_unary_call.h",
+        "grpcpp/support/client_callback.h",
+        "grpcpp/client_context.h",
+        "grpcpp/completion_queue.h",
+        "grpcpp/support/message_allocator.h",
+        "grpcpp/support/method_handler.h",
         "grpcpp/impl/codegen/proto_utils.h",
-        "grpcpp/impl/codegen/rpc_method.h",
-        "grpcpp/impl/codegen/server_callback.h",
+        "grpcpp/impl/rpc_method.h",
+        "grpcpp/support/server_callback.h",
         "grpcpp/impl/codegen/server_callback_handlers.h",
-        "grpcpp/impl/codegen/server_context.h",
-        "grpcpp/impl/codegen/service_type.h",
+        "grpcpp/server_context.h",
+        "grpcpp/impl/service_type.h",
         "grpcpp/impl/codegen/status.h",
-        "grpcpp/impl/codegen/stub_options.h",
-        "grpcpp/impl/codegen/sync_stream.h",
+        "grpcpp/support/stub_options.h",
+        "grpcpp/support/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
@@ -1648,19 +1648,19 @@ std::string GetSourceIncludes(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
     static const char* headers_strs[] = {
         "functional",
-        "grpcpp/impl/codegen/async_stream.h",
-        "grpcpp/impl/codegen/async_unary_call.h",
+        "grpcpp/support/async_stream.h",
+        "grpcpp/support/async_unary_call.h",
         "grpcpp/impl/codegen/channel_interface.h",
-        "grpcpp/impl/codegen/client_unary_call.h",
-        "grpcpp/impl/codegen/client_callback.h",
-        "grpcpp/impl/codegen/message_allocator.h",
-        "grpcpp/impl/codegen/method_handler.h",
+        "grpcpp/impl/client_unary_call.h",
+        "grpcpp/support/client_callback.h",
+        "grpcpp/support/message_allocator.h",
+        "grpcpp/support/method_handler.h",
         "grpcpp/impl/codegen/rpc_service_method.h",
-        "grpcpp/impl/codegen/server_callback.h",
+        "grpcpp/support/server_callback.h",
         "grpcpp/impl/codegen/server_callback_handlers.h",
-        "grpcpp/impl/codegen/server_context.h",
-        "grpcpp/impl/codegen/service_type.h",
-        "grpcpp/impl/codegen/sync_stream.h"};
+        "grpcpp/server_context.h",
+        "grpcpp/impl/service_type.h",
+        "grpcpp/support/sync_stream.h"};
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
@@ -2184,8 +2184,8 @@ std::string GetMockIncludes(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
 
     static const char* headers_strs[] = {
-        "grpcpp/impl/codegen/async_stream.h",
-        "grpcpp/impl/codegen/sync_stream.h",
+        "grpcpp/support/async_stream.h",
+        "grpcpp/support/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,

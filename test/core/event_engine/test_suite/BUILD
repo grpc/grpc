@@ -18,7 +18,10 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/event_engine/test_suite")
 
-COMMON_HEADERS = ["event_engine_test.h"]
+COMMON_HEADERS = [
+    "event_engine_test.h",
+    "event_engine_test_utils.h",
+]
 
 grpc_cc_library(
     name = "timer",
@@ -72,22 +75,100 @@ grpc_cc_library(
 # -- EventEngine implementations --
 
 grpc_cc_test(
-    name = "iomgr_event_engine_test",
-    srcs = ["iomgr_event_engine_test.cc"],
+    name = "posix_event_engine_test",
+    srcs = ["posix_event_engine_test.cc"],
+    tags = [
+        "no_windows",
+    ],
     uses_polling = False,
-    deps = ["//test/core/event_engine/test_suite:timer"],
+    deps = [
+        "//src/core:posix_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
+)
+
+grpc_cc_test(
+    name = "windows_event_engine_test",
+    srcs = ["windows_event_engine_test.cc"],
+    tags = [
+        "bazel_only",
+        "no_linux",
+        "no_mac",
+    ],
+    uses_polling = False,
+    deps = [
+        "//src/core:windows_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
+)
+
+grpc_cc_test(
+    name = "fuzzing_event_engine_test",
+    srcs = ["fuzzing_event_engine_test.cc"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_polling = False,
+    deps = [
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
 )
 
 # -- Internal targets --
 
 grpc_cc_library(
+    name = "oracle_event_engine_posix",
+    testonly = True,
+    srcs = ["oracle_event_engine_posix.cc"],
+    hdrs = ["oracle_event_engine_posix.h"],
+    tags = [
+        "cpu:10",
+        "no_windows",
+    ],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        ":conformance_test_base_lib",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "oracle_event_engine_posix_test",
+    srcs = ["oracle_event_engine_posix_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],
+    # TODO(vignesbabu): This is required because the oracle event engine uses
+    # poll syscall. If uses_polling is set to False, there will be an attempt
+    # to run this test with GRPC_POLL_STRATEGY=none which will hijack the poll
+    # c-wrapper causing the test to fail. A more generic posix oracle event
+    # engine design which doesn't rely on poll is required.
+    uses_polling = True,
+    deps = [
+        ":client",
+        ":oracle_event_engine_posix",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
     name = "conformance_test_base_lib",
     testonly = True,
-    srcs = ["event_engine_test.cc"],
+    srcs = [
+        "event_engine_test.cc",
+        "event_engine_test_utils.cc",
+    ],
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
+    visibility = ["@grpc:public"],
     deps = [
-        "//:exec_ctx",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

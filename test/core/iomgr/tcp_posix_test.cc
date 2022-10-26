@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -35,10 +36,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
@@ -151,6 +155,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
 
 struct read_socket_state {
   grpc_endpoint* ep;
+  size_t min_progress_size;
   size_t read_bytes;
   size_t target_read_bytes;
   grpc_slice_buffer incoming;
@@ -179,10 +184,15 @@ static void read_cb(void* user_data, grpc_error_handle error) {
   size_t read_bytes;
   int current_data;
 
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(error.ok());
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
+  // The number of bytes read each time this callback is invoked must be >=
+  // the min_progress_size.
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
+    GPR_ASSERT(state->min_progress_size <= state->incoming.length);
+  }
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
   state->read_bytes += read_bytes;
@@ -194,13 +204,15 @@ static void read_cb(void* user_data, grpc_error_handle error) {
     gpr_mu_unlock(g_mu);
   } else {
     gpr_mu_unlock(g_mu);
+    state->min_progress_size = state->target_read_bytes - state->read_bytes;
     grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb,
-                       /*urgent=*/false, /*min_progress_size=*/1);
+                       /*urgent=*/false, state->min_progress_size);
   }
 }
 
 /* Write to a socket, then read from it using the grpc_tcp API. */
-static void read_test(size_t num_bytes, size_t slice_size) {
+static void read_test(size_t num_bytes, size_t slice_size,
+                      int min_progress_size) {
   int sv[2];
   grpc_endpoint* ep;
   struct read_socket_state state;
@@ -223,8 +235,12 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep =
-      grpc_tcp_create(grpc_fd_create(sv[1], "read_test", false), &args, "test");
+  ep = grpc_tcp_create(
+      grpc_fd_create(sv[1], "read_test", false),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
+      "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -233,11 +249,13 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
+  state.min_progress_size =
+      std::min(min_progress_size, static_cast<int>(written_bytes));
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -251,7 +269,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(ep);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
@@ -259,7 +277,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
 /* Write to a socket until it fills up, then read from it using the grpc_tcp
    API. */
-static void large_read_test(size_t slice_size) {
+static void large_read_test(size_t slice_size, int min_progress_size) {
   int sv[2];
   grpc_endpoint* ep;
   struct read_socket_state state;
@@ -281,8 +299,12 @@ static void large_read_test(size_t slice_size) {
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test", false), &args,
-                       "test");
+  ep = grpc_tcp_create(
+      grpc_fd_create(sv[1], "large_read_test", false),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
+      "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket(sv[0]);
@@ -291,11 +313,13 @@ static void large_read_test(size_t slice_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = static_cast<size_t>(written_bytes);
+  state.min_progress_size =
+      std::min(min_progress_size, static_cast<int>(written_bytes));
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -309,7 +333,7 @@ static void large_read_test(size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(ep);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
@@ -346,7 +370,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
 
 static void write_done(void* user_data /* write_socket_state */,
                        grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(error.ok());
   struct write_socket_state* state =
       static_cast<struct write_socket_state*>(user_data);
   gpr_mu_lock(g_mu);
@@ -399,7 +423,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
 /* Verifier for timestamps callback for write_test */
 void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
                          grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(ts->sendmsg_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->scheduled_time.time.clock_type == GPR_CLOCK_REALTIME);
@@ -449,8 +473,12 @@ static void write_test(size_t num_bytes, size_t slice_size,
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test", collect_timestamps),
-                       &args, "test");
+  ep = grpc_tcp_create(
+      grpc_fd_create(sv[1], "write_test", collect_timestamps),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
+      "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   state.ep = ep;
@@ -488,7 +516,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   }
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&outgoing);
+  grpc_slice_buffer_destroy(&outgoing);
   grpc_endpoint_destroy(ep);
   gpr_free(slices);
   grpc_resource_quota_unref(
@@ -533,8 +561,12 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep =
-      grpc_tcp_create(grpc_fd_create(sv[1], "read_test", false), &args, "test");
+  ep = grpc_tcp_create(
+      grpc_fd_create(sv[1], "read_test", false),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
+      "test");
   GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
@@ -544,11 +576,12 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
+  state.min_progress_size = 1;
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -564,7 +597,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(ep, &fd, &fd_released_cb);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
@@ -589,14 +622,14 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
 void run_tests(void) {
   size_t i = 0;
-
-  read_test(100, 8192);
-  read_test(10000, 8192);
-  read_test(10000, 137);
-  read_test(10000, 1);
-  large_read_test(8192);
-  large_read_test(1);
-
+  for (int i = 1; i <= 8192; i = i * 2) {
+    read_test(100, 8192, i);
+    read_test(10000, 8192, i);
+    read_test(10000, 137, i);
+    read_test(10000, 1, i);
+    large_read_test(8192, i);
+    large_read_test(1, i);
+  }
   write_test(100, 8192, false);
   write_test(100, 1, false);
   write_test(100000, 8192, false);
@@ -635,10 +668,18 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client", false),
-                                &args, "test");
-  f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server", false),
-                                &args, "test");
+  f.client_ep = grpc_tcp_create(
+      grpc_fd_create(sv[0], "fixture:client", false),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
+      "test");
+  f.server_ep = grpc_tcp_create(
+      grpc_fd_create(sv[1], "fixture:server", false),
+      TcpOptionsFromEndpointConfig(
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
+      "test");
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
   grpc_resource_quota_unref(

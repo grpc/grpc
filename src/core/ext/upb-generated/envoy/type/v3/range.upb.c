@@ -22,7 +22,7 @@ static const upb_MiniTable_Field envoy_type_v3_Int64Range__fields[2] = {
 const upb_MiniTable envoy_type_v3_Int64Range_msginit = {
   NULL,
   &envoy_type_v3_Int64Range__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_v3_Int32Range__fields[2] = {
@@ -44,7 +44,7 @@ static const upb_MiniTable_Field envoy_type_v3_DoubleRange__fields[2] = {
 const upb_MiniTable envoy_type_v3_DoubleRange_msginit = {
   NULL,
   &envoy_type_v3_DoubleRange__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

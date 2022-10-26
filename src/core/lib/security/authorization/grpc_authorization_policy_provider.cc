@@ -16,11 +16,24 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/string_util.h>
+#include <stdint.h>
 
+#include <utility>
+
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -50,14 +63,12 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
   grpc_error_handle error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  if (error != GRPC_ERROR_NONE) {
-    absl::Status status =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
+  if (!error.ok()) {
+    absl::Status status = absl::InvalidArgumentError(StatusToString(error));
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
+  CSliceUnref(policy_slice);
   return policy_contents;
 }
 
@@ -110,31 +121,49 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
     }
   };
-  refresh_thread_ = absl::make_unique<Thread>(
+  refresh_thread_ = std::make_unique<Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();
 }
 
+void FileWatcherAuthorizationPolicyProvider::SetCallbackForTesting(
+    std::function<void(bool contents_changed, absl::Status status)> cb) {
+  MutexLock lock(&mu_);
+  cb_ = std::move(cb);
+}
+
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
+  bool contents_changed = false;
+  auto done_early = [&](absl::Status status) {
+    MutexLock lock(&mu_);
+    if (cb_ != nullptr) {
+      cb_(contents_changed, status);
+    }
+    return status;
+  };
   absl::StatusOr<std::string> file_contents =
       ReadPolicyFromFile(authz_policy_path_);
   if (!file_contents.ok()) {
-    return file_contents.status();
+    return done_early(file_contents.status());
   }
   if (file_contents_ == *file_contents) {
-    return absl::OkStatus();
+    return done_early(absl::OkStatus());
   }
   file_contents_ = std::move(*file_contents);
+  contents_changed = true;
   auto rbac_policies_or = GenerateRbacPolicies(file_contents_);
   if (!rbac_policies_or.ok()) {
-    return rbac_policies_or.status();
+    return done_early(rbac_policies_or.status());
   }
   MutexLock lock(&mu_);
   allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->allow_policy));
   deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->deny_policy));
+  if (cb_ != nullptr) {
+    cb_(contents_changed, absl::OkStatus());
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "

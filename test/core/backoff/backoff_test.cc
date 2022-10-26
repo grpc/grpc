@@ -20,12 +20,12 @@
 
 #include <algorithm>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -48,11 +48,11 @@ TEST(BackOffTest, ConstantBackOff) {
   BackOff backoff(options);
 
   grpc_core::Timestamp next_attempt_start_time = backoff.NextAttemptTime();
-  EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
+  EXPECT_EQ(next_attempt_start_time - grpc_core::Timestamp::Now(),
             initial_backoff);
   for (int i = 0; i < 10000; i++) {
     next_attempt_start_time = backoff.NextAttemptTime();
-    EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
+    EXPECT_EQ(next_attempt_start_time - grpc_core::Timestamp::Now(),
               initial_backoff);
   }
 }
@@ -70,7 +70,7 @@ TEST(BackOffTest, MinConnect) {
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
   grpc_core::Timestamp next = backoff.NextAttemptTime();
-  EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
+  EXPECT_EQ(next - grpc_core::Timestamp::Now(), initial_backoff);
 }
 
 TEST(BackOffTest, NoJitterBackOff) {
@@ -147,7 +147,7 @@ TEST(BackOffTest, JitterBackOff) {
 
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Timestamp next = backoff.NextAttemptTime();
-  EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
+  EXPECT_EQ(next - grpc_core::Timestamp::Now(), initial_backoff);
 
   auto expected_next_lower_bound = grpc_core::Duration::Milliseconds(
       static_cast<double>(current_backoff.millis()) * (1 - jitter));
@@ -159,7 +159,7 @@ TEST(BackOffTest, JitterBackOff) {
     // next-now must be within (jitter*100)% of the current backoff (which
     // increases by * multiplier up to max_backoff).
     const grpc_core::Duration timeout_millis =
-        next - grpc_core::ExecCtx::Get()->Now();
+        next - grpc_core::Timestamp::Now();
     EXPECT_GE(timeout_millis, expected_next_lower_bound);
     EXPECT_LE(timeout_millis, expected_next_upper_bound);
     current_backoff = std::min(

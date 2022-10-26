@@ -184,7 +184,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */);
+                                     grpc_core::ChannelArgs());
     }
     return result;
   }
@@ -198,10 +198,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config =
-        grpc_core::ServiceConfigImpl::Create(nullptr, "{}", &error);
-    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
+    ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
     response_generator_->SetResponse(result);
   }
 
@@ -217,13 +216,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config =
-        grpc_core::ServiceConfigImpl::Create(nullptr, svc_cfg, &error);
-    if (error != GRPC_ERROR_NONE) {
-      result.service_config = grpc_error_to_absl_status(error);
-      GRPC_ERROR_UNREF(error);
-    }
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), svc_cfg);
     response_generator_->SetResponse(result);
   }
 
@@ -326,7 +320,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       grpc::internal::MutexLock lock(&mu_);
       started_ = true;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host));
       while (!server_ready_) {
         cond_.Wait(&mu_);

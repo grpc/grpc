@@ -26,12 +26,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -54,21 +52,13 @@ class ServiceConfigParser {
 
     virtual absl::string_view name() const = 0;
 
-    virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
-        const grpc_channel_args*, const Json& /* json */,
-        grpc_error_handle* error) {
-      // Avoid unused parameter warning on debug-only parameter
-      (void)error;
-      GPR_DEBUG_ASSERT(error != nullptr);
+    virtual absl::StatusOr<std::unique_ptr<ParsedConfig>> ParseGlobalParams(
+        const ChannelArgs& /*args*/, const Json& /*json*/) {
       return nullptr;
     }
 
-    virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(
-        const grpc_channel_args*, const Json& /* json */,
-        grpc_error_handle* error) {
-      // Avoid unused parameter warning on debug-only parameter
-      (void)error;
-      GPR_DEBUG_ASSERT(error != nullptr);
+    virtual absl::StatusOr<std::unique_ptr<ParsedConfig>> ParsePerMethodParams(
+        const ChannelArgs& /*args*/, const Json& /*json*/) {
       return nullptr;
     }
   };
@@ -90,13 +80,11 @@ class ServiceConfigParser {
     ServiceConfigParserList registered_parsers_;
   };
 
-  ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
-                                           const Json& json,
-                                           grpc_error_handle* error) const;
+  absl::StatusOr<ParsedConfigVector> ParseGlobalParameters(
+      const ChannelArgs& args, const Json& json) const;
 
-  ParsedConfigVector ParsePerMethodParameters(const grpc_channel_args* args,
-                                              const Json& json,
-                                              grpc_error_handle* error) const;
+  absl::StatusOr<ParsedConfigVector> ParsePerMethodParameters(
+      const ChannelArgs& args, const Json& json) const;
 
   // Return the index for a given registered parser.
   // If there is an error, return -1.

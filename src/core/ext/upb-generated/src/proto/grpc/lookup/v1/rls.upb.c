@@ -26,7 +26,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupRequest__fields[4] = 
 const upb_MiniTable grpc_lookup_v1_RouteLookupRequest_msginit = {
   &grpc_lookup_v1_RouteLookupRequest_submsgs[0],
   &grpc_lookup_v1_RouteLookupRequest__fields[0],
-  UPB_SIZE(24, 56), 4, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(24, 48), 4, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[2] = {
@@ -48,7 +48,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupResponse__fields[2] =
 const upb_MiniTable grpc_lookup_v1_RouteLookupResponse_msginit = {
   NULL,
   &grpc_lookup_v1_RouteLookupResponse__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

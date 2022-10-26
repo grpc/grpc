@@ -18,10 +18,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"  // IWYU pragma: keep
 
 namespace grpc_core {
 
@@ -60,11 +70,11 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
 
 void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
-      absl::make_unique<GoogleDefaultChannelCredsFactory>());
+      std::make_unique<GoogleDefaultChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
-      absl::make_unique<InsecureChannelCredsFactory>());
+      std::make_unique<InsecureChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
-      absl::make_unique<FakeChannelCredsFactory>());
+      std::make_unique<FakeChannelCredsFactory>());
 }
 
 }  // namespace grpc_core

@@ -28,16 +28,20 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/status.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+
+// Channel arg key for enabling parsing fault injection via method config.
+#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
+  "grpc.internal.parse_fault_injection_method_config"
 
 namespace grpc_core {
 
@@ -72,8 +76,8 @@ class FaultInjectionMethodParsedConfig
   // keep track of their relative positions. The FaultInjectionFilter uses this
   // method to access the parsed fault injection policy in service config,
   // whether it came from xDS resolver or directly from service config
-  const FaultInjectionPolicy* fault_injection_policy(int index) const {
-    if (static_cast<size_t>(index) >= fault_injection_policies_.size()) {
+  const FaultInjectionPolicy* fault_injection_policy(size_t index) const {
+    if (index >= fault_injection_policies_.size()) {
       return nullptr;
     }
     return &fault_injection_policies_[index];
@@ -88,9 +92,8 @@ class FaultInjectionServiceConfigParser final
  public:
   absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for fault injection filter.
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error) override;
+  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+  ParsePerMethodParams(const ChannelArgs& args, const Json& json) override;
   // Returns the parser index for FaultInjectionServiceConfigParser.
   static size_t ParserIndex();
   // Registers FaultInjectionServiceConfigParser to ServiceConfigParser.

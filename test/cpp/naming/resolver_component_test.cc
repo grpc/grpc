@@ -50,11 +50,11 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -280,16 +280,15 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
   }
 }
 
-void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
+void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
                                ArgsStruct* args) {
-  const grpc_arg* lb_policy_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
+  absl::optional<absl::string_view> lb_policy_arg =
+      channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
-    GPR_ASSERT(lb_policy_arg != nullptr);
-    GPR_ASSERT(lb_policy_arg->type == GRPC_ARG_STRING);
-    EXPECT_EQ(lb_policy_arg->value.string, args->expected_lb_policy);
+    EXPECT_TRUE(lb_policy_arg.has_value());
+    EXPECT_EQ(*lb_policy_arg, args->expected_lb_policy);
   } else {
-    GPR_ASSERT(lb_policy_arg == nullptr);
+    EXPECT_FALSE(lb_policy_arg.has_value());
   }
 }
 
@@ -316,7 +315,7 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
                   SOCKET_ERROR)
           << "Failed to set socketopt reuseaddr. WSA error: " +
                  std::to_string(WSAGetLastError());
-      ASSERT_TRUE(grpc_tcp_set_non_block(s) == GRPC_ERROR_NONE)
+      ASSERT_TRUE(grpc_tcp_set_non_block(s) == absl::OkStatus())
           << "Failed to set socket non-blocking";
       ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
           << "Failed to bind socket " + std::to_string(s) +
@@ -466,7 +465,7 @@ class CheckingResultHandler : public ResultHandler {
     AddActualAddresses(*result.addresses, /*is_balancer=*/false,
                        &found_lb_addrs);
     const grpc_core::ServerAddressList* balancer_addresses =
-        grpc_core::FindGrpclbBalancerAddressesInChannelArgs(*result.args);
+        grpc_core::FindGrpclbBalancerAddressesInChannelArgs(result.args);
     if (balancer_addresses != nullptr) {
       AddActualAddresses(*balancer_addresses, /*is_balancer=*/true,
                          &found_lb_addrs);
@@ -585,7 +584,7 @@ void RunResolvesRelevantRecordsTest(
   std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer>
       fake_non_responsive_dns_server;
   if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "True") {
-    fake_non_responsive_dns_server = absl::make_unique<
+    fake_non_responsive_dns_server = std::make_unique<
         grpc_core::testing::FakeUdpAndTcpServer>(
         grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
             kWaitForClientToSendFirstBytes,
@@ -606,15 +605,12 @@ void RunResolvesRelevantRecordsTest(
   }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
           absl::GetFlag(FLAGS_enable_srv_queries).c_str());
-  grpc_channel_args* resolver_args = nullptr;
+  grpc_core::ChannelArgs resolver_args;
   // By default, SRV queries are disabled, so tests that expect no SRV query
   // should avoid setting any channel arg. Test cases that do rely on the SRV
   // query must explicitly enable SRV though.
   if (absl::GetFlag(FLAGS_enable_srv_queries) == "True") {
-    grpc_arg srv_queries_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
-    resolver_args =
-        grpc_channel_args_copy_and_add(nullptr, &srv_queries_arg, 1);
+    resolver_args = resolver_args.Set(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
   } else if (absl::GetFlag(FLAGS_enable_srv_queries) != "False") {
     gpr_log(GPR_DEBUG, "Invalid value for --enable_srv_queries.");
     abort();
@@ -629,12 +625,8 @@ void RunResolvesRelevantRecordsTest(
     // Rather, we use the resolver-agnostic "service config" resolution option,
     // for which c-ares has its own specific default value, which isn't
     // necessarily shared by other resolvers.
-    grpc_arg txt_queries_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), false);
-    grpc_channel_args* tmp_args =
-        grpc_channel_args_copy_and_add(resolver_args, &txt_queries_arg, 1);
-    grpc_channel_args_destroy(resolver_args);
-    resolver_args = tmp_args;
+    resolver_args =
+        resolver_args.Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, false);
   } else if (absl::GetFlag(FLAGS_enable_txt_queries) != "False") {
     gpr_log(GPR_DEBUG, "Invalid value for --enable_txt_queries.");
     abort();
@@ -644,7 +636,6 @@ void RunResolvesRelevantRecordsTest(
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
-  grpc_channel_args_destroy(resolver_args);
   auto* resolver_ptr = resolver.get();
   args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
                  DEBUG_LOCATION);

@@ -17,7 +17,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <map>
 #include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/types/optional.h"
 
 #include "src/core/lib/matchers/matchers.h"
 

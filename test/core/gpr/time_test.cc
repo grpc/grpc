@@ -19,13 +19,12 @@
 /* Test of gpr time support. */
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
 #include "test/core/util/test_config.h"
@@ -41,7 +40,7 @@ static void i_to_s(intmax_t x, int base, int chars,
                    void* arg) {
   char buf[64];
   char fmt[32];
-  GPR_ASSERT(base == 16 || base == 10);
+  ASSERT_TRUE(base == 16 || base == 10);
   sprintf(fmt, "%%0%d%s", chars, base == 16 ? PRIxMAX : PRIdMAX);
   sprintf(buf, fmt, x);
   (*writer)(arg, buf, strlen(buf));
@@ -60,18 +59,18 @@ static void ts_to_s(gpr_timespec t,
   i_to_s(t.tv_nsec, 10, 9, writer, arg);
 }
 
-static void test_values(void) {
+TEST(TimeTest, Values) {
   int i;
 
   gpr_timespec x = gpr_time_0(GPR_CLOCK_REALTIME);
-  GPR_ASSERT(x.tv_sec == 0 && x.tv_nsec == 0);
+  ASSERT_TRUE(x.tv_sec == 0 && x.tv_nsec == 0);
 
   x = gpr_inf_future(GPR_CLOCK_REALTIME);
   fprintf(stderr, "far future ");
   fflush(stderr);
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
-  GPR_ASSERT(x.tv_sec == INT64_MAX);
+  ASSERT_EQ(x.tv_sec, INT64_MAX);
   fprintf(stderr, "far future ");
   fflush(stderr);
   ts_to_s(x, &to_fp, stderr);
@@ -84,7 +83,7 @@ static void test_values(void) {
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
   fflush(stderr);
-  GPR_ASSERT(x.tv_sec == INT64_MIN);
+  ASSERT_EQ(x.tv_sec, INT64_MIN);
   fprintf(stderr, "far past   ");
   fflush(stderr);
   ts_to_s(x, &to_fp, stderr);
@@ -93,41 +92,48 @@ static void test_values(void) {
 
   for (i = 1; i != 1000 * 1000 * 1000; i *= 10) {
     x = gpr_time_from_micros(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec == i / GPR_US_PER_SEC &&
-               x.tv_nsec == (i % GPR_US_PER_SEC) * GPR_NS_PER_US);
+    ASSERT_TRUE(x.tv_sec == i / GPR_US_PER_SEC &&
+                x.tv_nsec == (i % GPR_US_PER_SEC) * GPR_NS_PER_US);
     x = gpr_time_from_nanos(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec == i / GPR_NS_PER_SEC &&
-               x.tv_nsec == (i % GPR_NS_PER_SEC));
+    ASSERT_TRUE(x.tv_sec == i / GPR_NS_PER_SEC &&
+                x.tv_nsec == (i % GPR_NS_PER_SEC));
     x = gpr_time_from_millis(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec == i / GPR_MS_PER_SEC &&
-               x.tv_nsec == (i % GPR_MS_PER_SEC) * GPR_NS_PER_MS);
+    ASSERT_TRUE(x.tv_sec == i / GPR_MS_PER_SEC &&
+                x.tv_nsec == (i % GPR_MS_PER_SEC) * GPR_NS_PER_MS);
   }
 
   /* Test possible overflow in conversion of -ve values. */
   x = gpr_time_from_micros(-(INT64_MAX - 999997), GPR_TIMESPAN);
-  GPR_ASSERT(x.tv_sec < 0);
-  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  ASSERT_LT(x.tv_sec, 0);
+  ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  EXPECT_EQ((x.tv_sec * GPR_US_PER_SEC +
+             x.tv_nsec / (GPR_NS_PER_SEC / GPR_US_PER_SEC)),
+            -(INT64_MAX - 999997));
 
   x = gpr_time_from_nanos(-(INT64_MAX - 999999997), GPR_TIMESPAN);
-  GPR_ASSERT(x.tv_sec < 0);
-  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  ASSERT_LT(x.tv_sec, 0);
+  ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  EXPECT_EQ((x.tv_sec * GPR_NS_PER_SEC + x.tv_nsec), -(INT64_MAX - 999999997));
 
   x = gpr_time_from_millis(-(INT64_MAX - 997), GPR_TIMESPAN);
-  GPR_ASSERT(x.tv_sec < 0);
-  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  ASSERT_LT(x.tv_sec, 0);
+  ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  EXPECT_EQ((x.tv_sec * GPR_MS_PER_SEC +
+             x.tv_nsec / (GPR_NS_PER_SEC / GPR_MS_PER_SEC)),
+            -(INT64_MAX - 997));
 
   /* Test general -ve values. */
   for (i = -1; i > -1000 * 1000 * 1000; i *= 7) {
     x = gpr_time_from_micros(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec * GPR_US_PER_SEC + x.tv_nsec / GPR_NS_PER_US == i);
+    ASSERT_EQ(x.tv_sec * GPR_US_PER_SEC + x.tv_nsec / GPR_NS_PER_US, i);
     x = gpr_time_from_nanos(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec * GPR_NS_PER_SEC + x.tv_nsec == i);
+    ASSERT_EQ(x.tv_sec * GPR_NS_PER_SEC + x.tv_nsec, i);
     x = gpr_time_from_millis(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec * GPR_MS_PER_SEC + x.tv_nsec / GPR_NS_PER_MS == i);
+    ASSERT_EQ(x.tv_sec * GPR_MS_PER_SEC + x.tv_nsec / GPR_NS_PER_MS, i);
   }
 }
 
-static void test_add_sub(void) {
+TEST(TimeTest, AddSub) {
   int i;
   int j;
   int k;
@@ -148,7 +154,7 @@ static void test_add_sub(void) {
           ts_to_s(sumt, &to_fp, stderr);
           fprintf(stderr, "\n");
           fflush(stderr);
-          GPR_ASSERT(0);
+          ASSERT_TRUE(0);
         }
         if (gpr_time_cmp(gpr_time_from_micros(diff * k, GPR_TIMESPAN), difft) !=
             0) {
@@ -157,28 +163,28 @@ static void test_add_sub(void) {
           ts_to_s(sumt, &to_fp, stderr);
           fprintf(stderr, "\n");
           fflush(stderr);
-          GPR_ASSERT(0);
+          ASSERT_TRUE(0);
         }
       }
     }
   }
 }
 
-static void test_overflow(void) {
+TEST(TimeTest, Overflow) {
   /* overflow */
   gpr_timespec x = gpr_time_from_micros(1, GPR_TIMESPAN);
   do {
     x = gpr_time_add(x, x);
   } while (gpr_time_cmp(x, gpr_inf_future(GPR_TIMESPAN)) < 0);
-  GPR_ASSERT(gpr_time_cmp(x, gpr_inf_future(GPR_TIMESPAN)) == 0);
+  ASSERT_EQ(gpr_time_cmp(x, gpr_inf_future(GPR_TIMESPAN)), 0);
   x = gpr_time_from_micros(-1, GPR_TIMESPAN);
   do {
     x = gpr_time_add(x, x);
   } while (gpr_time_cmp(x, gpr_inf_past(GPR_TIMESPAN)) > 0);
-  GPR_ASSERT(gpr_time_cmp(x, gpr_inf_past(GPR_TIMESPAN)) == 0);
+  ASSERT_EQ(gpr_time_cmp(x, gpr_inf_past(GPR_TIMESPAN)), 0);
 }
 
-static void test_sticky_infinities(void) {
+TEST(TimeTest, StickyInfinities) {
   int i;
   int j;
   int k;
@@ -194,75 +200,68 @@ static void test_sticky_infinities(void) {
   for (i = 0; i != sizeof(infinity) / sizeof(infinity[0]); i++) {
     for (j = 0; j != sizeof(addend) / sizeof(addend[0]); j++) {
       gpr_timespec x = gpr_time_add(infinity[i], addend[j]);
-      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
+      ASSERT_EQ(gpr_time_cmp(x, infinity[i]), 0);
       x = gpr_time_sub(infinity[i], addend[j]);
-      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
+      ASSERT_EQ(gpr_time_cmp(x, infinity[i]), 0);
     }
     for (k = -200; k <= 200; k++) {
       gpr_timespec y = gpr_time_from_micros(k * 100000, GPR_TIMESPAN);
       gpr_timespec x = gpr_time_add(infinity[i], y);
-      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
+      ASSERT_EQ(gpr_time_cmp(x, infinity[i]), 0);
       x = gpr_time_sub(infinity[i], y);
-      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
+      ASSERT_EQ(gpr_time_cmp(x, infinity[i]), 0);
     }
   }
 }
 
-static void test_similar(void) {
-  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
-                                   gpr_inf_future(GPR_TIMESPAN),
-                                   gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
-                                   gpr_inf_past(GPR_TIMESPAN),
-                                   gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
-                                   gpr_inf_future(GPR_TIMESPAN),
-                                   gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
-                                   gpr_inf_past(GPR_TIMESPAN),
-                                   gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
-                                   gpr_time_from_micros(10, GPR_TIMESPAN),
-                                   gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
-                                   gpr_time_from_micros(15, GPR_TIMESPAN),
-                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(15, GPR_TIMESPAN),
-                                   gpr_time_from_micros(10, GPR_TIMESPAN),
-                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
-                                   gpr_time_from_micros(25, GPR_TIMESPAN),
-                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_time_from_micros(25, GPR_TIMESPAN),
-                                   gpr_time_from_micros(10, GPR_TIMESPAN),
-                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
+TEST(TimeTest, Similar) {
+  ASSERT_EQ(1, gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
+                                gpr_inf_future(GPR_TIMESPAN),
+                                gpr_time_0(GPR_TIMESPAN)));
+  ASSERT_EQ(1, gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
+                                gpr_inf_past(GPR_TIMESPAN),
+                                gpr_time_0(GPR_TIMESPAN)));
+  ASSERT_EQ(0, gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
+                                gpr_inf_future(GPR_TIMESPAN),
+                                gpr_time_0(GPR_TIMESPAN)));
+  ASSERT_EQ(0, gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
+                                gpr_inf_past(GPR_TIMESPAN),
+                                gpr_time_0(GPR_TIMESPAN)));
+  ASSERT_EQ(1, gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
+                                gpr_time_from_micros(10, GPR_TIMESPAN),
+                                gpr_time_0(GPR_TIMESPAN)));
+  ASSERT_EQ(1, gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
+                                gpr_time_from_micros(15, GPR_TIMESPAN),
+                                gpr_time_from_micros(10, GPR_TIMESPAN)));
+  ASSERT_EQ(1, gpr_time_similar(gpr_time_from_micros(15, GPR_TIMESPAN),
+                                gpr_time_from_micros(10, GPR_TIMESPAN),
+                                gpr_time_from_micros(10, GPR_TIMESPAN)));
+  ASSERT_EQ(0, gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
+                                gpr_time_from_micros(25, GPR_TIMESPAN),
+                                gpr_time_from_micros(10, GPR_TIMESPAN)));
+  ASSERT_EQ(0, gpr_time_similar(gpr_time_from_micros(25, GPR_TIMESPAN),
+                                gpr_time_from_micros(10, GPR_TIMESPAN),
+                                gpr_time_from_micros(10, GPR_TIMESPAN)));
 }
 
-static void test_convert_extreme(void) {
+TEST(TimeTest, ConvertExtreme) {
   gpr_timespec realtime = {INT64_MAX, 1, GPR_CLOCK_REALTIME};
   gpr_timespec monotime = gpr_convert_clock_type(realtime, GPR_CLOCK_MONOTONIC);
-  GPR_ASSERT(monotime.tv_sec == realtime.tv_sec);
-  GPR_ASSERT(monotime.clock_type == GPR_CLOCK_MONOTONIC);
+  ASSERT_EQ(monotime.tv_sec, realtime.tv_sec);
+  ASSERT_EQ(monotime.clock_type, GPR_CLOCK_MONOTONIC);
 }
 
-static void test_cmp_extreme(void) {
+TEST(TimeTest, CmpExtreme) {
   gpr_timespec t1 = {INT64_MAX, 1, GPR_CLOCK_REALTIME};
   gpr_timespec t2 = {INT64_MAX, 2, GPR_CLOCK_REALTIME};
-  GPR_ASSERT(gpr_time_cmp(t1, t2) == 0);
+  ASSERT_EQ(gpr_time_cmp(t1, t2), 0);
   t1.tv_sec = INT64_MIN;
   t2.tv_sec = INT64_MIN;
-  GPR_ASSERT(gpr_time_cmp(t1, t2) == 0);
+  ASSERT_EQ(gpr_time_cmp(t1, t2), 0);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-
-  test_values();
-  test_add_sub();
-  test_overflow();
-  test_sticky_infinities();
-  test_similar();
-  test_convert_extreme();
-  test_cmp_extreme();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

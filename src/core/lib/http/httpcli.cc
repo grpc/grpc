@@ -21,32 +21,37 @@
 #include "src/core/lib/http/httpcli.h"
 
 #include <limits.h>
-#include <string.h>
 
 #include <string>
+#include <utility>
 
 #include "absl/functional/bind_front.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 namespace grpc_core {
@@ -159,13 +164,15 @@ HttpRequest::HttpRequest(
       channel_args_(CoreConfiguration::Get()
                         .channel_args_preconditioning()
                         .PreconditionChannelArgs(channel_args)
-                        .ToC()),
+                        .ToC()
+                        .release()),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
-      test_only_generate_response_(std::move(test_only_generate_response)) {
+      test_only_generate_response_(std::move(test_only_generate_response)),
+      resolver_(GetDNSResolver()) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -188,11 +195,10 @@ HttpRequest::~HttpRequest() {
   if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
   }
-  grpc_slice_unref_internal(request_text_);
+  CSliceUnref(request_text_);
   grpc_iomgr_unregister_object(&iomgr_obj_);
-  grpc_slice_buffer_destroy_internal(&incoming_);
-  grpc_slice_buffer_destroy_internal(&outgoing_);
-  GRPC_ERROR_UNREF(overall_error_);
+  grpc_slice_buffer_destroy(&incoming_);
+  grpc_slice_buffer_destroy(&outgoing_);
   grpc_pollset_set_destroy(pollset_set_);
 }
 
@@ -203,9 +209,10 @@ void HttpRequest::Start() {
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  dns_request_handle_ = GetDNSResolver()->ResolveName(
-      uri_.authority(), uri_.scheme(), pollset_set_,
-      absl::bind_front(&HttpRequest::OnResolved, this));
+  dns_request_handle_ = resolver_->LookupHostname(
+      absl::bind_front(&HttpRequest::OnResolved, this), uri_.authority(),
+      uri_.scheme(), kDefaultDNSRequestTimeout, pollset_set_,
+      /*name_server=*/"");
 }
 
 void HttpRequest::Orphan() {
@@ -215,35 +222,32 @@ void HttpRequest::Orphan() {
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (dns_request_handle_.has_value() &&
-        GetDNSResolver()->Cancel(dns_request_handle_.value())) {
-      Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "cancelled during DNS resolution"));
+        resolver_->Cancel(dns_request_handle_.value())) {
+      Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
       Unref();
     }
     if (handshake_mgr_ != nullptr) {
       // Shutdown will cancel any ongoing tcp connect.
-      handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HTTP request cancelled during handshake"));
+      handshake_mgr_->Shutdown(
+          GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     }
     if (own_endpoint_ && ep_ != nullptr) {
-      grpc_endpoint_shutdown(
-          ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
+      grpc_endpoint_shutdown(ep_, GRPC_ERROR_CREATE("HTTP request cancelled"));
     }
   }
   Unref();
 }
 
 void HttpRequest::AppendError(grpc_error_handle error) {
-  if (overall_error_ == GRPC_ERROR_NONE) {
-    overall_error_ =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
+  if (overall_error_.ok()) {
+    overall_error_ = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
   auto addr_text = grpc_sockaddr_to_uri(addr);
   overall_error_ = grpc_error_add_child(
       overall_error_,
       grpc_error_set_str(
-          error, GRPC_ERROR_STR_TARGET_ADDRESS,
+          error, StatusStrProperty::kTargetAddress,
           addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
 }
 
@@ -253,19 +257,19 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
       have_read_byte_ = 1;
       grpc_error_handle err =
           grpc_http_parser_parse(&parser_, incoming_.slices[i], nullptr);
-      if (err != GRPC_ERROR_NONE) {
+      if (!err.ok()) {
         Finish(err);
         return;
       }
     }
   }
   if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "HTTP1 request cancelled during read", &overall_error_, 1));
-  } else if (error == GRPC_ERROR_NONE) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING("HTTP1 request cancelled during read",
+                                         &overall_error_, 1));
+  } else if (error.ok()) {
     DoRead();
   } else if (!have_read_byte_) {
-    NextAddress(GRPC_ERROR_REF(error));
+    NextAddress(error);
   } else {
     Finish(grpc_http_parser_eof(&parser_));
   }
@@ -275,15 +279,15 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
     void* arg, grpc_error_handle error) {
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
   MutexLock lock(&req->mu_);
-  if (error == GRPC_ERROR_NONE && !req->cancelled_) {
+  if (error.ok() && !req->cancelled_) {
     req->OnWritten();
   } else {
-    req->NextAddress(GRPC_ERROR_REF(error));
+    req->NextAddress(error);
   }
 }
 
 void HttpRequest::StartWrite() {
-  grpc_slice_ref_internal(request_text_);
+  CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
@@ -300,20 +304,19 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   }
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
-  if (error != GRPC_ERROR_NONE) {
+  if (!error.ok()) {
     req->handshake_mgr_.reset();
-    req->NextAddress(GRPC_ERROR_REF(error));
+    req->NextAddress(error);
     return;
   }
   // Handshake completed, so we own fields in args
-  grpc_channel_args_destroy(args->args);
-  grpc_slice_buffer_destroy_internal(args->read_buffer);
+  grpc_slice_buffer_destroy(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
   req->handshake_mgr_.reset();
   if (req->cancelled_) {
-    req->NextAddress(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "HTTP request cancelled during handshake"));
+    req->NextAddress(
+        GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     return;
   }
   req->StartWrite();
@@ -321,60 +324,48 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
 
 void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   // Create the security connector using the credentials and target name.
-  grpc_channel_args* new_args_from_connector = nullptr;
+  ChannelArgs args = ChannelArgs::FromC(channel_args_);
   RefCountedPtr<grpc_channel_security_connector> sc =
       channel_creds_->create_security_connector(
-          nullptr /*call_creds*/, uri_.authority().c_str(), channel_args_,
-          &new_args_from_connector);
+          nullptr /*call_creds*/, uri_.authority().c_str(), &args);
   if (sc == nullptr) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "failed to create security connector", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("failed to create security connector",
+                                         &overall_error_, 1));
     return;
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(addr);
   if (!address.ok()) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Failed to extract URI from address", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("Failed to extract URI from address",
+                                         &overall_error_, 1));
     return;
   }
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      grpc_security_connector_to_arg(sc.get()),
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
-          const_cast<char*>(address.value().c_str())),
-  };
-  const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      new_args_from_connector != nullptr ? new_args_from_connector
-                                         : channel_args_,
-      args_to_add.data(), args_to_add.size());
-  grpc_channel_args_destroy(new_args_from_connector);
+  args = args.SetObject(std::move(sc))
+             .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value());
   // Start the handshake
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      HANDSHAKER_CLIENT, new_args, pollset_set_, handshake_mgr_.get());
+      HANDSHAKER_CLIENT, args, pollset_set_, handshake_mgr_.get());
   Ref().release();  // ref held by pending handshake
   grpc_endpoint* ep = ep_;
   ep_ = nullptr;
   own_endpoint_ = false;
-  handshake_mgr_->DoHandshake(ep, new_args, deadline_,
+  handshake_mgr_->DoHandshake(ep, args, deadline_,
                               /*acceptor=*/nullptr, OnHandshakeDone,
                               /*user_data=*/this);
-  sc.reset(DEBUG_LOCATION, "httpcli");
-  grpc_channel_args_destroy(new_args);
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!error.ok()) {
     AppendError(error);
   }
   if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "HTTP request was cancelled", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("HTTP request was cancelled",
+                                         &overall_error_, 1));
     return;
   }
   if (next_address_ == addresses_.size()) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Failed HTTP requests to all targets", &overall_error_, 1));
+    Finish(GRPC_ERROR_CREATE_REFERENCING("Failed HTTP requests to all targets",
+                                         &overall_error_, 1));
     return;
   }
   const grpc_resolved_address* addr = &addresses_[next_address_++];
@@ -387,8 +378,7 @@ void HttpRequest::OnResolved(
   MutexLock lock(&mu_);
   dns_request_handle_.reset();
   if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "cancelled during DNS resolution"));
+    Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
     return;
   }
   if (!addresses_or.ok()) {
@@ -397,7 +387,7 @@ void HttpRequest::OnResolved(
   }
   addresses_ = std::move(*addresses_or);
   next_address_ = 0;
-  NextAddress(GRPC_ERROR_NONE);
+  NextAddress(absl::OkStatus());
 }
 
 }  // namespace grpc_core

@@ -19,6 +19,7 @@
 
 #include <new>
 #include <type_traits>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -75,14 +76,14 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
 template <typename F>
 class Loop {
  private:
-  using Factory = promise_detail::PromiseFactory<void, F>;
-  using PromiseType = decltype(std::declval<Factory>().Repeated());
+  using Factory = promise_detail::RepeatedPromiseFactory<void, F>;
+  using PromiseType = decltype(std::declval<Factory>().Make());
   using PromiseResult = typename PromiseType::Result;
 
  public:
   using Result = typename LoopTraits<PromiseResult>::Result;
 
-  explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Repeated()) {}
+  explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Make()) {}
   ~Loop() { promise_.~PromiseType(); }
 
   Loop(Loop&& loop) noexcept
@@ -103,7 +104,7 @@ class Loop {
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);
         if (absl::holds_alternative<Continue>(lc)) {
           promise_.~PromiseType();
-          new (&promise_) PromiseType(factory_.Repeated());
+          new (&promise_) PromiseType(factory_.Make());
           continue;
         }
         //  - otherwise there's our result... return it out.

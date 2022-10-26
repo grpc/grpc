@@ -52,19 +52,16 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
           target);
 
   // Disable client authority filter when using Cronet
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args)
-             .Set(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER, 1)
-             .ToC();
+  auto channel_args = grpc_core::CoreConfiguration::Get()
+                          .channel_args_preconditioning()
+                          .PreconditionChannelArgs(args)
+                          .Set(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER, 1);
 
-  grpc_transport* ct =
-      grpc_create_cronet_transport(engine, target, args, reserved);
+  grpc_transport* ct = grpc_create_cronet_transport(
+      engine, target, channel_args.ToC().get(), reserved);
 
   grpc_core::ExecCtx exec_ctx;
-  auto channel =
-      grpc_core::Channel::Create(target, grpc_core::ChannelArgs::FromC(args),
-                                 GRPC_CLIENT_DIRECT_CHANNEL, ct);
-  grpc_channel_args_destroy(args);
+  auto channel = grpc_core::Channel::Create(target, channel_args,
+                                            GRPC_CLIENT_DIRECT_CHANNEL, ct);
   return channel.ok() ? channel->release()->c_ptr() : nullptr;
 }

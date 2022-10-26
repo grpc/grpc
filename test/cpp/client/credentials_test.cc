@@ -28,8 +28,8 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
 
@@ -228,7 +228,7 @@ TEST(CredentialsTest, StsCredentialsOptionsJson) {
 
 TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
   // Unset env and check expected failure.
-  gpr_unsetenv("STS_CREDENTIALS");
+  grpc_core::UnsetEnv("STS_CREDENTIALS");
   grpc::experimental::StsCredentialsOptions options;
   auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
   EXPECT_EQ(grpc::StatusCode::NOT_FOUND, status.error_code());
@@ -247,7 +247,7 @@ TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
   ASSERT_EQ(sizeof(valid_json),
             fwrite(valid_json, 1, sizeof(valid_json), creds_file));
   fclose(creds_file);
-  gpr_setenv("STS_CREDENTIALS", creds_file_name);
+  grpc_core::SetEnv("STS_CREDENTIALS", creds_file_name);
   gpr_free(creds_file_name);
   status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
   EXPECT_TRUE(status.ok());
@@ -262,7 +262,7 @@ TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
   EXPECT_EQ(options.actor_token_type, "");
 
   // Cleanup.
-  gpr_unsetenv("STS_CREDENTIALS");
+  grpc_core::UnsetEnv("STS_CREDENTIALS");
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithDefaultRootsAndDefaultVerifier) {

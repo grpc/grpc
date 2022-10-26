@@ -20,6 +20,8 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -47,18 +49,20 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/trace.h"
@@ -105,7 +109,7 @@ class TcpZerocopySendRecord {
 
   ~TcpZerocopySendRecord() {
     AssertEmpty();
-    grpc_slice_buffer_destroy_internal(&buf_);
+    grpc_slice_buffer_destroy(&buf_);
   }
 
   // Given the slices that we wish to send, and the current offset into the
@@ -173,7 +177,7 @@ class TcpZerocopySendRecord {
   // reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
     GPR_DEBUG_ASSERT(ref_.load(std::memory_order_relaxed) == 0);
-    grpc_slice_buffer_reset_and_unref_internal(&buf_);
+    grpc_slice_buffer_reset_and_unref(&buf_);
   }
 
   grpc_slice_buffer buf_;
@@ -232,7 +236,11 @@ class TcpZerocopySendCtx {
   // buffers that were sent with the corresponding call to sendmsg().
   void NoteSend(TcpZerocopySendRecord* record) {
     record->Ref();
-    AssociateSeqWithSendRecord(last_send_, record);
+    {
+      MutexLock guard(&lock_);
+      is_in_write_ = true;
+      AssociateSeqWithSendRecordLocked(last_send_, record);
+    }
     ++last_send_;
   }
 
@@ -253,8 +261,8 @@ class TcpZerocopySendCtx {
 
   // Simply associate this send record (and the underlying sent data buffers)
   // with the implicit sequence number for this zerocopy sendmsg().
-  void AssociateSeqWithSendRecord(uint32_t seq, TcpZerocopySendRecord* record) {
-    MutexLock guard(&lock_);
+  void AssociateSeqWithSendRecordLocked(uint32_t seq,
+                                        TcpZerocopySendRecord* record) {
     ctx_lookup_.emplace(seq, record);
   }
 
@@ -312,7 +320,107 @@ class TcpZerocopySendCtx {
   // zerocopy is not useful for small transfers.
   size_t threshold_bytes() const { return threshold_bytes_; }
 
+  // Expected to be called by handler reading messages from the err queue.
+  // It is used to indicate that some OMem meory is now available. It returns
+  // true to tell the caller to mark the file descriptor as immediately
+  // writable.
+  //
+  // If a write is currently in progress on the socket (ie. we have issued a
+  // sendmsg() and are about to check its return value) then we set omem state
+  // to CHECK to make the sending thread know that some tcp_omem was
+  // concurrently freed even if sendmsg() returns ENOBUFS. In this case, since
+  // there is already an active send thread, we do not need to mark the
+  // socket writeable, so we return false.
+  //
+  // If there was no write in progress on the socket, and the socket was not
+  // marked as FULL, then we need not mark the socket writeable now that some
+  // tcp_omem memory is freed since it was not considered as blocked on
+  // tcp_omem to begin with. So in this case, return false.
+  //
+  // But, if a write was not in progress and the omem state was FULL, then we
+  // need to mark the socket writeable since it is no longer blocked by
+  // tcp_omem. In this case, return true.
+  //
+  // Please refer to the STATE TRANSITION DIAGRAM below for more details.
+  //
+  bool UpdateZeroCopyOMemStateAfterFree() {
+    MutexLock guard(&lock_);
+    if (is_in_write_) {
+      zcopy_enobuf_state_ = OMemState::CHECK;
+      return false;
+    }
+    GPR_DEBUG_ASSERT(zcopy_enobuf_state_ != OMemState::CHECK);
+    if (zcopy_enobuf_state_ == OMemState::FULL) {
+      // A previous sendmsg attempt was blocked by ENOBUFS. Return true to
+      // mark the fd as writable so the next write attempt could be made.
+      zcopy_enobuf_state_ = OMemState::OPEN;
+      return true;
+    } else if (zcopy_enobuf_state_ == OMemState::OPEN) {
+      // No need to mark the fd as writable because the previous write
+      // attempt did not encounter ENOBUFS.
+      return false;
+    } else {
+      // This state should never be reached because it implies that the previous
+      // state was CHECK and is_in_write is false. This means that after the
+      // previous sendmsg returned and set is_in_write to false, it did
+      // not update the z-copy change from CHECK to OPEN.
+      GPR_ASSERT(false && "OMem state error!");
+    }
+  }
+
+  // Expected to be called by the thread calling sendmsg after the syscall
+  // invocation. is complete. If an ENOBUF is seen, it checks if the error
+  // handler (Tx0cp completions) has already run and free'ed up some OMem. It
+  // returns true indicating that the write can be attempted again immediately.
+  // If ENOBUFS was seen but no Tx0cp completions have been received between the
+  // sendmsg() and us taking this lock, then tcp_omem is still full from our
+  // point of view. Therefore, we do not signal that the socket is writeable
+  // with respect to the availability of tcp_omem. Therefore the function
+  // returns false. This indicates that another write should not be attempted
+  // immediately and the calling thread should wait until the socket is writable
+  // again. If ENOBUFS was not seen, then again return false because the next
+  // write should be attempted only when the socket is writable again.
+  //
+  // Please refer to the STATE TRANSITION DIAGRAM below for more details.
+  //
+  bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf) {
+    MutexLock guard(&lock_);
+    is_in_write_ = false;
+    if (seen_enobuf) {
+      if (zcopy_enobuf_state_ == OMemState::CHECK) {
+        zcopy_enobuf_state_ = OMemState::OPEN;
+        return true;
+      } else {
+        zcopy_enobuf_state_ = OMemState::FULL;
+      }
+    } else if (zcopy_enobuf_state_ != OMemState::OPEN) {
+      zcopy_enobuf_state_ = OMemState::OPEN;
+    }
+    return false;
+  }
+
  private:
+  //                      STATE TRANSITION DIAGRAM
+  //
+  // sendmsg succeeds       Tx-zero copy succeeds and there is no active sendmsg
+  //      ----<<--+  +------<<-------------------------------------+
+  //      |       |  |                                             |
+  //      |       |  v       sendmsg returns ENOBUFS               |
+  //      +-----> OPEN  ------------->>-------------------------> FULL
+  //                ^                                              |
+  //                |                                              |
+  //                | sendmsg completes                            |
+  //                +----<<---------- CHECK <-------<<-------------+
+  //                                        Tx-zero copy succeeds and there is
+  //                                        an active sendmsg
+  //
+  enum class OMemState : int8_t {
+    OPEN,   // Everything is clear and omem is not full.
+    FULL,   // The last sendmsg() has returned with an errno of ENOBUFS.
+    CHECK,  // Error queue is read while is_in_write_ was true, so we should
+            // check this state after the sendmsg.
+  };
+
   TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq) {
     auto iter = ctx_lookup_.find(seq);
     GPR_DEBUG_ASSERT(iter != ctx_lookup_.end());
@@ -349,6 +457,8 @@ class TcpZerocopySendCtx {
   size_t threshold_bytes_ = kDefaultSendBytesThreshold;
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
+  bool is_in_write_ = false;
+  OMemState zcopy_enobuf_state_;
 };
 
 }  // namespace grpc_core
@@ -357,16 +467,21 @@ using grpc_core::TcpZerocopySendCtx;
 using grpc_core::TcpZerocopySendRecord;
 
 namespace {
+
 struct grpc_tcp {
-  grpc_tcp(int max_sends, size_t send_bytes_threshold)
-      : tcp_zerocopy_send_ctx(max_sends, send_bytes_threshold) {}
+  explicit grpc_tcp(const grpc_core::PosixTcpOptions& tcp_options)
+      : min_read_chunk_size(tcp_options.tcp_min_read_chunk_size),
+        max_read_chunk_size(tcp_options.tcp_max_read_chunk_size),
+        tcp_zerocopy_send_ctx(
+            tcp_options.tcp_tx_zerocopy_max_simultaneous_sends,
+            tcp_options.tcp_tx_zerocopy_send_bytes_threshold) {}
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
   /* Used by the endpoint read function to distinguish the very first read call
    * from the rest */
   bool is_first_read;
-  bool has_posted_reclaimer;
+  bool has_posted_reclaimer ABSL_GUARDED_BY(read_mu) = false;
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -374,6 +489,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int set_rcvlowat = 0;
 
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
@@ -426,6 +542,10 @@ struct grpc_tcp {
                                       on errors anymore */
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
+
+  int min_progress_size; /* A hint from upper layers specifying the minimum
+                            number of bytes that need to be read to make
+                            meaningful progress */
 };
 
 struct backup_poller {
@@ -465,8 +585,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   }
   gpr_mu_lock(p->pollset_mu);
   grpc_core::Timestamp deadline =
-      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
-  GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS();
+      grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(10);
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
       grpc_pollset_work(BACKUP_POLLER_POLLSET(p), nullptr, deadline));
@@ -489,7 +608,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p reschedule", p);
     }
-    grpc_core::Executor::Run(&p->run_poller, GRPC_ERROR_NONE,
+    grpc_core::Executor::Run(&p->run_poller, absl::OkStatus(),
                              grpc_core::ExecutorType::DEFAULT,
                              grpc_core::ExecutorJobType::LONG);
   }
@@ -527,13 +646,12 @@ static void cover_self(grpc_tcp* tcp) {
     g_backup_poller = p;
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     g_backup_poller_mu->Unlock();
-    GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p create", p);
     }
     grpc_core::Executor::Run(
         GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p, nullptr),
-        GRPC_ERROR_NONE, grpc_core::ExecutorType::DEFAULT,
+        absl::OkStatus(), grpc_core::ExecutorType::DEFAULT,
         grpc_core::ExecutorJobType::LONG);
   } else {
     old_count = g_uncovered_notifications_pending++;
@@ -568,7 +686,7 @@ static void tcp_drop_uncovered_then_handle_write(void* arg,
                                                  grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   drop_uncovered(static_cast<grpc_tcp*>(arg));
   tcp_handle_write(arg, error);
@@ -596,11 +714,12 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+          grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd,
+                             tcp->fd),
           /* All tcp errors are marked with UNAVAILABLE so that application may
            * choose to retry. */
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
+      grpc_core::StatusStrProperty::kTargetAddress, tcp->peer_string);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -615,12 +734,11 @@ static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
 static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
-  grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
+  grpc_slice_buffer_destroy(&tcp->last_read_buffer);
   /* The lock is not really necessary here, since all refs have been released */
   gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::Shutdown(
-      &tcp->tb_head, tcp->outgoing_buffer_arg,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+  grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, tcp->outgoing_buffer_arg,
+                                    GRPC_ERROR_CREATE("endpoint destroyed"));
   gpr_mu_unlock(&tcp->tb_mu);
   tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
@@ -655,7 +773,7 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 
 static void tcp_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
     ZerocopyDisableAndWaitForRemaining(tcp);
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
@@ -671,10 +789,10 @@ static void perform_reclamation(grpc_tcp* tcp)
   }
   tcp->read_mu.Lock();
   if (tcp->incoming_buffer != nullptr) {
-    grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
   }
-  tcp->read_mu.Unlock();
   tcp->has_posted_reclaimer = false;
+  tcp->read_mu.Unlock();
 }
 
 static void maybe_post_reclaimer(grpc_tcp* tcp)
@@ -697,23 +815,66 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
     gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
-            tcp->peer_string.c_str(), grpc_error_std_string(error).c_str());
+            tcp->peer_string.c_str(), grpc_core::StatusToString(error).c_str());
     if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", dump);
+        gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
         gpr_free(dump);
       }
     }
   }
 }
 
+static void update_rcvlowat(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  if (!grpc_core::IsTcpRcvLowatEnabled()) return;
+
+  // TODO(ctiller): Check if supported by OS.
+  // TODO(ctiller): Allow some adjustments instead of hardcoding things.
+
+  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
+  static constexpr int kRcvLowatThreshold = 16 * 1024;
+
+  int remaining = std::min(static_cast<int>(tcp->incoming_buffer->length),
+                           tcp->min_progress_size);
+  remaining = std::min(remaining, kRcvLowatMax);
+
+  // Setting SO_RCVLOWAT for small quantities does not save on CPU.
+  if (remaining < kRcvLowatThreshold) {
+    remaining = 0;
+  }
+
+  // If zerocopy is off, wake shortly before the full RPC is here. More can
+  // show up partway through recvmsg() since it takes a while to copy data.
+  // So an early wakeup aids latency.
+  if (!tcp->tcp_zerocopy_send_ctx.enabled() && remaining > 0) {
+    remaining -= kRcvLowatThreshold;
+  }
+
+  // We still do not know the RPC size. Do not set SO_RCVLOWAT.
+  if (tcp->set_rcvlowat <= 1 && remaining <= 1) return;
+
+  // Previous value is still valid. No change needed in SO_RCVLOWAT.
+  if (tcp->set_rcvlowat == remaining) {
+    return;
+  }
+  if (setsockopt(tcp->fd, SOL_SOCKET, SO_RCVLOWAT, &remaining,
+                 sizeof(remaining)) != 0) {
+    gpr_log(GPR_ERROR, "%s",
+            absl::StrCat("Cannot set SO_RCVLOWAT on fd=", tcp->fd,
+                         " err=", grpc_core::StrError(errno).c_str())
+                .c_str());
+    return;
+  }
+  tcp->set_rcvlowat = remaining;
+}
+
 /* Returns true if data available to read or error other than EAGAIN. */
-#define MAX_READ_IOVEC 4
+#define MAX_READ_IOVEC 64
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  GPR_TIMER_SCOPE("tcp_do_read", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
   }
@@ -736,6 +897,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
   }
 
   GPR_ASSERT(tcp->incoming_buffer->length != 0);
+  GPR_DEBUG_ASSERT(tcp->min_progress_size > 0);
 
   do {
     /* Assume there is something on the queue. If we receive TCP_INQ from
@@ -756,48 +918,49 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     }
     msg.msg_flags = 0;
 
-    GRPC_STATS_INC_TCP_READ_OFFER(tcp->incoming_buffer->length);
-    GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(tcp->incoming_buffer->count);
+    grpc_core::global_stats().IncrementTcpReadOffer(
+        tcp->incoming_buffer->length);
+    grpc_core::global_stats().IncrementTcpReadOfferIovSize(
+        tcp->incoming_buffer->count);
 
     do {
-      GPR_TIMER_SCOPE("recvmsg", 0);
-      GRPC_STATS_INC_SYSCALL_READ();
+      grpc_core::global_stats().IncrementSyscallRead();
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    if (read_bytes < 0 && errno == EAGAIN) {
+      /* NB: After calling call_read_cb a parallel call of the read handler may
+       * be running. */
+      if (total_read_bytes > 0) {
+        break;
+      }
+      finish_estimate(tcp);
+      tcp->inq = 0;
+      return false;
+    }
+
     /* We have read something in previous reads. We need to deliver those
      * bytes to the upper layer. */
-    if (read_bytes <= 0 && total_read_bytes > 0) {
+    if (read_bytes <= 0 && total_read_bytes >= 1) {
       tcp->inq = 1;
       break;
     }
 
-    if (read_bytes < 0) {
-      /* NB: After calling call_read_cb a parallel call of the read handler may
-       * be running. */
-      if (errno == EAGAIN) {
-        finish_estimate(tcp);
-        tcp->inq = 0;
-        return false;
+    if (read_bytes <= 0) {
+      /* 0 read size ==> end of stream */
+      grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+      if (read_bytes == 0) {
+        *error = tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
       } else {
-        grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
-        return true;
+        *error =
+            tcp_annotate_error(absl::InternalError(absl::StrCat(
+                                   "recvmsg:", grpc_core::StrError(errno))),
+                               tcp);
       }
-    }
-    if (read_bytes == 0) {
-      /* 0 read size ==> end of stream
-       *
-       * We may have read something, i.e., total_read_bytes > 0, but
-       * since the connection is closed we will drop the data here, because we
-       * can't call the callback multiple times. */
-      grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-      *error = tcp_annotate_error(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
       return true;
     }
 
-    GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
+    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     GPR_DEBUG_ASSERT((size_t)read_bytes <=
                      tcp->incoming_buffer->length - total_read_bytes);
@@ -848,36 +1011,103 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
   }
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
+  *error = absl::OkStatus();
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
+    // Update min progress size based on the total number of bytes read in
+    // this round.
+    tcp->min_progress_size -= total_read_bytes;
+    if (tcp->min_progress_size > 0) {
+      // There is still some bytes left to be read before we can signal
+      // the read as complete. Append the bytes read so far into
+      // last_read_buffer which serves as a staging buffer. Return false
+      // to indicate tcp_handle_read needs to be scheduled again.
+      grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
+                                   &tcp->last_read_buffer);
+      return false;
+    } else {
+      // The required number of bytes have been read. Append the bytes
+      // read in this round into last_read_buffer. Then swap last_read_buffer
+      // and incoming_buffer. Now incoming buffer contains all the bytes
+      // read since the start of the last tcp_read operation. last_read_buffer
+      // would contain any spare space left in the incoming buffer. This
+      // space will be used in the next tcp_read operation.
+      tcp->min_progress_size = 1;
+      grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
+                                   &tcp->last_read_buffer);
+      grpc_slice_buffer_swap(&tcp->last_read_buffer, tcp->incoming_buffer);
+      return true;
+    }
+  }
   if (total_read_bytes < tcp->incoming_buffer->length) {
     grpc_slice_buffer_trim_end(tcp->incoming_buffer,
                                tcp->incoming_buffer->length - total_read_bytes,
                                &tcp->last_read_buffer);
   }
-  *error = GRPC_ERROR_NONE;
   return true;
 }
 
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  if (tcp->incoming_buffer->length == 0 &&
-      tcp->incoming_buffer->count < MAX_READ_IOVEC) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO,
-              "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d target=%lf "
-              "buf_len=%" PRIdPTR,
-              tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
-              tcp->target_length, tcp->incoming_buffer->length);
+  if (grpc_core::IsTcpReadChunksEnabled()) {
+    static const int kBigAlloc = 64 * 1024;
+    static const int kSmallAlloc = 8 * 1024;
+    if (tcp->incoming_buffer->length <
+        static_cast<size_t>(tcp->min_progress_size)) {
+      size_t allocate_length = tcp->min_progress_size;
+      const size_t target_length = static_cast<size_t>(tcp->target_length);
+      // If memory pressure is low and we think there will be more than
+      // min_progress_size bytes to read, allocate a bit more.
+      const bool low_memory_pressure =
+          tcp->memory_owner.GetPressureInfo().pressure_control_value < 0.8;
+      if (low_memory_pressure && target_length > allocate_length) {
+        allocate_length = target_length;
+      }
+      int extra_wanted =
+          allocate_length - static_cast<int>(tcp->incoming_buffer->length);
+      if (extra_wanted >=
+          (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
+        while (extra_wanted > 0) {
+          extra_wanted -= kBigAlloc;
+          grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
+                                        tcp->memory_owner.MakeSlice(kBigAlloc));
+          grpc_core::global_stats().IncrementTcpReadAlloc64k();
+        }
+      } else {
+        while (extra_wanted > 0) {
+          extra_wanted -= kSmallAlloc;
+          grpc_slice_buffer_add_indexed(
+              tcp->incoming_buffer, tcp->memory_owner.MakeSlice(kSmallAlloc));
+          grpc_core::global_stats().IncrementTcpReadAlloc8k();
+        }
+      }
+      maybe_post_reclaimer(tcp);
     }
-    int target_length = static_cast<int>(tcp->target_length);
-    int extra_wanted =
-        target_length - static_cast<int>(tcp->incoming_buffer->length);
-    grpc_slice_buffer_add_indexed(
-        tcp->incoming_buffer,
-        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
-                             tcp->max_read_chunk_size))));
-    maybe_post_reclaimer(tcp);
+  } else {
+    if (tcp->incoming_buffer->length <
+            static_cast<size_t>(tcp->min_progress_size) &&
+        tcp->incoming_buffer->count < MAX_READ_IOVEC) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_INFO,
+                "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d target=%lf "
+                "buf_len=%" PRIdPTR,
+                tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
+                tcp->target_length, tcp->incoming_buffer->length);
+      }
+      int target_length = std::max(static_cast<int>(tcp->target_length),
+                                   tcp->min_progress_size);
+      int extra_wanted =
+          target_length - static_cast<int>(tcp->incoming_buffer->length);
+      int min_read_chunk_size =
+          std::max(tcp->min_read_chunk_size, tcp->min_progress_size);
+      int max_read_chunk_size =
+          std::max(tcp->max_read_chunk_size, tcp->min_progress_size);
+      grpc_slice slice = tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+          min_read_chunk_size,
+          grpc_core::Clamp(extra_wanted, min_read_chunk_size,
+                           max_read_chunk_size)));
+      grpc_slice_buffer_add_indexed(tcp->incoming_buffer, slice);
+      maybe_post_reclaimer(tcp);
+    }
   }
 }
 
@@ -885,23 +1115,24 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
-  if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
+  if (GPR_LIKELY(error.ok())) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       /* We've consumed the edge, request a new one */
+      update_rcvlowat(tcp);
       tcp->read_mu.Unlock();
       notify_on_read(tcp);
       return;
     }
     tcp_trace_read(tcp, tcp_read_error);
   } else {
-    tcp_read_error = GRPC_ERROR_REF(error);
-    grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-    grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
+    tcp_read_error = error;
+    grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+    grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   }
   grpc_closure* cb = tcp->read_cb;
   tcp->read_cb = nullptr;
@@ -912,47 +1143,53 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
 }
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
-                     grpc_closure* cb, bool urgent, int /*min_progress_size*/) {
+                     grpc_closure* cb, bool urgent, int min_progress_size) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
-  grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
+  tcp->min_progress_size =
+      grpc_core::IsTcpFrameSizeTuningEnabled() ? min_progress_size : 1;
+  grpc_slice_buffer_reset_and_unref(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
-  tcp->read_mu.Unlock();
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
+    update_rcvlowat(tcp);
+    tcp->read_mu.Unlock();
     /* Endpoint read called for the very first time. Register read callback with
      * the polling engine */
     tcp->is_first_read = false;
     notify_on_read(tcp);
   } else if (!urgent && tcp->inq == 0) {
+    update_rcvlowat(tcp);
+    tcp->read_mu.Unlock();
     /* Upper layer asked to read more but we know there is no pending data
      * to read from previous reads. So, wait for POLLIN.
      */
     notify_on_read(tcp);
   } else {
+    tcp->read_mu.Unlock();
     /* Not the first time. We may or may not have more bytes available. In any
      * case call tcp->read_done_closure (i.e tcp_handle_read()) which does the
      * right thing (i.e calls tcp_do_read() which either reads the available
      * bytes or calls notify_on_read() to be notified when new bytes become
      * available */
     grpc_core::Closure::Run(DEBUG_LOCATION, &tcp->read_done_closure,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
 /* A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
  * of bytes sent. */
-ssize_t tcp_send(int fd, const struct msghdr* msg, int additional_flags = 0) {
-  GPR_TIMER_SCOPE("sendmsg", 1);
+ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
+                 int additional_flags = 0) {
   ssize_t sent_length;
   do {
     /* TODO(klempner): Cork if this is a partial write */
-    GRPC_STATS_INC_SYSCALL_WRITE();
+    grpc_core::global_stats().IncrementSyscallWrite();
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
-  } while (sent_length < 0 && errno == EINTR);
+  } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
   return sent_length;
 }
 
@@ -964,7 +1201,7 @@ ssize_t tcp_send(int fd, const struct msghdr* msg, int additional_flags = 0) {
  */
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length,
+                                      ssize_t* sent_length, int* saved_errno,
                                       int additional_flags = 0);
 
 /** The callback function to be invoked when we get an error on the socket. */
@@ -1008,7 +1245,7 @@ static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* tcp) {
 
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length,
+                                      ssize_t* sent_length, int* saved_errno,
                                       int additional_flags) {
   if (!tcp->socket_ts_enabled) {
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
@@ -1037,7 +1274,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   msg->msg_controllen = CMSG_SPACE(sizeof(uint32_t));
 
   /* If there was an error on sendmsg the logic in tcp_flush will handle it. */
-  ssize_t length = tcp_send(tcp->fd, msg, additional_flags);
+  ssize_t length = tcp_send(tcp->fd, msg, saved_errno, additional_flags);
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
@@ -1071,6 +1308,9 @@ static void process_zerocopy(grpc_tcp* tcp, struct cmsghdr* cmsg) {
         tcp->tcp_zerocopy_send_ctx.ReleaseSendRecord(seq);
     GPR_DEBUG_ASSERT(record);
     UnrefMaybePutZerocopySendRecord(tcp, record, seq, "CALLBACK RCVD");
+  }
+  if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterFree()) {
+    grpc_fd_set_writable(tcp->em_fd);
   }
 }
 
@@ -1228,10 +1468,10 @@ static void tcp_handle_error(void* arg /* grpc_tcp */,
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
 
-  if (error != GRPC_ERROR_NONE ||
+  if (!error.ok() ||
       static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification))) {
     /* We aren't going to register to hear on error anymore, so it is safe to
      * unref. */
@@ -1262,6 +1502,7 @@ static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* /*tcp*/) {}
 static bool tcp_write_with_timestamps(grpc_tcp* /*tcp*/, struct msghdr* /*msg*/,
                                       size_t /*sending_length*/,
                                       ssize_t* /*sent_length*/,
+                                      int* /* saved_errno */,
                                       int /*additional_flags*/) {
   gpr_log(GPR_ERROR, "Write with timestamps not supported for this platform");
   GPR_ASSERT(0);
@@ -1282,7 +1523,7 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::Shutdown(
         &tcp->tb_head, tcp->outgoing_buffer_arg,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TracedBuffer list shutdown"));
+        GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }
@@ -1342,6 +1583,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
   bool tried_sending_message;
+  int saved_errno;
   msghdr msg;
   // iov consumes a large space. Keep it as the last item on the stack to
   // improve locality. After all, we expect only the first elements of it being
@@ -1360,10 +1602,11 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
     tcp->tcp_zerocopy_send_ctx.NoteSend(record);
+    saved_errno = 0;
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp->ts_capable ||
           !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
-                                     MSG_ZEROCOPY)) {
+                                     &saved_errno, MSG_ZEROCOPY)) {
         /* We could not set socket options to collect Fathom timestamps.
          * Fallback on writing without timestamps. */
         tcp->ts_capable = false;
@@ -1375,31 +1618,36 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
-      GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
-      GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
-      sent_length = tcp_send(tcp->fd, &msg, MSG_ZEROCOPY);
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
+      sent_length = tcp_send(tcp->fd, &msg, &saved_errno, MSG_ZEROCOPY);
+    }
+    if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterSend(
+            saved_errno == ENOBUFS)) {
+      grpc_fd_set_writable(tcp->em_fd);
     }
     if (sent_length < 0) {
       // If this particular send failed, drop ref taken earlier in this method.
       tcp->tcp_zerocopy_send_ctx.UndoSend();
-      if (errno == EAGAIN) {
+      if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
-      } else if (errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
+      } else if (saved_errno == EPIPE) {
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
         return true;
       }
     }
+    grpc_core::EventLog::Append("tcp-write-outstanding", -sent_length);
     tcp->bytes_counter += sent_length;
     record->UpdateOffsetForBytesSent(sending_length,
                                      static_cast<size_t>(sent_length));
     if (record->AllSlicesSent()) {
-      *error = GRPC_ERROR_NONE;
+      *error = absl::OkStatus();
       return true;
     }
   }
@@ -1434,6 +1682,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
   size_t trailing;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
+  int saved_errno;
 
   // We always start at zero, because we eagerly unref and trim the slice
   // buffer as we write
@@ -1465,9 +1714,11 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
     bool tried_sending_message = false;
+    saved_errno = 0;
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp->ts_capable ||
-          !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length)) {
+          !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
+                                     &saved_errno)) {
         /* We could not set socket options to collect Fathom timestamps.
          * Fallback on writing without timestamps. */
         tcp->ts_capable = false;
@@ -1480,14 +1731,14 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
 
-      GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
-      GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
 
-      sent_length = tcp_send(tcp->fd, &msg);
+      sent_length = tcp_send(tcp->fd, &msg, &saved_errno);
     }
 
     if (sent_length < 0) {
-      if (errno == EAGAIN) {
+      if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
         tcp->outgoing_byte_idx = unwind_byte_idx;
         // unref all and forget about all slices that have been written to this
         // point
@@ -1495,20 +1746,21 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
           grpc_slice_buffer_remove_first(tcp->outgoing_buffer);
         }
         return false;
-      } else if (errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
-        grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
+      } else if (saved_errno == EPIPE) {
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+        grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
-        grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+        grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
       }
     }
 
     GPR_ASSERT(tcp->outgoing_byte_idx == 0);
+    grpc_core::EventLog::Append("tcp-write-outstanding", -sent_length);
     tcp->bytes_counter += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
     while (trailing > 0) {
@@ -1525,8 +1777,8 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       }
     }
     if (outgoing_slice_idx == tcp->outgoing_buffer->count) {
-      *error = GRPC_ERROR_NONE;
-      grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
+      *error = absl::OkStatus();
+      grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
       return true;
     }
   }
@@ -1537,7 +1789,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   grpc_closure* cb;
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!error.ok()) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
     if (tcp->current_zerocopy_send != nullptr) {
@@ -1545,11 +1797,10 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
                                       "handle_write_err");
       tcp->current_zerocopy_send = nullptr;
     }
-    grpc_core::Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_REF(error));
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
     TCP_UNREF(tcp, "write");
     return;
   }
-
   bool flush_result =
       tcp->current_zerocopy_send != nullptr
           ? tcp_flush_zerocopy(tcp, tcp->current_zerocopy_send, &error)
@@ -1560,13 +1811,13 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     }
     notify_on_write(tcp);
     // tcp_flush does not populate error if it has returned false.
-    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error.ok());
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
     tcp->current_zerocopy_send = nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
     }
     // No need to take a ref on error since tcp_flush provides a ref.
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
@@ -1576,10 +1827,11 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
 
 static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
                       grpc_closure* cb, void* arg, int /*max_frame_size*/) {
-  GPR_TIMER_SCOPE("tcp_write", 0);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
+
+  grpc_core::EventLog::Append("tcp-write-outstanding", buf->length);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     size_t i;
@@ -1589,7 +1841,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", data);
+        gpr_log(GPR_DEBUG, "WRITE DATA: %s", data);
         gpr_free(data);
       }
     }
@@ -1602,9 +1854,8 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     grpc_core::Closure::Run(
         DEBUG_LOCATION, cb,
         grpc_fd_is_shutdown(tcp->em_fd)
-            ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
-                                 tcp)
-            : GRPC_ERROR_NONE);
+            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
+            : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;
   }
@@ -1634,7 +1885,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     notify_on_write(tcp);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
     }
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
   }
@@ -1697,72 +1948,16 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_get_fd,
                                             tcp_can_track_err};
 
-#define MAX_CHUNK_SIZE (32 * 1024 * 1024)
-
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
-                               const grpc_channel_args* channel_args,
+                               const grpc_core::PosixTcpOptions& options,
                                absl::string_view peer_string) {
-  static constexpr bool kZerocpTxEnabledDefault = false;
-  int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
-  int tcp_max_read_chunk_size = 4 * 1024 * 1024;
-  int tcp_min_read_chunk_size = 256;
-  bool tcp_tx_zerocopy_enabled = kZerocpTxEnabledDefault;
-  int tcp_tx_zerocopy_send_bytes_thresh =
-      grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold;
-  int tcp_tx_zerocopy_max_simult_sends =
-      grpc_core::TcpZerocopySendCtx::kDefaultMaxSends;
-  if (channel_args != nullptr) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-          strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_min_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_max_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED)) {
-        tcp_tx_zerocopy_enabled = grpc_channel_arg_get_bool(
-            &channel_args->args[i], kZerocpTxEnabledDefault);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD)) {
-        grpc_integer_options options = {
-            grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0,
-            INT_MAX};
-        tcp_tx_zerocopy_send_bytes_thresh =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS)) {
-        grpc_integer_options options = {
-            grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0, INT_MAX};
-        tcp_tx_zerocopy_max_simult_sends =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      }
-    }
-  }
-
-  if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {
-    tcp_min_read_chunk_size = tcp_max_read_chunk_size;
-  }
-  tcp_read_chunk_size = grpc_core::Clamp(
-      tcp_read_chunk_size, tcp_min_read_chunk_size, tcp_max_read_chunk_size);
-
-  grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
-                               tcp_tx_zerocopy_send_bytes_thresh);
+  grpc_tcp* tcp = new grpc_tcp(options);
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
-                          ->memory_quota()
-                          ->CreateMemoryOwner(peer_string);
+  GPR_ASSERT(options.resource_quota != nullptr);
+  tcp->memory_owner =
+      options.resource_quota->memory_quota()->CreateMemoryOwner(peer_string);
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
@@ -1781,18 +1976,17 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->current_zerocopy_send = nullptr;
   tcp->release_fd_cb = nullptr;
   tcp->release_fd = nullptr;
-  tcp->target_length = static_cast<double>(tcp_read_chunk_size);
-  tcp->min_read_chunk_size = tcp_min_read_chunk_size;
-  tcp->max_read_chunk_size = tcp_max_read_chunk_size;
+  tcp->target_length = static_cast<double>(options.tcp_read_chunk_size);
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */
   tcp->is_first_read = true;
-  tcp->has_posted_reclaimer = false;
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
+  tcp->min_progress_size = 1;
+  if (options.tcp_tx_zero_copy_enabled &&
+      !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
     auto err =
@@ -1864,7 +2058,7 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;
   tcp->release_fd_cb = done;
-  grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
     /* Stop errors notification. */
     ZerocopyDisableAndWaitForRemaining(tcp);

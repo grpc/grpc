@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gtest/gtest.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 

@@ -330,6 +330,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def setUpClass(cls):
+        logging.info('----- Testing %s -----', cls.__name__)
+        logging.info('Logs timezone: %s', time.localtime().tm_zone)
+
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
         skips.evaluate_test_config(cls.is_supported)
@@ -420,7 +423,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             test_client.get_load_balancer_stats(num_rpcs=num_rpcs))
         logging.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.ip, json.dumps(json_lb_stats, indent=2))
+            test_client.hostname, json.dumps(json_lb_stats, indent=2))
         return RpcDistributionStats(json_lb_stats)
 
     def assertNumEndpoints(self, xds_config: DumpedXdsConfig, k: int) -> None:
@@ -438,12 +441,12 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
-            test_client.ip, before_stats)
+            test_client.hostname, before_stats)
         time.sleep(length)
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
-            test_client.ip, after_stats)
+            test_client.hostname, after_stats)
 
         # Validate the diff
         for expected_result in expected:

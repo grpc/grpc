@@ -237,7 +237,7 @@ MATCHER_P2(EqNoRdsHCM, route_configuration_name, cluster_name,
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
   ClientStatusDiscoveryServiceTest() {
-    admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
+    admin_server_thread_ = std::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());
@@ -510,8 +510,8 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
             kCdsTypeUrl, kDefaultClusterName, "1",
             UnpackCluster(EqCluster(kDefaultClusterName)),
             ClientResourceStatus::NACKED,
-            EqUpdateFailureState(
-                ::testing::HasSubstr("DiscoveryType not found"), "2"))));
+            EqUpdateFailureState(::testing::HasSubstr("unknown discovery type"),
+                                 "2"))));
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
         grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
@@ -548,8 +548,11 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
                 kDefaultEdsServiceName, backends_[0]->port(),
                 kDefaultLocalityWeight)),
             ClientResourceStatus::NACKED,
-            EqUpdateFailureState(::testing::HasSubstr("Empty locality"),
-                                 "2"))));
+            EqUpdateFailureState(
+                ::testing::HasSubstr(
+                    "errors parsing EDS resource: ["
+                    "field:endpoints[0].locality error:field not present]"),
+                "2"))));
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
         grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
@@ -560,11 +563,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerRequested) {
   int kTimeoutMillisecond = 1000;
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
               ::testing::Contains(EqGenericXdsConfig(
@@ -591,11 +592,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
   routes2->mutable_route()->set_cluster(kClusterName2);
   SetRouteConfiguration(balancer_.get(), route_config);
   // Try to get the configs plumb through
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
               ::testing::AllOf(
@@ -638,11 +637,10 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
-          .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list: ", kServerName,
+                                   ": xDS listener resource does not exist"),
+                      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
               ::testing::Contains(EqGenericXdsConfig(
@@ -656,10 +654,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kRdsTypeUrl,
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
-          .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
+                   ": xDS route configuration resource does not exist"),
+      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
       csds_response.config(0).generic_xds_configs(),
@@ -672,10 +670,9 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
-          .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
               ::testing::Contains(EqGenericXdsConfig(
@@ -687,10 +684,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
-          .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
+      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
       csds_response.config(0).generic_xds_configs(),
@@ -713,7 +710,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();

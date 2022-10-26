@@ -14,40 +14,54 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
+
+#include <algorithm>
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
 
 namespace grpc_core {
 namespace {
 
-const char* kDropPolicyName = "drop_lb";
+constexpr absl::string_view kDropPolicyName = "drop_lb";
 
 class DropPolicy : public LoadBalancingPolicy {
  public:
   explicit DropPolicy(Args args) : LoadBalancingPolicy(std::move(args)) {}
 
-  const char* name() const override { return kDropPolicyName; }
+  absl::string_view name() const override { return kDropPolicyName; }
 
-  void UpdateLocked(UpdateArgs) override {
+  absl::Status UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                          absl::make_unique<DropPicker>());
+                                          std::make_unique<DropPicker>());
+    return absl::OkStatus();
   }
 
   void ResetBackoffLocked() override {}
@@ -65,7 +79,7 @@ class DropPolicy : public LoadBalancingPolicy {
 
 class DropLbConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kDropPolicyName; }
+  absl::string_view name() const override { return kDropPolicyName; }
 };
 
 class DropPolicyFactory : public LoadBalancingPolicyFactory {
@@ -75,25 +89,19 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<DropPolicy>(std::move(args));
   }
 
-  const char* name() const override { return kDropPolicyName; }
+  absl::string_view name() const override { return kDropPolicyName; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<DropLbConfig>();
   }
 };
 
 std::vector<PickArgsSeen>* g_pick_args_vector = nullptr;
 
-void RegisterDropPolicy() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<DropPolicyFactory>());
-  RegisterTestPickArgsLoadBalancingPolicy(
-      [](const PickArgsSeen& pick_args) {
-        GPR_ASSERT(g_pick_args_vector != nullptr);
-        g_pick_args_vector->push_back(pick_args);
-      },
-      kDropPolicyName);
+void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<DropPolicyFactory>());
 }
 
 }  // namespace
@@ -202,7 +210,7 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_lb_drop", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -238,8 +246,8 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 ==
@@ -252,8 +260,6 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   gpr_log(GPR_INFO, "NUMBER OF LB PICKS: %" PRIuPTR, pick_args_seen.size());
   GPR_ASSERT(pick_args_seen.size() == 1);
@@ -269,4 +275,16 @@ void retry_lb_drop(grpc_end2end_test_config config) {
   test_retry_lb_drop(config);
 }
 
-void retry_lb_drop_pre_init(void) { grpc_core::RegisterDropPolicy(); }
+void retry_lb_drop_pre_init(void) {
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::RegisterTestPickArgsLoadBalancingPolicy(
+            builder,
+            [](const grpc_core::PickArgsSeen& pick_args) {
+              GPR_ASSERT(grpc_core::g_pick_args_vector != nullptr);
+              grpc_core::g_pick_args_vector->push_back(pick_args);
+            },
+            grpc_core::kDropPolicyName);
+      });
+  grpc_core::CoreConfiguration::RegisterBuilder(grpc_core::RegisterDropPolicy);
+}

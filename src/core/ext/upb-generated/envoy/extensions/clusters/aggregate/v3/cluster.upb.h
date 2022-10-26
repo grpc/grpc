@@ -51,11 +51,15 @@ UPB_INLINE envoy_extensions_clusters_aggregate_v3_ClusterConfig* envoy_extension
   return ret;
 }
 UPB_INLINE char* envoy_extensions_clusters_aggregate_v3_ClusterConfig_serialize(const envoy_extensions_clusters_aggregate_v3_ClusterConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_clusters_aggregate_v3_ClusterConfig_serialize_ex(const envoy_extensions_clusters_aggregate_v3_ClusterConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_extensions_clusters_aggregate_v3_ClusterConfig_clear_clusters(const envoy_extensions_clusters_aggregate_v3_ClusterConfig* msg) {
   _upb_array_detach(msg, UPB_SIZE(0, 0));

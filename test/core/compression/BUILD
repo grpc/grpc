@@ -36,6 +36,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "compression_test",
     srcs = ["compression_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -76,6 +77,7 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "message_compress_test",
     srcs = ["message_compress_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -83,5 +85,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

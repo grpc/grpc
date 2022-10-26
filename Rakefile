@@ -38,7 +38,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
       |file| file.start_with?(
         "src/ruby/bin/", "src/ruby/ext/", "src/ruby/lib/", "src/ruby/pb/")
     }
-    spec.files += %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby grpc_c.64-ucrt.ruby )
+    spec.files += %w( etc/roots.pem grpc_c.32-msvcrt.ruby grpc_c.64-msvcrt.ruby grpc_c.64-ucrt.ruby )
   end
 end
 
@@ -86,14 +86,16 @@ task 'dlls', [:plat] do |t, args|
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
   plat_list = args[:plat]
 
-  build_configs = []
-  w64_ucrt = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' }
-  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
-  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
-  [w64_ucrt, w64, w32].each do |config|
+  build_configs = [
+    { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' },
+    { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-msvcrt.ruby', platform: 'x64-mingw32' },
+    { cross: 'i686-w64-mingw32', out: 'grpc_c.32-msvcrt.ruby', platform: 'x86-mingw32' }
+  ]
+  selected_build_configs = []
+  build_configs.each do |config|
     if plat_list.include?(config[:platform])
       # build the DLL (as grpc_c.*.ruby)
-      build_configs.append(config)
+      selected_build_configs.append(config)
     else
       # create an empty grpc_c.*.ruby file as a placeholder
       FileUtils.touch config[:out]
@@ -122,7 +124,7 @@ task 'dlls', [:plat] do |t, args|
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
-  build_configs.each do |opt|
+  selected_build_configs.each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
@@ -142,7 +144,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.1.0', '3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
+  ruby_cc_versions = ['3.1.0', '3.0.0', '2.7.0', '2.6.0'].join(':')
   selected_plat = "#{args[:plat]}"
 
   if RUBY_PLATFORM =~ /darwin/
@@ -150,8 +152,8 @@ task 'gem:native', [:plat] do |t, args|
       fail "Cannot pass platform as an argument when on Darwin."
     end
 
-    FileUtils.touch 'grpc_c.32.ruby'
-    FileUtils.touch 'grpc_c.64.ruby'
+    FileUtils.touch 'grpc_c.32-msvcrt.ruby'
+    FileUtils.touch 'grpc_c.64-msvcrt.ruby'
     FileUtils.touch 'grpc_c.64-ucrt.ruby'
     unless '2.5' == /(\d+\.\d+)/.match(RUBY_VERSION).to_s
       fail "rake gem:native (the rake task to build the binary packages) is being " \
@@ -210,8 +212,8 @@ task 'gem:native', [:plat] do |t, args|
 
     # Truncate grpc_c.*.ruby files because they're for Windows only and we don't want
     # them to take up space in the gems that don't target windows.
-    File.truncate('grpc_c.32.ruby', 0)
-    File.truncate('grpc_c.64.ruby', 0)
+    File.truncate('grpc_c.32-msvcrt.ruby', 0)
+    File.truncate('grpc_c.64-msvcrt.ruby', 0)
     File.truncate('grpc_c.64-ucrt.ruby', 0)
 
     unix_platforms.each do |plat|

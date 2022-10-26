@@ -14,6 +14,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+
+#include "absl/status/status.h"
+
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -24,16 +29,13 @@
 
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -56,15 +58,13 @@ class BinderResolver : public Resolver {
   BinderResolver(ServerAddressList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
         addresses_(std::move(addresses)),
-        channel_args_(grpc_channel_args_copy(args.args)) {}
-
-  ~BinderResolver() override { grpc_channel_args_destroy(channel_args_); };
+        channel_args_(std::move(args.args)) {}
 
   void StartLocked() override {
     Result result;
     result.addresses = std::move(addresses_);
     result.args = channel_args_;
-    channel_args_ = nullptr;
+    channel_args_ = ChannelArgs();
     result_handler_->ReportResult(std::move(result));
   }
 
@@ -73,7 +73,7 @@ class BinderResolver : public Resolver {
  private:
   std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
 };
 
 class BinderResolverFactory : public ResolverFactory {
@@ -96,7 +96,7 @@ class BinderResolverFactory : public ResolverFactory {
       absl::string_view path, grpc_resolved_address* resolved_addr) {
     path = absl::StripPrefix(path, "/");
     if (path.empty()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING("path is empty");
+      return GRPC_ERROR_CREATE("path is empty");
     }
     // Store parsed path in a unix socket so it can be reinterpreted as
     // sockaddr. An invalid address family (AF_MAX) is set to make sure it won't
@@ -108,14 +108,14 @@ class BinderResolverFactory : public ResolverFactory {
     static_assert(sizeof(un->sun_path) >= 101,
                   "unix socket path size is unexpectedly short");
     if (path.size() + 1 > sizeof(un->sun_path)) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      return GRPC_ERROR_CREATE(
           absl::StrCat(path, " is too long to be handled"));
     }
     // `un` has already be set to zero, no need to append null after the string
     memcpy(un->sun_path, path.data(), path.size());
     resolved_addr->len =
         static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1);
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static bool ParseUri(const URI& uri, ServerAddressList* addresses) {
@@ -126,14 +126,13 @@ class BinderResolverFactory : public ResolverFactory {
         return false;
       }
       grpc_error_handle error = BinderAddrPopulate(uri.path(), &addr);
-      if (error != GRPC_ERROR_NONE) {
-        gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
-        GRPC_ERROR_UNREF(error);
+      if (!error.ok()) {
+        gpr_log(GPR_ERROR, "%s", StatusToString(error).c_str());
         return false;
       }
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
     return true;
   }
@@ -143,7 +142,7 @@ class BinderResolverFactory : public ResolverFactory {
 
 void RegisterBinderResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<BinderResolverFactory>());
+      std::make_unique<BinderResolverFactory>());
 }
 
 }  // namespace grpc_core

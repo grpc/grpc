@@ -18,25 +18,26 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-
-#if GPR_LINUX
-
 #include <stdio.h>
 #include <string.h>
+
+#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+
+#if GPR_LINUX
 
 static bool check_bios_data_linux_test(const char* data) {
   /* Create a file with contents data. */
   char* filename = nullptr;
   FILE* fp = gpr_tmpfile("check_gcp_environment_test", &filename);
-  GPR_ASSERT(filename != nullptr);
-  GPR_ASSERT(fp != nullptr);
-  GPR_ASSERT(fwrite(data, 1, strlen(data), fp) == strlen(data));
+  EXPECT_NE(filename, nullptr);
+  EXPECT_NE(fp, nullptr);
+  EXPECT_EQ(fwrite(data, 1, strlen(data), fp), strlen(data));
   fclose(fp);
   bool result = grpc_core::internal::check_bios_data(
       reinterpret_cast<const char*>(filename));
@@ -46,41 +47,35 @@ static bool check_bios_data_linux_test(const char* data) {
   return result;
 }
 
-static void test_gcp_environment_check_success() {
+TEST(CheckGcpEnvironmentLinuxTest, GcpEnvironmentCheckSuccess) {
   /* Exact match. */
-  GPR_ASSERT(check_bios_data_linux_test("Google"));
-  GPR_ASSERT(check_bios_data_linux_test("Google Compute Engine"));
+  ASSERT_TRUE(check_bios_data_linux_test("Google"));
+  ASSERT_TRUE(check_bios_data_linux_test("Google Compute Engine"));
   /* With leading and trailing whitespaces. */
-  GPR_ASSERT(check_bios_data_linux_test(" Google  "));
-  GPR_ASSERT(check_bios_data_linux_test("Google  "));
-  GPR_ASSERT(check_bios_data_linux_test("   Google"));
-  GPR_ASSERT(check_bios_data_linux_test("  Google Compute Engine  "));
-  GPR_ASSERT(check_bios_data_linux_test("Google Compute Engine  "));
-  GPR_ASSERT(check_bios_data_linux_test("  Google Compute Engine"));
+  ASSERT_TRUE(check_bios_data_linux_test(" Google  "));
+  ASSERT_TRUE(check_bios_data_linux_test("Google  "));
+  ASSERT_TRUE(check_bios_data_linux_test("   Google"));
+  ASSERT_TRUE(check_bios_data_linux_test("  Google Compute Engine  "));
+  ASSERT_TRUE(check_bios_data_linux_test("Google Compute Engine  "));
+  ASSERT_TRUE(check_bios_data_linux_test("  Google Compute Engine"));
   /* With leading and trailing \t and \n. */
-  GPR_ASSERT(check_bios_data_linux_test("\t\tGoogle Compute Engine\t"));
-  GPR_ASSERT(check_bios_data_linux_test("Google Compute Engine\n"));
-  GPR_ASSERT(check_bios_data_linux_test("\n\n\tGoogle Compute Engine \n\t\t"));
+  ASSERT_TRUE(check_bios_data_linux_test("\t\tGoogle Compute Engine\t"));
+  ASSERT_TRUE(check_bios_data_linux_test("Google Compute Engine\n"));
+  ASSERT_TRUE(check_bios_data_linux_test("\n\n\tGoogle Compute Engine \n\t\t"));
 }
 
-static void test_gcp_environment_check_failure() {
-  GPR_ASSERT(!check_bios_data_linux_test("non_existing-file"));
-  GPR_ASSERT(!check_bios_data_linux_test("Google-Chrome"));
-  GPR_ASSERT(!check_bios_data_linux_test("Amazon"));
-  GPR_ASSERT(!check_bios_data_linux_test("Google-Chrome\t\t"));
-  GPR_ASSERT(!check_bios_data_linux_test("Amazon"));
-  GPR_ASSERT(!check_bios_data_linux_test("\n"));
+TEST(CheckGcpEnvironmentLinuxTest, GcpEnvironmentCheckFailure) {
+  ASSERT_FALSE(check_bios_data_linux_test("non_existing-file"));
+  ASSERT_FALSE(check_bios_data_linux_test("Google-Chrome"));
+  ASSERT_FALSE(check_bios_data_linux_test("Amazon"));
+  ASSERT_FALSE(check_bios_data_linux_test("Google-Chrome\t\t"));
+  ASSERT_FALSE(check_bios_data_linux_test("Amazon"));
+  ASSERT_FALSE(check_bios_data_linux_test("\n"));
 }
-
-int main(int /*argc*/, char** /*argv*/) {
-  /* Tests. */
-  test_gcp_environment_check_success();
-  test_gcp_environment_check_failure();
-  return 0;
-}
-
-#else  // GPR_LINUX
-
-int main(int /*argc*/, char** /*argv*/) { return 0; }
 
 #endif  // GPR_LINUX
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

@@ -18,9 +18,12 @@ set -e
 BUILDOZER_VERSION="4.2.2"
 TEMP_BUILDOZER_PATH="/tmp/buildozer-for-grpc"
 
+MAX_DOWNLOAD_RETRY=5
+DOWNLOAD_WAITING_INTERVAL_SECS=10
+
 function error_handling() {
     error=$1
-    if [[ -x "$error" ]]; then
+    if [[ -n "$error" ]]; then
         echo "${error}"
         exit 1
     fi
@@ -34,12 +37,29 @@ function download_buildozer() {
         *)          error_handling "Unsupported platform: ${platform}";;
     esac
 
-    if [ -x "$(command -v curl)" ]; then
-        curl -L -o ${TEMP_BUILDOZER_PATH} ${download_link}
-    elif [ -x "$(command -v wget)" ]; then
-        wget -O ${TEMP_BUILDOZER_PATH} ${download_link}
-    else
-        error_handling "Download failed: curl and wget not available"
+    download_success=0
+    for i in $(seq 1 $MAX_DOWNLOAD_RETRY); do
+        if [ -x "$(command -v curl)" ]; then
+            http_code=`curl -L -o ${TEMP_BUILDOZER_PATH} -w "%{http_code}" ${download_link}`
+            if [ $http_code -eq "200" ]; then
+                download_success=1
+            fi
+        elif [ -x "$(command -v wget)" ]; then
+            wget -S -O ${TEMP_BUILDOZER_PATH} ${download_link} 2>&1 | grep "200 OK" && download_success=1
+        else
+            error_handling "Download failed: curl and wget not available"
+        fi
+
+        if [ $download_success -eq 1 ]; then
+            break
+        elif [ $i -lt $MAX_DOWNLOAD_RETRY ]; then
+            echo "Failed to download buildozer: retrying in $DOWNLOAD_WAITING_INTERVAL_SECS secs"
+            sleep $DOWNLOAD_WAITING_INTERVAL_SECS
+        fi
+    done
+
+    if [ $download_success -ne 1 ]; then
+        error_handling "Failed to download buildozer after $MAX_DOWNLOAD_RETRY tries"
     fi
 
     chmod +x ${TEMP_BUILDOZER_PATH}

@@ -43,6 +43,10 @@ build_test_app_docker_images() {
   gcloud -q auth configure-docker
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
+  if is_version_branch "${TESTING_VERSION}"; then
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+    tag_and_push_docker_image "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+  fi
 }
 
 #######################################
@@ -85,6 +89,8 @@ build_docker_images_if_needed() {
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test: used by the framework to determine the supported PSM
+#                    features.
 # Arguments:
 #   Test case name
 # Outputs:
@@ -95,20 +101,22 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
-  # testing_version is used by the framework to determine the supported PSM
-  # features. It's captured from Kokoro job name of the Core repo, which takes
-  # 2 forms:
-  #   grpc/core/master/linux/...
-  #   grpc/core/v1.42.x/branch/linux/...
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
+  mkdir -pv "${out_dir}"
+  set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    ${@:2}
+    --testing_version="${TESTING_VERSION}" \
+    --force_cleanup \
+    --collect_app_logs \
+    --log_dir="${out_dir}" \
+    --xml_output_file="${out_dir}/sponge_log.xml" \
+    ${@:2} \
+    |& tee "${out_dir}/sponge_log.log"
 }
 
 run_alpha_test() {
@@ -161,7 +169,7 @@ main() {
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
   run_alpha_test subsetting_test || (( failed_tests++ ))
-  test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test")
+  test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test" "outlier_detection_test")
   for test in "${test_suites[@]}"; do
     run_test $test || (( failed_tests++ ))
   done
@@ -169,7 +177,6 @@ main() {
   if (( failed_tests > 0 )); then
     exit 1
   fi
-
 }
 
 main "$@"

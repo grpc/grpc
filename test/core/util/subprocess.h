@@ -32,5 +32,6 @@ void gpr_subprocess_destroy(gpr_subprocess* p);
 /** returns exit status; can be called at most once */
 int gpr_subprocess_join(gpr_subprocess* p);
 void gpr_subprocess_interrupt(gpr_subprocess* p);
+int gpr_subprocess_get_process_id(gpr_subprocess* p);
 
 #endif /* GRPC_TEST_CORE_UTIL_SUBPROCESS_H */

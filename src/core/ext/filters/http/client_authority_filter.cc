@@ -23,6 +23,7 @@
 #include <limits.h>
 
 #include <functional>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -33,7 +34,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -41,7 +41,7 @@
 namespace grpc_core {
 
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
-    ChannelArgs args, ChannelFilter::Args) {
+    const ChannelArgs& args, ChannelFilter::Args) {
   absl::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {

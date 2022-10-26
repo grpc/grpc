@@ -26,8 +26,8 @@ import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
-from framework.test_app import client_app
-from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
@@ -38,6 +38,8 @@ STRATEGY = flags.DEFINE_enum('strategy',
                              help='Strategy of GCP resources management')
 
 # Type alias
+_KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+_KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 UrlMapType = Any
 HostRule = Any
 PathMatcher = Any
@@ -146,6 +148,10 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
                 'Predefined resource_suffix is not supported for UrlMap tests')
         logging.info('GcpResourceManager: resource prefix=%s, suffix=%s',
                      self.resource_prefix, self.resource_suffix)
+
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
+
         # API managers
         self.k8s_api_manager = k8s.KubernetesApiManager(self.kube_context)
         self.gcp_api_manager = gcp.api.GcpApiManager()
@@ -161,7 +167,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,
                                                      self.resource_prefix)
         # Kubernetes Test Servers
-        self.test_server_runner = server_app.KubernetesServerRunner(
+        self.test_server_runner = _KubernetesServerRunner(
             self.k8s_namespace,
             deployment_name=self.server_name,
             image_name=self.server_image,
@@ -172,7 +178,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             enable_workload_identity=self.enable_workload_identity)
-        self.test_server_alternative_runner = server_app.KubernetesServerRunner(
+        self.test_server_alternative_runner = _KubernetesServerRunner(
             self.k8s_namespace,
             deployment_name=self.server_name + '-alternative',
             image_name=self.server_image,
@@ -184,7 +190,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             network=self.network,
             enable_workload_identity=self.enable_workload_identity,
             reuse_namespace=True)
-        self.test_server_affinity_runner = server_app.KubernetesServerRunner(
+        self.test_server_affinity_runner = _KubernetesServerRunner(
             self.k8s_namespace,
             deployment_name=self.server_name + '-affinity',
             image_name=self.server_image,
@@ -207,11 +213,10 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         logging.info('GcpResourceManager: client_namespace_suffix=%s',
                      client_namespace_suffix)
         # Kubernetes Test Client
-        return client_app.KubernetesClientRunner(
-            k8s.KubernetesNamespace(
-                self.k8s_api_manager,
-                client_app.KubernetesClientRunner.make_namespace_name(
-                    self.resource_prefix, client_namespace_suffix)),
+        namespace_name = _KubernetesClientRunner.make_namespace_name(
+            self.resource_prefix, client_namespace_suffix)
+        return _KubernetesClientRunner(
+            k8s.KubernetesNamespace(self.k8s_api_manager, namespace_name),
             deployment_name=self.client_name,
             image_name=self.client_image,
             gcp_project=self.project,

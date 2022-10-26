@@ -20,8 +20,17 @@
 
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
+#include <string.h>
+
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/local_transport_security.h"
 
@@ -58,7 +67,7 @@ ArenaPromise<absl::Status> InsecureChannelSecurityConnector::CheckCallHost(
 // security handshaker so that check_peer is invoked and an auth_context is
 // created with the security level of TSI_SECURITY_NONE.
 void InsecureChannelSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* /* interested_parties */,
+    const ChannelArgs& args, grpc_pollset_set* /* interested_parties */,
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
@@ -67,12 +76,12 @@ void InsecureChannelSecurityConnector::add_handshakers(
 }
 
 void InsecureChannelSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
   tsi_peer_destruct(&peer);
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, absl::OkStatus());
 }
 
 int InsecureChannelSecurityConnector::cmp(
@@ -85,7 +94,7 @@ int InsecureChannelSecurityConnector::cmp(
 // security handshaker so that check_peer is invoked and an auth_context is
 // created with the security level of TSI_SECURITY_NONE.
 void InsecureServerSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* /* interested_parties */,
+    const ChannelArgs& args, grpc_pollset_set* /* interested_parties */,
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
@@ -94,12 +103,12 @@ void InsecureServerSecurityConnector::add_handshakers(
 }
 
 void InsecureServerSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
   tsi_peer_destruct(&peer);
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, absl::OkStatus());
 }
 
 int InsecureServerSecurityConnector::cmp(

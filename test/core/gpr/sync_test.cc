@@ -18,11 +18,13 @@
 
 /* Test of gpr synchronization support. */
 
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -224,7 +226,7 @@ static int thread_id(struct test* m) {
    and signalling done_cv if m->done==0. */
 static void mark_thread_done(struct test* m) {
   gpr_mu_lock(&m->mu);
-  GPR_ASSERT(m->done != 0);
+  ASSERT_NE(m->done, 0);
   m->done--;
   if (m->done == 0) {
     gpr_cv_signal(&m->done_cv);
@@ -269,7 +271,7 @@ static void test(const char* name, void (*body)(void* m),
               static_cast<long>(m->counter), m->nthreads,
               static_cast<long>(m->iterations));
       fflush(stderr);
-      GPR_ASSERT(0);
+      ASSERT_TRUE(0);
     }
     test_destroy(m);
     iterations <<= 1;
@@ -353,7 +355,7 @@ static void inc_with_1ms_delay_event(void* v /*=m*/) {
     gpr_timespec deadline;
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                             gpr_time_from_micros(1000, GPR_TIMESPAN));
-    GPR_ASSERT(gpr_event_wait(&m->event, deadline) == nullptr);
+    ASSERT_EQ(gpr_event_wait(&m->event, deadline), nullptr);
     gpr_mu_lock(&m->mu);
     m->counter++;
     gpr_mu_unlock(&m->mu);
@@ -395,7 +397,7 @@ static void consumer(void* v /*=m*/) {
   gpr_mu_lock(&m->mu);
   m->counter = n;
   gpr_mu_unlock(&m->mu);
-  GPR_ASSERT(
+  ASSERT_TRUE(
       !queue_remove(&m->q, &value,
                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                  gpr_time_from_micros(1000000, GPR_TIMESPAN))));
@@ -442,22 +444,21 @@ static void refcheck(void* v /*=m*/) {
   struct test* m = static_cast<struct test*>(v);
   int64_t n = m->iterations * m->nthreads * m->incr_step;
   int64_t i;
-  GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
-             (void*)1);
-  GPR_ASSERT(gpr_event_get(&m->event) == (void*)1);
+  ASSERT_EQ(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)),
+            (void*)1);
+  ASSERT_EQ(gpr_event_get(&m->event), (void*)1);
   for (i = 1; i != n; i++) {
-    GPR_ASSERT(!gpr_unref(&m->refcount));
+    ASSERT_FALSE(gpr_unref(&m->refcount));
     m->counter++;
   }
-  GPR_ASSERT(gpr_unref(&m->refcount));
+  ASSERT_TRUE(gpr_unref(&m->refcount));
   m->counter++;
   mark_thread_done(m);
 }
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(&argc, argv);
+TEST(SyncTest, MainTest) {
   test("mutex", &inc, nullptr, 1, 1);
   test("mutex try", &inctry, nullptr, 1, 1);
   test("cv", &inc_by_turns, nullptr, 1, 1);
@@ -469,5 +470,10 @@ int main(int argc, char* argv[]) {
                                                       arbitrary choice. Any
                                                       number > 1 is okay here */
   test("timedevent", &inc_with_1ms_delay_event, nullptr, 1, 1);
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

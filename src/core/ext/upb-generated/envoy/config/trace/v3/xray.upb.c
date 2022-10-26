@@ -35,7 +35,7 @@ static const upb_MiniTable_Field envoy_config_trace_v3_XRayConfig__fields[4] = {
 const upb_MiniTable envoy_config_trace_v3_XRayConfig_msginit = {
   &envoy_config_trace_v3_XRayConfig_submsgs[0],
   &envoy_config_trace_v3_XRayConfig__fields[0],
-  UPB_SIZE(24, 56), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 48), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_trace_v3_XRayConfig_SegmentFields_submsgs[1] = {
@@ -50,7 +50,7 @@ static const upb_MiniTable_Field envoy_config_trace_v3_XRayConfig_SegmentFields_
 const upb_MiniTable envoy_config_trace_v3_XRayConfig_SegmentFields_msginit = {
   &envoy_config_trace_v3_XRayConfig_SegmentFields_submsgs[0],
   &envoy_config_trace_v3_XRayConfig_SegmentFields__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

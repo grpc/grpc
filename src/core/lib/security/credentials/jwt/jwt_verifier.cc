@@ -21,24 +21,51 @@
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <openssl/bio.h>
 #include <openssl/bn.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+#include <openssl/x509.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/b64.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/ssl_types.h"
 
 using grpc_core::Json;
@@ -86,16 +113,14 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     return Json();  // JSON null
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(string, &error);
-  if (error != GRPC_ERROR_NONE) {
+  auto json = Json::Parse(string);
+  grpc_core::CSliceUnref(slice);
+  if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
-    json = Json();  // JSON null
+            json.status().ToString().c_str());
+    return Json();  // JSON null
   }
-  grpc_slice_unref_internal(slice);
-  return json;
+  return std::move(*json);
 }
 
 static const char* validate_string_field(const Json& json, const char* key) {
@@ -371,8 +396,8 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
 void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
   if (ctx->audience != nullptr) gpr_free(ctx->audience);
   if (ctx->claims != nullptr) grpc_jwt_claims_destroy(ctx->claims);
-  grpc_slice_unref_internal(ctx->signature);
-  grpc_slice_unref_internal(ctx->signed_data);
+  grpc_core::CSliceUnref(ctx->signature);
+  grpc_core::CSliceUnref(ctx->signed_data);
   jose_header_destroy(ctx->header);
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
@@ -410,14 +435,13 @@ static Json json_from_http(const grpc_http_response* response) {
             response->status);
     return Json();  // JSON null
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(
-      absl::string_view(response->body, response->body_length), &error);
-  if (error != GRPC_ERROR_NONE) {
+  auto json =
+      Json::Parse(absl::string_view(response->body, response->body_length));
+  if (!json.ok()) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null
   }
-  return json;
+  return std::move(*json);
 }
 
 static const Json* find_property_by_name(const Json& json, const char* name) {
@@ -463,7 +487,7 @@ static BIGNUM* bignum_from_base64(const char* b64) {
   }
   result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
                      TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
-  grpc_slice_unref_internal(bin);
+  grpc_core::CSliceUnref(bin);
   return result;
 }
 
@@ -709,7 +733,7 @@ static void on_openid_config_retrieved(void* user_data,
   }
   ctx->http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
-      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
+      grpc_core::Timestamp::Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS],
       grpc_core::CreateHttpRequestSSLCredentials());
@@ -840,7 +864,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   }
   ctx->http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
-      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
+      grpc_core::Timestamp::Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx], grpc_core::CreateHttpRequestSSLCredentials());
   ctx->http_request->Start();
   gpr_free(host);

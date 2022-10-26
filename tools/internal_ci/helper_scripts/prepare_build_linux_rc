@@ -42,3 +42,9 @@ export DOCKERHUB_ORGANIZATION=grpctesting
 git submodule update --init
 
 python3 -m pip install six
+
+# check whether /tmpfs is mounted correctly
+(mount | grep -q 'on /tmpfs ') || (mount; echo 'BAD KOKORO WORKER WARNING: it seems that /tmpfs volume with scratch disk is not mounted in the kokoro worker. This can result in unexpected "out of disk space" errors.')
+
+# Uncomment the following line to debug "out of disk space" errors by print available disk space every 30seconds in the background
+# bash -c "while true; do echo 'periodic background disk usage check:'; df -h / /tmpfs; sleep 30; done;" &

@@ -23,17 +23,35 @@
 
 #include <stddef.h>
 
-#include <grpc/support/time.h>
+#include <functional>
+#include <memory>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -179,8 +197,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void OnRead(void* user_data, grpc_error_handle error) {
     HttpRequest* req = static_cast<HttpRequest*>(user_data);
     ExecCtx::Run(DEBUG_LOCATION,
-                 &req->continue_on_read_after_schedule_on_exec_ctx_,
-                 GRPC_ERROR_REF(error));
+                 &req->continue_on_read_after_schedule_on_exec_ctx_, error);
   }
 
   // Needed since OnRead may be called inline from grpc_endpoint_read
@@ -199,8 +216,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void DoneWrite(void* arg, grpc_error_handle error) {
     HttpRequest* req = static_cast<HttpRequest*>(arg);
     ExecCtx::Run(DEBUG_LOCATION,
-                 &req->continue_done_write_after_schedule_on_exec_ctx_,
-                 GRPC_ERROR_REF(error));
+                 &req->continue_done_write_after_schedule_on_exec_ctx_, error);
   }
 
   // Needed since DoneWrite may be called inline from grpc_endpoint_write
@@ -245,7 +261,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
-  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
+  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
+  std::shared_ptr<DNSResolver> resolver_;
   absl::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };

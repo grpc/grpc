@@ -21,25 +21,27 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
-
 #include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/sync.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
-
-struct grpc_http_response;
 
 /* --- Constants. --- */
 
@@ -103,15 +105,12 @@ struct grpc_channel_credentials
     return args1->cmp(args2);
   }
 
-  // Creates a security connector for the channel. May also create new channel
-  // args for the channel to be used in place of the passed in const args if
-  // returned non NULL. In that case the caller is responsible for destroying
-  // new_args after channel creation.
+  // Creates a security connector for the channel. Also updates passed in
+  // channel args for the channel.
   virtual grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) = 0;
+      const char* target, grpc_core::ChannelArgs* args) = 0;
 
   // Creates a version of the channel credentials without any attached call
   // credentials. This can be used in order to open a channel to a non-trusted
@@ -123,9 +122,7 @@ struct grpc_channel_credentials
   }
 
   // Allows credentials to optionally modify a parent channel's args.
-  // By default, leave channel args as is. The callee takes ownership
-  // of the passed-in channel args, and the caller takes ownership
-  // of the returned channel args.
+  // By default, leave channel args as is.
   virtual grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) {
     return args;
   }
@@ -251,6 +248,8 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
 
 /* --- grpc_server_credentials. --- */
 
+#define GRPC_SERVER_CREDENTIALS_ARG "grpc.internal.server_credentials"
+
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -259,9 +258,18 @@ struct grpc_server_credentials
  public:
   ~grpc_server_credentials() override { DestroyProcessor(); }
 
+  static absl::string_view ChannelArgName() {
+    return GRPC_SERVER_CREDENTIALS_ARG;
+  }
+
+  static int ChannelArgsCompare(const grpc_server_credentials* a,
+                                const grpc_server_credentials* b) {
+    return grpc_core::QsortCompare(a, b);
+  }
+
   // Ownership of \a args is not passed.
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* args) = 0;
+  create_security_connector(const grpc_core::ChannelArgs& args) = 0;
 
   virtual grpc_core::UniqueTypeName type() const = 0;
 
@@ -281,8 +289,6 @@ struct grpc_server_credentials
   grpc_auth_metadata_processor processor_ =
       grpc_auth_metadata_processor();  // Zero-initialize the C struct.
 };
-
-#define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);

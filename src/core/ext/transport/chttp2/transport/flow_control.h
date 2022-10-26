@@ -25,9 +25,15 @@
 
 #include <iosfwd>
 #include <string>
+#include <utility>
 
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 
+#include <grpc/support/log.h>
+
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -48,17 +54,20 @@ namespace chttp2 {
 static constexpr uint32_t kDefaultWindow = 65535;
 static constexpr uint32_t kDefaultFrameSize = 16384;
 static constexpr int64_t kMaxWindow = static_cast<int64_t>((1u << 31) - 1);
-// TODO(ncteisen): Tune this
-static constexpr uint32_t kFrameSize = 1024 * 1024;
-static constexpr const uint32_t kMinInitialWindowSize = 128;
+// If smaller than this, advertise zero window.
+static constexpr uint32_t kMinPositiveInitialWindowSize = 1024;
 static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
-static constexpr const uint32_t kMaxWindowDelta = (1u << 20);
+static constexpr const int64_t kMaxWindowDelta = (1u << 20);
+
+// TODO(ctiller): clean up when flow_control_fixes is enabled by default
+static constexpr uint32_t kFrameSize = 1024 * 1024;
+static constexpr const uint32_t kMinInitialWindowSize = 128;
 
 class TransportFlowControl;
 class StreamFlowControl;
 
-extern bool g_test_only_transport_flow_control_window_check;
+enum class StallEdge { kNoChange, kStalled, kUnstalled };
 
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
@@ -110,13 +119,17 @@ class FlowControlAction {
   static const char* UrgencyString(Urgency u);
   std::string DebugString() const;
 
+  void AssertEmpty() { GPR_ASSERT(*this == FlowControlAction()); }
+
   bool operator==(const FlowControlAction& other) const {
     return send_stream_update_ == other.send_stream_update_ &&
            send_transport_update_ == other.send_transport_update_ &&
            send_initial_window_update_ == other.send_initial_window_update_ &&
            send_max_frame_size_update_ == other.send_max_frame_size_update_ &&
-           initial_window_size_ == other.initial_window_size_ &&
-           max_frame_size_ == other.max_frame_size_;
+           (send_initial_window_update_ == Urgency::NO_ACTION_NEEDED ||
+            initial_window_size_ == other.initial_window_size_) &&
+           (send_max_frame_size_update_ == Urgency::NO_ACTION_NEEDED ||
+            max_frame_size_ == other.max_frame_size_);
   }
 
  private:
@@ -147,62 +160,106 @@ class TransportFlowControl final {
   // this announce will cause a write to occur
   uint32_t MaybeSendUpdate(bool writing_anyway);
 
-  // Reads the flow control data and returns and actionable struct that will
-  // tell chttp2 exactly what it needs to do
-  FlowControlAction MakeAction() { return UpdateAction(FlowControlAction()); }
+  // Track an update to the incoming flow control counters - that is how many
+  // tokens we report to our peer that we're willing to accept.
+  // Instantiators *must* call MakeAction before destruction of this value.
+  class IncomingUpdateContext {
+   public:
+    explicit IncomingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
+    ~IncomingUpdateContext() { GPR_ASSERT(tfc_ == nullptr); }
+
+    IncomingUpdateContext(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+
+    // Reads the flow control data and returns an actionable struct that will
+    // tell chttp2 exactly what it needs to do
+    FlowControlAction MakeAction() {
+      return std::exchange(tfc_, nullptr)->UpdateAction(FlowControlAction());
+    }
+
+    // Notify of data receipt. Returns OkStatus if the data was accepted,
+    // else an error status if the connection should be closed.
+    absl::Status RecvData(
+        int64_t incoming_frame_size, absl::FunctionRef<absl::Status()> stream =
+                                         []() { return absl::OkStatus(); });
+
+    // Update a stream announce window delta, keeping track of how much total
+    // positive delta is present on the transport.
+    void UpdateAnnouncedWindowDelta(int64_t* delta, int64_t change) {
+      if (change == 0) return;
+      if (*delta > 0) {
+        tfc_->announced_stream_total_over_incoming_window_ -= *delta;
+      }
+      *delta += change;
+      if (*delta > 0) {
+        tfc_->announced_stream_total_over_incoming_window_ += *delta;
+      }
+    }
+
+   private:
+    TransportFlowControl* tfc_;
+  };
+
+  // Track an update to the outgoing flow control counters - that is how many
+  // tokens our peer has said we can send.
+  class OutgoingUpdateContext {
+   public:
+    explicit OutgoingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
+    void StreamSentData(int64_t size) { tfc_->remote_window_ -= size; }
+
+    // we have received a WINDOW_UPDATE frame for a transport
+    void RecvUpdate(uint32_t size) { tfc_->remote_window_ += size; }
+
+    // Finish the update and check whether we became stalled or unstalled.
+    StallEdge Finish() {
+      bool is_stalled = tfc_->remote_window_ <= 0;
+      if (is_stalled != was_stalled_) {
+        return is_stalled ? StallEdge::kStalled : StallEdge::kUnstalled;
+      } else {
+        return StallEdge::kNoChange;
+      }
+    }
+
+   private:
+    TransportFlowControl* tfc_;
+    const bool was_stalled_ = tfc_->remote_window_ <= 0;
+  };
 
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let chttp2 change its parameters
   FlowControlAction PeriodicUpdate();
 
-  void StreamSentData(int64_t size) { remote_window_ -= size; }
-
-  absl::Status ValidateRecvData(int64_t incoming_frame_size);
-  void CommitRecvData(int64_t incoming_frame_size);
-
-  absl::Status RecvData(int64_t incoming_frame_size);
-
-  // we have received a WINDOW_UPDATE frame for a transport
-  void RecvUpdate(uint32_t size);
-
   int64_t target_window() const;
-
   int64_t target_frame_size() const { return target_frame_size_; }
-
-  void PreUpdateAnnouncedWindowOverIncomingWindow(int64_t delta) {
-    if (delta > 0) {
-      announced_stream_total_over_incoming_window_ -= delta;
-    }
-  }
-
-  void PostUpdateAnnouncedWindowOverIncomingWindow(int64_t delta) {
-    if (delta > 0) {
-      announced_stream_total_over_incoming_window_ += delta;
-    }
-  }
 
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
-  void TestOnlyForceHugeWindow() {
-    announced_window_ = 1024 * 1024 * 1024;
-    remote_window_ = 1024 * 1024 * 1024;
-  }
-
   uint32_t acked_init_window() const { return acked_init_window_; }
-  uint32_t sent_init_window() const { return sent_init_window_; }
+  uint32_t sent_init_window() const { return target_initial_window_size_; }
 
-  void SetSentInitialWindow(uint32_t value) { sent_init_window_ = value; }
   void SetAckedInitialWindow(uint32_t value) { acked_init_window_ = value; }
 
   // Getters
   int64_t remote_window() const { return remote_window_; }
   int64_t announced_window() const { return announced_window_; }
 
+  int64_t announced_stream_total_over_incoming_window() const {
+    return announced_stream_total_over_incoming_window_;
+  }
+
+  void RemoveAnnouncedWindowDelta(int64_t delta) {
+    if (delta > 0) {
+      announced_stream_total_over_incoming_window_ -= delta;
+    }
+  }
+
  private:
   double TargetLogBdp();
   double SmoothLogBdp(double value);
-  static void UpdateSetting(int64_t* desired_value, int64_t new_desired_value,
+  double TargetInitialWindowSizeBasedOnMemoryPressureAndBdp() const;
+  static void UpdateSetting(grpc_chttp2_setting_id id, int64_t* desired_value,
+                            uint32_t new_desired_value,
                             FlowControlAction* action,
                             FlowControlAction& (FlowControlAction::*set)(
                                 FlowControlAction::Urgency, uint32_t));
@@ -235,7 +292,6 @@ class TransportFlowControl final {
   int64_t target_initial_window_size_ = kDefaultWindow;
   int64_t target_frame_size_ = kDefaultFrameSize;
   int64_t announced_window_ = kDefaultWindow;
-  uint32_t sent_init_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
 };
 
@@ -245,48 +301,73 @@ class StreamFlowControl final {
  public:
   explicit StreamFlowControl(TransportFlowControl* tfc);
   ~StreamFlowControl() {
-    tfc_->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
+    tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
   }
 
-  FlowControlAction UpdateAction(FlowControlAction action);
-  FlowControlAction MakeAction() { return UpdateAction(tfc_->MakeAction()); }
+  // Track an update to the incoming flow control counters - that is how many
+  // tokens we report to our peer that we're willing to accept.
+  // Instantiators *must* call MakeAction before destruction of this value.
+  class IncomingUpdateContext {
+   public:
+    explicit IncomingUpdateContext(StreamFlowControl* sfc)
+        : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
 
-  // we have sent data on the wire, we must track this in our bookkeeping for
-  // the remote peer's flow control.
-  void SentData(int64_t outgoing_frame_size);
+    FlowControlAction MakeAction() {
+      return sfc_->UpdateAction(tfc_upd_.MakeAction());
+    }
 
-  // we have received data from the wire
-  absl::Status RecvData(int64_t incoming_frame_size);
+    // we have received data from the wire
+    absl::Status RecvData(int64_t incoming_frame_size);
+
+    // the application is asking for a certain amount of bytes
+    void SetMinProgressSize(int64_t min_progress_size) {
+      sfc_->min_progress_size_ = min_progress_size;
+    }
+
+    void SetPendingSize(int64_t pending_size);
+
+   private:
+    TransportFlowControl::IncomingUpdateContext tfc_upd_;
+    StreamFlowControl* const sfc_;
+  };
+
+  // Track an update to the outgoing flow control counters - that is how many
+  // tokens our peer has said we can send.
+  class OutgoingUpdateContext {
+   public:
+    explicit OutgoingUpdateContext(StreamFlowControl* sfc)
+        : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
+    // we have received a WINDOW_UPDATE frame for a stream
+    void RecvUpdate(uint32_t size) { sfc_->remote_window_delta_ += size; }
+    // we have sent data on the wire, we must track this in our bookkeeping for
+    // the remote peer's flow control.
+    void SentData(int64_t outgoing_frame_size) {
+      tfc_upd_.StreamSentData(outgoing_frame_size);
+      sfc_->remote_window_delta_ -= outgoing_frame_size;
+    }
+
+   private:
+    TransportFlowControl::OutgoingUpdateContext tfc_upd_;
+    StreamFlowControl* const sfc_;
+  };
 
   // returns an announce if we should send a stream update to our peer, else
   // returns zero
   uint32_t MaybeSendUpdate();
 
-  // we have received a WINDOW_UPDATE frame for a stream
-  void RecvUpdate(uint32_t size) { remote_window_delta_ += size; }
-
-  // the application is asking for a certain amount of bytes
-  void UpdateProgress(uint32_t min_progress_size);
-
   int64_t remote_window_delta() const { return remote_window_delta_; }
-  int64_t local_window_delta() const { return local_window_delta_; }
   int64_t announced_window_delta() const { return announced_window_delta_; }
-  uint32_t min_progress_size() const { return min_progress_size_; }
-
-  void TestOnlyForceHugeWindow() {
-    announced_window_delta_ = 1024 * 1024 * 1024;
-    local_window_delta_ = 1024 * 1024 * 1024;
-    remote_window_delta_ = 1024 * 1024 * 1024;
-  }
+  int64_t min_progress_size() const { return min_progress_size_; }
 
  private:
   TransportFlowControl* const tfc_;
-  uint32_t min_progress_size_ = 0;
+  int64_t min_progress_size_ = 0;
   int64_t remote_window_delta_ = 0;
-  int64_t local_window_delta_ = 0;
   int64_t announced_window_delta_ = 0;
+  absl::optional<int64_t> pending_size_;
 
-  void UpdateAnnouncedWindowDelta(TransportFlowControl* tfc, int64_t change);
+  FlowControlAction UpdateAction(FlowControlAction action);
+  int64_t DesiredAnnounceSize() const;
 };
 
 class TestOnlyTransportTargetWindowEstimatesMocker {

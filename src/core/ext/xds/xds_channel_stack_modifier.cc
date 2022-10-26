@@ -92,6 +92,10 @@ grpc_arg XdsChannelStackModifier::MakeChannelArg() const {
       const_cast<XdsChannelStackModifier*>(this), &kChannelArgVtable);
 }
 
+absl::string_view XdsChannelStackModifier::ChannelArgName() {
+  return kXdsChannelStackModifierChannelArgName;
+}
+
 RefCountedPtr<XdsChannelStackModifier>
 XdsChannelStackModifier::GetFromChannelArgs(const grpc_channel_args& args) {
   XdsChannelStackModifier* config_selector_provider =
@@ -104,10 +108,8 @@ XdsChannelStackModifier::GetFromChannelArgs(const grpc_channel_args& args) {
 void RegisterXdsChannelStackModifier(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* channel_args = builder->channel_args().ToC();
-        RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier =
-            XdsChannelStackModifier::GetFromChannelArgs(*channel_args);
-        grpc_channel_args_destroy(channel_args);
+        auto channel_stack_modifier =
+            builder->channel_args().GetObjectRef<XdsChannelStackModifier>();
         if (channel_stack_modifier != nullptr) {
           return channel_stack_modifier->ModifyChannelStack(builder);
         }

@@ -49,7 +49,7 @@ describe 'user agent' do
   it 'client sends expected user agent' do
     stub = UserAgentEchoServiceStub.new("localhost:#{@port}",
                                         :this_channel_is_insecure,
-                                        {})
+                                        channel_args: {})
     response = stub.an_rpc(EchoMsg.new)
     expected_user_agent_prefix = "grpc-ruby/#{GRPC::VERSION}"
     expect(response.msg.start_with?(expected_user_agent_prefix)).to be true

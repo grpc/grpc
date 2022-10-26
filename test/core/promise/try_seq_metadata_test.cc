@@ -12,9 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+#include <memory>
 
+#include "absl/types/variant.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/status.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/metadata_batch.h"
 

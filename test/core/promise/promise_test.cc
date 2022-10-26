@@ -14,7 +14,9 @@
 
 #include "src/core/lib/promise/promise.h"
 
-#include <gtest/gtest.h>
+#include <type_traits>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

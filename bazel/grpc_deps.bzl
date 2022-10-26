@@ -56,21 +56,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "absl",
-        actual = "@com_google_absl//absl",
-    )
-
-    native.bind(
-        name = "absl-base",
-        actual = "@com_google_absl//absl/base",
-    )
-
-    native.bind(
-        name = "absl-time",
-        actual = "@com_google_absl//absl/time:time",
-    )
-
-    native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
     )
@@ -186,6 +171,16 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "opencensus-trace-stackdriver_exporter",
+        actual = "@io_opencensus_cpp//opencensus/exporters/trace/stackdriver:stackdriver_exporter",
+    )
+
+    native.bind(
+        name = "opencensus-stats-stackdriver_exporter",
+        actual = "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
+    )
+
+    native.bind(
         name = "libuv",
         actual = "@com_github_libuv_libuv//:libuv",
     )
@@ -193,6 +188,16 @@ def grpc_deps():
     native.bind(
         name = "libuv_test",
         actual = "@com_github_libuv_libuv//:libuv_test",
+    )
+
+    native.bind(
+        name = "googleapis_trace_grpc_service",
+        actual = "@com_google_googleapis//google/devtools/cloudtrace/v2:cloudtrace_cc_grpc",
+    )
+
+    native.bind(
+        name = "googleapis_monitoring_grpc_service",
+        actual = "@com_google_googleapis//google/monitoring/v3:monitoring_cc_grpc",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -212,22 +217,22 @@ def grpc_deps():
         http_archive(
             name = "zlib",
             build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
-            sha256 = "ef47b0fbe646d69a2fc5ba012cb278de8e8946a8e9649f83a807cc05559f0eff",
-            strip_prefix = "zlib-21767c654d31d2dccdde4330529775c6c5fd5389",
+            sha256 = "90f43a9c998740e8a0db24b0af0147033db2aaaa99423129abbd76640757cac9",
+            strip_prefix = "zlib-04f42ceca40f73e2978b50e93806c2a18c1281fc",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/21767c654d31d2dccdde4330529775c6c5fd5389.tar.gz",
-                "https://github.com/madler/zlib/archive/21767c654d31d2dccdde4330529775c6c5fd5389.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/04f42ceca40f73e2978b50e93806c2a18c1281fc.tar.gz",
+                "https://github.com/madler/zlib/archive/04f42ceca40f73e2978b50e93806c2a18c1281fc.tar.gz",
             ],
         )
 
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "bab1685f92cc4ea5b6420026eef6c7973ae96fc21f4f1a3ee626dc6ca6d77c12",
-            strip_prefix = "protobuf-22d0e265de7d2b3d2e9a00d071313502e7d4cccf",
+            sha256 = "63c5539a8506dc6bccd352a857cea106e0a389ce047a3ff0a78fe3f8fede410d",
+            strip_prefix = "protobuf-24487dd1045c7f3d64a21f38a3f0c06cc4cf2edb",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/22d0e265de7d2b3d2e9a00d071313502e7d4cccf.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/22d0e265de7d2b3d2e9a00d071313502e7d4cccf.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/24487dd1045c7f3d64a21f38a3f0c06cc4cf2edb.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/24487dd1045c7f3d64a21f38a3f0c06cc4cf2edb.tar.gz",
             ],
             patches = ["@com_github_grpc_grpc//third_party:protobuf.patch"],
             patch_args = ["-p1"],
@@ -259,11 +264,11 @@ def grpc_deps():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            sha256 = "0b921a3bc39e35f4275c8dcc658af2391c150fb966102341287b0401ff2e6f21",
-            strip_prefix = "benchmark-0baacde3618ca617da95375e0af13ce1baadea47",
+            sha256 = "3a43368d3ec48afe784573cf962fe98c084e89a1e3d176c00715a84366316e7d",
+            strip_prefix = "benchmark-361e8d1cfe0c6c36d30b39f1b61302ece5507320",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/0baacde3618ca617da95375e0af13ce1baadea47.tar.gz",
-                "https://github.com/google/benchmark/archive/0baacde3618ca617da95375e0af13ce1baadea47.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/361e8d1cfe0c6c36d30b39f1b61302ece5507320.tar.gz",
+                "https://github.com/google/benchmark/archive/361e8d1cfe0c6c36d30b39f1b61302ece5507320.tar.gz",
             ],
         )
 
@@ -294,22 +299,22 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "dcf71b9cba8dc0ca9940c4b316a0c796be8fab42b070bb6b7cab62b48f0e66c4",
-            strip_prefix = "abseil-cpp-20211102.0",
+            sha256 = "4208129b49006089ba1d6710845a45e31c59b0ab6bff9e5788a87f55c5abd602",
+            strip_prefix = "abseil-cpp-20220623.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20220623.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20220623.0.tar.gz",
             ],
         )
 
     if "bazel_toolchains" not in native.existing_rules():
-        # list of releases is at https://releases.bazel.build/bazel-toolchains.html
+        # list of releases is at https://github.com/bazelbuild/bazel-toolchains/releases
         http_archive(
             name = "bazel_toolchains",
             sha256 = "179ec02f809e86abf56356d8898c8bd74069f1bd7c56044050c2cd3d79d0e024",
             strip_prefix = "bazel-toolchains-4.1.0",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4.1.0.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
                 "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
             ],
         )
@@ -338,33 +343,33 @@ def grpc_deps():
     if "io_opencensus_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opencensus_cpp",
-            sha256 = "90d6fafa8b1a2ea613bf662731d3086e1c2ed286f458a95c81744df2dbae41b1",
-            strip_prefix = "opencensus-cpp-c9a4da319bc669a772928ffc55af4a61be1a1176",
+            sha256 = "20119a53cc1c140347671ac40650d797567ec63bd3a9f135e17f144fdb36c272",
+            strip_prefix = "opencensus-cpp-3e6aa4c0fb31d2f39a2d38365483599ab50bef6d",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-cpp/archive/c9a4da319bc669a772928ffc55af4a61be1a1176.tar.gz",
-                "https://github.com/census-instrumentation/opencensus-cpp/archive/c9a4da319bc669a772928ffc55af4a61be1a1176.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-cpp/archive/3e6aa4c0fb31d2f39a2d38365483599ab50bef6d.tar.gz",
+                "https://github.com/census-instrumentation/opencensus-cpp/archive/3e6aa4c0fb31d2f39a2d38365483599ab50bef6d.tar.gz",
             ],
         )
 
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "d0fe259d650bf9547e75896a1307bfc7034195e4ae89f5139814d295991ba681",
-            strip_prefix = "upb-bef53686ec702607971bd3ea4d4fefd80c6cc6e8",
+            sha256 = "017a7e8e4e842d01dba5dc8aa316323eee080cd1b75986a7d1f94d87220e6502",
+            strip_prefix = "upb-e4635f223e7d36dfbea3b722a4ca4807a7e882e2",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/bef53686ec702607971bd3ea4d4fefd80c6cc6e8.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/bef53686ec702607971bd3ea4d4fefd80c6cc6e8.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/e4635f223e7d36dfbea3b722a4ca4807a7e882e2.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/e4635f223e7d36dfbea3b722a4ca4807a7e882e2.tar.gz",
             ],
         )
 
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630",
-            strip_prefix = "data-plane-api-9c42588c956220b48eb3099d186487c2f04d32ec",
+            sha256 = "0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd",
+            strip_prefix = "data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz",
             ],
         )
 
@@ -381,10 +386,10 @@ def grpc_deps():
     if "build_bazel_rules_apple" not in native.existing_rules():
         http_archive(
             name = "build_bazel_rules_apple",
-            sha256 = "0052d452af7742c8f3a4e0929763388a66403de363775db7e90adecb2ba4944b",
+            sha256 = "77e8bf6fda706f420a55874ae6ee4df0c9d95da6c7838228b26910fc82eea5a2",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_apple/releases/download/0.31.3/rules_apple.0.31.3.tar.gz",
-                "https://github.com/bazelbuild/rules_apple/releases/download/0.31.3/rules_apple.0.31.3.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_apple/releases/download/0.32.0/rules_apple.0.32.0.tar.gz",
+                "https://github.com/bazelbuild/rules_apple/releases/download/0.32.0/rules_apple.0.32.0.tar.gz",
             ],
         )
 

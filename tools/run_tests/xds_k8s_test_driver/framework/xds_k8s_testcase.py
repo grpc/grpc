@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import abc
+import contextlib
 import datetime
 import enum
 import hashlib
@@ -28,16 +29,19 @@ import grpc
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
+from framework.helpers import rand as helpers_rand
 from framework.helpers import retryers
 from framework.helpers import skips
-import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 from framework.rpc import grpc_channelz
+from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -55,32 +59,48 @@ TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
-KubernetesServerRunner = server_app.KubernetesServerRunner
-KubernetesClientRunner = client_app.KubernetesClientRunner
+KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
-ClientConfig = framework.rpc.grpc_csds.ClientConfig
+ClientConfig = grpc_csds.ClientConfig
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
 
-class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
-    _resource_suffix_randomize: bool = True
+class TdPropagationRetryableError(Exception):
+    """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
+
+
+class XdsKubernetesBaseTestCase(absltest.TestCase):
+    lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
+    ensure_firewall: bool
+    force_cleanup: bool
     gcp_api_manager: gcp.api.GcpApiManager
+    gcp_service_account: Optional[str]
     k8s_api_manager: k8s.KubernetesApiManager
+    secondary_k8s_api_manager: k8s.KubernetesApiManager
+    network: str
+    project: str
     resource_prefix: str
     resource_suffix: str = ''
+    # Whether to randomize resources names for each test by appending a
+    # unique suffix.
+    resource_suffix_randomize: bool = True
+    server_maintenance_port: Optional[int]
     server_namespace: str
     server_runner: KubernetesServerRunner
+    server_xds_host: str
     server_xds_port: int
     td: TrafficDirectorManager
+    td_bootstrap_image: str
 
     @staticmethod
-    def isSupported(config: skips.TestConfig) -> bool:
-        """Overrided by the test class to decide if the config is supported.
+    def is_supported(config: skips.TestConfig) -> bool:
+        """Overridden by the test class to decide if the config is supported.
 
         Returns:
           A bool indicates if the given config is supported.
@@ -93,14 +113,20 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         """Hook method for setting up class fixture before running tests in
         the class.
         """
+        logger.info('----- Testing %s -----', cls.__name__)
+        logger.info('Logs timezone: %s', time.localtime().tm_zone)
+
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        skips.evaluate_test_config(cls.isSupported)
+        cls.lang_spec = skips.evaluate_test_config(cls.is_supported)
+
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
 
         # GCP
-        cls.project: str = xds_flags.PROJECT.value
-        cls.network: str = xds_flags.NETWORK.value
-        cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
+        cls.project = xds_flags.PROJECT.value
+        cls.network = xds_flags.NETWORK.value
+        cls.gcp_service_account = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
         cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
@@ -110,7 +136,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # Resource names.
         cls.resource_prefix = xds_flags.RESOURCE_PREFIX.value
         if xds_flags.RESOURCE_SUFFIX.value is not None:
-            cls._resource_suffix_randomize = False
+            cls.resource_suffix_randomize = False
             cls.resource_suffix = xds_flags.RESOURCE_SUFFIX.value
 
         # Test server
@@ -130,7 +156,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
-        cls.enable_workload_identity = xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
+        cls.enable_workload_identity = \
+            xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
         cls.check_local_certs = _CHECK_LOCAL_CERTS.value
 
         # Resource managers
@@ -140,77 +167,19 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value)
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
-    def setUp(self):
-        """Hook method for setting up the test fixture before exercising it."""
-        super().setUp()
-
-        if self._resource_suffix_randomize:
-            self.resource_suffix = framework.helpers.rand.random_resource_suffix(
-            )
-        logger.info('Test run resource prefix: %s, suffix: %s',
-                    self.resource_prefix, self.resource_suffix)
-
-        # TD Manager
-        self.td = self.initTrafficDirectorManager()
-
-        # Test Server runner
-        self.server_namespace = KubernetesServerRunner.make_namespace_name(
-            self.resource_prefix, self.resource_suffix)
-        self.server_runner = self.initKubernetesServerRunner()
-
-        # Test Client runner
-        self.client_namespace = KubernetesClientRunner.make_namespace_name(
-            self.resource_prefix, self.resource_suffix)
-        self.client_runner = self.initKubernetesClientRunner()
-
-        # Ensures the firewall exist
-        if self.ensure_firewall:
-            self.td.create_firewall_rule(
-                allowed_ports=self.firewall_allowed_ports)
-
-        # Randomize xds port, when it's set to 0
-        if self.server_xds_port == 0:
-            # TODO(sergiitk): this is prone to race conditions:
-            #  The port might not me taken now, but there's not guarantee
-            #  it won't be taken until the tests get to creating
-            #  forwarding rule. This check is better than nothing,
-            #  but we should find a better approach.
-            self.server_xds_port = self.td.find_unused_forwarding_rule_port()
-            logger.info('Found unused xds port: %s', self.server_xds_port)
-
-    @abc.abstractmethod
-    def initTrafficDirectorManager(self) -> TrafficDirectorManager:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
-        raise NotImplementedError
-
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
         cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
-    def tearDown(self):
-        logger.info('----- TestMethod %s teardown -----', self.id())
-        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
-                                            attempts=3,
-                                            log_level=logging.INFO)
+    @contextlib.contextmanager
+    def subTest(self, msg, **params):  # noqa pylint: disable=signature-differs
+        logger.info('--- Starting subTest %s.%s ---', self.id(), msg)
         try:
-            retryer(self._cleanup)
-        except retryers.RetryError:
-            logger.exception('Got error during teardown')
-
-    def _cleanup(self):
-        self.td.cleanup(force=self.force_cleanup)
-        self.client_runner.cleanup(force=self.force_cleanup)
-        self.server_runner.cleanup(force=self.force_cleanup,
-                                   force_namespace=self.force_cleanup)
+            yield super().subTest(msg, **params)
+        finally:
+            logger.info('--- Finished subTest %s.%s ---', self.id(), msg)
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,
@@ -270,26 +239,30 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                     diff.stats_per_method[method].result[status] = count
         return diff
 
-    def assertRpcStatusCodes(self, test_client: XdsTestClient, *,
-                             status_code: grpc.StatusCode, duration: _timedelta,
-                             method: str) -> None:
+    def assertRpcStatusCodes(self,
+                             test_client: XdsTestClient,
+                             *,
+                             status_code: grpc.StatusCode,
+                             duration: _timedelta,
+                             method: str,
+                             stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
         response_type = 'LoadBalancerAccumulatedStatsResponse'
         logging.info('Received %s from test client %s: before:\n%s',
-                     response_type, test_client.ip, before_stats)
+                     response_type, test_client.hostname, before_stats)
         time.sleep(duration.total_seconds())
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info('Received %s from test client %s: after:\n%s',
-                     response_type, test_client.ip, after_stats)
+                     response_type, test_client.hostname, after_stats)
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
         stats = diff_stats.stats_per_method[method]
         status = status_code.value[0]
         for found_status, count in stats.result.items():
-            if found_status != status and count > 0:
+            if found_status != status and count > stray_rpc_limit:
                 self.fail(f"Expected only status {status} but found status "
                           f"{found_status} for method {method}:\n{diff_stats}")
         self.assertGreater(stats.result[status_code.value[0]], 0)
@@ -305,28 +278,29 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         try:
             retryer(self._assertRpcsEventuallyGoToGivenServers, test_client,
                     servers, num_rpcs)
-        except retryers.RetryError:
+        except retryers.RetryError as retry_error:
             logger.exception(
                 'Rpcs did not go to expected servers before timeout %s',
                 _TD_CONFIG_MAX_WAIT_SEC)
+            raise retry_error
 
     def _assertRpcsEventuallyGoToGivenServers(self, test_client: XdsTestClient,
                                               servers: List[XdsTestServer],
                                               num_rpcs: int):
-        server_names = [server.pod_name for server in servers]
-        logger.info('Verifying RPCs go to %s', server_names)
+        server_hostnames = [server.hostname for server in servers]
+        logger.info('Verifying RPCs go to servers %s', server_hostnames)
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         failed = int(lb_stats.num_failures)
         self.assertLessEqual(
             failed,
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
-        for server_name in server_names:
-            self.assertIn(server_name, lb_stats.rpcs_by_peer,
-                          f'{server_name} did not receive RPCs')
-        for peer in lb_stats.rpcs_by_peer.keys():
-            self.assertIn(peer, server_names,
-                          f'Unexpected server {peer} received RPCs')
+        for server_hostname in server_hostnames:
+            self.assertIn(server_hostname, lb_stats.rpcs_by_peer,
+                          f'Server {server_hostname} did not receive RPCs')
+        for server_hostname in lb_stats.rpcs_by_peer.keys():
+            self.assertIn(server_hostname, server_hostnames,
+                          f'Unexpected server {server_hostname} received RPCs')
 
     def assertXdsConfigExists(self, test_client: XdsTestClient):
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
@@ -409,7 +383,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logger.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.ip, lb_stats)
+            test_client.hostname, lb_stats)
         return lb_stats
 
     def assertAllBackendsReceivedRpcs(self, lb_stats):
@@ -421,11 +395,82 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                 msg=f'Backend {backend} did not receive a single RPC')
 
 
-class TdPropagationRetryableError(Exception):
-    pass
+class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
+                                    metaclass=abc.ABCMeta):
+    """Isolated test case.
+
+    Base class for tests cases where infra resources are created before
+    each test, and destroyed after.
+    """
+
+    def setUp(self):
+        """Hook method for setting up the test fixture before exercising it."""
+        super().setUp()
+
+        if self.resource_suffix_randomize:
+            self.resource_suffix = helpers_rand.random_resource_suffix()
+        logger.info('Test run resource prefix: %s, suffix: %s',
+                    self.resource_prefix, self.resource_suffix)
+
+        # TD Manager
+        self.td = self.initTrafficDirectorManager()
+
+        # Test Server runner
+        self.server_namespace = KubernetesServerRunner.make_namespace_name(
+            self.resource_prefix, self.resource_suffix)
+        self.server_runner = self.initKubernetesServerRunner()
+
+        # Test Client runner
+        self.client_namespace = KubernetesClientRunner.make_namespace_name(
+            self.resource_prefix, self.resource_suffix)
+        self.client_runner = self.initKubernetesClientRunner()
+
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=self.firewall_allowed_ports)
+
+        # Randomize xds port, when it's set to 0
+        if self.server_xds_port == 0:
+            # TODO(sergiitk): this is prone to race conditions:
+            #  The port might not me taken now, but there's not guarantee
+            #  it won't be taken until the tests get to creating
+            #  forwarding rule. This check is better than nothing,
+            #  but we should find a better approach.
+            self.server_xds_port = self.td.find_unused_forwarding_rule_port()
+            logger.info('Found unused xds port: %s', self.server_xds_port)
+
+    @abc.abstractmethod
+    def initTrafficDirectorManager(self) -> TrafficDirectorManager:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
+        raise NotImplementedError
+
+    def tearDown(self):
+        logger.info('----- TestMethod %s teardown -----', self.id())
+        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
+                                            attempts=3,
+                                            log_level=logging.INFO)
+        try:
+            retryer(self.cleanup)
+        except retryers.RetryError:
+            logger.exception('Got error during teardown')
+
+    def cleanup(self):
+        self.td.cleanup(force=self.force_cleanup)
+        self.client_runner.cleanup(force=self.force_cleanup)
+        self.server_runner.cleanup(force=self.force_cleanup,
+                                   force_namespace=self.force_cleanup)
 
 
-class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
+class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
+    """Regular test case base class for testing PSM features in isolation."""
 
     @classmethod
     def setUpClass(cls):
@@ -515,7 +560,8 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             compute_api_version=self.compute_api_version)
 
 
-class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
+class SecurityXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
+    """Test case base class for testing PSM security features in isolation."""
     td: TrafficDirectorSecureManager
 
     class SecurityMode(enum.Enum):

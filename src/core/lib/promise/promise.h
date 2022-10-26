@@ -19,6 +19,7 @@
 
 #include <functional>
 #include <type_traits>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"

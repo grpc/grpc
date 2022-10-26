@@ -20,7 +20,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolConfig__field
 const upb_MiniTable envoy_config_core_v3_ProxyProtocolConfig_msginit = {
   NULL,
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

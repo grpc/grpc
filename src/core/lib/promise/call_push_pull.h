@@ -79,20 +79,16 @@ class CallPushPull {
         if (IsStatusOk(*status)) {
           done_.set(kDonePush);
         } else {
-          return Result(std::move(*status));
+          return StatusCast<Result>(std::move(*status));
         }
       }
     }
     if (!done_.is_set(kDoneMain)) {
       auto p = main_();
       if (auto* status = absl::get_if<kPollReadyIdx>(&p)) {
-        if (IsStatusOk(*status)) {
-          done_.set(kDoneMain);
-          Destruct(&main_);
-          Construct(&result_, std::move(*status));
-        } else {
-          return std::move(*status);
-        }
+        done_.set(kDoneMain);
+        Destruct(&main_);
+        Construct(&result_, std::move(*status));
       }
     }
     if (!done_.is_set(kDonePull)) {
@@ -101,7 +97,7 @@ class CallPushPull {
         if (IsStatusOk(*status)) {
           done_.set(kDonePull);
         } else {
-          return Result(std::move(*status));
+          return StatusCast<Result>(std::move(*status));
         }
       }
     }
@@ -133,6 +129,10 @@ class CallPushPull {
 // It takes three promises: the main call, the push and the pull.
 // When polling, the push is polled first, then the main call (descending the
 // stack), then the pull (as we ascend once more).
+//
+// If the push or the pull fail early, then the entire call fails.
+// If the main part of the call fails, we wait until both push and pull are also
+// done.
 //
 // This strategy minimizes repolls.
 template <typename FMain, typename FPush, typename FPull>

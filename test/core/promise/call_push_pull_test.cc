@@ -14,9 +14,10 @@
 
 #include "src/core/lib/promise/call_push_pull.h"
 
-#include <gtest/gtest.h>
+#include <utility>
 
 #include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -53,8 +54,8 @@ TEST(CallPushPullTest, OneReady) {
 TEST(CallPushPullTest, OneFailed) {
   auto a = CallPushPull(
       []() -> Poll<absl::Status> { return absl::UnknownError("bah"); },
-      []() -> Poll<absl::Status> { return Pending{}; },
-      []() -> Poll<absl::Status> { return Pending{}; });
+      []() -> Poll<absl::Status> { return absl::OkStatus(); },
+      []() -> Poll<absl::Status> { return absl::OkStatus(); });
   EXPECT_EQ(a(), Poll<absl::Status>(absl::UnknownError("bah")));
   auto b = CallPushPull(
       []() -> Poll<absl::Status> { return Pending{}; },

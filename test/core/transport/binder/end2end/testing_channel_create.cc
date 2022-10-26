@@ -35,7 +35,7 @@ namespace {
 class ServerSetupTransportHelper {
  public:
   ServerSetupTransportHelper()
-      : wire_reader_(absl::make_unique<WireReaderImpl>(
+      : wire_reader_(std::make_unique<WireReaderImpl>(
             /*transport_stream_receiver=*/nullptr, /*is_client=*/false,
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
@@ -112,22 +112,20 @@ grpc_channel* grpc_binder_channel_create_for_testing(
     grpc_server* server, const grpc_channel_args* args, void* /*reserved*/) {
   grpc_core::ExecCtx exec_ctx;
 
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args)
-             .ToC();
-  auto client_args = grpc_core::ChannelArgs::FromC(args).Set(
-      GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+  auto server_args = grpc_core::CoreConfiguration::Get()
+                         .channel_args_preconditioning()
+                         .PreconditionChannelArgs(args);
+  auto client_args =
+      server_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
 
   grpc_transport *client_transport, *server_transport;
   std::tie(client_transport, server_transport) =
       grpc_binder::end2end_testing::CreateClientServerBindersPairForTesting();
   grpc_error_handle error = grpc_core::Server::FromC(server)->SetupTransport(
-      server_transport, nullptr, args, nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+      server_transport, nullptr, server_args, nullptr);
+  GPR_ASSERT(error.ok());
   auto channel = grpc_core::Channel::Create(
       "binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
   GPR_ASSERT(channel.ok());
-  grpc_channel_args_destroy(args);
   return channel->release()->c_ptr();
 }

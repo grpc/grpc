@@ -73,6 +73,8 @@ then
     sleep 3
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
+  # fix .rvm directory ownership on kokoro monterey image
+  sudo chown -R "${USER}" ~/.rvm
   rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   # stop echoing bash commands temporarily to prevent rvm from polluting the logs
   set +x
@@ -83,9 +85,7 @@ then
     time rvm install "ruby-${RUBY_VERSION}"
   done;
   echo "Setting default ruby version."
-  rvm use 2.5.0 --default
-  echo "Installing cocoapods."
-  time gem install cocoapods --version 1.3.1 --no-document
+  rvm use 2.7.0 --default
   echo "Updating osx-ssl-certs."
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
@@ -98,7 +98,8 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
 then
   # cocoapods
   export LANG=en_US.UTF-8
-  time gem install cocoapods --version 1.7.2 --no-document
+  # use "sudo" to avoid permission error on kokoro monterey image
+  time sudo gem install cocoapods --version 1.7.2 --no-document --user-install
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
@@ -154,10 +155,18 @@ then
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
-    time curl -O https://www.python.org/ftp/python/3.10.2/python-3.10.2-macos11.pkg
-    echo "22dd9a45718a99d77398312da6ac720c4968bae7a854da4da3a3986f6d3478f8  python-3.10.2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    time curl -O https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg
+    echo "568c69b4361af1faf0ae35c4cac7236c1a332f5c  python-3.10.5-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.10.2-macos11.pkg -target /
+    time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
+  fi
+
+  # Install Python 3.11 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.11" ]; then
+    time curl -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
+    echo "eec3f817797b1d61f48f29b96ac0443ea19f3170  python-3.11.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.11.0rc1-macos11.pkg -target /
   fi
 fi
 

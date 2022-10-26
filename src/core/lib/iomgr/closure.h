@@ -31,7 +31,6 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/profiling/timers.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -46,7 +45,7 @@ typedef struct grpc_closure_list {
 /** gRPC Callback definition.
  *
  * \param arg Arbitrary input.
- * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
+ * \param error absl::OkStatus() if no error occurred, otherwise some grpc_error
  *              describing what went wrong.
  *              Error contract: it is not the cb's job to unref this error;
  *              the closure scheduler will do that after the cb returns */
@@ -118,6 +117,54 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
 #define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
   grpc_closure_init(closure, cb, cb_arg)
 #endif
+
+namespace grpc_core {
+template <typename T, void (T::*cb)(grpc_error_handle)>
+grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
+  grpc_closure out;
+  GRPC_CLOSURE_INIT(
+      &out, [](void* p, grpc_error_handle e) { (static_cast<T*>(p)->*cb)(e); },
+      p, nullptr);
+#ifndef NDEBUG
+  out.file_created = location.file();
+  out.line_created = location.line();
+#else
+  (void)location;
+#endif
+  return out;
+}
+
+template <typename T, void (T::*cb)()>
+grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
+  grpc_closure out;
+  GRPC_CLOSURE_INIT(
+      &out, [](void* p, grpc_error_handle) { (static_cast<T*>(p)->*cb)(); }, p,
+      nullptr);
+#ifndef NDEBUG
+  out.file_created = location.file();
+  out.line_created = location.line();
+#else
+  (void)location;
+#endif
+  return out;
+}
+
+template <typename F>
+grpc_closure* NewClosure(F f) {
+  struct Closure : public grpc_closure {
+    explicit Closure(F f) : f(std::move(f)) {}
+    F f;
+    static void Run(void* arg, grpc_error_handle error) {
+      auto self = static_cast<Closure*>(arg);
+      self->f(error);
+      delete self;
+    }
+  };
+  Closure* c = new Closure(std::move(f));
+  GRPC_CLOSURE_INIT(c, Closure::Run, c, nullptr);
+  return c;
+}
+}  // namespace grpc_core
 
 namespace closure_impl {
 
@@ -196,14 +243,9 @@ inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
                                      grpc_closure* closure,
                                      grpc_error_handle error) {
   if (closure == nullptr) {
-    GRPC_ERROR_UNREF(error);
     return false;
   }
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(error);
-#else
-  closure->error_data.error = reinterpret_cast<intptr_t>(error);
-#endif
   return grpc_closure_list_append(closure_list, closure);
 }
 
@@ -212,16 +254,10 @@ inline void grpc_closure_list_fail_all(grpc_closure_list* list,
                                        grpc_error_handle forced_failure) {
   for (grpc_closure* c = list->head; c != nullptr; c = c->next_data.next) {
     if (c->error_data.error == 0) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
       c->error_data.error =
           grpc_core::internal::StatusAllocHeapPtr(forced_failure);
-#else
-      c->error_data.error =
-          reinterpret_cast<intptr_t>(GRPC_ERROR_REF(forced_failure));
-#endif
     }
   }
-  GRPC_ERROR_UNREF(forced_failure);
 }
 
 /** append all closures from \a src to \a dst and empty \a src. */
@@ -251,7 +287,6 @@ class Closure {
                   grpc_error_handle error) {
     (void)location;
     if (closure == nullptr) {
-      GRPC_ERROR_UNREF(error);
       return;
     }
 #ifndef NDEBUG
@@ -268,7 +303,6 @@ class Closure {
       gpr_log(GPR_DEBUG, "closure %p finished", closure);
     }
 #endif
-    GRPC_ERROR_UNREF(error);
   }
 };
 }  // namespace grpc_core

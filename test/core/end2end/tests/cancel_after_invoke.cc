@@ -21,14 +21,17 @@
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -96,7 +99,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_call* c;
   grpc_end2end_test_fixture f = begin_test(config, "test_cancel_after_invoke",
                                            mode, test_ops, nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -159,8 +162,8 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
 
@@ -175,7 +178,6 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 
   grpc_call_unref(c);
 
-  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -185,6 +187,11 @@ void cancel_after_invoke(grpc_end2end_test_config config) {
 
   for (j = 3; j < 6; j++) {
     for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
+      if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES &&
+          cancellation_modes[i].expect_status ==
+              GRPC_STATUS_DEADLINE_EXCEEDED) {
+        continue;
+      }
       test_cancel_after_invoke(config, cancellation_modes[i], j);
     }
   }

@@ -16,6 +16,9 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
+#include <algorithm>
+#include <utility>
+
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -95,7 +98,7 @@ Rbac::Permission Rbac::Permission::MakeNotPermission(Permission permission) {
   Permission not_permission;
   not_permission.type = Permission::RuleType::kNot;
   not_permission.permissions.push_back(
-      absl::make_unique<Rbac::Permission>(std::move(permission)));
+      std::make_unique<Rbac::Permission>(std::move(permission)));
   return not_permission;
 }
 
@@ -267,7 +270,7 @@ Rbac::Principal Rbac::Principal::MakeNotPrincipal(Principal principal) {
   Principal not_principal;
   not_principal.type = Principal::RuleType::kNot;
   not_principal.principals.push_back(
-      absl::make_unique<Rbac::Principal>(std::move(principal)));
+      std::make_unique<Rbac::Principal>(std::move(principal)));
   return not_principal;
 }
 
