@@ -1469,7 +1469,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       }
       break;
     default:
-      GPR_UNREACHABLE_CODE(return);
+      GPR_UNREACHABLE_CODE(return );
   }
   grpc_cq_end_op(cq_new_, rc->tag, absl::OkStatus(), Server::DoneRequestEvent,
                  rc, &rc->completion, true);
