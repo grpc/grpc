@@ -626,11 +626,23 @@ class XdsClientTest : public ::testing::Test {
         timeout * grpc_test_slowdown_factor());
   }
 
-  void TriggerConnectivityChange(const XdsBootstrap::XdsServer& server,
-                                 absl::Status status) {
+  void ReportConnecting(const XdsBootstrap::XdsServer& server) {
     const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
     GPR_ASSERT(xds_server != nullptr);
-    transport_factory_->TriggerConnectivityChange(*xds_server, status);
+    transport_factory_->ReportConnecting(*xds_server);
+  }
+
+  void ReportReady(const XdsBootstrap::XdsServer& server) {
+    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
+    GPR_ASSERT(xds_server != nullptr);
+    transport_factory_->ReportReady(*xds_server);
+  }
+
+  void ReportTransientFailure(const XdsBootstrap::XdsServer& server,
+                              absl::Status status) {
+    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
+    GPR_ASSERT(xds_server != nullptr);
+    transport_factory_->ReportTransientFailure(*xds_server, std::move(status));
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
@@ -2085,7 +2097,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // triggering that here.
   InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
   // Tell transport not to immediately report that it is connected.
-  transport_factory_->SetAutoReportTransportConnected(false);
+  transport_factory_->SetAutoReportTransportReady(false);
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2102,8 +2114,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Transport reports connection failure.
-  TriggerConnectivityChange(xds_client_->bootstrap().server(),
-                            absl::UnavailableError("connection failed"));
+  ReportTransientFailure(xds_client_->bootstrap().server(),
+                         absl::UnavailableError("connection failed"));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
@@ -2128,8 +2140,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Second watcher should not see resource-does-not-exist either.
   EXPECT_FALSE(watcher2->HasEvent());
   // Report channel as having become connected.
-  TriggerConnectivityChange(xds_client_->bootstrap().server(),
-                            absl::OkStatus());
+  ReportReady(xds_client_->bootstrap().server());
   // The ADS stream uses wait_for_ready inside the XdsTransport interface,
   // so when the channel reconnects, the already-started stream will proceed.
   // Server sends a response.
@@ -2173,7 +2184,7 @@ TEST_F(XdsClientTest, LongConnectionAttempt) {
   // triggering that here.
   InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
   // Tell transport not to immediately report that it is connected.
-  transport_factory_->SetAutoReportTransportConnected(false);
+  transport_factory_->SetAutoReportTransportReady(false);
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2193,8 +2204,7 @@ TEST_F(XdsClientTest, LongConnectionAttempt) {
   // timer should not be running while the channel is disconnected.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
   // Report channel as having become connected.
-  TriggerConnectivityChange(xds_client_->bootstrap().server(),
-                            absl::OkStatus());
+  ReportReady(xds_client_->bootstrap().server());
   // The ADS stream uses wait_for_ready inside the XdsTransport interface,
   // so when the channel connects, the already-started stream will proceed.
   // Server sends a response.
@@ -2248,8 +2258,7 @@ TEST_F(XdsClientTest, LongReconnectionAttempt) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Report channel as having become connected.
-  TriggerConnectivityChange(xds_client_->bootstrap().server(),
-                            absl::OkStatus());
+  ReportReady(xds_client_->bootstrap().server());
   // Server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2269,10 +2278,11 @@ TEST_F(XdsClientTest, LongReconnectionAttempt) {
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
+  // Transport reports disconnection.
+  ReportConnecting(xds_client_->bootstrap().server());
   // Stream fails because of transport disconnection.
-  // Transport does NOT report an error, since it's IDLE, not TF.
   stream->MaybeSendStatusToClient(absl::UnavailableError("connection failed"));
-  // XdsClient should report the error to the watcher.
+  // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
@@ -2296,8 +2306,7 @@ TEST_F(XdsClientTest, LongReconnectionAttempt) {
   // resending it.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
   // Report channel as having become connected.
-  TriggerConnectivityChange(xds_client_->bootstrap().server(),
-                            absl::OkStatus());
+  ReportReady(xds_client_->bootstrap().server());
   // The ADS stream uses wait_for_ready inside the XdsTransport interface,
   // so when the channel connects, the already-started stream will proceed.
   // Server sends a response.
@@ -2352,14 +2361,14 @@ TEST_F(XdsClientTest, LongReconnectionAttemptBeforeResourceReceived) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
-  // Report channel as having become connected.
-  TriggerConnectivityChange(xds_client_->bootstrap().server(),
-                            absl::OkStatus());
+  // Report channel connected.
+  ReportReady(xds_client_->bootstrap().server());
   // Server does NOT send a response.
+  // Now report channel as having become disconnected.
+  ReportConnecting(xds_client_->bootstrap().server());
   // Stream fails because of transport disconnection.
-  // Transport does NOT report an error, since it's IDLE, not TF.
   stream->MaybeSendStatusToClient(absl::UnavailableError("connection failed"));
-  // XdsClient should report the error to the watcher.
+  // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
@@ -2382,8 +2391,7 @@ TEST_F(XdsClientTest, LongReconnectionAttemptBeforeResourceReceived) {
   // timer should not be running while the channel is disconnected.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
   // Now report channel as having become connected.
-  TriggerConnectivityChange(xds_client_->bootstrap().server(),
-                            absl::OkStatus());
+  ReportReady(xds_client_->bootstrap().server());
   // The ADS stream uses wait_for_ready inside the XdsTransport interface,
   // so when the channel connects, the already-started stream will proceed.
   // Server sends a response.
@@ -2919,8 +2927,8 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{kXdstpResourceName});
   // Now cause a channel failure on the stream to the authority's xDS server.
-  TriggerConnectivityChange(authority_server,
-                            absl::UnavailableError("connection failed"));
+  ReportTransientFailure(authority_server,
+                         absl::UnavailableError("connection failed"));
   // The watcher for the xdstp resource name should see the error.
   auto error = watcher2->WaitForNextError();
   ASSERT_TRUE(error.has_value());

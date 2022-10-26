@@ -51,7 +51,7 @@ class GrpcXdsTransportFactory : public XdsTransportFactory {
 
   OrphanablePtr<XdsTransport> Create(
       const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_change,
+      std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter,
       absl::Status* status) override;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
@@ -66,10 +66,10 @@ class GrpcXdsTransportFactory::GrpcXdsTransport
  public:
   class GrpcStreamingCall;
 
-  GrpcXdsTransport(GrpcXdsTransportFactory* factory,
-                   const XdsBootstrap::XdsServer& server,
-                   std::function<void(absl::Status)> on_connectivity_change,
-                   absl::Status* status);
+  GrpcXdsTransport(
+      GrpcXdsTransportFactory* factory, const XdsBootstrap::XdsServer& server,
+      std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter,
+      absl::Status* status);
   ~GrpcXdsTransport() override;
 
   void Orphan() override;

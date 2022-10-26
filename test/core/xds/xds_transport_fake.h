@@ -119,8 +119,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   using XdsTransportFactory::Ref;  // Make it public.
 
-  void TriggerConnectivityChange(const XdsBootstrap::XdsServer& server,
-                                 absl::Status status);
+  void ReportConnecting(const XdsBootstrap::XdsServer& server);
+  void ReportReady(const XdsBootstrap::XdsServer& server);
+  void ReportTransientFailure(const XdsBootstrap::XdsServer& server,
+                              absl::Status status);
 
   // By default, FakeStreamingCall will automatically invoke
   // EventHandler::OnRequestSent() upon reading a request from the client.
@@ -136,13 +138,13 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   // By default, FakeTransport will immediately report to the XdsClient
   // that it is connected as soon as it is created.  If this is set to
   // false, that behavior will be inhibited, and the test must invoke
-  // TriggerConnectivityChange() to explicitly report the connectivity
-  // state to the XdsClient.
+  // ReportReady() to explicitly report to the XdsClient that
+  // connectivity has been established.
   //
   // This value affects all transports created after this call is
   // complete.  Any transport that already exists prior to this call
   // will not be affected.
-  void SetAutoReportTransportConnected(bool value);
+  void SetAutoReportTransportReady(bool value);
 
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServer& server, const char* method,
@@ -153,9 +155,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
  private:
   class FakeXdsTransport : public XdsTransport {
    public:
-    FakeXdsTransport(std::function<void(absl::Status)> on_connectivity_change,
-                     bool auto_complete_messages_from_client,
-                     bool auto_report_transport_connected);
+    FakeXdsTransport(
+        std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter,
+        bool auto_complete_messages_from_client,
+        bool auto_report_transport_ready);
 
     void Orphan() override;
 
@@ -165,7 +168,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     using XdsTransport::Ref;  // Make it public.
 
-    void TriggerConnectivityChange(absl::Status status);
+    void ReportConnecting();
+    void ReportReady();
+    void ReportTransientFailure(absl::Status status);
 
     RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method,
                                                    absl::Duration timeout);
@@ -173,21 +178,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
    private:
-    class RefCountedOnConnectivityChange
-        : public RefCounted<RefCountedOnConnectivityChange> {
-     public:
-      explicit RefCountedOnConnectivityChange(
-          std::function<void(absl::Status)> on_connectivity_change)
-          : on_connectivity_change_(std::move(on_connectivity_change)) {}
-
-      void Run(absl::Status status) {
-        on_connectivity_change_(std::move(status));
-      }
-
-     private:
-      std::function<void(absl::Status)> on_connectivity_change_;
-    };
-
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
@@ -198,7 +188,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     Mutex mu_;
     CondVar cv_;
-    RefCountedPtr<RefCountedOnConnectivityChange> on_connectivity_change_
+    std::shared_ptr<ConnectivityStateReporter> connectivity_state_reporter_
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
@@ -206,7 +196,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   OrphanablePtr<XdsTransport> Create(
       const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_change,
+      std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter,
       absl::Status* status) override;
 
   RefCountedPtr<FakeXdsTransport> GetTransport(
@@ -216,7 +206,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
-  bool auto_report_transport_connected_ ABSL_GUARDED_BY(&mu_) = true;
+  bool auto_report_transport_ready_ ABSL_GUARDED_BY(&mu_) = true;
 };
 
 }  // namespace grpc_core

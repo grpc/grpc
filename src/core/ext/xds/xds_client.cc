@@ -426,6 +426,81 @@ class XdsClient::ChannelState::LrsCallState
   OrphanablePtr<Reporter> reporter_;
 };
 
+// Handles connectivity state reports from the transport.
+class XdsClient::ChannelState::ConnectivityStateReporter
+    : public XdsTransportFactory::ConnectivityStateReporter {
+ public:
+  explicit ConnectivityStateReporter(
+      WeakRefCountedPtr<ChannelState> channel_state)
+      : channel_state_(std::move(channel_state)) {}
+
+  void ReportConnecting() override {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] xds channel %p for server %s: "
+              "attempting to connect",
+              channel_state_->xds_client(), channel_state_.get(),
+              channel_state_->server_.server_uri().c_str());
+    }
+    {
+      MutexLock lock(&channel_state_->xds_client_->mu_);
+      SetChannelDisconnectedLocked();
+    }
+    channel_state_->xds_client_->work_serializer_.DrainQueue();
+  }
+
+  void ReportReady() override {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] xds channel %p for server %s: connected",
+              channel_state_->xds_client(), channel_state_.get(),
+              channel_state_->server_.server_uri().c_str());
+    }
+    {
+      MutexLock lock(&channel_state_->xds_client_->mu_);
+      channel_state_->channel_connected_ = true;
+      // Notify the ADS call of the connectivity state, so that it can
+      // start timers as needed.
+      if (channel_state_->ads_calld_ != nullptr) {
+        auto* calld = channel_state_->ads_calld_->calld();
+        if (calld != nullptr) calld->ChannelConnected();
+      }
+    }
+    channel_state_->xds_client_->work_serializer_.DrainQueue();
+  }
+
+  void ReportTransientFailure(absl::Status status) override {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] xds channel %p for server %s: "
+              "connectivity failed: %s",
+              channel_state_->xds_client(), channel_state_.get(),
+              channel_state_->server_.server_uri().c_str(),
+              status.ToString().c_str());
+    }
+    {
+      MutexLock lock(&channel_state_->xds_client_->mu_);
+      SetChannelDisconnectedLocked();
+      channel_state_->SetChannelStatusLocked(std::move(status));
+    }
+    channel_state_->xds_client_->work_serializer_.DrainQueue();
+  }
+
+ private:
+  void SetChannelDisconnectedLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
+    channel_state_->channel_connected_ = false;
+    // Notify the ADS call of the disconnection, so that it can stop
+    // timers as needed.
+    if (channel_state_->ads_calld_ != nullptr) {
+      auto* calld = channel_state_->ads_calld_->calld();
+      if (calld != nullptr) calld->ChannelDisconnected();
+    }
+  }
+
+  WeakRefCountedPtr<ChannelState> channel_state_;
+};
+
 //
 // XdsClient::ChannelState
 //
@@ -445,10 +520,8 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
   absl::Status status;
   transport_ = xds_client_->transport_factory_->Create(
       server,
-      [self = WeakRef(DEBUG_LOCATION, "OnConnectivityChange")](
-          absl::Status status) {
-        self->OnConnectivityChange(std::move(status));
-      },
+      std::make_unique<ConnectivityStateReporter>(
+          WeakRef(DEBUG_LOCATION, "OnConnectivityChange")),
       &status);
   GPR_ASSERT(transport_ != nullptr);
   if (!status.ok()) SetChannelStatusLocked(std::move(status));
@@ -530,37 +603,6 @@ void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
       }
     }
   }
-}
-
-void XdsClient::ChannelState::OnConnectivityChange(absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_client %p] xds channel %p for server %s: connectivity status: %s",
-        xds_client(), this, server_.server_uri().c_str(),
-        status.ToString().c_str());
-  }
-  {
-    MutexLock lock(&xds_client_->mu_);
-    channel_connected_ = status.ok();
-    // Notify the ADS call of the connectivity state, so that it can
-    // start or stop timers as needed.
-    if (ads_calld_ != nullptr) {
-      auto* calld = ads_calld_->calld();
-      if (calld != nullptr) {
-        if (status.ok()) {
-          calld->ChannelConnected();
-        } else {
-          calld->ChannelDisconnected();
-        }
-      }
-    }
-    // Set the channel status only if not OK.
-    // (For OK, we wait until we actually get a response on the ADS
-    // stream to clear the status.)
-    if (!status.ok()) SetChannelStatusLocked(std::move(status));
-  }
-  xds_client_->work_serializer_.DrainQueue();
 }
 
 void XdsClient::ChannelState::SetChannelStatusLocked(absl::Status status) {
