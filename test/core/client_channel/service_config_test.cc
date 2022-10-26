@@ -536,7 +536,8 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       "      \"discoveryMechanisms\": [\n"
       "      { \"clusterName\": \"foo\",\n"
       "        \"type\": \"EDS\"\n"
-      "    } ]\n"
+      "      } ],\n"
+      "      \"xdsLbPolicy\": [{\"round_robin\":{}}]\n"
       "    } }\n"
       "  ]\n"
       "}";

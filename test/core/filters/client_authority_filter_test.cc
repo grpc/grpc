@@ -71,7 +71,8 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
+                                    Arena::PooledDeleter(nullptr)),
                nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
@@ -81,8 +82,8 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
         seen = true;
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch);
+              return ServerMetadataHandle(&trailing_metadata_batch,
+                                          Arena::PooledDeleter(nullptr));
             });
       });
   auto result = promise();
@@ -103,7 +104,8 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+      CallArgs{ClientMetadataHandle(&initial_metadata_batch,
+                                    Arena::PooledDeleter(nullptr)),
                nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
@@ -113,8 +115,8 @@ TEST(ClientAuthorityFilterTest,
         seen = true;
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
-              return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch);
+              return ServerMetadataHandle(&trailing_metadata_batch,
+                                          Arena::PooledDeleter(nullptr));
             });
       });
   auto result = promise();
@@ -127,5 +129,10 @@ TEST(ClientAuthorityFilterTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  // TODO(ctiller): promise_based_call currently demands to instantiate an event
+  // engine which needs grpc to be initialized.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
+#include "absl/types/variant.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -53,6 +54,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
@@ -87,11 +89,8 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
   }
-  contents.push_back(absl::StrCat("lb_policy=", lb_policy));
-  if (lb_policy == "RING_HASH") {
-    contents.push_back(absl::StrCat("min_ring_size=", min_ring_size));
-    contents.push_back(absl::StrCat("max_ring_size=", max_ring_size));
-  }
+  contents.push_back(
+      absl::StrCat("lb_policy_config=", Json{lb_policy_config}.Dump()));
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
@@ -103,39 +102,34 @@ std::string XdsClusterResource::ToString() const {
 
 namespace {
 
-absl::optional<CommonTlsContext> UpstreamTlsContextParse(
+CommonTlsContext UpstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket,
     ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".typed_config");
   const auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-  if (typed_config == nullptr) {
-    errors->AddError("field not present");
-    return absl::nullopt;
-  }
-  absl::string_view type_url = absl::StripPrefix(
-      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
-      "type.googleapis.com/");
-  if (type_url !=
+  auto extension = ExtractXdsExtension(context, typed_config, errors);
+  if (!extension.has_value()) return {};
+  if (extension->type !=
       "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext") {
     ValidationErrors::ScopedField field(errors, ".type_url");
-    errors->AddError(
-        absl::StrCat("unrecognized transport socket type: ", type_url));
-    return absl::nullopt;
+    errors->AddError("unsupported transport socket type");
+    return {};
   }
-  ValidationErrors::ScopedField field2(
-      errors,
-      ".value[envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]");
-  absl::string_view serialized_upstream_tls_context =
-      UpbStringToAbsl(google_protobuf_Any_value(typed_config));
+  absl::string_view* serialized_upstream_tls_context =
+      absl::get_if<absl::string_view>(&extension->value);
+  if (serialized_upstream_tls_context == nullptr) {
+    errors->AddError("can't decode UpstreamTlsContext");
+    return {};
+  }
   const auto* upstream_tls_context =
       envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
-          serialized_upstream_tls_context.data(),
-          serialized_upstream_tls_context.size(), context.arena);
+          serialized_upstream_tls_context->data(),
+          serialized_upstream_tls_context->size(), context.arena);
   if (upstream_tls_context == nullptr) {
     errors->AddError("can't decode UpstreamTlsContext");
-    return absl::nullopt;
+    return {};
   }
   ValidationErrors::ScopedField field3(errors, ".common_tls_context");
   const auto* common_tls_context_proto =
@@ -278,7 +272,7 @@ void AggregateClusterParse(const XdsResourceType::DecodeContext& context,
 
 absl::StatusOr<XdsClusterResource> CdsResourceParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/) {
+    const envoy_config_cluster_v3_Cluster* cluster) {
   XdsClusterResource cds_update;
   ValidationErrors errors;
   // Check the cluster discovery type.
@@ -327,39 +321,48 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
   // Check the LB policy.
   if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
       envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
-    cds_update.lb_policy = "ROUND_ROBIN";
+    cds_update.lb_policy_config = {
+        Json::Object{
+            {"xds_wrr_locality_experimental",
+             Json::Object{
+                 {"childPolicy",
+                  Json::Array{
+                      Json::Object{
+                          {"round_robin", Json::Object()},
+                      },
+                  }},
+             }},
+        },
+    };
   } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
              envoy_config_cluster_v3_Cluster_RING_HASH) {
-    cds_update.lb_policy = "RING_HASH";
     // Record ring hash lb config
     auto* ring_hash_config =
         envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
+    uint64_t min_ring_size = 1024;
+    uint64_t max_ring_size = 8388608;
     if (ring_hash_config != nullptr) {
       ValidationErrors::ScopedField field(&errors, ".ring_hash_lb_config");
-      const google_protobuf_UInt64Value* max_ring_size =
+      const google_protobuf_UInt64Value* uint64_value =
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
               ring_hash_config);
-      if (max_ring_size != nullptr) {
+      if (uint64_value != nullptr) {
         ValidationErrors::ScopedField field(&errors, ".maximum_ring_size");
-        cds_update.max_ring_size =
-            google_protobuf_UInt64Value_value(max_ring_size);
-        if (cds_update.max_ring_size > 8388608 ||
-            cds_update.max_ring_size == 0) {
+        max_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        if (max_ring_size > 8388608 || max_ring_size == 0) {
           errors.AddError("must be in the range of 1 to 8388608");
         }
       }
-      const google_protobuf_UInt64Value* min_ring_size =
+      uint64_value =
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
               ring_hash_config);
-      if (min_ring_size != nullptr) {
+      if (uint64_value != nullptr) {
         ValidationErrors::ScopedField field(&errors, ".minimum_ring_size");
-        cds_update.min_ring_size =
-            google_protobuf_UInt64Value_value(min_ring_size);
-        if (cds_update.min_ring_size > 8388608 ||
-            cds_update.min_ring_size == 0) {
+        min_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        if (min_ring_size > 8388608 || min_ring_size == 0) {
           errors.AddError("must be in the range of 1 to 8388608");
         }
-        if (cds_update.min_ring_size > cds_update.max_ring_size) {
+        if (min_ring_size > max_ring_size) {
           errors.AddError("cannot be greater than maximum_ring_size");
         }
       }
@@ -370,6 +373,15 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
         errors.AddError("invalid hash function");
       }
     }
+    cds_update.lb_policy_config = {
+        Json::Object{
+            {"ring_hash_experimental",
+             Json::Object{
+                 {"min_ring_size", min_ring_size},
+                 {"max_ring_size", max_ring_size},
+             }},
+        },
+    };
   } else {
     ValidationErrors::ScopedField field(&errors, ".lb_policy");
     errors.AddError("LB policy is not supported");
@@ -379,11 +391,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
     ValidationErrors::ScopedField field(&errors, ".transport_socket");
-    auto common_tls_context =
+    cds_update.common_tls_context =
         UpstreamTlsContextParse(context, transport_socket, &errors);
-    if (common_tls_context.has_value()) {
-      cds_update.common_tls_context = std::move(*common_tls_context);
-    }
   }
   // Record LRS server name (if any).
   const envoy_config_core_v3_ConfigSource* lrs_server =
@@ -565,7 +574,7 @@ void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
 
 XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_resource, bool is_v2) const {
+    absl::string_view serialized_resource) const {
   DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
@@ -579,7 +588,7 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
   // Validate resource.
   result.name =
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
-  auto cds_resource = CdsResourceParse(context, resource, is_v2);
+  auto cds_resource = CdsResourceParse(context, resource);
   if (!cds_resource.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Cluster %s: %s",
