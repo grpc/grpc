@@ -103,7 +103,6 @@ class Message {
   Message& operator=(const Message&) = delete;
 
   uint32_t flags() const { return flags_; }
-  uint32_t& mutable_flags() { return flags_; }
   SliceBuffer* payload() { return &payload_; }
   const SliceBuffer* payload() const { return &payload_; }
 
