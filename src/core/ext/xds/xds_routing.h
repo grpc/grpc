@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -90,6 +91,7 @@ class XdsRouting {
   // Generates a map of per_filter_configs. \a args is consumed.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
   GeneratePerHTTPFilterConfigs(
+      const XdsHttpFilterRegistry& http_filter_registry,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
       const XdsRouteConfigResource::VirtualHost& vhost,

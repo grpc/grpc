@@ -81,44 +81,7 @@ XdsHttpRouterFilter::GenerateFilterConfigOverride(
 // XdsHttpFilterRegistry
 //
 
-namespace {
-
-using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;
-using FilterRegistryMap = std::map<absl::string_view, XdsHttpFilterImpl*>;
-
-FilterOwnerList* g_filters = nullptr;
-FilterRegistryMap* g_filter_registry = nullptr;
-
-}  // namespace
-
-void XdsHttpFilterRegistry::RegisterFilter(
-    std::unique_ptr<XdsHttpFilterImpl> filter) {
-  GPR_ASSERT(g_filter_registry->emplace(filter->ConfigProtoName(), filter.get())
-                 .second);
-  auto override_proto_name = filter->OverrideConfigProtoName();
-  if (!override_proto_name.empty()) {
-    GPR_ASSERT(
-        g_filter_registry->emplace(override_proto_name, filter.get()).second);
-  }
-  g_filters->push_back(std::move(filter));
-}
-
-const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
-    absl::string_view proto_type_name) {
-  auto it = g_filter_registry->find(proto_type_name);
-  if (it == g_filter_registry->end()) return nullptr;
-  return it->second;
-}
-
-void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) {
-  for (const auto& filter : *g_filters) {
-    filter->PopulateSymtab(symtab);
-  }
-}
-
-void XdsHttpFilterRegistry::Init(bool register_builtins) {
-  g_filters = new FilterOwnerList;
-  g_filter_registry = new FilterRegistryMap;
+XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
   if (register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
     RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
@@ -126,9 +89,28 @@ void XdsHttpFilterRegistry::Init(bool register_builtins) {
   }
 }
 
-void XdsHttpFilterRegistry::Shutdown() {
-  delete g_filter_registry;
-  delete g_filters;
+void XdsHttpFilterRegistry::RegisterFilter(
+    std::unique_ptr<XdsHttpFilterImpl> filter) {
+  GPR_ASSERT(
+      registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+  auto override_proto_name = filter->OverrideConfigProtoName();
+  if (!override_proto_name.empty()) {
+    GPR_ASSERT(registry_map_.emplace(override_proto_name, filter.get()).second);
+  }
+  owning_list_.push_back(std::move(filter));
+}
+
+const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
+    absl::string_view proto_type_name) const {
+  auto it = registry_map_.find(proto_type_name);
+  if (it == registry_map_.end()) return nullptr;
+  return it->second;
+}
+
+void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) const {
+  for (const auto& filter : owning_list_) {
+    filter->PopulateSymtab(symtab);
+  }
 }
 
 }  // namespace grpc_core
