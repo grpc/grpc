@@ -257,6 +257,16 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
   resolver->IPv6QueryDone(error.ok() && response->status == 200);
 }
 
+bool UsingBootstrapWithoutFederation() {
+  auto federation_env = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  if (federation_env.has_value() && *federation_env == "true") {
+    return false;
+  }
+  // federation not enabled
+  return GetEnv("GRPC_XDS_BOOTSTRAP").has_value() ||
+         GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG").has_value();
+}
+
 //
 // GoogleCloud2ProdResolver
 //
@@ -279,8 +289,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       // they may be talking to a completely different xDS server than we
       // want to.
       // TODO(roth): When we implement xDS federation, remove this constraint.
-      GetEnv("GRPC_XDS_BOOTSTRAP").has_value() ||
-      GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG").has_value()) {
+      UsingBootstrapWithoutFederation()) {
     using_dns_ = true;
     child_resolver_ =
         CoreConfiguration::Get().resolver_registry().CreateResolver(
