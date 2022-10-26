@@ -33,7 +33,6 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -1244,8 +1243,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
 }
 
 ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
-    grpc_channel_element* elem, grpc_core::CallArgs call_args,
-    grpc_core::NextPromiseFactory) {
+    grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
   auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
   auto* server = chand->server_.get();
   if (server->ShutdownCalled()) {
@@ -1471,7 +1469,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       }
       break;
     default:
-      GPR_UNREACHABLE_CODE(return);
+      GPR_UNREACHABLE_CODE(return );
   }
   grpc_cq_end_op(cq_new_, rc->tag, absl::OkStatus(), Server::DoneRequestEvent,
                  rc, &rc->completion, true);
