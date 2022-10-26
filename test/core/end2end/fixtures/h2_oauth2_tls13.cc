@@ -97,7 +97,6 @@ static void process_oauth2_failure(void* state, grpc_auth_context* /*ctx*/,
   cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
     const grpc_channel_args* client_args,
     const grpc_channel_args* server_args) {
