@@ -28,31 +28,36 @@ namespace promise_detail {
 namespace testing {
 
 template <typename Arg, typename F>
-PromiseFactory<Arg, F> MakeFactory(F f) {
-  return PromiseFactory<Arg, F>(std::move(f));
+auto MakeOnceFactory(F f) {
+  return OncePromiseFactory<Arg, F>(std::move(f));
+}
+template <typename Arg, typename F>
+auto MakeRepeatedFactory(F f) {
+  return RepeatedPromiseFactory<Arg, F>(std::move(f));
 }
 
 TEST(AdaptorTest, FactoryFromPromise) {
   EXPECT_EQ(
-      MakeFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Once()(),
+      MakeOnceFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Make()(),
       Poll<int>(42));
-  EXPECT_EQ(
-      MakeFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Repeated()(),
-      Poll<int>(42));
-  EXPECT_EQ(MakeFactory<void>(Promise<int>([]() {
+  EXPECT_EQ(MakeRepeatedFactory<void>([]() {
               return Poll<int>(Poll<int>(42));
-            })).Once()(),
+            }).Make()(),
             Poll<int>(42));
-  EXPECT_EQ(MakeFactory<void>(Promise<int>([]() {
+  EXPECT_EQ(MakeOnceFactory<void>(Promise<int>([]() {
               return Poll<int>(Poll<int>(42));
-            })).Repeated()(),
+            })).Make()(),
+            Poll<int>(42));
+  EXPECT_EQ(MakeRepeatedFactory<void>(Promise<int>([]() {
+              return Poll<int>(Poll<int>(42));
+            })).Make()(),
             Poll<int>(42));
 }
 
 TEST(AdaptorTest, FactoryFromBindFrontPromise) {
-  EXPECT_EQ(MakeFactory<void>(
+  EXPECT_EQ(MakeOnceFactory<void>(
                 absl::bind_front([](int i) { return Poll<int>(i); }, 42))
-                .Once()(),
+                .Make()(),
             Poll<int>(42));
 }
 

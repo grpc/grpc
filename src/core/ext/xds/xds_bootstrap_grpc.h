@@ -74,7 +74,6 @@ class GrpcXdsBootstrap : public XdsBootstrap {
    public:
     const std::string& server_uri() const override { return server_uri_; }
 
-    bool ShouldUseV3() const override;
     bool IgnoreResourceDeletion() const override;
 
     bool Equals(const XdsServer& other) const override;

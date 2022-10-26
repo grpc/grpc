@@ -34,10 +34,10 @@ template <typename CallPoll, typename T, typename F>
 typename CallPoll::PollResult ChooseIf(CallPoll call_poll, bool result,
                                        T* if_true, F* if_false) {
   if (result) {
-    auto promise = if_true->Once();
+    auto promise = if_true->Make();
     return call_poll(promise);
   } else {
-    auto promise = if_false->Once();
+    auto promise = if_false->Make();
     return call_poll(promise);
   }
 }
@@ -49,10 +49,10 @@ typename CallPoll::PollResult ChooseIf(CallPoll call_poll,
   if (!result.ok()) {
     return typename CallPoll::PollResult(result.status());
   } else if (*result) {
-    auto promise = if_true->Once();
+    auto promise = if_true->Make();
     return call_poll(promise);
   } else {
-    auto promise = if_false->Once();
+    auto promise = if_false->Make();
     return call_poll(promise);
   }
 }
@@ -60,8 +60,8 @@ typename CallPoll::PollResult ChooseIf(CallPoll call_poll,
 template <typename C, typename T, typename F>
 class If {
  private:
-  using TrueFactory = promise_detail::PromiseFactory<void, T>;
-  using FalseFactory = promise_detail::PromiseFactory<void, F>;
+  using TrueFactory = promise_detail::OncePromiseFactory<void, T>;
+  using FalseFactory = promise_detail::OncePromiseFactory<void, F>;
   using ConditionPromise = PromiseLike<C>;
   using TruePromise = typename TrueFactory::Promise;
   using FalsePromise = typename FalseFactory::Promise;

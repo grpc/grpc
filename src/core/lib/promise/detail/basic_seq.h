@@ -68,7 +68,7 @@ struct SeqStateTypes {
   // Wrap the factory callable in our factory wrapper to deal with common edge
   // cases. We use the 'unwrapped type' from the traits, so for instance, TrySeq
   // can pass back a T from a StatusOr<T>.
-  using Next = promise_detail::PromiseFactory<
+  using Next = promise_detail::OncePromiseFactory<
       typename PromiseResultTraits::UnwrappedType, FNext>;
 };
 
