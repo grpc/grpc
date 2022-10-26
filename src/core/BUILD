@@ -4369,6 +4369,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:uri_parser",
         "//:work_serializer",
+        "//:xds_client",
     ],
 )
 

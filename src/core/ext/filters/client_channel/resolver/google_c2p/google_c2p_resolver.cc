@@ -38,6 +38,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -263,6 +264,11 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
 // GoogleCloud2ProdResolver
 //
 
+bool XdsBootstrapConfigured() {
+  return GetEnv("GRPC_XDS_BOOTSTRAP").has_value() ||
+         GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG").has_value();
+}
+
 GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     : resource_quota_(args.args.GetObjectRef<ResourceQuota>()),
       work_serializer_(std::move(args.work_serializer)),
@@ -276,18 +282,19 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
           .value_or(false);
   const bool running_on_gcp =
       test_only_pretend_running_on_gcp || grpc_alts_is_running_on_gcp();
+  const bool federation_enabled = XdsFederationEnabled();
   if (!running_on_gcp ||
-      // If the client is already using xDS, we can't use it here, because
-      // they may be talking to a completely different xDS server than we
-      // want to.
-      // TODO(roth): When we implement xDS federation, remove this constraint.
-      GetEnv("GRPC_XDS_BOOTSTRAP").has_value() ||
-      GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG").has_value()) {
+      // If the client is already using xDS and federation is not enabled,
+      // we can't use it here, because they may be talking to a completely
+      // different xDS server than we want to.
+      // TODO(roth): When we remove xDS federation env var protection,
+      // remove this constraint.
+      (!federation_enabled && XdsBootstrapConfigured())) {
     using_dns_ = true;
     child_resolver_ =
         CoreConfiguration::Get().resolver_registry().CreateResolver(
-            absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
-            args.pollset_set, work_serializer_, std::move(args.result_handler));
+            absl::StrCat("dns:", name_to_resolve), args.args, args.pollset_set,
+            work_serializer_, std::move(args.result_handler));
     GPR_ASSERT(child_resolver_ != nullptr);
     return;
   }
@@ -300,9 +307,12 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     metadata_server_name_ = std::move(*test_only_metadata_server_override);
   }
   // Create xds resolver.
+  std::string xds_uri =
+      federation_enabled
+          ? absl::StrCat("xds://", kC2PAuthority, "/", name_to_resolve)
+          : absl::StrCat("xds:", name_to_resolve);
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      absl::StrCat("xds://", kC2PAuthority, "/", name_to_resolve).c_str(),
-      args.args, args.pollset_set, work_serializer_,
+      xds_uri, args.args, args.pollset_set, work_serializer_,
       std::move(args.result_handler));
   GPR_ASSERT(child_resolver_ != nullptr);
 }
