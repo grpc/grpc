@@ -473,12 +473,12 @@ static void test_connect(size_t num_connects,
 
 static void pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
                                    int* fd) {
-  struct sockaddr_in address;
+  struct sockaddr_in6 address;
   memset(&address, 0, sizeof(address));
-  address.sin_family = family;
-  address.sin_port = htons(port);
+  address.sin6_family = family;
+  address.sin6_port = htons(port);
 
-  int pre_fd = socket(address.sin_family, SOCK_STREAM, 0);
+  int pre_fd = socket(address.sin6_family, SOCK_STREAM, 0);
   ASSERT_GE(pre_fd, 0);
   ASSERT_EQ(bind(pre_fd, (struct sockaddr*)&address, sizeof(address)), 0);
   ASSERT_EQ(listen(pre_fd, SOMAXCONN), 0);
@@ -491,8 +491,8 @@ static void pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
 static void test_pre_allocated_inet_fd() {
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr =
-      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in6* addr =
+      reinterpret_cast<struct sockaddr_in6*>(resolved_addr.addr);
   grpc_tcp_server* s;
   auto args = grpc_core::CoreConfiguration::Get()
                   .channel_args_preconditioning()
@@ -508,14 +508,14 @@ static void test_pre_allocated_inet_fd() {
   // Pre allocate FD
   int pre_fd;
   int port = grpc_pick_unused_port_or_die();
-  pre_allocate_inet_sock(s, AF_INET, port, &pre_fd);
+  pre_allocate_inet_sock(s, AF_INET6, port, &pre_fd);
 
   // Add port
   int pt;
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
-  addr->sin_family = AF_INET;
-  addr->sin_port = htons(port);
+  addr->sin6_family = AF_INET6;
+  addr->sin6_port = htons(port);
   ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &pt), absl::OkStatus());
   ASSERT_GE(grpc_tcp_server_port_fd_count(s, 0), 1);
   ASSERT_EQ(grpc_tcp_server_port_fd(s, 0, 0), pre_fd);
