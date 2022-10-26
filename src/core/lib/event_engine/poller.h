@@ -40,16 +40,10 @@ class Poller {
   // polling.
   //
   // Returns:
-  //  * Poller::WorkResult::kKicked if it was Kicked. A poller that was Kicked
-  //  may still process some events and if so, it may have run the
-  //  schedule_poll_again callback function synchronously. When the poller
-  //  returns Poller::WorkResult::kKicked tts upto the user to determine
-  //  if the schedule_poll_again callback has run or not.
-  //  * Poller::WorkResult::kDeadlineExceeded if timeout occurred. The
-  //  schedule_poll_again callback is not run in this case.
-  //  * Poller::WorkResult::kOk, otherwise indicating that the
-  //  schedule_poll_again callback function was run synchonously before some
-  //  events were processed.
+  //  * Poller::WorkResult::kKicked if it was Kicked.
+  //  * Poller::WorkResult::kDeadlineExceeded if timeout occurred
+  //  * Poller::WorkResult::kOk, otherwise indicating that the callback function
+  //  was run synchonously before some events were processed.
   virtual WorkResult Work(EventEngine::Duration timeout,
                           absl::FunctionRef<void()> schedule_poll_again) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.

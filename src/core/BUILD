@@ -362,6 +362,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "map_pipe",
+    external_deps = ["absl/status"],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/map_pipe.h",
+    ],
+    deps = [
+        "for_each",
+        "map",
+        "pipe",
+        "promise_factory",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "call_push_pull",
     hdrs = ["lib/promise/call_push_pull.h"],
     external_deps = ["absl/types:variant"],
@@ -733,20 +749,26 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
+    srcs = [
+        "lib/promise/pipe.cc",
+    ],
+    hdrs = [
+        "lib/promise/pipe.h",
+    ],
     external_deps = [
+        "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
-    public_hdrs = [
-        "lib/promise/pipe.h",
-    ],
     deps = [
+        "activity",
         "arena",
         "context",
         "intra_activity_waiter",
         "poll",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1462,6 +1484,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/synchronization",
     ],
     deps = [
         "event_engine_poller",
@@ -1495,6 +1518,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/synchronization",
     ],
     deps = [
         "common_event_engine_closures",
@@ -1585,7 +1609,6 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
-        "event_engine_common",
         "experiments",
         "iomgr_port",
         "load_file",
@@ -1664,12 +1687,8 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/posix_engine/posix_engine.h"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/cleanup",
-        "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
-        "absl/hash",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -1683,11 +1702,8 @@ grpc_cc_library(
         "experiments",
         "init_internally",
         "iomgr_port",
-        "posix_event_engine_closure",
-        "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_default",
-        "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "//:event_engine_base_hdrs",

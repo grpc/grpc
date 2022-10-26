@@ -48,7 +48,7 @@ class ForEach {
       typename PollTraits<decltype(std::declval<ReaderNext>()())>::Type;
   using ReaderResultValue = typename ReaderResult::value_type;
   using ActionFactory =
-      promise_detail::PromiseFactory<ReaderResultValue, Action>;
+      promise_detail::RepeatedPromiseFactory<ReaderResultValue, Action>;
   using ActionPromise = typename ActionFactory::Promise;
 
  public:
@@ -90,7 +90,7 @@ class ForEach {
       auto r = reader_next();
       if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         if (p->has_value()) {
-          auto action = self->action_factory_.Repeated(std::move(**p));
+          auto action = self->action_factory_.Make(std::move(**p));
           return (*this)(self->state_.template emplace<InAction>(
               std::move(action), std::move(*p)));
         } else {
