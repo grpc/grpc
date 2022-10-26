@@ -1643,7 +1643,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
-  resource_type->InitUpbSymtab(symtab_.ptr());
+  resource_type->InitUpbSymtab(this, symtab_.ptr());
 }
 
 const XdsResourceType* XdsClient::GetResourceTypeLocked(
