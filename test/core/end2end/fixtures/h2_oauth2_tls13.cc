@@ -30,14 +30,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
+#include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -47,11 +46,6 @@
 static const char oauth2_md[] = "Bearer aaslkfjs424535asdf";
 static const char* client_identity_property_name = "smurf_name";
 static const char* client_identity = "Brainy Smurf";
-
-struct fullstack_secure_fixture_data {
-  std::string localaddr;
-  grpc_tls_version tls_version;
-};
 
 static const grpc_metadata* find_metadata(const grpc_metadata* md,
                                           size_t md_count, const char* key,
@@ -103,57 +97,12 @@ static void process_oauth2_failure(void* state, grpc_auth_context* /*ctx*/,
   cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/, grpc_tls_version tls_version) {
-  grpc_end2end_test_fixture f;
-  int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
-  memset(&f, 0, sizeof(f));
-  ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-  ffd->tls_version = tls_version;
-  f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(nullptr);
-  return f;
-}
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
     const grpc_channel_args* client_args,
     const grpc_channel_args* server_args) {
   return chttp2_create_fixture_secure_fullstack(client_args, server_args,
                                                 grpc_tls_version::TLS1_3);
-}
-
-static void chttp2_init_client_secure_fullstack(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args,
-    grpc_channel_credentials* creds) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
-  GPR_ASSERT(f->client != nullptr);
-  grpc_channel_credentials_release(creds);
-}
-
-static void chttp2_init_server_secure_fullstack(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args,
-    grpc_server_credentials* server_creds) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  if (f->server) {
-    grpc_server_destroy(f->server);
-  }
-  f->server = grpc_server_create(server_args, nullptr);
-  grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
-                                        server_creds));
-  grpc_server_credentials_release(server_creds);
-  grpc_server_start(f->server);
-}
-
-void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  delete ffd;
 }
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
@@ -191,18 +140,6 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_channel_credentials_release(ssl_creds);
   grpc_call_credentials_release(oauth2_creds);
   grpc_slice_unref(ca_slice);
-}
-
-static int fail_server_auth_check(const grpc_channel_args* server_args) {
-  size_t i;
-  if (server_args == nullptr) return 0;
-  for (i = 0; i < server_args->num_args; i++) {
-    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
-        0) {
-      return 1;
-    }
-  }
-  return 0;
 }
 
 static void processor_destroy(void* state) {

@@ -34,11 +34,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/port.h"
 #include "test/core/util/tls_utils.h"
 
 // For normal TLS connections.
@@ -70,6 +72,7 @@ struct fullstack_secure_fixture_data {
   grpc_tls_certificate_verifier* client_verifier = nullptr;
   grpc_tls_certificate_verifier* server_verifier = nullptr;
   bool check_call_host = true;
+  bool server_credential_reloaded = false;
 };
 
 inline void SetTlsVersion(fullstack_secure_fixture_data* ffd,
@@ -170,6 +173,20 @@ inline void SetCertificateVerifier(
   }
 }
 
+inline grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/, grpc_tls_version tls_version) {
+  grpc_end2end_test_fixture f;
+  int port = grpc_pick_unused_port_or_die();
+  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
+  memset(&f, 0, sizeof(f));
+  ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
+  ffd->tls_version = tls_version;
+  f.fixture_data = ffd;
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  return f;
+}
+
 inline void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,
                                  size_t /*md_count*/,
@@ -197,6 +214,7 @@ inline void chttp2_init_server_secure_fullstack(
   if (f->server) {
     grpc_server_destroy(f->server);
   }
+  ffd->server_credential_reloaded = false;
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
