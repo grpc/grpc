@@ -51,7 +51,7 @@ _SETTINGS = {
     'GRPC_ALLOW_TRUE_BINARY_METADATA':
         Setting(0xfe03, 0, 0, 1, clamp_invalid_value),
     'GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE':
-        Setting(0xfe04, 0, 16384, 16777215, clamp_invalid_value),
+        Setting(0xfe04, 0, 16384, 0x7fffffff, clamp_invalid_value),
 }
 
 H = open('src/core/ext/transport/chttp2/transport/http2_settings.h', 'w')

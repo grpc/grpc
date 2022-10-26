@@ -367,18 +367,18 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
           &action, &FlowControlAction::set_send_max_frame_size_update);
     }
 
-    if (IsPeerStateBasedFramingEnabled() && IsTcpFrameSizeTuningEnabled()) {
-      // Advertise PREFERRED_RECEIVE_FRAME_SIZE to peer. By advertising
-      // PREFERRED_RECEIVE_FRAME_SIZE to the peer, we are informing the peer of
-      // our ability to adjust sending frame length. The prefered rx frame size
-      // is determined as: Clamp(target_frame_size_ * 2, 16384, 16777215). In
-      // the future, this maybe updated to a different function of the memory
-      // pressure.
+    if (IsTcpFrameSizeTuningEnabled()) {
+      // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
+      // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
+      // peer that we have tcp frame size tuning enabled and we inform it of our
+      // prefered rx frame sizes. The prefered rx frame size is determined as:
+      // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
+      // maybe updated to a different function of the memory pressure.
       UpdateSetting(
           GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
           &target_preferred_rx_crypto_frame_size_,
-          static_cast<int32_t>(
-              Clamp(static_cast<int>(target_frame_size_ * 2), 16384, 16777215)),
+          Clamp(static_cast<unsigned int>(target_frame_size_ * 2), 16384u,
+                0x7ffffffu),
           &action,
           &FlowControlAction::set_preferred_rx_crypto_frame_size_update);
     }

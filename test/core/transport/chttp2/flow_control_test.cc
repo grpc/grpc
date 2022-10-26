@@ -91,7 +91,7 @@ TEST(FlowControl, NoOp) {
   EXPECT_EQ(tfc.acked_init_window(), 65535);
   EXPECT_EQ(tfc.remote_window(), 65535);
   EXPECT_EQ(tfc.target_frame_size(), 16384);
-  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(), 16384);
+  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(), INT_MAX);
   EXPECT_EQ(sfc.remote_window_delta(), 0);
   EXPECT_EQ(sfc.min_progress_size(), 0);
   EXPECT_EQ(sfc.announced_window_delta(), 0);
@@ -101,7 +101,7 @@ TEST(FlowControl, SendData) {
   ExecCtx exec_ctx;
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
-  int prev_preferred_rx_frame_size =
+  int64_t prev_preferred_rx_frame_size =
       tfc.target_preferred_rx_crypto_frame_size();
   {
     StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
@@ -144,13 +144,13 @@ TEST(FlowControl, PeriodicUpdate) {
     AdvanceClockMillis(10);
     next_ping = bdp->CompletePing();
     FlowControlAction action = tfc.PeriodicUpdate();
-    if (IsTcpFrameSizeTuningEnabled() && IsPeerStateBasedFramingEnabled()) {
+    if (IsTcpFrameSizeTuningEnabled()) {
       if (action.send_max_frame_size_update() !=
           FlowControlAction::Urgency::NO_ACTION_NEEDED) {
         prev_max_frame_size = action.max_frame_size();
       }
       EXPECT_EQ(action.preferred_rx_crypto_frame_size(),
-                Clamp(2 * prev_max_frame_size, 16384u, 16777215u));
+                Clamp(2 * prev_max_frame_size, 16384u, 0x7fffffffu));
       EXPECT_TRUE(action.preferred_rx_crypto_frame_size_update() !=
                   FlowControlAction::Urgency::NO_ACTION_NEEDED);
     } else {
@@ -166,7 +166,7 @@ TEST(FlowControl, RecvData) {
   TransportFlowControl tfc("test", true, g_memory_owner);
   StreamFlowControl sfc(&tfc);
   StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
-  int prev_preferred_rx_frame_size =
+  int64_t prev_preferred_rx_frame_size =
       tfc.target_preferred_rx_crypto_frame_size();
   EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(1024));
   sfc_upd.MakeAction();
