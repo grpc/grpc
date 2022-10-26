@@ -2244,7 +2244,10 @@ grpc_cc_library(
     name = "ref_counted_ptr",
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/ref_counted_ptr.h"],
-    visibility = ["@grpc:ref_counted_ptr"],
+    visibility = [
+        "@grpc:ref_counted_ptr",
+        "@grpc:xds_client_core",
+    ],
     deps = [
         "debug_location",
         "gpr_platform",
