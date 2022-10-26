@@ -218,14 +218,29 @@ class TryConcurrently {
   auto Pull(P p);
 
  private:
+  // Bitmask for done_bits_ specifying which promises must be completed prior to
+  // returning ok.
   constexpr uint8_t NecessaryBits() {
     return 1 | (PreMain::NecessaryBits() << 1) |
            (PostMain::NecessaryBits() << (1 + PreMain::Size()));
   }
+  // Bitmask for done_bits_ specifying what all of the promises being complete
+  // would look like.
   constexpr uint8_t AllBits() {
     return (1 << (1 + PreMain::Size() + PostMain::Size())) - 1;
   }
+  // Bitmask of done_bits_ specifying which bits correspond to helper promises -
+  // that is all promises that are not the main one.
   constexpr uint8_t HelperBits() { return AllBits() ^ 1; }
+
+  // done_bits signifies which operations have completed.
+  // Bit 0 is set if main_ has completed.
+  // The next higher bits correspond one per pre-main promise.
+  // The next higher bits correspond one per post-main promise.
+  // So, going from most significant bit to least significant:
+  // +--------------+-------------+--------+
+  // |post_main bits|pre_main bits|main bit|
+  // +--------------+-------------+--------+
   uint8_t done_bits_;
   PreMain pre_main_;
   union {
