@@ -116,27 +116,24 @@ class XdsClientTest : public ::testing::Test {
     class FakeXdsServer : public XdsServer {
      public:
       const std::string& server_uri() const override { return server_uri_; }
-      bool ShouldUseV3() const override { return use_v3_; }
       bool IgnoreResourceDeletion() const override {
         return ignore_resource_deletion_;
       }
       bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
-        return server_uri_ == o.server_uri_ && use_v3_ == o.use_v3_ &&
+        return server_uri_ == o.server_uri_ &&
                ignore_resource_deletion_ == o.ignore_resource_deletion_;
       }
 
       void set_server_uri(std::string server_uri) {
         server_uri_ = std::move(server_uri);
       }
-      void set_use_v3(bool use_v3) { use_v3_ = use_v3; }
       void set_ignore_resource_deletion(bool ignore_resource_deletion) {
         ignore_resource_deletion_ = ignore_resource_deletion;
       }
 
      private:
       std::string server_uri_ = "default_xds_server";
-      bool use_v3_ = true;
       bool ignore_resource_deletion_ = false;
     };
 
@@ -158,10 +155,6 @@ class XdsClientTest : public ::testing::Test {
      public:
       Builder() { node_.emplace(); }
 
-      Builder& set_use_v2() {
-        server_.set_use_v3(false);
-        return *this;
-      }
       Builder& set_node_id(std::string id) {
         if (!node_.has_value()) node_.emplace();
         node_->set_id(std::move(id));
@@ -220,8 +213,7 @@ class XdsClientTest : public ::testing::Test {
   // The specified ResourceStruct must provide the following:
   // - a static JsonLoader() method, as described in json_object_loader.h
   // - an AsJsonString() method that returns the object in JSON string form
-  // - a static TypeUrl() method that returns the V3 resource type
-  // - a static TypeUrlV2() method that returns the V2 resource type
+  // - a static TypeUrl() method that returns the resource type
   template <typename ResourceStruct>
   class XdsTestResourceType
       : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
@@ -340,12 +332,9 @@ class XdsClientTest : public ::testing::Test {
     absl::string_view type_url() const override {
       return ResourceStruct::TypeUrl();
     }
-    absl::string_view v2_type_url() const override {
-      return ResourceStruct::TypeUrlV2();
-    }
     XdsResourceType::DecodeResult Decode(
         const XdsResourceType::DecodeContext& /*context*/,
-        absl::string_view serialized_resource, bool /*is_v2*/) const override {
+        absl::string_view serialized_resource) const override {
       auto json = Json::Parse(serialized_resource);
       XdsResourceType::DecodeResult result;
       if (!json.ok()) {
@@ -403,7 +392,6 @@ class XdsClientTest : public ::testing::Test {
     }
 
     static absl::string_view TypeUrl() { return "test.v3.foo"; }
-    static absl::string_view TypeUrlV2() { return "test.v2.foo"; }
   };
   using XdsFooResourceType = XdsTestResourceType<XdsFooResource>;
 
@@ -434,7 +422,6 @@ class XdsClientTest : public ::testing::Test {
     }
 
     static absl::string_view TypeUrl() { return "test.v3.bar"; }
-    static absl::string_view TypeUrlV2() { return "test.v2.bar"; }
   };
   using XdsBarResourceType = XdsTestResourceType<XdsBarResource>;
 
@@ -626,7 +613,6 @@ class XdsClientTest : public ::testing::Test {
   // Helper function to check the contents of the node message in a
   // request against the client's node info.
   void CheckRequestNode(const DiscoveryRequest& request,
-                        bool check_build_version = false,
                         SourceLocation location = SourceLocation()) {
     // These fields come from the bootstrap config.
     EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id())
@@ -669,28 +655,6 @@ class XdsClientTest : public ::testing::Test {
     EXPECT_EQ(request.node().user_agent_version(),
               absl::StrCat("C-core ", grpc_version_string()))
         << location.file() << ":" << location.line();
-    if (check_build_version) {
-      auto build_version = GetBuildVersion(request.node());
-      ASSERT_TRUE(build_version.has_value())
-          << location.file() << ":" << location.line();
-      EXPECT_EQ(*build_version,
-                absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
-                             grpc_version_string()))
-          << location.file() << ":" << location.line();
-    }
-  }
-
-  // Helper function to find the "build_version" field, which was
-  // removed in v3, but which we still populate in v2.
-  static absl::optional<std::string> GetBuildVersion(
-      const envoy::config::core::v3::Node& node) {
-    const auto& unknown_field_set =
-        node.GetReflection()->GetUnknownFields(node);
-    for (int i = 0; i < unknown_field_set.field_count(); ++i) {
-      const auto& unknown_field = unknown_field_set.field(i);
-      if (unknown_field.number() == 5) return unknown_field.length_delimited();
-    }
-    return absl::nullopt;
   }
 
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
@@ -1453,6 +1417,118 @@ TEST_F(XdsClientTest, ResourceDoesNotExist) {
   }
 }
 
+// In https://github.com/grpc/grpc/issues/29583, we ran into a case
+// where we wound up starting a timer after we had already received the
+// resource, thus incorrectly reporting the resource as not existing.
+// This happened when unsubscribing and then resubscribing to the same
+// resource a send_message op was already in flight and then receiving an
+// update containing that resource.
+TEST_F(XdsClientTest,
+       ResourceDoesNotExistUnsubscribeAndResubscribeWhileSendMessagePending) {
+  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
+  // Tell transport to let us manually trigger completion of the
+  // send_message ops to XdsClient.
+  transport_factory_->SetAutoCompleteMessagesFromClient(false);
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  stream->CompleteSendMessageFromClient();
+  // Server sends a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watchers.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  stream->CompleteSendMessageFromClient();
+  // Start a watch for a second resource.
+  auto watcher2 = StartFooWatch("foo2");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher2->HasEvent());
+  // XdsClient sends a request to subscribe to the new resource.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // NOTE: We do NOT yet tell the XdsClient that the send_message op is
+  // complete.
+  // Unsubscribe from foo1 and then re-subscribe to it.
+  CancelFooWatch(watcher.get(), "foo1");
+  watcher = StartFooWatch("foo1");
+  // Now send a response from the server containing both foo1 and foo2.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("B")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .AddFooResource(XdsFooResource("foo2", 7))
+          .Serialize());
+  // The watcher for foo1 will receive an update even if the resource
+  // has not changed, since the previous value was removed from the
+  // cache when we unsubscribed.
+  resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // For foo2, the watcher should receive notification for the new resource.
+  resource = watcher2->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 7);
+  // Now we finally tell XdsClient that its previous send_message op is
+  // complete.
+  stream->CompleteSendMessageFromClient();
+  // XdsClient should send an ACK with the updated subscription list
+  // (which happens to be identical to the old list), and it should not
+  // restart the does-not-exist timer.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  stream->CompleteSendMessageFromClient();
+  // Make sure the watcher for foo1 does not see a does-not-exist event.
+  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(5)));
+  // Cancel watches.
+  CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
+  CancelFooWatch(watcher2.get(), "foo2");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = WaitForRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"B",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
 TEST_F(XdsClientTest, StreamClosedByServer) {
   InitXdsClient();
   // Start a watch for "foo1".
@@ -1868,57 +1944,6 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   if (request.has_value()) {
     CheckRequest(*request, XdsBarResourceType::Get()->type_url(),
                  /*version_info=*/"2", /*response_nonce=*/"B",
-                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
-  }
-}
-
-TEST_F(XdsClientTest, BasicWatchV2) {
-  InitXdsClient(FakeXdsBootstrap::Builder().set_use_v2());
-  // Start a watch for "foo1".
-  auto watcher = StartFooWatch("foo1");
-  // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->HasEvent());
-  // XdsClient should have created an ADS stream.
-  auto stream = transport_factory_->WaitForStream(
-      xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsV2Method,
-      absl::Seconds(5) * grpc_test_slowdown_factor());
-  ASSERT_TRUE(stream != nullptr);
-  // XdsClient should have sent a subscription request on the ADS stream.
-  auto request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->v2_type_url(),
-               /*version_info=*/"", /*response_nonce=*/"",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1"});
-  // Node Should be present on the first request.
-  CheckRequestNode(*request, /*check_build_version=*/true);
-  // Send a response.
-  stream->SendMessageToClient(
-      ResponseBuilder(XdsFooResourceType::Get()->v2_type_url())
-          .set_version_info("1")
-          .set_nonce("A")
-          .AddFooResource(XdsFooResource("foo1", 6))
-          .Serialize());
-  // XdsClient should have delivered the response to the watcher.
-  auto resource = watcher->WaitForNextResource();
-  ASSERT_TRUE(resource.has_value());
-  EXPECT_EQ(resource->name, "foo1");
-  EXPECT_EQ(resource->value, 6);
-  // XdsClient should have sent an ACK message to the xDS server.
-  request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->v2_type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1"});
-  // Cancel watch.
-  CancelFooWatch(watcher.get(), "foo1");
-  // The XdsClient may or may not send an unsubscription message
-  // before it closes the transport, depending on callback timing.
-  request = WaitForRequest(stream.get());
-  if (request.has_value()) {
-    CheckRequest(*request, XdsFooResourceType::Get()->v2_type_url(),
-                 /*version_info=*/"1", /*response_nonce=*/"A",
                  /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   }
 }

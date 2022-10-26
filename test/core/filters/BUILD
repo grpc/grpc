@@ -42,7 +42,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//:grpc_client_authority_filter",
+        "//src/core:grpc_client_authority_filter",
         "//test/core/promise:test_context",
     ],
 )

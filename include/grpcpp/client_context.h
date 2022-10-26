@@ -386,6 +386,9 @@ class ClientContext {
   /// Note that TryCancel() does not change any of the tags that are pending
   /// on the completion queue. All pending tags will still be delivered
   /// (though their ok result may reflect the effect of cancellation).
+  ///
+  /// This method is thread-safe, and can be called multiple times from any
+  /// thread.
   void TryCancel();
 
   /// Global Callbacks
