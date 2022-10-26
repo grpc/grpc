@@ -2272,10 +2272,12 @@ src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
+src/core/lib/promise/for_each.h \
 src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
+src/core/lib/promise/map_pipe.h \
 src/core/lib/promise/pipe.cc \
 src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
