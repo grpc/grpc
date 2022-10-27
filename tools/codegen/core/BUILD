@@ -24,5 +24,5 @@ grpc_cc_binary(
         "absl/types:variant",
         "libcrypto",
     ],
-    deps = ["//:huffsyms"],
+    deps = ["//src/core:huffsyms"],
 )

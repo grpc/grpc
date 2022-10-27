@@ -32,12 +32,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
-
-// Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
-  "grpc.parse_fault_injection_method_config"
 
 namespace grpc_core {
 

@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -96,17 +97,13 @@ class XdsClusterResourceType
   absl::string_view type_url() const override {
     return "envoy.config.cluster.v3.Cluster";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.Cluster";
-  }
 
   DecodeResult Decode(const XdsResourceType::DecodeContext& context,
-                      absl::string_view serialized_resource,
-                      bool is_v2) const override;
+                      absl::string_view serialized_resource) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
-  void InitUpbSymtab(upb_DefPool* symtab) const override {
+  void InitUpbSymtab(XdsClient*, upb_DefPool* symtab) const override {
     envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
     envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
     envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(

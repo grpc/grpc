@@ -73,11 +73,6 @@ class XdsTestType {
     return *this;
   }
 
-  XdsTestType& set_use_v2() {
-    use_v2_ = true;
-    return *this;
-  }
-
   XdsTestType& set_use_xds_credentials() {
     use_xds_credentials_ = true;
     return *this;
@@ -105,7 +100,6 @@ class XdsTestType {
 
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
-  bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
   bool use_csds_streaming() const { return use_csds_streaming_; }
   HttpFilterConfigLocation filter_config_setup() const {
@@ -117,7 +111,7 @@ class XdsTestType {
   }
 
   std::string AsString() const {
-    std::string retval = use_v2_ ? "V2" : "V3";
+    std::string retval = "V3";
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     if (use_xds_credentials_) retval += "XdsCreds";
@@ -146,7 +140,6 @@ class XdsTestType {
  private:
   bool enable_load_reporting_ = false;
   bool enable_rds_testing_ = false;
-  bool use_v2_ = false;
   bool use_xds_credentials_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
@@ -215,7 +208,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
    public:
     // A status notifier for xDS-enabled servers.
     class XdsServingStatusNotifier
-        : public grpc::experimental::XdsServerServingStatusNotifierInterface {
+        : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
@@ -397,10 +390,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   class BootstrapBuilder {
    public:
     BootstrapBuilder() {}
-    BootstrapBuilder& SetV2() {
-      v2_ = true;
-      return *this;
-    }
     BootstrapBuilder& SetIgnoreResourceDeletion() {
       ignore_resource_deletion_ = true;
       return *this;
@@ -452,7 +441,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::string MakeCertificateProviderText();
     std::string MakeAuthorityText();
 
-    bool v2_ = false;
     bool ignore_resource_deletion_ = false;
     std::string top_server_;
     std::string client_default_listener_resource_name_template_;

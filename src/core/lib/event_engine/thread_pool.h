@@ -44,9 +44,12 @@ namespace experimental {
 class ThreadPool final : public Forkable, public Executor {
  public:
   ThreadPool();
-  // Ensures the thread pool is empty before destroying it.
+  // Asserts Quiesce was called.
   ~ThreadPool() override;
 
+  void Quiesce();
+
+  // Run must not be called after Quiesce completes
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
 
@@ -125,6 +128,7 @@ class ThreadPool final : public Forkable, public Executor {
   const unsigned reserve_threads_ =
       grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
   const StatePtr state_ = std::make_shared<State>(reserve_threads_);
+  std::atomic<bool> quiesced_{false};
 };
 
 }  // namespace experimental
