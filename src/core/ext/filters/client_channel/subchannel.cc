@@ -43,18 +43,18 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -81,6 +81,8 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -160,7 +162,7 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
   if (GPR_UNLIKELY(!error->ok())) {
-    gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
+    gpr_log(GPR_ERROR, "error: %s", StatusToString(*error).c_str());
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
@@ -624,7 +626,7 @@ Subchannel::Subchannel(SubchannelKey key,
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+      event_engine_(args_.GetObjectRef<EventEngine>()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a
@@ -634,7 +636,7 @@ Subchannel::Subchannel(SubchannelKey key,
   // triggering segmentation faults. To prevent this issue, we call a grpc_init
   // here and a grpc_shutdown in the subchannel destructor.
   InitInternally();
-  GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
+  global_stats().IncrementClientSubchannelsCreated();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
@@ -761,7 +763,7 @@ void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      engine_->Cancel(retry_timer_handle_)) {
+      event_engine_->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
     next_attempt_time_ = Timestamp::Now();
@@ -906,11 +908,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
-            this, key_.ToString().c_str(), grpc_error_std_string(error).c_str(),
+            this, key_.ToString().c_str(), StatusToString(error).c_str(),
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    retry_timer_handle_ = engine_->RunAfter(
+    retry_timer_handle_ = event_engine_->RunAfter(
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
@@ -931,9 +933,9 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL);
-  builder.SetChannelArgs(connecting_result_.channel_args)
-      .SetTransport(connecting_result_.transport);
+  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
+                                  connecting_result_.channel_args);
+  builder.SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
@@ -943,7 +945,7 @@ bool Subchannel::PublishTransportLocked() {
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR,
             "subchannel %p %s: error initializing subchannel stack: %s", this,
-            key_.ToString().c_str(), grpc_error_std_string(error).c_str());
+            key_.ToString().c_str(), StatusToString(error).c_str());
     return false;
   }
   RefCountedPtr<channelz::SocketNode> socket =

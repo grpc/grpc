@@ -150,8 +150,7 @@ static void test_addr_init_str(test_addr* addr) {
 static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
                        grpc_pollset* /*pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(tcp);
 
   on_connect_result temp_result;
@@ -302,7 +301,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   if (g_nconnects != nconnects_before + 1) {
     gpr_mu_unlock(g_mu);
     close(clifd);
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Didn't connect");
+    return GRPC_ERROR_CREATE("Didn't connect");
   }
   close(clifd);
   *result = g_result;
@@ -418,7 +417,7 @@ static void test_connect(size_t num_connects,
           continue;
         }
         gpr_log(GPR_ERROR, "Failed to connect to %s: %s", dst.str,
-                grpc_error_std_string(err).c_str());
+                grpc_core::StatusToString(err).c_str());
         ASSERT_TRUE(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
       }

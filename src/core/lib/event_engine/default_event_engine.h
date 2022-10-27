@@ -21,6 +21,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/context.h"
 
 namespace grpc_core {
@@ -37,8 +38,10 @@ namespace experimental {
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
-/// Reset the default event engine
-void ResetDefaultEventEngine();
+/// On ingress, ensure that an EventEngine exists in channel args via
+/// preconditioning.
+void RegisterEventEngineChannelArgPreconditioning(
+    grpc_core::CoreConfiguration::Builder* builder);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

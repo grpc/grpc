@@ -28,7 +28,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:grpc_rbac_filter",
+        "//src/core:grpc_rbac_filter",
         "//test/core/util:grpc_test_util",
     ],
 )

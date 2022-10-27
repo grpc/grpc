@@ -26,6 +26,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -35,6 +36,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -155,6 +157,10 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
       return parent_->channel_control_helper()->GetAuthority();
     }
 
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
+    }
+
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
@@ -273,6 +279,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       return parent_->channel_control_helper()->GetAuthority();
     }
 
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
+    }
+
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
@@ -382,6 +392,10 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
     absl::string_view GetAuthority() override {
       return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
     }
 
     void AddTraceEvent(TraceSeverity severity,
@@ -499,6 +513,10 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
       return parent_->channel_control_helper()->GetAuthority();
     }
 
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
+    }
+
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
@@ -528,8 +546,7 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
     if (!error_list.empty()) {
       grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "errors parsing fixed_address_lb config", &error_list);
-      absl::Status status =
-          absl::InvalidArgumentError(grpc_error_std_string(error));
+      absl::Status status = absl::InvalidArgumentError(StatusToString(error));
       return status;
     }
     return MakeRefCounted<FixedAddressConfig>(std::move(address));
@@ -615,6 +632,10 @@ class OobBackendMetricTestLoadBalancingPolicy
 
     absl::string_view GetAuthority() override {
       return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
     }
 
     void AddTraceEvent(TraceSeverity severity,

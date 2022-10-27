@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -109,9 +110,9 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     ChannelStackBuilder* builder) {
   auto channel_args = builder->channel_args();
   if (builder->channel_stack_type() == GRPC_SERVER_CHANNEL) {
-    GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
+    global_stats().IncrementServerChannelsCreated();
   } else {
-    GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
+    global_stats().IncrementClientChannelsCreated();
   }
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder->Build();
   if (!r.ok()) {
@@ -169,44 +170,12 @@ void channelz_node_destroy(void* p) {
 int channelz_node_cmp(void* p1, void* p2) { return QsortCompare(p1, p2); }
 const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
     channelz_node_copy, channelz_node_destroy, channelz_node_cmp};
-
-void CreateChannelzNode(ChannelStackBuilder* builder) {
-  auto args = builder->channel_args();
-  // Check whether channelz is enabled.
-  const bool channelz_enabled = args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
-                                    .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT);
-  if (!channelz_enabled) return;
-  // Get parameters needed to create the channelz node.
-  const size_t channel_tracer_max_memory = std::max(
-      0, args.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
-             .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
-  const bool is_internal_channel =
-      args.GetBool(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL).value_or(false);
-  // Create the channelz node.
-  std::string target(builder->target());
-  RefCountedPtr<channelz::ChannelNode> channelz_node =
-      MakeRefCounted<channelz::ChannelNode>(
-          target.c_str(), channel_tracer_max_memory, is_internal_channel);
-  channelz_node->AddTraceEvent(
-      channelz::ChannelTrace::Severity::Info,
-      grpc_slice_from_static_string("Channel created"));
-  // Add channelz node to channel args.
-  // We remove the is_internal_channel arg, since we no longer need it.
-  builder->SetChannelArgs(
-      args.Remove(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL)
-          .Set(GRPC_ARG_CHANNELZ_CHANNEL_NODE,
-               ChannelArgs::Pointer(channelz_node.release(),
-                                    &channelz_node_arg_vtable)));
-}
-
 }  // namespace
 
 absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
     const char* target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type,
     grpc_transport* optional_transport) {
-  ChannelStackBuilderImpl builder(
-      grpc_channel_stack_type_string(channel_stack_type), channel_stack_type);
   if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
     auto ssl_override = args.GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (ssl_override.has_value()) {
@@ -221,15 +190,42 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
       args = channel_args_mutator(target, args, channel_stack_type);
     }
   }
-  builder.SetChannelArgs(args).SetTarget(target).SetTransport(
-      optional_transport);
-  if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
-    return nullptr;
-  }
   // We only need to do this for clients here. For servers, this will be
   // done in src/core/lib/surface/server.cc.
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
-    CreateChannelzNode(&builder);
+    // Check whether channelz is enabled.
+    if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+            .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+      // Get parameters needed to create the channelz node.
+      const size_t channel_tracer_max_memory = std::max(
+          0,
+          args.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
+              .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
+      const bool is_internal_channel =
+          args.GetBool(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL).value_or(false);
+      // Create the channelz node.
+      std::string channelz_node_target{target == nullptr ? "unknown" : target};
+      RefCountedPtr<channelz::ChannelNode> channelz_node =
+          MakeRefCounted<channelz::ChannelNode>(channelz_node_target,
+                                                channel_tracer_max_memory,
+                                                is_internal_channel);
+      channelz_node->AddTraceEvent(
+          channelz::ChannelTrace::Severity::Info,
+          grpc_slice_from_static_string("Channel created"));
+      // Add channelz node to channel args.
+      // We remove the is_internal_channel arg, since we no longer need it.
+      args = args.Remove(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL)
+                 .Set(GRPC_ARG_CHANNELZ_CHANNEL_NODE,
+                      ChannelArgs::Pointer(channelz_node.release(),
+                                           &channelz_node_arg_vtable));
+    }
+  }
+  ChannelStackBuilderImpl builder(
+      grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
+      args);
+  builder.SetTarget(target).SetTransport(optional_transport);
+  if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
+    return nullptr;
   }
   return CreateWithBuilder(&builder);
 }
@@ -429,8 +425,7 @@ void grpc_channel_destroy_internal(grpc_channel* c_channel) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   grpc_channel_element* elem;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (c_channel));
-  op->disconnect_with_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
+  op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   elem = grpc_channel_stack_element(channel->channel_stack(), 0);
   elem->filter->start_transport_op(elem, op);
 }

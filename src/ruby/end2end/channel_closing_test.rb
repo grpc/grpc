@@ -31,7 +31,7 @@ def main
   sleep 3
 
   begin
-    Timeout.timeout(20) do
+    Timeout.timeout(120) do
       loop do
         begin
           client_controller.stub.shutdown(ClientControl::Void.new)

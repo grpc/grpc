@@ -21,7 +21,6 @@ import time
 import unittest
 
 import grpc
-import six
 
 from tests.unit.framework.common import test_constants
 

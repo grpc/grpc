@@ -29,6 +29,8 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
@@ -67,6 +69,7 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
+using ::grpc_event_engine::experimental::PosixEventEngine;
 using ::grpc_event_engine::posix_engine::PosixEventPoller;
 
 static gpr_mu g_mu;
@@ -385,7 +388,10 @@ class EventPollerTest : public ::testing::Test {
         std::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
             engine_.get());
     EXPECT_NE(scheduler_, nullptr);
-    g_event_poller = GetDefaultPoller(scheduler_.get());
+    g_event_poller = MakeDefaultPoller(scheduler_.get());
+    engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
+    EXPECT_NE(engine_, nullptr);
+    scheduler_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
       gpr_log(GPR_INFO, "Using poller: %s", g_event_poller->Name().c_str());
     }
@@ -401,7 +407,7 @@ class EventPollerTest : public ::testing::Test {
   TestScheduler* Scheduler() { return scheduler_.get(); }
 
  private:
-  std::unique_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
   std::unique_ptr<grpc_event_engine::posix_engine::TestScheduler> scheduler_;
 };
 
@@ -714,7 +720,12 @@ int main(int argc, char** argv) {
     // Skip the test entirely if poll strategy is none.
     return 0;
   }
-  return RUN_ALL_TESTS();
+  // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
+  // until we clear out the iomgr shutdown code.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }
 
 #else /* GRPC_POSIX_SOCKET_EV */

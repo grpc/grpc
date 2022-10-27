@@ -167,8 +167,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
   if (s->active_ports) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_fd_shutdown(
-          sp->emfd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server destroyed"));
+      grpc_fd_shutdown(sp->emfd, GRPC_ERROR_CREATE("Server destroyed"));
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -232,7 +231,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     if (grpc_is_unix_socket(&addr)) {
       memset(&addr, 0, sizeof(addr));
       addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-      if (getsockname(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
+      if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                       &(addr.len)) < 0) {
         gpr_log(GPR_ERROR, "Failed getsockname: %s",
                 grpc_core::StrError(errno).c_str());
@@ -340,18 +339,18 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
       gpr_log(GPR_INFO,
               "Failed to add :: listener, "
               "the environment may not support IPv6: %s",
-              grpc_error_std_string(v6_err).c_str());
+              grpc_core::StatusToString(v6_err).c_str());
     }
     if (!v4_err.ok()) {
       gpr_log(GPR_INFO,
               "Failed to add 0.0.0.0 listener, "
               "the environment may not support IPv4: %s",
-              grpc_error_std_string(v4_err).c_str());
+              grpc_core::StatusToString(v4_err).c_str());
     }
     return absl::OkStatus();
   } else {
-    grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Failed to add any wildcard listeners");
+    grpc_error_handle root_err =
+        GRPC_ERROR_CREATE("Failed to add any wildcard listeners");
     GPR_ASSERT(!v6_err.ok() && !v4_err.ok());
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
@@ -382,7 +381,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     listener->server->nports++;
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
     if (!addr_str.ok()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
+      return GRPC_ERROR_CREATE(addr_str.status().ToString());
     }
     sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = listener->next;
@@ -576,8 +575,7 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   if (s->active_ports) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
-      grpc_fd_shutdown(sp->emfd,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+      grpc_fd_shutdown(sp->emfd, GRPC_ERROR_CREATE("Server shutdown"));
     }
   }
   gpr_mu_unlock(&s->mu);

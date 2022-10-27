@@ -27,7 +27,9 @@
 
 #include <functional>
 #include <string>
+#include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -49,11 +51,11 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
@@ -80,6 +82,60 @@ struct grpc_transport_stream_op_batch_payload;
   (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
+
+// Server metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ServerMetadata = grpc_metadata_batch;
+using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
+
+// Client initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ClientMetadata = grpc_metadata_batch;
+using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
+
+class Message {
+ public:
+  Message() = default;
+  ~Message() = default;
+  Message(SliceBuffer payload, uint32_t flags)
+      : payload_(std::move(payload)), flags_(flags) {}
+  Message(const Message&) = delete;
+  Message& operator=(const Message&) = delete;
+
+  uint32_t flags() const { return flags_; }
+  uint32_t& mutable_flags() { return flags_; }
+  SliceBuffer* payload() { return &payload_; }
+  const SliceBuffer* payload() const { return &payload_; }
+
+ private:
+  SliceBuffer payload_;
+  uint32_t flags_ = 0;
+};
+
+using MessageHandle = Arena::PoolPtr<Message>;
+
+// Ok/not-ok check for trailing metadata, so that it can be used as result types
+// for TrySeq.
+inline bool IsStatusOk(const ServerMetadataHandle& m) {
+  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+         GRPC_STATUS_OK;
+}
+
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
+
+template <>
+struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
+  static ServerMetadataHandle Cast(const absl::Status& m) {
+    return ServerMetadataFromStatus(m);
+  }
+};
+
+template <>
+struct StatusCastImpl<ServerMetadataHandle, const absl::Status&> {
+  static ServerMetadataHandle Cast(const absl::Status& m) {
+    return ServerMetadataFromStatus(m);
+  }
+};
 
 struct CallArgs {
   // Initial metadata from the client to the server.

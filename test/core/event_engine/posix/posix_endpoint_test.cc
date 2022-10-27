@@ -22,7 +22,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -85,7 +84,7 @@ std::list<Connection> CreateConnectedEndpoints(
     std::shared_ptr<EventEngine> posix_ee,
     std::shared_ptr<EventEngine> oracle_ee) {
   std::list<Connection> connections;
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   EventEngine::ResolvedAddress resolved_addr =
@@ -112,7 +111,7 @@ std::list<Connection> CreateConnectedEndpoints(
   auto listener = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
-      absl::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
   GPR_ASSERT(listener.ok());
 
   EXPECT_TRUE((*listener)->Bind(resolved_addr).ok());
@@ -127,15 +126,20 @@ std::list<Connection> CreateConnectedEndpoints(
     server_signal->WaitForNotification();
     EXPECT_NE(server_endpoint, nullptr);
     ++g_num_active_connections;
+    PosixTcpOptions options = TcpOptionsFromEndpointConfig(config);
     connections.push_back(Connection{
-        CreatePosixEndpoint(handle,
-                            PosixEngineClosure::TestOnlyToClosure(
-                                [&poller](absl::Status /*status*/) {
-                                  if (--g_num_active_connections == 0) {
-                                    poller.Kick();
-                                  }
-                                }),
-                            posix_ee, config),
+        CreatePosixEndpoint(
+            handle,
+            PosixEngineClosure::TestOnlyToClosure(
+                [&poller](absl::Status /*status*/) {
+                  if (--g_num_active_connections == 0) {
+                    poller.Kick();
+                  }
+                }),
+            posix_ee,
+            options.resource_quota->memory_quota()->CreateMemoryAllocator(
+                "test"),
+            options),
         std::move(server_endpoint)});
     delete server_signal;
     server_signal = new grpc_core::Notification();
@@ -197,12 +201,14 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   void SetUp() override {
     oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
-    posix_ee_ = std::make_shared<PosixEventEngine>();
     scheduler_ =
-        absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
+        std::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
-    poller_ = GetDefaultPoller(scheduler_.get());
+    poller_ = MakeDefaultPoller(scheduler_.get());
+    posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
+    EXPECT_NE(posix_ee_, nullptr);
+    scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
     if (poller_ != nullptr) {
       gpr_log(GPR_INFO, "Using poller: %s", poller_->Name().c_str());
     }
@@ -342,5 +348,10 @@ int main(int argc, char** argv) {
     // Skip the test entirely if poll strategy is none.
     return 0;
   }
-  return RUN_ALL_TESTS();
+  // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
+  // until we clear out the iomgr shutdown code.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

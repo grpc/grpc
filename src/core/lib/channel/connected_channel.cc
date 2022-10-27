@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -66,7 +67,6 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
@@ -195,8 +195,7 @@ static grpc_error_handle connected_channel_init_call_elem(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data, args->arena);
   return r == 0 ? absl::OkStatus()
-                : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "transport stream initialization failed");
+                : GRPC_ERROR_CREATE("transport stream initialization failed");
 }
 
 static void set_pollset_or_pollset_set(grpc_call_element* elem,
@@ -372,7 +371,7 @@ class ClientStream : public Orphanable {
       batch_payload_.send_initial_metadata.peer_string =
           GetContext<CallContext>()->peer_string_atm_ptr();
       server_initial_metadata_ =
-          GetContext<FragmentAllocator>()->MakeServerMetadata();
+          GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
       batch_payload_.recv_initial_metadata.recv_initial_metadata =
           server_initial_metadata_.get();
       batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
@@ -381,7 +380,7 @@ class ClientStream : public Orphanable {
           nullptr;
       batch_payload_.recv_initial_metadata.peer_string = nullptr;
       server_trailing_metadata_ =
-          GetContext<FragmentAllocator>()->MakeClientMetadata();
+          GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
           server_trailing_metadata_.get();
       batch_payload_.recv_trailing_metadata.collect_stats =
@@ -421,7 +420,8 @@ class ClientStream : public Orphanable {
         } else {
           GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
           client_trailing_metadata_ =
-              GetContext<FragmentAllocator>()->MakeClientMetadata();
+              GetContext<Arena>()->MakePooled<ClientMetadata>(
+                  GetContext<Arena>());
           send_message_state_ = Closed{};
           send_message_.send_trailing_metadata = true;
           batch_payload_.send_trailing_metadata.send_trailing_metadata =
@@ -446,7 +446,7 @@ class ClientStream : public Orphanable {
                     pending->payload->Length());
           }
           recv_message_state_ = server_to_client_messages_->Push(
-              GetContext<FragmentAllocator>()->MakeMessage(
+              GetContext<Arena>()->MakePooled<Message>(
                   std::move(*pending->payload), pending->flags));
         } else {
           if (grpc_call_trace.enabled()) {
@@ -571,7 +571,7 @@ class ClientStream : public Orphanable {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
                   recv_message_waker_.ActivityDebugTag().c_str(),
-                  grpc_error_std_string(error).c_str());
+                  StatusToString(error).c_str());
         }
       } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
         if (grpc_call_trace.enabled()) {

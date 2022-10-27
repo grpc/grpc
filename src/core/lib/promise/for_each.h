@@ -29,19 +29,6 @@ namespace grpc_core {
 
 namespace for_each_detail {
 
-// Helper function: at the end of each iteration of a for-each loop, this is
-// called. If the iteration failed, return failure. If the iteration succeeded,
-// then call the next iteration.
-template <typename Reader, typename CallPoll>
-Poll<absl::Status> FinishIteration(absl::Status* r, Reader* reader,
-                                   CallPoll call_poll) {
-  if (r->ok()) {
-    auto next = reader->Next();
-    return call_poll(next);
-  }
-  return std::move(*r);
-}
-
 // Done creates statuses for the end of the iteration. It's templated on the
 // type of the result of the ForEach loop, so that we can introduce new types
 // easily.
@@ -57,9 +44,11 @@ template <typename Reader, typename Action>
 class ForEach {
  private:
   using ReaderNext = decltype(std::declval<Reader>().Next());
-  using ReaderResult = typename PollTraits<
-      decltype(std::declval<ReaderNext>()())>::Type::value_type;
-  using ActionFactory = promise_detail::PromiseFactory<ReaderResult, Action>;
+  using ReaderResult =
+      typename PollTraits<decltype(std::declval<ReaderNext>()())>::Type;
+  using ReaderResultValue = typename ReaderResult::value_type;
+  using ActionFactory =
+      promise_detail::RepeatedPromiseFactory<ReaderResultValue, Action>;
   using ActionPromise = typename ActionFactory::Promise;
 
  public:
@@ -79,20 +68,21 @@ class ForEach {
   // NOLINTNEXTLINE(performance-noexcept-move-constructor)
   ForEach& operator=(ForEach&&) = default;
 
-  Poll<Result> operator()() {
-    return absl::visit(CallPoll<false>{this}, state_);
-  }
+  Poll<Result> operator()() { return absl::visit(CallPoll{this}, state_); }
 
  private:
+  struct InAction {
+    InAction(ActionPromise promise, ReaderResult result)
+        : promise(std::move(promise)), result(std::move(result)) {}
+    ActionPromise promise;
+    ReaderResult result;
+  };
   Reader reader_;
   ActionFactory action_factory_;
-  absl::variant<ReaderNext, ActionPromise> state_;
+  absl::variant<ReaderNext, InAction> state_;
 
   // Call the inner poll function, and if it's finished, start the next
-  // iteration. If kSetState==true, also set the current state in self->state_.
-  // We omit that on the first iteration because it's common to poll once and
-  // not change state, which saves us some work.
-  template <bool kSetState>
+  // iteration.
   struct CallPoll {
     ForEach* const self;
 
@@ -100,26 +90,25 @@ class ForEach {
       auto r = reader_next();
       if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         if (p->has_value()) {
-          auto action = self->action_factory_.Repeated(std::move(**p));
-          p->reset();
-          return CallPoll<true>{self}(action);
+          auto action = self->action_factory_.Make(std::move(**p));
+          return (*this)(self->state_.template emplace<InAction>(
+              std::move(action), std::move(*p)));
         } else {
           return Done<Result>::Make();
         }
       }
-      if (kSetState) {
-        self->state_.template emplace<ReaderNext>(std::move(reader_next));
-      }
       return Pending();
     }
 
-    Poll<Result> operator()(ActionPromise& promise) {
-      auto r = promise();
+    Poll<Result> operator()(InAction& in_action) {
+      auto r = in_action.promise();
       if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
-        return FinishIteration(p, &self->reader_, CallPoll<true>{self});
-      }
-      if (kSetState) {
-        self->state_.template emplace<ActionPromise>(std::move(promise));
+        if (p->ok()) {
+          return (*this)(
+              self->state_.template emplace<ReaderNext>(self->reader_.Next()));
+        } else {
+          return std::move(*p);
+        }
       }
       return Pending();
     }

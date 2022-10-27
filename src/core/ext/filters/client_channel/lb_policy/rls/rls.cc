@@ -53,6 +53,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -72,6 +73,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -334,6 +336,7 @@ class RlsLb : public LoadBalancingPolicy {
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -914,6 +917,11 @@ absl::string_view RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetAuthority() {
   return wrapper_->lb_policy_->channel_control_helper()->GetAuthority();
 }
 
+grpc_event_engine::experimental::EventEngine*
+RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetEventEngine() {
+  return wrapper_->lb_policy_->channel_control_helper()->GetEventEngine();
+}
+
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
     TraceSeverity severity, absl::string_view message) {
   if (wrapper_->is_shutdown_) return;
@@ -1421,7 +1429,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
           gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
-                  cache->lb_policy_, grpc_error_std_string(error).c_str());
+                  cache->lb_policy_, StatusToString(error).c_str());
         }
         if (error == absl::CancelledError()) return;
         MutexLock lock(&lb_policy->mu_);
@@ -1767,7 +1775,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
             "[rlslb %p] rls_request=%p %s, error=%s, status={%d, %s} RLS call "
             "response received",
             lb_policy_.get(), this, key_.ToString().c_str(),
-            grpc_error_std_string(error).c_str(), status_recv_,
+            StatusToString(error).c_str(), status_recv_,
             status_message.c_str());
   }
   // Parse response.
@@ -2418,13 +2426,8 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error;
-    rls_channel_service_config_ = it->second.Dump();
-    auto service_config = MakeRefCounted<ServiceConfigImpl>(
-        ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
-    if (!child_error.ok()) {
-      errors->AddError(grpc_error_std_string(child_error));
-    }
+    // Don't need to save the result here, just need the errors (if any).
+    ServiceConfigImpl::Create(ChannelArgs(), it->second, errors);
   }
   // Validate childPolicyConfigTargetFieldName.
   {
