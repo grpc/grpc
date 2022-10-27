@@ -541,16 +541,15 @@ void XdsClient::ChannelState::OnConnectivityChange(absl::Status status) {
   }
   {
     MutexLock lock(&xds_client_->mu_);
+    channel_connected_ = status.ok();
     // Notify the ADS call of the connectivity state, so that it can
     // start or stop timers as needed.
     if (ads_calld_ != nullptr) {
       auto* calld = ads_calld_->calld();
       if (calld != nullptr) {
         if (status.ok()) {
-          channel_connected_ = true;
           calld->ChannelConnected();
         } else {
-          channel_connected_ = false;
           calld->ChannelDisconnected();
         }
       }
