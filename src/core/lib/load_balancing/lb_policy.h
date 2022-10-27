@@ -33,6 +33,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
@@ -290,6 +291,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Returns the channel authority.
     virtual absl::string_view GetAuthority() = 0;
+
+    /// Returns the EventEngine to use for timers and async work.
+    virtual grpc_event_engine::experimental::EventEngine* GetEventEngine() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };

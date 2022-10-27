@@ -18,6 +18,11 @@
  */
 class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
 {
+    private $server;
+    private $port;
+    private $host_override;
+    private $channel;
+
     public function setUp(): void
     {
         $credentials = Grpc\ChannelCredentials::createSsl(

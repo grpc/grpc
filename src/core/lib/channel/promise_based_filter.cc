@@ -364,6 +364,7 @@ bool BaseCallData::SendMessage::IsIdle() const {
     case State::kPushedToPipe:
       return false;
   }
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 void BaseCallData::SendMessage::OnComplete(absl::Status status) {
@@ -480,6 +481,11 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
     } break;
     case State::kBatchCompleted:
       next_result_.reset();
+      // We've cleared out the NextResult on the pipe from promise to us, but
+      // there's also the pipe from us to the promise (so that the promise can
+      // intercept the sent messages). The push promise here is pushing into the
+      // latter pipe, and so we need to keep polling it until it's done, which
+      // depending on what happens inside the promise may take some time.
       if (absl::holds_alternative<Pending>((*push_)())) break;
       if (completed_status_.ok()) {
         state_ = State::kIdle;
@@ -488,7 +494,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
         state_ = State::kCancelled;
       }
       push_.reset();
-      flusher->AddClosure(intercepted_on_complete_, absl::OkStatus(),
+      flusher->AddClosure(intercepted_on_complete_, completed_status_,
                           "batch_completed");
       break;
   }
@@ -1727,7 +1733,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
-    Cancel(batch->payload->cancel_stream.cancel_error, &flusher);
+    Completed(batch->payload->cancel_stream.cancel_error, &flusher);
     if (is_last()) {
       batch.CompleteWith(&flusher);
     } else {
@@ -1828,7 +1834,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ServerCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
+void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
   // Track the latest reason for cancellation.
   cancelled_error_ = error;
   // Stop running the promise.
@@ -1952,7 +1958,7 @@ void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   }
   Flusher flusher(this);
   PollContext poll_ctx(this, &flusher);
-  Cancel(error, &flusher);
+  Completed(error, &flusher);
   flusher.AddClosure(original_recv_trailing_metadata_ready_, std::move(error),
                      "continue recv trailing");
 }
@@ -2101,7 +2107,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          Cancel(StatusFromMetadata(*md), flusher);
+          Completed(StatusFromMetadata(*md), flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.

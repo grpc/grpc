@@ -362,6 +362,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "try_concurrently",
+    hdrs = ["lib/promise/try_concurrently.h"],
+    external_deps = [
+        "absl/status",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/map_pipe.h",
+    ],
+    deps = [
+        "construct_destruct",
+        "for_each",
+        "map",
+        "pipe",
+        "poll",
+        "promise_factory",
+        "promise_like",
+        "promise_status",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "map_pipe",
     external_deps = ["absl/status"],
     language = "c++",
@@ -373,21 +397,6 @@ grpc_cc_library(
         "map",
         "pipe",
         "promise_factory",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "try_concurrently",
-    hdrs = ["lib/promise/try_concurrently.h"],
-    external_deps = ["absl/types:variant"],
-    language = "c++",
-    deps = [
-        "construct_destruct",
-        "poll",
-        "promise_like",
-        "promise_status",
-        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -443,6 +452,7 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "construct_destruct",
         "context",
         "poll",
         "//:gpr_platform",
@@ -1335,7 +1345,9 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_thread_pool",
         "forkable",
+        "notification",
         "posix_event_engine_timer",
         "time",
         "//:event_engine_base_hdrs",
@@ -1809,10 +1821,13 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
+        "channel_args",
+        "channel_args_preconditioning",
         "context",
         "default_event_engine_factory",
         "event_engine_trace",
         "no_destruct",
+        "//:config",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
@@ -2055,15 +2070,12 @@ grpc_cc_library(
     hdrs = [
         "lib/service_config/service_config_parser.h",
     ],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "channel_args",
         "json",
+        "validation_errors",
         "//:gpr",
     ],
 )
@@ -2958,7 +2970,6 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "closure",
-        "default_event_engine",
         "exec_ctx_wakeup_scheduler",
         "http2_errors",
         "idle_filter_state",
@@ -3054,7 +3065,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
-        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -3068,9 +3078,12 @@ grpc_cc_library(
         "closure",
         "grpc_service_config",
         "json",
+        "json_args",
+        "json_object_loader",
         "service_config_parser",
         "slice_buffer",
         "status_helper",
+        "validation_errors",
         "//:channel_stack_builder",
         "//:config",
         "//:debug_location",
@@ -3084,11 +3097,11 @@ grpc_cc_library(
     name = "grpc_fault_injection_filter",
     srcs = [
         "ext/filters/fault_injection/fault_injection_filter.cc",
-        "ext/filters/fault_injection/service_config_parser.cc",
+        "ext/filters/fault_injection/fault_injection_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/fault_injection/fault_injection_filter.h",
-        "ext/filters/fault_injection/service_config_parser.h",
+        "ext/filters/fault_injection/fault_injection_service_config_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3105,12 +3118,13 @@ grpc_cc_library(
         "context",
         "grpc_service_config",
         "json",
-        "json_util",
+        "json_args",
+        "json_object_loader",
         "service_config_parser",
         "sleep",
-        "status_helper",
         "time",
         "try_seq",
+        "validation_errors",
         "//:config",
         "//:gpr",
         "//:grpc_base",
@@ -3133,7 +3147,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -3146,10 +3159,12 @@ grpc_cc_library(
         "grpc_rbac_engine",
         "grpc_service_config",
         "json",
-        "json_util",
+        "json_args",
+        "json_object_loader",
         "service_config_parser",
         "status_helper",
         "transport_fwd",
+        "validation_errors",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -3189,7 +3204,6 @@ grpc_cc_library(
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
-        "default_event_engine",
         "gpr_atm",
         "grpc_sockaddr",
         "json",
@@ -3523,6 +3537,7 @@ grpc_cc_library(
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "iomgr_fwd",
+        "match",
         "resolved_address",
         "slice_refcount",
         "status_helper",
@@ -3751,7 +3766,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "default_event_engine",
         "grpc_resolver_xds_header",
         "json",
         "json_args",
@@ -4076,7 +4090,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "default_event_engine",
         "grpc_lb_address_filtering",
         "json",
         "json_args",
@@ -4368,6 +4381,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:uri_parser",
         "//:work_serializer",
+        "//:xds_client",
     ],
 )
 

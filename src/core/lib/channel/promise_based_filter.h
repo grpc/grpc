@@ -269,28 +269,57 @@ class BaseCallData : public Activity, private Wakeable {
     return p.release();
   }
 
+  // State machine for sending messages: handles intercepting send_message ops
+  // and forwarding them through pipes to the promise, then getting the result
+  // down the stack.
+  // Split into its own class so that we don't spend the memory instantiating
+  // these members for filters that don't need to intercept sent messages.
   class SendMessage {
    public:
     explicit SendMessage(BaseCallData* base)
         : base_(base), pipe_(base->arena()) {}
     PipeReceiver<MessageHandle>* outgoing_pipe() { return &pipe_.receiver; }
 
+    // Start a send_message op.
     void StartOp(CapturedBatch batch);
+    // Publish the outbound pipe to the filter.
+    // This happens when the promise requests to call the next filter: until
+    // this occurs messages can't be sent as we don't know the pipe that the
+    // promise expects to send on.
     void GotPipe(PipeReceiver<MessageHandle>* receiver);
+    // Called from client/server polling to do the send message part of the
+    // work.
     void WakeInsideCombiner(Flusher* flusher);
+    // Call is completed, we have trailing metadata. Close things out.
     void Done(const ServerMetadata& metadata);
+    // Return true if we have a batch captured (for debug logs)
     bool HaveCapturedBatch() const { return batch_.is_captured(); }
+    // Return true if we're not actively sending a message.
     bool IsIdle() const;
 
    private:
     enum class State : uint8_t {
+      // Starting state: no batch started, no outgoing pipe configured.
       kInitial,
+      // We have an outgoing pipe, but no batch started.
+      // (this is the steady state).
       kIdle,
+      // We have a batch started, but no outgoing pipe configured.
+      // Stall until we have one.
       kGotBatchNoPipe,
+      // We have a batch, and an outgoing pipe. On the next poll we'll push the
+      // message into the pipe to the promise.
       kGotBatch,
+      // We've pushed a message into the promise, and we're now waiting for it
+      // to pop out the other end so we can forward it down the stack.
       kPushedToPipe,
+      // We've forwarded a message down the stack, and now we're waiting for
+      // completion.
       kForwardedBatch,
+      // We've got the completion callback, we'll close things out during poll
+      // and then forward completion callbacks up and transition back to idle.
       kBatchCompleted,
+      // We're done.
       kCancelled,
     };
     static const char* StateString(State);
@@ -311,29 +340,67 @@ class BaseCallData : public Activity, private Wakeable {
     absl::Status completed_status_;
   };
 
+  // State machine for receiving messages: handles intercepting recv_message
+  // ops, forwarding them down the stack, and then publishing the result via
+  // pipes to the promise (and ultimately calling the right callbacks for the
+  // batch when our promise has completed processing of them).
+  // Split into its own class so that we don't spend the memory instantiating
+  // these members for filters that don't need to intercept sent messages.
   class ReceiveMessage {
    public:
     explicit ReceiveMessage(BaseCallData* base)
         : base_(base), pipe_(base->arena()) {}
     PipeSender<MessageHandle>* incoming_pipe() { return &pipe_.sender; }
 
+    // Start a recv_message op.
     void StartOp(CapturedBatch& batch);
+    // Publish the inbound pipe to the filter.
+    // This happens when the promise requests to call the next filter: until
+    // this occurs messages can't be received as we don't know the pipe that the
+    // promise expects to forward them with.
     void GotPipe(PipeSender<MessageHandle>* sender);
+    // Called from client/server polling to do the receive message part of the
+    // work.
     void WakeInsideCombiner(Flusher* flusher);
+    // Call is completed, we have trailing metadata. Close things out.
     void Done(const ServerMetadata& metadata, Flusher* flusher);
 
    private:
     enum class State : uint8_t {
+      // Starting state: no batch started, no incoming pipe configured.
       kInitial,
+      // We have an incoming pipe, but no batch started.
+      // (this is the steady state).
       kIdle,
+      // We received a batch and forwarded it on, but have not got an incoming
+      // pipe configured.
       kForwardedBatchNoPipe,
+      // We received a batch and forwarded it on.
       kForwardedBatch,
+      // We got the completion for the recv_message, but we don't yet have a
+      // pipe configured. Stall until this changes.
       kBatchCompletedNoPipe,
+      // We got the completion for the recv_message, and we have a pipe
+      // configured: next poll will push the message into the pipe for the
+      // filter to process.
       kBatchCompleted,
+      // We've pushed a message into the promise, and we're now waiting for it
+      // to pop out the other end so we can forward it up the stack.
       kPushedToPipe,
+      // We've got a message out of the pipe, now we need to wait for processing
+      // to completely quiesce in the promise prior to forwarding the completion
+      // up the stack.
       kPulledFromPipe,
+      // We're done.
       kCancelled,
+      // Call got terminated whilst we had forwarded a recv_message down the
+      // stack: we need to keep track of that until we get the completion so
+      // that we do the right thing in OnComplete.
       kCancelledWhilstForwarding,
+      // Call got terminated whilst we had a recv_message batch completed, and
+      // we've now received the completion.
+      // On the next poll we'll close things out and forward on completions,
+      // then transition to cancelled.
       kBatchCompletedButCancelled,
     };
     static const char* StateString(State);
@@ -565,8 +632,8 @@ class ServerCallData : public BaseCallData {
   class PollContext;
   struct SendInitialMetadata;
 
-  // Handle cancellation.
-  void Cancel(grpc_error_handle error, Flusher* flusher);
+  // Shut things down when the call completes.
+  void Completed(grpc_error_handle error, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
