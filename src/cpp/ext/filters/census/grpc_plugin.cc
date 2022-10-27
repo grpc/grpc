@@ -25,6 +25,7 @@
 #include <atomic>
 
 #include "absl/base/attributes.h"
+#include "absl/strings/string_view.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
 
@@ -35,7 +36,6 @@
 #include "src/cpp/common/channel_filter.h"
 #include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
-#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/server_filter.h"
 
@@ -75,9 +75,12 @@ void RegisterOpenCensusPlugin() {
     grpc::ServerContext* context) {
   if (context == nullptr) return opencensus::trace::Span::BlankSpan();
 
-  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
+  return reinterpret_cast<const grpc::experimental::CensusContext*>(
+             context->census_context())
       ->Span();
 }
+
+namespace experimental {
 
 // These measure definitions should be kept in sync across opencensus
 // implementations--see
@@ -162,6 +165,8 @@ ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
 
 ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
     "grpc.io/server/started_rpcs";
+
+}  // namespace experimental
 
 std::atomic<bool> g_open_census_stats_enabled(true);
 std::atomic<bool> g_open_census_tracing_enabled(true);

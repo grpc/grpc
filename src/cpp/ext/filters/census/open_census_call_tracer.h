@@ -30,6 +30,7 @@
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -41,7 +42,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/ext/filters/census/context.h"
 
 // TODO(yashykt): This might not be the right place for this channel arg, but we
 // don't have a better place for this right now.
@@ -82,7 +82,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
 
-    CensusContext* context() { return &context_; }
+    experimental::CensusContext* context() { return &context_; }
 
    private:
     // Maximum size of trace context is sent on the wire.
@@ -91,7 +91,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     static constexpr uint32_t kMaxTagsLen = 2048;
     OpenCensusCallTracer* parent_;
     const bool arena_allocated_;
-    CensusContext context_;
+    experimental::CensusContext context_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     // Number of messages in this RPC.
@@ -110,13 +110,13 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
       bool is_transparent_retry) override;
 
  private:
-  CensusContext CreateCensusContextForCallAttempt();
+  experimental::CensusContext CreateCensusContextForCallAttempt();
 
   const grpc_call_context_element* call_context_;
   // Client method.
   grpc_core::Slice path_;
   absl::string_view method_;
-  CensusContext context_;
+  experimental::CensusContext context_;
   grpc_core::Arena* arena_;
   bool tracing_enabled_;
   grpc_core::Mutex mu_;

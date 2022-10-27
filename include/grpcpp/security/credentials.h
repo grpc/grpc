@@ -54,12 +54,6 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
-
-GRPC_DEPRECATED(
-    "Use grpc::XdsCredentials instead. The experimental version will be "
-    "deleted after the 1.41 release.")
-std::shared_ptr<ChannelCredentials> XdsCredentials(
-    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 }  // namespace experimental
 
 /// Builds XDS Credentials.

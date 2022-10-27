@@ -89,7 +89,7 @@ class PollPoller : public PosixEventPoller {
 // It use_phony_poll is true, it implies that the poller is declared
 // non-polling and any attempt to schedule a blocking poll will result in a
 // crash failure.
-PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll);
+PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

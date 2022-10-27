@@ -65,14 +65,6 @@ struct SslServerCredentialsOptions {
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
-namespace experimental {
-GRPC_DEPRECATED(
-    "Use grpc::XdsServerCredentials instead. The experimental version will be "
-    "deleted after the 1.41 release.")
-std::shared_ptr<ServerCredentials> XdsServerCredentials(
-    const std::shared_ptr<ServerCredentials>& fallback_credentials);
-}  // namespace experimental
-
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
 class ServerCredentials : private grpc::internal::GrpcLibrary {
  public:

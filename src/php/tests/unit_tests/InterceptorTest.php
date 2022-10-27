@@ -217,6 +217,10 @@ class StopCallInterceptor extends Grpc\Interceptor
 
 class InterceptorTest extends \PHPUnit\Framework\TestCase
 {
+    private $server;
+    private $port;
+    private $channel;
+
     public function setUp(): void
     {
         $this->server = new Grpc\Server([]);
