@@ -33,6 +33,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
+#include "call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -1282,7 +1283,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
         break;
       case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
         maybe_read_first_message =
-            Map(GetContext<ServerCallContext>()
+            Map(static_cast<ServerCallContext*>(GetContext<CallContext>())
                     ->TopLevelIncomingMessageReceiver()
                     ->Next(),
                 [](NextResult<MessageHandle> msg)
@@ -1329,14 +1330,15 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
           default:
             GPR_UNREACHABLE_CODE(abort());
         }
-        return GetContext<ServerCallContext>()->Run(
-            std::move(call_args), rc->cq_bound_to_call, rc->initial_metadata,
-            [rc, cq_for_new_request](grpc_call* call) {
-              *rc->call = call;
-              grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
-                             Server::DoneRequestEvent, rc, &rc->completion,
-                             true);
-            });
+        return static_cast<ServerCallContext*>(GetContext<CallContext>())
+            ->Run(std::move(call_args), rc->cq_bound_to_call,
+                  rc->initial_metadata,
+                  [rc, cq_for_new_request](grpc_call* call) {
+                    *rc->call = call;
+                    grpc_cq_end_op(cq_for_new_request, rc->tag,
+                                   absl::OkStatus(), Server::DoneRequestEvent,
+                                   rc, &rc->completion, true);
+                  });
       });
 }
 
@@ -1469,7 +1471,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       }
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
   grpc_cq_end_op(cq_new_, rc->tag, absl::OkStatus(), Server::DoneRequestEvent,
                  rc, &rc->completion, true);

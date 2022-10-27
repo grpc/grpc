@@ -43,6 +43,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+#include "call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -2364,6 +2365,23 @@ gpr_atm* CallContext::peer_string_atm_ptr() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// PublishMetadataArray
+
+namespace {
+void PublishMetadataArray(grpc_metadata_array* array, grpc_metadata_batch* md) {
+  const auto md_count = md->count();
+  if (md_count > array->capacity) {
+    array->capacity =
+        std::max(array->capacity + md->count(), array->capacity * 3 / 2);
+    array->metadata = static_cast<grpc_metadata*>(
+        gpr_realloc(array->metadata, sizeof(grpc_metadata) * array->capacity));
+  }
+  PublishToAppEncoder encoder(array);
+  md->Encode(&encoder);
+}
+}  // namespace
+
+///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
 
 class ClientPromiseBasedCall final : public PromiseBasedCall {
@@ -2433,9 +2451,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   // Start the underlying promise.
   void StartPromise(ClientMetadataHandle client_initial_metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
-  // Publish some metadata out to the application.
-  static void PublishMetadataArray(grpc_metadata_array* array,
-                                   ServerMetadata* md);
   // Publish status out to the application.
   void PublishStatus(
       grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
@@ -2841,19 +2856,6 @@ void ClientPromiseBasedCall::PublishStatus(
                        PendingOp::kReceiveStatusOnClient);
 }
 
-void ClientPromiseBasedCall::PublishMetadataArray(grpc_metadata_array* array,
-                                                  ServerMetadata* md) {
-  const auto md_count = md->count();
-  if (md_count > array->capacity) {
-    array->capacity =
-        std::max(array->capacity + md->count(), array->capacity * 3 / 2);
-    array->metadata = static_cast<grpc_metadata*>(
-        gpr_realloc(array->metadata, sizeof(grpc_metadata) * array->capacity));
-  }
-  PublishToAppEncoder encoder(array);
-  md->Encode(&encoder);
-}
-
 bool ClientPromiseBasedCall::Completed() {
   MutexLock lock(mu());
   return completed_;
@@ -2879,10 +2881,24 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   absl::string_view GetServerAuthority() const override { abort(); }
 
   void UpdateOnce() override { abort(); }
+  Poll<ServerMetadataHandle> PollTopOfCall();
 
  private:
+  ServerCallContext call_context_{this};
   ArenaPromise<ServerMetadataHandle> promise_;
 };
+
+ArenaPromise<ServerMetadataHandle> ServerCallContext::Run(
+    CallArgs call_args, grpc_completion_queue* cq,
+    grpc_metadata_array* publish_initial_metadata,
+    absl::FunctionRef<void(grpc_call* call)> publish) {
+  auto* call = static_cast<ServerPromiseBasedCall*>(this->call());
+  call->SetCompletionQueue(cq);
+  PublishMetadataArray(publish_initial_metadata,
+                       call_args.client_initial_metadata.get());
+  publish(call->c_ptr());
+  return [call]() { return call->PollTopOfCall(); };
+}
 
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)

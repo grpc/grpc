@@ -96,6 +96,9 @@ class CallContext {
   gpr_atm* peer_string_atm_ptr();
   grpc_polling_entity* polling_entity() { return &pollent_; }
 
+ protected:
+  PromiseBasedCall* call() { return call_; }
+
  private:
   friend class PromiseBasedCall;
   // Call final info.
@@ -111,17 +114,15 @@ class CallContext {
 template <>
 struct ContextType<CallContext> {};
 
-class ServerCallContext {
+class ServerCallContext : public CallContext {
  public:
+  explicit ServerCallContext(PromiseBasedCall* call) : CallContext(call) {}
   ArenaPromise<ServerMetadataHandle> Run(
       CallArgs call_args, grpc_completion_queue* cq,
       grpc_metadata_array* publish_initial_metadata,
       absl::FunctionRef<void(grpc_call* call)> publish);
   PipeReceiver<MessageHandle>* TopLevelIncomingMessageReceiver();
 };
-
-template <>
-struct ContextType<ServerCallContext> {};
 }  // namespace grpc_core
 
 /* Create a new call based on \a args.
