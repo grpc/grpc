@@ -362,6 +362,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "map_pipe",
+    external_deps = ["absl/status"],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/map_pipe.h",
+    ],
+    deps = [
+        "for_each",
+        "map",
+        "pipe",
+        "promise_factory",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "call_push_pull",
     hdrs = ["lib/promise/call_push_pull.h"],
     external_deps = ["absl/types:variant"],
@@ -733,20 +749,26 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
+    srcs = [
+        "lib/promise/pipe.cc",
+    ],
+    hdrs = [
+        "lib/promise/pipe.h",
+    ],
     external_deps = [
+        "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
-    public_hdrs = [
-        "lib/promise/pipe.h",
-    ],
     deps = [
+        "activity",
         "arena",
         "context",
         "intra_activity_waiter",
         "poll",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1787,10 +1809,13 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
+        "channel_args",
+        "channel_args_preconditioning",
         "context",
         "default_event_engine_factory",
         "event_engine_trace",
         "no_destruct",
+        "//:config",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
@@ -2936,7 +2961,6 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "closure",
-        "default_event_engine",
         "exec_ctx_wakeup_scheduler",
         "http2_errors",
         "idle_filter_state",
@@ -3167,7 +3191,6 @@ grpc_cc_library(
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
-        "default_event_engine",
         "gpr_atm",
         "grpc_sockaddr",
         "json",
@@ -3501,6 +3524,7 @@ grpc_cc_library(
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "iomgr_fwd",
+        "match",
         "resolved_address",
         "slice_refcount",
         "status_helper",
@@ -3729,7 +3753,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "default_event_engine",
         "grpc_resolver_xds_header",
         "json",
         "json_args",
@@ -4054,7 +4077,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "default_event_engine",
         "grpc_lb_address_filtering",
         "json",
         "json_args",

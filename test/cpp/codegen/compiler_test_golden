@@ -43,7 +43,7 @@
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/stub_options.h>
-#include <grpcpp/impl/codegen/sync_stream.h>
+#include <grpcpp/support/sync_stream.h>
 
 namespace grpc {
 namespace testing {

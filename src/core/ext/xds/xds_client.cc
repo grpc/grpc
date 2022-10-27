@@ -204,16 +204,15 @@ class XdsClient::ChannelState::AdsCallState
 
     void MaybeCancelTimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
       // If the timer hasn't been started yet, make sure we don't start
-      // it later.  This can happen if the last watch for an LDS or CDS
-      // resource is cancelled and then restarted, both while an ADS
-      // request for a different resource type is being sent (causing
-      // the unsubscription and then resubscription requests to be
-      // queued), and then we get a response for the LDS or CDS resource.
-      // In that case, we would call MaybeCancelTimer() when we receive the
-      // response and then MaybeStartTimer() when we finally send the new
-      // LDS or CDS request, thus causing the timer to fire when it shouldn't.
-      // For details, see https://github.com/grpc/grpc/issues/29583.
-      // TODO(roth): Find a way to write a test for this case.
+      // it later.  This can happen if the last watch for a resource is
+      // cancelled and then restarted, both while an ADS request is
+      // being sent (causing the unsubscription and then resubscription
+      // requests to be queued), and then we get a response that
+      // contains that resource.  In that case, we would call
+      // MaybeCancelTimer() when we receive the response and then
+      // MaybeStartTimer() when we finally send the new request, thus
+      // causing the timer to fire when it shouldn't.  For details,
+      // see https://github.com/grpc/grpc/issues/29583.
       timer_start_needed_ = false;
       if (timer_handle_.has_value()) {
         ads_calld_->xds_client()->engine()->Cancel(*timer_handle_);
@@ -1642,7 +1641,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
-  resource_type->InitUpbSymtab(symtab_.ptr());
+  resource_type->InitUpbSymtab(this, symtab_.ptr());
 }
 
 const XdsResourceType* XdsClient::GetResourceTypeLocked(
