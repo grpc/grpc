@@ -18,6 +18,8 @@ set -ex
 # Accept the Android SDK licences.
 yes | /opt/android-sdk/current/tools/bin/sdkmanager --licenses
 
+/opt/android-sdk/current/tools/bin/sdkmanager "ndk;16.1.4479499"
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
