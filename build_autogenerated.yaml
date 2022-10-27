@@ -329,6 +329,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_channelz.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
+  - src/core/ext/filters/client_channel/client_channel_service_config.h
   - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
@@ -356,7 +357,6 @@ libs:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/polling_resolver.h
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
-  - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
@@ -366,7 +366,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
-  - src/core/ext/filters/fault_injection/service_config_parser.h
+  - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
@@ -869,6 +869,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_args.h
+  - src/core/lib/json/json_channel_args.h
   - src/core/lib/json/json_object_loader.h
   - src/core/lib/json/json_util.h
   - src/core/lib/load_balancing/lb_policy.h
@@ -1050,6 +1051,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_channelz.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
+  - src/core/ext/filters/client_channel/client_channel_service_config.cc
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
@@ -1091,7 +1093,6 @@ libs:
   - src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
@@ -1101,7 +1102,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_stream_client.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  - src/core/ext/filters/fault_injection/service_config_parser.cc
+  - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
@@ -1888,6 +1889,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_channelz.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
+  - src/core/ext/filters/client_channel/client_channel_service_config.h
   - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
@@ -1912,7 +1914,6 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/polling_resolver.h
-  - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
@@ -1922,7 +1923,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
-  - src/core/ext/filters/fault_injection/service_config_parser.h
+  - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
@@ -2127,8 +2128,8 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_args.h
+  - src/core/lib/json/json_channel_args.h
   - src/core/lib/json/json_object_loader.h
-  - src/core/lib/json/json_util.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -2256,6 +2257,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_channelz.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
+  - src/core/ext/filters/client_channel/client_channel_service_config.cc
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
@@ -2289,7 +2291,6 @@ libs:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
@@ -2299,7 +2300,7 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_stream_client.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  - src/core/ext/filters/fault_injection/service_config_parser.cc
+  - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
@@ -2488,7 +2489,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/json/json_object_loader.cc
   - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/load_balancing/lb_policy.cc
   - src/core/lib/load_balancing/lb_policy_registry.cc
@@ -5170,6 +5170,15 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: client_channel_service_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/client_channel_service_config_test.cc
+  deps:
+  - grpc_test_util
 - name: client_channel_stress_test
   gtest: true
   build: test
@@ -8025,6 +8034,15 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: message_size_service_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/message_size/message_size_service_config_test.cc
+  deps:
+  - grpc_test_util
 - name: metadata_map_test
   gtest: true
   build: test
@@ -9048,6 +9066,15 @@ targets:
   deps:
   - grpc_test_util_unsecure
   uses_polling: false
+- name: retry_service_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/retry_service_config_test.cc
+  deps:
+  - grpc_test_util
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -9470,7 +9497,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/service_config_test.cc
+  - test/core/service_config/service_config_test.cc
   deps:
   - grpc_test_util
 - name: settings_timeout_test
