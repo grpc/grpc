@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">24.0.0</span>
+   &#160;<span id="projectnumber">28.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,7 +68,7 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p>Health checks are used to probe whether the server is able to handle rpcs. The client-to-server health checking can happen from point to point or via some control system. A server may choose to reply “unhealthy” because it is not ready to take requests, it is shutting down or some other reason. The client can act accordingly if the response is not received within some time window or the response says unhealthy in it.</p>
 <p>A GRPC service is used as the health checking mechanism for both simple client-to-server scenario and other control systems such as load-balancing. Being a high level service provides some benefits. Firstly, since it is a GRPC service itself, doing a health check is in the same format as a normal rpc. Secondly, it has rich semantics such as per-service health status. Thirdly, as a GRPC service, it is able reuse all the existing billing, quota infrastructure, etc, and thus the server has full control over the access of the health checking service.</p>
-<h1><a class="anchor" id="autotoc_md144"></a>
+<h1><a class="anchor" id="autotoc_md137"></a>
 Service Definition</h1>
 <p>The server should export a service defined in the following proto:</p>
 <div class="fragment"><div class="line">syntax = &quot;proto3&quot;;</div>
@@ -103,7 +103,7 @@ Service Definition</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

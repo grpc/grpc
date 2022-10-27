@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['zerocopyinputstream_3970',['ZeroCopyInputStream',['../namespacegrpc_1_1protobuf_1_1io.html#ae16bb38d6b730de308f0be4eb43931b4',1,'grpc::protobuf::io']]],
-  ['zerocopyoutputstream_3971',['ZeroCopyOutputStream',['../namespacegrpc_1_1protobuf_1_1io.html#aafcf83341d287d00418952374bc82ce1',1,'grpc::protobuf::io']]]
+  ['value_5ftype_4098',['value_type',['../classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#ac80fa61f538822111ea9597115cfaa49',1,'grpc_event_engine::experimental::MemoryAllocator::Container::value_type()'],['../classgrpc_1_1_auth_property_iterator.html#ac2e44e5556b85425992601d50c1a490c',1,'grpc::AuthPropertyIterator::value_type()']]]
 ];

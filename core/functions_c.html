@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">24.0.0</span>
+   &#160;<span id="projectnumber">28.0.0</span>
    </div>
   </td>
  </tr>
@@ -65,6 +65,15 @@ $(function() {
 <div class="textblock">Here is a list of all struct and union fields with links to the structures/unions they belong to:</div>
 
 <h3><a id="index_c"></a>- c -</h3><ul>
+<li>c_slice()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#a60ae7c059d743f0b8e9538d065b6c036">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+</li>
+<li>c_slice_buffer()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#aca36a90ea747f310ebf1962af5a45cfb">grpc_event_engine::experimental::SliceBuffer</a>
+</li>
+<li>c_slice_ptr()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#ab1ac14170bdaaa86bf0c7641629cdbb7">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+</li>
 <li>Cancel()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">grpc_event_engine::experimental::EventEngine</a>
 </li>
@@ -84,11 +93,20 @@ $(function() {
 : <a class="el" href="structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97">grpc_metadata_array</a>
 , <a class="el" href="structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833">grpc_slice_buffer</a>
 </li>
+<li>cbegin()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#a7894d541a0d9d41da7e7be2721244d68">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+</li>
+<li>cend()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#ad4b21b847cef788178a4485a221c6c8a">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+</li>
 <li>cert_chain
 : <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html#a483c3601705853f48dfbc8ee66d5e656">grpc_ssl_pem_key_cert_pair</a>
 </li>
 <li>channel_auth_context
 : <a class="el" href="structgrpc__auth__metadata__context.html#a7cb596d3af7463816fdde64f3e18dbde">grpc_auth_metadata_context</a>
+</li>
+<li>Clear()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a8279d76edb2d6fcbb052ea8c806485a1">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>clock_type
 : <a class="el" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">gpr_timespec</a>
@@ -109,7 +127,7 @@ $(function() {
 : <a class="el" href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a110cdc07225f77ae580e50a8944bcb7c">grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer</a>
 </li>
 <li>Connect()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">grpc_event_engine::experimental::EventEngine</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a1b0a8f1b88d47735c3b5bb7a51d8c4c5">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>Container()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#a3bafc0cf3260f5fa626c81a6cb45b371">grpc_event_engine::experimental::MemoryAllocator::Container&lt; T &gt;</a>
@@ -117,9 +135,17 @@ $(function() {
 <li>copy
 : <a class="el" href="structgrpc__arg__pointer__vtable.html#a1a71527a772bae82735ef8682d0668ad">grpc_arg_pointer_vtable</a>
 </li>
+<li>Copy()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a0cf6d2c2c104352bdfe1e5517edcdc58">grpc_event_engine::experimental::Slice</a>
+</li>
 <li>count
 : <a class="el" href="structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470">gpr_refcount</a>
-, <a class="el" href="structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4">grpc_metadata_array</a>
+</li>
+<li>Count()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a16d16cca5897e73bb04b22766f7f2377">grpc_event_engine::experimental::SliceBuffer</a>
+</li>
+<li>count
+: <a class="el" href="structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4">grpc_metadata_array</a>
 , <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata.html#adb1b8160a56a0a3328bb1f199fb27f0b">grpc_op::grpc_op_data::grpc_op_send_initial_metadata</a>
 , <a class="el" href="structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc">grpc_slice_buffer</a>
 </li>
@@ -133,10 +159,13 @@ $(function() {
 : <a class="el" href="structgrpc__completion__queue__attributes.html#a6faddba9d18cf836653a6207fa1c762d">grpc_completion_queue_attributes</a>
 </li>
 <li>CreateListener()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">grpc_event_engine::experimental::EventEngine</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a42219352c1ecf679da50671e9a1b35fb">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>CreateMemoryAllocator()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a13cf58d9ec269ca343e3887242074a07">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
+</li>
+<li>CreateUninitialized()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#a05e040c1f6365ee1d613a4856fa591d8">grpc_event_engine::experimental::MutableSlice</a>
 </li>
 <li>ctx
 : <a class="el" href="structgrpc__auth__property__iterator.html#a971904d29fa6f6ca6a853d078cae2f58">grpc_auth_property_iterator</a>
@@ -148,7 +177,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

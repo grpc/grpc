@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -175,6 +175,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a59d640fecf5d688527d3a4e24b5ddfcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed5bbc8685a952a6bf390f804694073d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#aed5bbc8685a952a6bf390f804694073d">grpc_slice_buffer_add</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *sb, <a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)=0</td></tr>
 <tr class="separator:aed5bbc8685a952a6bf390f804694073d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a412f32f5b3ee01a0eb19b440993ef6e4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a412f32f5b3ee01a0eb19b440993ef6e4">grpc_slice_buffer_add_indexed</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *sb, <a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)=0</td></tr>
+<tr class="separator:a412f32f5b3ee01a0eb19b440993ef6e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3bf7bcb987209890cb897c3ca2e4050"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#ae3bf7bcb987209890cb897c3ca2e4050">grpc_slice_buffer_pop</a> (<a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *sb)=0</td></tr>
 <tr class="separator:ae3bf7bcb987209890cb897c3ca2e4050"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad50c60d4e8074e1056c09ce54c556694"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#ad50c60d4e8074e1056c09ce54c556694">grpc_slice_from_static_buffer</a> (const void *buffer, size_t length)=0</td></tr>
@@ -1521,6 +1523,42 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a412f32f5b3ee01a0eb19b440993ef6e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a412f32f5b3ee01a0eb19b440993ef6e4">&#9670;&nbsp;</a></span>grpc_slice_buffer_add_indexed()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::CoreCodegenInterface::grpc_slice_buffer_add_indexed </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> *&#160;</td>
+          <td class="paramname"><em>sb</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td>
+          <td class="paramname"><em>slice</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ae3bf7bcb987209890cb897c3ca2e4050"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae3bf7bcb987209890cb897c3ca2e4050">&#9670;&nbsp;</a></span>grpc_slice_buffer_pop()</h2>
 
@@ -1932,7 +1970,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:45 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

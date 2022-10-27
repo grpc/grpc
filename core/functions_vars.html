@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">24.0.0</span>
+   &#160;<span id="projectnumber">28.0.0</span>
    </div>
   </td>
  </tr>
@@ -191,6 +191,9 @@ $(function() {
 <li>dns_names_size
 : <a class="el" href="structgrpc__tls__custom__verification__check__request_1_1peer__info_1_1san__names.html#abb2c27c41795f8e84502c50fbdeae3cb">grpc_tls_custom_verification_check_request::peer_info::san_names</a>
 </li>
+<li>dns_server
+: <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html#acd167b0350ce5c97b722c1bc2cf8bd60">grpc_event_engine::experimental::EventEngine::DNSResolver::ResolverOptions</a>
+</li>
 </ul>
 
 
@@ -218,8 +221,7 @@ $(function() {
 : <a class="el" href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">gpr_log_func_args</a>
 </li>
 <li>flags
-: <a class="el" href="structgrpc__call__details.html#a8acee25b5bfd2a644e99cfd744fcd077">grpc_call_details</a>
-, <a class="el" href="structgrpc__op.html#a5b6e034719e0ac3cd6bcf5efbc7cb019">grpc_op</a>
+: <a class="el" href="structgrpc__op.html#a5b6e034719e0ac3cd6bcf5efbc7cb019">grpc_op</a>
 </li>
 <li>functor_run
 : <a class="el" href="structgrpc__completion__queue__functor.html#a9227cc362f840e890aa5f8de09c80c7a">grpc_completion_queue_functor</a>
@@ -230,6 +232,9 @@ $(function() {
 <h3><a id="index_g"></a>- g -</h3><ul>
 <li>get_metadata
 : <a class="el" href="structgrpc__metadata__credentials__plugin.html#af8506ea31e5709124899e4e406b4a9f1">grpc_metadata_credentials_plugin</a>
+</li>
+<li>google_specific
+: <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#ab97c6daae5fd26738e1a7b9a9d6143ec">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a>
 </li>
 </ul>
 
@@ -283,11 +288,11 @@ $(function() {
 <h3><a id="index_k"></a>- k -</h3><ul>
 <li>key
 : <a class="el" href="structgrpc__arg.html#aeb230fbd50daacfe654abc3500a44968">grpc_arg</a>
-, <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html#ab0df833b1c7ecb0d4de326b9c65288cd">grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle</a>
 , <a class="el" href="structgrpc__metadata.html#a97e0b57621fa9ae74f15e833bece37a6">grpc_metadata</a>
 </li>
 <li>keys
 : <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html#a66e5396bb7339bac12cd68191aadb6d2">grpc_event_engine::experimental::EventEngine::ConnectionHandle</a>
+, <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html#af4b575b65f7b4b3c7d690f21074b4d5b">grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle</a>
 , <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html#a81267fb939a1c23a2b48e58d6db54f37">grpc_event_engine::experimental::EventEngine::TaskHandle</a>
 </li>
 </ul>
@@ -313,6 +318,9 @@ $(function() {
 
 
 <h3><a id="index_m"></a>- m -</h3><ul>
+<li>max_frame_size
+: <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#a2924b1be68e26cea8926b470af815303">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a>
+</li>
 <li>MAX_SIZE_BYTES
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#a0abb7fdbdb6842d41549af3da3471dab">grpc_event_engine::experimental::EventEngine::ResolvedAddress</a>
 </li>
@@ -394,6 +402,9 @@ $(function() {
 <li>raw
 : <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#aac38c706315d24458e43986d153f0bf8">grpc_byte_buffer::grpc_byte_buffer_data</a>
 </li>
+<li>read_hint_bytes
+: <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#a0a2d665ff2d7a46ef7dea7b7bdd0a801">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a>
+</li>
 <li>recv_close_on_server
 : <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ab107ca86ebc78d541ef3bb1dbca3334c">grpc_op::grpc_op_data</a>
 </li>
@@ -421,7 +432,6 @@ $(function() {
 : <a class="el" href="structgrpc__auth__metadata__context.html#a0ca2d1c0da619c1e50cef8437f1ef517">grpc_auth_metadata_context</a>
 , <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a83dbb8e4a7b9660b1d8b3a21b68128c0">grpc_byte_buffer::grpc_byte_buffer_data</a>
 , <a class="el" href="structgrpc__byte__buffer.html#a0945e647b3a7b14083537a6d3e51fde5">grpc_byte_buffer</a>
-, <a class="el" href="structgrpc__call__details.html#a5c323f3f0c94cbb867f13453dd43dd9d">grpc_call_details</a>
 , <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#aa8dbb47234771bd5509fffa821260dd9">grpc_op::grpc_op_data</a>
 , <a class="el" href="structgrpc__op.html#a58d279ba14f133153eb0ee801deb74f5">grpc_op</a>
 </li>
@@ -579,7 +589,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

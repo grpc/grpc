@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -104,14 +104,6 @@ $(function() {
 <li>gpr_atm_full_xchg
 : <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">atm_gcc_atomic.h</a>
 </li>
-<li>GPR_ATM_INC_ADD_THEN
-: <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">atm_gcc_atomic.h</a>
-, <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">atm_gcc_sync.h</a>
-</li>
-<li>GPR_ATM_INC_CAS_THEN
-: <a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">atm_gcc_atomic.h</a>
-, <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#af498a174edbc5b41c4d972480f892eac">atm_gcc_sync.h</a>
-</li>
 <li>GPR_ATM_LS_BARRIER_
 : <a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#a4ceb46c9b854db0ade8cfe2f37edb878">atm_gcc_sync.h</a>
 </li>
@@ -150,6 +142,9 @@ $(function() {
 </li>
 <li>GPR_ATTRIBUTE_NOINLINE
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#ab83587850217119f977454604236a0e6">port_platform.h</a>
+</li>
+<li>GPR_ATTRIBUTE_NORETURN
+: <a class="el" href="impl_2codegen_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">port_platform.h</a>
 </li>
 <li>GPR_ATTRIBUTE_WEAK
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#a5b73ca15c9e24b43959f202f094ea7b6">port_platform.h</a>
@@ -553,6 +548,9 @@ $(function() {
 <li>GPR_UNLIKELY
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">port_platform.h</a>
 </li>
+<li>gpr_unreachable_code()
+: <a class="el" href="impl_2codegen_2port__platform_8h.html#ad81f265625a28840b8be4c9f8247d50f">port_platform.h</a>
+</li>
 <li>GPR_UNREACHABLE_CODE
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">port_platform.h</a>
 </li>
@@ -663,6 +661,9 @@ $(function() {
 </li>
 <li>GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING
 : <a class="el" href="group__grpc__arg__keys.html#gaa96b205e65a2a441064390e6e52b3e5b">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS
+: <a class="el" href="group__grpc__arg__keys.html#ga87358852b0249cfab0e128c68810366f">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS
 : <a class="el" href="group__grpc__arg__keys.html#ga1768735fceeb8108a2f1eb12ea0a894e">grpc_types.h</a>
@@ -1373,7 +1374,7 @@ $(function() {
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#adf4e855c651994140b1bfe26295825b5">port_platform.h</a>
 </li>
 <li>grpc_dump_xds_configs()
-: <a class="el" href="grpc_8h.html#a1eaf68aa4269abb1d71b92d1fd1a442b">grpc.h</a>
+: <a class="el" href="grpc_8h.html#a7408718487625d05c9abad7dce78d923">grpc.h</a>
 </li>
 <li>grpc_empty_slice()
 : <a class="el" href="grpc_2slice_8h.html#a5deea1b06b3f4830c91e910cd4379004">slice.h</a>
@@ -1419,9 +1420,6 @@ $(function() {
 </li>
 <li>grpc_init()
 : <a class="el" href="grpc_8h.html#a573aed8e200997856a227c7eb798a185">grpc.h</a>
-</li>
-<li>GRPC_INITIAL_METADATA_CORKED
-: <a class="el" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">grpc_types.h</a>
 </li>
 <li>GRPC_INITIAL_METADATA_USED_MASK
 : <a class="el" href="grpc__types_8h.html#aca7fa3c1b87589e5829f508ee3fc1f84">grpc_types.h</a>
@@ -1491,6 +1489,9 @@ $(function() {
 </li>
 <li>GRPC_MUST_USE_RESULT
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#aef49047a3be38448a61332117b306686">port_platform.h</a>
+</li>
+<li>GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
+: <a class="el" href="impl_2codegen_2port__platform_8h.html#ae573312314f81c2a87ecdbcc7bbd7159">port_platform.h</a>
 </li>
 <li>grpc_op
 : <a class="el" href="grpc__types_8h.html#a0018ee30f0af340c387901829095aad5">grpc_types.h</a>
@@ -1804,11 +1805,11 @@ $(function() {
 <li>GRPC_SLICE_LENGTH
 : <a class="el" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">slice.h</a>
 </li>
-<li>GRPC_SLICE_MALLOC
-: <a class="el" href="grpc_2slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">slice.h</a>
-</li>
 <li>grpc_slice_malloc()
 : <a class="el" href="grpc_2slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
+</li>
+<li>GRPC_SLICE_MALLOC
+: <a class="el" href="grpc_2slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">slice.h</a>
 </li>
 <li>grpc_slice_malloc_large()
 : <a class="el" href="grpc_2slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">slice.h</a>
@@ -2069,22 +2070,25 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#af2bc85e32b46689f20d6b8fe78954146">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier
-: <a class="el" href="tls__certificate__verifier_8h.html#afc10060e41d23b0e31f5c5a312d49138">tls_certificate_verifier.h</a>
-, <a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_security.h</a>
+, <a class="el" href="tls__certificate__verifier_8h.html#afc10060e41d23b0e31f5c5a312d49138">tls_certificate_verifier.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_cancel()
 : <a class="el" href="grpc__security_8h.html#a8650518e6108ff6ed8624e0c00f8a55c">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_external
-: <a class="el" href="grpc__security_8h.html#a02ce84a849538d46352f38553d1df8f1">grpc_security.h</a>
-, <a class="el" href="tls__certificate__verifier_8h.html#a02ce84a849538d46352f38553d1df8f1">tls_certificate_verifier.h</a>
+: <a class="el" href="tls__certificate__verifier_8h.html#a02ce84a849538d46352f38553d1df8f1">tls_certificate_verifier.h</a>
+, <a class="el" href="grpc__security_8h.html#a02ce84a849538d46352f38553d1df8f1">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_external_create()
-: <a class="el" href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">grpc_security.h</a>
-, <a class="el" href="tls__certificate__verifier_8h.html#a129d8fd8e77cde679368f6ae03f990d4">tls_certificate_verifier.h</a>
+: <a class="el" href="tls__certificate__verifier_8h.html#a129d8fd8e77cde679368f6ae03f990d4">tls_certificate_verifier.h</a>
+, <a class="el" href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_host_name_create()
 : <a class="el" href="grpc__security_8h.html#a576605b5b21536662c29d135ee19e07b">grpc_security.h</a>
+</li>
+<li>grpc_tls_certificate_verifier_no_op_create()
+: <a class="el" href="grpc__security_8h.html#a91c9dca2867decd1478590e7f5c380a4">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_release()
 : <a class="el" href="grpc__security_8h.html#a08134898a71be96ee8dec28202cb35c8">grpc_security.h</a>
@@ -2151,8 +2155,8 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#ac0ad89ed7803b8b71ee7f0b8d7b86a51">grpc_security.h</a>
 </li>
 <li>grpc_tls_on_custom_verification_check_done_cb
-: <a class="el" href="tls__certificate__verifier_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">tls_certificate_verifier.h</a>
-, <a class="el" href="grpc__security_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_security.h</a>
+, <a class="el" href="tls__certificate__verifier_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">tls_certificate_verifier.h</a>
 </li>
 <li>grpc_tls_server_credentials_create()
 : <a class="el" href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">grpc_security.h</a>
@@ -2224,7 +2228,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

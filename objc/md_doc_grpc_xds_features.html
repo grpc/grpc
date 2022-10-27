@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -88,7 +88,7 @@ ADS stream</li>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><b>Load Balancing:</b><ul>
 <li>
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-virtualhost">Virtual host</a> domains matching</li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-virtualhost">Virtual host</a> domains matching</li>
 <li>
 Only default path ("" or "/") matching</li>
 <li>
@@ -96,27 +96,27 @@ Priority-based weighted round-robin locality picking</li>
 <li>
 Round-robin endpoint picking within locality</li>
 <li>
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#envoy-api-msg-route-routeaction">Cluster</a> route action</li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-routeaction">Cluster</a> route action</li>
 <li>
-Client-side Load reporting via <a href="https://github.com/envoyproxy/data-plane-api/blob/master/envoy/service/load_stats/v2/lrs.proto">LRS</a></li>
+Client-side Load reporting via <a href="https://github.com/envoyproxy/data-plane-api/blob/master/envoy/service/load_stats/v3/lrs.proto">LRS</a></li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md">A27</a> </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.2.0  </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">Request matching based on:<ul>
 <li>
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-routematch">Path</a> (prefix, full path and safe regex)<ul>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-routematch">Path</a> (prefix, full path and safe regex)<ul>
 <li>
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-routematch">case_sensitive</a> must be true else config is NACKed</li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-routematch">case_sensitive</a> must be true else config is NACKed</li>
 </ul>
 </li>
 <li>
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-headermatcher">Headers</a></li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-headermatcher">Headers</a></li>
 </ul>
-Request routing to multiple clusters based on <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-weightedcluster">weights</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md">A28</a> </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.3.0  </td></tr>
+Request routing to multiple clusters based on <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-weightedcluster">weights</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md">A28</a> </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.3.0  </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">Case insensitive prefix/full path matching:<ul>
 <li>
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-routematch">case_sensitive</a> can be true or false</li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-routematch">case_sensitive</a> can be true or false</li>
 </ul>
 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">v1.34.0 </td><td class="markdownTableBodyNone">v1.34.0 </td><td class="markdownTableBodyNone">v1.34.0 </td><td class="markdownTableBodyNone">v1.3.0  </td></tr>
 <tr class="markdownTableRowOdd">
@@ -189,7 +189,7 @@ CEL unsupported and rejected</li>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:35 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:25:10 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

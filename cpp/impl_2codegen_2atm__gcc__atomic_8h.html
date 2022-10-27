@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -83,10 +83,6 @@ Macros</h2></td></tr>
 <tr class="separator:a5fb170a483552faeb4b6d4acb674c44c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99e375c7c261fecdf2ffed0ec491c8e1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a99e375c7c261fecdf2ffed0ec491c8e1">GPR_ATM_MIN</a>&#160;&#160;&#160;INTPTR_MIN</td></tr>
 <tr class="separator:a99e375c7c261fecdf2ffed0ec491c8e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af498a174edbc5b41c4d972480f892eac"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(blah)&#160;&#160;&#160;blah</td></tr>
-<tr class="separator:af498a174edbc5b41c4d972480f892eac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9c18195c74f7c1fb80e26462ea55d2ab"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">GPR_ATM_INC_ADD_THEN</a>(blah)&#160;&#160;&#160;blah</td></tr>
-<tr class="separator:a9c18195c74f7c1fb80e26462ea55d2ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95f86e51ae9a479026bd237cb792193e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a95f86e51ae9a479026bd237cb792193e">gpr_atm_full_barrier</a>()&#160;&#160;&#160;(__atomic_thread_fence(__ATOMIC_SEQ_CST))</td></tr>
 <tr class="separator:a95f86e51ae9a479026bd237cb792193e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44607f95f7ee40eba592c7fe10960a06"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">gpr_atm_acq_load</a>(p)&#160;&#160;&#160;(__atomic_load_n((p), __ATOMIC_ACQUIRE))</td></tr>
@@ -97,11 +93,11 @@ Macros</h2></td></tr>
 <tr class="separator:a42e3982d45ae4cec439a12b8fcd618e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afad47d4c311c5439371fcdd4a0b6794e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#afad47d4c311c5439371fcdd4a0b6794e">gpr_atm_no_barrier_store</a>(p,  value)&#160;&#160;&#160;(__atomic_store_n((p), (intptr_t)(value), __ATOMIC_RELAXED))</td></tr>
 <tr class="separator:afad47d4c311c5439371fcdd4a0b6794e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae337dc477a6a45ac3d91e41e8f3f2f8c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add</a>(p,  delta)</td></tr>
+<tr class="memitem:ae337dc477a6a45ac3d91e41e8f3f2f8c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add</a>(p,  delta)&#160;&#160;&#160;__atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_RELAXED)</td></tr>
 <tr class="separator:ae337dc477a6a45ac3d91e41e8f3f2f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abada8771b338845e4c6ef93c8392582c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">gpr_atm_full_fetch_add</a>(p,  delta)</td></tr>
+<tr class="memitem:abada8771b338845e4c6ef93c8392582c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">gpr_atm_full_fetch_add</a>(p,  delta)&#160;&#160;&#160;__atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_ACQ_REL)</td></tr>
 <tr class="separator:abada8771b338845e4c6ef93c8392582c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a724691b6d48f35bbd9f575c82fdfb526"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">gpr_atm_full_xchg</a>(p,  n)&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</td></tr>
+<tr class="memitem:a724691b6d48f35bbd9f575c82fdfb526"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">gpr_atm_full_xchg</a>(p,  n)&#160;&#160;&#160;__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL)</td></tr>
 <tr class="separator:a724691b6d48f35bbd9f575c82fdfb526"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -166,13 +162,11 @@ Typedefs</h2></td></tr>
         <tr>
           <td></td>
           <td>)</td>
-          <td></td><td></td>
+          <td></td><td>&#160;&#160;&#160;__atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_ACQ_REL)</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">GPR_ATM_INC_ADD_THEN</a>(                  \</div>
-<div class="line">      __atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_ACQ_REL))</div>
-</div><!-- fragment -->
+
 </div>
 </div>
 <a id="a724691b6d48f35bbd9f575c82fdfb526"></a>
@@ -196,43 +190,7 @@ Typedefs</h2></td></tr>
         <tr>
           <td></td>
           <td>)</td>
-          <td></td><td>&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__gcc__sync_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9c18195c74f7c1fb80e26462ea55d2ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9c18195c74f7c1fb80e26462ea55d2ab">&#9670;&nbsp;</a></span>GPR_ATM_INC_ADD_THEN</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GPR_ATM_INC_ADD_THEN</td>
-          <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">blah</td><td>)</td>
-          <td>&#160;&#160;&#160;blah</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="af498a174edbc5b41c4d972480f892eac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af498a174edbc5b41c4d972480f892eac">&#9670;&nbsp;</a></span>GPR_ATM_INC_CAS_THEN</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GPR_ATM_INC_CAS_THEN</td>
-          <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">blah</td><td>)</td>
-          <td>&#160;&#160;&#160;blah</td>
+          <td></td><td>&#160;&#160;&#160;__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -288,13 +246,11 @@ Typedefs</h2></td></tr>
         <tr>
           <td></td>
           <td>)</td>
-          <td></td><td></td>
+          <td></td><td>&#160;&#160;&#160;__atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_RELAXED)</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">  <a class="code" href="impl_2codegen_2atm__gcc__atomic_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">GPR_ATM_INC_ADD_THEN</a>(                        \</div>
-<div class="line">      __atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_RELAXED))</div>
-</div><!-- fragment -->
+
 </div>
 </div>
 <a id="aa647aa9c97294a6709bbf2ac401cd9a6"></a>
@@ -387,10 +343,9 @@ Typedefs</h2></td></tr>
 </div>
 </div>
 </div><!-- contents -->
-<div class="ttc" id="aimpl_2codegen_2atm__gcc__atomic_8h_html_a9c18195c74f7c1fb80e26462ea55d2ab"><div class="ttname"><a href="impl_2codegen_2atm__gcc__atomic_8h.html#a9c18195c74f7c1fb80e26462ea55d2ab">GPR_ATM_INC_ADD_THEN</a></div><div class="ttdeci">#define GPR_ATM_INC_ADD_THEN(blah)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:47</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:45 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

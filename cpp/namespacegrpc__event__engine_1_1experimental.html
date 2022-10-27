@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.46.2</span>
+   &#160;<span id="projectnumber">1.50.0</span>
    </div>
   </td>
  </tr>
@@ -79,6 +79,8 @@ $(function() {
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacegrpc__event__engine_1_1experimental_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html">internal</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacegrpc__event__engine_1_1experimental_1_1slice__detail"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1slice__detail.html">slice_detail</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
@@ -95,16 +97,21 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reservation request - how much memory do we want to allocate?  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html">MutableSlice</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html">Slice</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A Wrapper around <em><a class="el" href="structgrpc__slice__buffer.html" title="Represents an expandable array of slices, to be interpreted as a single item.">grpc_slice_buffer</a></em> pointer.  <a href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_vector.html">Vector</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a20069bd62de0e53ee087b3bd5e8f3ebd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a20069bd62de0e53ee087b3bd5e8f3ebd">SetDefaultEventEngineFactory</a> (const std::function&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;()&gt; *factory)</td></tr>
-<tr class="memdesc:a20069bd62de0e53ee087b3bd5e8f3ebd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a20069bd62de0e53ee087b3bd5e8f3ebd">More...</a><br /></td></tr>
-<tr class="separator:a20069bd62de0e53ee087b3bd5e8f3ebd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3dfbf75b97bfbb167883cda8553d5702"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a3dfbf75b97bfbb167883cda8553d5702">SetDefaultEventEngineFactory</a> (absl::AnyInvocable&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;()&gt; factory)</td></tr>
+<tr class="memdesc:a3dfbf75b97bfbb167883cda8553d5702"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a3dfbf75b97bfbb167883cda8553d5702">More...</a><br /></td></tr>
+<tr class="separator:a3dfbf75b97bfbb167883cda8553d5702"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">CreateEventEngine</a> ()</td></tr>
 <tr class="memdesc:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> using the default factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">More...</a><br /></td></tr>
 <tr class="separator:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -129,8 +136,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a20069bd62de0e53ee087b3bd5e8f3ebd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a20069bd62de0e53ee087b3bd5e8f3ebd">&#9670;&nbsp;</a></span>SetDefaultEventEngineFactory()</h2>
+<a id="a3dfbf75b97bfbb167883cda8553d5702"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3dfbf75b97bfbb167883cda8553d5702">&#9670;&nbsp;</a></span>SetDefaultEventEngineFactory()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -138,7 +145,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">void grpc_event_engine::experimental::SetDefaultEventEngineFactory </td>
           <td>(</td>
-          <td class="paramtype">const std::function&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;()&gt; *&#160;</td>
+          <td class="paramtype">absl::AnyInvocable&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">EventEngine</a> &gt;()&gt;&#160;</td>
           <td class="paramname"><em>factory</em></td><td>)</td>
           <td></td>
         </tr>
@@ -154,7 +161,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:45 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

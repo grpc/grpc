@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">24.0.0</span>
+   &#160;<span id="projectnumber">28.0.0</span>
    </div>
   </td>
  </tr>
@@ -106,18 +106,21 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ad38e4bd2a5559809d16246442460af3d"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">OnConnectCallback</a> = std::function&lt; void(absl::StatusOr&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a> &gt; &gt;)&gt;</td></tr>
-<tr class="memdesc:ad38e4bd2a5559809d16246442460af3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when a new connection is established.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">More...</a><br /></td></tr>
-<tr class="separator:ad38e4bd2a5559809d16246442460af3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3380997754430d27e6b9832174184327"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> = std::chrono::duration&lt; int64_t, std::nano &gt;</td></tr>
+<tr class="memdesc:a3380997754430d27e6b9832174184327"><td class="mdescLeft">&#160;</td><td class="mdescRight">A duration between two events.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">More...</a><br /></td></tr>
+<tr class="separator:a3380997754430d27e6b9832174184327"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d190fa0d2978cce36684d203830496e"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9d190fa0d2978cce36684d203830496e">OnConnectCallback</a> = absl::AnyInvocable&lt; void(absl::StatusOr&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a> &gt; &gt;)&gt;</td></tr>
+<tr class="memdesc:a9d190fa0d2978cce36684d203830496e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when a new connection is established.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9d190fa0d2978cce36684d203830496e">More...</a><br /></td></tr>
+<tr class="separator:a9d190fa0d2978cce36684d203830496e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a57fe4d3cb961ef56f9f872e18a64f840"><td class="memItemLeft" align="right" valign="top">virtual absl::StatusOr&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html">Listener</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">CreateListener</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a4ab93dee16f17ef34fe4ff0f0b95a1ab">Listener::AcceptCallback</a> on_accept, std::function&lt; void(absl::Status)&gt; on_shutdown, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a> &amp;config, std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html">MemoryAllocatorFactory</a> &gt; memory_allocator_factory)=0</td></tr>
-<tr class="memdesc:a57fe4d3cb961ef56f9f872e18a64f840"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factory method to create a network listener / server.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">More...</a><br /></td></tr>
-<tr class="separator:a57fe4d3cb961ef56f9f872e18a64f840"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f6d2fe70d8fd254ec4099f6c60b291f"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">Connect</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">OnConnectCallback</a> on_connect, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;addr, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a> &amp;args, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> memory_allocator, absl::Time deadline)=0</td></tr>
-<tr class="memdesc:a9f6d2fe70d8fd254ec4099f6c60b291f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a client network connection to a remote network listener.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">More...</a><br /></td></tr>
-<tr class="separator:a9f6d2fe70d8fd254ec4099f6c60b291f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42219352c1ecf679da50671e9a1b35fb"><td class="memItemLeft" align="right" valign="top">virtual absl::StatusOr&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html">Listener</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a42219352c1ecf679da50671e9a1b35fb">CreateListener</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#ab96fd5b221a41105db2be8b458f92a6c">Listener::AcceptCallback</a> on_accept, absl::AnyInvocable&lt; void(absl::Status)&gt; on_shutdown, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a> &amp;config, std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html">MemoryAllocatorFactory</a> &gt; memory_allocator_factory)=0</td></tr>
+<tr class="memdesc:a42219352c1ecf679da50671e9a1b35fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factory method to create a network listener / server.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a42219352c1ecf679da50671e9a1b35fb">More...</a><br /></td></tr>
+<tr class="separator:a42219352c1ecf679da50671e9a1b35fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b0a8f1b88d47735c3b5bb7a51d8c4c5"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a1b0a8f1b88d47735c3b5bb7a51d8c4c5">Connect</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9d190fa0d2978cce36684d203830496e">OnConnectCallback</a> on_connect, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;addr, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a> &amp;args, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> memory_allocator, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> timeout)=0</td></tr>
+<tr class="memdesc:a1b0a8f1b88d47735c3b5bb7a51d8c4c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a client network connection to a remote network listener.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a1b0a8f1b88d47735c3b5bb7a51d8c4c5">More...</a><br /></td></tr>
+<tr class="separator:a1b0a8f1b88d47735c3b5bb7a51d8c4c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad116ce06ec29f65ce4083b226d2d90c8"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">CancelConnect</a> (<a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> handle)=0</td></tr>
 <tr class="memdesc:ad116ce06ec29f65ce4083b226d2d90c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request cancellation of a connection attempt.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">More...</a><br /></td></tr>
 <tr class="separator:ad116ce06ec29f65ce4083b226d2d90c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,21 +129,21 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa283885518525b71339f166e15932cd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb9dbb26c374daf51b6460da89a7d586"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#afb9dbb26c374daf51b6460da89a7d586">IsWorkerThread</a> ()=0</td></tr>
 <tr class="separator:afb9dbb26c374daf51b6460da89a7d586"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a955326b931bda68cecff3f75605c0689"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a955326b931bda68cecff3f75605c0689">GetDNSResolver</a> ()=0</td></tr>
-<tr class="memdesc:a955326b931bda68cecff3f75605c0689"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates and returns an instance of a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a955326b931bda68cecff3f75605c0689">More...</a><br /></td></tr>
-<tr class="separator:a955326b931bda68cecff3f75605c0689"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ff36f88737f1ea6daf7e0f630935d37"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a2ff36f88737f1ea6daf7e0f630935d37">GetDNSResolver</a> (const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">DNSResolver::ResolverOptions</a> &amp;options)=0</td></tr>
+<tr class="memdesc:a2ff36f88737f1ea6daf7e0f630935d37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates and returns an instance of a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>, optionally configured by the <em>options</em> struct.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a2ff36f88737f1ea6daf7e0f630935d37">More...</a><br /></td></tr>
+<tr class="separator:a2ff36f88737f1ea6daf7e0f630935d37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a589e091e9af842bcda00411996d9255f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">Run</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a> *closure)=0</td></tr>
 <tr class="memdesc:a589e091e9af842bcda00411996d9255f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously executes a task as soon as possible.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">More...</a><br /></td></tr>
 <tr class="separator:a589e091e9af842bcda00411996d9255f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af5539922dc4f6599e38adb0891f44986"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#af5539922dc4f6599e38adb0891f44986">Run</a> (std::function&lt; void()&gt; closure)=0</td></tr>
-<tr class="memdesc:af5539922dc4f6599e38adb0891f44986"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously executes a task as soon as possible.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#af5539922dc4f6599e38adb0891f44986">More...</a><br /></td></tr>
-<tr class="separator:af5539922dc4f6599e38adb0891f44986"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a254481ef518e7aba0e07bbb4c3d3e18c"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a254481ef518e7aba0e07bbb4c3d3e18c">RunAt</a> (absl::Time when, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a> *closure)=0</td></tr>
-<tr class="memdesc:a254481ef518e7aba0e07bbb4c3d3e18c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Synonymous with scheduling an alarm to run at time <em>when</em>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a254481ef518e7aba0e07bbb4c3d3e18c">More...</a><br /></td></tr>
-<tr class="separator:a254481ef518e7aba0e07bbb4c3d3e18c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a61c5e59baf71097104f5867f3b0b6d2e"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a61c5e59baf71097104f5867f3b0b6d2e">RunAt</a> (absl::Time when, std::function&lt; void()&gt; closure)=0</td></tr>
-<tr class="memdesc:a61c5e59baf71097104f5867f3b0b6d2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Synonymous with scheduling an alarm to run at time <em>when</em>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a61c5e59baf71097104f5867f3b0b6d2e">More...</a><br /></td></tr>
-<tr class="separator:a61c5e59baf71097104f5867f3b0b6d2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51b363a206399c2acde2d1681699b3ae"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a51b363a206399c2acde2d1681699b3ae">Run</a> (absl::AnyInvocable&lt; void()&gt; closure)=0</td></tr>
+<tr class="memdesc:a51b363a206399c2acde2d1681699b3ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously executes a task as soon as possible.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a51b363a206399c2acde2d1681699b3ae">More...</a><br /></td></tr>
+<tr class="separator:a51b363a206399c2acde2d1681699b3ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a854dfb6d39d5c6106eb98d499209529a"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a854dfb6d39d5c6106eb98d499209529a">RunAfter</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> when, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a> *closure)=0</td></tr>
+<tr class="memdesc:a854dfb6d39d5c6106eb98d499209529a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Synonymous with scheduling an alarm to run after duration <em>when</em>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a854dfb6d39d5c6106eb98d499209529a">More...</a><br /></td></tr>
+<tr class="separator:a854dfb6d39d5c6106eb98d499209529a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f6ad8aa9c0eb3e6881e03f6ffc42e3b"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a8f6ad8aa9c0eb3e6881e03f6ffc42e3b">RunAfter</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> when, absl::AnyInvocable&lt; void()&gt; closure)=0</td></tr>
+<tr class="memdesc:a8f6ad8aa9c0eb3e6881e03f6ffc42e3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Synonymous with scheduling an alarm to run after duration <em>when</em>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a8f6ad8aa9c0eb3e6881e03f6ffc42e3b">More...</a><br /></td></tr>
+<tr class="separator:a8f6ad8aa9c0eb3e6881e03f6ffc42e3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab8a579f7dc8429c8d2aa2cd81da910b"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">Cancel</a> (<a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> handle)=0</td></tr>
 <tr class="memdesc:aab8a579f7dc8429c8d2aa2cd81da910b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request cancellation of a task.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">More...</a><br /></td></tr>
 <tr class="separator:aab8a579f7dc8429c8d2aa2cd81da910b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,14 +160,31 @@ Public Member Functions</h2></td></tr>
 <p>A gRPC server can use a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> by calling the ServerBuilder::SetEventEngine method:</p>
 <p>ServerBuilder builder; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); builder.SetEventEngine(engine); std::unique_ptr&lt;Server&gt; server(builder.BuildAndStart()); server-&gt;Wait(); </p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
-<a id="ad38e4bd2a5559809d16246442460af3d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad38e4bd2a5559809d16246442460af3d">&#9670;&nbsp;</a></span>OnConnectCallback</h2>
+<a id="a3380997754430d27e6b9832174184327"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3380997754430d27e6b9832174184327">&#9670;&nbsp;</a></span>Duration</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">grpc_event_engine::experimental::EventEngine::OnConnectCallback</a> =  std::function&lt;void(absl::StatusOr&lt;std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a>&gt; &gt;)&gt;</td>
+          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">grpc_event_engine::experimental::EventEngine::Duration</a> =  std::chrono::duration&lt;int64_t, std::nano&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A duration between two events. </p>
+<p>Throughout the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> API durations are used to express how long until an action should be performed. </p>
+
+</div>
+</div>
+<a id="a9d190fa0d2978cce36684d203830496e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d190fa0d2978cce36684d203830496e">&#9670;&nbsp;</a></span>OnConnectCallback</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9d190fa0d2978cce36684d203830496e">grpc_event_engine::experimental::EventEngine::OnConnectCallback</a> =  absl::AnyInvocable&lt;void(absl::StatusOr&lt;std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">Endpoint</a>&gt; &gt;)&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -230,7 +250,8 @@ Public Member Functions</h2></td></tr>
 
 <p>Request cancellation of a task. </p>
 <p>If the associated closure has already been scheduled to run, it will not be cancelled, and this function will return false.</p>
-<p>If the associated callback has not been scheduled to run, it will be cancelled, and the associated std::function or <em>Closure*</em> will not be executed. In this case, Cancel will return true. </p>
+<p>If the associated callback has not been scheduled to run, it will be cancelled, and the associated absl::AnyInvocable or <em>Closure*</em> will not be executed. In this case, Cancel will return true.</p>
+<p>Implementation note: closures should be destroyed in a timely manner after execution or cancelliation (milliseconds), since any state bound to the closure may need to be destroyed for things to progress (e.g., if a closure holds a ref to some ref-counted object). </p>
 
 </div>
 </div>
@@ -264,8 +285,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a9f6d2fe70d8fd254ec4099f6c60b291f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9f6d2fe70d8fd254ec4099f6c60b291f">&#9670;&nbsp;</a></span>Connect()</h2>
+<a id="a1b0a8f1b88d47735c3b5bb7a51d8c4c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b0a8f1b88d47735c3b5bb7a51d8c4c5">&#9670;&nbsp;</a></span>Connect()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -276,7 +297,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> grpc_event_engine::experimental::EventEngine::Connect </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">OnConnectCallback</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9d190fa0d2978cce36684d203830496e">OnConnectCallback</a>&#160;</td>
           <td class="paramname"><em>on_connect</em>, </td>
         </tr>
         <tr>
@@ -300,8 +321,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">absl::Time&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a>&#160;</td>
+          <td class="paramname"><em>timeout</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -322,8 +343,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a57fe4d3cb961ef56f9f872e18a64f840"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a57fe4d3cb961ef56f9f872e18a64f840">&#9670;&nbsp;</a></span>CreateListener()</h2>
+<a id="a42219352c1ecf679da50671e9a1b35fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a42219352c1ecf679da50671e9a1b35fb">&#9670;&nbsp;</a></span>CreateListener()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -334,13 +355,13 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual absl::StatusOr&lt;std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html">Listener</a>&gt; &gt; grpc_event_engine::experimental::EventEngine::CreateListener </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a4ab93dee16f17ef34fe4ff0f0b95a1ab">Listener::AcceptCallback</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#ab96fd5b221a41105db2be8b458f92a6c">Listener::AcceptCallback</a>&#160;</td>
           <td class="paramname"><em>on_accept</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::function&lt; void(absl::Status)&gt;&#160;</td>
+          <td class="paramtype">absl::AnyInvocable&lt; void(absl::Status)&gt;&#160;</td>
           <td class="paramname"><em>on_shutdown</em>, </td>
         </tr>
         <tr>
@@ -375,8 +396,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a955326b931bda68cecff3f75605c0689"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a955326b931bda68cecff3f75605c0689">&#9670;&nbsp;</a></span>GetDNSResolver()</h2>
+<a id="a2ff36f88737f1ea6daf7e0f630935d37"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ff36f88737f1ea6daf7e0f630935d37">&#9670;&nbsp;</a></span>GetDNSResolver()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -387,7 +408,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a>&gt; grpc_event_engine::experimental::EventEngine::GetDNSResolver </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">DNSResolver::ResolverOptions</a> &amp;&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -398,7 +420,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Creates and returns an instance of a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>. </p>
+<p>Creates and returns an instance of a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>, optionally configured by the <em>options</em> struct. </p>
 
 </div>
 </div>
@@ -427,8 +449,38 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a51b363a206399c2acde2d1681699b3ae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51b363a206399c2acde2d1681699b3ae">&#9670;&nbsp;</a></span>Run() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::Run </td>
+          <td>(</td>
+          <td class="paramtype">absl::AnyInvocable&lt; void()&gt;&#160;</td>
+          <td class="paramname"><em>closure</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Asynchronously executes a task as soon as possible. </p>
+<p><em>Closures</em> scheduled with <em>Run</em> cannot be cancelled. Unlike the overloaded <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> alternative, the absl::AnyInvocable version's <em>closure</em> will be deleted by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> after the closure has been run.</p>
+<p>This version of <em>Run</em> may be less performant than the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> version in some scenarios. This overload is useful in situations where performance is not a critical concern. </p>
+
+</div>
+</div>
 <a id="a589e091e9af842bcda00411996d9255f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a589e091e9af842bcda00411996d9255f">&#9670;&nbsp;</a></span>Run() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a589e091e9af842bcda00411996d9255f">&#9670;&nbsp;</a></span>Run() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -456,8 +508,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="af5539922dc4f6599e38adb0891f44986"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af5539922dc4f6599e38adb0891f44986">&#9670;&nbsp;</a></span>Run() <span class="overload">[2/2]</span></h2>
+<a id="a8f6ad8aa9c0eb3e6881e03f6ffc42e3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f6ad8aa9c0eb3e6881e03f6ffc42e3b">&#9670;&nbsp;</a></span>RunAfter() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -466,11 +518,21 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::Run </td>
+          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> grpc_event_engine::experimental::EventEngine::RunAfter </td>
           <td>(</td>
-          <td class="paramtype">std::function&lt; void()&gt;&#160;</td>
-          <td class="paramname"><em>closure</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a>&#160;</td>
+          <td class="paramname"><em>when</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">absl::AnyInvocable&lt; void()&gt;&#160;</td>
+          <td class="paramname"><em>closure</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -480,14 +542,14 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Asynchronously executes a task as soon as possible. </p>
-<p><em>Closures</em> scheduled with <em>Run</em> cannot be cancelled. Unlike the overloaded <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> alternative, the std::function version's <em>closure</em> will be deleted by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> after the closure has been run.</p>
-<p>This version of <em>Run</em> may be less performant than the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> version in some scenarios. This overload is useful in situations where performance is not a critical concern. </p>
+<p>Synonymous with scheduling an alarm to run after duration <em>when</em>. </p>
+<p>The <em>closure</em> will execute when time <em>when</em> arrives unless it has been cancelled via the <em>Cancel</em> method. If cancelled, the closure will not be run. Unilke the overloaded <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> alternative, the absl::AnyInvocable version's <em>closure</em> will be deleted by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> after the closure has been run, or upon cancellation.</p>
+<p>This version of <em>RunAfter</em> may be less performant than the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> version in some scenarios. This overload is useful in situations where performance is not a critical concern. </p>
 
 </div>
 </div>
-<a id="a254481ef518e7aba0e07bbb4c3d3e18c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a254481ef518e7aba0e07bbb4c3d3e18c">&#9670;&nbsp;</a></span>RunAt() <span class="overload">[1/2]</span></h2>
+<a id="a854dfb6d39d5c6106eb98d499209529a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a854dfb6d39d5c6106eb98d499209529a">&#9670;&nbsp;</a></span>RunAfter() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -496,9 +558,9 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> grpc_event_engine::experimental::EventEngine::RunAt </td>
+          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> grpc_event_engine::experimental::EventEngine::RunAfter </td>
           <td>(</td>
-          <td class="paramtype">absl::Time&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a>&#160;</td>
           <td class="paramname"><em>when</em>, </td>
         </tr>
         <tr>
@@ -520,48 +582,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Synonymous with scheduling an alarm to run at time <em>when</em>. </p>
+<p>Synonymous with scheduling an alarm to run after duration <em>when</em>. </p>
 <p>The <em>closure</em> will execute when time <em>when</em> arrives unless it has been cancelled via the <em>Cancel</em> method. If cancelled, the closure will not be run, nor will it be deleted. Ownership remains with the caller. </p>
-
-</div>
-</div>
-<a id="a61c5e59baf71097104f5867f3b0b6d2e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a61c5e59baf71097104f5867f3b0b6d2e">&#9670;&nbsp;</a></span>RunAt() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> grpc_event_engine::experimental::EventEngine::RunAt </td>
-          <td>(</td>
-          <td class="paramtype">absl::Time&#160;</td>
-          <td class="paramname"><em>when</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::function&lt; void()&gt;&#160;</td>
-          <td class="paramname"><em>closure</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Synonymous with scheduling an alarm to run at time <em>when</em>. </p>
-<p>The <em>closure</em> will execute when time <em>when</em> arrives unless it has been cancelled via the <em>Cancel</em> method. If cancelled, the closure will not be run. Unilke the overloaded <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> alternative, the std::function version's <em>closure</em> will be deleted by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> after the closure has been run, or upon cancellation.</p>
-<p>This version of <em>RunAt</em> may be less performant than the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> version in some scenarios. This overload is useful in situations where performance is not a critical concern. </p>
 
 </div>
 </div>
@@ -571,7 +593,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 14 2022 17:24:44 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
