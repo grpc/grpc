@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_RESULT_PARSING_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_RESULT_PARSING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -23,7 +23,9 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -31,10 +33,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -44,6 +43,14 @@ namespace internal {
 class ClientChannelGlobalParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
+  ClientChannelGlobalParsedConfig(
+      RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config,
+      std::string parsed_deprecated_lb_policy,
+      absl::optional<std::string> health_check_service_name)
+      : parsed_lb_config_(std::move(parsed_lb_config)),
+        parsed_deprecated_lb_policy_(std::move(parsed_deprecated_lb_policy)),
+        health_check_service_name_(std::move(health_check_service_name)) {}
+
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config() const {
     return parsed_lb_config_;
   }
@@ -53,33 +60,25 @@ class ClientChannelGlobalParsedConfig
   }
 
   const absl::optional<std::string>& health_check_service_name() const {
-    return health_check_config_.service_name;
+    return health_check_service_name_;
   }
 
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
-
  private:
-  struct HealthCheckConfig {
-    absl::optional<std::string> service_name;
-
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  };
-
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
   std::string parsed_deprecated_lb_policy_;
-  HealthCheckConfig health_check_config_;
+  absl::optional<std::string> health_check_service_name_;
 };
 
 class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
+  ClientChannelMethodParsedConfig(Duration timeout,
+                                  const absl::optional<bool>& wait_for_ready)
+      : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
+
   Duration timeout() const { return timeout_; }
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
   Duration timeout_;
@@ -90,13 +89,11 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      const ChannelArgs& /*args*/, const Json& json,
-      ValidationErrors* errors) override;
+  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+  ParseGlobalParams(const ChannelArgs& /*args*/, const Json& json) override;
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const ChannelArgs& /*args*/, const Json& json,
-      ValidationErrors* errors) override;
+  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+  ParsePerMethodParams(const ChannelArgs& /*args*/, const Json& json) override;
 
   static size_t ParserIndex();
   static void Register(CoreConfiguration::Builder* builder);
@@ -108,4 +105,4 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
 }  // namespace internal
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_RESULT_PARSING_H
