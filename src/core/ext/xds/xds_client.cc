@@ -197,7 +197,8 @@ class XdsClient::ChannelState::AdsCallState
       // Don't start timer if we've already either seen the resource or
       // marked it as non-existing.
       if (resource_seen_) return;
-      // Don't start timer if we haven't yet sent the resource.
+      // Don't start timer if we haven't yet sent the initial subscription
+      // request for the resource.
       if (!subscription_sent_) return;
       // Don't start timer if the channel is not connected.
       if (!ads_calld->chand()->channel_connected_) return;

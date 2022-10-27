@@ -71,13 +71,14 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
   };
 
   // Creates a new transport for the specified server.
-  // The on_connectivity_failure callback will be invoked whenever there is
-  // a connectivity failure on the transport.
+  // The on_connectivity_change callback will be invoked with OK status
+  // whenever the transport becomes connected and with non-OK status
+  // whenever the transport sees a connectivity failure.
   // *status will be set if there is an error creating the channel,
   // although the returned channel must still accept calls (which may fail).
   virtual OrphanablePtr<XdsTransport> Create(
       const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
+      std::function<void(absl::Status)> on_connectivity_change,
       absl::Status* status) = 0;
 };
 
