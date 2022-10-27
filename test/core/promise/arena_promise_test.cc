@@ -79,7 +79,12 @@ TEST(ArenaPromiseTest, AllocatedUniquePtrWorks) {
   std::array<int, 5> garbage = {0, 1, 2, 3, 4};
   auto freer = [garbage](int* p) { free(p + garbage[0]); };
   using Ptr = std::unique_ptr<int, decltype(freer)>;
-  Ptr x(new int(42), freer);
+  Ptr x(([] {
+          int* p = static_cast<decltype(p)>(malloc(sizeof(*p)));
+          *p = 42;
+          return p;
+        })(),
+        freer);
   static_assert(sizeof(x) > sizeof(arena_promise_detail::ArgType),
                 "This test assumes the unique ptr will go down the allocated "
                 "path for ArenaPromise");
