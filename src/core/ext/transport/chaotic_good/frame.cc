@@ -45,7 +45,11 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   }
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
-    GRPC_RETURN_IF_ERROR(parser->Parse(deserializer.ReceiveHeaders()));
+    auto slices = deserializer.ReceiveHeaders();
+    for (size_t i = 0; i < slices.Count(); i++) {
+      GRPC_RETURN_IF_ERROR(
+          parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
+    }
   }
   if (header.flags.is_set(1)) {
     message = deserializer.ReceiveMessage();
@@ -83,13 +87,21 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   }
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
-    GRPC_RETURN_IF_ERROR(parser->Parse(deserializer.ReceiveHeaders()));
+    auto slices = deserializer.ReceiveHeaders();
+    for (size_t i = 0; i < slices.Count(); i++) {
+      GRPC_RETURN_IF_ERROR(
+          parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
+    }
   }
   if (header.flags.is_set(1)) {
     message = deserializer.ReceiveMessage();
   }
   if (header.flags.is_set(2)) {
-    GRPC_RETURN_IF_ERROR(parser->Parse(deserializer.ReceiveTrailers()));
+    auto slices = deserializer.ReceiveTrailers();
+    for (size_t i = 0; i < slices.Count(); i++) {
+      GRPC_RETURN_IF_ERROR(
+          parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
+    }
   }
   return deserializer.Finish();
 }
@@ -97,15 +109,15 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
 SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
   BitSet<3> flags;
   flags.set(0, headers.get() != nullptr);
-  flags.set(1, message.get() != nullptr);
+  flags.set(1, message.has_value());
   flags.set(2, trailers.get() != nullptr);
   FrameSerializer serializer(FrameType::kFragment, flags);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(),
                               serializer.AddHeaders().c_slice_buffer());
   }
-  if (message.get() != nullptr) {
-    serializer.AddMessage().Append(*message->payload());
+  if (message.has_value()) {
+    serializer.AddMessage().Append(*message);
   }
   if (trailers.get() != nullptr) {
     encoder->EncodeRawHeaders(*trailers.get(),

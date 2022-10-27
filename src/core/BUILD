@@ -4614,6 +4614,34 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "chaotic_good_frame",
+    srcs = [
+        "ext/transport/chaotic_good/frame.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/frame.h",
+    ],
+    deps = [
+        "chaotic_good_frame_header",
+        "slice_buffer",
+        "//:grpc_base",
+        "//:grpc_transport_chttp2",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_frame_header",
+    srcs = [
+        "ext/transport/chaotic_good/frame_header.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/frame_header.h",
+    ],
+    external_deps = ["absl/status:statusor"],
+    deps = ["bitset"],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
