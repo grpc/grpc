@@ -19,7 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <memory>
 #include <string>
 
