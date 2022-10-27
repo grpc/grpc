@@ -15,7 +15,7 @@
 
 import logging
 import time
-from typing import Any, AnyStr, Callable, Optional
+from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -80,7 +80,9 @@ def decode(b: AnyStr) -> str:
     return b
 
 
-def _transform(message: Any, transformer, exception_message: str) -> Any:
+def _transform(message: Any,
+               transformer: Union[SerializingFunction, DeserializingFunction, None],
+               exception_message: str) -> Any:
     if transformer is None:
         return message
     else:
@@ -104,7 +106,7 @@ def fully_qualified_method(group: str, method: str) -> str:
     return '/{}/{}'.format(group, method)
 
 
-def _wait_once(wait_fn, timeout: float, spin_cb):
+def _wait_once(wait_fn, timeout: float, spin_cb: Optional[Callable[[], None]]):
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()

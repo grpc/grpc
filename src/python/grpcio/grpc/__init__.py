@@ -20,7 +20,7 @@ import contextlib
 import enum
 import logging
 import sys
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Type
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -613,7 +613,7 @@ class AuthMetadataContext(abc.ABC):
 class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
-    def __call__(self, metadata, error):
+    def __call__(self, metadata: MetadataType, error: Optional[Type[BaseException]]):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -626,7 +626,7 @@ class AuthMetadataPluginCallback(abc.ABC):
 class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
-    def __call__(self, context, callback):
+    def __call__(self, contex: AuthMetadataContext, callback: AuthMetadataPluginCallback):
         """Implements authentication by passing metadata to a callback.
 
         This method will be invoked asynchronously in a separate thread.
@@ -1665,7 +1665,7 @@ def xds_channel_credentials(fallback_credentials=None):
         _cygrpc.XDSChannelCredentials(fallback_credentials._credentials))
 
 
-def metadata_call_credentials(metadata_plugin, name=None):
+def metadata_call_credentials(metadata_plugin: AuthMetadataPlugin, name: Optional[str] = None) -> CallCredentials:
     """Construct CallCredentials from an AuthMetadataPlugin.
 
     Args:
@@ -1680,7 +1680,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
         metadata_plugin, name)
 
 
-def access_token_call_credentials(access_token):
+def access_token_call_credentials(access_token: str) -> CallCredentials:
     """Construct CallCredentials from an access token.
 
     Args:

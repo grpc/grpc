@@ -15,10 +15,13 @@
 import collections
 import logging
 import threading
+from typing import Callable, Optional, Type
 
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
+
+from grpc._typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,11 +44,11 @@ class _CallbackState(object):
 
 class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 
-    def __init__(self, state, callback):
+    def __init__(self, state: _CallbackState, callback: Callable):
         self._state = state
         self._callback = callback
 
-    def __call__(self, metadata, error):
+    def __call__(self, metadata: MetadataType, error: Optional[Type[BaseException]]):
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
@@ -66,7 +69,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 
 class _Plugin(object):
 
-    def __init__(self, metadata_plugin):
+    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):
         self._metadata_plugin = metadata_plugin
         self._stored_ctx = None
 
@@ -81,7 +84,7 @@ class _Plugin(object):
             # Support versions predating contextvars.
             pass
 
-    def __call__(self, service_url, method_name, callback):
+    def __call__(self, service_url: str, method_name: str, callback: Callable):
         context = _AuthMetadataContext(_common.decode(service_url),
                                        _common.decode(method_name))
         callback_state = _CallbackState()
@@ -100,7 +103,8 @@ class _Plugin(object):
                      _common.encode(str(exception)))
 
 
-def metadata_plugin_call_credentials(metadata_plugin, name):
+def metadata_plugin_call_credentials(metadata_plugin: grpc.AuthMetadataPlugin,
+                                     name: Optional[str]) -> grpc.CallCredentials:
     if name is None:
         try:
             effective_name = metadata_plugin.__name__

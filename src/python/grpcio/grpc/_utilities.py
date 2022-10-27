@@ -72,7 +72,7 @@ class _ChannelReadyFuture(grpc.Future):
         self._cancelled = False
         self._done_callbacks = []
 
-    def _block(self, timeout: Optional[float]):
+    def _block(self, timeout: Optional[float]) -> None:
         until = None if timeout is None else time.time() + timeout
         with self._condition:
             while True:
@@ -90,7 +90,7 @@ class _ChannelReadyFuture(grpc.Future):
                         else:
                             self._condition.wait(timeout=remaining)
 
-    def _update(self, connectivity: Optional[grpc.ChannelConnectivity]):
+    def _update(self, connectivity: Optional[grpc.ChannelConnectivity]) -> None:
         with self._condition:
             if (not self._cancelled and
                     connectivity is grpc.ChannelConnectivity.READY):
@@ -139,13 +139,13 @@ class _ChannelReadyFuture(grpc.Future):
         with self._condition:
             return self._cancelled or self._matured
 
-    def result(self, timeout: Optional[float] = None):
+    def result(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def exception(self, timeout: Optional[float] = None):
+    def exception(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def traceback(self, timeout: Optional[float] = None):
+    def traceback(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
     def add_done_callback(self, fn: DoneCallbackType):
@@ -166,7 +166,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._channel.unsubscribe(self._update)
 
 
-def channel_ready_future(channel: grpc.Channel):
+def channel_ready_future(channel: grpc.Channel) -> _ChannelReadyFuture:
     ready_future = _ChannelReadyFuture(channel)
     ready_future.start()
     return ready_future

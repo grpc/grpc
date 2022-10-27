@@ -30,6 +30,7 @@ from grpc._cython import cygrpc
 import grpc.experimental
 
 from ._typing import ChannelArgumentType
+from ._typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -310,10 +311,10 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def code(self):
         return self._state.code
 
-    def details(self):
+    def details(self) -> str:
         return _common.decode(self._state.details)
 
-    def debug_error_string(self):
+    def debug_error_string(self) -> str:
         return _common.decode(self._state.debug_error_string)
 
     def _repr(self):
@@ -586,7 +587,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
                     "Cannot get code until RPC is completed.")
             return self._state.code
 
-    def details(self):
+    def details(self) -> str:
         """See grpc.Call.details"""
         with self._state.condition:
             if self._state.details is None:
@@ -644,7 +645,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
                 raise self
         return self._next_response()
 
-    def debug_error_string(self):
+    def debug_error_string(self) -> str:
         with self._state.condition:
             if self._state.debug_error_string is None:
                 raise grpc.experimental.UsageError(
@@ -693,7 +694,7 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
             _common.wait(self._state.condition.wait, _done)
             return self._state.code
 
-    def details(self):
+    def details(self) -> str:
         """See grpc.Call.details"""
         with self._state.condition:
 
@@ -703,7 +704,7 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
             _common.wait(self._state.condition.wait, _done)
             return _common.decode(self._state.details)
 
-    def debug_error_string(self):
+    def debug_error_string(self) -> str:
         with self._state.condition:
 
             def _done():
@@ -897,7 +898,12 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         self._response_deserializer = response_deserializer
         self._context = cygrpc.build_census_context()
 
-    def _prepare(self, request, timeout, metadata, wait_for_ready, compression):
+    def _prepare(self,
+                request,
+                timeout: Optional[float],
+                metadata: Optional[MetadataType],
+                wait_for_ready: Optional[bool],
+                compression: Optional[grpc.Compression]):
         deadline, serialized_request, rendezvous = _start_unary_request(
             request, timeout, self._request_serializer)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
@@ -1502,7 +1508,7 @@ class Channel(grpc.Channel):
         _unsubscribe(self._connectivity_state, callback)
 
     def unary_unary(self,
-                    method,
+                    method: str,
                     request_serializer=None,
                     response_deserializer=None):
         return _UnaryUnaryMultiCallable(
@@ -1510,7 +1516,7 @@ class Channel(grpc.Channel):
             _common.encode(method), request_serializer, response_deserializer)
 
     def unary_stream(self,
-                     method,
+                     method: str,
                      request_serializer=None,
                      response_deserializer=None):
         # NOTE(rbellevi): Benchmarks have shown that running a unary-stream RPC
@@ -1529,7 +1535,7 @@ class Channel(grpc.Channel):
                 response_deserializer)
 
     def stream_unary(self,
-                     method,
+                     method: str,
                      request_serializer=None,
                      response_deserializer=None):
         return _StreamUnaryMultiCallable(
@@ -1537,7 +1543,7 @@ class Channel(grpc.Channel):
             _common.encode(method), request_serializer, response_deserializer)
 
     def stream_stream(self,
-                      method,
+                      method: str,
                       request_serializer=None,
                       response_deserializer=None):
         return _StreamStreamMultiCallable(
