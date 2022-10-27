@@ -956,7 +956,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    def subscribe(self, callback, try_to_connect: bool = False):
+    def subscribe(self, callback: Callable, try_to_connect: bool = False):
         """Subscribe to this Channel's connectivity state machine.
 
         A Channel may be in any of the states described by ChannelConnectivity.
@@ -977,7 +977,7 @@ class Channel(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unsubscribe(self, callback):
+    def unsubscribe(self, callback: Callable):
         """Unsubscribes a subscribed callback from this Channel's connectivity.
 
         Args:
