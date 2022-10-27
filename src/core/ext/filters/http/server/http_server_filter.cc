@@ -32,11 +32,12 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/promise/call_push_pull.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_concurrently.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
@@ -131,20 +132,21 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   auto* write_latch =
       std::exchange(call_args.server_initial_metadata, read_latch);
 
-  return TryConcurrently(
-             Seq(next_promise_factory(std::move(call_args)),
-                 [](ServerMetadataHandle md) -> ServerMetadataHandle {
-                   FilterOutgoingMetadata(md.get());
-                   return md;
-                 }))
-      .Push(Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
-        FilterOutgoingMetadata(*md);
-        (*md)->Set(HttpStatusMetadata(), 200);
-        (*md)->Set(ContentTypeMetadata(),
-                   ContentTypeMetadata::kApplicationGrpc);
-        write_latch->Set(*md);
-        return absl::OkStatus();
-      }));
+  return CallPushPull(Seq(next_promise_factory(std::move(call_args)),
+                          [](ServerMetadataHandle md) -> ServerMetadataHandle {
+                            FilterOutgoingMetadata(md.get());
+                            return md;
+                          }),
+                      Seq(read_latch->Wait(),
+                          [write_latch](ServerMetadata** md) {
+                            FilterOutgoingMetadata(*md);
+                            (*md)->Set(HttpStatusMetadata(), 200);
+                            (*md)->Set(ContentTypeMetadata(),
+                                       ContentTypeMetadata::kApplicationGrpc);
+                            write_latch->Set(*md);
+                            return absl::OkStatus();
+                          }),
+                      []() { return absl::OkStatus(); });
 }
 
 absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(
