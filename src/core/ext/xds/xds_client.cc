@@ -1124,6 +1124,8 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                 }
               } else {
                 resource_state.resource.reset();
+                resource_state.meta.client_status =
+                    XdsApi::ResourceMetadata::DOES_NOT_EXIST;
                 xds_client()->NotifyWatchersOnResourceDoesNotExist(
                     resource_state.watchers);
               }
@@ -1131,8 +1133,8 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
           }
         }
       }
-      // If we had valid resources, update the version.
-      if (result.have_valid_resources) {
+      // If we had valid resources or the update was empty, update the version.
+      if (result.have_valid_resources || result.errors.empty()) {
         chand()->resource_type_version_map_[result.type] =
             std::move(result.version);
         // Start load reporting if needed.
@@ -1700,7 +1702,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
-  resource_type->InitUpbSymtab(symtab_.ptr());
+  resource_type->InitUpbSymtab(this, symtab_.ptr());
 }
 
 const XdsResourceType* XdsClient::GetResourceTypeLocked(

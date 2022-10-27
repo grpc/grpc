@@ -1794,6 +1794,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
+        "absl/types:optional",
         "absl/memory",
         "upb_lib",
         "protobuf_headers",
@@ -2670,7 +2671,6 @@ grpc_cc_library(
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:construct_destruct",
-        "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:gpr_atm",
@@ -3110,8 +3110,6 @@ grpc_cc_library(
         "promise",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
-        "//src/core:call_push_pull",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -3124,6 +3122,7 @@ grpc_cc_library(
         "//src/core:slice_buffer",
         "//src/core:status_helper",
         "//src/core:transport_fwd",
+        "//src/core:try_concurrently",
     ],
 )
 

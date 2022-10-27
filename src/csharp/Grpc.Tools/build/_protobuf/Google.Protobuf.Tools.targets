@@ -189,7 +189,7 @@
           Condition=" '$(Language)' == 'C#' ">
     <ItemGroup>
       <_Protobuf_CodeCompile Include="@(Protobuf_ExpectedOutputs->Distinct())"
-         Condition=" '%(Protobuf_Compile.Source)' != '' and '@(Protobuf_Compile->WithMetadataValue('CompileOutputs', 'true'))' != '' " />
+         Condition=" '%(Source)' != '' and '@(Protobuf_Compile->WithMetadataValue('CompileOutputs', 'true'))' != '' " />
       <Compile Include="@(_Protobuf_CodeCompile)" />
     </ItemGroup>
   </Target>
@@ -208,9 +208,9 @@
          not matching any proto marked for compilation. -->
     <ItemGroup>
       <Protobuf_ExpectedOutputs Remove="@(Protobuf_ExpectedOutputs)" Condition=" '%(Protobuf_ExpectedOutputs.Source)' == '' " />
-      <Protobuf_ExpectedOutputs Remove="@(Protobuf_ExpectedOutputs)" Condition=" '%(Protobuf_ExpectedOutputs.Source)' != '' and '@(Protobuf_Compile)' == '' " />
+      <Protobuf_ExpectedOutputs Remove="@(Protobuf_ExpectedOutputs)" Condition=" '%(Source)' != '' and '@(Protobuf_Compile)' == '' " />
       <Protobuf_Dependencies Remove="@(Protobuf_Dependencies)" Condition=" '%(Protobuf_Dependencies.Source)' == '' " />
-      <Protobuf_Dependencies Remove="@(Protobuf_Dependencies)" Condition=" '%(Protobuf_Dependencies.Source)' != '' and '@(Protobuf_Compile)' == '' " />
+      <Protobuf_Dependencies Remove="@(Protobuf_Dependencies)" Condition=" '%(Source)' != '' and '@(Protobuf_Compile)' == '' " />
     </ItemGroup>
   </Target>
 
@@ -228,7 +228,7 @@
     <!-- Simple selection: always compile files that have no declared outputs (but warn below). -->
     <ItemGroup>
       <_Protobuf_OutOfDateProto Include="@(Protobuf_Compile)"
-                                Condition = " '%(Protobuf_Compile.Source)' != '' and '@(Protobuf_ExpectedOutputs)' == '' ">
+                                Condition = " '%(Source)' != '' and '@(Protobuf_ExpectedOutputs)' == '' ">
         <_Exec>true</_Exec>
       </_Protobuf_OutOfDateProto>
     </ItemGroup>
@@ -238,11 +238,11 @@
          will be recompiled on every build, as there is nothing to run up-to-date check against.
          Set Protobuf_NoOrphanWarning to 'true' to suppress if this is what you want. -->
     <Warning Condition=" '@(_Protobuf_OutOfDateProto)' != '' and '$(Protobuf_NoOrphanWarning)' != 'true' "
-             Text="The following files have no known outputs, and will be always recompiled as if out-of-date:&#10;@(_Protobuf_OutOfDateProto->'&#10;    %(Identity)', '')" />
+             Text="The following files have no known outputs, and will be always recompiled as if out-of-date:&#10;@(_Protobuf_Orphans->'&#10;    %(Identity)', '')" />
   </Target>
 
   <Target Name="_Protobuf_GatherStaleBatched"
-          Inputs="@(Protobuf_Compile);%(Protobuf_Compile.Source);@(Protobuf_Dependencies);$(MSBuildAllProjects)"
+          Inputs="@(Protobuf_Compile);%(Source);@(Protobuf_Dependencies);$(MSBuildAllProjects)"
           Outputs="@(Protobuf_ExpectedOutputs)" >
     <!-- The '_Exec' metadatum is set to distinguish really executed items from those MSBuild so
          "helpfully" infers in a bucketed task. For the same reason, cannot use the intrinsic
@@ -296,7 +296,7 @@
     <!-- Compute files expected but not in fact produced by protoc. -->
     <ItemGroup Condition=" '@(_Protobuf_OutOfDateProto)' != '' ">
       <Protobuf_ExpectedNotGenerated Include="@(Protobuf_ExpectedOutputs)"
-                                     Condition=" '%(Protobuf_ExpectedOutputs.Source)' != '' and '@(_Protobuf_OutOfDateProto)' != '' " />
+                                     Condition=" '%(Source)' != '' and '@(_Protobuf_OutOfDateProto)' != '' " />
       <Protobuf_ExpectedNotGenerated Remove="@(_Protobuf_GeneratedFiles)" />
     </ItemGroup>
   </Target>

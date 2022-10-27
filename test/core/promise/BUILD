@@ -312,6 +312,28 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "map_pipe_test",
+    srcs = ["map_pipe_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//src/core:for_each",
+        "//src/core:join",
+        "//src/core:map",
+        "//src/core:map_pipe",
+        "//src/core:observable",
+        "//src/core:pipe",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:try_seq",
+    ],
+)
+
+grpc_cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     external_deps = ["gtest"],
@@ -384,8 +406,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "call_push_pull_test",
-    srcs = ["call_push_pull_test.cc"],
+    name = "try_concurrently_test",
+    srcs = ["try_concurrently_test.cc"],
     external_deps = [
         "gtest",
         "absl/status",
@@ -395,6 +417,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:call_push_pull",
+        "//src/core:try_concurrently",
     ],
 )
