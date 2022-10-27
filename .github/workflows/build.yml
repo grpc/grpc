@@ -1,0 +1,49 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+    if: github.actor == 'Ankit098'
+    runs-on: [self-hosted, macOS-arm64]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Build
+        shell: /bin/zsh {0}
+        working-directory: src/ruby
+        run: |
+          source $HOME/.zshrc
+          chruby ruby-2.7.2
+          arch -arm64 bundle config set --local force_ruby_platform true
+          arch -arm64 bundle
+          arch -arm64 rake compile
+      - name: Test
+        continue-on-error: true
+        shell: /bin/zsh {0}
+        working-directory: src/ruby
+        run: |
+          source $HOME/.zshrc
+          chruby ruby-2.7.2 
+          arch -arm64 rake suite:idiomatic suite:bidi suite:pb suite:server
+      - name: Publish
+        shell: /bin/zsh {0}
+        run: |
+          source $HOME/.zshrc
+          chruby ruby-2.7.2
+          gem build
+      - name: Store gem
+        uses: actions/upload-artifact@v2
+        with:
+          name: gem
+          path: grpc-*.gem
+          retention-days: 90 # maximum on public repos
+
+      - name: Store grpc_c.bundle
+        uses: actions/upload-artifact@v2
+        with:
+          name: grpc_c.bundle
+          path: tmp/arm64-darwin20/stage/src/ruby/lib/grpc/grpc_c.bundle
+          retention-days: 90 # maximum on public repos
