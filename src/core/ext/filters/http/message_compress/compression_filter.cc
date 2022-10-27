@@ -18,6 +18,7 @@
 
 #include <inttypes.h>
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -151,17 +152,18 @@ MessageHandle CompressionFilter::CompressMessage(
 
 absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm,
-    int max_recv_message_length) const {
+    absl::optional<uint32_t> max_recv_message_length) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
     gpr_log(GPR_ERROR, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
-            message->payload()->Length(), max_recv_message_length, algorithm);
+            message->payload()->Length(), max_recv_message_length.value_or(-1),
+            algorithm);
   }
-  if (max_recv_message_length > 0 &&
+  if (max_recv_message_length.has_value() &&
       message->payload()->Length() >
-          static_cast<size_t>(max_recv_message_length)) {
-    return absl::ResourceExhaustedError(
-        absl::StrFormat("Received message larger than max (%u vs. %d)",
-                        message->payload()->Length(), max_recv_message_length));
+          static_cast<size_t>(*max_recv_message_length)) {
+    return absl::ResourceExhaustedError(absl::StrFormat(
+        "Received message larger than max (%u vs. %d)",
+        message->payload()->Length(), *max_recv_message_length));
   }
   if (!enable_decompression_ ||
       (message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) == 0) {
@@ -192,10 +194,10 @@ class CompressionFilter::DecompressLoop {
         MessageSizeParsedConfig::GetFromCallContext(
             GetContext<grpc_call_context_element>(),
             filter_->message_size_service_config_parser_index_);
-    if (limits != nullptr && limits->limits().max_recv_size >= 0 &&
-        (limits->limits().max_recv_size < max_recv_message_length ||
-         max_recv_message_length < 0)) {
-      max_recv_message_length = limits->limits().max_recv_size;
+    if (limits != nullptr && limits->max_recv_size().has_value() &&
+        (!max_recv_message_length.has_value() ||
+         *limits->max_recv_size() < *max_recv_message_length)) {
+      max_recv_message_length = *limits->max_recv_size();
     }
     return mapper_.TakeAndRun([algorithm, max_recv_message_length,
                                filter = filter_](MessageHandle message) {

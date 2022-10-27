@@ -77,9 +77,9 @@ class CompressionFilter : public ChannelFilter {
                                 grpc_compression_algorithm algorithm) const;
   absl::StatusOr<MessageHandle> DecompressMessage(
       MessageHandle message, grpc_compression_algorithm algorithm,
-      int max_recv_message_length) const;
+      absl::optional<uint32_t> max_recv_message_length) const;
 
-  int max_recv_size_;
+  absl::optional<uint32_t> max_recv_size_;
   size_t message_size_service_config_parser_index_;
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
