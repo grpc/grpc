@@ -2266,6 +2266,8 @@ TEST_F(XdsClientTest, LongReconnectionAttempt) {
   // Lower resources-does-not-exist timeout, to make sure that we're not
   // triggering that here.
   InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  // Tell transport not to immediately report that it is connected.
+  transport_factory_->SetAutoReportTransportReady(false);
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2281,6 +2283,8 @@ TEST_F(XdsClientTest, LongReconnectionAttempt) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
+  // Transport reports connection.
+  ReportReady(xds_client_->bootstrap().server());
   // Server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2362,6 +2366,8 @@ TEST_F(XdsClientTest, LongReconnectionAttemptBeforeResourceReceived) {
   // Lower resources-does-not-exist timeout, to make sure that we're not
   // triggering that here.
   InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  // Tell transport not to immediately report that it is connected.
+  transport_factory_->SetAutoReportTransportReady(false);
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2377,6 +2383,8 @@ TEST_F(XdsClientTest, LongReconnectionAttemptBeforeResourceReceived) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
+  // Transport reports connected.
+  ReportReady(xds_client_->bootstrap().server());
   // Server does NOT send a response.
   // Now report channel as having become disconnected.
   ReportConnecting(xds_client_->bootstrap().server());

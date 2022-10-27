@@ -434,29 +434,29 @@ class XdsClient::ChannelState::ConnectivityStateReporter
       : channel_state_(std::move(channel_state)) {}
 
   void ReportConnecting() override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] xds channel %p for server %s: "
-              "attempting to connect",
-              channel_state_->xds_client(), channel_state_.get(),
-              channel_state_->server_.server_uri().c_str());
-    }
     {
       MutexLock lock(&channel_state_->xds_client_->mu_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] xds channel %p for server %s: "
+                "attempting to connect",
+                channel_state_->xds_client(), channel_state_.get(),
+                channel_state_->server_.server_uri().c_str());
+      }
       SetChannelDisconnectedLocked();
     }
     channel_state_->xds_client_->work_serializer_.DrainQueue();
   }
 
   void ReportReady() override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] xds channel %p for server %s: connected",
-              channel_state_->xds_client(), channel_state_.get(),
-              channel_state_->server_.server_uri().c_str());
-    }
     {
       MutexLock lock(&channel_state_->xds_client_->mu_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] xds channel %p for server %s: connected",
+                channel_state_->xds_client(), channel_state_.get(),
+                channel_state_->server_.server_uri().c_str());
+      }
       channel_state_->channel_connected_ = true;
       // Notify the ADS call of the connectivity state, so that it can
       // start timers as needed.
@@ -469,16 +469,16 @@ class XdsClient::ChannelState::ConnectivityStateReporter
   }
 
   void ReportTransientFailure(absl::Status status) override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] xds channel %p for server %s: "
-              "connectivity failed: %s",
-              channel_state_->xds_client(), channel_state_.get(),
-              channel_state_->server_.server_uri().c_str(),
-              status.ToString().c_str());
-    }
     {
       MutexLock lock(&channel_state_->xds_client_->mu_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] xds channel %p for server %s: "
+                "connectivity failed: %s",
+                channel_state_->xds_client(), channel_state_.get(),
+                channel_state_->server_.server_uri().c_str(),
+                status.ToString().c_str());
+      }
       SetChannelDisconnectedLocked();
       channel_state_->SetChannelStatusLocked(std::move(status));
     }
