@@ -362,30 +362,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "try_concurrently",
-    hdrs = ["lib/promise/try_concurrently.h"],
-    external_deps = [
-        "absl/status",
-        "absl/types:variant",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "lib/promise/map_pipe.h",
-    ],
-    deps = [
-        "construct_destruct",
-        "for_each",
-        "map",
-        "pipe",
-        "poll",
-        "promise_factory",
-        "promise_like",
-        "promise_status",
-        "//:gpr",
-    ],
-)
-
-grpc_cc_library(
     name = "map_pipe",
     external_deps = ["absl/status"],
     language = "c++",
@@ -397,6 +373,21 @@ grpc_cc_library(
         "map",
         "pipe",
         "promise_factory",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_push_pull",
+    hdrs = ["lib/promise/call_push_pull.h"],
+    external_deps = ["absl/types:variant"],
+    language = "c++",
+    deps = [
+        "bitset",
+        "construct_destruct",
+        "poll",
+        "promise_like",
+        "promise_status",
         "//:gpr_platform",
     ],
 )
@@ -452,7 +443,6 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
-        "construct_destruct",
         "context",
         "poll",
         "//:gpr_platform",
