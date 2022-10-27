@@ -20,9 +20,9 @@
 
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 
+#include <stdint.h>
 #include <string.h>
 
-#include <cstdint>
 #include <new>
 
 #include "absl/status/status.h"
@@ -57,13 +57,13 @@ class ChannelData {
         message_size_service_config_parser_index_(
             MessageSizeParser::ParserIndex()) {}
 
-  absl::optional<uint32_t> max_recv_size() const { return max_recv_size_; }
+  int max_recv_size() const { return max_recv_size_; }
   size_t message_size_service_config_parser_index() const {
     return message_size_service_config_parser_index_;
   }
 
  private:
-  absl::optional<uint32_t> max_recv_size_;
+  int max_recv_size_;
   const size_t message_size_service_config_parser_index_;
 };
 
@@ -86,10 +86,10 @@ class CallData {
     const MessageSizeParsedConfig* limits =
         MessageSizeParsedConfig::GetFromCallContext(
             args.context, chand->message_size_service_config_parser_index());
-    if (limits != nullptr && limits->max_recv_size().has_value() &&
-        (!max_recv_message_length_.has_value() ||
-         *limits->max_recv_size() < *max_recv_message_length_)) {
-      max_recv_message_length_ = *limits->max_recv_size();
+    if (limits != nullptr && limits->limits().max_recv_size >= 0 &&
+        (limits->limits().max_recv_size < max_recv_message_length_ ||
+         max_recv_message_length_ < 0)) {
+      max_recv_message_length_ = limits->limits().max_recv_size;
     }
   }
 
@@ -117,7 +117,7 @@ class CallData {
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   // Fields for handling recv_message_ready callback
   bool seen_recv_message_ready_ = false;
-  absl::optional<uint32_t> max_recv_message_length_;
+  int max_recv_message_length_;
   grpc_compression_algorithm algorithm_ = GRPC_COMPRESS_NONE;
   absl::optional<SliceBuffer>* recv_message_ = nullptr;
   uint32_t* recv_message_flags_ = nullptr;
@@ -171,15 +171,15 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
           ((*calld->recv_message_flags_ & GRPC_WRITE_INTERNAL_COMPRESS) == 0)) {
         return calld->ContinueRecvMessageReadyCallback(absl::OkStatus());
       }
-      if (calld->max_recv_message_length_.has_value() &&
+      if (calld->max_recv_message_length_ >= 0 &&
           (*calld->recv_message_)->Length() >
-              static_cast<uint32_t>(*calld->max_recv_message_length_)) {
+              static_cast<uint32_t>(calld->max_recv_message_length_)) {
         GPR_DEBUG_ASSERT(calld->error_.ok());
         calld->error_ = grpc_error_set_int(
             GRPC_ERROR_CREATE(
                 absl::StrFormat("Received message larger than max (%u vs. %d)",
                                 (*calld->recv_message_)->Length(),
-                                *calld->max_recv_message_length_)),
+                                calld->max_recv_message_length_)),
             StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
         return calld->ContinueRecvMessageReadyCallback(calld->error_);
       }

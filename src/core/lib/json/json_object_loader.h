@@ -20,7 +20,6 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -384,26 +383,6 @@ class AutoLoader<absl::optional<T>> final : public LoadOptional {
   }
   void Reset(void* dst) const final {
     static_cast<absl::optional<T>*>(dst)->reset();
-  }
-  const LoaderInterface* ElementLoader() const final {
-    return LoaderForType<T>();
-  }
-
- private:
-  ~AutoLoader() = default;
-};
-
-// Specializations of AutoLoader for std::unique_ptr<>.
-template <typename T>
-class AutoLoader<std::unique_ptr<T>> final : public LoadOptional {
- public:
-  void* Emplace(void* dst) const final {
-    auto& p = *static_cast<std::unique_ptr<T>*>(dst);
-    p = std::make_unique<T>();
-    return p.get();
-  }
-  void Reset(void* dst) const final {
-    static_cast<std::unique_ptr<T>*>(dst)->reset();
   }
   const LoaderInterface* ElementLoader() const final {
     return LoaderForType<T>();

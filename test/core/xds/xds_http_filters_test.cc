@@ -37,7 +37,7 @@
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
-#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
+#include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
@@ -693,7 +693,7 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
             "\"ignoreCase\":false,\"safeRegex\":{\"regex\":\"regex_match\"}}}},"
             // destination IP match with prefix len
             "{\"destinationIp\":{"
-            "\"addressPrefix\":\"127.0.0\",\"prefixLen\":24}},"
+            "\"addressPrefix\":\"127.0.0\",\"prefixLen\":{\"value\":24}}},"
             // destination IP match
             "{\"destinationIp\":{\"addressPrefix\":\"10.0.0\"}},"
             // destination port match
