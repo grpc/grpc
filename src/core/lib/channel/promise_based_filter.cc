@@ -364,6 +364,7 @@ bool BaseCallData::SendMessage::IsIdle() const {
     case State::kPushedToPipe:
       return false;
   }
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 void BaseCallData::SendMessage::OnComplete(absl::Status status) {
