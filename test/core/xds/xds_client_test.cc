@@ -355,7 +355,7 @@ class XdsClientTest : public ::testing::Test {
       }
       return result;
     }
-    void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
+    void InitUpbSymtab(XdsClient*, upb_DefPool* /*symtab*/) const override {}
 
     static google::protobuf::Any EncodeAsAny(const ResourceStruct& resource) {
       google::protobuf::Any any;
