@@ -25,7 +25,6 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -1209,9 +1208,14 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
     if (IsCurrentCallOnChannel()) {
       // Try to restart the call.
       parent_->OnCallFinishedLocked();
-      // Send error to all watchers for the channel.
-      chand()->SetChannelStatusLocked(absl::UnavailableError(absl::StrFormat(
-          "xDS call failed; status: %s", status.ToString().c_str())));
+      // If we didn't receive a response on the stream, report the
+      // stream failure as a connectivity failure, which will report the
+      // error to all watchers of resources on this channel.
+      if (!seen_response_) {
+        chand()->SetChannelStatusLocked(absl::UnavailableError(
+            absl::StrCat("xDS call failed with no responses received; status: ",
+                         status.ToString())));
+      }
     }
   }
   xds_client()->work_serializer_.DrainQueue();
