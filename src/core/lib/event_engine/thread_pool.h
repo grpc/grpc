@@ -35,6 +35,7 @@
 
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/work_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -60,33 +61,14 @@ class ThreadPool final : public Forkable, public Executor {
   void PostforkChild() override;
 
  private:
-  class Queue {
-   public:
-    explicit Queue(unsigned reserve_threads)
-        : reserve_threads_(reserve_threads) {}
-    bool Step();
-    void SetShutdown() { SetState(State::kShutdown); }
-    void SetForking() { SetState(State::kForking); }
-    // Add a callback to the queue.
-    // Return true if we should also spin up a new thread.
-    bool Add(absl::AnyInvocable<void()> callback);
-    void Reset() { SetState(State::kRunning); }
-    bool IsBacklogged();
-    void SleepIfRunning();
-
-   private:
-    enum class State { kRunning, kShutdown, kForking };
-
-    void SetState(State state);
-
-    grpc_core::Mutex mu_;
-    grpc_core::CondVar cv_;
-    std::queue<absl::AnyInvocable<void()>> callbacks_ ABSL_GUARDED_BY(mu_);
-    unsigned threads_waiting_ ABSL_GUARDED_BY(mu_) = 0;
-    const unsigned reserve_threads_;
-    State state_ ABSL_GUARDED_BY(mu_) = State::kRunning;
-  };
-
+  enum class RunState { kRunning, kShutdown, kForking };
+  bool Step();
+  void SetRunState(RunState state);
+  // DO NOT SUBMIT(hork): implement a backlog check (currently: queue > 1)
+  bool IsBacklogged();
+  // DO NOT SUBMIT(hork): implement SleepIfRunning (trickled thread creation on
+  // startup)
+  void SleepIfRunning();
   class ThreadCount {
    public:
     void Add();
@@ -99,36 +81,34 @@ class ThreadPool final : public Forkable, public Executor {
     int threads_ ABSL_GUARDED_BY(mu_) = 0;
   };
 
-  struct State {
-    explicit State(int reserve_threads) : queue(reserve_threads) {}
-    Queue queue;
-    ThreadCount thread_count;
-    // After pool creation we use this to rate limit creation of threads to one
-    // at a time.
-    std::atomic<bool> currently_starting_one_thread{false};
-    std::atomic<uint64_t> last_started_thread{0};
-  };
-
-  using StatePtr = std::shared_ptr<State>;
-
   enum class StartThreadReason {
     kInitialPool,
-    kNoWaitersWhenScheduling,
-    kNoWaitersWhenFinishedStarting,
+    kBacklogged,
   };
 
-  static void ThreadFunc(StatePtr state);
-  // Start a new thread; throttled indicates whether the State::starting_thread
-  // variable is being used to throttle this threads creation against others or
-  // not: at thread pool startup we start several threads concurrently, but
-  // after that we only start one at a time.
-  static void StartThread(StatePtr state, StartThreadReason reason);
+  static void ThreadFunc(ThreadPool* pool);
+  // Start a new thread that initializes the thread pool
+  // This is not subject to rate limiting or backlog checking.
+  void StartInitialThread();
+  // Start a new thread while backlogged.
+  // This is throttled to a maximum rate of thread creation, and only done if
+  // the backlog necessitates it.
+  void StartThreadIfBacklogged() ABSL_LOCKS_EXCLUDED(run_state_mu_);
   void Postfork();
 
-  const unsigned reserve_threads_ =
-      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 32u);
-  const StatePtr state_ = std::make_shared<State>(reserve_threads_);
-  std::atomic<bool> quiesced_{false};
+  WorkQueue global_queue_;
+  ThreadCount thread_count_;
+  // After pool creation we use this to rate limit creation of threads to one
+  // at a time.
+  std::atomic<bool> currently_starting_one_thread_;
+  std::atomic<uint64_t> last_started_thread_;
+  RunState run_state_ ABSL_GUARDED_BY(run_state_mu_);
+
+  const unsigned reserve_threads_;
+  std::atomic<bool> quiesced_;
+  grpc_core::Mutex run_state_mu_;
+  grpc_core::CondVar run_state_cv_;
+  unsigned threads_waiting_ ABSL_GUARDED_BY(run_state_mu_);
 };
 
 }  // namespace experimental
