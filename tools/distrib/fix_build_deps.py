@@ -410,6 +410,7 @@ for dirname in [
         "test/core/end2end",
         "test/core/event_engine",
         "test/core/resource_quota",
+        "test/core/transport/chaotic_good",
 ]:
     parsing_path = dirname
     exec(
