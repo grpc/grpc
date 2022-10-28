@@ -396,27 +396,27 @@ int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in SockaddrGetPort",
               addr->sa_family);
-      return 0;
+      abort();
   }
 }
 
-bool SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port) {
+void SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port) {
   sockaddr* addr = const_cast<sockaddr*>(resolved_addr.address());
   switch (addr->sa_family) {
     case AF_INET:
       GPR_ASSERT(port >= 0 && port < 65536);
       (reinterpret_cast<sockaddr_in*>(addr))->sin_port =
           htons(static_cast<uint16_t>(port));
-      return true;
+      return;
     case AF_INET6:
       GPR_ASSERT(port >= 0 && port < 65536);
       (reinterpret_cast<sockaddr_in6*>(addr))->sin6_port =
           htons(static_cast<uint16_t>(port));
-      return true;
+      return;
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
               addr->sa_family);
-      return false;
+      abort();
   }
 }
 
@@ -438,10 +438,13 @@ void UnlinkIfUnixDomainSocket(
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
     unlink(un->sun_path);
   }
+#else
+  (void)resolved_addr;
 #endif
 }
 
-int SockaddrIsWildcard(const EventEngine::ResolvedAddress& addr) {
+absl::optional<int> SockaddrIsWildcard(
+    const EventEngine::ResolvedAddress& addr) {
   const EventEngine::ResolvedAddress* resolved_addr = &addr;
   EventEngine::ResolvedAddress addr4_normalized;
   if (SockaddrIsV4Mapped(resolved_addr, &addr4_normalized)) {
@@ -452,7 +455,7 @@ int SockaddrIsWildcard(const EventEngine::ResolvedAddress& addr) {
     const sockaddr_in* addr4 =
         reinterpret_cast<const sockaddr_in*>(resolved_addr->address());
     if (addr4->sin_addr.s_addr != 0) {
-      return -1;
+      return absl::nullopt;
     }
     return static_cast<int>(ntohs(addr4->sin_port));
   } else if (resolved_addr->address()->sa_family == AF_INET6) {
@@ -462,12 +465,12 @@ int SockaddrIsWildcard(const EventEngine::ResolvedAddress& addr) {
     int i;
     for (i = 0; i < 16; i++) {
       if (addr6->sin6_addr.s6_addr[i] != 0) {
-        return -1;
+        return absl::nullopt;
       }
     }
     return static_cast<int>(ntohs(addr6->sin6_port));
   } else {
-    return -1;
+    return absl::nullopt;
   }
 }
 

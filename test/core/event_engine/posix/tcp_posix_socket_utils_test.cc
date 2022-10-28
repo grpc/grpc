@@ -392,8 +392,8 @@ TEST(TcpPosixSocketUtilsTest, SockAddrPortTest) {
   EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:20");
   EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:20");
   // Update the port values.
-  ASSERT_TRUE(SockaddrSetPort(wild4, 21));
-  ASSERT_TRUE(SockaddrSetPort(wild6, 22));
+  SockaddrSetPort(wild4, 21);
+  SockaddrSetPort(wild6, 22);
   // Read back the port values.
   EXPECT_EQ(SockaddrGetPort(wild4), 21);
   EXPECT_EQ(SockaddrGetPort(wild6), 22);
@@ -412,6 +412,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char** argv) { return 0; }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */

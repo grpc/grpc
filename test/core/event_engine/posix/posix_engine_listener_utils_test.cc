@@ -157,6 +157,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char** argv) { return 0; }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */

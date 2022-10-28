@@ -64,28 +64,26 @@ absl::StatusOr<int> GetUnusedPort() {
   PosixSocketWrapper::DSMode dsmode;
   auto sock = PosixSocketWrapper::CreateDualStackSocket(nullptr, wild,
                                                         SOCK_STREAM, 0, dsmode);
-  if (!sock.ok()) {
-    return sock.status();
-  }
+  GRPC_RETURN_IF_ERROR(sock.status());
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
     wild = SockaddrMakeWild4(0);
   }
   if (bind(sock->Fd(), wild.address(), wild.size()) != 0) {
     close(sock->Fd());
-    return absl::InternalError(
+    return absl::FailedPreconditionError(
         absl::StrCat("bind(GetUnusedPort): ", std::strerror(errno)));
   }
   socklen_t len = wild.size();
   if (getsockname(sock->Fd(), const_cast<sockaddr*>(wild.address()), &len) !=
       0) {
     close(sock->Fd());
-    return absl::InternalError(
+    return absl::FailedPreconditionError(
         absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
   }
   close(sock->Fd());
   int port = SockaddrGetPort(wild);
   if (port <= 0) {
-    return absl::InternalError("Bad port");
+    return absl::FailedPreconditionError("Bad port");
   }
   return port;
 }
@@ -174,19 +172,19 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
       GRPC_FD_SERVER_LISTENER_USAGE, options));
 
   if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
-    return absl::InternalError(
+    return absl::FailedPreconditionError(
         absl::StrCat("Error in bind: ", std::strerror(errno)));
   }
 
   if (listen(fd, GetMaxAcceptQueueSize()) < 0) {
-    return absl::InternalError(
+    return absl::FailedPreconditionError(
         absl::StrCat("Error in listen: ", std::strerror(errno)));
   }
   socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
   if (getsockname(fd, const_cast<sockaddr*>(sockname_temp.address()), &len) <
       0) {
-    return absl::InternalError(
+    return absl::FailedPreconditionError(
         absl::StrCat("Error in getsockname: ", std::strerror(errno)));
   }
 
@@ -234,13 +232,13 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     if (!result.ok()) {
       return result.status();
     } else if (*result <= 0) {
-      return absl::InternalError("Bad get_unused_port()");
+      return absl::FailedPreconditionError("Bad get_unused_port()");
     }
     requested_port = *result;
     gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
   }
   if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-    return absl::InternalError(
+    return absl::FailedPreconditionError(
         absl::StrCat("getifaddrs: ", std::strerror(errno)));
   }
   for (ifa_it = ifa; ifa_it != nullptr; ifa_it = ifa_it->ifa_next) {
@@ -257,11 +255,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
       continue;
     }
     memcpy(const_cast<sockaddr*>(addr.address()), ifa_it->ifa_addr, len);
-    if (!SockaddrSetPort(addr, requested_port)) {
-      // Should never happen, because we check sa_family above.
-      status = absl::InternalError("Failed to set port");
-      break;
-    }
+    SockaddrSetPort(addr, requested_port);
     std::string addr_str = *SockaddrToString(&addr, false);
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",
@@ -275,7 +269,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     }
     auto result = CreateAndPrepareListenerSocket(options, addr);
     if (!result.ok()) {
-      status = absl::InternalError(
+      status = absl::FailedPreconditionError(
           absl::StrCat("Failed to add listener: ", addr_str,
                        " due to error: ", result.status().message()));
       break;
@@ -289,7 +283,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
   if (!status.ok()) {
     return status;
   } else if (no_local_addresses) {
-    return absl::InternalError("No local addresses");
+    return absl::FailedPreconditionError("No local addresses");
   } else {
     return assigned_port;
   }
@@ -347,7 +341,7 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   } else {
     GPR_ASSERT(!v6_sock.ok());
     GPR_ASSERT(!v4_sock.ok());
-    return absl::InternalError(absl::StrCat(
+    return absl::FailedPreconditionError(absl::StrCat(
         "Failed to add any wildcard listeners: ", v6_sock.status().message(),
         v4_sock.status().message()));
   }

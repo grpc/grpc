@@ -23,6 +23,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -168,19 +169,19 @@ EventEngine::ResolvedAddress SockaddrMakeWild4(int port);
 // Given a resolved address, return the port number in the address.
 int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr);
 
-// Modifes the passed address to use the specified port number. It returns true
-// if the modification operation succeeded. Otherwise it returns false. The
+// Modifes the passed address to use the specified port number. The
 // operation would only succeed if the passed address is an IPv4 or Ipv6
-// address.
-bool SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port);
+// address. Otherwise the function call would abort fail.
+void SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port);
 
 // Unlink the path pointed to by the given address if it refers to UDS path.
 void UnlinkIfUnixDomainSocket(
     const EventEngine::ResolvedAddress& resolved_addr);
 
-// Returns -1 if the given address is not a wildcard ipv6 or ipv6 address.
-// Otherwise returns the port number associated with the address.
-int SockaddrIsWildcard(const EventEngine::ResolvedAddress& addr);
+// Returns the port number associated with the address if the given address is
+// not a wildcard ipv6 or ipv6 address. Otherwise returns absl::nullopt
+absl::optional<int> SockaddrIsWildcard(
+    const EventEngine::ResolvedAddress& addr);
 
 // Converts a EventEngine::ResolvedAddress into a newly-allocated
 // human-readable string.
