@@ -14,10 +14,38 @@
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 
+#include <limits>
+
 #include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc_core {
 namespace chaotic_good {
+
+namespace {
+template <typename Metadata>
+absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(HPackParser* parser,
+                                                      SliceBuffer slices,
+                                                      uint32_t stream_id,
+                                                      bool is_header,
+                                                      bool is_client) {
+  Arena::PoolPtr<Metadata> metadata;
+  parser->BeginFrame(
+      metadata.get(), std::numeric_limits<uint32_t>::max(),
+      is_header ? HPackParser::Boundary::EndOfHeaders
+                : HPackParser::Boundary::EndOfStream,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{stream_id,
+                           is_header ? HPackParser::LogInfo::Type::kHeaders
+                                     : HPackParser::LogInfo::Type::kTrailers,
+                           is_client});
+  for (size_t i = 0; i < slices.Count(); i++) {
+    GRPC_RETURN_IF_ERROR(
+        parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
+  }
+  parser->FinishFrame();
+  return std::move(metadata);
+}
+}  // namespace
 
 absl::Status SettingsFrame::Deserialize(HPackParser* parser,
                                         const FrameHeader& header,
@@ -45,14 +73,13 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   }
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
-    auto slices = deserializer.ReceiveHeaders();
-    for (size_t i = 0; i < slices.Count(); i++) {
-      GRPC_RETURN_IF_ERROR(
-          parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
-    }
+    auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
+                                          header.stream_id, true, true);
+    if (!r.ok()) return r.status();
   }
   if (header.flags.is_set(1)) {
-    message = deserializer.ReceiveMessage();
+    message = GetContext<Arena>()->MakePooled<Message>();
+    deserializer.ReceiveMessage().Swap(message->payload());
   }
   if (header.flags.is_set(2)) {
     if (header.trailer_length != 0) {
@@ -87,21 +114,17 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   }
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
-    auto slices = deserializer.ReceiveHeaders();
-    for (size_t i = 0; i < slices.Count(); i++) {
-      GRPC_RETURN_IF_ERROR(
-          parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
-    }
+    auto r = ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
+                                          header.stream_id, true, false);
+    if (!r.ok()) return r.status();
   }
   if (header.flags.is_set(1)) {
-    message = deserializer.ReceiveMessage();
+    message = GetContext<Arena>()->MakePooled<Message>();
+    deserializer.ReceiveMessage().Swap(message->payload());
   }
   if (header.flags.is_set(2)) {
-    auto slices = deserializer.ReceiveTrailers();
-    for (size_t i = 0; i < slices.Count(); i++) {
-      GRPC_RETURN_IF_ERROR(
-          parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
-    }
+    auto r = ReadMetadata<ServerMetadata>(
+        parser, deserializer.ReceiveTrailers(), header.stream_id, false, false);
   }
   return deserializer.Finish();
 }
@@ -109,15 +132,15 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
 SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
   BitSet<3> flags;
   flags.set(0, headers.get() != nullptr);
-  flags.set(1, message.has_value());
+  flags.set(1, message.get() != nullptr);
   flags.set(2, trailers.get() != nullptr);
   FrameSerializer serializer(FrameType::kFragment, flags);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(),
                               serializer.AddHeaders().c_slice_buffer());
   }
-  if (message.has_value()) {
-    serializer.AddMessage().Append(*message);
+  if (message.get() != nullptr) {
+    serializer.AddMessage().Append(*message->payload());
   }
   if (trailers.get() != nullptr) {
     encoder->EncodeRawHeaders(*trailers.get(),
