@@ -19,17 +19,23 @@
 
 #include <stdint.h>
 
+#include <string>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_promise_pipe;
 
 namespace grpc_core {
 
@@ -103,6 +109,9 @@ class Center {
 
   // Add one ref to the send side of this object, and return this.
   Center* RefSend() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("RefSend").c_str());
+    }
     send_refs_++;
     GPR_ASSERT(send_refs_ != 0);
     return this;
@@ -110,6 +119,9 @@ class Center {
 
   // Add one ref to the recv side of this object, and return this.
   Center* RefRecv() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("RefRecv").c_str());
+    }
     recv_refs_++;
     GPR_ASSERT(recv_refs_ != 0);
     return this;
@@ -119,6 +131,9 @@ class Center {
   // If no send refs remain, wake due to send closure
   // If no refs remain, destroy this object
   void UnrefSend() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("UnrefSend").c_str());
+    }
     GPR_DEBUG_ASSERT(send_refs_ > 0);
     send_refs_--;
     if (0 == send_refs_) {
@@ -134,6 +149,9 @@ class Center {
   // If no recv refs remain, wake due to recv closure
   // If no refs remain, destroy this object
   void UnrefRecv() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("UnrefRecv").c_str());
+    }
     GPR_DEBUG_ASSERT(recv_refs_ > 0);
     recv_refs_--;
     if (0 == recv_refs_) {
@@ -152,6 +170,9 @@ class Center {
   // Return true if the value was pushed.
   // Return false if the recv end is closed.
   Poll<bool> Push(T* value) {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("Push").c_str());
+    }
     GPR_DEBUG_ASSERT(send_refs_ != 0);
     if (recv_refs_ == 0) return false;
     if (value_state_ != ValueState::kEmpty) return on_empty_.pending();
@@ -162,6 +183,9 @@ class Center {
   }
 
   Poll<bool> PollAck() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollAck").c_str());
+    }
     GPR_DEBUG_ASSERT(send_refs_ != 0);
     if (recv_refs_ == 0) return value_state_ == ValueState::kAcked;
     if (value_state_ != ValueState::kAcked) return on_empty_.pending();
@@ -174,6 +198,9 @@ class Center {
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
   Poll<NextResult<T>> Next() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
+    }
     GPR_DEBUG_ASSERT(recv_refs_ != 0);
     if (value_state_ != ValueState::kReady) {
       if (send_refs_ == 0) return NextResult<T>(nullptr);
@@ -183,6 +210,9 @@ class Center {
   }
 
   void AckNext() {
+    if (grpc_trace_promise_pipe.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
+    }
     GPR_DEBUG_ASSERT(value_state_ == ValueState::kReady);
     value_state_ = ValueState::kAcked;
     on_empty_.Wake();
@@ -193,6 +223,15 @@ class Center {
   const T& value() const { return value_; }
 
  private:
+  std::string DebugTag() {
+    return absl::StrCat(Activity::current()->DebugTag(), "PIPE[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
+  std::string DebugOpString(std::string op) {
+    return absl::StrCat(DebugTag(), op, " send_refs=", send_refs_,
+                        " recv_refs=", recv_refs_,
+                        " value_state=", ValueStateName(value_state_));
+  }
   void ResetValue() {
     // Fancy dance to move out of value in the off chance that we reclaim some
     // memory earlier.
@@ -264,6 +303,8 @@ class PipeSender {
     if (auto* center = std::exchange(center_, nullptr)) center->UnrefSend();
   }
 
+  void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }
+
   // Send a single message along the pipe.
   // Returns a promise that will resolve to a bool - true if the message was
   // sent, false if it could never be sent. Blocks the promise until the
@@ -297,6 +338,8 @@ class PipeReceiver {
   ~PipeReceiver() {
     if (center_ != nullptr) center_->UnrefRecv();
   }
+
+  void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
 
   // Receive a single message from the pipe.
   // Returns a promise that will resolve to an optional<T> - with a value if a
