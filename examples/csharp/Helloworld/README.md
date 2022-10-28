@@ -10,7 +10,7 @@ and the client, and run them.
 PREREQUISITES
 -------------
 
-- The [.NET Core SDK 2.1+](https://www.microsoft.com/net/core)
+- The [.NET Core SDK 3.1+](https://www.microsoft.com/net/core)
 
 You can also build the solution `Greeter.sln` using Visual Studio 2017,
 but it's not a requirement.
@@ -36,4 +36,4 @@ Tutorial
 You can find a more detailed tutorial about Grpc in [gRPC Basics: C#][]
 
 [helloworld.proto]:../../protos/helloworld.proto
-[gRPC Basics: C#]:https://grpc.io/docs/languages/csharp/basics
+[gRPC Basics: C#]:../RouteGuide/basics.md

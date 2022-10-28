@@ -1,16 +1,3 @@
----
-title: Quick start
-description: This guide gets you started with gRPC in C# with a simple working example.
-weight: 10
----
-
-{{% alert title="Note" color="info" %}}
-  This page uses the [gRPC C# core-library][core-library] implementation. For
-  documentation covering gRPC for .NET, see [gRPC for .NET](../dotnet/).
-
-  [core-library]: https://github.com/grpc/grpc/tree/master/src/csharp
-{{% /alert %}}
-
 ### Prerequisites
 
 Whether you're using Windows, OS X, or Linux, you can follow this
@@ -18,7 +5,7 @@ example by using either an IDE and its build tools,
 or by using the the .NET Core SDK command line tools.
 
 First, make sure you have installed the
-[gRPC C# prerequisites](https://github.com/grpc/grpc/blob/{{< param grpc_vers.core >}}/src/csharp/README.md#prerequisites).
+[gRPC C# prerequisites](https://github.com/grpc/grpc/blob/v1.46.x/src/csharp/README.md#prerequisites).
 You will also need Git to download the sample code.
 
 ### Download the example
@@ -30,7 +17,7 @@ and other tutorials):
 
 ```sh
 # Clone the repository to get the example code:
-$ git clone -b {{< param grpc_vers.core >}} --depth 1 --shallow-submodules https://github.com/grpc/grpc
+$ git clone -b v1.46.x --depth 1 --shallow-submodules https://github.com/grpc/grpc
 $ cd grpc
 ```
 
@@ -63,14 +50,14 @@ From the `examples/csharp/Helloworld` directory:
 
   ```sh
   > cd GreeterServer
-  > dotnet run -f netcoreapp2.1
+  > dotnet run
   ```
 
 * From another terminal, run the client:
 
   ```sh
   > cd GreeterClient
-  > dotnet run -f netcoreapp2.1
+  > dotnet run
   ```
 
 Congratulations! You've just run a client-server application with gRPC.
@@ -80,7 +67,7 @@ Congratulations! You've just run a client-server application with gRPC.
 Now let's look at how to update the application with an extra method on the
 server for the client to call. Our gRPC service is defined using protocol
 buffers; you can find out lots more about how to define a service in a `.proto`
-file in [Basics tutorial](../basics/). For now all you need to know is that both the
+file in [Basics tutorial](../RouteGuide/basics.md). For now all you need to know is that both the
 server and the client "stub" have a `SayHello` RPC method that takes a
 `HelloRequest` parameter from the client and returns a `HelloResponse` from the
 server, and that this method is defined like this:
@@ -136,10 +123,10 @@ Next we need to update the gRPC code used by our application to use the new serv
 
 The `Grpc.Tools` NuGet package contains the protoc and protobuf C# plugin binaries needed
 to generate the code. Starting from version 1.17 the package also integrates with
-MSBuild to provide [automatic C# code generation](https://github.com/grpc/grpc/blob/master/src/csharp/BUILD-INTEGRATION.md)
+MSBuild to provide [automatic C# code generation](https://github.com/grpc/grpc/blob/v1.46.x/src/csharp/BUILD-INTEGRATION.md)
 from `.proto` files.
 
-This example project already depends on the `Grpc.Tools.{{< psubstr grpc_vers.core 1 >}}` NuGet package so just re-building the solution
+This example project already depends on the `Grpc.Tools` NuGet package so just re-building the solution
 is enough to regenerate the code from our modified `.proto` file.
 
 You can rebuild just like we first built the original
@@ -222,19 +209,13 @@ Just like we did before, from the `examples/csharp/Helloworld` directory:
 
     ```sh
     > cd GreeterServer
-    > dotnet run -f netcoreapp2.1
+    > dotnet run
     ```
 
 2. From another terminal, run the client:
 
     ```sh
     > cd GreeterClient
-    > dotnet run -f netcoreapp2.1
+    > dotnet run
     ```
 
-### What's next
-
-- Learn how gRPC works in [Introduction to gRPC](/docs/what-is-grpc/introduction/)
-  and [Core concepts](/docs/what-is-grpc/core-concepts/).
-- Work through the [Basics tutorial](../basics/)
-- Explore the [API reference](../api).
