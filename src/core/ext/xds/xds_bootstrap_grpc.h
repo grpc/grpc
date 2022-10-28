@@ -33,6 +33,7 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_lb_policy_registry.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -157,6 +158,9 @@ class GrpcXdsBootstrap : public XdsBootstrap {
       const {
     return cluster_specifier_plugin_registry_;
   }
+  const XdsLbPolicyRegistry& lb_policy_registry() const {
+    return lb_policy_registry_;
+  }
 
   // Exposed for testing purposes only.
   const std::map<std::string, GrpcAuthority>& authorities() const {
@@ -172,6 +176,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
   XdsHttpFilterRegistry http_filter_registry_;
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
+  XdsLbPolicyRegistry lb_policy_registry_;
 };
 
 }  // namespace grpc_core
