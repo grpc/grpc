@@ -2884,8 +2884,11 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   Poll<ServerMetadataHandle> PollTopOfCall();
 
  private:
+  friend class ServerCallContext;
   ServerCallContext call_context_{this};
   ArenaPromise<ServerMetadataHandle> promise_;
+  PipeSender<MessageHandle>* server_to_client_messages_ = nullptr;
+  PipeReceiver<MessageHandle>* client_to_server_messages_ = nullptr;
 };
 
 ArenaPromise<ServerMetadataHandle> ServerCallContext::Run(
@@ -2894,6 +2897,8 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::Run(
     absl::FunctionRef<void(grpc_call* call)> publish) {
   auto* call = static_cast<ServerPromiseBasedCall*>(this->call());
   call->SetCompletionQueue(cq);
+  call->server_to_client_messages_ = call_args.server_to_client_messages;
+  call->client_to_server_messages_ = call_args.client_to_server_messages;
   PublishMetadataArray(publish_initial_metadata,
                        call_args.client_initial_metadata.get());
   publish(call->c_ptr());

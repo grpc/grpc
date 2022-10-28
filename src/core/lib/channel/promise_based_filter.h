@@ -151,9 +151,24 @@ class InvalidChannelFilter : public ChannelFilter {
 
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
- public:
+ protected:
+  class Interceptor {
+   public:
+    virtual PipeSender<MessageHandle>* Push() = 0;
+    virtual PipeReceiver<MessageHandle>* Pull() = 0;
+    virtual PipeReceiver<MessageHandle>* original_receiver() = 0;
+    virtual PipeSender<MessageHandle>* original_sender() = 0;
+    virtual void GotPipe(PipeSender<MessageHandle>*) = 0;
+    virtual void GotPipe(PipeReceiver<MessageHandle>*) = 0;
+    virtual ~Interceptor() = default;
+  };
+
   BaseCallData(grpc_call_element* elem, const grpc_call_element_args* args,
-               uint8_t flags);
+               uint8_t flags,
+               absl::FunctionRef<Interceptor*()> make_send_interceptor,
+               absl::FunctionRef<Interceptor*()> make_recv_interceptor);
+
+ public:
   ~BaseCallData() override;
 
   void set_pollent(grpc_polling_entity* pollent) {
@@ -269,6 +284,54 @@ class BaseCallData : public Activity, private Wakeable {
     return p.release();
   }
 
+  class ReceiveInterceptor final : public Interceptor {
+   public:
+    explicit ReceiveInterceptor(Arena* arena) : pipe_{arena} {}
+
+    PipeReceiver<MessageHandle>* original_receiver() override {
+      return &pipe_.receiver;
+    }
+    PipeSender<MessageHandle>* original_sender() override { abort(); }
+
+    void GotPipe(PipeReceiver<MessageHandle>* receiver) override {
+      GPR_ASSERT(receiver_ == nullptr);
+      receiver_ = receiver;
+    }
+
+    void GotPipe(PipeSender<MessageHandle>*) override { abort(); }
+
+    PipeSender<MessageHandle>* Push() override { return &pipe_.sender; }
+    PipeReceiver<MessageHandle>* Pull() override { return receiver_; }
+
+   private:
+    Pipe<MessageHandle> pipe_;
+    PipeReceiver<MessageHandle>* receiver_ = nullptr;
+  };
+
+  class SendInterceptor final : public Interceptor {
+   public:
+    explicit SendInterceptor(Arena* arena) : pipe_{arena} {}
+
+    PipeReceiver<MessageHandle>* original_receiver() override { abort(); }
+    PipeSender<MessageHandle>* original_sender() override {
+      return &pipe_.sender;
+    }
+
+    void GotPipe(PipeReceiver<MessageHandle>*) override { abort(); }
+
+    void GotPipe(PipeSender<MessageHandle>* sender) override {
+      GPR_ASSERT(sender_ == nullptr);
+      sender_ = sender;
+    }
+
+    PipeSender<MessageHandle>* Push() override { return sender_; }
+    PipeReceiver<MessageHandle>* Pull() override { return &pipe_.receiver; }
+
+   private:
+    Pipe<MessageHandle> pipe_;
+    PipeSender<MessageHandle>* sender_ = nullptr;
+  };
+
   // State machine for sending messages: handles intercepting send_message ops
   // and forwarding them through pipes to the promise, then getting the result
   // down the stack.
@@ -276,9 +339,11 @@ class BaseCallData : public Activity, private Wakeable {
   // these members for filters that don't need to intercept sent messages.
   class SendMessage {
    public:
-    explicit SendMessage(BaseCallData* base)
-        : base_(base), pipe_(base->arena()) {}
-    PipeReceiver<MessageHandle>* outgoing_pipe() { return &pipe_.receiver; }
+    SendMessage(BaseCallData* base, Interceptor* interceptor)
+        : base_(base), interceptor_(interceptor) {}
+    ~SendMessage() { interceptor_->~Interceptor(); }
+
+    Interceptor* interceptor() { return interceptor_; }
 
     // Start a send_message op.
     void StartOp(CapturedBatch batch);
@@ -286,7 +351,8 @@ class BaseCallData : public Activity, private Wakeable {
     // This happens when the promise requests to call the next filter: until
     // this occurs messages can't be sent as we don't know the pipe that the
     // promise expects to send on.
-    void GotPipe(PipeReceiver<MessageHandle>* receiver);
+    template <typename T>
+    void GotPipe(T* pipe);
     // Called from client/server polling to do the send message part of the
     // work.
     void WakeInsideCombiner(Flusher* flusher);
@@ -328,8 +394,7 @@ class BaseCallData : public Activity, private Wakeable {
 
     BaseCallData* const base_;
     State state_ = State::kInitial;
-    Pipe<MessageHandle> pipe_;
-    PipeReceiver<MessageHandle>* receiver_ = nullptr;
+    Interceptor* const interceptor_;
     absl::optional<PipeSender<MessageHandle>::PushType> push_;
     absl::optional<PipeReceiver<MessageHandle>::NextType> next_;
     absl::optional<NextResult<MessageHandle>> next_result_;
@@ -348,9 +413,11 @@ class BaseCallData : public Activity, private Wakeable {
   // these members for filters that don't need to intercept sent messages.
   class ReceiveMessage {
    public:
-    explicit ReceiveMessage(BaseCallData* base)
-        : base_(base), pipe_(base->arena()) {}
-    PipeSender<MessageHandle>* incoming_pipe() { return &pipe_.sender; }
+    ReceiveMessage(BaseCallData* base, Interceptor* interceptor)
+        : base_(base), interceptor_(interceptor) {}
+    ~ReceiveMessage() { interceptor_->~Interceptor(); }
+
+    Interceptor* interceptor() { return interceptor_; }
 
     // Start a recv_message op.
     void StartOp(CapturedBatch& batch);
@@ -358,7 +425,8 @@ class BaseCallData : public Activity, private Wakeable {
     // This happens when the promise requests to call the next filter: until
     // this occurs messages can't be received as we don't know the pipe that the
     // promise expects to forward them with.
-    void GotPipe(PipeSender<MessageHandle>* sender);
+    template <typename T>
+    void GotPipe(T* pipe);
     // Called from client/server polling to do the receive message part of the
     // work.
     void WakeInsideCombiner(Flusher* flusher);
@@ -408,8 +476,7 @@ class BaseCallData : public Activity, private Wakeable {
     void OnComplete(absl::Status status);
 
     BaseCallData* const base_;
-    Pipe<MessageHandle> pipe_;
-    PipeSender<MessageHandle>* sender_;
+    Interceptor* const interceptor_;
     State state_ = State::kInitial;
     uint32_t scratch_flags_;
     absl::optional<SliceBuffer>* intercepted_slice_buffer_;
@@ -429,13 +496,6 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_stack* call_stack() const { return call_stack_; }
   Latch<ServerMetadata*>* server_initial_metadata_latch() const {
     return server_initial_metadata_latch_;
-  }
-  PipeReceiver<MessageHandle>* outgoing_messages_pipe() const {
-    return send_message_ == nullptr ? nullptr : send_message_->outgoing_pipe();
-  }
-  PipeSender<MessageHandle>* incoming_messages_pipe() const {
-    return receive_message_ == nullptr ? nullptr
-                                       : receive_message_->incoming_pipe();
   }
   SendMessage* send_message() const { return send_message_; }
   ReceiveMessage* receive_message() const { return receive_message_; }

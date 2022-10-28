@@ -148,9 +148,9 @@ struct CallArgs {
   // and consequently intercept the sent value and mutate/observe it.
   Latch<ServerMetadata*>* server_initial_metadata;
   // Messages travelling from the application to the transport.
-  PipeReceiver<MessageHandle>* outgoing_messages;
+  PipeReceiver<MessageHandle>* client_to_server_messages;
   // Messages travelling from the transport to the application.
-  PipeSender<MessageHandle>* incoming_messages;
+  PipeSender<MessageHandle>* server_to_client_messages;
 };
 
 using NextPromiseFactory =

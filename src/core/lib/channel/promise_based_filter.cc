@@ -70,8 +70,10 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
 
-BaseCallData::BaseCallData(grpc_call_element* elem,
-                           const grpc_call_element_args* args, uint8_t flags)
+BaseCallData::BaseCallData(
+    grpc_call_element* elem, const grpc_call_element_args* args, uint8_t flags,
+    absl::FunctionRef<Interceptor*()> make_send_interceptor,
+    absl::FunctionRef<Interceptor*()> make_recv_interceptor)
     : call_stack_(args->call_stack),
       elem_(elem),
       arena_(args->arena),
@@ -82,12 +84,14 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
           flags & kFilterExaminesServerInitialMetadata
               ? arena_->New<Latch<ServerMetadata*>>()
               : nullptr),
-      send_message_(flags & kFilterExaminesOutboundMessages
-                        ? arena_->New<SendMessage>(this)
-                        : nullptr),
-      receive_message_(flags & kFilterExaminesInboundMessages
-                           ? arena_->New<ReceiveMessage>(this)
-                           : nullptr),
+      send_message_(
+          flags & kFilterExaminesOutboundMessages
+              ? arena_->New<SendMessage>(this, make_send_interceptor())
+              : nullptr),
+      receive_message_(
+          flags & kFilterExaminesInboundMessages
+              ? arena_->New<ReceiveMessage>(this, make_recv_interceptor())
+              : nullptr),
       event_engine_(
           static_cast<ChannelFilter*>(elem->channel_data)
               ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
@@ -324,12 +328,13 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
   intercepted_on_complete_ = std::exchange(batch_->on_complete, &on_complete_);
 }
 
-void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
+template <typename T>
+void BaseCallData::SendMessage::GotPipe(T* pipe_end) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG, "%s SendMessage.GotPipe st=%s", base_->LogTag().c_str(),
             StateString(state_));
   }
-  GPR_ASSERT(receiver != nullptr);
+  GPR_ASSERT(pipe_end != nullptr);
   switch (state_) {
     case State::kInitial:
       state_ = State::kIdle;
@@ -348,7 +353,7 @@ void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
     case State::kCancelled:
       return;
   }
-  receiver_ = receiver;
+  interceptor_->GotPipe(pipe_end);
 }
 
 bool BaseCallData::SendMessage::IsIdle() const {
@@ -442,8 +447,8 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher) {
       auto message = GetContext<Arena>()->MakePooled<Message>();
       message->payload()->Swap(batch_->payload->send_message.send_message);
       message->mutable_flags() = batch_->payload->send_message.flags;
-      push_ = pipe_.sender.Push(std::move(message));
-      next_ = receiver_->Next();
+      push_ = interceptor()->Push()->Push(std::move(message));
+      next_ = interceptor()->Pull()->Next();
     }
       ABSL_FALLTHROUGH_INTENDED;
     case State::kPushedToPipe: {
@@ -565,7 +570,8 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
       batch->payload->recv_message.recv_message_ready, &on_complete_);
 }
 
-void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
+template <typename T>
+void BaseCallData::ReceiveMessage::GotPipe(T* pipe_end) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG, "%s ReceiveMessage.GotPipe st=%s",
             base_->LogTag().c_str(), StateString(state_));
@@ -592,7 +598,7 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
     case State::kCancelled:
       return;
   }
-  sender_ = sender;
+  interceptor()->GotPipe(pipe_end);
 }
 
 void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
@@ -679,7 +685,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kBatchCompletedNoPipe:
       break;
     case State::kBatchCompletedButCancelled:
-      sender_->Close();
+      interceptor()->Push()->Close();
       state_ = State::kCancelled;
       flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                           completed_status_, "recv_message");
@@ -690,10 +696,10 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
         auto message = GetContext<Arena>()->MakePooled<Message>();
         message->payload()->Swap(&**intercepted_slice_buffer_);
         message->mutable_flags() = *intercepted_flags_;
-        push_ = sender_->Push(std::move(message));
-        next_ = pipe_.receiver.Next();
+        push_ = interceptor()->Push()->Push(std::move(message));
+        next_ = interceptor()->Pull()->Next();
       } else {
-        sender_->Close();
+        interceptor()->Push()->Close();
         state_ = State::kCancelled;
         flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                             completed_status_, "recv_message");
@@ -1050,7 +1056,12 @@ class ClientCallData::PollContext {
 ClientCallData::ClientCallData(grpc_call_element* elem,
                                const grpc_call_element_args* args,
                                uint8_t flags)
-    : BaseCallData(elem, args, flags) {
+    : BaseCallData(
+          elem, args, flags,
+          [args]() {
+            return args->arena->New<ReceiveInterceptor>(args->arena);
+          },
+          [args]() { return args->arena->New<SendInterceptor>(args->arena); }) {
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
@@ -1314,8 +1325,13 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               server_initial_metadata_latch(), outgoing_messages_pipe(),
-               incoming_messages_pipe()},
+               server_initial_metadata_latch(),
+               send_message() == nullptr
+                   ? nullptr
+                   : send_message()->interceptor()->original_receiver(),
+               receive_message() == nullptr
+                   ? nullptr
+                   : receive_message()->interceptor()->original_sender()},
       [this](CallArgs call_args) {
         return MakeNextPromise(std::move(call_args));
       });
@@ -1442,14 +1458,14 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     GPR_ASSERT(call_args.server_initial_metadata == nullptr);
   }
   if (send_message() != nullptr) {
-    send_message()->GotPipe(call_args.outgoing_messages);
+    send_message()->GotPipe(call_args.client_to_server_messages);
   } else {
-    GPR_ASSERT(call_args.outgoing_messages == nullptr);
+    GPR_ASSERT(call_args.server_to_client_messages == nullptr);
   }
   if (receive_message() != nullptr) {
-    receive_message()->GotPipe(call_args.incoming_messages);
+    receive_message()->GotPipe(call_args.server_to_client_messages);
   } else {
-    GPR_ASSERT(call_args.incoming_messages == nullptr);
+    GPR_ASSERT(call_args.server_to_client_messages == nullptr);
   }
   return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
@@ -1686,7 +1702,12 @@ const char* ServerCallData::StateString(SendTrailingState state) {
 ServerCallData::ServerCallData(grpc_call_element* elem,
                                const grpc_call_element_args* args,
                                uint8_t flags)
-    : BaseCallData(elem, args, flags) {
+    : BaseCallData(
+          elem, args, flags,
+          [args]() { return args->arena->New<SendInterceptor>(args->arena); },
+          [args]() {
+            return args->arena->New<ReceiveInterceptor>(args->arena);
+          }) {
   if (server_initial_metadata_latch() != nullptr) {
     send_initial_metadata_ = arena()->New<SendInitialMetadata>();
   }
@@ -1909,14 +1930,14 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
     GPR_ASSERT(call_args.server_initial_metadata == nullptr);
   }
   if (send_message() != nullptr) {
-    send_message()->GotPipe(call_args.outgoing_messages);
+    send_message()->GotPipe(call_args.server_to_client_messages);
   } else {
-    GPR_ASSERT(call_args.outgoing_messages == nullptr);
+    GPR_ASSERT(call_args.server_to_client_messages == nullptr);
   }
   if (receive_message() != nullptr) {
-    receive_message()->GotPipe(call_args.incoming_messages);
+    receive_message()->GotPipe(call_args.client_to_server_messages);
   } else {
-    GPR_ASSERT(call_args.incoming_messages == nullptr);
+    GPR_ASSERT(call_args.client_to_server_messages == nullptr);
   }
   return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
@@ -1993,8 +2014,13 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   FakeActivity().Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),
-                 server_initial_metadata_latch(), outgoing_messages_pipe(),
-                 incoming_messages_pipe()},
+                 server_initial_metadata_latch(),
+                 receive_message() == nullptr
+                     ? nullptr
+                     : receive_message()->interceptor()->original_receiver(),
+                 send_message() == nullptr
+                     ? nullptr
+                     : send_message()->interceptor()->original_sender()},
         [this](CallArgs call_args) {
           return MakeNextPromise(std::move(call_args));
         });
