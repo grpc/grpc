@@ -43,7 +43,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
-#include "call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
