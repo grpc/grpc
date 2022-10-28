@@ -775,6 +775,7 @@ const JsonLoaderInterface* RbacConfig::RbacPolicy::JsonLoader(const JsonArgs&) {
 
 std::vector<Rbac> RbacConfig::TakeAsRbacList() {
   std::vector<Rbac> rbac_list;
+  rbac_list.reserve(rbac_policies.size());
   for (auto& rbac_policy : rbac_policies) {
     rbac_list.emplace_back(rbac_policy.TakeAsRbac());
   }
