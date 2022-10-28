@@ -21,8 +21,8 @@
 #include <vector>
 
 #include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -30,6 +30,7 @@ class PromiseFactory {
  public:
   // Create a promise that resolves to Ok but has a memory allocation (to verify
   // destruction)
+  // tag should have static lifetime (i.e. pass a string literal here).
   auto OkPromise(absl::string_view tag) {
     return [this, tag,
             p = std::make_unique<absl::Status>(absl::OkStatus())]() mutable {
@@ -39,6 +40,7 @@ class PromiseFactory {
   }
 
   // Create a promise that never resolves and carries a memory allocation
+  // tag should have static lifetime (i.e. pass a string literal here).
   auto NeverPromise(absl::string_view tag) {
     return
         [this, tag, p = std::make_unique<Pending>()]() -> Poll<absl::Status> {
@@ -48,6 +50,7 @@ class PromiseFactory {
   }
 
   // Create a promise that fails and carries a memory allocation
+  // tag should have static lifetime (i.e. pass a string literal here).
   auto FailPromise(absl::string_view tag) {
     return [this, p = std::make_unique<absl::Status>(absl::UnknownError(tag)),
             tag]() mutable {
