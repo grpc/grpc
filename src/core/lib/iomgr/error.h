@@ -42,10 +42,6 @@
 
 typedef absl::Status grpc_error_handle;
 
-// DEPRECATED: Use grpc_core::StatusToString instead
-// TODO(veblush): Remove this once migration is done
-std::string grpc_error_std_string(grpc_error_handle error);
-
 #define GRPC_ERROR_CREATE(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
 
