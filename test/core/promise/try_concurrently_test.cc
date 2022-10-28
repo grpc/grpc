@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -29,8 +30,9 @@ class PromiseFactory {
  public:
   // Create a promise that resolves to Ok but has a memory allocation (to verify
   // destruction)
-  auto OkPromise(std::string tag) {
-    return [this, tag = std::move(tag),
+  // tag should have static lifetime (i.e. pass a string literal here).
+  auto OkPromise(absl::string_view tag) {
+    return [this, tag,
             p = std::make_unique<absl::Status>(absl::OkStatus())]() mutable {
       order_.push_back(tag);
       return std::move(*p);
@@ -38,18 +40,20 @@ class PromiseFactory {
   }
 
   // Create a promise that never resolves and carries a memory allocation
-  auto NeverPromise(std::string tag) {
-    return [this, tag = std::move(tag),
-            p = std::make_unique<Pending>()]() -> Poll<absl::Status> {
-      order_.push_back(tag);
-      return *p;
-    };
+  // tag should have static lifetime (i.e. pass a string literal here).
+  auto NeverPromise(absl::string_view tag) {
+    return
+        [this, tag, p = std::make_unique<Pending>()]() -> Poll<absl::Status> {
+          order_.push_back(tag);
+          return *p;
+        };
   }
 
   // Create a promise that fails and carries a memory allocation
-  auto FailPromise(std::string tag) {
+  // tag should have static lifetime (i.e. pass a string literal here).
+  auto FailPromise(absl::string_view tag) {
     return [this, p = std::make_unique<absl::Status>(absl::UnknownError(tag)),
-            tag = std::move(tag)]() mutable {
+            tag]() mutable {
       order_.push_back(tag);
       return std::move(*p);
     };
@@ -57,10 +61,10 @@ class PromiseFactory {
 
   // Finish one round and return a vector of strings representing which promises
   // were polled and in which order.
-  std::vector<std::string> Finish() { return std::exchange(order_, {}); }
+  std::vector<absl::string_view> Finish() { return std::exchange(order_, {}); }
 
  private:
-  std::vector<std::string> order_;
+  std::vector<absl::string_view> order_;
 };
 
 std::ostream& operator<<(std::ostream& out, const Poll<absl::Status>& p) {
@@ -72,54 +76,54 @@ TEST(TryConcurrentlyTest, Immediate) {
   PromiseFactory pf;
   auto a = TryConcurrently(pf.OkPromise("1"));
   EXPECT_EQ(a(), Poll<absl::Status>(absl::OkStatus()));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"1"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1"}));
   auto b = TryConcurrently(pf.OkPromise("1")).NecessaryPush(pf.OkPromise("2"));
   EXPECT_EQ(b(), Poll<absl::Status>(absl::OkStatus()));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"2", "1"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"2", "1"}));
   auto c = TryConcurrently(pf.OkPromise("1")).NecessaryPull(pf.OkPromise("2"));
   EXPECT_EQ(c(), Poll<absl::Status>(absl::OkStatus()));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"1", "2"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "2"}));
   auto d = TryConcurrently(pf.OkPromise("1"))
                .NecessaryPull(pf.OkPromise("2"))
                .NecessaryPush(pf.OkPromise("3"));
   EXPECT_EQ(d(), Poll<absl::Status>(absl::OkStatus()));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"3", "1", "2"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"3", "1", "2"}));
   auto e = TryConcurrently(pf.OkPromise("1")).Push(pf.NeverPromise("2"));
   EXPECT_EQ(e(), Poll<absl::Status>(absl::OkStatus()));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"2", "1"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"2", "1"}));
   auto f = TryConcurrently(pf.OkPromise("1")).Pull(pf.NeverPromise("2"));
   EXPECT_EQ(f(), Poll<absl::Status>(absl::OkStatus()));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"1", "2"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "2"}));
 }
 
 TEST(TryConcurrentlyTest, Paused) {
   PromiseFactory pf;
   auto a = TryConcurrently(pf.NeverPromise("1"));
   EXPECT_EQ(a(), Poll<absl::Status>(Pending{}));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"1"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1"}));
   auto b =
       TryConcurrently(pf.OkPromise("1")).NecessaryPush(pf.NeverPromise("2"));
   EXPECT_EQ(b(), Poll<absl::Status>(Pending{}));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"2", "1"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"2", "1"}));
   auto c =
       TryConcurrently(pf.OkPromise("1")).NecessaryPull(pf.NeverPromise("2"));
   EXPECT_EQ(c(), Poll<absl::Status>(Pending{}));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"1", "2"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "2"}));
 }
 
 TEST(TryConcurrentlyTest, OneFailed) {
   PromiseFactory pf;
   auto a = TryConcurrently(pf.FailPromise("bah"));
   EXPECT_EQ(a(), Poll<absl::Status>(absl::UnknownError("bah")));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"bah"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"bah"}));
   auto b = TryConcurrently(pf.NeverPromise("1"))
                .NecessaryPush(pf.FailPromise("humbug"));
   EXPECT_EQ(b(), Poll<absl::Status>(absl::UnknownError("humbug")));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"humbug"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"humbug"}));
   auto c = TryConcurrently(pf.NeverPromise("1"))
                .NecessaryPull(pf.FailPromise("wha"));
   EXPECT_EQ(c(), Poll<absl::Status>(absl::UnknownError("wha")));
-  EXPECT_EQ(pf.Finish(), std::vector<std::string>({"1", "wha"}));
+  EXPECT_EQ(pf.Finish(), std::vector<absl::string_view>({"1", "wha"}));
 }
 
 // A pointer to an int designed to cause a double free if it's double destructed
