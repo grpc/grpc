@@ -73,7 +73,8 @@ class ThreadPool final : public Forkable, public Executor {
    public:
     void Add();
     void Remove();
-    void BlockUntilThreadCount(int threads, const char* why);
+    void BlockUntilThreadCount(int threads, const char* why,
+                               grpc_core::CondVar& waiting_cv);
 
    private:
     grpc_core::Mutex mu_;
@@ -93,7 +94,7 @@ class ThreadPool final : public Forkable, public Executor {
   // Start a new thread while backlogged.
   // This is throttled to a maximum rate of thread creation, and only done if
   // the backlog necessitates it.
-  void StartThreadIfBacklogged() ABSL_LOCKS_EXCLUDED(run_state_mu_);
+  void StartThreadIfBacklogged();
   void Postfork();
 
   WorkQueue global_queue_;
@@ -102,13 +103,13 @@ class ThreadPool final : public Forkable, public Executor {
   // at a time.
   std::atomic<bool> currently_starting_one_thread_;
   std::atomic<uint64_t> last_started_thread_;
-  RunState run_state_ ABSL_GUARDED_BY(run_state_mu_);
+  std::atomic<RunState> run_state_;
 
   const unsigned reserve_threads_;
   std::atomic<bool> quiesced_;
+  std::atomic<int> threads_waiting_;
   grpc_core::Mutex run_state_mu_;
   grpc_core::CondVar run_state_cv_;
-  unsigned threads_waiting_ ABSL_GUARDED_BY(run_state_mu_);
 };
 
 }  // namespace experimental
