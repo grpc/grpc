@@ -121,7 +121,6 @@ class ServerCallContext : public CallContext {
       CallArgs call_args, grpc_completion_queue* cq,
       grpc_metadata_array* publish_initial_metadata,
       absl::FunctionRef<void(grpc_call* call)> publish);
-  PipeReceiver<MessageHandle>* TopLevelIncomingMessageReceiver();
 };
 }  // namespace grpc_core
 

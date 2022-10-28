@@ -1283,9 +1283,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
         break;
       case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
         maybe_read_first_message =
-            Map(static_cast<ServerCallContext*>(GetContext<CallContext>())
-                    ->TopLevelIncomingMessageReceiver()
-                    ->Next(),
+            Map(call_args.client_to_server_messages->Next(),
                 [](NextResult<MessageHandle> msg)
                     -> absl::StatusOr<NextResult<MessageHandle>> {
                   return std::move(msg);
