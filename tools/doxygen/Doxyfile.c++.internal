@@ -948,6 +948,7 @@ include/grpcpp/completion_queue.h \
 include/grpcpp/create_channel.h \
 include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
+include/grpcpp/delegating_channel.h \
 include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/generic/async_generic_service.h \
