@@ -22,6 +22,7 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
