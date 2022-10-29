@@ -4626,6 +4626,7 @@ grpc_cc_library(
     deps = [
         "chaotic_good_frame_header",
         "slice_buffer",
+        "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_transport_chttp2",
     ],
@@ -4640,7 +4641,10 @@ grpc_cc_library(
         "ext/transport/chaotic_good/frame_header.h",
     ],
     external_deps = ["absl/status:statusor"],
-    deps = ["bitset"],
+    deps = [
+        "bitset",
+        "//:gpr_platform",
+    ],
 )
 
 ### UPB Targets

@@ -14,6 +14,8 @@
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
+bool squelch = false;
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (size != 64) return 0;
   auto r = grpc_core::chaotic_good::FrameHeader::Parse(data);
