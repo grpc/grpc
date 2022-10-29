@@ -26,44 +26,11 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-class FrameSerializer {
- public:
-  explicit FrameSerializer(FrameType type, BitSet<3> flags);
-  // If called, must be called before AddMessage, AddTrailers, Finish
-  SliceBuffer& AddHeaders();
-  // If called, must be called before AddTrailers, Finish
-  SliceBuffer& AddMessage();
-  // If called, must be called before Finish
-  SliceBuffer& AddTrailers();
-
-  SliceBuffer Finish();
-
- private:
-  FrameHeader header_;
-};
-
-class FrameDeserializer {
- public:
-  FrameDeserializer(const FrameHeader& header, const SliceBuffer& slice_buffer);
-  const FrameHeader& header() const { return header_; }
-  // If called, must be called before ReceiveMessage, ReceiveTrailers
-  SliceBuffer ReceiveHeaders();
-  // If called, must be called before ReceiveTrailers
-  SliceBuffer ReceiveMessage();
-  // If called, must be called before Finish
-  SliceBuffer ReceiveTrailers();
-
-  absl::Status Finish();
-
- private:
-  FrameHeader header_;
-};
-
 class FrameInterface {
  public:
   virtual absl::Status Deserialize(HPackParser* parser,
                                    const FrameHeader& header,
-                                   const SliceBuffer& slice_buffer) = 0;
+                                   SliceBuffer& slice_buffer) = 0;
   virtual SliceBuffer Serialize(HPackCompressor* encoder) const = 0;
 
  protected:
@@ -72,15 +39,18 @@ class FrameInterface {
 
 struct SettingsFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           const SliceBuffer& slice_buffer) override;
+                           SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+
+  bool operator==(const SettingsFrame& other) const { return true; }
 };
 
 struct ClientFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           const SliceBuffer& slice_buffer) override;
+                           SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
+  uint32_t stream_id;
   ClientMetadataHandle headers;
   MessageHandle message;
   bool end_of_stream;
@@ -88,9 +58,10 @@ struct ClientFragmentFrame final : public FrameInterface {
 
 struct ServerFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           const SliceBuffer& slice_buffer) override;
+                           SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
+  uint32_t stream_id;
   ServerMetadataHandle headers;
   MessageHandle message;
   ServerMetadataHandle trailers;
@@ -98,8 +69,10 @@ struct ServerFragmentFrame final : public FrameInterface {
 
 struct CancelFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           const SliceBuffer& slice_buffer) override;
+                           SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+
+  uint32_t stream_id;
 };
 
 using ClientFrame = absl::variant<ClientFragmentFrame, CancelFrame>;

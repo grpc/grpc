@@ -4622,6 +4622,7 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/frame.h",
     ],
+    external_deps = ["absl/status"],
     deps = [
         "chaotic_good_frame_header",
         "slice_buffer",

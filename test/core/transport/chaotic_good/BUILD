@@ -40,3 +40,13 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = ["//src/core:chaotic_good_frame_header"],
 )
+
+grpc_cc_test(
+    name = "frame_test",
+    srcs = ["frame_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    deps = ["//src/core:chaotic_good_frame"],
+)
