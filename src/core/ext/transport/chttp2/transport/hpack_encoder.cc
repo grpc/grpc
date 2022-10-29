@@ -25,8 +25,6 @@
 #include <limits>
 #include <memory>
 
-#include "frame.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
