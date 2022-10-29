@@ -36,6 +36,20 @@ class FrameInterface {
   virtual SliceBuffer Serialize(HPackCompressor* encoder) const = 0;
 
  protected:
+  static bool EqVal(const Message& a, const Message& b) {
+    return a.payload()->JoinIntoString() == b.payload()->JoinIntoString() &&
+           a.flags() == b.flags();
+  }
+  static bool EqVal(const grpc_metadata_batch& a,
+                    const grpc_metadata_batch& b) {
+    return a.DebugString() == b.DebugString();
+  }
+  template <typename T>
+  static bool EqHdl(const Arena::PoolPtr<T>& a, const Arena::PoolPtr<T>& b) {
+    if (a == nullptr && b == nullptr) return true;
+    if (a == nullptr || b == nullptr) return false;
+    return EqVal(*a, *b);
+  }
   ~FrameInterface() = default;
 };
 
@@ -56,6 +70,12 @@ struct ClientFragmentFrame final : public FrameInterface {
   ClientMetadataHandle headers;
   MessageHandle message;
   bool end_of_stream;
+
+  bool operator==(const ClientFragmentFrame& other) const {
+    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
+           EqHdl(message, other.message) &&
+           end_of_stream == other.end_of_stream;
+  }
 };
 
 struct ServerFragmentFrame final : public FrameInterface {
@@ -67,6 +87,11 @@ struct ServerFragmentFrame final : public FrameInterface {
   ServerMetadataHandle headers;
   MessageHandle message;
   ServerMetadataHandle trailers;
+
+  bool operator==(const ServerFragmentFrame& other) const {
+    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
+           EqHdl(message, other.message) && EqHdl(trailers, other.trailers);
+  }
 };
 
 struct CancelFrame final : public FrameInterface {
@@ -75,6 +100,10 @@ struct CancelFrame final : public FrameInterface {
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
   uint32_t stream_id;
+
+  bool operator==(const CancelFrame& other) const {
+    return stream_id == other.stream_id;
+  }
 };
 
 using ClientFrame = absl::variant<ClientFragmentFrame, CancelFrame>;

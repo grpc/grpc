@@ -19,6 +19,7 @@
 #include <limits>
 
 #include "absl/status/status.h"
+#include "frame.h"
 
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -66,7 +67,6 @@ class FrameSerializer {
 
  private:
   SliceBuffer& Start(uint32_t* length_field) {
-    GPR_ASSERT(last_added_ == nullptr);
     last_added_ = length_field;
     length_at_last_added_ = output_.Length();
     return output_;
@@ -111,12 +111,17 @@ class FrameDeserializer {
   absl::StatusOr<SliceBuffer> Take(uint32_t length) {
     if (length == 0) return SliceBuffer{};
     if (input_.Length() < length) {
-      return absl::InvalidArgumentError("Frame too short");
+      return absl::InvalidArgumentError(
+          "Frame too short (insufficient payload)");
     }
     SliceBuffer out;
     input_.MoveFirstNBytesIntoSliceBuffer(length, out);
     if (length % 64 != 0) {
       const uint32_t padding_length = 64 - length % 64;
+      if (input_.Length() < padding_length) {
+        return absl::InvalidArgumentError(
+            "Frame too short (insufficient padding)");
+      }
       uint8_t padding[64];
       input_.MoveFirstNBytesIntoBuffer(padding_length, padding);
       for (uint32_t i = 0; i < padding_length; i++) {
@@ -262,6 +267,23 @@ SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
     encoder->EncodeRawHeaders(*trailers.get(), serializer.AddTrailers());
   }
   return serializer.Finish();
+}
+
+absl::Status CancelFrame::Deserialize(HPackParser* parser,
+                                      const FrameHeader& header,
+                                      SliceBuffer& slice_buffer) {
+  if (header.type != FrameType::kCancel) {
+    return absl::InvalidArgumentError("Expected cancel frame");
+  }
+  if (header.flags.any()) {
+    return absl::InvalidArgumentError("Unexpected flags");
+  }
+  if (header.stream_id == 0) {
+    return absl::InvalidArgumentError("Expected non-zero stream id");
+  }
+  FrameDeserializer deserializer(header, slice_buffer);
+  stream_id = header.stream_id;
+  return deserializer.Finish();
 }
 
 SliceBuffer CancelFrame::Serialize(HPackCompressor*) const {

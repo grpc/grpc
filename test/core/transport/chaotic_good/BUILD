@@ -50,3 +50,17 @@ grpc_cc_test(
     ],
     deps = ["//src/core:chaotic_good_frame"],
 )
+
+grpc_fuzzer(
+    name = "frame_fuzzer",
+    srcs = ["frame_fuzzer.cc"],
+    corpus = "frame_fuzzer_corpus",
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//src/core:arena",
+        "//src/core:chaotic_good_frame",
+        "//src/core:resource_quota",
+        "//test/core/promise:test_context",
+    ],
+)
