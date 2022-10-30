@@ -21,6 +21,7 @@ import multiprocessing
 import os
 import re
 import sys
+import time
 
 import run_buildozer
 
@@ -399,6 +400,7 @@ parser.add_argument(
     type=str,
     default=None,
     help='with --explain, target why a given dependency is needed')
+parser.add_argument('--time', action='store_true', default=False, help='Time how long it takes to run on each target and produce a report at the end')
 args = parser.parse_args()
 
 for dirname in [
@@ -523,6 +525,7 @@ class Choices:
 
 
 def make_library(library):
+    start_time = time.perf_counter()
     error = False
     hdrs = sorted(consumes[library])
     # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
@@ -629,7 +632,7 @@ def make_library(library):
         external_deps.best(lambda x: SCORERS[args.score]
                            (x, original_external_deps[library])))
 
-    return (library, error, deps, external_deps)
+    return (library, error, deps, external_deps, time.perf_counter() - start_time)
 
 
 update_libraries = []
@@ -643,14 +646,21 @@ with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
     updated_libraries = p.map(make_library, update_libraries, 1)
 
 error = False
-for library, lib_error, deps, external_deps in updated_libraries:
+benchmark = []
+for library, lib_error, deps, external_deps, time in updated_libraries:
     if lib_error:
         error = True
         continue
+    benchmark.append((library, time))
     buildozer_set_list('external_deps', external_deps, library, via='deps')
     buildozer_set_list('deps', deps, library)
 
 run_buildozer.run_buildozer(buildozer_commands)
+
+if args.time:
+    benchmark.sort(key=lambda x: x[1])
+    for library, time in benchmark:
+        print('%s: %.2fs' % (library, time))
 
 if error:
     sys.exit(1)
