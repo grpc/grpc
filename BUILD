@@ -208,12 +208,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/support/workaround_list.h",
     "include/grpc/impl/codegen/byte_buffer.h",
     "include/grpc/impl/codegen/byte_buffer_reader.h",
-    "include/grpc/impl/codegen/compression_types.h",
-    "include/grpc/impl/codegen/connectivity_state.h",
-    "include/grpc/impl/codegen/grpc_types.h",
     "include/grpc/impl/codegen/propagation_bits.h",
-    "include/grpc/impl/codegen/status.h",
-    "include/grpc/impl/codegen/slice.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
@@ -531,6 +526,8 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_security_base",
         "grpc_trace",
+        "grpc_types",
+        "grpc_connectivity_state_enum",
         "http_connect_handshaker",
         "iomgr_timer",
         "//src/core:channel_init",
@@ -596,6 +593,8 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_common",
+        "grpc_types",
+        "grpc_connectivity_state_enum",
         "grpc_credentials_util",
         "grpc_http_filters",
         "grpc_jwt_credentials",
@@ -807,6 +806,8 @@ grpc_cc_library(
     deps = [
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
+        "grpc_connectivity_state_enum",
+        "grpc_types",
     ],
 )
 
@@ -842,6 +843,8 @@ grpc_cc_library(
         "grpc++_base",
         "//src/core:gpr_atm",
         "//src/core:slice",
+        "grpc_connectivity_state_enum",
+        "grpc_types",
     ],
 )
 
@@ -1048,6 +1051,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_security_base",
+        "grpc_types",
     ],
 )
 
@@ -1068,6 +1072,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
+        "grpc_types",
     ],
 )
 
@@ -1147,6 +1152,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
     ],
 )
 
@@ -1398,8 +1404,12 @@ grpc_cc_library(
         "debug_location",
         "exec_ctx",
         "gpr",
+        "grpc_compression_types",
+        "grpc_connectivity_state_enum",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
+        "grpc_types",
         "iomgr_timer",
         "orphanable",
         "promise",
@@ -1627,8 +1637,12 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_compression_types",
+        "grpc_connectivity_state_enum",
         "grpc_public_hdrs",
+        "grpc_status_enum",
         "grpc_trace",
+        "grpc_types",
         "handshaker",
         "promise",
         "ref_counted_ptr",
@@ -1678,6 +1692,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_trace",
+        "grpc_slice_type"
     ],
 )
 
@@ -1706,6 +1721,8 @@ grpc_cc_library(
         "alts_upb",
         "gpr",
         "grpc_public_hdrs",
+        "grpc_types",
+        "grpc_connectivity_state_enum",
     ],
 )
 
@@ -1779,6 +1796,9 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_service_config_impl",
+        "grpc_types",
+        "grpc_connectivity_state_enum",
+        "grpc_compression_types",
         "grpc_trace",
         "grpcpp_call_metric_recorder",
         "iomgr_timer",
@@ -2197,6 +2217,8 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_public_hdrs",
+        "grpc_types",
+        "grpc_connectivity_state_enum",
     ],
 )
 
@@ -2299,12 +2321,12 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
         "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:ref_counted",
-        "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:status_helper",
         "//src/core:time",
@@ -2364,8 +2386,8 @@ grpc_cc_library(
     deps = [
         "debug_location",
         "gpr",
-        "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
         "//src/core:closure",
         "//src/core:error",
         "//src/core:gpr_atm",
@@ -2674,11 +2696,13 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_base",
+        "grpc_connectivity_state_enum",
         "grpc_health_upb",
         "grpc_public_hdrs",
         "grpc_resolver",
         "grpc_service_config_impl",
         "grpc_trace",
+        "grpc_types",
         "http_connect_handshaker",
         "iomgr_timer",
         "orphanable",
@@ -2765,6 +2789,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_service_config_impl",
         "grpc_trace",
+        "grpc_types",
         "iomgr_timer",
         "orphanable",
         "ref_counted_ptr",
@@ -2818,6 +2843,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
+        "grpc_types",
         "handshaker",
         "orphanable",
         "ref_counted_ptr",
@@ -2861,6 +2887,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_security_base",
+        "grpc_types",
         "handshaker",
         "promise",
         "ref_counted_ptr",
@@ -3055,6 +3082,7 @@ grpc_cc_library(
         "cpp_impl_of",
         "gpr",
         "grpc_public_hdrs",
+        "grpc_types",
         "//src/core:ref_counted",
         "//src/core:slice",
     ],
@@ -3089,6 +3117,7 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_public_hdrs",
         "grpc_security_base",
+        "grpc_types",
         "ref_counted_ptr",
         "tsi_base",
         "tsi_ssl_session_cache",
@@ -3130,8 +3159,10 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_base",
+        "grpc_compression_types",
         "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
         "promise",
         "//src/core:arena",
         "//src/core:arena_promise",
@@ -3163,7 +3194,7 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_platform",
-        "grpc_public_hdrs",
+        "grpc_types",
         "server_address",
         "//src/core:channel_args",
         "//src/core:useful",
@@ -3283,8 +3314,8 @@ grpc_cc_library(
         "config",
         "debug_location",
         "gpr",
-        "grpc_public_hdrs",
         "grpc_resolver",
+        "grpc_types",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
@@ -3354,8 +3385,11 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_base",
+        "grpc_compression_types",
+        "grpc_connectivity_state_enum",
         "grpc_public_hdrs",
         "grpc_trace",
+        "grpc_types",
         "httpcli",
         "iomgr_timer",
         "ref_counted_ptr",
