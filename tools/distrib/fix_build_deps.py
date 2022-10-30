@@ -400,7 +400,13 @@ parser.add_argument(
     type=str,
     default=None,
     help='with --explain, target why a given dependency is needed')
-parser.add_argument('--time', action='store_true', default=False, help='Time how long it takes to run on each target and produce a report at the end')
+parser.add_argument(
+    '--time',
+    action='store_true',
+    default=False,
+    help=
+    'Time how long it takes to run on each target and produce a report at the end'
+)
 args = parser.parse_args()
 
 for dirname in [
@@ -632,7 +638,8 @@ def make_library(library):
         external_deps.best(lambda x: SCORERS[args.score]
                            (x, original_external_deps[library])))
 
-    return (library, error, deps, external_deps, time.perf_counter() - start_time)
+    return (library, error, deps, external_deps,
+            time.perf_counter() - start_time)
 
 
 update_libraries = []
@@ -666,7 +673,9 @@ if args.time:
     print('ADVICE: if a target is slow, consider one of:')
     print('- splitting it up into smaller parts')
     print('- eliminating ambiguity in the deps of that target')
-    print('You can see the deps for a target with `fix_build_deps.py --explain //path/to:target`')
+    print(
+        'You can see the deps for a target with `fix_build_deps.py --explain //path/to:target`'
+    )
 
 if error:
     sys.exit(1)
