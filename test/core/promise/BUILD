@@ -434,8 +434,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:event_engine_base_hdrs",
         "//:exec_ctx",
+        "//:grpc",
         "//src/core:default_event_engine",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:notification",
@@ -450,6 +450,7 @@ grpc_cc_test(
     srcs = ["try_concurrently_test.cc"],
     external_deps = [
         "absl/status",
+        "absl/strings",
         "gtest",
     ],
     language = "c++",

@@ -541,7 +541,6 @@ grpc_cc_library(
         },
     ],
     tags = [
-        "grpc_avoid_dep",
         "nofixdeps",
     ],
     visibility = [
