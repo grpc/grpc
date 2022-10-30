@@ -786,9 +786,15 @@ grpc_cc_library(
     hdrs = GRPC_PUBLIC_HDRS,
     tags = [
         "avoid_dep",
-        "nofixdeps",
     ],
-    deps = ["gpr_public_hdrs"],
+    deps = [
+        "gpr_public_hdrs",
+        "grpc_compression_types",
+        "grpc_connectivity_state_enum",
+        "grpc_slice_type",
+        "grpc_status_enum",
+        "grpc_types",
+    ],
 )
 
 grpc_cc_library(
