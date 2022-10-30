@@ -661,6 +661,12 @@ if args.time:
     benchmark.sort(key=lambda x: x[1])
     for library, time in benchmark:
         print('%s: %.2fs' % (library, time))
+    print('')
+    print('')
+    print('ADVICE: if a target is slow, consider one of:')
+    print('- splitting it up into smaller parts')
+    print('- eliminating ambiguity in the deps of that target')
+    print('You can see the deps for a target with `fix_build_deps.py --explain //path/to:target`')
 
 if error:
     sys.exit(1)
