@@ -523,11 +523,11 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_common",
+        "grpc_connectivity_state_enum",
         "grpc_http_filters",
         "grpc_security_base",
         "grpc_trace",
         "grpc_types",
-        "grpc_connectivity_state_enum",
         "http_connect_handshaker",
         "iomgr_timer",
         "//src/core:channel_init",
@@ -593,7 +593,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_common",
-        "grpc_types",
         "grpc_connectivity_state_enum",
         "grpc_credentials_util",
         "grpc_http_filters",
@@ -601,6 +600,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
+        "grpc_types",
         "http_connect_handshaker",
         "httpcli",
         "iomgr_timer",
@@ -804,10 +804,10 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "grpc_public_hdrs",
-        "//src/core:gpr_atm",
         "grpc_connectivity_state_enum",
+        "grpc_public_hdrs",
         "grpc_types",
+        "//src/core:gpr_atm",
     ],
 )
 
@@ -841,10 +841,10 @@ grpc_cc_library(
     ],
     deps = [
         "grpc++_base",
-        "//src/core:gpr_atm",
-        "//src/core:slice",
         "grpc_connectivity_state_enum",
         "grpc_types",
+        "//src/core:gpr_atm",
+        "//src/core:slice",
     ],
 )
 
@@ -1691,8 +1691,8 @@ grpc_cc_library(
     visibility = ["@grpc:tsi_interface"],
     deps = [
         "gpr",
+        "grpc_slice_type",
         "grpc_trace",
-        "grpc_slice_type"
     ],
 )
 
@@ -1721,8 +1721,6 @@ grpc_cc_library(
         "alts_upb",
         "gpr",
         "grpc_public_hdrs",
-        "grpc_types",
-        "grpc_connectivity_state_enum",
     ],
 )
 
@@ -1791,15 +1789,15 @@ grpc_cc_library(
         "grpc",
         "grpc++_codegen_proto",
         "grpc_base",
+        "grpc_compression_types",
+        "grpc_connectivity_state_enum",
         "grpc_credentials_util",
         "grpc_health_upb",
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_service_config_impl",
-        "grpc_types",
-        "grpc_connectivity_state_enum",
-        "grpc_compression_types",
         "grpc_trace",
+        "grpc_types",
         "grpcpp_call_metric_recorder",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -2217,8 +2215,6 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_public_hdrs",
-        "grpc_types",
-        "grpc_connectivity_state_enum",
     ],
 )
 
