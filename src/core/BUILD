@@ -1786,6 +1786,9 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_handle_containers",
+        "event_engine_interface",
+        "event_engine_memory_allocator",
+        "event_engine_slice_buffer",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
@@ -1794,7 +1797,6 @@ grpc_cc_library(
         "time",
         "windows_iocp",
         "//:gpr",
-        "//:grpc_base",
     ],
 )
 
