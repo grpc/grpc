@@ -19,8 +19,8 @@
 #include <limits>
 
 #include "absl/status/status.h"
-#include "frame.h"
 
+#include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc_core {
