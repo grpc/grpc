@@ -2593,7 +2593,7 @@ target_link_libraries(grpc_test_util_unsecure
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
-  grpc_unsecure
+  grpc
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -17355,86 +17355,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sleep_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/channel/channel_args_preconditioning.cc
-  src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/default_event_engine.cc
-  src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
-  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
-  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
-  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-  src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/posix_engine.cc
-  src/core/lib/event_engine/posix_engine/timer.cc
-  src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/event_engine/posix_engine/timer_manager.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/event_engine/thread_pool.cc
-  src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/trace.cc
-  src/core/lib/event_engine/utils.cc
-  src/core/lib/event_engine/windows/iocp.cc
-  src/core/lib/event_engine/windows/win_socket.cc
-  src/core/lib/event_engine/windows/windows_engine.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/handshaker/proxy_mapper_registry.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/iomgr/pollset_set.cc
-  src/core/lib/iomgr/sockaddr_utils_posix.cc
-  src/core/lib/iomgr/socket_utils_windows.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_writer.cc
-  src/core/lib/load_balancing/lb_policy.cc
-  src/core/lib/load_balancing/lb_policy_registry.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/sleep.cc
-  src/core/lib/resolver/resolver.cc
-  src/core/lib/resolver/resolver_registry.cc
-  src/core/lib/resolver/server_address.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/lib/service_config/service_config_parser.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/init_internally.cc
-  src/core/lib/transport/handshaker_registry.cc
-  src/core/lib/uri/uri_parser.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/promise/sleep_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -17462,16 +17382,7 @@ target_include_directories(sleep_test
 target_link_libraries(sleep_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
-  absl::inlined_vector
-  absl::any_invocable
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::utility
-  gpr
-  upb
+  grpc
 )
 
 
