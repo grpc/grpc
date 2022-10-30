@@ -46,7 +46,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:event_engine_base_hdrs",
+        "//:grpc_unsecure",
         "//:uri_parser",
         "//test/core/util:grpc_test_util_unsecure",
     ],

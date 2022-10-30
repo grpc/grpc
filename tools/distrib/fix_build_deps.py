@@ -409,6 +409,9 @@ for dirname in [
         "test/core/util",
         "test/core/end2end",
         "test/core/event_engine",
+        "test/core/event_engine/fuzzing_event_engine",
+        "test/core/event_engine/posix",
+        "test/core/event_engine/test_suite",
         "test/core/resource_quota",
 ]:
     parsing_path = dirname
@@ -421,6 +424,7 @@ for dirname in [
             'config_setting': lambda **kwargs: None,
             'selects': FakeSelects(),
             'python_config_settings': lambda **kwargs: None,
+            'grpc_proto_library': lambda **kwargs: None,
             'grpc_cc_binary': grpc_cc_library,
             'grpc_cc_library': grpc_cc_library,
             'grpc_cc_test': grpc_cc_library,
@@ -537,7 +541,7 @@ def make_library(library):
         if hdr.startswith('src/libfuzzer/'):
             continue
 
-        if hdr == 'grpc/grpc.h' and library.startswith('//test:'):
+        if hdr == 'grpc/grpc.h' and library.startswith('//test'):
             # not the root build including grpc.h ==> //:grpc
             deps.add_one_of(['//:grpc', '//:grpc_unsecure'], hdr)
             continue
@@ -604,6 +608,13 @@ def make_library(library):
                 break
         if is_sys_include:
             # assume a system include
+            continue
+
+        if hdr.endswith('.pb.h') and hdr.startswith('test/'):
+            path = hdr[:hdr.rfind('/')]
+            filename = hdr[hdr.rfind('/') + 1:]
+            target = filename[:filename.find('.')] + '_proto'
+            deps.add('//' + path + ':' + target, hdr)
             continue
 
         print("# ERROR: can't categorize header: %s used by %s" %

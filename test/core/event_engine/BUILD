@@ -29,9 +29,9 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_interface",
         "//src/core:notification",
     ],
 )
@@ -44,9 +44,9 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:forkable",
     ],
 )
@@ -88,9 +88,11 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_unsecure",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_interface",
+        "//src/core:event_engine_memory_allocator",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -100,8 +102,9 @@ grpc_cc_test(
     srcs = ["smoke_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:grpc_unsecure",
+        "//src/core:event_engine_interface",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -112,9 +115,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     deps = [
         "aborting_event_engine",
-        "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_interface",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -126,7 +130,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:gpr_platform",
-        "//src/core:event_engine_common",
+        "//src/core:event_engine_slice",
+        "//src/core:event_engine_slice_buffer",
         "//src/core:slice",
     ],
 )
@@ -152,8 +157,9 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
         "//:gpr",
+        "//src/core:event_engine_interface",
+        "//src/core:event_engine_memory_allocator",
     ],
 )
 
@@ -167,5 +173,8 @@ grpc_cc_library(
         "absl/status:statusor",
         "gtest",
     ],
-    deps = ["//:event_engine_base_hdrs"],
+    deps = [
+        "//src/core:event_engine_interface",
+        "//src/core:event_engine_memory_allocator",
+    ],
 )

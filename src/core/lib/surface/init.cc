@@ -23,6 +23,7 @@
 #include <limits.h>
 
 #include "absl/base/thread_annotations.h"
+#include "init_internally.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
@@ -119,6 +120,9 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
 static void do_basic_init(void) {
   grpc_core::InitInternally = grpc_init;
   grpc_core::ShutdownInternally = grpc_shutdown;
+  grpc_core::IsInitializedInternally = [] {
+    return grpc_is_initialized() != 0;
+  };
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();

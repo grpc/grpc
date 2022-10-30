@@ -26,14 +26,15 @@ grpc_cc_library(
     testonly = True,
     srcs = ["posix_engine_test_utils.cc"],
     hdrs = ["posix_engine_test_utils.h"],
+    external_deps = ["absl/functional:any_invocable"],
     tags = [
         "no_windows",
     ],
     visibility = ["//test:__subpackages__"],
     deps = [
-        "//src/core:event_engine_common",
+        "//:gpr",
+        "//src/core:event_engine_interface",
         "//src/core:posix_event_engine_event_poller",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -45,6 +46,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:gpr",
         "//src/core:bitset",
         "//src/core:posix_event_engine_timer",
     ],
@@ -53,25 +55,38 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/types:optional",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:grpc",
+        "//src/core:event_engine_interface",
         "//src/core:posix_event_engine_timer",
+        "//src/core:time",
     ],
 )
 
 grpc_cc_test(
     name = "timer_manager_test",
     srcs = ["timer_manager_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/time",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
         "//src/core:common_event_engine_closures",
+        "//src/core:posix_event_engine_timer",
         "//src/core:posix_event_engine_timer_manager",
         "//test/core/util:grpc_test_util",
     ],
@@ -80,7 +95,12 @@ grpc_cc_test(
 grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_windows",
@@ -88,13 +108,22 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "posix_engine_test_utils",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
         "//src/core:common_event_engine_closures",
+        "//src/core:dual_ref_counted",
         "//src/core:event_engine_poller",
+        "//src/core:iomgr_port",
+        "//src/core:notification",
         "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_closure",
         "//src/core:posix_event_engine_event_poller",
         "//src/core:posix_event_engine_poller_posix_default",
-        "//test/core/event_engine/posix:posix_engine_test_utils",
+        "//src/core:posix_event_engine_wakeup_fd_posix",
+        "//src/core:posix_event_engine_wakeup_fd_posix_pipe",
+        "//src/core:strerror",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -102,23 +131,33 @@ grpc_cc_test(
 grpc_cc_test(
     name = "lock_free_event_test",
     srcs = ["lock_free_event_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/time",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = True,
     uses_polling = False,
     deps = [
-        "//src/core:posix_event_engine",
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_interface",
         "//src/core:posix_event_engine_closure",
         "//src/core:posix_event_engine_event_poller",
         "//src/core:posix_event_engine_lockfree_event",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "wakeup_fd_posix_test",
     srcs = ["wakeup_fd_posix_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status:statusor",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_windows",
@@ -126,9 +165,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = True,
     deps = [
+        "//src/core:posix_event_engine_wakeup_fd_posix",
         "//src/core:posix_event_engine_wakeup_fd_posix_eventfd",
         "//src/core:posix_event_engine_wakeup_fd_posix_pipe",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -143,6 +182,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:grpc_unsecure",
+        "//src/core:iomgr_port",
         "//src/core:posix_event_engine_traced_buffer_list",
         "//test/core/util:grpc_test_util",
     ],
@@ -151,7 +192,12 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_posix_socket_utils_test",
     srcs = ["tcp_posix_socket_utils_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_windows",
@@ -159,17 +205,24 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:event_engine_common",
+        "//:gpr",
+        "//:grpc_unsecure",
+        "//src/core:event_engine_interface",
+        "//src/core:iomgr_port",
         "//src/core:posix_event_engine_tcp_socket_utils",
         "//src/core:socket_mutator",
-        "//test/core/util:grpc_test_util",
+        "//src/core:useful",
     ],
 )
 
 grpc_cc_test(
     name = "posix_endpoint_test",
     srcs = ["posix_endpoint_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_windows",
@@ -177,15 +230,21 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "posix_engine_test_utils",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
         "//src/core:channel_args",
-        "//src/core:common_event_engine_closures",
+        "//src/core:dual_ref_counted",
         "//src/core:event_engine_poller",
+        "//src/core:notification",
         "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_closure",
         "//src/core:posix_event_engine_endpoint",
         "//src/core:posix_event_engine_event_poller",
         "//src/core:posix_event_engine_poller_posix_default",
-        "//test/core/event_engine/posix:posix_engine_test_utils",
+        "//src/core:posix_event_engine_tcp_socket_utils",
+        "//src/core:resource_quota",
         "//test/core/event_engine/test_suite:conformance_test_base_lib",
         "//test/core/event_engine/test_suite:oracle_event_engine_posix",
         "//test/core/util:grpc_test_util",

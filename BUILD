@@ -462,6 +462,49 @@ GRPCXX_PUBLIC_HDRS = [
 ]
 
 grpc_cc_library(
+    name = "grpc_slice_type",
+    public_hdrs = [
+        "include/grpc/impl/codegen/slice.h",
+    ],
+    deps = ["gpr_public_hdrs"],
+)
+
+grpc_cc_library(
+    name = "grpc_status_enum",
+    public_hdrs = [
+        "include/grpc/impl/codegen/status.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_connectivity_state_enum",
+    public_hdrs = [
+        "include/grpc/impl/codegen/connectivity_state.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_compression_types",
+    public_hdrs = [
+        "include/grpc/impl/codegen/compression_types.h",
+    ],
+    deps = ["gpr_public_hdrs"],
+)
+
+grpc_cc_library(
+    name = "grpc_types",
+    public_hdrs = [
+        "include/grpc/impl/codegen/grpc_types.h",
+    ],
+    deps = [
+        "gpr_public_hdrs",
+        "grpc_compression_types",
+        "grpc_slice_type",
+        "grpc_status_enum",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "//src/core:lib/surface/init.cc",
@@ -1115,24 +1158,6 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
-    ],
-)
-
-grpc_cc_library(
-    name = "event_engine_base_hdrs",
-    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS,
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/time",
-        "absl/types:optional",
-        "absl/functional:any_invocable",
-    ],
-    tags = [
-        "nofixdeps",
-    ],
-    deps = [
-        "gpr",
     ],
 )
 
@@ -2397,12 +2422,12 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:iomgr_timer"],
     deps = [
-        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr",
         "gpr_platform",
         "grpc_trace",
         "//src/core:closure",
+        "//src/core:event_engine_interface",
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
         "//src/core:iomgr_port",
@@ -2746,7 +2771,7 @@ grpc_cc_library(
         "server_address",
         "sockaddr_utils",
         "uri_parser",
-        "//src/core:event_engine_common",
+        "//src/core:event_engine_handle_containers",
         "//src/core:grpc_resolver_dns_selection",
         "//src/core:grpc_service_config",
         "//src/core:grpc_sockaddr",
@@ -3191,10 +3216,10 @@ grpc_cc_library(
         "envoy_service_load_stats_upbdefs",
         "envoy_service_status_upb",
         "envoy_service_status_upbdefs",
-        "event_engine_base_hdrs",
         "exec_ctx",
         "google_rpc_status_upb",
         "gpr",
+        "grpc_public_hdrs",
         "grpc_trace",
         "orphanable",
         "protobuf_any_upb",
@@ -3207,6 +3232,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:env",
+        "//src/core:event_engine_interface",
         "//src/core:json",
         "//src/core:ref_counted",
         "//src/core:time",

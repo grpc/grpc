@@ -33,9 +33,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
+        "//:grpc_unsecure",
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:resource_quota",
