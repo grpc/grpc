@@ -23,7 +23,6 @@
 #include <limits.h>
 
 #include "absl/base/thread_annotations.h"
-#include "init_internally.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
