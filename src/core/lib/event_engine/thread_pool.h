@@ -35,18 +35,16 @@
 
 #include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/event_engine/work_queue.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
+class ThreadPoolImpl;
 class ThreadPool final : public Forkable, public Executor {
  public:
   ThreadPool();
   // Asserts Quiesce was called.
-  ~ThreadPool() override;
+  ~ThreadPool() override = default;
 
   void Quiesce();
 
@@ -56,60 +54,14 @@ class ThreadPool final : public Forkable, public Executor {
 
   // Forkable
   // Ensures that the thread pool is empty before forking.
+  // TODO(hork): this is only for testing. Consider exposing the impl for
+  // testing
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
 
  private:
-  enum class RunState { kRunning, kShutdown, kForking };
-  bool Step();
-  void SetRunState(RunState state);
-  // DO NOT SUBMIT(hork): implement a backlog check (currently: queue > 1)
-  bool IsBacklogged();
-  // DO NOT SUBMIT(hork): implement SleepIfRunning (trickled thread creation on
-  // startup)
-  void SleepIfRunning();
-  class ThreadCount {
-   public:
-    void Add();
-    void Remove();
-    void BlockUntilThreadCount(int threads, const char* why,
-                               grpc_core::CondVar& waiting_cv);
-
-   private:
-    grpc_core::Mutex mu_;
-    grpc_core::CondVar cv_;
-    int threads_ ABSL_GUARDED_BY(mu_) = 0;
-  };
-
-  enum class StartThreadReason {
-    kInitialPool,
-    kBacklogged,
-  };
-
-  static void ThreadFunc(ThreadPool* pool);
-  // Start a new thread that initializes the thread pool
-  // This is not subject to rate limiting or backlog checking.
-  void StartInitialThread();
-  // Start a new thread while backlogged.
-  // This is throttled to a maximum rate of thread creation, and only done if
-  // the backlog necessitates it.
-  void StartThreadIfBacklogged();
-  void Postfork();
-
-  WorkQueue global_queue_;
-  ThreadCount thread_count_;
-  // After pool creation we use this to rate limit creation of threads to one
-  // at a time.
-  std::atomic<bool> currently_starting_one_thread_;
-  std::atomic<uint64_t> last_started_thread_;
-  std::atomic<RunState> run_state_;
-
-  const unsigned reserve_threads_;
-  std::atomic<bool> quiesced_;
-  std::atomic<int> threads_waiting_;
-  grpc_core::Mutex run_state_mu_;
-  grpc_core::CondVar run_state_cv_;
+  std::shared_ptr<ThreadPoolImpl> impl_;
 };
 
 }  // namespace experimental
