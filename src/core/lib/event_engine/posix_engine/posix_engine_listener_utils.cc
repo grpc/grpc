@@ -349,27 +349,29 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
 
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
-    const PosixTcpOptions& /*options*/,
-    const grpc_event_engine::experimental::EventEngine::
-        ResolvedAddress& /*addr*/) {
+absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
+CreateAndPrepareListenerSocket(const PosixTcpOptions& /*options*/,
+                               const grpc_event_engine::experimental::
+                                   EventEngine::ResolvedAddress& /*addr*/) {
   GPR_ASSERT(
       false &&
       "CreateAndPrepareListenerSocket is not supported on this platform");
 }
 
-absl::StatusOr<int> ListenerAddWildcardAddresses(
+absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     ListenerSocketsContainer& /*listener_sockets*/,
     const PosixTcpOptions& /*options*/, int /*requested_port*/) {
   GPR_ASSERT(false &&
-             "ListenerAddWildcardAddresses is not supported on this platform");
+             "ListenerContainerAddWildcardAddresses is not supported on this "
+             "platform");
 }
 
-absl::StatusOr<int> ListenerAddAllLocalAddresses(
+absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& /*listener_sockets*/,
     const PosixTcpOptions& /*options*/, int /*requested_port*/) {
   GPR_ASSERT(false &&
-             "ListenerAddAllLocalAddresses is not supported on this platform");
+             "ListenerContainerAddAllLocalAddresses is not supported on this "
+             "platform");
 }
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
