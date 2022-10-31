@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 
 grpc_core::TraceFlag grpc_http_trace(false, "http");
