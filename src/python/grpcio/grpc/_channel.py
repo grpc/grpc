@@ -898,12 +898,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         self._response_deserializer = response_deserializer
         self._context = cygrpc.build_census_context()
 
-    def _prepare(self,
-                request,
-                timeout: Optional[float],
-                metadata: Optional[MetadataType],
-                wait_for_ready: Optional[bool],
-                compression: Optional[grpc.Compression]):
+    def _prepare(self, request, timeout: Optional[float],
+                 metadata: Optional[MetadataType],
+                 wait_for_ready: Optional[bool],
+                 compression: Optional[grpc.Compression]):
         deadline, serialized_request, rendezvous = _start_unary_request(
             request, timeout, self._request_serializer)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(

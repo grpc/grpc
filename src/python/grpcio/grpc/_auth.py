@@ -13,15 +13,13 @@
 # limitations under the License.
 """GRPCAuthMetadataPlugins for standard authentication."""
 
-from typing import Optional
-
 import inspect
+from typing import Optional
 
 import grpc
 
 
-def _sign_request(callback: grpc.AuthMetadataPluginCallback,
-                  token: str,
+def _sign_request(callback: grpc.AuthMetadataPluginCallback, token: str,
                   error: Optional[Exception]):
     metadata = (('authorization', 'Bearer {}'.format(token)),)
     callback(metadata, error)
@@ -37,8 +35,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         self._is_jwt = 'additional_claims' in inspect.getfullargspec(
             credentials.get_access_token).args
 
-    def __call__(self,
-                 context: grpc.AuthMetadataContext,
+    def __call__(self, context: grpc.AuthMetadataContext,
                  callback: grpc.AuthMetadataPluginCallback):
         try:
             if self._is_jwt:
@@ -60,7 +57,6 @@ class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
     def __init__(self, access_token: str):
         self._access_token = access_token
 
-    def __call__(self,
-                 context: grpc.AuthMetadataContext,
+    def __call__(self, context: grpc.AuthMetadataContext,
                  callback: grpc.AuthMetadataPluginCallback):
         _sign_request(callback, self._access_token, None)

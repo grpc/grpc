@@ -39,9 +39,9 @@ def _is_grpc_tools_importable() -> bool:
         return False
 
 
-def _call_with_lazy_import(fn_name: str,
-                           protobuf_path: str
-    ) -> Union[types.ModuleType, Tuple[types.ModuleType, types.ModuleType]]:
+def _call_with_lazy_import(
+    fn_name: str, protobuf_path: str
+) -> Union[types.ModuleType, Tuple[types.ModuleType, types.ModuleType]]:
     """Calls one of the three functions, lazily importing grpc_tools.
 
     Args:
@@ -137,7 +137,9 @@ def services(protobuf_path: str) -> types.ModuleType:  # pylint: disable=unused-
     return _call_with_lazy_import("services", protobuf_path)
 
 
-def protos_and_services(protobuf_path: str) -> Tuple[types.ModuleType, types.ModuleType]:  # pylint: disable=unused-argument
+def protos_and_services(
+    protobuf_path: str
+) -> Tuple[types.ModuleType, types.ModuleType]:  # pylint: disable=unused-argument
     """Returns a 2-tuple of modules corresponding to protos and services.
 
     THIS IS AN EXPERIMENTAL API.

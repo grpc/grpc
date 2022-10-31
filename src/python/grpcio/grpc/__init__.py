@@ -21,22 +21,21 @@ import enum
 import logging
 import sys
 import types
-from typing import Any, Callable, Dict, Optional, Type, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import DoneCallbackType
 from grpc._typing import MetadataType
 from grpc._typing import RequestIterableType
-from grpc._typing import SerializingFunction
 from grpc._typing import RequestType
 from grpc._typing import ResponseType
+from grpc._typing import SerializingFunction
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -176,7 +175,9 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def traceback(self, timeout: Optional[float] = None) -> Optional[types.TracebackType]:
+    def traceback(
+            self,
+            timeout: Optional[float] = None) -> Optional[types.TracebackType]:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -439,11 +440,9 @@ class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
-    def intercept_unary_unary(
-        self,
-        continuation: Callable[[ClientCallDetails, RequestType]],
-        client_call_details,
-        request):
+    def intercept_unary_unary(self, continuation: Callable[[
+        ClientCallDetails, RequestType
+    ]], client_call_details, request):
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -620,7 +619,8 @@ class AuthMetadataContext(abc.ABC):
 class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
-    def __call__(self, metadata: MetadataType, error: Optional[Type[BaseException]]):
+    def __call__(self, metadata: MetadataType,
+                 error: Optional[Type[BaseException]]):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -633,7 +633,8 @@ class AuthMetadataPluginCallback(abc.ABC):
 class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
-    def __call__(self, contex: AuthMetadataContext, callback: AuthMetadataPluginCallback):
+    def __call__(self, contex: AuthMetadataContext,
+                 callback: AuthMetadataPluginCallback):
         """Implements authentication by passing metadata to a callback.
 
         This method will be invoked asynchronously in a separate thread.
@@ -686,8 +687,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
-                 compression: Optional[Compression] = None
-    ) -> ResponseType:
+                 compression: Optional[Compression] = None) -> ResponseType:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -714,13 +714,14 @@ class UnaryUnaryMultiCallable(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def with_call(self,
-                  request: RequestType,
-                  timeout: Optional[float] = None,
-                  metadata: Optional[MetadataType] = None,
-                  credentials: Optional[CallCredentials] = None,
-                  wait_for_ready: Optional[bool] = None,
-                  compression: Optional[Compression] = None
+    def with_call(
+            self,
+            request: RequestType,
+            timeout: Optional[float] = None,
+            metadata: Optional[MetadataType] = None,
+            credentials: Optional[CallCredentials] = None,
+            wait_for_ready: Optional[bool] = None,
+            compression: Optional[Compression] = None
     ) -> Tuple[ResponseType, Call]:
         """Synchronously invokes the underlying RPC.
 
@@ -754,8 +755,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
                metadata: Optional[MetadataType] = None,
                credentials: Optional[CallCredentials] = None,
                wait_for_ready: Optional[bool] = None,
-               compression: Optional[Compression] = None
-    ) -> Future:
+               compression: Optional[Compression] = None) -> Future:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -826,8 +826,7 @@ class StreamUnaryMultiCallable(abc.ABC):
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
-                 compression: Optional[Compression] = None
-    ) -> ResponseType:
+                 compression: Optional[Compression] = None) -> ResponseType:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -855,13 +854,14 @@ class StreamUnaryMultiCallable(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def with_call(self,
-                  request_iterator: RequestIterableType,
-                  timeout: Optional[float] = None,
-                  metadata: Optional[MetadataType] = None,
-                  credentials: Optional[CallCredentials] = None,
-                  wait_for_ready: Optional[bool] = None,
-                  compression: Optional[Compression] = None
+    def with_call(
+            self,
+            request_iterator: RequestIterableType,
+            timeout: Optional[float] = None,
+            metadata: Optional[MetadataType] = None,
+            credentials: Optional[CallCredentials] = None,
+            wait_for_ready: Optional[bool] = None,
+            compression: Optional[Compression] = None
     ) -> Tuple[ResponseType, Call]:
         """Synchronously invokes the underlying RPC on the client.
 
@@ -896,8 +896,7 @@ class StreamUnaryMultiCallable(abc.ABC):
                metadata: Optional[MetadataType] = None,
                credentials: Optional[CallCredentials] = None,
                wait_for_ready: Optional[bool] = None,
-               compression: Optional[Compression] = None
-    ) -> Future:
+               compression: Optional[Compression] = None) -> Future:
         """Asynchronously invokes the underlying RPC on the client.
 
         Args:
@@ -969,7 +968,9 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    def subscribe(self, callback: Callable, try_to_connect: bool = False) -> None:
+    def subscribe(self,
+                  callback: Callable,
+                  try_to_connect: bool = False) -> None:
         """Subscribe to this Channel's connectivity state machine.
 
         A Channel may be in any of the states described by ChannelConnectivity.
@@ -1405,10 +1406,9 @@ class ServerInterceptor(abc.ABC):
     """Affords intercepting incoming RPCs on the service-side."""
 
     @abc.abstractmethod
-    def intercept_service(self,
-                          continuation: Callable,
-                          handler_call_details: HandlerCallDetails
-    ) -> RpcMethodHandler:
+    def intercept_service(
+            self, continuation: Callable,
+            handler_call_details: HandlerCallDetails) -> RpcMethodHandler:
         """Intercepts incoming RPCs before handing them over to a handler.
 
         Args:
@@ -1681,7 +1681,8 @@ def xds_channel_credentials(fallback_credentials=None):
         _cygrpc.XDSChannelCredentials(fallback_credentials._credentials))
 
 
-def metadata_call_credentials(metadata_plugin: AuthMetadataPlugin, name: Optional[str] = None) -> CallCredentials:
+def metadata_call_credentials(metadata_plugin: AuthMetadataPlugin,
+                              name: Optional[str] = None) -> CallCredentials:
     """Construct CallCredentials from an AuthMetadataPlugin.
 
     Args:

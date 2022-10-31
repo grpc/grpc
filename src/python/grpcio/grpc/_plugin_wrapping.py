@@ -20,7 +20,6 @@ from typing import Callable, Optional, Type
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
-
 from grpc._typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,7 +47,8 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
         self._state = state
         self._callback = callback
 
-    def __call__(self, metadata: MetadataType, error: Optional[Type[BaseException]]):
+    def __call__(self, metadata: MetadataType,
+                 error: Optional[Type[BaseException]]):
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
@@ -103,8 +103,9 @@ class _Plugin(object):
                      _common.encode(str(exception)))
 
 
-def metadata_plugin_call_credentials(metadata_plugin: grpc.AuthMetadataPlugin,
-                                     name: Optional[str]) -> grpc.CallCredentials:
+def metadata_plugin_call_credentials(
+        metadata_plugin: grpc.AuthMetadataPlugin,
+        name: Optional[str]) -> grpc.CallCredentials:
     if name is None:
         try:
             effective_name = metadata_plugin.__name__
