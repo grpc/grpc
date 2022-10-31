@@ -3285,6 +3285,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "http_trace",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/http_trace.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/http_trace.h",
+    ],
+    deps = ["grpc_trace"],
+)
+
+grpc_cc_library(
     name = "hpack_parser",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/hpack_parser.cc",
@@ -3309,6 +3320,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "http_trace",
         "//src/core:decode_huff",
         "//src/core:experiments",
         "//src/core:hpack_constants",
@@ -3337,6 +3349,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "http_trace",
         "//src/core:hpack_constants",
         "//src/core:hpack_encoder_table",
         "//src/core:slice",
@@ -3423,6 +3436,7 @@ grpc_cc_library(
         "grpc_trace",
         "hpack_encoder",
         "hpack_parser",
+        "http_trace",
         "httpcli",
         "iomgr_timer",
         "ref_counted_ptr",

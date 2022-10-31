@@ -23,6 +23,7 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -31,7 +32,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
-extern grpc_core::TraceFlag grpc_http_trace;
 extern grpc_core::TraceFlag grpc_keepalive_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;

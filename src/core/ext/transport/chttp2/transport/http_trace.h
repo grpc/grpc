@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef HTTP_TRACE
-#define HTTP_TRACE
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_TRACE_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_TRACE_H
 
-#endif
+#include "src/core/lib/debug/trace.h"
+
+extern grpc_core::TraceFlag grpc_http_trace;
+
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_TRACE_H
