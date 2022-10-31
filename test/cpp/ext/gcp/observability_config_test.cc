@@ -65,13 +65,13 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ASSERT_TRUE(config.cloud_logging.has_value());
   ASSERT_EQ(config.cloud_logging->client_rpc_events.size(), 2);
-  EXPECT_THAT(config.cloud_logging->client_rpc_events[0].methods,
+  EXPECT_THAT(config.cloud_logging->client_rpc_events[0].qualified_methods,
               ::testing::ElementsAre("google.pubsub.v1.Subscriber/Acknowledge",
                                      "google.pubsub.v1.Publisher/CreateTopic"));
   EXPECT_TRUE(config.cloud_logging->client_rpc_events[0].exclude);
   EXPECT_EQ(config.cloud_logging->client_rpc_events[0].max_metadata_bytes, 0);
   EXPECT_EQ(config.cloud_logging->client_rpc_events[0].max_message_bytes, 0);
-  EXPECT_THAT(config.cloud_logging->client_rpc_events[1].methods,
+  EXPECT_THAT(config.cloud_logging->client_rpc_events[1].qualified_methods,
               ::testing::ElementsAre("google.pubsub.v1.Subscriber/*",
                                      "google.pubsub.v1.Publisher/*"));
   EXPECT_FALSE(config.cloud_logging->client_rpc_events[1].exclude);
@@ -79,7 +79,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
             4096);
   EXPECT_EQ(config.cloud_logging->client_rpc_events[1].max_message_bytes, 4096);
   ASSERT_EQ(config.cloud_logging->server_rpc_events.size(), 1);
-  EXPECT_THAT(config.cloud_logging->server_rpc_events[0].methods,
+  EXPECT_THAT(config.cloud_logging->server_rpc_events[0].qualified_methods,
               ::testing::ElementsAre("*"));
   EXPECT_EQ(config.cloud_logging->server_rpc_events[0].max_metadata_bytes,
             4096);
@@ -169,7 +169,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigWildcardEntries) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ASSERT_TRUE(config.cloud_logging.has_value());
   ASSERT_EQ(config.cloud_logging->client_rpc_events.size(), 1);
-  EXPECT_THAT(config.cloud_logging->client_rpc_events[0].methods,
+  EXPECT_THAT(config.cloud_logging->client_rpc_events[0].qualified_methods,
               ::testing::ElementsAre("*", "service/*"));
 }
 

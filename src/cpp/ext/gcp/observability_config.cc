@@ -112,7 +112,7 @@ GcpObservabilityConfig::CloudLogging::RpcEventConfiguration::JsonLoader(
     const grpc_core::JsonArgs&) {
   static const auto* loader =
       grpc_core::JsonObjectLoader<RpcEventConfiguration>()
-          .OptionalField("methods", &RpcEventConfiguration::methods)
+          .OptionalField("methods", &RpcEventConfiguration::qualified_methods)
           .OptionalField("exclude", &RpcEventConfiguration::exclude)
           .OptionalField("max_metadata_bytes",
                          &RpcEventConfiguration::max_metadata_bytes)
@@ -126,12 +126,12 @@ void GcpObservabilityConfig::CloudLogging::RpcEventConfiguration::JsonPostLoad(
     const grpc_core::Json& /* json */, const grpc_core::JsonArgs& /* args */,
     grpc_core::ValidationErrors* errors) {
   grpc_core::ValidationErrors::ScopedField methods_field(errors, ".methods");
-  parsed_methods.reserve(methods.size());
-  for (size_t i = 0; i < methods.size(); ++i) {
+  parsed_methods.reserve(qualified_methods.size());
+  for (size_t i = 0; i < qualified_methods.size(); ++i) {
     grpc_core::ValidationErrors::ScopedField methods_index(
         errors, absl::StrCat("[", i, "]"));
     std::vector<absl::string_view> parts =
-        absl::StrSplit(methods[i], '/', absl::SkipEmpty());
+        absl::StrSplit(qualified_methods[i], '/', absl::SkipEmpty());
     if (parts.size() > 2) {
       errors->AddError("methods[] can have at most a single '/'");
       continue;

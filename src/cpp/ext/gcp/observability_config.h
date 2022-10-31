@@ -41,7 +41,7 @@ struct GcpObservabilityConfig {
         absl::string_view service;  // backed by methods
         absl::string_view method;   // backed by methods
       };
-      std::vector<std::string> methods;
+      std::vector<std::string> qualified_methods;
       std::vector<ParsedMethod> parsed_methods;
       bool exclude = false;
       uint32_t max_metadata_bytes = 0;
