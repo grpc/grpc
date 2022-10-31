@@ -61,7 +61,7 @@ static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
      max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
      which has a max allowable value of 16777215 (see chttp_transport.cc).
      Thus, the following assert can be a debug assert. */
-  GPR_DEBUG_ASSERT(len < 16777316);
+  GPR_DEBUG_ASSERT(len <= 16777216);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);
@@ -87,7 +87,7 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     flags |= GRPC_CHTTP2_DATA_FLAG_END_STREAM;
   }
   options.stats->header_bytes += raw.Length();
-  while (frame_type == GRPC_CHTTP2_FRAME_HEADER && raw.Length() > 0) {
+  while (frame_type == GRPC_CHTTP2_FRAME_HEADER || raw.Length() > 0) {
     // per the HTTP/2 spec:
     //   A HEADERS frame without the END_HEADERS flag set MUST be followed by
     //   a CONTINUATION frame for the same stream.
