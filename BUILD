@@ -3296,14 +3296,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "hpack_parser",
+    name = "hpack_parser_table",
     srcs = [
-        "//src/core:ext/transport/chttp2/transport/hpack_parser.cc",
         "//src/core:ext/transport/chttp2/transport/hpack_parser_table.cc",
     ],
     hdrs = [
-        "//src/core:ext/transport/chttp2/transport/hpack_parser.h",
         "//src/core:ext/transport/chttp2/transport/hpack_parser_table.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "gpr_public_hdrs",
+        "grpc_base",
+        "grpc_trace",
+        "http_trace",
+        "//src/core:hpack_constants",
+        "//src/core:no_destruct",
+        "//src/core:slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "hpack_parser",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/hpack_parser.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/hpack_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3320,12 +3342,11 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
-        "http_trace",
+        "hpack_parser_table",
         "//src/core:decode_huff",
         "//src/core:experiments",
         "//src/core:hpack_constants",
         "//src/core:http2_errors",
-        "//src/core:no_destruct",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -3436,6 +3457,7 @@ grpc_cc_library(
         "grpc_trace",
         "hpack_encoder",
         "hpack_parser",
+        "hpack_parser_table",
         "http_trace",
         "httpcli",
         "iomgr_timer",
