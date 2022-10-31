@@ -62,7 +62,8 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:gpr",
-        "//:grpc_transport_chttp2",
+        "//:hpack_encoder",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:chaotic_good_frame",

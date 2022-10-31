@@ -3277,10 +3277,105 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chttp2_frame",
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/frame.h",
+    ],
+    deps = ["gpr"],
+)
+
+grpc_cc_library(
+    name = "hpack_parser",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/hpack_parser.cc",
+        "//src/core:ext/transport/chttp2/transport/hpack_parser_table.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/hpack_parser.h",
+        "//src/core:ext/transport/chttp2/transport/hpack_parser_table.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/types:span",
+        "absl/types:variant",
+    ],
+    deps = [
+        "chttp2_frame",
+        "gpr_public_hdrs",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "grpc_trace",
+        "//src/core:decode_huff",
+        "//src/core:experiments",
+        "//src/core:hpack_constants",
+        "//src/core:http2_errors",
+        "//src/core:no_destruct",
+        "//src/core:slice",
+        "//src/core:slice_refcount",
+        "//src/core:status_helper",
+    ],
+)
+
+grpc_cc_library(
+    name = "hpack_encoder",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/hpack_encoder.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/hpack_encoder.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "chttp2_bin_encoder",
+        "chttp2_frame",
+        "chttp2_varint",
+        "gpr_public_hdrs",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "grpc_trace",
+        "//src/core:hpack_constants",
+        "//src/core:hpack_encoder_table",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
+    name = "chttp2_bin_encoder",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/bin_encoder.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/bin_encoder.h",
+    ],
+    deps = [
+        "gpr_public_hdrs",
+        "//src/core:huffsyms",
+        "//src/core:slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "chttp2_varint",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/varint.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/varint.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    deps = ["gpr_public_hdrs"],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
-        "//src/core:ext/transport/chttp2/transport/bin_encoder.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
         "//src/core:ext/transport/chttp2/transport/context_list.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
@@ -3289,33 +3384,23 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_rst_stream.cc",
         "//src/core:ext/transport/chttp2/transport/frame_settings.cc",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.cc",
-        "//src/core:ext/transport/chttp2/transport/hpack_encoder.cc",
-        "//src/core:ext/transport/chttp2/transport/hpack_parser.cc",
-        "//src/core:ext/transport/chttp2/transport/hpack_parser_table.cc",
         "//src/core:ext/transport/chttp2/transport/parsing.cc",
         "//src/core:ext/transport/chttp2/transport/stream_lists.cc",
         "//src/core:ext/transport/chttp2/transport/stream_map.cc",
-        "//src/core:ext/transport/chttp2/transport/varint.cc",
         "//src/core:ext/transport/chttp2/transport/writing.cc",
     ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
-        "//src/core:ext/transport/chttp2/transport/bin_encoder.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
         "//src/core:ext/transport/chttp2/transport/context_list.h",
-        "//src/core:ext/transport/chttp2/transport/frame.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.h",
         "//src/core:ext/transport/chttp2/transport/frame_ping.h",
         "//src/core:ext/transport/chttp2/transport/frame_rst_stream.h",
         "//src/core:ext/transport/chttp2/transport/frame_settings.h",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.h",
-        "//src/core:ext/transport/chttp2/transport/hpack_encoder.h",
-        "//src/core:ext/transport/chttp2/transport/hpack_parser.h",
-        "//src/core:ext/transport/chttp2/transport/hpack_parser_table.h",
         "//src/core:ext/transport/chttp2/transport/internal.h",
         "//src/core:ext/transport/chttp2/transport/stream_map.h",
-        "//src/core:ext/transport/chttp2/transport/varint.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3324,17 +3409,20 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/types:span",
         "absl/types:variant",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
+        "chttp2_frame",
+        "chttp2_varint",
         "debug_location",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "hpack_encoder",
+        "hpack_parser",
         "httpcli",
         "iomgr_timer",
         "ref_counted_ptr",
@@ -3343,18 +3431,13 @@ grpc_cc_library(
         "//src/core:bdp_estimator",
         "//src/core:bitset",
         "//src/core:chttp2_flow_control",
-        "//src/core:decode_huff",
         "//src/core:experiments",
         "//src/core:gpr_atm",
-        "//src/core:hpack_constants",
-        "//src/core:hpack_encoder_table",
         "//src/core:http2_errors",
         "//src/core:http2_settings",
-        "//src/core:huffsyms",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:memory_quota",
-        "//src/core:no_destruct",
         "//src/core:poll",
         "//src/core:ref_counted",
         "//src/core:resource_quota",

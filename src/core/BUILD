@@ -4562,6 +4562,7 @@ grpc_cc_library(
         "time",
         "transport_fwd",
         "unique_type_name",
+        "//:chttp2_frame",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4639,7 +4640,8 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:grpc_transport_chttp2",
+        "//:hpack_encoder",
+        "//:hpack_parser",
     ],
 )
 
