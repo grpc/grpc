@@ -280,7 +280,9 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                 LoadAuthorizationEngine(
                     arg.authorization_policy_provider().deny_engine())}));
       }
-    } else {
+    } else if (arg.key() == GRPC_INTERNAL_ARG_EVENT_ENGINE) {
+      // skip, the preconditioned engine will be used
+    }else {
       switch (arg.value_case()) {
         case filter_fuzzer::ChannelArg::VALUE_NOT_SET:
           break;
