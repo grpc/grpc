@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <functional>
 #include <memory>
 #include <utility>
 
@@ -228,24 +229,20 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(
-      std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter)
-      : connectivity_state_reporter_(std::move(connectivity_state_reporter)) {}
+      std::function<void(absl::Status)> on_connectivity_failure)
+      : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
-    if (new_state == GRPC_CHANNEL_READY) {
-      connectivity_state_reporter_->ReportReady();
-    } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      connectivity_state_reporter_->ReportTransientFailure(absl::Status(
+    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      on_connectivity_failure_(absl::Status(
           status.code(),
           absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
-    } else {  // IDLE or CONNECTING
-      connectivity_state_reporter_->ReportConnecting();
     }
   }
 
-  std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter_;
+  std::function<void(absl::Status)> on_connectivity_failure_;
 };
 
 //
@@ -273,7 +270,7 @@ bool IsLameChannel(grpc_channel* channel) {
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     GrpcXdsTransportFactory* factory, const XdsBootstrap::XdsServer& server,
-    std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter,
+    std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status)
     : factory_(factory) {
   channel_ = CreateXdsChannel(
@@ -286,7 +283,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     ClientChannel* client_channel =
         ClientChannel::GetFromChannel(Channel::FromC(channel_));
     GPR_ASSERT(client_channel != nullptr);
-    watcher_ = new StateWatcher(std::move(connectivity_state_reporter));
+    watcher_ = new StateWatcher(std::move(on_connectivity_failure));
     client_channel->AddConnectivityWatcher(
         GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
@@ -350,10 +347,10 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 OrphanablePtr<XdsTransportFactory::XdsTransport>
 GrpcXdsTransportFactory::Create(
     const XdsBootstrap::XdsServer& server,
-    std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter,
+    std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status) {
   return MakeOrphanable<GrpcXdsTransport>(
-      this, server, std::move(connectivity_state_reporter), status);
+      this, server, std::move(on_connectivity_failure), status);
 }
 
 }  // namespace grpc_core

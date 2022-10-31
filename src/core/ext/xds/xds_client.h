@@ -204,7 +204,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
-    class ConnectivityStateReporter;
+    void OnConnectivityFailure(absl::Status status);
 
     // Enqueues error notifications to watchers.  Caller must drain
     // XdsClient::work_serializer_ after releasing the lock.
@@ -229,7 +229,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
         resource_type_version_map_;
 
     absl::Status status_;
-    bool channel_connected_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
   };
 
   struct ResourceState {
