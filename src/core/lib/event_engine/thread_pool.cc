@@ -123,7 +123,7 @@ class ThreadPoolImpl : public Forkable,
 
   const unsigned reserve_threads_;
   std::atomic<bool> quiesced_;
-  std::atomic<int> threads_waiting_;
+  std::atomic<uint32_t> threads_waiting_;
   grpc_core::Mutex wait_mu_;
   grpc_core::CondVar wait_cv_;
 };
