@@ -3292,7 +3292,10 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/http_trace.h",
     ],
-    deps = ["grpc_trace"],
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
+    ],
 )
 
 grpc_cc_library(
