@@ -1,0 +1,52 @@
+%YAML 1.2
+--- |
+  # Copyright 2021 The gRPC Authors
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  
+  FROM debian:stretch
+  
+  <%include file="../../apt_get_basic.include"/>
+  <%include file="../../run_tests_python_deps.include"/>
+  <%include file="../../cmake.include"/>
+  <%include file="../../run_tests_addons.include"/>
+
+  # Java required by Android SDK
+  RUN apt-get update && apt-get -y install openjdk-8-jdk && apt-get clean
+
+  # Install Android SDK
+  ENV ANDROID_SDK_VERSION 4333796
+  RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && ${'\\'}
+      wget -q https://dl.google.com/android/repository/sdk-tools-linux-$ANDROID_SDK_VERSION.zip && ${'\\'}
+      unzip -q sdk-tools-linux-$ANDROID_SDK_VERSION.zip && ${'\\'}
+      rm sdk-tools-linux-$ANDROID_SDK_VERSION.zip
+  ENV ANDROID_SDK_PATH /opt/android-sdk
+  ENV ANDROID_HOME /opt/android-sdk
+  RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
+
+  # Install Android NDK
+  RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip && ${'\\'}
+      unzip -q android-ndk.zip -d /opt && ${'\\'}
+      rm -f android-ndk.zip
+  ENV ANDROID_NDK_PATH /opt/android-ndk-r16b
+  ENV ANDROID_NDK_HOME /opt/android-ndk-r16b
+
+  # Install gcloud
+  RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
+      tar -xf google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
+      ./google-cloud-sdk/install.sh --bash-completion=false --path-update=true && ${'\\'}
+      rm -rf google-cloud-cli-407.0.0-linux-x86_64.tar.gz
+  RUN ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
+
+  # Define the default command.
+  CMD ["bash"]
