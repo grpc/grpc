@@ -38,6 +38,7 @@
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -47,6 +48,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -236,6 +238,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     absl::string_view GetAuthority() override { return "server.example.com"; }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return grpc_event_engine::experimental::GetDefaultEventEngine().get();
+    }
 
     void AddTraceEvent(TraceSeverity, absl::string_view) override {}
 

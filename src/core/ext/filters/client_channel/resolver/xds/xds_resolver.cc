@@ -523,11 +523,14 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     }
   }
   // Populate filter list.
+  const auto& http_filter_registry =
+      static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
+          .http_filter_registry();
   for (const auto& http_filter : resolver_->current_listener_.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(
+        http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
     // Add C-core filter to list.
@@ -600,6 +603,8 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
   }
   // Handle xDS HTTP filters.
   auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+      static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
+          .http_filter_registry(),
       resolver_->current_listener_.http_filters,
       resolver_->current_virtual_host_, route, cluster_weight,
       resolver_->args_);
