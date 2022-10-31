@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_TRACE_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_TRACE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
