@@ -38,6 +38,10 @@ cd "${REPO_ROOT}/src/android/test/interop/"
 ./gradlew assembleDebugAndroidTest \
     "-Pprotoc=${PROTOC}" \
     "-Pgrpc_cpp_plugin=${PLUGIN}"
+
+# TODO(jtattermusch): make it easier to run this test locally
+# under docker. The issue is that "gcloud firebase" requires being authenticated
+# with gcloud first (while on CI we can rely on GCE default credentials).
 gcloud firebase test android run \
     --type instrumentation \
     --app app/build/outputs/apk/debug/app-debug.apk \
