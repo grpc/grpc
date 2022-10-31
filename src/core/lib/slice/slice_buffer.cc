@@ -39,8 +39,9 @@ void SliceBuffer::Append(Slice slice) {
 }
 
 void SliceBuffer::Append(const SliceBuffer& other) {
-  grpc_slice_buffer_addn(&slice_buffer_, other.slice_buffer_.slices,
-                         other.slice_buffer_.count);
+  for (size_t i = 0; i < other.Count(); i++) {
+    Append(other.RefSlice(i));
+  }
 }
 
 size_t SliceBuffer::AppendIndexed(Slice slice) {
