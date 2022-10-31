@@ -14,7 +14,9 @@
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"

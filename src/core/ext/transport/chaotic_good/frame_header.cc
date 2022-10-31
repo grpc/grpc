@@ -16,7 +16,11 @@
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
+#include <string.h>
+
 #include <cstdint>
+
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace chaotic_good {

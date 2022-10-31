@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "absl/status/statusor.h"
+
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
 bool squelch = false;

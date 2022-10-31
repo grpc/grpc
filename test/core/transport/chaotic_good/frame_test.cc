@@ -17,6 +17,7 @@
 #include <cstdint>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
