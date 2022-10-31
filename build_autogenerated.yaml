@@ -8637,7 +8637,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: posix_event_engine_test
   gtest: true
   build: test
