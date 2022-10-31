@@ -1399,10 +1399,15 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
+    src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+    src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
     src/core/lib/event_engine/posix_engine/timer_manager.cc \
+    src/core/lib/event_engine/posix_engine/traced_buffer_list.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
@@ -1418,6 +1423,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
+    src/core/lib/gprpp/load_file.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -1914,10 +1920,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
+    src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+    src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
     src/core/lib/event_engine/posix_engine/timer_manager.cc \
+    src/core/lib/event_engine/posix_engine/traced_buffer_list.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
     src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
@@ -1933,6 +1944,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
+    src/core/lib/gprpp/load_file.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
