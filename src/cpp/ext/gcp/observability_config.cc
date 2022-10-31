@@ -123,7 +123,7 @@ GcpObservabilityConfig::CloudLogging::RpcEventConfiguration::JsonLoader(
 }
 
 void GcpObservabilityConfig::CloudLogging::RpcEventConfiguration::JsonPostLoad(
-    const grpc_core::Json& json, const grpc_core::JsonArgs& args,
+    const grpc_core::Json& /* json */, const grpc_core::JsonArgs& /* args */,
     grpc_core::ValidationErrors* errors) {
   grpc_core::ValidationErrors::ScopedField methods_field(errors, ".methods");
   parsed_methods.reserve(methods.size());
