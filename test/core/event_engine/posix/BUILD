@@ -201,7 +201,6 @@ grpc_cc_test(
         "no_windows",
     ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//src/core:event_engine_common",
         "//src/core:posix_event_engine_listener_utils",
