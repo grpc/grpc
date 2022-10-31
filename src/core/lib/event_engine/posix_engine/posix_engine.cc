@@ -39,6 +39,7 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
 
 using namespace std::chrono_literals;
@@ -47,6 +48,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+using grpc_event_engine::posix_engine::PosixEngineListener;
 using grpc_event_engine::posix_engine::PosixEventPoller;
 
 PosixEnginePollerManager::PosixEnginePollerManager(
@@ -251,11 +253,19 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 PosixEventEngine::CreateListener(
-    Listener::AcceptCallback /*on_accept*/,
-    absl::AnyInvocable<void(absl::Status)> /*on_shutdown*/,
-    const EndpointConfig& /*config*/,
-    std::unique_ptr<MemoryAllocatorFactory> /*memory_allocator_factory*/) {
-  GPR_ASSERT(false && "unimplemented");
+    Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
+    const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+#ifdef GRPC_POSIX_SOCKET_TCP
+  return std::make_unique<PosixEngineListener>(
+      std::move(on_accept), std::move(on_shutdown), config,
+      std::move(memory_allocator_factory), poller_manager_->Poller(),
+      shared_from_this());
+#else   // GRPC_POSIX_SOCKET_TCP
+  GPR_ASSERT(false &&
+             "EventEngine::CreateListener is not supported on this platform");
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 }  // namespace experimental
