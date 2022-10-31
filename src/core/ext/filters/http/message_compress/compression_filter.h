@@ -18,11 +18,14 @@
 
 #ifndef GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
+
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/compression_types.h>
 
