@@ -142,7 +142,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
             &service_config_json_, resolver_->query_timeout_ms_));
         GRPC_CARES_TRACE_LOG(
             "resolver:%p Started resolving TXT records. txt_request_:%p",
-            resolver_.get(), srv_request_.get());
+            resolver_.get(), txt_request_.get());
       }
     }
 
