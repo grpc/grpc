@@ -1001,6 +1001,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/work_queue.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/work_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.cc" role="src" />
