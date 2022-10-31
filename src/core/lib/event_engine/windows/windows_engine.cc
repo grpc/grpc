@@ -70,17 +70,19 @@ WindowsEventEngine::WindowsEventEngine()
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
-  grpc_core::MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    for (auto handle : known_handles_) {
-      gpr_log(GPR_ERROR,
-              "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s", this,
-              HandleToString(handle).c_str());
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+      for (auto handle : known_handles_) {
+        gpr_log(GPR_ERROR,
+                "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                this, HandleToString(handle).c_str());
+      }
     }
+    GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    GPR_ASSERT(WSACleanup() == 0);
+    timer_manager_.Shutdown();
   }
-  GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
-  GPR_ASSERT(WSACleanup() == 0);
-  timer_manager_.Shutdown();
   executor_->Quiesce();
 }
 

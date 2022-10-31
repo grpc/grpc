@@ -45,7 +45,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bm_exec_ctx",
     srcs = ["bm_exec_ctx.cc"],
-    args = ["--benchmark_min_time=0.3"],
+    args = grpc_benchmark_args(),
     external_deps = [
         "benchmark",
     ],
@@ -58,15 +58,27 @@ grpc_cc_test(
     name = "bm_event_engine_run",
     size = "small",
     srcs = ["bm_event_engine_run.cc"],
-    args = ["--benchmark_min_time=0.1"],
+    args = grpc_benchmark_args(),
     external_deps = [
         "absl/debugging:leak_check",
         "benchmark",
     ],
-    tags = [
-        "no_mac",
-        "no_windows",
+    uses_polling = False,
+    deps = [
+        ":helpers",
+        "//src/core:common_event_engine_closures",
     ],
+)
+
+grpc_cc_test(
+    name = "bm_thread_pool",
+    size = "small",
+    srcs = ["bm_thread_pool.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = [
+        "benchmark",
+    ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":helpers",

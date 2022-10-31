@@ -12,19 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop_matrix.sh"
-timeout_mins: 600
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+grpc_package(name = "test/core/service_config")
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "--language=all --release=all --allow_flakes --report_file=sponge_log.xml"
-}
+licenses(["notice"])
+
+grpc_cc_test(
+    name = "service_config_test",
+    srcs = ["service_config_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

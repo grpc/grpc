@@ -426,6 +426,8 @@ message HeaderMatcher {
     //
     // * The suffix *abcd* matches the value *xyzabcd*, but not for *xyzbcd*.
     string suffix_match = 10;
+
+    string contains_match = 12;
   }
 
   // If specified, the match result will be inverted before checking. Defaults to false.
