@@ -106,7 +106,7 @@ class PosixEventEngine final : public EventEngine,
       grpc_event_engine::posix_engine::PosixEventPoller* poller);
   PosixEventEngine();
 #else   // GRPC_POSIX_SOCKET_TCP
-  PosixEventEngine() = default;
+  PosixEventEngine();
 #endif  // GRPC_POSIX_SOCKET_TCP
 
   ~PosixEventEngine() override;
@@ -160,8 +160,8 @@ class PosixEventEngine final : public EventEngine,
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
-  posix_engine::TimerManager timer_manager_;
   std::shared_ptr<ThreadPool> executor_;
+  posix_engine::TimerManager timer_manager_;
 #ifdef GRPC_POSIX_SOCKET_TCP
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
 #endif  // GRPC_POSIX_SOCKET_TCP

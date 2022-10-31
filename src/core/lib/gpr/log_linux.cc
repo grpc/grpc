@@ -103,10 +103,10 @@ void gpr_default_log(gpr_log_func_args* args) {
           ? grpc_core::GetCurrentStackTrace()
           : absl::nullopt;
   if (stack_trace) {
-    fprintf(stderr, "%-60s %s\n%s\n", prefix.c_str(), args->message,
+    fprintf(stderr, "%-70s %s\n%s\n", prefix.c_str(), args->message,
             stack_trace->c_str());
   } else {
-    fprintf(stderr, "%-60s %s\n", prefix.c_str(), args->message);
+    fprintf(stderr, "%-70s %s\n", prefix.c_str(), args->message);
   }
 }
 

@@ -21,7 +21,7 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/channel_interface.h>
+#include <grpcpp/impl/channel_interface.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_context.h>
