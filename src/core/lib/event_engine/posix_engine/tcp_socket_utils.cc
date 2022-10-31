@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <stdlib.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/statusor.h"
