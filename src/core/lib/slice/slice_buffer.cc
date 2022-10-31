@@ -22,7 +22,6 @@
 
 #include <string.h>
 
-#include <cstdint>
 #include <utility>
 
 #include <grpc/slice.h>
