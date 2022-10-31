@@ -3349,7 +3349,6 @@ grpc_cc_library(
         "//src/core:decode_huff",
         "//src/core:experiments",
         "//src/core:hpack_constants",
-        "//src/core:http2_errors",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
