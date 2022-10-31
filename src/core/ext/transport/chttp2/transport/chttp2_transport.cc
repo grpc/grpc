@@ -2445,13 +2445,10 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
   // prefered rx crypto frame sizes to the peer and the peer has also indicated
   // that it can adjust sending frame sizes. (The peer would have informed us of
   // this cabability by sending prefered rx frame sizes to us). Otherwise set
-  // min_progress_size it to -1. The endpoints should ignore tcp frame size
-  // tuning if min_progress_size value if set to -1 i.e by setting
-  // min_progress_size to -1 even if grpc_core::IsTcpFrameSizeTuning() is
-  // enabled, the endpoint should ignore it. We need to look at both
+  // min_progress_size it to 1. We need to look at both
   // enable_preferred_rx_crypto_frame_advertisement and peer's
   // GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to decide
-  // whether min_progress_size should be ignored. If
+  // whether min_progress_size should be set. If
   // enable_preferred_rx_crypto_frame_advertisement is true, it indicates that
   // we can tell the peer what rx frame sizes we want and if peer's
   // GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE > 0, it
@@ -2463,7 +2460,7 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
            [GRPC_PEER_SETTINGS]
            [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE])
           ? grpc_chttp2_min_read_progress_size(t)
-          : -1;
+          : 1;
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
                      min_progress_size);
 }
