@@ -141,7 +141,7 @@ class FrameDeserializer {
         }
       }
     }
-    return out;
+    return std::move(out);
   }
   FrameHeader header_;
   SliceBuffer& input_;
@@ -216,6 +216,8 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
       return absl::InvalidArgumentError("Unexpected trailer length");
     }
     end_of_stream = true;
+  } else {
+    end_of_stream = false;
   }
   return deserializer.Finish();
 }
