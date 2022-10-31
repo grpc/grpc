@@ -4622,10 +4622,21 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/frame.h",
     ],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:variant",
+    ],
     deps = [
+        "arena",
+        "bitset",
         "chaotic_good_frame_header",
+        "context",
+        "no_destruct",
+        "slice",
         "slice_buffer",
+        "status_helper",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_transport_chttp2",
@@ -4640,7 +4651,10 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/frame_header.h",
     ],
-    external_deps = ["absl/status:statusor"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
     deps = [
         "bitset",
         "//:gpr_platform",
