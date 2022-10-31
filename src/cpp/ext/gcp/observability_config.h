@@ -17,11 +17,17 @@
 #ifndef GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_CONFIG_H
 #define GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_CONFIG_H
 
+#include <stdint.h>
+
 #include <string>
+#include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 
@@ -30,10 +36,37 @@ namespace internal {
 
 struct GcpObservabilityConfig {
   struct CloudLogging {
+    struct RpcEventConfiguration {
+      struct ParsedMethod {
+        absl::string_view service;  // backed by methods
+        absl::string_view method;   // backed by methods
+      };
+      std::vector<std::string> methods;
+      std::vector<ParsedMethod> parsed_methods;
+      bool exclude = false;
+      uint32_t max_metadata_bytes = 0;
+      uint32_t max_message_bytes = 0;
+
+      static const grpc_core::JsonLoaderInterface* JsonLoader(
+          const grpc_core::JsonArgs&);
+
+      void JsonPostLoad(const grpc_core::Json& json,
+                        const grpc_core::JsonArgs& args,
+                        grpc_core::ValidationErrors* errors);
+    };
+
+    std::vector<RpcEventConfiguration> client_rpc_events;
+    std::vector<RpcEventConfiguration> server_rpc_events;
+
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
-          grpc_core::JsonObjectLoader<CloudLogging>().Finish();
+          grpc_core::JsonObjectLoader<CloudLogging>()
+              .OptionalField("client_rpc_events",
+                             &CloudLogging::client_rpc_events)
+              .OptionalField("server_rpc_events",
+                             &CloudLogging::server_rpc_events)
+              .Finish();
       return loader;
     }
   };
