@@ -1814,7 +1814,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - grpc
+  - grpc_unsecure
 - name: grpc_unsecure
   build: all
   language: c

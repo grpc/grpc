@@ -161,8 +161,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
 }
 }  // namespace
 
-absl::Status SettingsFrame::Deserialize(HPackParser* parser,
-                                        const FrameHeader& header,
+absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
                                         SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kSettings) {
     return absl::InvalidArgumentError("Expected settings frame");
@@ -269,8 +268,7 @@ SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
   return serializer.Finish();
 }
 
-absl::Status CancelFrame::Deserialize(HPackParser* parser,
-                                      const FrameHeader& header,
+absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
                                       SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kCancel) {
     return absl::InvalidArgumentError("Expected cancel frame");

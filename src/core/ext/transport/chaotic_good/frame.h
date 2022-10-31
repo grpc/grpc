@@ -58,7 +58,7 @@ struct SettingsFrame final : public FrameInterface {
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
-  bool operator==(const SettingsFrame& other) const { return true; }
+  bool operator==(const SettingsFrame&) const { return true; }
 };
 
 struct ClientFragmentFrame final : public FrameInterface {
