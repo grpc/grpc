@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -69,45 +70,14 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
     virtual void ResetBackoff() = 0;
   };
 
-  // An interface for reporting connectivity state events for a transport.
-  //
-  // A transport can be in one of three states:
-  // - CONNECTING: transport is attempting to establish a connection
-  // - READY: transport is connected and ready to start streams
-  // - TRANSIENT_FAILURE: connection attempt has failed
-  //
-  // A transport is assumed to start in state CONNECTING.  Expected
-  // transitions:
-  // - CONNECTING -> READY (when connection is successfully established)
-  // - CONNECTING -> TRANSIENT_FAILURE (when the connection attempt fails)
-  // - TRANSIENT_FAILURE -> READY (when a connection attempt had failed
-  //                               but a subsequent attempt has succeeded)
-  // - READY -> CONNECTING (when an established connection fails)
-  //
-  // Note that a transport should not transition from TRANSIENT_FAILURE to
-  // CONNECTING; once the transport has failed a connection attempt, it
-  // should remain in TRANSIENT_FAILURE until a subsequent connection
-  // attempt succeeds.
-  class ConnectivityStateReporter {
-   public:
-    virtual ~ConnectivityStateReporter() = default;
-
-    // Invoked when the transport enters state CONNECTING.
-    virtual void ReportConnecting() = 0;
-    // Invoked when the transport enters state READY.
-    virtual void ReportReady() = 0;
-    // Invoked when the transport enters state TRANSIENT_FAILURE.
-    virtual void ReportTransientFailure(absl::Status status) = 0;
-  };
-
   // Creates a new transport for the specified server.
-  // The transport will use connectivity_state_reporter to report its
-  // connectivity state.
+  // The on_connectivity_failure callback will be invoked whenever there is
+  // a connectivity failure on the transport.
   // *status will be set if there is an error creating the channel,
   // although the returned channel must still accept calls (which may fail).
   virtual OrphanablePtr<XdsTransport> Create(
       const XdsBootstrap::XdsServer& server,
-      std::unique_ptr<ConnectivityStateReporter> connectivity_state_reporter,
+      std::function<void(absl::Status)> on_connectivity_failure,
       absl::Status* status) = 0;
 };
 
