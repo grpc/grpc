@@ -3364,6 +3364,7 @@ foreach(_hdr
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_hook.h
+  include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/channel_interface.h
@@ -4036,6 +4037,7 @@ foreach(_hdr
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_hook.h
+  include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/channel_interface.h
