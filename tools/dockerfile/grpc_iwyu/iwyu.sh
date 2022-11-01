@@ -24,12 +24,12 @@ CPU_COUNT=`nproc`
 
 rm -rf iwyu || true
 git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
-# latest commit on the clang 14 branch
+# latest commit on the clang 15 branch
 cd ${IWYU_ROOT}/iwyu
-git checkout abd5d2bd6320867d3605227a7f798a4e08fef896
+git checkout f20eadd2060103543dac46732cb4dd7dbed970e2
 mkdir -p ${IWYU_ROOT}/iwyu_build
 cd ${IWYU_ROOT}/iwyu_build
-cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-14 ${IWYU_ROOT}/iwyu 
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-15 ${IWYU_ROOT}/iwyu 
 make -j $CPU_COUNT
 cd ${IWYU_ROOT}
 

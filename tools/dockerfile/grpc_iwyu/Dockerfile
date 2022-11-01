@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Docker file for running IWYU.
+# Updated: 2022-11-03
+
 FROM silkeh/clang:15-bullseye
 
 # Install prerequisites for the iwyu script
