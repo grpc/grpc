@@ -484,6 +484,8 @@ class Choices:
             return
         choices = sum([self.apply_substitutions(choice) for choice in choices],
                       [])
+        if self.library in choices:
+            return
         if args.explain and (args.why is None or args.why in choices):
             print("{}: Adding one of {} for {}".format(self.library, choices,
                                                        trigger))

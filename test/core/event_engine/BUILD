@@ -74,6 +74,7 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//:grpc",
+        "//src/core:channel_args",
     ],
 )
 

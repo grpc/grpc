@@ -61,8 +61,10 @@ grpc_cc_library(
     ],
     deps = [
         "conformance_test_base_lib",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
+        "//src/core:channel_args",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resource_quota",
