@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-# Nothing to do here. C# has been removed from this repository. This script is a placeholder
-# to prevent C# tests from becoming red (until they get eventually disabled).
+grpc_package(name = "test/core/message_size")
+
+licenses(["notice"])
+
+grpc_cc_test(
+    name = "message_size_service_config_test",
+    srcs = ["message_size_service_config_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

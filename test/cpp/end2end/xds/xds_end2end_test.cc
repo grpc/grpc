@@ -778,12 +778,11 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      absl::StrCat(
-          "xDS response validation errors: [resource index 0: ",
-          GetServerListenerName(backends_[0]->port()),
-          ": INVALID_ARGUMENT: Listener has neither address nor ApiListener]"));
+  EXPECT_THAT(response_state->error_message,
+              ::testing::EndsWith(absl::StrCat(
+                  GetServerListenerName(backends_[0]->port()),
+                  ": INVALID_ARGUMENT: Listener has neither address nor "
+                  "ApiListener]")));
 }
 
 // Verify that a mismatch of listening address results in "not serving"
