@@ -86,7 +86,7 @@ grpc_cc_test(
         ":oracle_event_engine_posix",
         ":server",
         "//src/core:posix_event_engine",
-        #"//test/core/event_engine/test_suite:timer",
+        "//test/core/event_engine/test_suite:timer",
     ],
 )
 
