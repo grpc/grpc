@@ -31,6 +31,7 @@
 
 #include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -256,19 +257,20 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
+static grpc_core::NoDestruct<grpc_core::EventLog> g_event_log;
+
 void invoke_large_request(grpc_end2end_test_config config) {
-  grpc_core::EventLog event_log;
   {
     grpc_core::ExecCtx exec_ctx;
-    event_log.BeginCollection();
+    g_event_log->BeginCollection();
   }
   test_invoke_large_request(config, 10 * 1024 * 1024);
   std::vector<std::string> events;
   grpc_core::ExecCtx exec_ctx;
-  gpr_log(
-      GPR_ERROR, "event_log:\n%s",
-      event_log.EndCollectionAndReportCsv({"logging", "tcp-write-outstanding"})
-          .c_str());
+  gpr_log(GPR_ERROR, "event_log:\n%s",
+          g_event_log
+              ->EndCollectionAndReportCsv({"logging", "tcp-write-outstanding"})
+              .c_str());
 }
 
 void invoke_large_request_pre_init(void) {}

@@ -42,14 +42,14 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/call_op_set.h>
-#include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/callback_common.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
