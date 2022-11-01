@@ -38,7 +38,7 @@ std::string GetAllMessageClasses(const FileDescriptor* file);
 // insertion point of the generated implementation file. This interface is
 // legacy and for backwards compatibility.
 std::string GetProtocol(const ServiceDescriptor* service,
-                   const Parameters& generator_params);
+                        const Parameters& generator_params);
 
 // Returns the content to be included defining the @protocol segment at the
 // insertion point of the generated implementation file.
@@ -47,12 +47,12 @@ std::string GetV2Protocol(const ServiceDescriptor* service);
 // Returns the content to be included defining the @interface segment at the
 // insertion point of the generated implementation file.
 std::string GetInterface(const ServiceDescriptor* service,
-                    const Parameters& generator_params);
+                         const Parameters& generator_params);
 
 // Returns the content to be included in the "global_scope" insertion point of
 // the generated implementation file.
 std::string GetSource(const ServiceDescriptor* service,
-                 const Parameters& generator_params);
+                      const Parameters& generator_params);
 
 }  // namespace grpc_objective_c_generator
 
