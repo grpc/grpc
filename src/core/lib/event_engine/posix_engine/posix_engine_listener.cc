@@ -18,27 +18,25 @@
 
 #include <unistd.h>
 
-#include <atomic>
-#include <chrono>
 #include <string>
-#include <thread>
 #include <utility>
 
-#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>  // IWYU pragma: keep
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
 #endif
 
 namespace grpc_event_engine {

@@ -19,7 +19,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include <cstring>
 #include <string>
@@ -41,6 +40,7 @@
 #include <ifaddrs.h>     // IWYU pragma: keep
 #include <netinet/in.h>  // IWYU pragma: keep
 #include <sys/socket.h>  // IWYU pragma: keep
+#include <unistd.h>      // IWYU pragma: keep
 
 #include "absl/strings/str_cat.h"
 #endif

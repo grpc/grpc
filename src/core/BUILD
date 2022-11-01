@@ -1727,10 +1727,13 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/posix_engine_listener.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_set",
+        "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/types:optional",
     ],
     deps = [
         "iomgr_port",
@@ -1739,6 +1742,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_listener_utils",
         "posix_event_engine_tcp_socket_utils",
+        "socket_mutator",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
