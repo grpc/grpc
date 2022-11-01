@@ -229,6 +229,336 @@ TEST_F(RlsTest, Basic) {
   EXPECT_EQ(plugin_name->cluster_specifier_plugin_name, "rls");
 }
 
+TEST_F(RlsTest, ClusterSpecifierPluginsIgnoredWhenNotEnabled) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  RouteLookupClusterSpecifier rls_cluster_specifier;
+  auto* rls_config = rls_cluster_specifier.mutable_route_lookup_config();
+  rls_config->set_cache_size_bytes(1024);
+  rls_config->set_lookup_service("rls.example.com");
+  auto* grpc_keybuilder = rls_config->add_grpc_keybuilders();
+  grpc_keybuilder->add_names()->set_service("service");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      rls_cluster_specifier);
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto& matchers = route.matchers;
+  EXPECT_EQ(matchers.path_matcher.ToString(), "StringMatcher{prefix=}");
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  auto* cluster_name = absl::get_if<
+      XdsRouteConfigResource::Route::RouteAction::ClusterName>(&action->action);
+  ASSERT_NE(cluster_name, nullptr);
+  EXPECT_EQ(cluster_name->cluster_name, "cluster1");
+}
+
+TEST_F(RlsTest, DuplicateClusterSpecifierPluginNames) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  RouteLookupClusterSpecifier rls_cluster_specifier;
+  auto* rls_config = rls_cluster_specifier.mutable_route_lookup_config();
+  rls_config->set_cache_size_bytes(1024);
+  rls_config->set_lookup_service("rls.example.com");
+  auto* grpc_keybuilder = rls_config->add_grpc_keybuilders();
+  grpc_keybuilder->add_names()->set_service("service");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      rls_cluster_specifier);
+  *route_config.add_cluster_specifier_plugins() = *cluster_specifier_plugin;
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:cluster_specifier_plugins[1].extension.name "
+            "error:duplicate name \"rls\"]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RlsTest, ClusterSpecifierPluginTypedConfigNotPresent) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:cluster_specifier_plugins[0].extension.typed_config "
+            "error:field not present]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RlsTest, UnsupportedClusterSpecifierPlugin) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      RouteConfiguration());
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:cluster_specifier_plugins[0].extension.typed_config.value["
+            "envoy.config.route.v3.RouteConfiguration] "
+            "error:unsupported ClusterSpecifierPlugin type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RlsTest, UnsupportedButOptionalClusterSpecifierPlugin) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  cluster_specifier_plugin->set_is_optional(true);
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      RouteConfiguration());
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto& matchers = route.matchers;
+  EXPECT_EQ(matchers.path_matcher.ToString(), "StringMatcher{prefix=}");
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  auto* cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster1");
+}
+
+TEST_F(RlsTest, InvalidGrpcLbPolicyConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  RouteLookupClusterSpecifier rls_cluster_specifier;
+  auto* rls_config = rls_cluster_specifier.mutable_route_lookup_config();
+  rls_config->set_cache_size_bytes(1024);
+  auto* grpc_keybuilder = rls_config->add_grpc_keybuilders();
+  grpc_keybuilder->add_names()->set_service("service");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      rls_cluster_specifier);
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:cluster_specifier_plugins[0].extension.typed_config "
+            "error:ClusterSpecifierPlugin returned invalid LB policy config: "
+            "errors validing RLS LB policy config: ["
+            "field:routeLookupConfig.lookupService error:field not present]]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RlsTest, RlsInTypedStruct) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  xds::type::v3::TypedStruct typed_struct;
+  typed_struct.set_type_url(
+      "types.googleapis.com/grpc.lookup.v1.RouteLookupClusterSpecifier");
+  typed_extension_config->mutable_typed_config()->PackFrom(typed_struct);
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:cluster_specifier_plugins[0].extension.typed_config.value["
+            "xds.type.v3.TypedStruct].value["
+            "grpc.lookup.v1.RouteLookupClusterSpecifier] "
+            "error:could not parse plugin config]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RlsTest, RlsConfigUnparseable) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  auto* typed_config = typed_extension_config->mutable_typed_config();
+  typed_config->PackFrom(RouteLookupClusterSpecifier());
+  typed_config->set_value(std::string("\0", 1));
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:cluster_specifier_plugins[0].extension.typed_config.value["
+            "grpc.lookup.v1.RouteLookupClusterSpecifier] "
+            "error:could not parse plugin config]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RlsTest, RlsMissingRouteLookupConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      RouteLookupClusterSpecifier());
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:cluster_specifier_plugins[0].extension.typed_config.value["
+            "grpc.lookup.v1.RouteLookupClusterSpecifier].route_lookup_config "
+            "error:field not present]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RlsTest, RouteUsesUnconfiguredClusterSpecifierPlugin) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].route.cluster_specifier_plugin "
+            "error:unknown cluster specifier plugin name \"rls\"]")
+      << decode_result.resource.status();
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

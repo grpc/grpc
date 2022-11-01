@@ -349,16 +349,16 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
     const envoy_config_core_v3_TypedExtensionConfig* typed_extension_config =
         envoy_config_route_v3_ClusterSpecifierPlugin_extension(
             cluster_specifier_plugin[i]);
-    if (typed_extension_config == nullptr) {
-      if (!is_optional) errors->AddError("field not present");
-      continue;
-    }
     std::string name = UpbStringToStdString(
         envoy_config_core_v3_TypedExtensionConfig_name(typed_extension_config));
     if (cluster_specifier_plugin_map.find(name) !=
         cluster_specifier_plugin_map.end()) {
       ValidationErrors::ScopedField field(errors, ".name");
       errors->AddError(absl::StrCat("duplicate name \"", name, "\""));
+    } else {
+      // Add a dummy entry in case we encounter an error later, just so we
+      // don't generate duplicate errors for each route that uses this plugin.
+      cluster_specifier_plugin_map[name] = "<dummy>";
     }
     ValidationErrors::ScopedField field2(errors, ".typed_config");
     const google_protobuf_Any* any =
@@ -381,9 +381,11 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
       }
       continue;
     }
+    const size_t original_error_size = errors->size();
     Json lb_policy_config =
         cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
             std::move(*extension), context.arena, context.symtab, errors);
+    if (errors->size() != original_error_size) continue;
     auto config =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             lb_policy_config);
@@ -920,7 +922,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
     const envoy_config_route_v3_RouteConfiguration* route_config,
     ValidationErrors* errors) {
   XdsRouteConfigResource rds_update;
-  // Get the cluster spcifier plugins
+  // Get the cluster spcifier plugin map.
   if (XdsRlsEnabled()) {
     rds_update.cluster_specifier_plugin_map =
         ClusterSpecifierPluginParse(context, route_config, errors);
@@ -1109,7 +1111,7 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
   auto rds_update = XdsRouteConfigResource::Parse(context, resource, &errors);
   if (!errors.ok()) {
     absl::Status status =
-        errors.status("errors validation RouteConfiguration resource");
+        errors.status("errors validating RouteConfiguration resource");
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
               context.client, result.name->c_str(), status.ToString().c_str());
