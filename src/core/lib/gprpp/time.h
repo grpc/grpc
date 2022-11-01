@@ -89,15 +89,15 @@ class Timestamp {
 
   class ScopedSource : public Source {
    public:
-    ScopedSource() : previous_(thread_local_time_source_) {
-      thread_local_time_source_ = this;
+    ScopedSource() : previous_(*GetThreadLocalTimeSource()) {
+      *GetThreadLocalTimeSource() = this;
     }
     ScopedSource(const ScopedSource&) = delete;
     ScopedSource& operator=(const ScopedSource&) = delete;
     void InvalidateCache() override { previous_->InvalidateCache(); }
 
    protected:
-    ~ScopedSource() { thread_local_time_source_ = previous_; }
+    ~ScopedSource() { *GetThreadLocalTimeSource() = previous_; }
     Source* previous() const { return previous_; }
 
    private:
@@ -113,7 +113,7 @@ class Timestamp {
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
   static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
 
-  static Timestamp Now() { return thread_local_time_source_->Now(); }
+  static Timestamp Now() { return (*GetThreadLocalTimeSource())->Now(); }
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);
@@ -161,7 +161,8 @@ class Timestamp {
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
   int64_t millis_ = 0;
-  static thread_local Timestamp::Source* thread_local_time_source_;
+
+  static Timestamp::Source** GetThreadLocalTimeSource();
 };
 
 class ScopedTimeCache final : public Timestamp::ScopedSource {
