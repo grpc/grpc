@@ -1621,6 +1621,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_common",
         "experiments",
         "iomgr_port",
         "load_file",
