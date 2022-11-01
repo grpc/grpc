@@ -3463,6 +3463,7 @@ targets:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
 - name: dualstack_socket_test
   build: test
@@ -5070,6 +5071,7 @@ targets:
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -5078,6 +5080,9 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -5096,6 +5101,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
@@ -5385,11 +5391,25 @@ targets:
   headers:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/gprpp/notification.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/common_closures_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
 - name: completion_queue_threading_test
   gtest: true
@@ -5582,6 +5602,7 @@ targets:
   src:
   - test/core/event_engine/default_engine_methods_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
 - name: delegating_channel_test
   gtest: true
@@ -6047,6 +6068,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -6054,6 +6076,10 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -6064,6 +6090,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
@@ -6084,6 +6111,7 @@ targets:
   src:
   - test/core/event_engine/factory_test.cc
   deps:
+  - grpc
   - grpc_test_util_unsecure
 - name: fake_binder_test
   gtest: true
@@ -6338,6 +6366,7 @@ targets:
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -6351,6 +6380,9 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -6368,6 +6400,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/pid_controller.cc
@@ -6437,6 +6470,7 @@ targets:
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -6446,6 +6480,9 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -6465,6 +6502,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   deps:
@@ -6496,16 +6534,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/event_engine/forkable.h
+  headers: []
   src:
-  - src/core/lib/event_engine/forkable.cc
   - test/core/event_engine/forkable_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/functional:any_invocable
-  - absl/status:statusor
-  - gpr
+  - grpc
 - name: format_request_test
   gtest: true
   build: test
@@ -6570,9 +6603,9 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
   deps:
-  - grpc_test_util
+  - grpc
+  - grpc_unsecure
   platforms:
   - linux
   - posix
@@ -7788,7 +7821,7 @@ targets:
   src:
   - test/core/event_engine/posix/lock_free_event_test.cc
   deps:
-  - grpc_test_util
+  - grpc_unsecure
   uses_polling: false
 - name: log_test
   gtest: true
@@ -7877,6 +7910,7 @@ targets:
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -7886,6 +7920,9 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -7905,6 +7942,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
   deps:
@@ -8219,7 +8257,6 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
@@ -8400,6 +8437,7 @@ targets:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -8407,6 +8445,10 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -8417,6 +8459,7 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
@@ -8424,6 +8467,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -8523,6 +8567,7 @@ targets:
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -8532,6 +8577,9 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -8551,6 +8599,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
@@ -8631,9 +8680,9 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
   deps:
-  - grpc_test_util
+  - grpc
+  - grpc_test_util_unsecure
   platforms:
   - linux
   - posix
@@ -9602,9 +9651,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
-  - absl/functional:any_invocable
   - absl/hash:hash
-  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: smoke_test
@@ -10099,7 +10146,7 @@ targets:
   - src/core/lib/iomgr/socket_mutator.cc
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
-  - grpc_test_util
+  - grpc_unsecure
   platforms:
   - linux
   - posix
@@ -10153,50 +10200,52 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
-  src:
-  - src/core/lib/event_engine/posix_engine/timer.cc
-  - src/core/lib/event_engine/posix_engine/timer_heap.cc
-  - src/core/lib/gprpp/time.cc
-  - src/core/lib/gprpp/time_averaged_stats.cc
-  - test/core/event_engine/posix/timer_heap_test.cc
-  deps:
-  - absl/functional:any_invocable
-  - absl/status:statusor
-  - gpr
-  uses_polling: false
-- name: test_core_event_engine_posix_timer_list_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/event_engine/posix_engine/timer.h
-  - src/core/lib/event_engine/posix_engine/timer_heap.h
-  - src/core/lib/gprpp/time.h
-  - src/core/lib/gprpp/time_averaged_stats.h
-  src:
-  - src/core/lib/event_engine/posix_engine/timer.cc
-  - src/core/lib/event_engine/posix_engine/timer_heap.cc
-  - src/core/lib/gprpp/time.cc
-  - src/core/lib/gprpp/time_averaged_stats.cc
-  - test/core/event_engine/posix/timer_list_test.cc
-  deps:
-  - absl/functional:any_invocable
-  - absl/status:statusor
-  - gpr
-  uses_polling: false
-- name: test_core_event_engine_slice_buffer_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/event_engine/posix/timer_heap_test.cc
+  deps:
+  - absl/functional:any_invocable
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
+- name: test_core_event_engine_posix_timer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/timer_list_test.cc
+  deps:
+  - grpc
+  uses_polling: false
+- name: test_core_event_engine_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  src:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/slice/slice.cc
@@ -10204,10 +10253,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/functional:any_invocable
   - absl/hash:hash
-  - absl/status:statusor
   - absl/utility:utility
   - gpr
 - name: test_core_gpr_time_test
@@ -10236,15 +10282,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/gprpp/time.h
+  headers: []
   src:
-  - src/core/lib/gprpp/time.cc
   - test/core/gprpp/time_test.cc
   deps:
-  - absl/functional:any_invocable
-  - absl/status:statusor
-  - gpr
+  - grpc
   uses_polling: false
 - name: test_core_iomgr_load_file_test
   gtest: true
@@ -10446,15 +10488,29 @@ targets:
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/event_engine/forkable.cc
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/thread_pool_test.cc
   deps:
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
+  - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
 - name: thread_quota_test
   gtest: true
@@ -10653,6 +10709,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
   - test/core/event_engine/posix/traced_buffer_list_test.cc
   deps:
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -10832,6 +10889,7 @@ targets:
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -10840,6 +10898,9 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -10857,6 +10918,7 @@ targets:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/try_concurrently_test.cc
   deps:
@@ -10994,11 +11056,18 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
+  - src/core/lib/iomgr/port.h
   src:
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - test/core/event_engine/posix/wakeup_fd_posix_test.cc
   deps:
-  - grpc_test_util
+  - absl/status:statusor
+  - gpr
   platforms:
   - linux
   - posix
