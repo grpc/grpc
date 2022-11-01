@@ -211,6 +211,14 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/propagation_bits.h",
 ]
 
+GRPC_EXPORTED_HDRS = [
+    "include/grpc/impl/codegen/slice.h",
+    "include/grpc/impl/codegen/status.h",
+    "include/grpc/impl/codegen/connectivity_state.h",
+    "include/grpc/impl/codegen/compression_types.h",
+    "include/grpc/impl/codegen/grpc_types.h",
+] + GRPC_PUBLIC_HDRS
+
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/endpoint_config.h",
     "include/grpc/event_engine/event_engine.h",
@@ -463,6 +471,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/codegen/slice.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["gpr_public_hdrs"],
 )
 
@@ -471,6 +480,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/codegen/status.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
 )
 
 grpc_cc_library(
@@ -478,6 +488,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/codegen/connectivity_state.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
 )
 
 grpc_cc_library(
@@ -485,6 +496,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/codegen/compression_types.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["gpr_public_hdrs"],
 )
 
@@ -493,6 +505,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/impl/codegen/grpc_types.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_public_hdrs",
         "grpc_compression_types",
@@ -513,7 +526,7 @@ grpc_cc_library(
         "absl/base:core_headers",
     ],
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
+    public_hdrs = GRPC_EXPORTED_HDRS,
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -574,7 +587,7 @@ grpc_cc_library(
         "absl/base:core_headers",
     ],
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
+    public_hdrs = GRPC_EXPORTED_HDRS,
     select_deps = [
         {
             "grpc_no_xds": [],
