@@ -588,6 +588,268 @@ TEST_P(TypedPerFilterConfigTest,
 }
 
 //
+// retry policy tests
+//
+
+// These tests cover common handling of retry policy at both the virtual
+// host and route layer, so we run them in both contexts.
+class RetryPolicyScope {
+ public:
+  enum Scope { kVirtualHost, kRoute };
+
+  explicit RetryPolicyScope(Scope scope) : scope_(scope) {}
+
+  Scope scope() const { return scope_; }
+
+  // For use as the final parameter in INSTANTIATE_TEST_SUITE_P().
+  static std::string Name(
+      const ::testing::TestParamInfo<RetryPolicyScope>& info) {
+    switch (info.param.scope_) {
+      case kVirtualHost: return "VirtualHost";
+      case kRoute: return "Route";
+      default: break;
+    }
+    GPR_UNREACHABLE_CODE(return "UNKNOWN");
+  }
+
+ private:
+  Scope scope_;
+};
+
+class RetryPolicyTest
+    : public XdsRouteConfigTest,
+      public ::testing::WithParamInterface<RetryPolicyScope> {
+ protected:
+  RetryPolicyTest() {
+    route_config_.set_name("foo");
+    auto* vhost = route_config_.add_virtual_hosts();
+    vhost->add_domains("*");
+    auto* route_proto = vhost->add_routes();
+    route_proto->mutable_match()->set_prefix("");
+    route_proto->mutable_route()->set_cluster("cluster1");
+  }
+
+  static envoy::config::route::v3::RetryPolicy* GetRetryPolicyProto(
+      RouteConfiguration* route_config) {
+    switch (GetParam().scope()) {
+      case RetryPolicyScope::kVirtualHost:
+        return route_config->mutable_virtual_hosts(0)->mutable_retry_policy();
+      case RetryPolicyScope::kRoute:
+        return route_config->mutable_virtual_hosts(0)->mutable_routes(0)
+                   ->mutable_route()
+                   ->mutable_retry_policy();
+      default:
+        break;
+    }
+    GPR_UNREACHABLE_CODE(return nullptr);
+  }
+
+  static absl::string_view FieldName() {
+    switch (GetParam().scope()) {
+      case RetryPolicyScope::kVirtualHost:
+        return "virtual_hosts[0].retry_policy";
+      case RetryPolicyScope::kRoute:
+        return "virtual_hosts[0].routes[0].route.retry_policy";
+      default:
+        break;
+    }
+    GPR_ASSERT(false);
+  }
+
+  RouteConfiguration route_config_;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsRouteConfig, RetryPolicyTest,
+    ::testing::Values(
+        RetryPolicyScope(RetryPolicyScope::kVirtualHost),
+        RetryPolicyScope(RetryPolicyScope::kRoute)),
+    &RetryPolicyScope::Name);
+
+TEST_P(RetryPolicyTest, Empty) {
+  GetRetryPolicyProto(&route_config_);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  ASSERT_TRUE(action->retry_policy.has_value());
+  const auto& retry_policy = *action->retry_policy;
+  // Defaults.
+  auto expected_codes = internal::StatusCodeSet();
+  EXPECT_EQ(retry_policy.retry_on, expected_codes)
+      << "Actual: " << retry_policy.retry_on.ToString()
+      << "\nExpected: " << expected_codes.ToString();
+  EXPECT_EQ(retry_policy.num_retries, 1);
+  EXPECT_EQ(retry_policy.retry_back_off.base_interval,
+            Duration::Milliseconds(25));
+  EXPECT_EQ(retry_policy.retry_back_off.max_interval,
+            Duration::Milliseconds(250));
+}
+
+TEST_P(RetryPolicyTest, AllFields) {
+  auto* retry_policy_proto = GetRetryPolicyProto(&route_config_);
+  retry_policy_proto->set_retry_on(
+      "cancelled,deadline-exceeded,internal,some-unsupported-policy,"
+      "resource-exhausted,unavailable");
+  retry_policy_proto->mutable_num_retries()->set_value(3);
+  auto* backoff = retry_policy_proto->mutable_retry_back_off();
+  backoff->mutable_base_interval()->set_seconds(1);
+  backoff->mutable_max_interval()->set_seconds(3);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  ASSERT_TRUE(action->retry_policy.has_value());
+  const auto& retry_policy = *action->retry_policy;
+  auto expected_codes = internal::StatusCodeSet()
+      .Add(GRPC_STATUS_CANCELLED)
+      .Add(GRPC_STATUS_DEADLINE_EXCEEDED)
+      .Add(GRPC_STATUS_INTERNAL)
+      .Add(GRPC_STATUS_RESOURCE_EXHAUSTED)
+      .Add(GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(retry_policy.retry_on, expected_codes)
+      << "Actual: " << retry_policy.retry_on.ToString()
+      << "\nExpected: " << expected_codes.ToString();
+  EXPECT_EQ(retry_policy.num_retries, 3);
+  EXPECT_EQ(retry_policy.retry_back_off.base_interval, Duration::Seconds(1));
+  EXPECT_EQ(retry_policy.retry_back_off.max_interval, Duration::Seconds(3));
+}
+
+TEST_P(RetryPolicyTest, MaxIntervalDefaultsTo10xBaseInterval) {
+  auto* retry_policy_proto = GetRetryPolicyProto(&route_config_);
+  retry_policy_proto->mutable_retry_back_off()->mutable_base_interval()
+      ->set_seconds(3);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  ASSERT_TRUE(action->retry_policy.has_value());
+  const auto& retry_policy = *action->retry_policy;
+  EXPECT_EQ(retry_policy.retry_back_off.base_interval, Duration::Seconds(3));
+  EXPECT_EQ(retry_policy.retry_back_off.max_interval, Duration::Seconds(30));
+}
+
+TEST_P(RetryPolicyTest, InvalidValues) {
+  auto* retry_policy_proto = GetRetryPolicyProto(&route_config_);
+  retry_policy_proto->set_retry_on("unavailable");
+  retry_policy_proto->mutable_num_retries()->set_value(0);
+  auto* backoff = retry_policy_proto->mutable_retry_back_off();
+  backoff->mutable_base_interval()->set_seconds(315576000001);
+  backoff->mutable_max_interval()->set_seconds(315576000001);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          ".num_retries error:must be greater than 0; field:",
+          FieldName(),
+          ".retry_back_off.base_interval.seconds "
+          "error:value must be in the range [0, 315576000000]; field:",
+          FieldName(),
+          ".retry_back_off.max_interval.seconds "
+          "error:value must be in the range [0, 315576000000]]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(RetryPolicyTest, MissingBaseInterval) {
+  auto* retry_policy_proto = GetRetryPolicyProto(&route_config_);
+  retry_policy_proto->mutable_retry_back_off();
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          ".retry_back_off.base_interval error:field not present]"))
+      << decode_result.resource.status();
+}
+
+using RetryPolicyOverrideTest = XdsRouteConfigTest;
+
+TEST_F(RetryPolicyOverrideTest, RoutePolicyOverridesVhostPolicy) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  vhost->mutable_retry_policy()->set_retry_on("unavailable");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_route()->mutable_retry_policy()
+      ->set_retry_on("cancelled");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  ASSERT_TRUE(action->retry_policy.has_value());
+  auto expected_codes = internal::StatusCodeSet().Add(GRPC_STATUS_CANCELLED);
+  EXPECT_EQ(action->retry_policy->retry_on, expected_codes)
+      << "Actual: " << action->retry_policy->retry_on.ToString()
+      << "\nExpected: " << expected_codes.ToString();
+}
+
+//
 // RLS tests
 //
 
