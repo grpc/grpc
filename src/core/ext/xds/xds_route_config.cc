@@ -914,6 +914,78 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
   return route_action;
 }
 
+absl::optional<XdsRouteConfigResource::Route> ParseRoute(
+    const XdsResourceType::DecodeContext& context,
+    const absl::optional<XdsRouteConfigResource::RetryPolicy>&
+        virtual_host_retry_policy,
+    const XdsRouteConfigResource::ClusterSpecifierPluginMap&
+        cluster_specifier_plugin_map,
+    std::set<absl::string_view>* cluster_specifier_plugins_not_seen,
+    const envoy_config_route_v3_Route* route_proto,
+    ValidationErrors* errors) {
+  XdsRouteConfigResource::Route route;
+  // Parse route match.
+  {
+    ValidationErrors::ScopedField field(errors, ".match");
+    const auto* match = envoy_config_route_v3_Route_match(route_proto);
+    if (match == nullptr) {
+      errors->AddError("field not present");
+      return absl::nullopt;
+    }
+    // Skip routes with query_parameters set.
+    size_t query_parameters_size;
+    static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
+        match, &query_parameters_size));
+    if (query_parameters_size > 0) return absl::nullopt;
+    // Parse matchers.
+    auto path_matcher = RoutePathMatchParse(match, errors);
+    if (!path_matcher.has_value()) return absl::nullopt;
+    route.matchers.path_matcher = std::move(*path_matcher);
+    RouteHeaderMatchersParse(match, &route, errors);
+    RouteRuntimeFractionParse(match, &route, errors);
+  }
+  // Parse route action.
+  if (envoy_config_route_v3_Route_has_route(route_proto)) {
+    ValidationErrors::ScopedField field(errors, ".route");
+    const envoy_config_route_v3_RouteAction* route_action_proto =
+        envoy_config_route_v3_Route_route(route_proto);
+    GPR_ASSERT(route_action_proto != nullptr);
+    auto route_action = RouteActionParse(
+        context, route_action_proto, cluster_specifier_plugin_map, errors);
+    if (!route_action.has_value()) return absl::nullopt;
+    // If the route does not have a retry policy but the vhost does,
+    // use the vhost retry policy for this route.
+    if (!route_action->retry_policy.has_value()) {
+      route_action->retry_policy = virtual_host_retry_policy;
+    }
+    // Mark off plugins used in route action.
+    auto* cluster_specifier_action =
+        absl::get_if<XdsRouteConfigResource::Route::RouteAction::
+                         ClusterSpecifierPluginName>(&route_action->action);
+    if (cluster_specifier_action != nullptr) {
+      cluster_specifier_plugins_not_seen->erase(
+          cluster_specifier_action->cluster_specifier_plugin_name);
+    }
+    route.action = std::move(*route_action);
+  } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
+                 route_proto)) {
+    route.action = XdsRouteConfigResource::Route::NonForwardingAction();
+  }
+  // Parse typed_per_filter_config.
+  {
+    ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
+    route.typed_per_filter_config = ParseTypedPerFilterConfig<
+        envoy_config_route_v3_Route,
+        envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
+        context, route_proto,
+        envoy_config_route_v3_Route_typed_per_filter_config_next,
+        envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
+        envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value,
+        errors);
+  }
+  return route;
+}
+
 }  // namespace
 
 XdsRouteConfigResource XdsRouteConfigResource::Parse(
@@ -990,71 +1062,11 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
         envoy_config_route_v3_VirtualHost_routes(virtual_hosts[i], &num_routes);
     for (size_t j = 0; j < num_routes; ++j) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", j, "]"));
-      const auto* route_proto = routes[j];
-      XdsRouteConfigResource::Route route;
-      // Parse route match.
-      {
-        ValidationErrors::ScopedField field(errors, ".match");
-        const auto* match = envoy_config_route_v3_Route_match(route_proto);
-        if (match == nullptr) {
-          errors->AddError("field not present");
-          continue;
-        }
-        // Skip routes with query_parameters set.
-        size_t query_parameters_size;
-        static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
-            match, &query_parameters_size));
-        if (query_parameters_size > 0) continue;
-        // Parse matchers.
-        auto path_matcher = RoutePathMatchParse(match, errors);
-        if (!path_matcher.has_value()) continue;
-        route.matchers.path_matcher = std::move(*path_matcher);
-        RouteHeaderMatchersParse(match, &route, errors);
-        RouteRuntimeFractionParse(match, &route, errors);
-      }
-      // Parse route action.
-      if (envoy_config_route_v3_Route_has_route(route_proto)) {
-        ValidationErrors::ScopedField field(errors, ".route");
-        const envoy_config_route_v3_RouteAction* route_action_proto =
-            envoy_config_route_v3_Route_route(route_proto);
-        GPR_ASSERT(route_action_proto != nullptr);
-        auto route_action =
-            RouteActionParse(context, route_action_proto,
-                             rds_update.cluster_specifier_plugin_map, errors);
-        if (!route_action.has_value()) continue;
-        // If the route does not have a retry policy but the vhost does,
-        // use the vhost retry policy for this route.
-        if (!route_action->retry_policy.has_value() &&
-            retry_policy != nullptr) {
-          route_action->retry_policy = virtual_host_retry_policy;
-        }
-        // Mark off plugins used in route action.
-        auto* cluster_specifier_action =
-            absl::get_if<XdsRouteConfigResource::Route::RouteAction::
-                             ClusterSpecifierPluginName>(&route_action->action);
-        if (cluster_specifier_action != nullptr) {
-          cluster_specifier_plugins_not_seen.erase(
-              cluster_specifier_action->cluster_specifier_plugin_name);
-        }
-        route.action = std::move(*route_action);
-      } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
-                     route_proto)) {
-        route.action = XdsRouteConfigResource::Route::NonForwardingAction();
-      }
-      // Parse typed_per_filter_config.
-      {
-        ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
-        route.typed_per_filter_config = ParseTypedPerFilterConfig<
-            envoy_config_route_v3_Route,
-            envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
-            context, route_proto,
-            envoy_config_route_v3_Route_typed_per_filter_config_next,
-            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
-            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value,
-            errors);
-      }
-      // Add route to vhost.
-      vhost.routes.emplace_back(std::move(route));
+      auto route = ParseRoute(
+          context, virtual_host_retry_policy,
+          rds_update.cluster_specifier_plugin_map,
+          &cluster_specifier_plugins_not_seen, routes[j], errors);
+      if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
     }
     if (vhost.routes.empty()) {
       errors->AddError("no valid routes in VirtualHost");
