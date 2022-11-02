@@ -3418,6 +3418,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/grpc_library.h
+  include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
@@ -4090,6 +4091,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/grpc_library.h
+  include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
