@@ -366,6 +366,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/async_stream.h",
     "include/grpcpp/support/async_unary_call.h",
     "include/grpcpp/support/byte_buffer.h",
+    "include/grpcpp/support/callback_common.h",
     "include/grpcpp/support/channel_arguments.h",
     "include/grpcpp/support/client_callback.h",
     "include/grpcpp/support/client_interceptor.h",
