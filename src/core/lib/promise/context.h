@@ -46,7 +46,7 @@ class Context : public ContextType<T> {
   T* const old_;
 
   static T** GetCurrent() {
-    static thread_local T* current = nullptr;
+    static thread_local T* current;
     return &current;
   }
 };
