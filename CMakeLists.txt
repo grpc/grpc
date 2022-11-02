@@ -3422,6 +3422,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/method_handler_impl.h
+  include/grpcpp/impl/proto_utils.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
@@ -4096,6 +4097,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/method_handler_impl.h
+  include/grpcpp/impl/proto_utils.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h

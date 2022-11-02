@@ -21,8 +21,8 @@
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/proto_utils.h>
 
 #include "test/core/util/test_config.h"
 
