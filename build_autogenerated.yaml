@@ -8633,6 +8633,25 @@ targets:
   - linux
   - posix
   - mac
+- name: posix_engine_listener_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
+  - src/core/lib/iomgr/socket_mutator.h
+  src:
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  - src/core/lib/iomgr/socket_mutator.cc
+  - test/core/event_engine/posix/posix_engine_listener_utils_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: posix_event_engine_test
   gtest: true
   build: test
