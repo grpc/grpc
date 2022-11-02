@@ -1109,6 +1109,7 @@ grpc_cc_library(
         "absl/status",
         "absl/strings:str_format",
     ],
+    visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
         "gpr_spinlock",
         "slice",
@@ -2562,6 +2563,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "env",
+        "error",
         "grpc_external_account_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_oauth2_credentials",
@@ -2585,7 +2587,6 @@ grpc_cc_library(
         "//:httpcli",
         "//:ref_counted_ptr",
         "//:uri_parser",
-        "error",
     ],
 )
 

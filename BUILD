@@ -1824,6 +1824,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "//src/core:arena",
         "//src/core:channel_init",
+        "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_insecure_credentials",
@@ -1833,7 +1834,6 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:time",
-        "//src/core:error",
         "//src/core:useful",
     ],
 )
