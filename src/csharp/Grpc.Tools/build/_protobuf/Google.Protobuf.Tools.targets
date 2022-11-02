@@ -195,7 +195,7 @@
       <_Protobuf_CodeCompile Include="@(Protobuf_ExpectedOutputs->Distinct())"
          Condition=" '%(Source)' != '' and '@(Protobuf_Compile->WithMetadataValue('CompileOutputs', 'true'))' != '' " />
       <!-- Adding Distinct() is just a precaution as the CSC compiler complains if there are 
-           duplidate source files
+           duplicate source files
       -->
       <Compile Include="@(_Protobuf_CodeCompile->Distinct())" />
     </ItemGroup>
