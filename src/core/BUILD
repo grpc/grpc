@@ -784,15 +784,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "for_each",
-    external_deps = [
-        "absl/status",
-        "absl/types:variant",
-    ],
+    external_deps = ["absl/status"],
     language = "c++",
     public_hdrs = ["lib/promise/for_each.h"],
     deps = [
+        "construct_destruct",
         "poll",
         "promise_factory",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
