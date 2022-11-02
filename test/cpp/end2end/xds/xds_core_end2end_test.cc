@@ -714,7 +714,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   // Eds for the new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -764,7 +764,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -835,7 +835,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});

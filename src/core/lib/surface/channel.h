@@ -26,7 +26,6 @@
 
 #include <atomic>
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -46,7 +45,6 @@
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -158,7 +156,7 @@ class Channel : public RefCounted<Channel>,
   }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return event_engine_.get();
+    return channel_stack_->EventEngine();
   }
 
  private:
@@ -176,8 +174,6 @@ class Channel : public RefCounted<Channel>,
   MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
-  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-      event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 }  // namespace grpc_core

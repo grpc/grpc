@@ -53,6 +53,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -335,6 +336,7 @@ class RlsLb : public LoadBalancingPolicy {
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -913,6 +915,11 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
 
 absl::string_view RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetAuthority() {
   return wrapper_->lb_policy_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine*
+RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetEventEngine() {
+  return wrapper_->lb_policy_->channel_control_helper()->GetEventEngine();
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
@@ -2419,13 +2426,8 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error;
-    rls_channel_service_config_ = it->second.Dump();
-    auto service_config = MakeRefCounted<ServiceConfigImpl>(
-        ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
-    if (!child_error.ok()) {
-      errors->AddError(StatusToString(child_error));
-    }
+    // Don't need to save the result here, just need the errors (if any).
+    ServiceConfigImpl::Create(ChannelArgs(), it->second, errors);
   }
   // Validate childPolicyConfigTargetFieldName.
   {
