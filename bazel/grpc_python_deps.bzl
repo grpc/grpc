@@ -17,8 +17,30 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 # buildifier: disable=unnamed-macro
-def grpc_python_deps():
+def grpc_python_deps(
+      configure_python = True,
+      bind_externals = True,
+      omit_io_bazel_rules_python = False,
+      omit_cython = False):
     """Loads dependencies for gRPC Python."""
+    if not omit_io_bazel_rules_python:
+        io_bazel_rules_python()
+    if configure_python:
+        python_configure(name = "local_config_python")
+    if bind_externals:
+        grpc_bind_externals_python()
+    if not omit_cython:
+        cython()
+
+
+def grpc_bind_externals_python():
+    native.bind(
+        name = "python_headers",
+        actual = "@local_config_python//:python_headers",
+    )
+
+
+def io_bazel_rules_python():
     if "io_bazel_rules_python" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_python",
@@ -28,13 +50,8 @@ def grpc_python_deps():
             patch_args = ["-p1"],
         )
 
-    python_configure(name = "local_config_python")
 
-    native.bind(
-        name = "python_headers",
-        actual = "@local_config_python//:python_headers",
-    )
-
+def cython():
     if "cython" not in native.existing_rules():
         http_archive(
             name = "cython",
