@@ -210,11 +210,7 @@ class ExecCtx {
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
   ScopedTimeCache time_cache_;
-
-  static ExecCtx** GetExecCtx() {
-    static thread_local ExecCtx* exec_ctx = nullptr;
-    return &exec_ctx;
-  }
+  static ExecCtx** GetExecCtx();
 
   ExecCtx* last_exec_ctx_ = Get();
 };
@@ -286,7 +282,7 @@ class ApplicationCallbackExecCtx {
         }
         (*f->functor_run)(f, f->internal_success);
       }
-      callback_exec_ctx_ = nullptr;
+      *GetCallbackExecCtx() = nullptr;
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
         Fork::DecExecCtxCount();
       }
@@ -298,14 +294,14 @@ class ApplicationCallbackExecCtx {
 
   uintptr_t Flags() { return flags_; }
 
-  static ApplicationCallbackExecCtx* Get() { return callback_exec_ctx_; }
+  static ApplicationCallbackExecCtx* Get() { return *GetCallbackExecCtx(); }
 
   static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
     if (Get() == nullptr) {
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
         Fork::IncExecCtxCount();
       }
-      callback_exec_ctx_ = exec_ctx;
+      *GetCallbackExecCtx() = exec_ctx;
     }
   }
 
@@ -330,7 +326,8 @@ class ApplicationCallbackExecCtx {
   uintptr_t flags_{0u};
   grpc_completion_queue_functor* head_{nullptr};
   grpc_completion_queue_functor* tail_{nullptr};
-  static thread_local ApplicationCallbackExecCtx* callback_exec_ctx_;
+
+  static ApplicationCallbackExecCtx** GetCallbackExecCtx();
 };
 
 }  // namespace grpc_core
