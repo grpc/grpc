@@ -28,10 +28,10 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #ifdef GRPC_POSIX_SOCKET_TCP
-#include <errno.h>  // IWYU pragma: keep
+#include <errno.h>       // IWYU pragma: keep
+#include <sys/socket.h>  // IWYU pragma: keep
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
@@ -173,22 +173,21 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
 
     // Create an Endpoint here.
-    std::string connection_name =
-        absl::StrCat("tcp-server-connection: ", *SockaddrToString(&addr, true));
+    std::string peer_name = *SockaddrToString(&addr, true);
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
-            fd, connection_name, listener_->poller_->CanTrackErrors()),
+            fd, peer_name, listener_->poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
         /*allocator=*/
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            connection_name),
+            absl::StrCat("endpoint-tcp-server-connection: ", peer_name)),
         /*options=*/listener_->options_);
     // Call on_accept_ and then resume accepting new connections by continuing
     // the parent for-loop.
     listener_->on_accept_(
         std::move(endpoint),
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            connection_name));
+            absl::StrCat("on-accept-tcp-server-connection: ", peer_name)));
   }
   GPR_UNREACHABLE_CODE(return);
 }

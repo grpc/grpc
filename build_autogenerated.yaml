@@ -8664,6 +8664,7 @@ targets:
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
   - test/core/event_engine/test_suite/server_test.cc
+  - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
   platforms:
