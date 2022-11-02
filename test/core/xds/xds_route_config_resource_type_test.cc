@@ -850,6 +850,366 @@ TEST_F(RetryPolicyOverrideTest, RoutePolicyOverridesVhostPolicy) {
 }
 
 //
+// route tests
+//
+
+using RouteTest = XdsRouteConfigTest;
+
+TEST_F(RouteTest, RouteMatchNotPresent) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].match "
+            "error:field not present]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RouteTest, PathMatchers) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path("/service/method");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster2");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->mutable_safe_regex()->set_regex("/.*");
+  route_proto->mutable_route()->set_cluster("cluster3");
+  // The remaining routes will be ignored, since they cannot possibly
+  // match a gRPC path.
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("does_not_start_with_slash");
+  route_proto->mutable_route()->set_cluster("cluster4");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("/three/slashes/");
+  route_proto->mutable_route()->set_cluster("cluster5");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("//two_leading_slashes");
+  route_proto->mutable_route()->set_cluster("cluster6");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path("");
+  route_proto->mutable_route()->set_cluster("cluster7");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path("does_not_start_with_slash");
+  route_proto->mutable_route()->set_cluster("cluster8");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path("/three/slashes/");
+  route_proto->mutable_route()->set_cluster("cluster9");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path("/one_slash");
+  route_proto->mutable_route()->set_cluster("cluster10");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path("//service_empty");
+  route_proto->mutable_route()->set_cluster("cluster11");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path("/method_empty/");
+  route_proto->mutable_route()->set_cluster("cluster12");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  auto& virtual_host = resource.virtual_hosts.front();
+  ASSERT_EQ(virtual_host.routes.size(), 3UL);
+  // route 0
+  EXPECT_EQ(virtual_host.routes[0].matchers.path_matcher.ToString(),
+            "StringMatcher{exact=/service/method}");
+  auto* action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+      &virtual_host.routes[0].action);
+  ASSERT_NE(action, nullptr);
+  auto* cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster1");
+  // route 1
+  EXPECT_EQ(virtual_host.routes[1].matchers.path_matcher.ToString(),
+            "StringMatcher{prefix=}");
+  action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+      &virtual_host.routes[1].action);
+  ASSERT_NE(action, nullptr);
+  cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster2");
+  // route 2
+  EXPECT_EQ(virtual_host.routes[2].matchers.path_matcher.ToString(),
+            "StringMatcher{safe_regex=/.*}");
+  action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+      &virtual_host.routes[2].action);
+  ASSERT_NE(action, nullptr);
+  cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster3");
+}
+
+TEST_F(RouteTest, PathMatchersInvalid) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_path_separated_prefix("foo");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->mutable_safe_regex()->set_regex("/[");
+  route_proto->mutable_route()->set_cluster("cluster2");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].match "
+            "error:invalid path specifier; "
+            "field:virtual_hosts[0].routes[1].match "
+            "error:error creating path matcher: "
+            "Invalid regex string specified in matcher.]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RouteTest, HeaderMatchers) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_match()->set_prefix("");
+  // header0: exact match with invert
+  auto* header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header0");
+  header_proto->set_exact_match("exact1");
+  header_proto->set_invert_match(true);
+  // header1: prefix match
+  header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header1");
+  header_proto->set_prefix_match("prefix1");
+  // header2: suffix match
+  header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header2");
+  header_proto->set_suffix_match("suffix1");
+  // header3: contains match
+  header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header3");
+  header_proto->set_contains_match("contains1");
+  // header4: regex match
+  header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header4");
+  header_proto->mutable_safe_regex_match()->set_regex("regex1");
+  // header5: range match
+  header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header5");
+  header_proto->mutable_range_match()->set_start(1);
+  header_proto->mutable_range_match()->set_end(3);
+  // header6: present match
+  header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header6");
+  header_proto->set_present_match(true);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  auto& virtual_host = resource.virtual_hosts.front();
+  ASSERT_EQ(virtual_host.routes.size(), 1UL);
+  auto& header_matchers = virtual_host.routes[0].matchers.header_matchers;
+  ASSERT_EQ(header_matchers.size(), 7UL);
+  // header0: exact match with invert
+  EXPECT_EQ(header_matchers[0].ToString(),
+            "HeaderMatcher{header0 not StringMatcher{exact=exact1}}");
+  // header1: prefix match
+  EXPECT_EQ(header_matchers[1].ToString(),
+            "HeaderMatcher{header1 StringMatcher{prefix=prefix1}}");
+  // header2: suffix match
+  EXPECT_EQ(header_matchers[2].ToString(),
+            "HeaderMatcher{header2 StringMatcher{suffix=suffix1}}");
+  // header3: contains match
+  EXPECT_EQ(header_matchers[3].ToString(),
+            "HeaderMatcher{header3 StringMatcher{contains=contains1}}");
+  // header4: regex match
+  EXPECT_EQ(header_matchers[4].ToString(),
+            "HeaderMatcher{header4 StringMatcher{safe_regex=regex1}}");
+  // header5: range match
+  EXPECT_EQ(header_matchers[5].ToString(),
+            "HeaderMatcher{header5 range=[1, 3]}");
+  // header6: present match
+  EXPECT_EQ(header_matchers[6].ToString(),
+            "HeaderMatcher{header6 present=true}");
+}
+
+TEST_F(RouteTest, HeaderMatchersInvalid) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_match()->set_prefix("");
+  // header0: no match type set
+  auto* header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header0");
+  // header1: range end before start
+  header_proto = route_proto->mutable_match()->add_headers();
+  header_proto->set_name("header1");
+  header_proto->mutable_range_match()->set_start(2);
+  header_proto->mutable_range_match()->set_end(1);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].match.headers[0] "
+            "error:invalid header matcher; "
+            "field:virtual_hosts[0].routes[0].match.headers[1] "
+            "error:cannot create header matcher: "
+            "Invalid range specifier specified: "
+            "end cannot be smaller than start.]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RouteTest, RuntimeFractionMatcher) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  // Route 0: 10 per 100
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_match()->set_prefix("");
+  auto* runtime_fraction_proto =
+      route_proto->mutable_match()->mutable_runtime_fraction()
+          ->mutable_default_value();
+  runtime_fraction_proto->set_numerator(10);
+  // Route 1: 10 per 10000
+  route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_match()->set_prefix("");
+  runtime_fraction_proto =
+      route_proto->mutable_match()->mutable_runtime_fraction()
+          ->mutable_default_value();
+  runtime_fraction_proto->set_numerator(10);
+  runtime_fraction_proto->set_denominator(runtime_fraction_proto->TEN_THOUSAND);
+  // Route 2: 10 per 1000000
+  route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_match()->set_prefix("");
+  runtime_fraction_proto =
+      route_proto->mutable_match()->mutable_runtime_fraction()
+          ->mutable_default_value();
+  runtime_fraction_proto->set_numerator(10);
+  runtime_fraction_proto->set_denominator(runtime_fraction_proto->MILLION);
+  // Route 3: runtime_fraction.default_value not set, so no fractional percent
+  route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_match()->mutable_runtime_fraction();
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  auto& virtual_host = resource.virtual_hosts.front();
+  ASSERT_EQ(virtual_host.routes.size(), 4UL);
+  EXPECT_EQ(virtual_host.routes[0].matchers.fraction_per_million, 100000);
+  EXPECT_EQ(virtual_host.routes[1].matchers.fraction_per_million, 1000);
+  EXPECT_EQ(virtual_host.routes[2].matchers.fraction_per_million, 10);
+  EXPECT_FALSE(
+      virtual_host.routes[3].matchers.fraction_per_million.has_value());
+}
+
+TEST_F(RouteTest, RuntimeFractionMatcherInvalid) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_route()->set_cluster("cluster1");
+  route_proto->mutable_match()->set_prefix("");
+  auto* runtime_fraction_proto =
+      route_proto->mutable_match()->mutable_runtime_fraction()
+          ->mutable_default_value();
+  runtime_fraction_proto->set_numerator(10);
+  runtime_fraction_proto->set_denominator(
+      static_cast<envoy::type::v3::FractionalPercent_DenominatorType>(5));
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].match.runtime_fraction"
+            ".default_value.denominator "
+            "error:unknown denominator type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(RouteTest, NoRoutesInVirtualHost) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes "
+            "error:no valid routes in VirtualHost]")
+      << decode_result.resource.status();
+}
+
+//
 // RLS tests
 //
 

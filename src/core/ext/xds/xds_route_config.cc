@@ -490,6 +490,18 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
       type = HeaderMatcher::Type::kExact;
       match_string = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_exact_match(header));
+    } else if (envoy_config_route_v3_HeaderMatcher_has_prefix_match(header)) {
+      type = HeaderMatcher::Type::kPrefix;
+      match_string = UpbStringToStdString(
+          envoy_config_route_v3_HeaderMatcher_prefix_match(header));
+    } else if (envoy_config_route_v3_HeaderMatcher_has_suffix_match(header)) {
+      type = HeaderMatcher::Type::kSuffix;
+      match_string = UpbStringToStdString(
+          envoy_config_route_v3_HeaderMatcher_suffix_match(header));
+    } else if (envoy_config_route_v3_HeaderMatcher_has_contains_match(header)) {
+      type = HeaderMatcher::Type::kContains;
+      match_string = UpbStringToStdString(
+          envoy_config_route_v3_HeaderMatcher_contains_match(header));
     } else if (envoy_config_route_v3_HeaderMatcher_has_safe_regex_match(
                    header)) {
       const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
@@ -507,18 +519,6 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
       type = HeaderMatcher::Type::kPresent;
       present_match = envoy_config_route_v3_HeaderMatcher_present_match(header);
-    } else if (envoy_config_route_v3_HeaderMatcher_has_prefix_match(header)) {
-      type = HeaderMatcher::Type::kPrefix;
-      match_string = UpbStringToStdString(
-          envoy_config_route_v3_HeaderMatcher_prefix_match(header));
-    } else if (envoy_config_route_v3_HeaderMatcher_has_suffix_match(header)) {
-      type = HeaderMatcher::Type::kSuffix;
-      match_string = UpbStringToStdString(
-          envoy_config_route_v3_HeaderMatcher_suffix_match(header));
-    } else if (envoy_config_route_v3_HeaderMatcher_has_contains_match(header)) {
-      type = HeaderMatcher::Type::kContains;
-      match_string = UpbStringToStdString(
-          envoy_config_route_v3_HeaderMatcher_contains_match(header));
     } else {
       errors->AddError("invalid header matcher");
       continue;
@@ -1057,6 +1057,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
     }
     // Parse routes.
     ValidationErrors::ScopedField field2(errors, ".routes");
+    const size_t original_error_size = errors->size();
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
         envoy_config_route_v3_VirtualHost_routes(virtual_hosts[i], &num_routes);
@@ -1068,7 +1069,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
           &cluster_specifier_plugins_not_seen, routes[j], errors);
       if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
     }
-    if (vhost.routes.empty()) {
+    if (errors->size() == original_error_size && vhost.routes.empty()) {
       errors->AddError("no valid routes in VirtualHost");
     }
   }
