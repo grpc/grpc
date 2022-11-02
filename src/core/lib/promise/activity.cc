@@ -27,7 +27,10 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
-thread_local Activity* Activity::g_current_activity_{nullptr};
+Activity** Activity::GetCurrentActivity() {
+  static thread_local Activity* current_activity = nullptr;
+  return &current_activity;
+}
 
 namespace promise_detail {
 
