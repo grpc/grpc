@@ -1109,7 +1109,7 @@ grpc_cc_library(
         "absl/status",
         "absl/strings:str_format",
     ],
-    visibility = ["@grpc:alt_grpc++_base_legacy"],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_spinlock",
         "slice",
