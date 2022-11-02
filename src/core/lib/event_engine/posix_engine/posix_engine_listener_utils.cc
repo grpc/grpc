@@ -222,18 +222,14 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
 #ifdef GRPC_HAVE_IFADDRS
-  absl::Status status;
+  absl::Status op_status = absl::OkStatus();
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
   bool no_local_addresses = true;
   int assigned_port = 0;
   if (requested_port == 0) {
     auto result = GetUnusedPort();
-    if (!result.ok()) {
-      return result.status();
-    } else if (*result <= 0) {
-      return absl::FailedPreconditionError("Bad get_unused_port()");
-    }
+    GRPC_RETURN_IF_ERROR(result.status());
     requested_port = *result;
     gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
   }
@@ -269,7 +265,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     }
     auto result = CreateAndPrepareListenerSocket(options, addr);
     if (!result.ok()) {
-      status = absl::FailedPreconditionError(
+      op_status = absl::FailedPreconditionError(
           absl::StrCat("Failed to add listener: ", addr_str,
                        " due to error: ", result.status().message()));
       break;
@@ -280,13 +276,12 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     }
   }
   freeifaddrs(ifa);
-  if (!status.ok()) {
-    return status;
-  } else if (no_local_addresses) {
+  GRPC_RETURN_IF_ERROR(op_status);
+  if (no_local_addresses) {
     return absl::FailedPreconditionError("No local addresses");
-  } else {
-    return assigned_port;
   }
+  return assigned_port;
+
 #else
   GPR_ASSERT(false && "System does not support ifaddrs");
 #endif
