@@ -185,7 +185,7 @@ class ExecCtx {
   void TestOnlySetNow(Timestamp now) { time_cache_.TestOnlySetNow(now); }
 
   /** Gets pointer to current exec_ctx. */
-  static ExecCtx* Get() { return *GetExecCtx(); }
+  static ExecCtx* Get() { return exec_ctx_; }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error);
@@ -201,7 +201,7 @@ class ExecCtx {
 
  private:
   /** Set exec_ctx_ to exec_ctx. */
-  static void Set(ExecCtx* exec_ctx) { *GetExecCtx() = exec_ctx; }
+  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
@@ -210,12 +210,7 @@ class ExecCtx {
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
   ScopedTimeCache time_cache_;
-
-  static ExecCtx** GetExecCtx() {
-    static thread_local ExecCtx* exec_ctx = nullptr;
-    return &exec_ctx;
-  }
-
+  static thread_local ExecCtx* exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();
 };
 
