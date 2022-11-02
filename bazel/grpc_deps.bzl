@@ -90,7 +90,7 @@ def grpc_deps(
       bind_externals = bind_externals,
       configure_python = configure_python,
       omit_io_bazel_rules_python = omit_io_bazel_rules_python,
-      omit_cython = omit_cython):
+      omit_cython = omit_cython)
 
 
 def grpc_deps_impl(
