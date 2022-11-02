@@ -19,7 +19,7 @@ from typing import Optional
 import grpc
 
 
-def _sign_request(callback: grpc.AuthMetadataPluginCallback, token: str,
+def _sign_request(callback: grpc.AuthMetadataPluginCallback, token: Optional[str],
                   error: Optional[Exception]):
     metadata = (('authorization', 'Bearer {}'.format(token)),)
     callback(metadata, error)
@@ -27,6 +27,7 @@ def _sign_request(callback: grpc.AuthMetadataPluginCallback, token: str,
 
 class GoogleCallCredentials(grpc.AuthMetadataPlugin):
     """Metadata wrapper for GoogleCredentials from the oauth2client library."""
+    _is_jwt: bool
 
     def __init__(self, credentials):
         self._credentials = credentials
@@ -53,6 +54,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
 
 class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
     """Metadata wrapper for raw access token credentials."""
+    _access_token: str
 
     def __init__(self, access_token: str):
         self._access_token = access_token

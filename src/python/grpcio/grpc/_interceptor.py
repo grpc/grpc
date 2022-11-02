@@ -16,7 +16,7 @@
 import collections
 import sys
 import types
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import grpc
 
@@ -30,15 +30,17 @@ from ._typing import SerializingFunction
 
 
 class _ServicePipeline(object):
+    interceptors: Tuple[grpc.ServerInterceptor]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
         self.interceptors = tuple(interceptors)
 
-    def _continuation(self, thunk: Callable, index: int):
+    def _continuation(self, thunk: Callable, index: int) -> Callable:
         return lambda context: self._intercept_at(thunk, index, context)
 
-    def _intercept_at(self, thunk: Callable, index: int,
-                      context: grpc.HandlerCallDetails):
+    def _intercept_at(
+            self, thunk: Callable, index: int,
+            context: grpc.HandlerCallDetails) -> grpc.RpcMethodHandler:
         if index < len(self.interceptors):
             interceptor = self.interceptors[index]
             thunk = self._continuation(thunk, index + 1)
@@ -46,7 +48,8 @@ class _ServicePipeline(object):
         else:
             return thunk(context)
 
-    def execute(self, thunk: Callable, context: grpc.HandlerCallDetails):
+    def execute(self, thunk: Callable,
+                context: grpc.HandlerCallDetails) -> grpc.RpcMethodHandler:
         return self._intercept_at(thunk, 0, context)
 
 
@@ -64,8 +67,11 @@ class _ClientCallDetails(
     pass
 
 
-def _unwrap_client_call_details(call_details: grpc.ClientCallDetails,
-                                default_details: grpc.ClientCallDetails):
+def _unwrap_client_call_details(
+    call_details: grpc.ClientCallDetails,
+    default_details: grpc.ClientCallDetails
+) -> Tuple[str, float, MetadataType, grpc.CallCredentials, bool,
+           grpc.Compression]:
     try:
         method = call_details.method
     except AttributeError:
@@ -100,6 +106,8 @@ def _unwrap_client_call_details(call_details: grpc.ClientCallDetails,
 
 
 class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too-many-ancestors
+    _exception: Exception
+    _traceback: types.TracebackType
 
     def __init__(self, exception: Exception, traceback: types.TracebackType):
         super(_FailureOutcome, self).__init__()
@@ -167,6 +175,8 @@ class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable
 
 
 class _UnaryOutcome(grpc.Call, grpc.Future):
+    _response: ResponseType
+    _call: grpc.Call
 
     def __init__(self, response: ResponseType, call: grpc.Call):
         self._response = response
@@ -219,6 +229,9 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
 
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
+    _thunk: Callable
+    _method: str
+    _interceptor: grpc.UnaryUnaryClientInterceptor
 
     def __init__(self, thunk: Callable, method: str,
                  interceptor: grpc.UnaryUnaryClientInterceptor):
@@ -327,8 +340,12 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
 
 class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
+    _thunk: Callable
+    _method: str
+    _interceptor: grpc.UnaryStreamClientInterceptor
 
-    def __init__(self, thunk, method, interceptor):
+    def __init__(self, thunk: Callable, method: str,
+                 interceptor: grpc.UnaryStreamClientInterceptor):
         self._thunk = thunk
         self._method = method
         self._interceptor = interceptor
@@ -364,6 +381,9 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
 
 class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
+    _thunk: Callable
+    _method: str
+    _interceptor: grpc.StreamUnaryClientInterceptor
 
     def __init__(self, thunk: Callable, method: str,
                  interceptor: grpc.StreamUnaryClientInterceptor):
@@ -467,8 +487,12 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
 
 class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
+    _thunk: Callable
+    _method: str
+    _interceptor: grpc.StreamStreamMultiCallable
 
-    def __init__(self, thunk, method, interceptor):
+    def __init__(self, thunk: Callable, method: str,
+                 interceptor: grpc.StreamStreamMultiCallable):
         self._thunk = thunk
         self._method = method
         self._interceptor = interceptor
@@ -504,6 +528,11 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
 
 class _Channel(grpc.Channel):
+    _channel: grpc.Channel
+    _interceptor: Union[grpc.UnaryUnaryClientInterceptor,
+                         grpc.UnaryStreamClientInterceptor,
+                         grpc.StreamStreamClientInterceptor,
+                         grpc.StreamUnaryClientInterceptor]
 
     def __init__(self, channel: grpc.Channel,
                  interceptor: Union[grpc.UnaryUnaryClientInterceptor,
@@ -587,8 +616,13 @@ class _Channel(grpc.Channel):
         self._channel.close()
 
 
-def intercept_channel(channel: grpc.Channel,
-                      *interceptors: Optional[Sequence[Any]]) -> grpc.Channel:
+def intercept_channel(
+    channel: grpc.Channel,
+    *interceptors: Optional[Sequence[Union[grpc.UnaryUnaryClientInterceptor,
+                                           grpc.UnaryStreamClientInterceptor,
+                                           grpc.StreamStreamClientInterceptor,
+                                           grpc.StreamUnaryClientInterceptor]]]
+) -> grpc.Channel:
     for interceptor in reversed(list(interceptors)):
         if not isinstance(interceptor, grpc.UnaryUnaryClientInterceptor) and \
            not isinstance(interceptor, grpc.UnaryStreamClientInterceptor) and \

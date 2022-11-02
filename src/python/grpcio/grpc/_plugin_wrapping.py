@@ -42,6 +42,8 @@ class _CallbackState(object):
 
 
 class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
+    _state: _CallbackState
+    _callback: Callable
 
     def __init__(self, state: _CallbackState, callback: Callable):
         self._state = state
@@ -68,6 +70,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 
 
 class _Plugin(object):
+    _metadata_plugin: grpc.AuthMetadataPlugin
 
     def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):
         self._metadata_plugin = metadata_plugin

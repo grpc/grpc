@@ -17,7 +17,7 @@ import collections
 import logging
 import threading
 import time
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional, Sequence
 
 import grpc
 from grpc import _common
@@ -44,6 +44,8 @@ class RpcMethodHandler(
 
 
 class DictionaryGenericHandler(grpc.ServiceRpcHandler):
+    _name: str
+    _method_handlers: Dict[str, grpc.RpcMethodHandler]
 
     def __init__(self, service: str,
                  method_handlers: Dict[str, grpc.RpcMethodHandler]):
@@ -63,6 +65,11 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
 
 
 class _ChannelReadyFuture(grpc.Future):
+    _condition: threading.Condition
+    _channel: grpc.Channel
+    _matured: bool
+    _cancelled: bool
+    _done_callbacks: Sequence[Callable]
 
     def __init__(self, channel: grpc.Channel):
         self._condition = threading.Condition()
