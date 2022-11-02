@@ -162,6 +162,432 @@ TEST_F(XdsRouteConfigTest, MinimumValidConfig) {
 }
 
 //
+// virtual host tests
+//
+
+using VirtualHostTest = XdsRouteConfigTest;
+
+TEST_F(VirtualHostTest, BadDomainPattern) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("foo*bar");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].domains[0] "
+            "error:invalid domain pattern \"foo*bar\"]")
+      << decode_result.resource.status();
+}
+
+TEST_F(VirtualHostTest, NoDomainsSpecified) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].domains error:must be non-empty]")
+      << decode_result.resource.status();
+}
+
+//
+// typed_per_filter_config tests
+//
+
+// These tests cover common handling of typed_per_filter_config at all
+// three layers (virtual host, route, and weighted cluster), so we run
+// them in all three contexts.
+class TypedPerFilterConfigScope {
+ public:
+  enum Scope { kVirtualHost, kRoute, kWeightedCluster };
+
+  explicit TypedPerFilterConfigScope(Scope scope) : scope_(scope) {}
+
+  Scope scope() const { return scope_; }
+
+  // For use as the final parameter in INSTANTIATE_TEST_SUITE_P().
+  static std::string Name(
+      const ::testing::TestParamInfo<TypedPerFilterConfigScope>& info) {
+    switch (info.param.scope_) {
+      case kVirtualHost: return "VirtualHost";
+      case kRoute: return "Route";
+      case kWeightedCluster: return "WeightedCluster";
+      default: break;
+    }
+    GPR_UNREACHABLE_CODE(return "UNKNOWN");
+  }
+
+ private:
+  Scope scope_;
+};
+
+class TypedPerFilterConfigTest
+    : public XdsRouteConfigTest,
+      public ::testing::WithParamInterface<TypedPerFilterConfigScope> {
+ protected:
+  TypedPerFilterConfigTest() {
+    route_config_.set_name("foo");
+    auto* vhost = route_config_.add_virtual_hosts();
+    vhost->add_domains("*");
+    auto* route_proto = vhost->add_routes();
+    route_proto->mutable_match()->set_prefix("");
+    route_proto->mutable_route()->set_cluster("cluster1");
+  }
+
+  static google::protobuf::Map<std::string, google::protobuf::Any>*
+  GetTypedPerFilterConfigProto(RouteConfiguration* route_config) {
+    switch (GetParam().scope()) {
+      case TypedPerFilterConfigScope::kVirtualHost:
+        return route_config->mutable_virtual_hosts(0)
+                   ->mutable_typed_per_filter_config();
+      case TypedPerFilterConfigScope::kRoute:
+        return route_config->mutable_virtual_hosts(0)->mutable_routes(0)
+                   ->mutable_typed_per_filter_config();
+      case TypedPerFilterConfigScope::kWeightedCluster: {
+        auto* cluster = route_config->mutable_virtual_hosts(0)
+                   ->mutable_routes(0)
+                   ->mutable_route()
+                   ->mutable_weighted_clusters()
+                   ->add_clusters();
+        cluster->set_name("cluster1");
+        cluster->mutable_weight()->set_value(1);
+        return cluster->mutable_typed_per_filter_config();
+      }
+      default:
+        break;
+    }
+    GPR_UNREACHABLE_CODE(return nullptr);
+  }
+
+  static const XdsRouteConfigResource::TypedPerFilterConfig&
+  GetTypedPerFilterConfig(const XdsRouteConfigResource& resource) {
+    switch (GetParam().scope()) {
+      case TypedPerFilterConfigScope::kVirtualHost:
+        return resource.virtual_hosts[0].typed_per_filter_config;
+      case TypedPerFilterConfigScope::kRoute:
+        return resource.virtual_hosts[0].routes[0].typed_per_filter_config;
+      case TypedPerFilterConfigScope::kWeightedCluster: {
+        auto& action = absl::get<XdsRouteConfigResource::Route::RouteAction>(
+            resource.virtual_hosts[0].routes[0].action);
+        auto& weighted_clusters =
+            absl::get<std::vector<
+                XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
+                    action.action);
+        return weighted_clusters[0].typed_per_filter_config;
+      }
+      default:
+        break;
+    }
+    GPR_ASSERT(false);
+  }
+
+  static absl::string_view FieldName() {
+    switch (GetParam().scope()) {
+      case TypedPerFilterConfigScope::kVirtualHost:
+        return "virtual_hosts[0].typed_per_filter_config";
+      case TypedPerFilterConfigScope::kRoute:
+        return "virtual_hosts[0].routes[0].typed_per_filter_config";
+      case TypedPerFilterConfigScope::kWeightedCluster:
+        return "virtual_hosts[0].routes[0].route.weighted_clusters"
+               ".clusters[0].typed_per_filter_config";
+      default:
+        break;
+    }
+    GPR_ASSERT(false);
+  }
+
+  RouteConfiguration route_config_;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsRouteConfig, TypedPerFilterConfigTest,
+    ::testing::Values(
+        TypedPerFilterConfigScope(TypedPerFilterConfigScope::kVirtualHost),
+        TypedPerFilterConfigScope(TypedPerFilterConfigScope::kRoute),
+        TypedPerFilterConfigScope(TypedPerFilterConfigScope::kWeightedCluster)),
+    &TypedPerFilterConfigScope::Name);
+
+TEST_P(TypedPerFilterConfigTest, Basic) {
+  envoy::extensions::filters::http::fault::v3::HTTPFault fault_config;
+  fault_config.mutable_abort()->set_grpc_status(GRPC_STATUS_PERMISSION_DENIED);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(fault_config);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  ASSERT_EQ(typed_per_filter_config.size(), 1UL);
+  auto it = typed_per_filter_config.begin();
+  ASSERT_NE(it, typed_per_filter_config.end());
+  EXPECT_EQ("fault", it->first);
+  const auto& filter_config = it->second;
+  EXPECT_EQ(filter_config.config_proto_type_name,
+            "envoy.extensions.filters.http.fault.v3.HTTPFault");
+  EXPECT_EQ(filter_config.config.Dump(),
+            "{\"abortCode\":\"PERMISSION_DENIED\"}");
+}
+
+TEST_P(TypedPerFilterConfigTest, EmptyName) {
+  envoy::extensions::filters::http::fault::v3::HTTPFault fault_config;
+  fault_config.mutable_abort()->set_grpc_status(GRPC_STATUS_PERMISSION_DENIED);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)[""].PackFrom(fault_config);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[] error:filter name must be non-empty]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, EmptyConfig) {
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"];
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[fault].type_url error:field not present]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, UnsupportedFilterType) {
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(RouteConfiguration());
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[fault].value[envoy.config.route.v3.RouteConfiguration] "
+          "error:unsupported filter type]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterConfigInvalid) {
+  envoy::extensions::filters::http::fault::v3::HTTPFault fault_config;
+  fault_config.mutable_abort()->set_grpc_status(123);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(fault_config);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[fault].value[envoy.extensions.filters.http.fault.v3.HTTPFault]"
+          ".abort.grpc_status "
+          "error:invalid gRPC status code: 123]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
+  envoy::extensions::filters::http::fault::v3::HTTPFault fault_config;
+  fault_config.mutable_abort()->set_grpc_status(GRPC_STATUS_PERMISSION_DENIED);
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.mutable_config()->PackFrom(fault_config);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  ASSERT_EQ(typed_per_filter_config.size(), 1UL);
+  auto it = typed_per_filter_config.begin();
+  ASSERT_NE(it, typed_per_filter_config.end());
+  EXPECT_EQ("fault", it->first);
+  const auto& filter_config = it->second;
+  EXPECT_EQ(filter_config.config_proto_type_name,
+            "envoy.extensions.filters.http.fault.v3.HTTPFault");
+  EXPECT_EQ(filter_config.config.Dump(),
+            "{\"abortCode\":\"PERMISSION_DENIED\"}");
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperInTypedStruct) {
+  xds::type::v3::TypedStruct typed_struct;
+  typed_struct.set_type_url(
+      "types.googleapis.com/envoy.config.route.v3.FilterConfig");
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(typed_struct);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[fault].value[xds.type.v3.TypedStruct].value["
+          "envoy.config.route.v3.FilterConfig] "
+          "error:could not parse FilterConfig]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparseable) {
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  auto& any = (*typed_per_filter_config_proto)["fault"];
+  any.set_type_url("types.googleapis.com/envoy.config.route.v3.FilterConfig");
+  any.set_value(std::string("\0", 1));
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[fault].value[envoy.config.route.v3.FilterConfig] "
+          "error:could not parse FilterConfig]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperEmptyConfig) {
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(
+      envoy::config::route::v3::FilterConfig());
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[fault].value[envoy.config.route.v3.FilterConfig].config "
+          "error:field not present]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnsupportedFilterType) {
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.mutable_config()->PackFrom(RouteConfiguration());
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:",
+          FieldName(),
+          "[fault].value[envoy.config.route.v3.FilterConfig].config.value["
+          "envoy.config.route.v3.RouteConfiguration] "
+          "error:unsupported filter type]"))
+      << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest,
+       FilterConfigWrapperUnsupportedOptionalFilterType) {
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.mutable_config()->PackFrom(RouteConfiguration());
+  filter_config_wrapper.set_is_optional(true);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  EXPECT_THAT(typed_per_filter_config, ::testing::ElementsAre());
+}
+
+//
 // RLS tests
 //
 

@@ -592,7 +592,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     auto extension = ExtractXdsExtension(context, any, errors);
     if (!extension.has_value()) continue;
     auto* extension_to_use = &*extension;
-    XdsExtension nested_extension;
+    absl::optional<XdsExtension> nested_extension;
     bool is_optional = false;
     if (extension->type == "envoy.config.route.v3.FilterConfig") {
       absl::string_view* serialized_config =
@@ -610,11 +610,10 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       is_optional =
           envoy_config_route_v3_FilterConfig_is_optional(filter_config);
       any = envoy_config_route_v3_FilterConfig_config(filter_config);
-      ValidationErrors::ScopedField field(errors, ".config");
-      auto tmp_extension = ExtractXdsExtension(context, any, errors);
-      if (!tmp_extension.has_value()) continue;
-      nested_extension = std::move(*tmp_extension);
-      extension_to_use = &nested_extension;
+      extension->validation_fields.emplace_back(errors, ".config");
+      nested_extension = ExtractXdsExtension(context, any, errors);
+      if (!nested_extension.has_value()) continue;
+      extension_to_use = &*nested_extension;
     }
     const auto& http_filter_registry =
         static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
@@ -954,7 +953,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
         ValidationErrors::ScopedField field(errors,
                                             absl::StrCat(".domains[", j, "]"));
         errors->AddError(
-            absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
+            absl::StrCat("invalid domain pattern \"", domain_pattern, "\""));
       }
       vhost.domains.emplace_back(std::move(domain_pattern));
     }
