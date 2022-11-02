@@ -19,8 +19,8 @@ from typing import Optional
 import grpc
 
 
-def _sign_request(callback: grpc.AuthMetadataPluginCallback, token: Optional[str],
-                  error: Optional[Exception]):
+def _sign_request(callback: grpc.AuthMetadataPluginCallback,
+                  token: Optional[str], error: Optional[Exception]):
     metadata = (('authorization', 'Bearer {}'.format(token)),)
     callback(metadata, error)
 

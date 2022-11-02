@@ -21,6 +21,7 @@ import grpc
 from grpc._cython import cygrpc
 from grpc._typing import DeserializingFunction
 from grpc._typing import SerializingFunction
+from grpc._typing import ResponseType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ def decode(b: AnyStr) -> str:
 
 def _transform(message: Any, transformer: Union[SerializingFunction,
                                                 DeserializingFunction, None],
-               exception_message: str) -> Any:
+               exception_message: str) -> Union[ResponseType, bytes]:
     if transformer is None:
         return message
     else:
@@ -158,7 +159,7 @@ def wait(wait_fn: Callable[[float], None],
     return False
 
 
-def validate_port_binding_result(address: str, port: int) -> bool:
+def validate_port_binding_result(address: str, port: int) -> int:
     """Validates if the port binding succeed.
 
     If the port returned by Core is 0, the binding is failed. However, in that
