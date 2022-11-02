@@ -34,7 +34,7 @@
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/intercepted_channel.h>
-#include <grpcpp/impl/codegen/interceptor_common.h>
+#include <grpcpp/impl/interceptor_common.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/config.h>
