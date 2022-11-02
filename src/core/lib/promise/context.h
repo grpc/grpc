@@ -35,21 +35,20 @@ namespace promise_detail {
 template <typename T>
 class Context : public ContextType<T> {
  public:
-  explicit Context(T* p) : old_(*GetCurrent()) { *GetCurrent() = p; }
-  ~Context() { *GetCurrent() = old_; }
+  explicit Context(T* p) : old_(current_) { current_ = p; }
+  ~Context() { current_ = old_; }
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
 
-  static T* get() { return *GetCurrent(); }
+  static T* get() { return current_; }
 
  private:
   T* const old_;
-
-  static T** GetCurrent() {
-    static thread_local T* current;
-    return &current;
-  }
+  static thread_local T* current_;
 };
+
+template <typename T>
+thread_local T* Context<T>::current_;
 
 template <typename T, typename F>
 class WithContext {
