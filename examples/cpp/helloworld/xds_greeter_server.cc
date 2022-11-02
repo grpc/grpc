@@ -64,7 +64,7 @@ void RunServer() {
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   int port = absl::GetFlag(FLAGS_port);
   int maintenance_port = absl::GetFlag(FLAGS_maintenance_port);
-  grpc::experimental::XdsServerBuilder xds_builder;
+  grpc::XdsServerBuilder xds_builder;
   ServerBuilder builder;
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
@@ -75,9 +75,9 @@ void RunServer() {
   if (absl::GetFlag(FLAGS_secure)) {
     // Listen on the given address with XdsServerCredentials and a fallback of
     // InsecureServerCredentials
-    xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                                 grpc::experimental::XdsServerCredentials(
-                                     grpc::InsecureServerCredentials()));
+    xds_builder.AddListeningPort(
+        absl::StrCat("0.0.0.0:", port),
+        grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
     grpc::AddAdminServices(&builder);

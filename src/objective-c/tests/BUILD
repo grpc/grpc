@@ -194,6 +194,35 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "PerfTests-lib-Posix",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsNoCFStreamSSL.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "PerfTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsCFStreamSSL.m",
+        "PerfTests/PerfTestsCronet.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "UnitTests",
     deps = [
         ":APIv2Tests-lib",
@@ -231,6 +260,23 @@ grpc_objc_ios_unit_test(
     name = "CronetTests",
     deps = [
         "CronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTestsPosix",
+    deps = [
+        "PerfTests-lib-Posix",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTests",
+    env = {
+        "GRPC_CFSTREAM_RUN_LOOP": "1",
+    },
+    deps = [
+        "PerfTests-lib",
     ],
 )
 
