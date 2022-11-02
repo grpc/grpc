@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "absl/status/status.h"
+#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
