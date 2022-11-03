@@ -19,8 +19,8 @@ import threading
 import time
 from typing import Callable, Dict, Optional, Sequence
 
-import grpc
-from grpc import _common
+import grpc  # pytype: disable=pyi-error
+from grpc import _common  # pytype: disable=pyi-error
 from grpc._typing import DoneCallbackType
 
 _LOGGER = logging.getLogger(__name__)
@@ -173,7 +173,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._channel.unsubscribe(self._update)
 
 
-def channel_ready_future(channel: grpc.Channel) -> grpc.Future:
+def channel_ready_future(channel: grpc.Channel) -> _ChannelReadyFuture:
     ready_future = _ChannelReadyFuture(channel)
     ready_future.start()
     return ready_future

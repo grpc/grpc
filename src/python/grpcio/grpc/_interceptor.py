@@ -311,7 +311,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                metadata: Optional[MetadataType] = None,
                credentials: Optional[grpc.CallCredentials] = None,
                wait_for_ready: Optional[bool] = None,
-               compression: Optional[grpc.Compression] = None) -> _UnaryOutcome:
+               compression: Optional[grpc.Compression] = None) -> Any:
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
@@ -462,7 +462,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                metadata: Optional[MetadataType] = None,
                credentials: Optional[grpc.CallCredentials] = None,
                wait_for_ready: Optional[bool] = None,
-               compression: Optional[grpc.Compression] = None) -> _UnaryOutcome:
+               compression: Optional[grpc.Compression] = None) -> Any:
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
