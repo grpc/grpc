@@ -1285,6 +1285,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/detail/promise_factory.h )
   s.files += %w( src/core/lib/promise/detail/promise_like.h )
   s.files += %w( src/core/lib/promise/detail/status.h )
+  s.files += %w( src/core/lib/promise/detail/switch.h )
   s.files += %w( src/core/lib/promise/exec_ctx_wakeup_scheduler.h )
   s.files += %w( src/core/lib/promise/for_each.h )
   s.files += %w( src/core/lib/promise/intra_activity_waiter.h )

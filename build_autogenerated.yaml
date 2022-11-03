@@ -881,6 +881,7 @@ libs:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
@@ -2136,6 +2137,7 @@ libs:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
@@ -3760,6 +3762,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -5043,6 +5046,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -6310,6 +6314,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -6401,6 +6406,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
@@ -7723,6 +7729,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
@@ -7794,6 +7801,7 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
@@ -7840,6 +7848,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
@@ -8188,6 +8197,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -8500,6 +8510,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
@@ -8609,6 +8620,25 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: posix_engine_listener_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
+  - src/core/lib/iomgr/socket_mutator.h
+  src:
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  - src/core/lib/iomgr/socket_mutator.cc
+  - test/core/event_engine/posix/posix_engine_listener_utils_test.cc
   deps:
   - grpc_test_util
   platforms:
@@ -9215,6 +9245,7 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   src:
@@ -10810,6 +10841,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
@@ -10907,6 +10939,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/try_seq.h
   src:

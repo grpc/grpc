@@ -18,8 +18,12 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+# some extra pip packages are needed for the check_on_pr.py script to work
+# TODO(jtattermusch): avoid needing to install these pip packages each time
+time python3 -m pip install --user -r tools/internal_ci/helper_scripts/requirements.linux_perf.txt
 
-export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_performance_profile_summary_in_docker.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+CPUS=`python3 -c 'import multiprocessing; print(multiprocessing.cpu_count())'`
+
+tools/run_tests/start_port_server.py
+
+tools/run_tests/run_microbenchmark.py --collect summary --bq_result_table microbenchmarks.microbenchmarks
