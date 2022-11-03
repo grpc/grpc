@@ -595,6 +595,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/detail/switch.h",
+    ],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "basic_seq",
     external_deps = [
         "absl/meta:type_traits",
@@ -610,6 +619,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
+        "switch",
         "//:gpr_platform",
     ],
 )
@@ -1690,6 +1700,30 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_listener_utils",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_engine_listener_utils.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_engine_listener_utils.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "iomgr_port",
+        "posix_event_engine_tcp_socket_utils",
+        "socket_mutator",
+        "status_helper",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
     ],
 )
 

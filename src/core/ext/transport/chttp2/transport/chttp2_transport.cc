@@ -1395,6 +1395,9 @@ static void perform_stream_op_locked(void* stream_op,
         op_payload->recv_initial_metadata.recv_initial_metadata;
     s->trailing_metadata_available =
         op_payload->recv_initial_metadata.trailing_metadata_available;
+    if (s->parsed_trailers_only && s->trailing_metadata_available != nullptr) {
+      *s->trailing_metadata_available = true;
+    }
     if (op_payload->recv_initial_metadata.peer_string != nullptr) {
       gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
                         (gpr_atm)t->peer_string.c_str());
