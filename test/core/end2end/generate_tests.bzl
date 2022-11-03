@@ -37,6 +37,7 @@ def _fixture_options(
         supports_proxy_auth = False,
         supports_write_buffering = True,
         client_channel = True,
+        status_unavailable = False,
         supports_msvc = True,
         supports_retry = None,
         tags = []):
@@ -56,6 +57,7 @@ def _fixture_options(
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
+        status_unavailable = status_unavailable,
         supports_msvc = supports_msvc,
         _platforms = _platforms,
         supports_retry = supports_retry,
@@ -117,6 +119,7 @@ END2END_FIXTURES = {
     "h2_tls_static_async_tls1_3": _fixture_options(secure = True),
     "h2_tls_certwatch_sync_tls1_2": _fixture_options(secure = True),
     "h2_tls_certwatch_async_tls1_3": _fixture_options(secure = True),
+    "h2_tls_wrong_versions": _fixture_options(status_unavailable = True),
     "h2_local_abstract_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
@@ -179,6 +182,7 @@ def _test_options(
         needs_write_buffering = False,
         needs_client_channel = False,
         needs_retry = False,
+        status_unavailable = False,
         short_name = None,
         tags = [],
         exclude_pollers = []):
@@ -197,6 +201,7 @@ def _test_options(
         needs_write_buffering = needs_write_buffering,
         needs_client_channel = needs_client_channel,
         needs_retry = needs_retry,
+        status_unavailable = status_unavailable,
         short_name = short_name,
         tags = tags,
         exclude_pollers = exclude_pollers,
@@ -368,6 +373,7 @@ END2END_TESTS = {
     "simple_delayed_request": _test_options(needs_fullstack = True),
     "simple_metadata": _test_options(),
     "simple_request": _test_options(),
+    "status_unavailable": _test_options(status_unavailable = True),
     "streaming_error_response": _test_options(),
     "trailing_metadata": _test_options(),
     "authority_not_supported": _test_options(),
@@ -417,6 +423,8 @@ def _compatible(fopt, topt):
     if topt.needs_retry:
         if not fopt.supports_retry:
             return False
+    if topt.status_unavailable != fopt.status_unavailable:
+        return False
     return True
 
 def _platform_support_tags(fopt):

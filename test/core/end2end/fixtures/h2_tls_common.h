@@ -36,7 +36,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/tls_utils.h"
@@ -64,7 +63,10 @@ struct fullstack_secure_fixture_data {
     grpc_tls_certificate_verifier_release(server_verifier);
   }
   std::string localaddr;
-  grpc_tls_version tls_version;
+  grpc_tls_version channel_min_tls_version;
+  grpc_tls_version channel_max_tls_version;
+  grpc_tls_version server_min_tls_version;
+  grpc_tls_version server_max_tls_version;
   grpc_tls_certificate_provider* client_provider = nullptr;
   grpc_tls_certificate_provider* server_provider = nullptr;
   grpc_tls_certificate_verifier* client_verifier = nullptr;
@@ -72,15 +74,53 @@ struct fullstack_secure_fixture_data {
   bool check_call_host = true;
 };
 
-inline void SetTlsVersion(fullstack_secure_fixture_data* ffd,
-                          SecurityPrimitives::TlsVersion tls_version) {
-  switch (tls_version) {
+inline void SetChannelTlsVersion(
+    fullstack_secure_fixture_data* ffd,
+    SecurityPrimitives::TlsVersion min_tls_version,
+    SecurityPrimitives::TlsVersion max_tls_version) {
+  switch (min_tls_version) {
     case SecurityPrimitives::TlsVersion::V_12: {
-      ffd->tls_version = grpc_tls_version::TLS1_2;
+      ffd->channel_min_tls_version = grpc_tls_version::TLS1_2;
       break;
     }
     case SecurityPrimitives::TlsVersion::V_13: {
-      ffd->tls_version = grpc_tls_version::TLS1_3;
+      ffd->channel_min_tls_version = grpc_tls_version::TLS1_3;
+      break;
+    }
+  }
+  switch (max_tls_version) {
+    case SecurityPrimitives::TlsVersion::V_12: {
+      ffd->channel_max_tls_version = grpc_tls_version::TLS1_2;
+      break;
+    }
+    case SecurityPrimitives::TlsVersion::V_13: {
+      ffd->channel_max_tls_version = grpc_tls_version::TLS1_3;
+      break;
+    }
+  }
+}
+
+inline void SetServerTlsVersion(
+    fullstack_secure_fixture_data* ffd,
+    SecurityPrimitives::TlsVersion min_tls_version,
+    SecurityPrimitives::TlsVersion max_tls_version) {
+  switch (min_tls_version) {
+    case SecurityPrimitives::TlsVersion::V_12: {
+      ffd->server_min_tls_version = grpc_tls_version::TLS1_2;
+      break;
+    }
+    case SecurityPrimitives::TlsVersion::V_13: {
+      ffd->server_min_tls_version = grpc_tls_version::TLS1_3;
+      break;
+    }
+  }
+  switch (max_tls_version) {
+    case SecurityPrimitives::TlsVersion::V_12: {
+      ffd->server_max_tls_version = grpc_tls_version::TLS1_2;
+      break;
+    }
+    case SecurityPrimitives::TlsVersion::V_13: {
+      ffd->server_max_tls_version = grpc_tls_version::TLS1_3;
       break;
     }
   }
@@ -217,8 +257,10 @@ inline grpc_channel_credentials* create_tls_channel_credentials(
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_verify_server_cert(
       options, 1 /* = verify server certs */);
-  options->set_min_tls_version(ffd->tls_version);
-  options->set_max_tls_version(ffd->tls_version);
+  grpc_tls_credentials_options_set_min_tls_version(
+      options, ffd->channel_min_tls_version);
+  grpc_tls_credentials_options_set_max_tls_version(
+      options, ffd->channel_max_tls_version);
   // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->client_provider);
@@ -238,8 +280,10 @@ inline grpc_channel_credentials* create_tls_channel_credentials(
 inline grpc_server_credentials* create_tls_server_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
-  grpc_tls_credentials_options_set_min_tls_version(options, ffd->tls_version);
-  grpc_tls_credentials_options_set_max_tls_version(options, ffd->tls_version);
+  grpc_tls_credentials_options_set_min_tls_version(options,
+                                                   ffd->server_min_tls_version);
+  grpc_tls_credentials_options_set_max_tls_version(options,
+                                                   ffd->server_max_tls_version);
   // Set credential provider.
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         ffd->server_provider);

@@ -38,7 +38,10 @@ chttp2_create_fixture_hostname_verifier_cert_watcher(const grpc_channel_args*,
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-  SetTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_12);
+  SetChannelTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_12,
+                       SecurityPrimitives::TlsVersion::V_12);
+  SetServerTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_12,
+                      SecurityPrimitives::TlsVersion::V_12);
   SetCertificateProvider(ffd, SecurityPrimitives::ProviderType::FILE_PROVIDER);
   SetCertificateVerifier(ffd,
                          SecurityPrimitives::VerifierType::HOSTNAME_VERIFIER);

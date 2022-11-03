@@ -38,7 +38,10 @@ chttp2_create_fixture_async_verifier_cert_watcher(const grpc_channel_args*,
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-  SetTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_13);
+  SetChannelTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_13,
+                       SecurityPrimitives::TlsVersion::V_13);
+  SetServerTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_13,
+                      SecurityPrimitives::TlsVersion::V_13);
   SetCertificateProvider(ffd, SecurityPrimitives::ProviderType::FILE_PROVIDER);
   SetCertificateVerifier(
       ffd, SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);

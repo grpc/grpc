@@ -37,7 +37,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_async_verifier(
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-  SetTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_13);
+  SetChannelTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_13,
+                       SecurityPrimitives::TlsVersion::V_13);
+  SetServerTlsVersion(ffd, SecurityPrimitives::TlsVersion::V_13,
+                      SecurityPrimitives::TlsVersion::V_13);
   SetCertificateProvider(ffd,
                          SecurityPrimitives::ProviderType::STATIC_PROVIDER);
   SetCertificateVerifier(
