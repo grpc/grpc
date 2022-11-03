@@ -208,7 +208,7 @@ extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
 extern void status_unavailable(grpc_end2end_test_config config);
-extern void status_unavailable_pre_init();
+extern void status_unavailable_pre_init(void);
 extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
