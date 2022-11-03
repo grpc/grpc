@@ -8611,7 +8611,6 @@ targets:
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
   - src/core/lib/gprpp/load_file.h
-  - src/core/lib/iomgr/socket_mutator.h
   - test/core/event_engine/posix/posix_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
@@ -8621,7 +8620,6 @@ targets:
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
   - src/core/lib/gprpp/load_file.cc
-  - src/core/lib/iomgr/socket_mutator.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
@@ -10126,10 +10124,8 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
-  - src/core/lib/iomgr/socket_mutator.h
   src:
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-  - src/core/lib/iomgr/socket_mutator.cc
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
   - grpc_test_util
