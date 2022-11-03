@@ -1797,62 +1797,6 @@ TEST_P(XdsServerRdsTest, Basic) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()->at(0).add_domains("");
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Invalid domain pattern \"\""));
-}
-
-TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()->at(0).clear_domains();
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("VirtualHost has no domains"));
-}
-
-TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()->at(0).clear_routes();
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No route found in the virtual host"));
-}
-
-TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()
-      ->at(0)
-      .mutable_routes()
-      ->at(0)
-      .clear_match();
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Match can't be null"));
-}
-
 TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
   SetServerListenerNameAndRouteConfiguration(
       balancer_.get(), default_server_listener_, backends_[0]->port(),
