@@ -995,7 +995,7 @@ TEST_F(RouteMatchTest, PathMatchersInvalid) {
   route_proto->mutable_match()->set_path_separated_prefix("foo");
   route_proto->mutable_route()->set_cluster("cluster1");
   route_proto = vhost->add_routes();
-  route_proto->mutable_match()->mutable_safe_regex()->set_regex("/[");
+  route_proto->mutable_match()->mutable_safe_regex()->set_regex("[");
   route_proto->mutable_route()->set_cluster("cluster2");
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
@@ -1010,7 +1010,7 @@ TEST_F(RouteMatchTest, PathMatchersInvalid) {
             "error:invalid path specifier; "
             "field:virtual_hosts[0].routes[1].match "
             "error:error creating path matcher: "
-            "Invalid regex string specified in matcher.]")
+            "Invalid regex string specified in matcher: missing ]: []")
       << decode_result.resource.status();
 }
 
@@ -1359,7 +1359,7 @@ TEST_F(MaxStreamDurationTest, MaxStreamDurationInvalid) {
 
 using HashPolicyTest = XdsRouteConfigTest;
 
-TEST_F(HashPolicyTest, MinimumValidConfig) {
+TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -1370,19 +1370,27 @@ TEST_F(HashPolicyTest, MinimumValidConfig) {
   route_action_proto->set_cluster("cluster1");
   // hash policy 0: header "header0"
   auto* hash_policy_proto = route_action_proto->add_hash_policy();
-  hash_policy_proto->mutable_header()->set_header("header0");
-  // hash policy 1: header "header1" with regex_rewrite
+  hash_policy_proto->mutable_header()->set_header_name("header0");
+  // hash policy 1: header "header1" with regex_rewrite, terminal
   hash_policy_proto = route_action_proto->add_hash_policy();
   auto* header_proto = hash_policy_proto->mutable_header();
-  header_proto->set_header("header1");
+  header_proto->set_header_name("header1");
   auto* regex_rewrite_proto = header_proto->mutable_regex_rewrite();
   regex_rewrite_proto->mutable_pattern()->set_regex(".*");
   regex_rewrite_proto->set_substitution("substitution");
-  // hash policy 2: filter state "io.grpc.channel_id", terminal
-  auto* hash_policy_proto = route_action_proto->add_hash_policy();
-  hash_policy_proto->mutable_filter_state()->set_key("io.grpc.channel_id");
   hash_policy_proto->set_terminal(true);
-// FIXME: add hash policies that will be ignored
+  // hash policy 2: filter state "io.grpc.channel_id"
+  hash_policy_proto = route_action_proto->add_hash_policy();
+  hash_policy_proto->mutable_filter_state()->set_key("io.grpc.channel_id");
+  // hash policy 3: filter state with an unsupported key
+  hash_policy_proto = route_action_proto->add_hash_policy();
+  hash_policy_proto->mutable_filter_state()->set_key("unsupported_key");
+  // hash policy 4: cookie (unsupported)
+  route_action_proto->add_hash_policy()->mutable_cookie();
+  // hash policy 5: connection_properties (unsupported)
+  route_action_proto->add_hash_policy()->mutable_connection_properties();
+  // hash policy 6: query_parameter (unsupported)
+  route_action_proto->add_hash_policy()->mutable_query_parameter();
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1401,7 +1409,78 @@ TEST_F(HashPolicyTest, MinimumValidConfig) {
   ASSERT_NE(action, nullptr);
   auto& hash_policies = action->hash_policies;
   ASSERT_EQ(hash_policies.size(), 3UL);
-// FIXME: add validation
+  // hash policy 0: header "header0"
+  auto* header =
+      absl::get_if<
+          XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
+              &hash_policies[0].policy);
+  ASSERT_NE(header, nullptr);
+  EXPECT_EQ(header->header_name, "header0");
+  EXPECT_EQ(header->regex, nullptr);
+  EXPECT_EQ(header->regex_substitution, "");
+  EXPECT_FALSE(hash_policies[0].terminal);
+  // hash policy 1: header "header1" with regex_rewrite
+  header = absl::get_if<
+      XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
+          &hash_policies[1].policy);
+  ASSERT_NE(header, nullptr);
+  EXPECT_EQ(header->header_name, "header1");
+  ASSERT_NE(header->regex, nullptr);
+  EXPECT_EQ(header->regex->pattern(), ".*");
+  EXPECT_EQ(header->regex_substitution, "substitution");
+  EXPECT_TRUE(hash_policies[1].terminal);
+  // hash policy 2: filter state "io.grpc.channel_id", terminal
+  ASSERT_TRUE(absl::holds_alternative<
+      XdsRouteConfigResource::Route::RouteAction::HashPolicy::ChannelId>(
+          hash_policies[2].policy));
+  EXPECT_FALSE(hash_policies[2].terminal);
+}
+
+TEST_F(HashPolicyTest, InvalidPolicies) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* route_action_proto = route_proto->mutable_route();
+  route_action_proto->set_cluster("cluster1");
+  // empty header name
+  route_action_proto->add_hash_policy()->mutable_header();
+  // missing regex pattern
+  auto* header_proto = route_action_proto->add_hash_policy()->mutable_header();
+  header_proto->set_header_name("header1");
+  header_proto->mutable_regex_rewrite();
+  // missing regex pattern string
+  header_proto = route_action_proto->add_hash_policy()->mutable_header();
+  header_proto->set_header_name("header1");
+  header_proto->mutable_regex_rewrite()->mutable_pattern();
+  // invalid regex pattern string
+  header_proto = route_action_proto->add_hash_policy()->mutable_header();
+  header_proto->set_header_name("header2");
+  header_proto->mutable_regex_rewrite()->mutable_pattern()->set_regex("[");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].route.hash_policy[0].header"
+            ".header_name "
+            "error:must be non-empty; "
+            "field:virtual_hosts[0].routes[0].route.hash_policy[1].header"
+            ".regex_rewrite.pattern "
+            "error:field not present; "
+            "field:virtual_hosts[0].routes[0].route.hash_policy[2].header"
+            ".regex_rewrite.pattern.regex "
+            "error:field not present; "
+            "field:virtual_hosts[0].routes[0].route.hash_policy[3].header"
+            ".regex_rewrite.pattern.regex "
+            "error:errors compiling regex: missing ]: []")
+      << decode_result.resource.status();
 }
 
 //

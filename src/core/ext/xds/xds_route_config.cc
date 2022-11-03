@@ -122,13 +122,12 @@ std::string XdsRouteConfigResource::Route::Matchers::ToString() const {
 }
 
 //
-// XdsRouteConfigResource::Route::RouteAction::HashPolicy
+// XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header
 //
 
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
-    const HashPolicy& other)
-    : type(other.type),
-      header_name(other.header_name),
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::Header(
+    const Header& other)
+    : header_name(other.header_name),
       regex_substitution(other.regex_substitution) {
   if (other.regex != nullptr) {
     regex =
@@ -136,10 +135,9 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
   }
 }
 
-XdsRouteConfigResource::Route::RouteAction::HashPolicy&
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
-    const HashPolicy& other) {
-  type = other.type;
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header&
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator=(
+    const Header& other) {
   header_name = other.header_name;
   if (other.regex != nullptr) {
     regex =
@@ -149,58 +147,53 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
   return *this;
 }
 
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
-    HashPolicy&& other) noexcept
-    : type(other.type),
-      header_name(std::move(other.header_name)),
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::Header(
+    Header&& other) noexcept
+    : header_name(std::move(other.header_name)),
       regex(std::move(other.regex)),
       regex_substitution(std::move(other.regex_substitution)) {}
 
-XdsRouteConfigResource::Route::RouteAction::HashPolicy&
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
-    HashPolicy&& other) noexcept {
-  type = other.type;
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header&
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator=(
+    Header&& other) noexcept {
   header_name = std::move(other.header_name);
   regex = std::move(other.regex);
   regex_substitution = std::move(other.regex_substitution);
   return *this;
 }
 
-bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy::
-operator==(const HashPolicy& other) const {
-  if (type != other.type) return false;
-  if (type == Type::HEADER) {
-    if (regex == nullptr) {
-      if (other.regex != nullptr) return false;
-    } else {
-      if (other.regex == nullptr) return false;
-      return header_name == other.header_name &&
-             regex->pattern() == other.regex->pattern() &&
-             regex_substitution == other.regex_substitution;
-    }
+bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::
+operator==(const Header& other) const {
+  if (header_name != other.header_name) return false;
+  if (regex_substitution != other.regex_substitution) return false;
+  if (regex == nullptr) {
+    if (other.regex != nullptr) return false;
+  } else {
+    if (other.regex == nullptr) return false;
+    return regex->pattern() == other.regex->pattern();
   }
   return true;
 }
 
+std::string
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::ToString()
+    const {
+  return absl::StrCat(
+      "Header ", header_name, "/", (regex == nullptr) ? "" : regex->pattern(),
+      "/", regex_substitution);
+}
+
+//
+// XdsRouteConfigResource::Route::RouteAction::HashPolicy
+//
+
 std::string XdsRouteConfigResource::Route::RouteAction::HashPolicy::ToString()
     const {
-  std::vector<std::string> contents;
-  switch (type) {
-    case Type::HEADER:
-      contents.push_back("type=HEADER");
-      break;
-    case Type::CHANNEL_ID:
-      contents.push_back("type=CHANNEL_ID");
-      break;
-  }
-  contents.push_back(
-      absl::StrFormat("terminal=%s", terminal ? "true" : "false"));
-  if (type == Type::HEADER) {
-    contents.push_back(absl::StrFormat(
-        "Header %s:/%s/%s", header_name,
-        (regex == nullptr) ? "" : regex->pattern(), regex_substitution));
-  }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+  std::string type = Match(
+      policy, [](const Header& header) { return header.ToString(); },
+      [](const ChannelId&) -> std::string { return "ChannelId"; });
+  return absl::StrCat("{", type, ", terminal=", terminal ? "true" : "false",
+                      "}");
 }
 
 //
@@ -755,12 +748,12 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
              hash_policy)) != nullptr) {
       // header
       ValidationErrors::ScopedField field(errors, ".header");
-      policy.type =
-          XdsRouteConfigResource::Route::RouteAction::HashPolicy::Type::HEADER;
-      policy.header_name = UpbStringToStdString(
+      XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header
+          header_policy;
+      header_policy.header_name = UpbStringToStdString(
           envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
               header));
-      if (policy.header_name.empty()) {
+      if (header_policy.header_name.empty()) {
         ValidationErrors::ScopedField field(errors, ".header_name");
         errors->AddError("must be non-empty");
       }
@@ -777,6 +770,7 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
           errors->AddError("field not present");
           continue;
         }
+        ValidationErrors::ScopedField field2(errors, ".regex");
         std::string regex = UpbStringToStdString(
             envoy_type_matcher_v3_RegexMatcher_regex(pattern));
         if (regex.empty()) {
@@ -784,16 +778,18 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
           continue;
         }
         RE2::Options options;
-        policy.regex = std::make_unique<RE2>(regex, options);
-        if (!policy.regex->ok()) {
+        header_policy.regex = std::make_unique<RE2>(regex, options);
+        if (!header_policy.regex->ok()) {
           errors->AddError(
-              absl::StrCat("errors compiling regex: ", policy.regex->error()));
+              absl::StrCat("errors compiling regex: ",
+                           header_policy.regex->error()));
           continue;
         }
-        policy.regex_substitution = UpbStringToStdString(
+        header_policy.regex_substitution = UpbStringToStdString(
             envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
                 regex_rewrite));
       }
+      policy.policy = std::move(header_policy);
     } else if ((filter_state =
                     envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
                         hash_policy)) != nullptr) {
@@ -802,8 +798,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
           envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
               filter_state));
       if (key != "io.grpc.channel_id") continue;
-      policy.type = XdsRouteConfigResource::Route::RouteAction::HashPolicy::
-          Type::CHANNEL_ID;
+      policy.policy =
+          XdsRouteConfigResource::Route::RouteAction::HashPolicy::ChannelId();
     } else {
       // Unsupported hash policy type, ignore it.
       continue;

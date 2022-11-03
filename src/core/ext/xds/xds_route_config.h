@@ -103,26 +103,35 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
 
     struct RouteAction {
       struct HashPolicy {
-// FIXME: use absl::variant
-        enum Type { HEADER, CHANNEL_ID };
-        Type type;
+        struct Header {
+          std::string header_name;
+          std::unique_ptr<RE2> regex;
+          std::string regex_substitution;
+
+          Header() = default;
+
+          // Copyable.
+          Header(const Header& other);
+          Header& operator=(const Header& other);
+
+          // Movable.
+          Header(Header&& other) noexcept;
+          Header& operator=(Header&& other) noexcept;
+
+          bool operator==(const Header& other) const;
+          std::string ToString() const;
+        };
+
+        struct ChannelId {
+          bool operator==(const ChannelId&) const { return true; }
+        };
+
+        absl::variant<Header, ChannelId> policy;
         bool terminal = false;
-        // Fields used for type HEADER.
-        std::string header_name;
-        std::unique_ptr<RE2> regex = nullptr;
-        std::string regex_substitution;
 
-        HashPolicy() {}
-
-        // Copyable.
-        HashPolicy(const HashPolicy& other);
-        HashPolicy& operator=(const HashPolicy& other);
-
-        // Moveable.
-        HashPolicy(HashPolicy&& other) noexcept;
-        HashPolicy& operator=(HashPolicy&& other) noexcept;
-
-        bool operator==(const HashPolicy& other) const;
+        bool operator==(const HashPolicy& other) const {
+          return policy == other.policy && terminal == other.terminal;
+        }
         std::string ToString() const;
       };
 
