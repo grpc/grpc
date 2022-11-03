@@ -649,24 +649,21 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
 }
 
 absl::optional<uint64_t> HeaderHashHelper(
-    const XdsRouteConfigResource::Route::RouteAction::HashPolicy& policy,
+    const XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header&
+        header_policy,
     grpc_metadata_batch* initial_metadata) {
-  auto& header =
-      absl::get<XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
-          policy.policy);
   std::string value_buffer;
   absl::optional<absl::string_view> header_value = XdsRouting::GetHeaderValue(
-      initial_metadata, header.header_name, &value_buffer);
-  if (!header_value.has_value()) {
-    return absl::nullopt;
-  }
-  if (header.regex != nullptr) {
+      initial_metadata, header_policy.header_name, &value_buffer);
+  if (!header_value.has_value()) return absl::nullopt;
+  if (header_policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
     if (header_value->data() != value_buffer.data()) {
       value_buffer = std::string(*header_value);
     }
-    RE2::GlobalReplace(&value_buffer, *header.regex, header.regex_substitution);
+    RE2::GlobalReplace(&value_buffer, *header_policy.regex,
+                       header_policy.regex_substitution);
     header_value = value_buffer;
   }
   return XXH64(header_value->data(), header_value->size(), 0);
@@ -750,7 +747,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         hash_policy.policy,
         [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
                 Header& header) {
-          return HeaderHashHelper(hash_policy, args.initial_metadata);
+          return HeaderHashHelper(header, args.initial_metadata);
         },
         [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
                 ChannelId&) -> absl::optional<uint64_t> {
