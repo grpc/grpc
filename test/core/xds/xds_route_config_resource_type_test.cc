@@ -209,6 +209,25 @@ TEST_F(VirtualHostTest, NoDomainsSpecified) {
       << decode_result.resource.status();
 }
 
+TEST_F(VirtualHostTest, NoRoutesInVirtualHost) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes "
+            "error:no valid routes in VirtualHost]")
+      << decode_result.resource.status();
+}
+
 //
 // typed_per_filter_config tests
 //
@@ -850,12 +869,12 @@ TEST_F(RetryPolicyOverrideTest, RoutePolicyOverridesVhostPolicy) {
 }
 
 //
-// route tests
+// route match tests
 //
 
-using RouteTest = XdsRouteConfigTest;
+using RouteMatchTest = XdsRouteConfigTest;
 
-TEST_F(RouteTest, RouteMatchNotPresent) {
+TEST_F(RouteMatchTest, RouteMatchNotPresent) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -876,7 +895,7 @@ TEST_F(RouteTest, RouteMatchNotPresent) {
       << decode_result.resource.status();
 }
 
-TEST_F(RouteTest, PathMatchers) {
+TEST_F(RouteMatchTest, PathMatchers) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -967,7 +986,7 @@ TEST_F(RouteTest, PathMatchers) {
   EXPECT_EQ(cluster->cluster_name, "cluster3");
 }
 
-TEST_F(RouteTest, PathMatchersInvalid) {
+TEST_F(RouteMatchTest, PathMatchersInvalid) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -995,7 +1014,7 @@ TEST_F(RouteTest, PathMatchersInvalid) {
       << decode_result.resource.status();
 }
 
-TEST_F(RouteTest, HeaderMatchers) {
+TEST_F(RouteMatchTest, HeaderMatchers) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -1071,7 +1090,7 @@ TEST_F(RouteTest, HeaderMatchers) {
             "HeaderMatcher{header6 present=true}");
 }
 
-TEST_F(RouteTest, HeaderMatchersInvalid) {
+TEST_F(RouteMatchTest, HeaderMatchersInvalid) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -1105,7 +1124,7 @@ TEST_F(RouteTest, HeaderMatchersInvalid) {
       << decode_result.resource.status();
 }
 
-TEST_F(RouteTest, RuntimeFractionMatcher) {
+TEST_F(RouteMatchTest, RuntimeFractionMatcher) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -1161,7 +1180,7 @@ TEST_F(RouteTest, RuntimeFractionMatcher) {
       virtual_host.routes[3].matchers.fraction_per_million.has_value());
 }
 
-TEST_F(RouteTest, RuntimeFractionMatcherInvalid) {
+TEST_F(RouteMatchTest, RuntimeFractionMatcherInvalid) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -1190,11 +1209,110 @@ TEST_F(RouteTest, RuntimeFractionMatcherInvalid) {
       << decode_result.resource.status();
 }
 
-TEST_F(RouteTest, NoRoutesInVirtualHost) {
+//
+// RouteAction tests
+//
+
+using MaxStreamDurationTest = XdsRouteConfigTest;
+
+TEST_F(MaxStreamDurationTest, GrpcTimeoutHeaderMax) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
   vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* route_action_proto = route_proto->mutable_route();
+  route_action_proto->set_cluster("cluster1");
+  route_action_proto->mutable_max_stream_duration()->mutable_grpc_timeout_header_max()->set_seconds(3);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  EXPECT_EQ(action->max_stream_duration, Duration::Seconds(3));
+}
+
+TEST_F(MaxStreamDurationTest, MaxStreamDuration) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* route_action_proto = route_proto->mutable_route();
+  route_action_proto->set_cluster("cluster1");
+  route_action_proto->mutable_max_stream_duration()->mutable_max_stream_duration()->set_seconds(3);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  EXPECT_EQ(action->max_stream_duration, Duration::Seconds(3));
+}
+
+TEST_F(MaxStreamDurationTest, PrefersGrpcTimeoutHeaderMaxToMaxStreamDuration) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* route_action_proto = route_proto->mutable_route();
+  route_action_proto->set_cluster("cluster1");
+  route_action_proto->mutable_max_stream_duration()->mutable_grpc_timeout_header_max()->set_seconds(3);
+  route_action_proto->mutable_max_stream_duration()->mutable_max_stream_duration()->set_seconds(4);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  EXPECT_EQ(action->max_stream_duration, Duration::Seconds(3));
+}
+
+TEST_F(MaxStreamDurationTest, GrpcTimeoutHeaderMaxInvalid) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* route_action_proto = route_proto->mutable_route();
+  route_action_proto->set_cluster("cluster1");
+  route_action_proto->mutable_max_stream_duration()->mutable_grpc_timeout_header_max()->set_seconds(315576000001);
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1204,8 +1322,34 @@ TEST_F(RouteTest, NoRoutesInVirtualHost) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
             "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes "
-            "error:no valid routes in VirtualHost]")
+            "field:virtual_hosts[0].routes[0].route.max_stream_duration"
+            ".grpc_timeout_header_max.seconds "
+            "error:value must be in the range [0, 315576000000]]")
+      << decode_result.resource.status();
+}
+
+TEST_F(MaxStreamDurationTest, MaxStreamDurationInvalid) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* route_action_proto = route_proto->mutable_route();
+  route_action_proto->set_cluster("cluster1");
+  route_action_proto->mutable_max_stream_duration()->mutable_max_stream_duration()->set_seconds(315576000001);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].route.max_stream_duration"
+            ".max_stream_duration.seconds "
+            "error:value must be in the range [0, 315576000000]]")
       << decode_result.resource.status();
 }
 

@@ -916,12 +916,12 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
 
 absl::optional<XdsRouteConfigResource::Route> ParseRoute(
     const XdsResourceType::DecodeContext& context,
+    const envoy_config_route_v3_Route* route_proto,
     const absl::optional<XdsRouteConfigResource::RetryPolicy>&
         virtual_host_retry_policy,
     const XdsRouteConfigResource::ClusterSpecifierPluginMap&
         cluster_specifier_plugin_map,
     std::set<absl::string_view>* cluster_specifier_plugins_not_seen,
-    const envoy_config_route_v3_Route* route_proto,
     ValidationErrors* errors) {
   XdsRouteConfigResource::Route route;
   // Parse route match.
@@ -945,11 +945,10 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
     RouteRuntimeFractionParse(match, &route, errors);
   }
   // Parse route action.
-  if (envoy_config_route_v3_Route_has_route(route_proto)) {
+  const envoy_config_route_v3_RouteAction* route_action_proto =
+      envoy_config_route_v3_Route_route(route_proto);
+  if (route_action_proto != nullptr) {
     ValidationErrors::ScopedField field(errors, ".route");
-    const envoy_config_route_v3_RouteAction* route_action_proto =
-        envoy_config_route_v3_Route_route(route_proto);
-    GPR_ASSERT(route_action_proto != nullptr);
     auto route_action = RouteActionParse(
         context, route_action_proto, cluster_specifier_plugin_map, errors);
     if (!route_action.has_value()) return absl::nullopt;
@@ -970,6 +969,8 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
   } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                  route_proto)) {
     route.action = XdsRouteConfigResource::Route::NonForwardingAction();
+  } else {
+    // Leave route.action initialized to UnknownAction (its default).
   }
   // Parse typed_per_filter_config.
   {
@@ -1064,9 +1065,9 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
     for (size_t j = 0; j < num_routes; ++j) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", j, "]"));
       auto route = ParseRoute(
-          context, virtual_host_retry_policy,
+          context, routes[j], virtual_host_retry_policy,
           rds_update.cluster_specifier_plugin_map,
-          &cluster_specifier_plugins_not_seen, routes[j], errors);
+          &cluster_specifier_plugins_not_seen, errors);
       if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
     }
     if (errors->size() == original_error_size && vhost.routes.empty()) {
