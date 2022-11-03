@@ -543,9 +543,8 @@ void RouteRuntimeFractionParse(const envoy_config_route_v3_RouteMatch* match,
             runtime_fraction);
     if (fraction != nullptr) {
       uint32_t numerator = envoy_type_v3_FractionalPercent_numerator(fraction);
-      const auto denominator =
-          static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
-              envoy_type_v3_FractionalPercent_denominator(fraction));
+      const uint32_t denominator =
+          envoy_type_v3_FractionalPercent_denominator(fraction);
       // Normalize to million.
       switch (denominator) {
         case envoy_type_v3_FractionalPercent_HUNDRED:
