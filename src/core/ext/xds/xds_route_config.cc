@@ -351,9 +351,9 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
       ValidationErrors::ScopedField field(errors, ".name");
       errors->AddError(absl::StrCat("duplicate name \"", name, "\""));
     } else {
-      // Add a dummy entry in case we encounter an error later, just so we
+      // Add a sentinel entry in case we encounter an error later, just so we
       // don't generate duplicate errors for each route that uses this plugin.
-      cluster_specifier_plugin_map[name] = "<dummy>";
+      cluster_specifier_plugin_map[name] = "<sentinel>";
     }
     ValidationErrors::ScopedField field2(errors, ".typed_config");
     const google_protobuf_Any* any =
