@@ -129,7 +129,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   if (secure_mode) {
-    grpc::XdsServerBuilder xds_builder;
+    XdsServerBuilder xds_builder;
     xds_builder.RegisterService(&service);
     xds_builder.AddListeningPort(
         absl::StrCat("0.0.0.0:", port),
