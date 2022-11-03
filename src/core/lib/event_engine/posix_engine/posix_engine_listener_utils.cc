@@ -283,6 +283,9 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
   return assigned_port;
 
 #else
+  (void)listener_sockets;
+  (void)options;
+  (void)requested_port;
   GPR_ASSERT(false && "System does not support ifaddrs");
 #endif
 }
