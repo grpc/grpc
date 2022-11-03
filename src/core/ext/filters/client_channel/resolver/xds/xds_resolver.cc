@@ -748,13 +748,12 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
   for (const auto& hash_policy : route_action->hash_policies) {
     absl::optional<uint64_t> new_hash = Match(
         hash_policy.policy,
-        [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header&
-                header) {
+        [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
+                Header& header) {
           return HeaderHashHelper(hash_policy, args.initial_metadata);
         },
-        [&](const
-        XdsRouteConfigResource::Route::RouteAction::HashPolicy::ChannelId&)
-        -> absl::optional<uint64_t> {
+        [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
+                ChannelId&) -> absl::optional<uint64_t> {
           return resolver_->channel_id();
         });
     if (new_hash.has_value()) {

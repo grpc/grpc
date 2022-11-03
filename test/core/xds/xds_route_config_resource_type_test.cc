@@ -49,8 +49,8 @@
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "test/core/util/test_config.h"
 #include "test/core/util/scoped_env_var.h"
+#include "test/core/util/test_config.h"
 
 using envoy::config::route::v3::RouteConfiguration;
 using grpc::lookup::v1::RouteLookupClusterSpecifier;
@@ -247,10 +247,14 @@ class TypedPerFilterConfigScope {
   static std::string Name(
       const ::testing::TestParamInfo<TypedPerFilterConfigScope>& info) {
     switch (info.param.scope_) {
-      case kVirtualHost: return "VirtualHost";
-      case kRoute: return "Route";
-      case kWeightedCluster: return "WeightedCluster";
-      default: break;
+      case kVirtualHost:
+        return "VirtualHost";
+      case kRoute:
+        return "Route";
+      case kWeightedCluster:
+        return "WeightedCluster";
+      default:
+        break;
     }
     GPR_UNREACHABLE_CODE(return "UNKNOWN");
   }
@@ -277,16 +281,17 @@ class TypedPerFilterConfigTest
     switch (GetParam().scope()) {
       case TypedPerFilterConfigScope::kVirtualHost:
         return route_config->mutable_virtual_hosts(0)
-                   ->mutable_typed_per_filter_config();
+            ->mutable_typed_per_filter_config();
       case TypedPerFilterConfigScope::kRoute:
-        return route_config->mutable_virtual_hosts(0)->mutable_routes(0)
-                   ->mutable_typed_per_filter_config();
+        return route_config->mutable_virtual_hosts(0)
+            ->mutable_routes(0)
+            ->mutable_typed_per_filter_config();
       case TypedPerFilterConfigScope::kWeightedCluster: {
         auto* cluster = route_config->mutable_virtual_hosts(0)
-                   ->mutable_routes(0)
-                   ->mutable_route()
-                   ->mutable_weighted_clusters()
-                   ->add_clusters();
+                            ->mutable_routes(0)
+                            ->mutable_route()
+                            ->mutable_weighted_clusters()
+                            ->add_clusters();
         cluster->set_name("cluster1");
         cluster->mutable_weight()->set_value(1);
         return cluster->mutable_typed_per_filter_config();
@@ -307,10 +312,9 @@ class TypedPerFilterConfigTest
       case TypedPerFilterConfigScope::kWeightedCluster: {
         auto& action = absl::get<XdsRouteConfigResource::Route::RouteAction>(
             resource.virtual_hosts[0].routes[0].action);
-        auto& weighted_clusters =
-            absl::get<std::vector<
-                XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
-                    action.action);
+        auto& weighted_clusters = absl::get<std::vector<
+            XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
+            action.action);
         return weighted_clusters[0].typed_per_filter_config;
       }
       default:
@@ -388,10 +392,8 @@ TEST_P(TypedPerFilterConfigTest, EmptyName) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
-          "[] error:filter name must be non-empty]"))
+      absl::StrCat("errors validating RouteConfiguration resource: [field:",
+                   FieldName(), "[] error:filter name must be non-empty]"))
       << decode_result.resource.status();
 }
 
@@ -408,10 +410,8 @@ TEST_P(TypedPerFilterConfigTest, EmptyConfig) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       decode_result.resource.status().message(),
-      absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
-          "[fault].type_url error:field not present]"))
+      absl::StrCat("errors validating RouteConfiguration resource: [field:",
+                   FieldName(), "[fault].type_url error:field not present]"))
       << decode_result.resource.status();
 }
 
@@ -429,8 +429,7 @@ TEST_P(TypedPerFilterConfigTest, UnsupportedFilterType) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.RouteConfiguration] "
           "error:unsupported filter type]"))
       << decode_result.resource.status();
@@ -452,8 +451,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigInvalid) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.extensions.filters.http.fault.v3.HTTPFault]"
           ".abort.grpc_status "
           "error:invalid gRPC status code: 123]"))
@@ -507,8 +505,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperInTypedStruct) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[xds.type.v3.TypedStruct].value["
           "envoy.config.route.v3.FilterConfig] "
           "error:could not parse FilterConfig]"))
@@ -531,8 +528,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparseable) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.FilterConfig] "
           "error:could not parse FilterConfig]"))
       << decode_result.resource.status();
@@ -553,8 +549,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperEmptyConfig) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.FilterConfig].config "
           "error:field not present]"))
       << decode_result.resource.status();
@@ -576,8 +571,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnsupportedFilterType) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.FilterConfig].config.value["
           "envoy.config.route.v3.RouteConfiguration] "
           "error:unsupported filter type]"))
@@ -624,9 +618,12 @@ class RetryPolicyScope {
   static std::string Name(
       const ::testing::TestParamInfo<RetryPolicyScope>& info) {
     switch (info.param.scope_) {
-      case kVirtualHost: return "VirtualHost";
-      case kRoute: return "Route";
-      default: break;
+      case kVirtualHost:
+        return "VirtualHost";
+      case kRoute:
+        return "Route";
+      default:
+        break;
     }
     GPR_UNREACHABLE_CODE(return "UNKNOWN");
   }
@@ -635,9 +632,8 @@ class RetryPolicyScope {
   Scope scope_;
 };
 
-class RetryPolicyTest
-    : public XdsRouteConfigTest,
-      public ::testing::WithParamInterface<RetryPolicyScope> {
+class RetryPolicyTest : public XdsRouteConfigTest,
+                        public ::testing::WithParamInterface<RetryPolicyScope> {
  protected:
   RetryPolicyTest() {
     route_config_.set_name("foo");
@@ -654,9 +650,10 @@ class RetryPolicyTest
       case RetryPolicyScope::kVirtualHost:
         return route_config->mutable_virtual_hosts(0)->mutable_retry_policy();
       case RetryPolicyScope::kRoute:
-        return route_config->mutable_virtual_hosts(0)->mutable_routes(0)
-                   ->mutable_route()
-                   ->mutable_retry_policy();
+        return route_config->mutable_virtual_hosts(0)
+            ->mutable_routes(0)
+            ->mutable_route()
+            ->mutable_retry_policy();
       default:
         break;
     }
@@ -680,9 +677,8 @@ class RetryPolicyTest
 
 INSTANTIATE_TEST_SUITE_P(
     XdsRouteConfig, RetryPolicyTest,
-    ::testing::Values(
-        RetryPolicyScope(RetryPolicyScope::kVirtualHost),
-        RetryPolicyScope(RetryPolicyScope::kRoute)),
+    ::testing::Values(RetryPolicyScope(RetryPolicyScope::kVirtualHost),
+                      RetryPolicyScope(RetryPolicyScope::kRoute)),
     &RetryPolicyScope::Name);
 
 TEST_P(RetryPolicyTest, Empty) {
@@ -745,11 +741,11 @@ TEST_P(RetryPolicyTest, AllFields) {
   ASSERT_TRUE(action->retry_policy.has_value());
   const auto& retry_policy = *action->retry_policy;
   auto expected_codes = internal::StatusCodeSet()
-      .Add(GRPC_STATUS_CANCELLED)
-      .Add(GRPC_STATUS_DEADLINE_EXCEEDED)
-      .Add(GRPC_STATUS_INTERNAL)
-      .Add(GRPC_STATUS_RESOURCE_EXHAUSTED)
-      .Add(GRPC_STATUS_UNAVAILABLE);
+                            .Add(GRPC_STATUS_CANCELLED)
+                            .Add(GRPC_STATUS_DEADLINE_EXCEEDED)
+                            .Add(GRPC_STATUS_INTERNAL)
+                            .Add(GRPC_STATUS_RESOURCE_EXHAUSTED)
+                            .Add(GRPC_STATUS_UNAVAILABLE);
   EXPECT_EQ(retry_policy.retry_on, expected_codes)
       << "Actual: " << retry_policy.retry_on.ToString()
       << "\nExpected: " << expected_codes.ToString();
@@ -760,7 +756,8 @@ TEST_P(RetryPolicyTest, AllFields) {
 
 TEST_P(RetryPolicyTest, MaxIntervalDefaultsTo10xBaseInterval) {
   auto* retry_policy_proto = GetRetryPolicyProto(&route_config_);
-  retry_policy_proto->mutable_retry_back_off()->mutable_base_interval()
+  retry_policy_proto->mutable_retry_back_off()
+      ->mutable_base_interval()
       ->set_seconds(3);
   std::string serialized_resource;
   ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
@@ -801,10 +798,8 @@ TEST_P(RetryPolicyTest, InvalidValues) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
-          ".num_retries error:must be greater than 0; field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
+          ".num_retries error:must be greater than 0; field:", FieldName(),
           ".retry_back_off.base_interval.seconds "
           "error:value must be in the range [0, 315576000000]; field:",
           FieldName(),
@@ -826,8 +821,7 @@ TEST_P(RetryPolicyTest, MissingBaseInterval) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       absl::StrCat(
-          "errors validating RouteConfiguration resource: [field:",
-          FieldName(),
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
           ".retry_back_off.base_interval error:field not present]"))
       << decode_result.resource.status();
 }
@@ -843,8 +837,8 @@ TEST_F(RetryPolicyOverrideTest, RoutePolicyOverridesVhostPolicy) {
   auto* route_proto = vhost->add_routes();
   route_proto->mutable_match()->set_prefix("");
   route_proto->mutable_route()->set_cluster("cluster1");
-  route_proto->mutable_route()->mutable_retry_policy()
-      ->set_retry_on("cancelled");
+  route_proto->mutable_route()->mutable_retry_policy()->set_retry_on(
+      "cancelled");
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1133,26 +1127,26 @@ TEST_F(RouteMatchTest, RuntimeFractionMatcher) {
   auto* route_proto = vhost->add_routes();
   route_proto->mutable_route()->set_cluster("cluster1");
   route_proto->mutable_match()->set_prefix("");
-  auto* runtime_fraction_proto =
-      route_proto->mutable_match()->mutable_runtime_fraction()
-          ->mutable_default_value();
+  auto* runtime_fraction_proto = route_proto->mutable_match()
+                                     ->mutable_runtime_fraction()
+                                     ->mutable_default_value();
   runtime_fraction_proto->set_numerator(10);
   // Route 1: 10 per 10000
   route_proto = vhost->add_routes();
   route_proto->mutable_route()->set_cluster("cluster1");
   route_proto->mutable_match()->set_prefix("");
-  runtime_fraction_proto =
-      route_proto->mutable_match()->mutable_runtime_fraction()
-          ->mutable_default_value();
+  runtime_fraction_proto = route_proto->mutable_match()
+                               ->mutable_runtime_fraction()
+                               ->mutable_default_value();
   runtime_fraction_proto->set_numerator(10);
   runtime_fraction_proto->set_denominator(runtime_fraction_proto->TEN_THOUSAND);
   // Route 2: 10 per 1000000
   route_proto = vhost->add_routes();
   route_proto->mutable_route()->set_cluster("cluster1");
   route_proto->mutable_match()->set_prefix("");
-  runtime_fraction_proto =
-      route_proto->mutable_match()->mutable_runtime_fraction()
-          ->mutable_default_value();
+  runtime_fraction_proto = route_proto->mutable_match()
+                               ->mutable_runtime_fraction()
+                               ->mutable_default_value();
   runtime_fraction_proto->set_numerator(10);
   runtime_fraction_proto->set_denominator(runtime_fraction_proto->MILLION);
   // Route 3: runtime_fraction.default_value not set, so no fractional percent
@@ -1188,9 +1182,9 @@ TEST_F(RouteMatchTest, RuntimeFractionMatcherInvalid) {
   auto* route_proto = vhost->add_routes();
   route_proto->mutable_route()->set_cluster("cluster1");
   route_proto->mutable_match()->set_prefix("");
-  auto* runtime_fraction_proto =
-      route_proto->mutable_match()->mutable_runtime_fraction()
-          ->mutable_default_value();
+  auto* runtime_fraction_proto = route_proto->mutable_match()
+                                     ->mutable_runtime_fraction()
+                                     ->mutable_default_value();
   runtime_fraction_proto->set_numerator(10);
   runtime_fraction_proto->set_denominator(
       static_cast<envoy::type::v3::FractionalPercent_DenominatorType>(5));
@@ -1224,7 +1218,9 @@ TEST_F(MaxStreamDurationTest, GrpcTimeoutHeaderMax) {
   route_proto->mutable_match()->set_prefix("");
   auto* route_action_proto = route_proto->mutable_route();
   route_action_proto->set_cluster("cluster1");
-  route_action_proto->mutable_max_stream_duration()->mutable_grpc_timeout_header_max()->set_seconds(3);
+  route_action_proto->mutable_max_stream_duration()
+      ->mutable_grpc_timeout_header_max()
+      ->set_seconds(3);
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1253,7 +1249,9 @@ TEST_F(MaxStreamDurationTest, MaxStreamDuration) {
   route_proto->mutable_match()->set_prefix("");
   auto* route_action_proto = route_proto->mutable_route();
   route_action_proto->set_cluster("cluster1");
-  route_action_proto->mutable_max_stream_duration()->mutable_max_stream_duration()->set_seconds(3);
+  route_action_proto->mutable_max_stream_duration()
+      ->mutable_max_stream_duration()
+      ->set_seconds(3);
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1282,8 +1280,12 @@ TEST_F(MaxStreamDurationTest, PrefersGrpcTimeoutHeaderMaxToMaxStreamDuration) {
   route_proto->mutable_match()->set_prefix("");
   auto* route_action_proto = route_proto->mutable_route();
   route_action_proto->set_cluster("cluster1");
-  route_action_proto->mutable_max_stream_duration()->mutable_grpc_timeout_header_max()->set_seconds(3);
-  route_action_proto->mutable_max_stream_duration()->mutable_max_stream_duration()->set_seconds(4);
+  route_action_proto->mutable_max_stream_duration()
+      ->mutable_grpc_timeout_header_max()
+      ->set_seconds(3);
+  route_action_proto->mutable_max_stream_duration()
+      ->mutable_max_stream_duration()
+      ->set_seconds(4);
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1312,7 +1314,9 @@ TEST_F(MaxStreamDurationTest, GrpcTimeoutHeaderMaxInvalid) {
   route_proto->mutable_match()->set_prefix("");
   auto* route_action_proto = route_proto->mutable_route();
   route_action_proto->set_cluster("cluster1");
-  route_action_proto->mutable_max_stream_duration()->mutable_grpc_timeout_header_max()->set_seconds(315576000001);
+  route_action_proto->mutable_max_stream_duration()
+      ->mutable_grpc_timeout_header_max()
+      ->set_seconds(315576000001);
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1337,7 +1341,9 @@ TEST_F(MaxStreamDurationTest, MaxStreamDurationInvalid) {
   route_proto->mutable_match()->set_prefix("");
   auto* route_action_proto = route_proto->mutable_route();
   route_action_proto->set_cluster("cluster1");
-  route_action_proto->mutable_max_stream_duration()->mutable_max_stream_duration()->set_seconds(315576000001);
+  route_action_proto->mutable_max_stream_duration()
+      ->mutable_max_stream_duration()
+      ->set_seconds(315576000001);
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
@@ -1410,10 +1416,9 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   auto& hash_policies = action->hash_policies;
   ASSERT_EQ(hash_policies.size(), 3UL);
   // hash policy 0: header "header0"
-  auto* header =
-      absl::get_if<
-          XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
-              &hash_policies[0].policy);
+  auto* header = absl::get_if<
+      XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
+      &hash_policies[0].policy);
   ASSERT_NE(header, nullptr);
   EXPECT_EQ(header->header_name, "header0");
   EXPECT_EQ(header->regex, nullptr);
@@ -1422,7 +1427,7 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   // hash policy 1: header "header1" with regex_rewrite
   header = absl::get_if<
       XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
-          &hash_policies[1].policy);
+      &hash_policies[1].policy);
   ASSERT_NE(header, nullptr);
   EXPECT_EQ(header->header_name, "header1");
   ASSERT_NE(header->regex, nullptr);
@@ -1430,8 +1435,9 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   EXPECT_EQ(header->regex_substitution, "substitution");
   EXPECT_TRUE(hash_policies[1].terminal);
   // hash policy 2: filter state "io.grpc.channel_id", terminal
-  ASSERT_TRUE(absl::holds_alternative<
-      XdsRouteConfigResource::Route::RouteAction::HashPolicy::ChannelId>(
+  ASSERT_TRUE(
+      absl::holds_alternative<
+          XdsRouteConfigResource::Route::RouteAction::HashPolicy::ChannelId>(
           hash_policies[2].policy));
   EXPECT_FALSE(hash_policies[2].terminal);
 }
@@ -1523,9 +1529,9 @@ TEST_F(WeightedClusterTest, Basic) {
   auto* action =
       absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
-  auto* weighted_clusters =
-      absl::get_if<std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
-          &action->action);
+  auto* weighted_clusters = absl::get_if<
+      std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
+      &action->action);
   ASSERT_NE(weighted_clusters, nullptr);
   ASSERT_EQ(weighted_clusters->size(), 2UL);
   EXPECT_EQ((*weighted_clusters)[0].name, "cluster1");
@@ -1614,16 +1620,15 @@ TEST_F(RlsTest, Basic) {
       static_cast<XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(
       resource.cluster_specifier_plugin_map,
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              "rls",
-              "[{\"rls_experimental\":{"
-              "\"childPolicy\":[{\"cds_experimental\":{}}],"
-              "\"childPolicyConfigTargetFieldName\":\"cluster\","
-              "\"routeLookupConfig\":{"
-              "\"cacheSizeBytes\":\"1024\","
-              "\"grpcKeybuilders\":[{\"names\":[{\"service\":\"service\"}]}],"
-              "\"lookupService\":\"rls.example.com\"}}}]")));
+      ::testing::ElementsAre(::testing::Pair(
+          "rls",
+          "[{\"rls_experimental\":{"
+          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicyConfigTargetFieldName\":\"cluster\","
+          "\"routeLookupConfig\":{"
+          "\"cacheSizeBytes\":\"1024\","
+          "\"grpcKeybuilders\":[{\"names\":[{\"service\":\"service\"}]}],"
+          "\"lookupService\":\"rls.example.com\"}}}]")));
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   EXPECT_THAT(resource.virtual_hosts[0].domains, ::testing::ElementsAre("*"));
   EXPECT_THAT(resource.virtual_hosts[0].typed_per_filter_config,
@@ -1639,7 +1644,7 @@ TEST_F(RlsTest, Basic) {
   ASSERT_NE(action, nullptr);
   auto* plugin_name = absl::get_if<
       XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName>(
-          &action->action);
+      &action->action);
   ASSERT_NE(plugin_name, nullptr);
   EXPECT_EQ(plugin_name->cluster_specifier_plugin_name, "rls");
 }
@@ -1685,8 +1690,9 @@ TEST_F(RlsTest, ClusterSpecifierPluginsIgnoredWhenNotEnabled) {
   auto* action =
       absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
-  auto* cluster_name = absl::get_if<
-      XdsRouteConfigResource::Route::RouteAction::ClusterName>(&action->action);
+  auto* cluster_name =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
   ASSERT_NE(cluster_name, nullptr);
   EXPECT_EQ(cluster_name->cluster_name, "cluster1");
 }

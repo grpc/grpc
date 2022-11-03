@@ -162,8 +162,8 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator=(
   return *this;
 }
 
-bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::
-operator==(const Header& other) const {
+bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator==(
+    const Header& other) const {
   if (header_name != other.header_name) return false;
   if (regex_substitution != other.regex_substitution) return false;
   if (regex == nullptr) {
@@ -178,9 +178,9 @@ operator==(const Header& other) const {
 std::string
 XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::ToString()
     const {
-  return absl::StrCat(
-      "Header ", header_name, "/", (regex == nullptr) ? "" : regex->pattern(),
-      "/", regex_substitution);
+  return absl::StrCat("Header ", header_name, "/",
+                      (regex == nullptr) ? "" : regex->pattern(), "/",
+                      regex_substitution);
 }
 
 //
@@ -780,9 +780,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
         RE2::Options options;
         header_policy.regex = std::make_unique<RE2>(regex, options);
         if (!header_policy.regex->ok()) {
-          errors->AddError(
-              absl::StrCat("errors compiling regex: ",
-                           header_policy.regex->error()));
+          errors->AddError(absl::StrCat("errors compiling regex: ",
+                                        header_policy.regex->error()));
           continue;
         }
         header_policy.regex_substitution = UpbStringToStdString(
@@ -945,8 +944,8 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
       envoy_config_route_v3_Route_route(route_proto);
   if (route_action_proto != nullptr) {
     ValidationErrors::ScopedField field(errors, ".route");
-    auto route_action = RouteActionParse(
-        context, route_action_proto, cluster_specifier_plugin_map, errors);
+    auto route_action = RouteActionParse(context, route_action_proto,
+                                         cluster_specifier_plugin_map, errors);
     if (!route_action.has_value()) return absl::nullopt;
     // If the route does not have a retry policy but the vhost does,
     // use the vhost retry policy for this route.
@@ -954,9 +953,9 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
       route_action->retry_policy = virtual_host_retry_policy;
     }
     // Mark off plugins used in route action.
-    auto* cluster_specifier_action =
-        absl::get_if<XdsRouteConfigResource::Route::RouteAction::
-                         ClusterSpecifierPluginName>(&route_action->action);
+    auto* cluster_specifier_action = absl::get_if<
+        XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName>(
+        &route_action->action);
     if (cluster_specifier_action != nullptr) {
       cluster_specifier_plugins_not_seen->erase(
           cluster_specifier_action->cluster_specifier_plugin_name);
@@ -977,8 +976,7 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
         context, route_proto,
         envoy_config_route_v3_Route_typed_per_filter_config_next,
         envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
-        envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value,
-        errors);
+        envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value, errors);
   }
   return route;
 }
@@ -1060,10 +1058,9 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
         envoy_config_route_v3_VirtualHost_routes(virtual_hosts[i], &num_routes);
     for (size_t j = 0; j < num_routes; ++j) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", j, "]"));
-      auto route = ParseRoute(
-          context, routes[j], virtual_host_retry_policy,
-          rds_update.cluster_specifier_plugin_map,
-          &cluster_specifier_plugins_not_seen, errors);
+      auto route = ParseRoute(context, routes[j], virtual_host_retry_policy,
+                              rds_update.cluster_specifier_plugin_map,
+                              &cluster_specifier_plugins_not_seen, errors);
       if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
     }
     if (errors->size() == original_error_size && vhost.routes.empty()) {
