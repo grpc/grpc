@@ -76,19 +76,24 @@ class CompressionFilter : public ChannelFilter {
   }
 
  private:
+  // Compress one message synchronously.
   MessageHandle CompressMessage(MessageHandle message,
                                 grpc_compression_algorithm algorithm) const;
+  // Decompress one message synchronously.
   absl::StatusOr<MessageHandle> DecompressMessage(
       MessageHandle message, grpc_compression_algorithm algorithm,
       absl::optional<uint32_t> max_recv_message_length) const;
 
+  // Max receive message length, if set.
   absl::optional<uint32_t> max_recv_size_;
   size_t message_size_service_config_parser_index_;
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
   // Enabled compression algorithms.
   CompressionAlgorithmSet enabled_compression_algorithms_;
+  // Is compression enabled?
   bool enable_compression_;
+  // Is decompression enabled?
   bool enable_decompression_;
 };
 
