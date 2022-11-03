@@ -1167,9 +1167,9 @@ TEST_F(RouteMatchTest, RuntimeFractionMatcher) {
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   auto& virtual_host = resource.virtual_hosts.front();
   ASSERT_EQ(virtual_host.routes.size(), 4UL);
-  EXPECT_EQ(virtual_host.routes[0].matchers.fraction_per_million, 100000);
-  EXPECT_EQ(virtual_host.routes[1].matchers.fraction_per_million, 1000);
-  EXPECT_EQ(virtual_host.routes[2].matchers.fraction_per_million, 10);
+  EXPECT_EQ(virtual_host.routes[0].matchers.fraction_per_million, 100000U);
+  EXPECT_EQ(virtual_host.routes[1].matchers.fraction_per_million, 1000U);
+  EXPECT_EQ(virtual_host.routes[2].matchers.fraction_per_million, 10U);
   EXPECT_FALSE(
       virtual_host.routes[3].matchers.fraction_per_million.has_value());
 }
