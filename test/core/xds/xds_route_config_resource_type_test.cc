@@ -14,9 +14,12 @@
 // limitations under the License.
 //
 
+#include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
@@ -24,29 +27,40 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "re2/re2.h"
 #include "upb/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_route_config.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
+#include "src/proto/grpc/testing/xds/v3/base.pb.h"
+#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
+#include "src/proto/grpc/testing/xds/v3/percent.pb.h"
+#include "src/proto/grpc/testing/xds/v3/range.pb.h"
+#include "src/proto/grpc/testing/xds/v3/regex.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/util/scoped_env_var.h"

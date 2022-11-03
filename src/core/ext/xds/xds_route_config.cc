@@ -69,6 +69,8 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {

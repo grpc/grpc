@@ -21,10 +21,8 @@
 
 #include <map>
 #include <memory>
-#include <string>
 #include <utility>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "upb/arena.h"
 #include "upb/def.h"
