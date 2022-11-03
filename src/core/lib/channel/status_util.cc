@@ -119,7 +119,7 @@ namespace internal {
 
 std::string StatusCodeSet::ToString() const {
   std::vector<absl::string_view> codes;
-  for (int i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
     if (Contains(g_status_string_entries[i].status)) {
       codes.emplace_back(g_status_string_entries[i].str);
     }
