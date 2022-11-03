@@ -1,0 +1,5 @@
+bin
+obj
+*.lock.json
+net5_singlefile_publish
+
