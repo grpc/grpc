@@ -103,6 +103,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
 
     struct RouteAction {
       struct HashPolicy {
+// FIXME: use absl::variant
         enum Type { HEADER, CHANNEL_ID };
         Type type;
         bool terminal = false;

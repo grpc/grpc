@@ -1354,6 +1354,57 @@ TEST_F(MaxStreamDurationTest, MaxStreamDurationInvalid) {
 }
 
 //
+// hash policy tests
+//
+
+using HashPolicyTest = XdsRouteConfigTest;
+
+TEST_F(HashPolicyTest, MinimumValidConfig) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* route_action_proto = route_proto->mutable_route();
+  route_action_proto->set_cluster("cluster1");
+  // hash policy 0: header "header0"
+  auto* hash_policy_proto = route_action_proto->add_hash_policy();
+  hash_policy_proto->mutable_header()->set_header("header0");
+  // hash policy 1: header "header1" with regex_rewrite
+  hash_policy_proto = route_action_proto->add_hash_policy();
+  auto* header_proto = hash_policy_proto->mutable_header();
+  header_proto->set_header("header1");
+  auto* regex_rewrite_proto = header_proto->mutable_regex_rewrite();
+  regex_rewrite_proto->mutable_pattern()->set_regex(".*");
+  regex_rewrite_proto->set_substitution("substitution");
+  // hash policy 2: filter state "io.grpc.channel_id", terminal
+  auto* hash_policy_proto = route_action_proto->add_hash_policy();
+  hash_policy_proto->mutable_filter_state()->set_key("io.grpc.channel_id");
+  hash_policy_proto->set_terminal(true);
+// FIXME: add hash policies that will be ignored
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  auto& hash_policies = action->hash_policies;
+  ASSERT_EQ(hash_policies.size(), 3UL);
+// FIXME: add validation
+}
+
+//
 // RLS tests
 //
 
