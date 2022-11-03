@@ -38,8 +38,8 @@
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/time.h>
 

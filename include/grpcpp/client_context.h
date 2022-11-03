@@ -43,8 +43,8 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>

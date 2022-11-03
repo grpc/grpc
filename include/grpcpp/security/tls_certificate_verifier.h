@@ -27,8 +27,8 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/string_ref.h>
 

@@ -27,7 +27,7 @@
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
 #include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/string_ref.h>
 

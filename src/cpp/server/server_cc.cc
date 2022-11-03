@@ -50,12 +50,12 @@
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
 #include <grpcpp/impl/codegen/server_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/impl/service_type.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
