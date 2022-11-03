@@ -30,7 +30,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -48,6 +47,10 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/uri/uri_parser.h"
+
+#ifndef GRPC_NO_XDS
+#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
+#endif
 
 namespace grpc_core {
 
@@ -553,6 +556,7 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
   }
 };
 
+#ifndef GRPC_NO_XDS
 //
 // OobBackendMetricTestLoadBalancingPolicy
 //
@@ -674,6 +678,7 @@ class OobBackendMetricTestFactory : public LoadBalancingPolicyFactory {
  private:
   OobBackendMetricCallback cb_;
 };
+#endif  // !defined(GRPC_NO_XDS)
 
 //
 // FailLoadBalancingPolicy
@@ -776,11 +781,13 @@ void RegisterFixedAddressLoadBalancingPolicy(
       std::make_unique<FixedAddressFactory>());
 }
 
+#ifndef GRPC_NO_XDS
 void RegisterOobBackendMetricTestLoadBalancingPolicy(
     CoreConfiguration::Builder* builder, OobBackendMetricCallback cb) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<OobBackendMetricTestFactory>(std::move(cb)));
 }
+#endif
 
 void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
                                      absl::Status status,

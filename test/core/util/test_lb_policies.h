@@ -79,10 +79,12 @@ void RegisterFixedAddressLoadBalancingPolicy(
 using OobBackendMetricCallback =
     std::function<void(ServerAddress, const BackendMetricData&)>;
 
+#ifndef GRPC_NO_XDS
 // Registers an LB policy called "oob_backend_metric_test_lb" that invokes
 // cb for each OOB backend metric report on each subchannel.
 void RegisterOobBackendMetricTestLoadBalancingPolicy(
     CoreConfiguration::Builder* builder, OobBackendMetricCallback cb);
+#endif
 
 // Registers an LB policy called "fail_lb" that fails all picks with the
 // specified status.  If pick_counter is non-null, it will be

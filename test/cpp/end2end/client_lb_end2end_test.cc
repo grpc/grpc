@@ -2632,6 +2632,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   EXPECT_EQ(addresses_seen(), expected);
 }
 
+#ifndef GRPC_NO_XDS
 //
 // tests OOB backend metric API
 //
@@ -2742,6 +2743,7 @@ TEST_F(OobBackendMetricTest, Basic) {
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
 }
+#endif  // !defined(GRPC_NO_XDS)
 
 //
 // tests rewriting of control plane status codes

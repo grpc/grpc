@@ -25,12 +25,16 @@
 #include "absl/strings/string_view.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
+
+#ifndef GRPC_NO_XDS
 #include "xds/data/orca/v3/orca_load_report.upb.h"
+#endif
 
 namespace grpc_core {
 
 namespace {
 
+#ifndef GRPC_NO_XDS
 template <typename EntryType>
 std::map<absl::string_view, double> ParseMap(
     xds_data_orca_v3_OrcaLoadReport* msg,
@@ -51,12 +55,16 @@ std::map<absl::string_view, double> ParseMap(
   }
   return result;
 }
+#endif
 
 }  // namespace
 
 const BackendMetricData* ParseBackendMetricData(
     absl::string_view serialized_load_report,
     BackendMetricAllocatorInterface* allocator) {
+#ifdef GRPC_NO_XDS
+  return nullptr;
+#else
   upb::Arena upb_arena;
   xds_data_orca_v3_OrcaLoadReport* msg = xds_data_orca_v3_OrcaLoadReport_parse(
       serialized_load_report.data(), serialized_load_report.size(),
@@ -79,6 +87,7 @@ const BackendMetricData* ParseBackendMetricData(
           xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key,
           xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value, allocator);
   return backend_metric_data;
+#endif
 }
 
 }  // namespace grpc_core
