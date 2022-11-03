@@ -595,6 +595,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/detail/switch.h",
+    ],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "basic_seq",
     external_deps = [
         "absl/meta:type_traits",
@@ -610,6 +619,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
+        "switch",
         "//:gpr_platform",
     ],
 )
@@ -1694,6 +1704,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_listener_utils",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_engine_listener_utils.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_engine_listener_utils.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "iomgr_port",
+        "posix_event_engine_tcp_socket_utils",
+        "socket_mutator",
+        "status_helper",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine",
     srcs = ["lib/event_engine/posix_engine/posix_engine.cc"],
     hdrs = ["lib/event_engine/posix_engine/posix_engine.h"],
@@ -2070,15 +2104,12 @@ grpc_cc_library(
     hdrs = [
         "lib/service_config/service_config_parser.h",
     ],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "channel_args",
         "json",
+        "validation_errors",
         "//:gpr",
     ],
 )
@@ -3068,7 +3099,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
-        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -3082,9 +3112,12 @@ grpc_cc_library(
         "closure",
         "grpc_service_config",
         "json",
+        "json_args",
+        "json_object_loader",
         "service_config_parser",
         "slice_buffer",
         "status_helper",
+        "validation_errors",
         "//:channel_stack_builder",
         "//:config",
         "//:debug_location",
@@ -3098,11 +3131,11 @@ grpc_cc_library(
     name = "grpc_fault_injection_filter",
     srcs = [
         "ext/filters/fault_injection/fault_injection_filter.cc",
-        "ext/filters/fault_injection/service_config_parser.cc",
+        "ext/filters/fault_injection/fault_injection_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/fault_injection/fault_injection_filter.h",
-        "ext/filters/fault_injection/service_config_parser.h",
+        "ext/filters/fault_injection/fault_injection_service_config_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3119,12 +3152,13 @@ grpc_cc_library(
         "context",
         "grpc_service_config",
         "json",
-        "json_util",
+        "json_args",
+        "json_object_loader",
         "service_config_parser",
         "sleep",
-        "status_helper",
         "time",
         "try_seq",
+        "validation_errors",
         "//:config",
         "//:gpr",
         "//:grpc_base",
@@ -3147,7 +3181,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -3160,10 +3193,12 @@ grpc_cc_library(
         "grpc_rbac_engine",
         "grpc_service_config",
         "json",
-        "json_util",
+        "json_args",
+        "json_object_loader",
         "service_config_parser",
         "status_helper",
         "transport_fwd",
+        "validation_errors",
         "//:config",
         "//:debug_location",
         "//:gpr",
