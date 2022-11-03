@@ -838,10 +838,10 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     const envoy_config_route_v3_WeightedCluster_ClusterWeight* const* clusters =
         envoy_config_route_v3_WeightedCluster_clusters(weighted_clusters_proto,
                                                        &clusters_size);
-    for (size_t j = 0; j < clusters_size; ++j) {
+    for (size_t i = 0; i < clusters_size; ++i) {
       ValidationErrors::ScopedField field(errors,
-                                          absl::StrCat(".clusters[", j, "]"));
-      const auto* cluster_proto = clusters[j];
+                                          absl::StrCat(".clusters[", i, "]"));
+      const auto* cluster_proto = clusters[i];
       XdsRouteConfigResource::Route::RouteAction::ClusterWeight cluster;
       // name
       cluster.name = UpbStringToStdString(

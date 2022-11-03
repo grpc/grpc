@@ -1484,6 +1484,99 @@ TEST_F(HashPolicyTest, InvalidPolicies) {
 }
 
 //
+// WeightedCluster tests
+//
+
+using WeightedClusterTest = XdsRouteConfigTest;
+
+TEST_F(WeightedClusterTest, Basic) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* weighted_clusters_proto =
+      route_proto->mutable_route()->mutable_weighted_clusters();
+  auto* cluster_weight_proto = weighted_clusters_proto->add_clusters();
+  cluster_weight_proto->set_name("cluster1");
+  cluster_weight_proto->mutable_weight()->set_value(123);
+  cluster_weight_proto = weighted_clusters_proto->add_clusters();
+  cluster_weight_proto->set_name("cluster2");
+  cluster_weight_proto->mutable_weight()->set_value(0);  // Will be ignored.
+  cluster_weight_proto = weighted_clusters_proto->add_clusters();
+  cluster_weight_proto->set_name("cluster3");
+  cluster_weight_proto->mutable_weight()->set_value(456);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  auto* weighted_clusters =
+      absl::get_if<std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
+          &action->action);
+  ASSERT_NE(weighted_clusters, nullptr);
+  ASSERT_EQ(weighted_clusters->size(), 2UL);
+  EXPECT_EQ((*weighted_clusters)[0].name, "cluster1");
+  EXPECT_EQ((*weighted_clusters)[0].weight, 123);
+  EXPECT_EQ((*weighted_clusters)[1].name, "cluster3");
+  EXPECT_EQ((*weighted_clusters)[1].weight, 456);
+}
+
+TEST_F(WeightedClusterTest, Invalid) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  auto* weighted_clusters_proto =
+      route_proto->mutable_route()->mutable_weighted_clusters();
+  // Empty cluster name.
+  auto* cluster_weight_proto = weighted_clusters_proto->add_clusters();
+  cluster_weight_proto->set_name("");
+  cluster_weight_proto->mutable_weight()->set_value(123);
+  // Weight not present.
+  weighted_clusters_proto->add_clusters()->set_name("cluster1");
+  // Second route has only a cluster with 0 weight.
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  cluster_weight_proto =
+      route_proto->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  cluster_weight_proto->set_name("cluster1");
+  cluster_weight_proto->mutable_weight()->set_value(0);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating RouteConfiguration resource: ["
+            "field:virtual_hosts[0].routes[0].route.weighted_clusters"
+            ".clusters[0].name "
+            "error:must be non-empty; "
+            "field:virtual_hosts[0].routes[0].route.weighted_clusters"
+            ".clusters[1].weight "
+            "error:field not present; "
+            "field:virtual_hosts[0].routes[1].route.weighted_clusters "
+            "error:no valid clusters specified]")
+      << decode_result.resource.status();
+}
+
+//
 // RLS tests
 //
 
