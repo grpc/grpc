@@ -842,6 +842,18 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
                                           absl::StrCat(".clusters[", i, "]"));
       const auto* cluster_proto = clusters[i];
       XdsRouteConfigResource::Route::RouteAction::ClusterWeight cluster;
+      // typed_per_filter_config
+      {
+        ValidationErrors::ScopedField field(errors, ".typed_per_filter_config");
+        cluster.typed_per_filter_config = ParseTypedPerFilterConfig<
+            envoy_config_route_v3_WeightedCluster_ClusterWeight,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
+            context, cluster_proto,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
+            errors);
+      }
       // name
       cluster.name = UpbStringToStdString(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_name(
@@ -859,18 +871,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
         errors->AddError("field not present");
       } else {
         cluster.weight = google_protobuf_UInt32Value_value(weight_proto);
+        if (cluster.weight == 0) continue;
       }
-      if (cluster.weight == 0) continue;
-      // typed_per_filter_config
-      ValidationErrors::ScopedField field2(errors, ".typed_per_filter_config");
-      cluster.typed_per_filter_config = ParseTypedPerFilterConfig<
-          envoy_config_route_v3_WeightedCluster_ClusterWeight,
-          envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
-          context, cluster_proto,
-          envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
-          envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
-          envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
-          errors);
       // Add entry to WeightedClusters.
       action_weighted_clusters.emplace_back(std::move(cluster));
     }
