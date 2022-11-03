@@ -23,6 +23,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -159,12 +160,35 @@ bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
 bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
                         EventEngine::ResolvedAddress* resolved_addr6_out);
 
-// Converts a EventEngine::ResolvedAddress into a newly-allocated human-readable
-// string.
+// Make wild card IPv6 address with specified port.
+EventEngine::ResolvedAddress SockaddrMakeWild6(int port);
+
+// Make wild card IPv4 address with specified port.
+EventEngine::ResolvedAddress SockaddrMakeWild4(int port);
+
+// Given a resolved address, return the port number in the address.
+int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr);
+
+// Modifes the passed address to use the specified port number. The
+// operation would only succeed if the passed address is an IPv4 or Ipv6
+// address. Otherwise the function call would abort fail.
+void SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port);
+
+// Unlink the path pointed to by the given address if it refers to UDS path.
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr);
+
+// Returns the port number associated with the address if the given address is
+// not a wildcard ipv6 or ipv6 address. Otherwise returns absl::nullopt
+absl::optional<int> SockaddrIsWildcard(
+    const EventEngine::ResolvedAddress& addr);
+
+// Converts a EventEngine::ResolvedAddress into a newly-allocated
+// human-readable string.
 //
-// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
-// If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
-// displayed as plain IPv4.
+// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are
+// recognized. If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6
+// addresses are displayed as plain IPv4.
 absl::StatusOr<std::string> SockaddrToString(
     const EventEngine::ResolvedAddress* resolved_addr, bool normalize);
 

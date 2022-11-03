@@ -93,15 +93,31 @@ RUN apt-get update && apt-get -y install openjdk-8-jdk && apt-get clean
 
 # Install Android SDK
 ENV ANDROID_SDK_VERSION 4333796
-RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk &&     wget -q https://dl.google.com/android/repository/sdk-tools-linux-$ANDROID_SDK_VERSION.zip &&     unzip -q sdk-tools-linux-$ANDROID_SDK_VERSION.zip &&     rm sdk-tools-linux-$ANDROID_SDK_VERSION.zip
+RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
+    wget -q https://dl.google.com/android/repository/sdk-tools-linux-$ANDROID_SDK_VERSION.zip && \
+    unzip -q sdk-tools-linux-$ANDROID_SDK_VERSION.zip && \
+    rm sdk-tools-linux-$ANDROID_SDK_VERSION.zip
 ENV ANDROID_SDK_PATH /opt/android-sdk
-
-# Install Android NDK and cmake using sdkmanager
-RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
+ENV ANDROID_HOME /opt/android-sdk
 RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
+
+# Install ndk-bundle and cmake using sdkmanager
+RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
 RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.6.4111459'
-ENV ANDROID_NDK_PATH $ANDROID_SDK_PATH/ndk-bundle
-ENV ANDROID_SDK_CMAKE $ANDROID_SDK_PATH/cmake/3.6.4111459/bin/cmake
+
+# Install Android NDK
+RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip && \
+    unzip -q android-ndk.zip -d /opt && \
+    rm -f android-ndk.zip
+ENV ANDROID_NDK_PATH /opt/android-ndk-r16b
+ENV ANDROID_NDK_HOME /opt/android-ndk-r16b
+
+# Install gcloud
+RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && \
+    tar -xf google-cloud-cli-407.0.0-linux-x86_64.tar.gz && \
+    ./google-cloud-sdk/install.sh --bash-completion=false --path-update=true && \
+    rm -rf google-cloud-cli-407.0.0-linux-x86_64.tar.gz
+RUN ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
 
 # Define the default command.
 CMD ["bash"]
