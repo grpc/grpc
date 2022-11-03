@@ -1204,7 +1204,7 @@ TEST_F(RouteMatchTest, RuntimeFractionMatcherInvalid) {
 }
 
 //
-// RouteAction tests
+// MaxStreamDuration tests
 //
 
 using MaxStreamDurationTest = XdsRouteConfigTest;
