@@ -20,7 +20,6 @@ from typing import Any, AnyStr, Callable, Optional, Union
 import grpc
 from grpc._cython import cygrpc
 from grpc._typing import DeserializingFunction
-from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,7 +82,7 @@ def decode(b: AnyStr) -> str:
 
 def _transform(message: Any, transformer: Union[SerializingFunction,
                                                 DeserializingFunction, None],
-               exception_message: str) -> Union[ResponseType, bytes]:
+               exception_message: str) -> Any:
     if transformer is None:
         return message
     else:
@@ -99,7 +98,7 @@ def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
 
 
 def deserialize(serialized_message: bytes,
-                deserializer: Optional[DeserializingFunction]) -> ResponseType:
+                deserializer: Optional[DeserializingFunction]) -> Any:
     return _transform(serialized_message, deserializer,
                       'Exception deserializing message!')
 

@@ -173,7 +173,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._channel.unsubscribe(self._update)
 
 
-def channel_ready_future(channel: grpc.Channel) -> _ChannelReadyFuture:
+def channel_ready_future(channel: grpc.Channel) -> grpc.Future:
     ready_future = _ChannelReadyFuture(channel)
     ready_future.start()
     return ready_future

@@ -19,8 +19,8 @@ from grpc._cython.cygrpc import EOF
 
 RequestType = TypeVar('RequestType')
 ResponseType = TypeVar('ResponseType')
-SerializingFunction = Callable[[RequestType], bytes]
-DeserializingFunction = Callable[[bytes], ResponseType]
+SerializingFunction = Callable[[Any], bytes]
+DeserializingFunction = Callable[[bytes], Any]
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 EOFType = type(EOF)
