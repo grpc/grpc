@@ -91,8 +91,8 @@ class TestCsds(unittest.TestCase):
 
         # Force the XdsClient to initialize and request a resource
         with self.assertRaises(grpc.RpcError) as rpc_error:
-            dummy_channel.unary_unary('')(b'', wait_for_ready=False)
-        self.assertEqual(grpc.StatusCode.UNAVAILABLE,
+            dummy_channel.unary_unary('')(b'', wait_for_ready=False, timeout=1)
+        self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
                          rpc_error.exception.code())
 
         # The resource request will fail with DOES_NOT_EXIST (after 15s)
@@ -105,14 +105,13 @@ class TestCsds(unittest.TestCase):
                     if "listenerConfig" in xds_config:
                         listener = xds_config["listenerConfig"][
                             "dynamicListeners"][0]
-                        if listener['clientStatus'] == 'DOES_NOT_EXIST':
+                        if listener['clientStatus'] == 'REQUESTED':
                             ok = True
                             break
                 for generic_xds_config in config["config"][0].get(
                         "genericXdsConfigs", []):
                     if "Listener" in generic_xds_config["typeUrl"]:
-                        if generic_xds_config[
-                                'clientStatus'] == 'DOES_NOT_EXIST':
+                        if generic_xds_config['clientStatus'] == 'REQUESTED':
                             ok = True
                             break
             except KeyError as e:

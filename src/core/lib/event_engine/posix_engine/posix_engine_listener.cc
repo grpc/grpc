@@ -16,8 +16,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 
-#include <unistd.h>
-
 #include <string>
 #include <utility>
 
@@ -32,6 +30,7 @@
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
 #include <sys/socket.h>  // IWYU pragma: keep
+#include <unistd.h>      // IWYU pragma: keep
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"

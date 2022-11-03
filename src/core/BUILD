@@ -595,6 +595,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/detail/switch.h",
+    ],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "basic_seq",
     external_deps = [
         "absl/meta:type_traits",
@@ -610,6 +619,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
+        "switch",
         "//:gpr_platform",
     ],
 )

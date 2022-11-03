@@ -227,8 +227,7 @@ int Accept4(int sockfd,
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  int ret = accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
-  return ret;
+  return accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
 }
 
 #endif /* GRPC_LINUX_SOCKETUTILS */

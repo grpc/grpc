@@ -3381,6 +3381,7 @@ foreach(_hdr
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_hook.h
+  include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/channel_interface.h
@@ -3463,6 +3464,7 @@ foreach(_hdr
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
+  include/grpcpp/support/callback_common.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
@@ -4053,6 +4055,7 @@ foreach(_hdr
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_hook.h
+  include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/channel_interface.h
@@ -4133,6 +4136,7 @@ foreach(_hdr
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
+  include/grpcpp/support/callback_common.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h

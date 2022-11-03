@@ -43,8 +43,8 @@
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
