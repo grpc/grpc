@@ -20,8 +20,6 @@
 
 #include <string>
 
-#include "h2_tls_common.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
