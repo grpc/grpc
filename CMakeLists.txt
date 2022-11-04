@@ -14876,7 +14876,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(posix_engine_listener_utils_test
     src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-    src/core/lib/iomgr/socket_mutator.cc
     test/core/event_engine/posix/posix_engine_listener_utils_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
