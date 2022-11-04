@@ -400,7 +400,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
-  /// run. Unilke the overloaded \a Closure alternative, the absl::AnyInvocable
+  /// run. Unlike the overloaded \a Closure alternative, the absl::AnyInvocable
   /// version's \a closure will be deleted by the EventEngine after the closure
   /// has been run, or upon cancellation.
   ///

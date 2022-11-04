@@ -2261,6 +2261,7 @@ grpc_cc_library(
         "//src/core:lib/transport/handshaker.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/status",
         "absl/strings:str_format",
@@ -2272,6 +2273,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "debug_location",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -2281,6 +2283,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:slice_buffer",

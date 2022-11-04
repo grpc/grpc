@@ -27,7 +27,9 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "handshaker.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -35,12 +37,15 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_handshaker_trace(false, "handshaker");
 
@@ -58,16 +63,19 @@ std::string HandshakerArgsString(HandshakerArgs* args) {
 
 }  // namespace
 
-HandshakeManager::HandshakeManager() {}
+HandshakeManager::HandshakeManager()
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)
+                     ? "HandshakeManager"
+                     : nullptr) {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
+  MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     gpr_log(
         GPR_INFO,
         "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
         this, handshaker->name(), handshaker.get(), handshakers_.size());
   }
-  MutexLock lock(&mu_);
   handshakers_.push_back(std::move(handshaker));
 }
 
@@ -128,7 +136,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
-    grpc_timer_cancel(&deadline_timer_);
+    GetDefaultEventEngine()->Cancel(deadline_timer_handle_);
     ExecCtx::Run(DEBUG_LOCATION, &on_handshake_done_, error);
     is_shutdown_ = true;
   } else {
@@ -161,11 +169,9 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
   }
 }
 
-void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
+void HandshakeManager::OnTimeoutFn(void* arg) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
-  if (error.ok()) {  // Timer fired, rather than being cancelled
-    mgr->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
-  }
+  mgr->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
   mgr->Unref();
 }
 
@@ -201,10 +207,11 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     GRPC_CLOSURE_INIT(&on_handshake_done_, on_handshake_done, &args_,
                       grpc_schedule_on_exec_ctx);
     // Start deadline timer, which owns a ref.
-    Ref().release();
-    GRPC_CLOSURE_INIT(&on_timeout_, &HandshakeManager::OnTimeoutFn, this,
-                      grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&deadline_timer_, deadline, &on_timeout_);
+    const Duration time_to_deadline = deadline - Timestamp::Now();
+    deadline_timer_handle_ = GetDefaultEventEngine()->RunAfter(
+        time_to_deadline, [self = Ref()]() mutable {
+          HandshakeManager::OnTimeoutFn(self.release());
+        });
     // Start first handshaker, which also owns a ref.
     Ref().release();
     done = CallNextHandshakerLocked(absl::OkStatus());
