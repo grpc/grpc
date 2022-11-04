@@ -109,13 +109,13 @@ trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
 time ../test-infra/bin/prepare_prebuilt_workers \
-    -l "cxx:${GRPC_CORE_GITREF}" \
+    -l "cxx:${GRPC_GITREF}" \
     -l "dotnet:${GRPC_DOTNET_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
-    -l "php7:${GRPC_CORE_GITREF}" \
-    -l "python:${GRPC_CORE_GITREF}" \
-    -l "ruby:${GRPC_CORE_GITREF}" \
+    -l "php7:${GRPC_GITREF}" \
+    -l "python:${GRPC_GITREF}" \
+    -l "ruby:${GRPC_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
