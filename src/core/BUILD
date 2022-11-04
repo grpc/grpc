@@ -946,6 +946,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "basic_seq",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "experiments",
@@ -1856,7 +1857,6 @@ grpc_cc_library(
     external_deps = ["absl/functional:any_invocable"],
     deps = [
         "channel_args",
-        "channel_args_preconditioning",
         "context",
         "default_event_engine_factory",
         "event_engine_trace",
@@ -3080,7 +3080,6 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "slice",
         "//:channel_stack_builder",
@@ -3226,6 +3225,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3534,7 +3534,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "ref_counted",
         "useful",
@@ -3589,7 +3588,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:uri_parser",
-        "//:xds_client",
     ],
 )
 
@@ -3671,7 +3669,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:work_serializer",
-        "//:xds_client",
     ],
 )
 
@@ -3923,7 +3920,6 @@ grpc_cc_library(
         "json",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
         "subchannel_interface",
         "//:config",
         "//:debug_location",
@@ -3962,7 +3958,6 @@ grpc_cc_library(
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
         "subchannel_interface",
         "unique_type_name",
         "validation_errors",
@@ -3998,7 +3993,6 @@ grpc_cc_library(
         "json",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
         "subchannel_interface",
         "//:config",
         "//:debug_location",
@@ -4161,7 +4155,6 @@ grpc_cc_library(
         "//:src/cpp/server/load_reporter/constants.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -4175,7 +4168,6 @@ grpc_cc_library(
     deps = [
         "arena_promise",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "context",
         "grpc_sockaddr",

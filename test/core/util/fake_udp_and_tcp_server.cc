@@ -18,6 +18,7 @@
 
 #include "test/core/util/fake_udp_and_tcp_server.h"
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <string.h>
 

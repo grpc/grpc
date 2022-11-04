@@ -26,7 +26,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstdint>
 #include <memory>
 #include <new>
 #include <string>
@@ -35,7 +34,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"

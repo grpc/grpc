@@ -18,8 +18,8 @@
 
 #include <atomic>
 #include <chrono>
-#include <cstdint>
 #include <limits>
+#include <ratio>
 #include <string>
 #include <utility>
 

@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <arpa/inet.h>
+
 #include <algorithm>
 #include <vector>
 

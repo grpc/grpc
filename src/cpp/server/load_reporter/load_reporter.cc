@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <iterator>

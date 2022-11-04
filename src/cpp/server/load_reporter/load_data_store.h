@@ -24,7 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>

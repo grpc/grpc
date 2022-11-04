@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/select.h>
 
@@ -20,6 +21,7 @@
 #include <chrono>
 #include <cstring>
 #include <memory>
+#include <ratio>
 #include <string>
 #include <vector>
 

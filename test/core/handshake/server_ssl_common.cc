@@ -18,6 +18,7 @@
 
 #include "test/core/handshake/server_ssl_common.h"
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>

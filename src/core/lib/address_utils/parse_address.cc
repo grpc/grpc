@@ -20,6 +20,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

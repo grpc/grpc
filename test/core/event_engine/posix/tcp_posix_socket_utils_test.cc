@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>

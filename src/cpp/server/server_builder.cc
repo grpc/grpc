@@ -45,7 +45,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/server_interceptor.h>
 
 #include "src/core/lib/gpr/string.h"

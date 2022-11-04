@@ -17,7 +17,6 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <cstdint>
 #include <deque>
 #include <functional>
 #include <limits>
