@@ -1364,6 +1364,16 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     seen_ops |= (1u << ops[i].op);
   }
 
+  if (!is_client() &&
+      (seen_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER)) != 0 &&
+      (seen_ops & ((1u << GRPC_OP_RECV_MESSAGE) |
+                   (1u << GRPC_OP_RECV_CLOSE_ON_SERVER))) != 0) {
+    gpr_log(GPR_ERROR,
+            "******************* SEND_STATUS WITH RECV_MESSAGE "
+            "*******************");
+    return GRPC_CALL_ERROR;
+  }
+
   GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
 
   if (nops == 0) {
