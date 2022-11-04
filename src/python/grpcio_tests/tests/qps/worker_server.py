@@ -17,6 +17,7 @@ import multiprocessing
 import random
 import threading
 import time
+import resource
 
 import grpc
 
@@ -32,36 +33,73 @@ from tests.unit import resources
 from tests.unit import test_common
 
 
+class Snapshotter:
+
+    def __init__(self, port):
+        self._start_time = 0.0
+        self._end_time = 0.0
+        self._last_utime = 0.0
+        self._utime = 0.0
+        self._last_stime = 0.0
+        self._stime = 0.0
+
+        self._port = port
+        self._cores = multiprocessing.cpu_count()
+        self.snapshot()
+        self.reset()
+
+    def get_time_elapsed(self):
+        return self._end_time - self._start_time
+
+    def get_utime(self):
+        return self._utime - self._last_utime
+
+    def get_stime(self):
+        return self._stime - self._last_stime
+
+    def snapshot(self):
+        self._end_time = time.time()
+
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        self._utime = usage.ru_utime
+        self._stime = usage.ru_stime
+
+    def reset(self):
+        self._start_time = self._end_time
+        self._last_utime = self._utime
+        self._last_stime = self._stime
+
+    def server_status(self):
+        stats = stats_pb2.ServerStats(time_elapsed=self.get_time_elapsed(),
+                                      time_user=self.get_utime(),
+                                      time_system=self.get_stime())
+        return control_pb2.ServerStatus(stats=stats,
+                                        port=self._port,
+                                        cores=self._cores)
+
+
 class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
     """Python Worker Server implementation."""
 
     def __init__(self, server_port=None):
         self._quit_event = threading.Event()
         self._server_port = server_port
+        self._snapshotter = None
 
     def RunServer(self, request_iterator, context):
         config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
         server, port = self._create_server(config)
-        cores = multiprocessing.cpu_count()
+        self._snapshotter = Snapshotter(port)
         server.start()
-        start_time = time.time()
-        yield self._get_server_status(start_time, start_time, port, cores)
+        yield self._snapshotter.server_status()
 
         for request in request_iterator:
-            end_time = time.time()
-            status = self._get_server_status(start_time, end_time, port, cores)
+            self._snapshotter.snapshot()
+            status = self._snapshotter.server_status()
             if request.mark.reset:
-                start_time = end_time
+                self._snapshotter.reset()
             yield status
         server.stop(None)
-
-    def _get_server_status(self, start_time, end_time, port, cores):
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        stats = stats_pb2.ServerStats(time_elapsed=elapsed_time,
-                                      time_user=elapsed_time,
-                                      time_system=elapsed_time)
-        return control_pb2.ServerStatus(stats=stats, port=port, cores=cores)
 
     def _create_server(self, config):
         if config.async_server_threads == 0:
