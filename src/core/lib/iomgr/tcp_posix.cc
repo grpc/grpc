@@ -914,9 +914,9 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     msg.msg_flags = 0;
 
     grpc_core::global_stats().IncrementTcpReadOffer(
-        tcp->incoming_buffer->length);
+        static_cast<int>(tcp->incoming_buffer->length));
     grpc_core::global_stats().IncrementTcpReadOfferIovSize(
-        tcp->incoming_buffer->count);
+        static_cast<int>(tcp->incoming_buffer->count));
 
     do {
       grpc_core::global_stats().IncrementSyscallRead();
@@ -955,7 +955,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       return true;
     }
 
-    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
+    grpc_core::global_stats().IncrementTcpReadSize(
+        static_cast<int>(read_bytes));
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     GPR_DEBUG_ASSERT((size_t)read_bytes <=
                      tcp->incoming_buffer->length - total_read_bytes);
@@ -1057,7 +1058,8 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
       if (low_memory_pressure && target_length > allocate_length) {
         allocate_length = target_length;
       }
-      size_t extra_wanted = allocate_length - tcp->incoming_buffer->length;
+      int extra_wanted = static_cast<int>(allocate_length) -
+                         static_cast<int>(tcp->incoming_buffer->length);
       if (extra_wanted >=
           (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
         while (extra_wanted > 0) {
@@ -1601,7 +1603,8 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
-      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteSize(
+          static_cast<int>(sending_length));
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno, MSG_ZEROCOPY);
     }
@@ -1714,7 +1717,8 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
 
-      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteSize(
+          static_cast<int>(sending_length));
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
 
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno);
