@@ -1136,6 +1136,7 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/closure.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "error",
         "gpr_manual_constructor",
@@ -2432,6 +2433,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "closure",
         "iomgr_fwd",
         "slice",
         "unique_type_name",
@@ -2465,6 +2467,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "closure",
         "iomgr_fwd",
         "tsi_local_credentials",
         "unique_type_name",
@@ -2515,6 +2518,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "closure",
         "grpc_sockaddr",
         "iomgr_fwd",
         "resolved_address",
@@ -2554,6 +2558,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "closure",
         "iomgr_fwd",
         "unique_type_name",
         "useful",
@@ -2602,6 +2607,7 @@ grpc_cc_library(
         "time",
         "unique_type_name",
         "useful",
+        ":closure",
         "//:alts_util",
         "//:gpr",
         "//:grpc_alts_credentials",
@@ -2660,6 +2666,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "closure",
         "iomgr_fwd",
         "ref_counted",
         "slice",
@@ -2731,6 +2738,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena_promise",
+        "closure",
         "context",
         "httpcli_ssl_credentials",
         "json",
@@ -2783,6 +2791,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "closure",
         "env",
         "grpc_oauth2_credentials",
         "httpcli_ssl_credentials",
@@ -2818,6 +2827,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "closure",
         "iomgr_fwd",
         "unique_type_name",
         "//:debug_location",
@@ -3239,6 +3249,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
+        "closure",
         "gpr_atm",
         "grpc_sockaddr",
         "json",
@@ -3309,6 +3320,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "closure",
         "dual_ref_counted",
         "grpc_fake_credentials",
         "json",
@@ -3500,6 +3512,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_type_upb",
         "xds_type_upbdefs",
+        ":closure",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4398,6 +4411,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "closure",
         "env",
         "grpc_xds_client",
         "json",
@@ -4543,6 +4557,7 @@ grpc_cc_library(
     deps = [
         "channel_args_preconditioning",
         "channel_stack_type",
+        "closure",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "resolved_address",
@@ -4586,6 +4601,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "closure",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
@@ -4633,6 +4649,7 @@ grpc_cc_library(
         "arena",
         "channel_args_preconditioning",
         "channel_stack_type",
+        "closure",
         "iomgr_fwd",
         "slice",
         "slice_buffer",
