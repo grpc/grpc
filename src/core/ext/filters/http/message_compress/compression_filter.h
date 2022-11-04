@@ -50,12 +50,12 @@ namespace grpc_core {
  *
  * Compression can be disabled for concrete messages (for instance in order to
  * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
- * the BEGIN_MESSAGE flags.
+ * the MessageHandle flags.
  *
  * The attempted compression mechanism is added to the resulting initial
  * metadata under the 'grpc-encoding' key.
  *
- * If compression is actually performed, BEGIN_MESSAGE's flag is modified to
+ * If compression is actually performed, the MessageHandle's flag is modified to
  * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
  * aforementioned 'grpc-encoding' metadata value, data will pass through
  * uncompressed. */

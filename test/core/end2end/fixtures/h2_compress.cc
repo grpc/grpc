@@ -33,7 +33,6 @@
 #include "test/core/util/test_config.h"
 
 struct fullstack_compression_fixture_data {
-  ~fullstack_compression_fixture_data() {}
   std::string localaddr;
 };
 

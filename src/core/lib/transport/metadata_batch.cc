@@ -204,7 +204,10 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
     case kGet:
       return StaticSlice::FromStaticString("GET");
     default:
-      return StaticSlice::FromStaticString("???");
+      // TODO(ctiller): this should be an abort, we should split up the debug
+      // string generation from the encode string generation so that debug
+      // strings can always succeed and encode strings can crash.
+      return StaticSlice::FromStaticString("<<INVALID METHOD>>");
   }
 }
 

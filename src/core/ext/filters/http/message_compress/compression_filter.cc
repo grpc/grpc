@@ -201,6 +201,7 @@ class CompressionFilter::DecompressLoop {
 
   // Once we have a compression algorithm we can construct the decompression
   // loop.
+  // Returns a promise that resolves to MessageHandle.
   auto TakeAndRun(grpc_compression_algorithm algorithm) {
     // Configure max receive size.
     auto max_recv_message_length = filter_->max_recv_size_;
@@ -235,6 +236,7 @@ class CompressionFilter::CompressLoop {
 
   // Once we're ready to send initial metadata we can construct the compression
   // loop.
+  // Returns a promise that resolves to MessageHandle.
   auto TakeAndRun(grpc_metadata_batch& outgoing_metadata) {
     const auto algorithm =
         outgoing_metadata.Take(GrpcInternalEncodingRequest())
