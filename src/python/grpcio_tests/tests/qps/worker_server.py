@@ -35,18 +35,13 @@ from tests.unit import test_common
 
 class Snapshotter:
 
-    def __init__(self, port):
+    def __init__(self):
         self._start_time = 0.0
         self._end_time = 0.0
         self._last_utime = 0.0
         self._utime = 0.0
         self._last_stime = 0.0
         self._stime = 0.0
-
-        self._port = port
-        self._cores = multiprocessing.cpu_count()
-        self.snapshot()
-        self.reset()
 
     def get_time_elapsed(self):
         return self._end_time - self._start_time
@@ -69,13 +64,12 @@ class Snapshotter:
         self._last_utime = self._utime
         self._last_stime = self._stime
 
-    def server_status(self):
-        stats = stats_pb2.ServerStats(time_elapsed=self.get_time_elapsed(),
-                                      time_user=self.get_utime(),
-                                      time_system=self.get_stime())
-        return control_pb2.ServerStatus(stats=stats,
-                                        port=self._port,
-                                        cores=self._cores)
+    def stats(self):
+        return {
+            "time_elapsed": self.get_time_elapsed(),
+            "time_user": self.get_utime(),
+            "time_system": self.get_stime(),
+        }
 
 
 class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
@@ -84,22 +78,28 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
     def __init__(self, server_port=None):
         self._quit_event = threading.Event()
         self._server_port = server_port
-        self._snapshotter = None
+        self._snapshotter = Snapshotter()
 
     def RunServer(self, request_iterator, context):
         config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
         server, port = self._create_server(config)
-        self._snapshotter = Snapshotter(port)
+        cores = multiprocessing.cpu_count()
         server.start()
-        yield self._snapshotter.server_status()
+        self._snapshotter.snapshot()
+        self._snapshotter.reset()
+        yield self._get_server_status(port, cores)
 
         for request in request_iterator:
             self._snapshotter.snapshot()
-            status = self._snapshotter.server_status()
+            status = self._get_server_status(port, cores)
             if request.mark.reset:
                 self._snapshotter.reset()
             yield status
         server.stop(None)
+
+    def _get_server_status(self, port, cores):
+        stats = stats_pb2.ServerStats(**self._snapshotter.stats())
+        return control_pb2.ServerStatus(stats=stats, port=port, cores=cores)
 
     def _create_server(self, config):
         if config.async_server_threads == 0:
@@ -150,7 +150,8 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         client_runners = []
         qps_data = histogram.Histogram(config.histogram_params.resolution,
                                        config.histogram_params.max_possible)
-        start_time = time.time()
+        self._snapshotter.snapshot()
+        self._snapshotter.reset()
 
         # Create a client for each channel
         for i in range(config.client_channels):
@@ -159,30 +160,26 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
             client_runners.append(runner)
             runner.start()
 
-        end_time = time.time()
-        yield self._get_client_status(start_time, end_time, qps_data)
+        self._snapshotter.snapshot()
+        yield self._get_client_status(qps_data)
 
         # Respond to stat requests
         for request in request_iterator:
-            end_time = time.time()
-            status = self._get_client_status(start_time, end_time, qps_data)
+            self._snapshotter.snapshot()
+            status = self._get_client_status(qps_data)
             if request.mark.reset:
                 qps_data.reset()
-                start_time = time.time()
+                self._snapshotter.reset()
             yield status
 
         # Cleanup the clients
         for runner in client_runners:
             runner.stop()
 
-    def _get_client_status(self, start_time, end_time, qps_data):
+    def _get_client_status(self, qps_data):
         latencies = qps_data.get_data()
-        end_time = time.time()
-        elapsed_time = end_time - start_time
         stats = stats_pb2.ClientStats(latencies=latencies,
-                                      time_elapsed=elapsed_time,
-                                      time_user=elapsed_time,
-                                      time_system=elapsed_time)
+                                      **self._snapshotter.stats())
         return control_pb2.ClientStatus(stats=stats)
 
     def _create_client_runner(self, server, config, qps_data):
