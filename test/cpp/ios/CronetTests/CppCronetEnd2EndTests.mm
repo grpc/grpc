@@ -39,10 +39,10 @@
 #import <vector>
 
 using namespace grpc::testing;
-using std::chrono::system_clock;
-using grpc::Status;
-using grpc::ServerContext;
 using grpc::ClientContext;
+using grpc::ServerContext;
+using grpc::Status;
+using std::chrono::system_clock;
 
 @interface CppCronetEnd2EndTests : XCTestCase
 

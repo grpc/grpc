@@ -374,7 +374,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
         break;
       }
       default:
-        GPR_UNREACHABLE_CODE(return );
+        GPR_UNREACHABLE_CODE(return);
     }
   }
   // Determine aggregated connectivity state.
@@ -554,7 +554,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
               [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
                 ApplicationCallbackExecCtx application_exec_ctx;
                 ExecCtx exec_ctx;
-                self->xds_cluster_manager_policy_->work_serializer()->Run(
+                auto* self_ptr = self.get();  // Avoid use-after-move problem.
+                self_ptr->xds_cluster_manager_policy_->work_serializer()->Run(
                     [self = std::move(self)]() {
                       self->OnDelayedRemovalTimerLocked();
                     },

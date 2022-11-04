@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,47 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM silkeh/clang:15-bullseye
 
-#=================
-# Basic C core dependencies
-
-# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  autoconf \
-  libtool \
-  pkg-config \
-  && apt-get clean
-
-# GCC
-RUN apt-get update && apt-get install -y \
-  gcc \
-  g++ \
-  && apt-get clean
-
-# libc6
-RUN apt-get update && apt-get install -y \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  && apt-get clean
-
-# Tools
-RUN apt-get update && apt-get install -y \
-  bzip2 \
-  curl \
-  dnsutils \
-  git \
-  lcov \
-  make \
-  strace \
-  time \
-  unzip \
-  wget \
-  zip \
-  && apt-get clean
-
+RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
 #====================
 # run_tests.py python dependencies
 
@@ -79,29 +41,32 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+
+#=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
+#=================
+# Install ccache
+
+# Install ccache from source since ccache 3.x packaged with most linux distributions
+# does not support Redis backend for caching.
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+    && tar -zxf ccache.tar.gz \
+    && cd ccache-4.5.1 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
+    && make -j4 && make install \
+    && cd ../.. \
+    && rm -rf ccache-4.5.1 ccache.tar.gz
+
 
 RUN mkdir /var/local/jenkins
 
-
-# Java required by Android SDK
-RUN apt-get update && apt-get -y install openjdk-8-jdk && apt-get clean
-
-# Install Android SDK
-ENV ANDROID_SDK_VERSION 4333796
-RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk &&     wget -q https://dl.google.com/android/repository/sdk-tools-linux-$ANDROID_SDK_VERSION.zip &&     unzip -q sdk-tools-linux-$ANDROID_SDK_VERSION.zip &&     rm sdk-tools-linux-$ANDROID_SDK_VERSION.zip
-ENV ANDROID_SDK_PATH /opt/android-sdk
-
-# Install Android NDK and cmake using sdkmanager
-RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
-RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
-RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.6.4111459'
-ENV ANDROID_NDK_PATH $ANDROID_SDK_PATH/ndk-bundle
-ENV ANDROID_SDK_CMAKE $ANDROID_SDK_PATH/cmake/3.6.4111459/bin/cmake
 
 # Define the default command.
 CMD ["bash"]
