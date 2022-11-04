@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <arpa/inet.h>
-
 #include <algorithm>
 #include <vector>
 
@@ -28,6 +26,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
+// IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
 // IWYU pragma: no_include <inttypes.h>
 // IWYU pragma: no_include <netdb.h>

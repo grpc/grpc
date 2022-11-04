@@ -18,7 +18,6 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 
@@ -41,6 +40,8 @@
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
+
+// IWYU pragma: no_include <ratio>
 
 using namespace std::chrono_literals;
 

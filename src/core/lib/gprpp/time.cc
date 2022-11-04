@@ -19,7 +19,6 @@
 #include <atomic>
 #include <chrono>
 #include <limits>
-#include <ratio>
 #include <string>
 #include <utility>
 
@@ -28,6 +27,8 @@
 #include <grpc/impl/codegen/gpr_types.h>
 
 #include "src/core/lib/gprpp/no_destruct.h"
+
+// IWYU pragma: no_include <ratio>
 
 namespace grpc_core {
 
