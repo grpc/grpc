@@ -647,7 +647,6 @@ class OobBackendMetricTestLoadBalancingPolicy
     RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy> parent_;
   };
 
- private:
   OobBackendMetricCallback cb_;
 };
 

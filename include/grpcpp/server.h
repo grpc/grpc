@@ -195,7 +195,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   grpc_server* server() override { return server_; }
 
- protected:
   /// NOTE: This method is not part of the public API for this class.
   void set_health_check_service(
       std::unique_ptr<HealthCheckServiceInterface> service) {
