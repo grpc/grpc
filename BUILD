@@ -2129,6 +2129,7 @@ grpc_cc_library(
         "grpc_base",
         "//src/core:arena",
         "//src/core:channel_stack_type",
+        "//src/core:closure",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
