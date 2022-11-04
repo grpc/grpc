@@ -16,7 +16,6 @@
  *
  */
 
-#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -32,6 +31,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP

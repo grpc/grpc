@@ -18,7 +18,6 @@
 
 #include "test/core/handshake/server_ssl_common.h"
 
-#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -50,6 +49,8 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"

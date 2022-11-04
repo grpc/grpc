@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/select.h>
 
@@ -21,7 +20,6 @@
 #include <chrono>
 #include <cstring>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <vector>
 
@@ -39,6 +37,9 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
+// IWYU pragma: no_include <ratio>
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV

@@ -18,7 +18,6 @@
 
 #include "test/core/util/fake_udp_and_tcp_server.h"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <string.h>
 
@@ -37,6 +36,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/util/port.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"

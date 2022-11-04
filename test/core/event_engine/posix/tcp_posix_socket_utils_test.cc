@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -29,6 +28,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/port.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
