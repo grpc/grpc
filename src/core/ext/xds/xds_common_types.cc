@@ -76,6 +76,7 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 
 std::string CommonTlsContext::CertificateValidationContext::ToString() const {
   std::vector<std::string> contents;
+  contents.reserve(match_subject_alt_names.size());
   for (const auto& match : match_subject_alt_names) {
     contents.push_back(match.ToString());
   }
