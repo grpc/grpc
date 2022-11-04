@@ -15,9 +15,9 @@
 from concurrent import futures
 import multiprocessing
 import random
+import resource
 import threading
 import time
-import resource
 
 import grpc
 
