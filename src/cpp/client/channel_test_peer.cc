@@ -18,6 +18,7 @@
 
 #include <grpcpp/channel.h>
 #include <grpcpp/test/channel_test_peer.h>
+#include <stddef.h>
 
 #include "src/core/lib/surface/channel.h"
 
