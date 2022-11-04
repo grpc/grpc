@@ -44,13 +44,14 @@ readonly VERSION_TAG="master v1.50.x"
 run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
-  local tag="${1:?Usage: run_test tag server_lang client_lang}"
-  local slang="${2:?Usage: run_test tag server_lang client_lang}"
-  local clang="${3:?Usage: run_test tag server_lang client_lang}"
-  local server_image_name="${IMAGE_REPO}/${slang}-server:${tag}"
-  local client_image_name="${IMAGE_REPO}/${clang}-client:${tag}"
+  local stag="${1:?Usage: run_test server_tag client_tag server_lang client_lang}"
+  local ctag="${2:?Usage: run_test server_tag client_tag server_lang client_lang}"
+  local slang="${3:?Usage: run_test server_tag client_tag server_lang client_lang}"
+  local clang="${4:?Usage: run_test server_tag client_tag server_lang client_lang}"
+  local server_image_name="${IMAGE_REPO}/${slang}-server:${stag}"
+  local client_image_name="${IMAGE_REPO}/${clang}-client:${ctag}"
   # TODO(sanjaypujare): skip test if image not found (by using gcloud_gcr_list_image_tags)
-  local out_dir="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}"
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${ctag}-${stag}/${clang}-${slang}"
   mkdir -pv "${out_dir}"
   set -x
   python -m "tests.security_test" \
@@ -95,6 +96,11 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
+  if [ "${TESTING_VERSION}" != "master" ]; then
+    echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
+    exit 0
+  fi
+
   activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
   set -x
@@ -117,7 +123,7 @@ main() {
     for SLANG in ${SERVER_LANG}
     do
       if [ "${CLANG}" != "${SLANG}" ]; then
-        if run_test "${TAG}" "${SLANG}" "${CLANG}"; then
+        if run_test "${TAG}" "${TAG}" "${SLANG}" "${CLANG}"; then
           successful_string="${successful_string} ${TAG}/${CLANG}-${SLANG}"
         else
           failed_tests=$((failed_tests+1))
