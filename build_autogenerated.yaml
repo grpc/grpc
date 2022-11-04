@@ -8627,19 +8627,11 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
-  - src/core/lib/gprpp/load_file.h
   - test/core/event_engine/posix/posix_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
   src:
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
-  - src/core/lib/gprpp/load_file.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
@@ -8657,11 +8649,28 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   src:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - test/core/event_engine/posix/posix_engine_listener_utils_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: posix_event_engine_connect_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  src:
+  - test/core/event_engine/posix/posix_event_engine_connect_test.cc
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   deps:
   - grpc_test_util
   platforms:
@@ -10142,10 +10151,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
+  headers: []
   src:
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
   - grpc_test_util
