@@ -181,6 +181,7 @@ std::string CqVerifier::Expectation::ToString() const {
 
 std::string CqVerifier::ToString() const {
   std::vector<std::string> expectations;
+  expectations.reserve(expectations_.size());
   for (const auto& e : expectations_) {
     expectations.push_back(e.ToString());
   }
