@@ -45,7 +45,6 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpcpp/opencensus.h>
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"

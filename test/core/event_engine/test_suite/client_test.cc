@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <ratio>
 #include <string>
 #include <thread>
 #include <tuple>

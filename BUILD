@@ -2103,6 +2103,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
         "absl/time",
@@ -3120,6 +3121,7 @@ grpc_cc_library(
         "promise",
         "//src/core:arena",
         "//src/core:arena_promise",
+        "//src/core:basic_seq",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",

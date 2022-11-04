@@ -15,8 +15,6 @@
 
 #include "src/core/lib/event_engine/work_queue.h"
 
-#include <cstdint>
-#include <memory>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
