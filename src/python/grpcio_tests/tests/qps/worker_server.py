@@ -17,7 +17,13 @@ import multiprocessing
 import random
 import threading
 import time
-import resource
+
+try:
+    # The resource module is not available on Windows. While this server only
+    # supports Linux, we must still be _importable_ on Windows.
+    import resource
+except ImportError:
+    pass
 
 import grpc
 
