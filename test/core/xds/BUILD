@@ -19,6 +19,8 @@ load(
     "grpc_package",
 )
 
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+
 grpc_package(name = "test/core/xds")
 
 licenses(["notice"])
@@ -153,6 +155,26 @@ grpc_cc_test(
         "//:xds_client",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "xds_client_fuzzer",
+    srcs = ["xds_client_fuzzer.cc"],
+    corpus = "xds_client_corpora",
+    language = "C++",
+    proto = "xds_client_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":xds_transport_fake",
+        "//src/core:grpc_xds_client",
+        "//test/core/util:grpc_test_util",
+    ],
+    proto_deps = [
+        "//src/proto/grpc/status:status_proto",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
     ],
 )
 
