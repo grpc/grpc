@@ -232,7 +232,8 @@ class ServerClientMixin(object):
         ], server_call_tag)
         self.assertEqual(cygrpc.CallError.ok, server_start_batch_result)
 
-        server_message_event = self.server_completion_queue.poll(deadline=DEADLINE)
+        server_message_event = self.server_completion_queue.poll(
+            deadline=DEADLINE)
 
         server_call_tag = object()
         server_initial_metadata = ((
@@ -299,10 +300,9 @@ class ServerClientMixin(object):
             elif server_result.type(
             ) == cygrpc.OperationType.receive_close_on_server:
                 self.assertFalse(server_result.cancelled())
-        self.assertEqual(
-            set([
-                cygrpc.OperationType.receive_message,
-            ]), found_server_op_types)
+        self.assertEqual(set([
+            cygrpc.OperationType.receive_message,
+        ]), found_server_op_types)
 
         self.assertEqual(4, len(server_event.batch_operations))
         found_server_op_types = set()
