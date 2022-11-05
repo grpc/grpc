@@ -16,32 +16,27 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/handshaker.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
-
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "handshaker.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/timer.h"
 
 namespace grpc_core {
 

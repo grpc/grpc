@@ -2281,7 +2281,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
-        "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:closure",
