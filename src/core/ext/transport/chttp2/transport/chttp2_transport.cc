@@ -2441,28 +2441,8 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
   const bool urgent = !t->goaway_error.ok();
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
-  // Set min progress size on the read path iff we are able to advertise
-  // prefered rx crypto frame sizes to the peer and the peer has also indicated
-  // that it can adjust sending frame sizes. (The peer would have informed us of
-  // this cabability by sending prefered rx frame sizes to us). Otherwise set
-  // min_progress_size it to 1. We need to look at both
-  // enable_preferred_rx_crypto_frame_advertisement and peer's
-  // GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to decide
-  // whether min_progress_size should be set. If
-  // enable_preferred_rx_crypto_frame_advertisement is true, it indicates that
-  // we can tell the peer what rx frame sizes we want and if peer's
-  // GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE > 0, it
-  // indicates that the peer can adjust sending frame sizes per our
-  // requirements.
-  int min_progress_size =
-      (t->enable_preferred_rx_crypto_frame_advertisement &&
-       t->settings
-           [GRPC_PEER_SETTINGS]
-           [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE])
-          ? grpc_chttp2_min_read_progress_size(t)
-          : 1;
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
-                     min_progress_size);
+                     grpc_chttp2_min_read_progress_size(t));
 }
 
 // t is reffed prior to calling the first time, and once the callback chain
