@@ -8236,6 +8236,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+  - test/core/event_engine/test_suite/server_test.cc
   deps:
   - grpc_test_util
   platforms:

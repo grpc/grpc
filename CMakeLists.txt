@@ -14095,6 +14095,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+    test/core/event_engine/test_suite/server_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )

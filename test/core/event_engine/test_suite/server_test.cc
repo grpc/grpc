@@ -89,25 +89,19 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto status = test_ee->CreateListener(
+  auto listener = test_ee->CreateListener(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(listener.ok());
 
-  std::unique_ptr<Listener> listener = std::move(*status);
-  EXPECT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
-  EXPECT_TRUE(listener->Start().ok());
+  EXPECT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
+  EXPECT_TRUE((*listener)->Start().ok());
 
   oracle_ee->Connect(
       [&client_endpoint,
        &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
-        if (!status.ok()) {
-          gpr_log(GPR_ERROR, "Connect failed: %s",
-                  status.status().ToString().c_str());
-          client_endpoint = nullptr;
-        } else {
-          client_endpoint = std::move(*status);
-        }
+        ASSERT_TRUE(status.ok());
+        client_endpoint = std::move(*status);
         client_signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
@@ -133,7 +127,7 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   }
   client_endpoint.reset();
   server_endpoint.reset();
-  listener.reset();
+  (*listener).reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
@@ -165,20 +159,19 @@ TEST_F(EventEngineServerTest,
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto status = test_ee->CreateListener(
+  auto listener = test_ee->CreateListener(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  EXPECT_TRUE(status.ok());
-  std::unique_ptr<Listener> listener = std::move(*status);
+  ASSERT_TRUE(listener.ok());
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
     std::string target_addr = absl::StrCat(
         "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-    EXPECT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
+    ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
     target_addrs.push_back(target_addr);
   }
-  EXPECT_TRUE(listener->Start().ok());
+  ASSERT_TRUE((*listener)->Start().ok());
   absl::SleepFor(absl::Milliseconds(500));
   for (int i = 0; i < kNumConnections; i++) {
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
@@ -193,13 +186,8 @@ TEST_F(EventEngineServerTest,
     oracle_ee->Connect(
         [&client_endpoint,
          &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
-          if (!status.ok()) {
-            gpr_log(GPR_ERROR, "Connect failed: %s",
-                    status.status().ToString().c_str());
-            client_endpoint = nullptr;
-          } else {
-            client_endpoint = std::move(*status);
-          }
+          ASSERT_TRUE(status.ok());
+          client_endpoint = std::move(*status);
           client_signal.Notify();
         },
         URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
@@ -210,8 +198,8 @@ TEST_F(EventEngineServerTest,
 
     client_signal.WaitForNotification();
     server_signal->WaitForNotification();
-    EXPECT_NE(client_endpoint.get(), nullptr);
-    EXPECT_NE(server_endpoint.get(), nullptr);
+    ASSERT_NE(client_endpoint.get(), nullptr);
+    ASSERT_NE(server_endpoint.get(), nullptr);
     connections.push_back(std::make_tuple(std::move(client_endpoint),
                                           std::move(server_endpoint)));
     delete server_signal;
@@ -244,11 +232,11 @@ TEST_F(EventEngineServerTest,
           // verify data read at the server. Otherwise send data from server
           // to client and verify data read at client.
           if (client_to_server) {
-            EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(),
+            ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                             client_endpoint, server_endpoint)
                             .ok());
           } else {
-            EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(),
+            ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                             server_endpoint, client_endpoint)
                             .ok());
           }
@@ -266,7 +254,7 @@ TEST_F(EventEngineServerTest,
     t.join();
   }
   server_endpoint.reset();
-  listener.reset();
+  (*listener).reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
