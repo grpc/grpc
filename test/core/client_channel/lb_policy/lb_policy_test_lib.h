@@ -137,7 +137,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
 
       void RequestConnection() override {
-        MutexLock lock(&state_->mu_);
+        MutexLock lock(&state_->requested_connection_mu_);
         state_->requested_connection_ = true;
       }
 
@@ -168,7 +168,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // have requested a connection attempt since the last time this
     // method was called.
     bool ConnectionRequested() {
-      MutexLock lock(&mu_);
+      MutexLock lock(&requested_connection_mu_);
       return std::exchange(requested_connection_, false);
     }
 
@@ -182,8 +182,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
    private:
     Mutex mu_;
-    bool requested_connection_ ABSL_GUARDED_BY(&mu_) = false;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(&mu_);
+    Mutex requested_connection_mu_;
+    bool requested_connection_ ABSL_GUARDED_BY(&requested_connection_mu_) =
+        false;
   };
 
   // A fake helper to be passed to the LB policy.

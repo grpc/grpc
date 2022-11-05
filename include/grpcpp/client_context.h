@@ -373,9 +373,7 @@ class ClientContext {
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
 
   /// Returns the census context that has been set, or nullptr if not set.
-  struct census_context* census_context() const {
-    return census_context_;
-  }
+  struct census_context* census_context() const { return census_context_; }
 
   /// Send a best-effort out-of-band cancel on the call associated with
   /// this client context.  The call could be in any stage; e.g., if it is

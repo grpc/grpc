@@ -38,6 +38,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
 
+// IWYU pragma: no_include <arpa/inet.h>
+// IWYU pragma: no_include <ratio>
+
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
 

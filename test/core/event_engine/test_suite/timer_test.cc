@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <memory>
 #include <random>
+#include <ratio>
 #include <thread>
 #include <vector>
 

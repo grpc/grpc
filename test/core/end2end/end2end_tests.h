@@ -24,9 +24,6 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
-struct grpc_end2end_test_config;
-struct grpc_end2end_test_fixture;
-
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
 typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 

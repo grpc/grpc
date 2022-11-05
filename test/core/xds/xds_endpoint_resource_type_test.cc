@@ -21,7 +21,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <google/protobuf/wrappers.pb.h>
 

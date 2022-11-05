@@ -164,6 +164,7 @@ std::string ServerAddress::ToString() const {
   }
   if (!attributes_.empty()) {
     std::vector<std::string> attrs;
+    attrs.reserve(attributes_.size());
     for (const auto& p : attributes_) {
       attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
     }

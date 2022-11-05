@@ -17,8 +17,9 @@
 # it's not activated yet due to the existing issues with the checks.
 # Once those issues are clear, these checks can be enabled later.
 #
+# - bugprone-assignment-in-if-condition
 # - bugprone-branch-clone
-# - bugprone-easily-swappable-parameters,
+# - bugprone-easily-swappable-parameters
 # - bugprone-implicit-widening-of-multiplication-result
 # - bugprone-infinite-loop
 # - bugprone-narrowing-conversions
@@ -26,9 +27,11 @@
 # - bugprone-signed-char-misuse
 # - bugprone-sizeof-expression
 # - bugprone-too-small-loop-variable
+# - bugprone-unchecked-optional-access
 # - clang-diagnostic-deprecated-declarations
 # - clang-diagnostic-unused-function
 # - google-readability-avoid-underscore-in-googletest-name
+# - google-readability-casting
 # - google-runtime-int
 # - google-runtime-references
 # - modernize-avoid-bind
@@ -55,6 +58,7 @@ Checks: '-*,
   abseil-*,
   -abseil-no-namespace,
   bugprone-*,
+  -bugprone-assignment-in-if-condition,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
   -bugprone-implicit-widening-of-multiplication-result,
@@ -65,8 +69,10 @@ Checks: '-*,
   -bugprone-signed-char-misuse,
   -bugprone-sizeof-expression,
   -bugprone-too-small-loop-variable,
+  -bugprone-unchecked-optional-access,
   google-*,
   -google-readability-avoid-underscore-in-googletest-name,
+  -google-readability-casting,
   -google-runtime-int,
   -google-runtime-references,
   -google-upgrade-googletest-case,
@@ -133,3 +139,5 @@ CheckOptions:
     value:  'absl/memory/memory.h'
   - key:    google-readability-braces-around-statements.ShortStatementLines
     value:  1
+  - key:    readability-simplify-boolean-expr.SimplifyDeMorgan
+    value:  false

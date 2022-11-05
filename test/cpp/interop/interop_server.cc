@@ -47,7 +47,6 @@ ABSL_FLAG(int32_t, port, 0, "Server port.");
 ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
-using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCredentials;
 using grpc::ServerReader;

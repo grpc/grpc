@@ -14837,7 +14837,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
     src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
     src/core/lib/gprpp/load_file.cc
-    src/core/lib/iomgr/socket_mutator.cc
     test/core/event_engine/posix/posix_endpoint_test.cc
     test/core/event_engine/posix/posix_engine_test_utils.cc
     test/core/event_engine/test_suite/event_engine_test.cc
@@ -14881,7 +14880,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(posix_engine_listener_utils_test
     src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-    src/core/lib/iomgr/socket_mutator.cc
     test/core/event_engine/posix/posix_engine_listener_utils_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -18161,7 +18159,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(tcp_posix_socket_utils_test
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-    src/core/lib/iomgr/socket_mutator.cc
     test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
