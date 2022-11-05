@@ -22,7 +22,12 @@ readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TES
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 readonly SERVER_LANG="cpp go java"
 readonly CLIENT_LANG="cpp go java"
-readonly VERSION_TAG="master v1.50.x"
+readonly MASTER_BRANCH="${MASTER_BRANCH:-master}"
+readonly LATEST_BRANCH_FROM_GITHUB="$((git ls-remote -t --refs https://github.com/grpc/${GITHUB_REPOSITORY_NAME}.git | cut -f 2 | sed s#refs/tags/##) | sort -V | tail -n 1 | cut -f 1-2 -d.)".x
+readonly OLDEST_BRANCH_FROM_GITHUB=v1.$(expr $(echo ${LATEST_BRANCH_FROM_GITHUB} | cut -f 2 -d.) - 9).x
+readonly LATEST_BRANCH="${LATEST_BRANCH:-${LATEST_BRANCH_FROM_GITHUB}}"
+readonly OLDEST_BRANCH="${OLDEST_BRANCH:-${OLDEST_BRANCH_FROM_GITHUB}}"
+readonly XLANG_VERSIONS="${MASTER_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
 
 #######################################
 # Executes the test case
@@ -115,8 +120,8 @@ main() {
   local failed_tests=0
   local successful_string
   local failed_string
-  # Run tests
-  for TAG in ${VERSION_TAG}
+  # Run cross lang tests: for given cross lang versions
+  for TAG in ${XLANG_VERSIONS}
   do
     for CLANG in ${CLIENT_LANG}
     do
@@ -133,6 +138,34 @@ main() {
     done
     echo "Failed test suites: ${failed_tests}"
     done
+  done
+  # Run cross branch tests per language: master x latest and master x oldest
+  for LANG in ${CLIENT_LANG}
+  do
+    if run_test "${MASTER_BRANCH}" "${LATEST_BRANCH}" "${LANG}" "${LANG}"; then
+      successful_string="${successful_string} ${MASTER_BRANCH}-${LATEST_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests+1))
+      failed_string="${failed_string} ${MASTER_BRANCH}-${LATEST_BRANCH}/${LANG}"
+    fi
+    if run_test "${LATEST_BRANCH}" "${MASTER_BRANCH}" "${LANG}" "${LANG}"; then
+      successful_string="${successful_string} ${LATEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests+1))
+      failed_string="${failed_string} ${LATEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+    fi
+    if run_test "${MASTER_BRANCH}" "${OLDEST_BRANCH}" "${LANG}" "${LANG}"; then
+      successful_string="${successful_string} ${MASTER_BRANCH}-${OLDEST_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests+1))
+      failed_string="${failed_string} ${MASTER_BRANCH}-${OLDEST_BRANCH}/${LANG}"
+    fi
+    if run_test "${OLDEST_BRANCH}" "${MASTER_BRANCH}" "${LANG}" "${LANG}"; then
+      successful_string="${successful_string} ${OLDEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+    else
+      failed_tests=$((failed_tests+1))
+      failed_string="${failed_string} ${OLDEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+    fi
   done
   set +x
   echo "Failed test suites list: ${failed_string}"
