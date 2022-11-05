@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstdint>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"

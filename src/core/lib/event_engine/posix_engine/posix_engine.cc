@@ -41,6 +41,8 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
 
+// IWYU pragma: no_include <ratio>
+
 using namespace std::chrono_literals;
 
 namespace grpc_event_engine {
