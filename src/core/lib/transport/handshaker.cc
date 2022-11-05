@@ -66,7 +66,8 @@ std::string HandshakerArgsString(HandshakerArgs* args) {
 HandshakeManager::HandshakeManager()
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)
                      ? "HandshakeManager"
-                     : nullptr) {}
+                     : nullptr),
+      event_engine_(GetDefaultEventEngine()) {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
@@ -136,7 +137,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
-    GetDefaultEventEngine()->Cancel(deadline_timer_handle_);
+    event_engine_->Cancel(deadline_timer_handle_);
     ExecCtx::Run(DEBUG_LOCATION, &on_handshake_done_, error);
     is_shutdown_ = true;
   } else {
@@ -167,12 +168,6 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
   if (done) {
     mgr->Unref();
   }
-}
-
-void HandshakeManager::OnTimeoutFn(void* arg) {
-  auto* mgr = static_cast<HandshakeManager*>(arg);
-  mgr->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
-  mgr->Unref();
 }
 
 void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
@@ -208,11 +203,13 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
                       grpc_schedule_on_exec_ctx);
     // Start deadline timer, which owns a ref.
     const Duration time_to_deadline = deadline - Timestamp::Now();
-    deadline_timer_handle_ = GetDefaultEventEngine()->RunAfter(
-        time_to_deadline, [self = Ref()]() mutable {
+    deadline_timer_handle_ =
+        event_engine_->RunAfter(time_to_deadline, [self = Ref()]() mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
-          HandshakeManager::OnTimeoutFn(self.release());
+          self->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
+          // HandshakeManager deletion might require an active ExecCtx.
+          self.reset();
         });
     // Start first handshaker, which also owns a ref.
     Ref().release();

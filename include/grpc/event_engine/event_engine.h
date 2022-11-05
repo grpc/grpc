@@ -414,7 +414,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// If the associated closure has already been scheduled to run, it will not
   /// be cancelled, and this function will return false.
   ///
-  /// If the associated callback has not been scheduled to run, it will be
+  /// If the associated closure has not been scheduled to run, it will be
   /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
   /// be executed. In this case, Cancel will return true.
   ///

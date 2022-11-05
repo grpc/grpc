@@ -23,8 +23,6 @@
 
 #include <stddef.h>
 
-#include <memory>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 
@@ -135,10 +133,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
   // A function used as the handshaker-done callback when chaining
   // handshakers together.
-  static void CallNextHandshakerFn(void* arg, grpc_error_handle error);
-
-  // Callback invoked when deadline is exceeded.
-  static void OnTimeoutFn(void* arg);
+  static void CallNextHandshakerFn(void* arg, grpc_error_handle error)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   static const size_t HANDSHAKERS_INIT_SIZE = 2;
 
@@ -161,6 +157,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   grpc_closure on_handshake_done_ ABSL_GUARDED_BY(mu_);
   // Handshaker args.
   HandshakerArgs args_ ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 
 }  // namespace grpc_core
