@@ -120,8 +120,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
       std::make_unique<grpc_core::MemoryQuota>("foo"));
   ASSERT_TRUE(listener.ok());
 
-  EXPECT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
-  EXPECT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
+  ASSERT_TRUE((*listener)->Start().ok());
 
   test_ee->Connect(
       [&client_endpoint,
@@ -193,10 +193,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   for (int i = 0; i < kNumListenerAddresses; i++) {
     std::string target_addr = absl::StrCat(
         "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-    EXPECT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
+    ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
     target_addrs.push_back(target_addr);
   }
-  EXPECT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE((*listener)->Start().ok());
   absl::SleepFor(absl::Milliseconds(500));
   for (int i = 0; i < kNumConnections; i++) {
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
@@ -223,8 +223,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
 
     client_signal.WaitForNotification();
     server_signal->WaitForNotification();
-    EXPECT_NE(client_endpoint.get(), nullptr);
-    EXPECT_NE(server_endpoint.get(), nullptr);
+    ASSERT_NE(client_endpoint.get(), nullptr);
+    ASSERT_NE(server_endpoint.get(), nullptr);
     connections.push_back(std::make_tuple(std::move(client_endpoint),
                                           std::move(server_endpoint)));
     delete server_signal;
@@ -257,11 +257,11 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
           // verify data read at the server. Otherwise send data from server
           // to client and verify data read at client.
           if (client_to_server) {
-            EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(),
+            ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                             client_endpoint, server_endpoint)
                             .ok());
           } else {
-            EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(),
+            ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                             server_endpoint, client_endpoint)
                             .ok());
           }

@@ -92,10 +92,10 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   auto listener = test_ee->CreateListener(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  EXPECT_TRUE(listener.ok());
+  ASSERT_TRUE(listener.ok());
 
-  EXPECT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
-  EXPECT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
+  ASSERT_TRUE((*listener)->Start().ok());
 
   oracle_ee->Connect(
       [&client_endpoint,
@@ -109,19 +109,19 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
 
   client_signal.WaitForNotification();
   server_signal.WaitForNotification();
-  EXPECT_NE(client_endpoint.get(), nullptr);
-  EXPECT_NE(server_endpoint.get(), nullptr);
+  ASSERT_NE(client_endpoint.get(), nullptr);
+  ASSERT_NE(server_endpoint.get(), nullptr);
 
   // Alternate message exchanges between client -- server and server --
   // client.
   for (int i = 0; i < kNumExchangedMessages; i++) {
     // Send from client to server and verify data read at the server.
-    EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(), client_endpoint.get(),
+    ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(), client_endpoint.get(),
                                     server_endpoint.get())
                     .ok());
 
     // Send from server to client and verify data read at the client.
-    EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(), server_endpoint.get(),
+    ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(), server_endpoint.get(),
                                     client_endpoint.get())
                     .ok());
   }
