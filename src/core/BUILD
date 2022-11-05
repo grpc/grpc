@@ -2611,6 +2611,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:httpcli",
+        "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri_parser",
     ],

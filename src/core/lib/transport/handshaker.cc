@@ -210,6 +210,8 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     const Duration time_to_deadline = deadline - Timestamp::Now();
     deadline_timer_handle_ = GetDefaultEventEngine()->RunAfter(
         time_to_deadline, [self = Ref()]() mutable {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
           HandshakeManager::OnTimeoutFn(self.release());
         });
     // Start first handshaker, which also owns a ref.
