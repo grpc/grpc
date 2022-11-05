@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -198,23 +199,27 @@ void ExtractOptStatsFromCmsg(ConnectionMetrics* metrics,
 }  // namespace.
 
 void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
-  buffer_list_.emplace_back(seq_no, arg);
-  TracedBuffer& new_elem = buffer_list_.back();
+  TracedBuffer new_elem(seq_no, arg);
   // Store the current time as the sendmsg time.
   new_elem.ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
   new_elem.ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem.ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem.ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-
   if (GetSocketTcpInfo(&new_elem.ts_.info, fd) == 0) {
     ExtractOptStatsFromTcpInfo(&new_elem.ts_.sendmsg_time.metrics,
                                &new_elem.ts_.info);
   }
+  grpc_core::MutexLock lock(&mu_);
+  buffer_list_.push_back(new_elem);
 }
 
 void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
                                         struct cmsghdr* opt_stats,
                                         struct scm_timestamping* tss) {
+  // The error handling can potentially be done on another thread so we need to
+  // protect the traced buffer list. A lock free list might be better. Using a
+  // simple mutex for now.
+  grpc_core::MutexLock lock(&mu_);
   auto it = buffer_list_.begin();
   while (it != buffer_list_.end()) {
     TracedBuffer& elem = (*it);
@@ -252,6 +257,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
 }
 
 void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
+  grpc_core::MutexLock lock(&mu_);
   while (!buffer_list_.empty()) {
     TracedBuffer& elem = buffer_list_.front();
     g_timestamps_callback(elem.arg_, &(elem.ts_), shutdown_err);
