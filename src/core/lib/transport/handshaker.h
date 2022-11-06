@@ -148,8 +148,6 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   // Deadline timer across all handshakers.
   grpc_event_engine::experimental::EventEngine::TaskHandle
       deadline_timer_handle_ ABSL_GUARDED_BY(mu_);
-  // grpc_timer deadline_timer_;
-  // grpc_closure on_timeout_;
   // The final callback and user_data to invoke after the last handshaker.
   grpc_closure on_handshake_done_ ABSL_GUARDED_BY(mu_);
   // Handshaker args.

@@ -419,7 +419,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// be executed. In this case, Cancel will return true.
   ///
   /// Implementation note: closures should be destroyed in a timely manner after
-  /// execution or cancelliation (milliseconds), since any state bound to the
+  /// execution or cancellation (milliseconds), since any state bound to the
   /// closure may need to be destroyed for things to progress (e.g., if a
   /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
