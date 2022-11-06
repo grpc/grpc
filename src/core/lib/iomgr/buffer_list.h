@@ -121,7 +121,7 @@ class TracedBufferList {
                         struct cmsghdr* opt_stats,
                         struct scm_timestamping* tss);
   int Size() {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return buffer_list_.size();
   }
   // Cleans the list by calling the callback for each traced buffer in the list
