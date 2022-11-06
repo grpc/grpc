@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <!-- <PackageReference Include="Grpc.Tools" Version="2.99.0-dev" /> -->
-    <PackageReference Include="Grpc.Tools" Version="2.99.0-dev" />
+    <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
     <!-- Grpc.Core.Api is not the package under test, it's included only so that gRPC generated service stubs can compile. -->
     <PackageReference Include="Grpc.Core.Api" Version="2.46.5" />
     <PackageReference Include="Google.Protobuf" Version="3.21.8" />
