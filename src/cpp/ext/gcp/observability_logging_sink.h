@@ -40,6 +40,8 @@ class ObservabilityLoggingSink : public LoggingSink {
   explicit ObservabilityLoggingSink(
       GcpObservabilityConfig::CloudLogging logging_config);
 
+  ~ObservabilityLoggingSink() override = default;
+
   LoggingSink::ParsedConfig Parse(bool is_client,
                                   absl::string_view path) override;
 

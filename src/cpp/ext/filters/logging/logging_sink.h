@@ -34,8 +34,8 @@ class LoggingSink {
     ParsedConfig(uint32_t max_metadata_bytes, uint32_t max_message_bytes)
         : max_metadata_bytes_(max_metadata_bytes),
           max_message_bytes_(max_message_bytes) {}
-    virtual bool MetadataLoggingEnabled() { return max_metadata_bytes_ != 0; }
-    virtual bool MessageLoggingEnabled() { return max_message_bytes_ != 0; }
+    bool MetadataLoggingEnabled() { return max_metadata_bytes_ != 0; }
+    bool MessageLoggingEnabled() { return max_message_bytes_ != 0; }
     bool ShouldLog() {
       return MetadataLoggingEnabled() || MessageLoggingEnabled();
     }
@@ -49,6 +49,8 @@ class LoggingSink {
     uint32_t max_metadata_bytes_;
     uint32_t max_message_bytes_;
   };
+
+  virtual ~LoggingSink() = default;
 
   virtual ParsedConfig Parse(bool is_client, absl::string_view path) = 0;
 };
