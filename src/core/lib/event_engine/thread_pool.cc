@@ -241,12 +241,15 @@ void ThreadPoolImpl::LifeguardThreadMain(std::shared_ptr<ThreadPoolImpl> pool) {
         pool->run_state_ == RunState::kForking) {
       break;
     }
-    if (!pool->global_queue_.Empty() &&
-        pool->threads_waiting_ >= pool->reserve_threads_) {
-      GRPC_EVENT_ENGINE_TRACE(
-          "Lifeguard found a potential stall in pool::%p. Waking a thread",
-          pool.get());
-      pool->wait_cv_.Signal();
+    if (!pool->global_queue_.Empty() && pool->IsBacklogged()) {
+      if (pool->threads_waiting_.load(std::memory_order_relaxed) > 0) {
+        GRPC_EVENT_ENGINE_TRACE(
+            "Lifeguard found a potential stall in pool::%p. Waking a thread",
+            pool.get());
+        pool->wait_cv_.Signal();
+      } else {
+        pool->StartThreadIfBacklogged();
+      }
     }
     absl::SleepFor(kLifeguardSnoozeDuration);
   }
@@ -257,21 +260,17 @@ bool ThreadPoolImpl::Step() {
   // Wait until work is available or we are shutting down.
   while (run_state_ == RunState::kRunning && global_queue_.Empty()) {
     // If there are too many threads waiting, then quit this thread.
-    if (threads_waiting_.fetch_add(1) >= reserve_threads_) {
-      GRPC_EVENT_ENGINE_TRACE("%s", "extra thread waiting for work");
+    if (threads_waiting_.fetch_add(1) + 1 >= reserve_threads_) {
       grpc_core::MutexLock lock(&wait_mu_);
       bool timed_out = wait_cv_.WaitWithTimeout(&wait_mu_, absl::Seconds(30));
-      GRPC_EVENT_ENGINE_TRACE("%s", "extra thread awoken");
       threads_waiting_--;
       if (timed_out && threads_waiting_ >= reserve_threads_) {
         gpr_log(GPR_DEBUG, "extra thread shutting down");
         return false;
       }
     } else {
-      GRPC_EVENT_ENGINE_TRACE("%s", "sleeping thread until work arrives");
       grpc_core::MutexLock lock(&wait_mu_);
       wait_cv_.Wait(&wait_mu_);
-      GRPC_EVENT_ENGINE_TRACE("%s", "thread awoken");
       threads_waiting_--;
     }
   }
