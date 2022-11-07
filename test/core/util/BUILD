@@ -95,6 +95,7 @@ grpc_cc_library(
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:closure",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
