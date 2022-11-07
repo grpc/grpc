@@ -24,6 +24,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/functional/function_ref.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -39,10 +40,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// TODO(hork): consider adding a lifeguard thread that starts worker threads if
-// the backlog grows. This could be needed if Run is not called in a timely
-// manner, which currently triggers the start of new threads.
-
 namespace {
 
 constexpr grpc_core::Duration kMaximumThreadStartFrequency =
@@ -55,7 +52,7 @@ constexpr absl::Duration kLifeguardSnoozeDuration = absl::Milliseconds(150);
 thread_local bool g_threadpool_thread;
 struct ThreadArg {
   bool initial;
-  void (*thread_body)(std::shared_ptr<ThreadPoolImpl> pool);
+  absl::FunctionRef<void(std::shared_ptr<ThreadPoolImpl>)> thread_body;
   std::shared_ptr<ThreadPoolImpl> pool;
 };
 }  // namespace
@@ -120,7 +117,8 @@ class ThreadPoolImpl : public Forkable,
   // if `initial=true`, this thread initializes the thread pool and is not
   // subject to rate limiting or backlog checking.
   void StartThreadInternal(
-      bool initial, void (*thd_body)(std::shared_ptr<ThreadPoolImpl> pool));
+      bool initial,
+      absl::FunctionRef<void(std::shared_ptr<ThreadPoolImpl>)> thread_body);
   void StartWorkerThread(bool initial);
   void StartLifeguardThread();
   // Start a new thread while backlogged.
@@ -184,7 +182,8 @@ void ThreadPoolImpl::StartLifeguardThread() {
 }
 
 void ThreadPoolImpl::StartThreadInternal(
-    bool initial, void (*thd_body)(std::shared_ptr<ThreadPoolImpl> pool)) {
+    bool initial,
+    absl::FunctionRef<void(std::shared_ptr<ThreadPoolImpl>)> thread_body) {
   thread_count_.Add();
   last_started_thread_.store(
       grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
@@ -206,7 +205,7 @@ void ThreadPoolImpl::StartThreadInternal(
         thread_arg->thread_body(std::move(thread_arg->pool));
         delete thread_arg;
       },
-      new ThreadArg{initial, thd_body, shared_from_this()}, nullptr,
+      new ThreadArg{initial, thread_body, shared_from_this()}, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
@@ -261,7 +260,7 @@ bool ThreadPoolImpl::Step() {
     if (threads_waiting_.fetch_add(1) >= reserve_threads_) {
       GRPC_EVENT_ENGINE_TRACE("%s", "extra thread waiting for work");
       grpc_core::MutexLock lock(&wait_mu_);
-      bool timed_out = wait_cv_.WaitWithTimeout(&wait_mu_, absl::Seconds(3));
+      bool timed_out = wait_cv_.WaitWithTimeout(&wait_mu_, absl::Seconds(30));
       GRPC_EVENT_ENGINE_TRACE("%s", "extra thread awoken");
       threads_waiting_--;
       if (timed_out && threads_waiting_ >= reserve_threads_) {
@@ -346,8 +345,7 @@ void ThreadPoolImpl::SleepIfRunning() {
 }
 
 void ThreadPoolImpl::SetRunState(RunState state) {
-  // TODO(hork): memory order?
-  auto old_state = run_state_.exchange(state);
+  auto old_state = run_state_.exchange(state, std::memory_order_relaxed);
   if (state == RunState::kRunning) {
     GPR_ASSERT(old_state != RunState::kRunning);
   } else {
@@ -396,10 +394,7 @@ void ThreadPoolImpl::PostforkParent() { Postfork(); }
 void ThreadPoolImpl::PostforkChild() { Postfork(); }
 void ThreadPoolImpl::Postfork() {
   SetRunState(RunState::kRunning);
-  StartLifeguardThread();
-  for (unsigned i = 0; i < reserve_threads_; i++) {
-    StartWorkerThread(/*initial=*/true);
-  }
+  Start();
 }
 
 }  // namespace experimental
