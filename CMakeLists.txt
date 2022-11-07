@@ -18910,8 +18910,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_pool_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/work_queue.cc
   src/core/lib/gprpp/time.cc
   test/core/event_engine/thread_pool_test.cc
@@ -18943,6 +18945,7 @@ target_link_libraries(thread_pool_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::any_invocable
+  absl::function_ref
   absl::statusor
   gpr
 )

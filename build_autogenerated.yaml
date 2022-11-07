@@ -10472,22 +10472,27 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/work_queue.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/time.h
   src:
+  - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/work_queue.cc
   - src/core/lib/gprpp/time.cc
   - test/core/event_engine/thread_pool_test.cc
   deps:
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/status:statusor
   - gpr
 - name: thread_quota_test
