@@ -117,6 +117,7 @@ grpc_cc_test(
         "//:grpc_public_hdrs",
         "//src/core:gpr_atm",
         "//src/core:iomgr_fwd",
+        "//src/core:slice",
         "//src/core:status_helper",
         "//test/core/util:grpc_test_util",
     ],

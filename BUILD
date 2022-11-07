@@ -1337,8 +1337,6 @@ grpc_cc_library(
     [
         "//src/core:lib/iomgr/closure.h",
         "//src/core:lib/iomgr/error.h",
-        "//src/core:lib/slice/slice_internal.h",
-        "//src/core:lib/slice/slice_string_helpers.h",
         "//src/core:lib/iomgr/exec_ctx.h",
         "//src/core:lib/iomgr/executor.h",
         "//src/core:lib/iomgr/combiner.h",
@@ -3081,6 +3079,7 @@ grpc_cc_library(
         "tsi_ssl_session_cache",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
+        "//src/core:slice",
         "//src/core:tsi_ssl_types",
         "//src/core:useful",
     ],
