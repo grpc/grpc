@@ -24,8 +24,6 @@
 
 #include <algorithm>
 
-#include "observability_logging_sink.h"
-
 namespace grpc {
 namespace internal {
 
