@@ -1335,6 +1335,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_executor",
+        "event_engine_trace",
         "event_engine_work_queue",
         "forkable",
         "time",

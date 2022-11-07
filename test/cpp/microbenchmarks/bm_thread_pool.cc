@@ -19,8 +19,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "absl/functional/any_invocable.h"
-
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
@@ -45,19 +43,20 @@ struct FanoutParameters {
 void BM_ThreadPool_RunSmallLambda(benchmark::State& state) {
   ThreadPool pool;
   const int cb_count = state.range(0);
-  std::atomic_int count{0};
   for (auto _ : state) {
     state.PauseTiming();
+    std::atomic_int run_count{0};
     grpc_core::Notification signal;
-    auto cb = [&signal, &count, cb_count]() {
-      if (++count == cb_count) signal.Notify();
+    auto cb = [&signal, &run_count, cb_count]() {
+      if (run_count.fetch_add(1, std::memory_order_relaxed) + 1 == cb_count) {
+        signal.Notify();
+      }
     };
     state.ResumeTiming();
     for (int i = 0; i < cb_count; i++) {
       pool.Run(cb);
     }
     signal.WaitForNotification();
-    count.store(0);
   }
   state.SetItemsProcessed(cb_count * state.iterations());
   pool.Quiesce();

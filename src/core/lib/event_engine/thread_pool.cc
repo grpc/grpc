@@ -29,6 +29,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/work_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -43,15 +44,18 @@ namespace experimental {
 // manner, which currently triggers the start of new threads.
 
 namespace {
+
 constexpr grpc_core::Duration kMaximumThreadStartFrequency =
     grpc_core::Duration::Milliseconds(1000);
 constexpr grpc_core::Duration kBacklogWaitThreshold =
     grpc_core::Duration::Milliseconds(333);
+constexpr absl::Duration kLifeguardSnoozeDuration = absl::Milliseconds(150);
 // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
 // current thread (with nullptr indicating not a threadpool thread).
 thread_local bool g_threadpool_thread;
 struct ThreadArg {
   bool initial;
+  void (*thread_body)(std::shared_ptr<ThreadPoolImpl> pool);
   std::shared_ptr<ThreadPoolImpl> pool;
 };
 }  // namespace
@@ -89,7 +93,7 @@ class ThreadPoolImpl : public Forkable,
     void Add();
     void Remove();
     void BlockUntilThreadCount(int threads, const char* why,
-                               grpc_core::CondVar& waiting_cv);
+                               grpc_core::CondVar& wait_cv);
 
    private:
     grpc_core::Mutex mu_;
@@ -103,10 +107,22 @@ class ThreadPoolImpl : public Forkable,
   };
 
   static void WorkerThreadMain(std::shared_ptr<ThreadPoolImpl> pool);
+  // A persistent thread that prevents pool starvation under queue/cv races.
+  // TODO(hork): this can go away with a work stealing implementation
+  //
+  // Without this thread, the empty-queue-check & cv-wait need to be an atomic
+  // operation, and the cv-signal must then happen while the lock is held.
+  // Otherwise, there can be a hang when the queue is found empty by all
+  // threads, then the queue is populated & the CV is signaled before any
+  // threads are waiting for that signal.
+  static void LifeguardThreadMain(std::shared_ptr<ThreadPoolImpl> pool);
   // Start a new thread.
   // if `initial=true`, this thread initializes the thread pool and is not
   // subject to rate limiting or backlog checking.
-  void StartThread(bool initial);
+  void StartThreadInternal(
+      bool initial, void (*thd_body)(std::shared_ptr<ThreadPoolImpl> pool));
+  void StartWorkerThread(bool initial);
+  void StartLifeguardThread();
   // Start a new thread while backlogged.
   // This is throttled to a maximum rate of thread creation, and only done if
   // the backlog necessitates it.
@@ -153,32 +169,44 @@ ThreadPoolImpl::ThreadPoolImpl()
       threads_waiting_(0) {}
 
 void ThreadPoolImpl::Start() {
+  StartLifeguardThread();
   for (unsigned i = 0; i < reserve_threads_; i++) {
-    StartThread(/*initial=*/true);
+    StartWorkerThread(/*initial=*/true);
   }
 }
 
-void ThreadPoolImpl::StartThread(bool initial) {
+void ThreadPoolImpl::StartWorkerThread(bool initial) {
+  StartThreadInternal(initial, &WorkerThreadMain);
+}
+
+void ThreadPoolImpl::StartLifeguardThread() {
+  StartThreadInternal(/*initial=*/true, &LifeguardThreadMain);
+}
+
+void ThreadPoolImpl::StartThreadInternal(
+    bool initial, void (*thd_body)(std::shared_ptr<ThreadPoolImpl> pool)) {
   thread_count_.Add();
   last_started_thread_.store(
       grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
       std::memory_order_relaxed);
-  // Initial pool creation can proceed immediately
   grpc_core::Thread(
-      "event_engine_thread_pool",
+      "ee_thread_pool",
       [](void* arg) {
         ThreadArg* thread_arg = static_cast<ThreadArg*>(arg);
+        GRPC_EVENT_ENGINE_TRACE("ThreadPoolImpl::%p started thread",
+                                thread_arg->pool.get());
         g_threadpool_thread = true;
+        // Initial pool creation can proceed immediately
         if (!thread_arg->initial) {
           thread_arg->pool->SleepIfRunning();
           GPR_ASSERT(thread_arg->pool->currently_starting_one_thread_.exchange(
               false, std::memory_order_relaxed));
           thread_arg->pool->StartThreadIfBacklogged();
         }
-        WorkerThreadMain(std::move(thread_arg->pool));
+        thread_arg->thread_body(std::move(thread_arg->pool));
         delete thread_arg;
       },
-      new ThreadArg{initial, shared_from_this()}, nullptr,
+      new ThreadArg{initial, thd_body, shared_from_this()}, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
@@ -198,11 +226,30 @@ void ThreadPoolImpl::StartThreadIfBacklogged() {
                                               std::memory_order_relaxed)) {
     return;
   }
-  StartThread(/*initial=*/false);
+  StartWorkerThread(/*initial=*/false);
 }
 
 void ThreadPoolImpl::WorkerThreadMain(std::shared_ptr<ThreadPoolImpl> pool) {
   while (pool->Step()) {
+  }
+  pool->thread_count_.Remove();
+  GRPC_EVENT_ENGINE_TRACE("ThreadPoolImpl::%p stopping thread", pool.get());
+}
+
+void ThreadPoolImpl::LifeguardThreadMain(std::shared_ptr<ThreadPoolImpl> pool) {
+  for (;;) {
+    if (pool->run_state_ == RunState::kShutdown ||
+        pool->run_state_ == RunState::kForking) {
+      break;
+    }
+    if (!pool->global_queue_.Empty() &&
+        pool->threads_waiting_ >= pool->reserve_threads_) {
+      GRPC_EVENT_ENGINE_TRACE(
+          "Lifeguard found a potential stall in pool::%p. Waking a thread",
+          pool.get());
+      pool->wait_cv_.Signal();
+    }
+    absl::SleepFor(kLifeguardSnoozeDuration);
   }
   pool->thread_count_.Remove();
 }
@@ -211,18 +258,21 @@ bool ThreadPoolImpl::Step() {
   // Wait until work is available or we are shutting down.
   while (run_state_ == RunState::kRunning && global_queue_.Empty()) {
     // If there are too many threads waiting, then quit this thread.
-    if (threads_waiting_ >= reserve_threads_) {
-      threads_waiting_++;
+    if (threads_waiting_.fetch_add(1) >= reserve_threads_) {
+      GRPC_EVENT_ENGINE_TRACE("%s", "extra thread waiting for work");
       grpc_core::MutexLock lock(&wait_mu_);
-      bool timed_out = wait_cv_.WaitWithTimeout(&wait_mu_, absl::Seconds(30));
+      bool timed_out = wait_cv_.WaitWithTimeout(&wait_mu_, absl::Seconds(3));
+      GRPC_EVENT_ENGINE_TRACE("%s", "extra thread awoken");
       threads_waiting_--;
       if (timed_out && threads_waiting_ >= reserve_threads_) {
+        gpr_log(GPR_DEBUG, "extra thread shutting down");
         return false;
       }
     } else {
-      threads_waiting_++;
+      GRPC_EVENT_ENGINE_TRACE("%s", "sleeping thread until work arrives");
       grpc_core::MutexLock lock(&wait_mu_);
       wait_cv_.Wait(&wait_mu_);
+      GRPC_EVENT_ENGINE_TRACE("%s", "thread awoken");
       threads_waiting_--;
     }
   }
@@ -318,11 +368,11 @@ void ThreadPoolImpl::ThreadCount::Remove() {
 }
 
 void ThreadPoolImpl::ThreadCount::BlockUntilThreadCount(
-    int threads, const char* why, grpc_core::CondVar& waiting_cv) {
+    int threads, const char* why, grpc_core::CondVar& wait_cv) {
   grpc_core::MutexLock lock(&mu_);
   auto last_log = absl::Now();
   while (threads_ > threads) {
-    waiting_cv.SignalAll();
+    wait_cv.SignalAll();
     // Wait for all threads to exit.
     // At least once every three seconds (but no faster than once per second
     // in the event of spurious wakeups) log a message indicating we're
@@ -346,8 +396,9 @@ void ThreadPoolImpl::PostforkParent() { Postfork(); }
 void ThreadPoolImpl::PostforkChild() { Postfork(); }
 void ThreadPoolImpl::Postfork() {
   SetRunState(RunState::kRunning);
+  StartLifeguardThread();
   for (unsigned i = 0; i < reserve_threads_; i++) {
-    StartThread(/*initial=*/true);
+    StartWorkerThread(/*initial=*/true);
   }
 }
 
