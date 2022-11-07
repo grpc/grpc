@@ -939,7 +939,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
             "Tx0cp encountered an ENOBUFS error possibly because one or "
             "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
             "small for the intended user. Current system value of "
-            "RLIMIT_MEMLOCK is %lu and hard memlock ulimit is %lu. Consider "
+            "RLIMIT_MEMLOCK is %llu and hard memlock ulimit is %llu. Consider "
             "increasing these values appropriately for the intended user.",
             GetRLimitMemLockMax(), GetUlimitHardMemLock());
 #endif
@@ -1211,7 +1211,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     if (zerocopy_enabled) {
       gpr_log(GPR_INFO,
               "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value = "
-              "%lu, ulimit hard memlock value = %lu",
+              "%llu, ulimit hard memlock value = %llu",
               GetRLimitMemLockMax(), GetUlimitHardMemLock());
     }
   }
