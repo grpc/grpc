@@ -756,14 +756,11 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
@@ -785,7 +782,6 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/notification.h
@@ -1487,13 +1483,10 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
   - src/core/lib/event_engine/posix_engine/timer_manager.cc
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
@@ -1509,7 +1502,6 @@ libs:
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -2025,14 +2017,11 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
@@ -2054,7 +2043,6 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/notification.h
@@ -2401,13 +2389,10 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
   - src/core/lib/event_engine/posix_engine/timer_manager.cc
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
@@ -2423,7 +2408,6 @@ libs:
   - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -7816,10 +7800,6 @@ targets:
   - test/core/event_engine/posix/lock_free_event_test.cc
   deps:
   - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: log_test
   gtest: true
@@ -8629,11 +8609,19 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
+  - src/core/lib/gprpp/load_file.h
   - test/core/event_engine/posix/posix_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
   src:
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  - src/core/lib/gprpp/load_file.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
@@ -8651,28 +8639,11 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   src:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - test/core/event_engine/posix/posix_engine_listener_utils_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: posix_event_engine_connect_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
-  src:
-  - test/core/event_engine/posix/posix_event_engine_connect_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   deps:
   - grpc_test_util
   platforms:
@@ -8686,12 +8657,9 @@ targets:
   headers:
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
   src:
-  - test/core/event_engine/test_suite/client_test.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
@@ -8700,6 +8668,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: promise_factory_test
   gtest: true
   build: test
@@ -10153,8 +10122,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   src:
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
   - grpc_test_util
@@ -10282,8 +10253,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/gprpp/load_file.h
   src:
+  - src/core/lib/gprpp/load_file.cc
   - test/core/gprpp/load_file_test.cc
   deps:
   - grpc_test_util
@@ -10703,8 +10676,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
   src:
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
   - test/core/event_engine/posix/traced_buffer_list_test.cc
   deps:
   - grpc_test_util
