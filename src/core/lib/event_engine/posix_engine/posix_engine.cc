@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"

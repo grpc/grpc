@@ -41,7 +41,6 @@ grpc_cc_test(
     flaky = True,
     deps = [
         "//:grpc++",
-        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -62,7 +61,6 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
-        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -23,7 +23,6 @@
 #include <chrono>
 #include <cstring>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>

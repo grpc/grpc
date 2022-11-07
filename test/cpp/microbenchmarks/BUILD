@@ -137,10 +137,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [
-        ":helpers",
-        "//src/core:closure",
-    ],
+    deps = [":helpers"],
 )
 
 grpc_cc_test(
@@ -338,10 +335,7 @@ grpc_cc_test(
         "no_windows",
         "nomsan",
     ],
-    deps = [
-        ":helpers",
-        "//src/core:closure",
-    ],
+    deps = [":helpers"],
 )
 
 grpc_cc_test(
