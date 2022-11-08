@@ -16,6 +16,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <limits.h>
 
 #include <algorithm>
