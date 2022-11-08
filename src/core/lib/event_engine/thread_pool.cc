@@ -109,7 +109,7 @@ class ThreadPoolImpl : public Forkable,
   //
   // Without this thread, the empty-queue-check & cv-wait need to be an atomic
   // operation, and the cv-signal must then happen while the lock is held.
-  // Otherwise, there can be a hang when the queue is found empty by all
+  // Otherwise execution can get stuck when the queue is found empty by all
   // threads, then the queue is populated & the CV is signaled before any
   // threads are waiting for that signal.
   static void LifeguardThreadMain(std::shared_ptr<ThreadPoolImpl> pool);
