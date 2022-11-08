@@ -253,8 +253,6 @@ This means you will need to have external copies of these libraries available
 on your system. This [example](test/distrib/cpp/run_distrib_test_cmake.sh) shows
 how to install dependencies with cmake before proceeding to installing gRPC itself. 
 
-> **Note**
-> All of gRPC's dependencies need to be already installed. 
 
 ```
 $ cmake ../.. -DgRPC_INSTALL=ON                \
