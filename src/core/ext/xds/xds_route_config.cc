@@ -974,6 +974,12 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
     rds_update.cluster_specifier_plugin_map =
         std::move(*cluster_specifier_plugin_map);
   }
+  // Build a set of cluster_specifier_plugin configured to make sure each is
+  // actually referenced by a route action.
+  std::set<absl::string_view> cluster_specifier_plugins;
+  for (auto& plugin : rds_update.cluster_specifier_plugin_map) {
+    cluster_specifier_plugins.emplace(plugin.first);
+  }
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
@@ -1026,12 +1032,6 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
         envoy_config_route_v3_VirtualHost_routes(virtual_hosts[i], &num_routes);
     if (num_routes < 1) {
       return absl::InvalidArgumentError("No route found in the virtual host.");
-    }
-    // Build a set of cluster_specifier_plugin configured to make sure each is
-    // actually referenced by a route action.
-    std::set<absl::string_view> cluster_specifier_plugins;
-    for (auto& plugin : rds_update.cluster_specifier_plugin_map) {
-      cluster_specifier_plugins.emplace(plugin.first);
     }
     // Loop over the whole list of routes
     for (size_t j = 0; j < num_routes; ++j) {
@@ -1096,11 +1096,11 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
     if (vhost.routes.empty()) {
       return absl::InvalidArgumentError("No valid routes specified.");
     }
-    // For plugins not used in route action, delete from the update to prevent
-    // further use.
-    for (auto& unused_plugin : cluster_specifier_plugins) {
-      rds_update.cluster_specifier_plugin_map.erase(std::string(unused_plugin));
-    }
+  }
+  // For plugins not used in route action, delete from the update to prevent
+  // further use.
+  for (auto& unused_plugin : cluster_specifier_plugins) {
+    rds_update.cluster_specifier_plugin_map.erase(std::string(unused_plugin));
   }
   return rds_update;
 }
