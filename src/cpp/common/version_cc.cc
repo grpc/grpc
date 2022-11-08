@@ -19,7 +19,7 @@
 #include <string>
 
 #include <grpcpp/grpcpp.h>
-#include <string>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 std::string Version() { return GRPC_CPP_VERSION_STRING; }
