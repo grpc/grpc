@@ -226,6 +226,7 @@ XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
 
 std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   std::vector<std::string> contents;
+  contents.reserve(hash_policies.size());
   for (const HashPolicy& hash_policy : hash_policies) {
     contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
   }

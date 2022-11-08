@@ -28,6 +28,7 @@
 #include <grpc/impl/codegen/gpr_types.h>
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
@@ -120,7 +121,17 @@ class TracedBufferList {
   void ProcessTimestamp(struct sock_extended_err* serr,
                         struct cmsghdr* opt_stats,
                         struct scm_timestamping* tss);
-  int Size() { return buffer_list_.size(); }
+  // The Size() operation is slow and is used only in tests.
+  int Size() {
+    grpc_core::MutexLock lock(&mu_);
+    int size = 0;
+    TracedBuffer* curr = head_;
+    while (curr) {
+      ++size;
+      curr = curr->next_;
+    }
+    return size;
+  }
   // Cleans the list by calling the callback for each traced buffer in the list
   // with timestamps that it has.
   void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/);
@@ -132,15 +143,18 @@ class TracedBufferList {
 
    private:
     friend class TracedBufferList;
+    TracedBuffer* next_ = nullptr;
     uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
     void* arg_;       /* The arg to pass to timestamps_callback */
     Timestamps ts_;   /* The timestamps corresponding to this buffer */
   };
+  grpc_core::Mutex mu_;
   // TracedBuffers are ordered by sequence number and would need to be processed
   // in a FIFO order starting with the smallest sequence number. To enable this,
-  // they are stored in a std::list which allows easy appends and forward
-  // iteration operations.
-  std::list<TracedBuffer> buffer_list_;
+  // they are stored in a singly linked with head and tail pointers which allows
+  // easy appends and forward iteration operations.
+  TracedBuffer* head_ = nullptr;
+  TracedBuffer* tail_ = nullptr;
 };
 
 #else  /* GRPC_LINUX_ERRQUEUE */

@@ -29,6 +29,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"

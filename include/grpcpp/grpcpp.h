@@ -58,6 +58,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/server_posix.h>
+#include <grpcpp/version_info.h>
 // IWYU pragma: end_exports
 
 namespace grpc {

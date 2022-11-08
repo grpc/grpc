@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <string>
-#include <vector>
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
@@ -43,7 +42,6 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ring_hash.pb.h"

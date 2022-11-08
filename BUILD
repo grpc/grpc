@@ -363,6 +363,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_context.h",
     "include/grpcpp/server_posix.h",
+    "include/grpcpp/version_info.h",
     "include/grpcpp/support/async_stream.h",
     "include/grpcpp/support/async_unary_call.h",
     "include/grpcpp/support/byte_buffer.h",
@@ -2103,6 +2104,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
         "absl/time",
@@ -3120,6 +3122,7 @@ grpc_cc_library(
         "promise",
         "//src/core:arena",
         "//src/core:arena_promise",
+        "//src/core:basic_seq",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",

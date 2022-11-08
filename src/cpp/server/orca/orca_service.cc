@@ -39,7 +39,6 @@
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>

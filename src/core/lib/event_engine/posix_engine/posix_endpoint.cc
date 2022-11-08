@@ -759,13 +759,7 @@ struct cmsghdr* PosixEndpointImpl::ProcessTimestamp(msghdr* msg,
     gpr_log(GPR_ERROR, "Unexpected control message");
     return cmsg;
   }
-  // The error handling can potentially be done on another thread so we need to
-  // protect the traced buffer list. A lock free list might be better. Using a
-  // simple mutex for now.
-  {
-    grpc_core::MutexLock lock(&traced_buffer_mu_);
-    traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
-  }
+  traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
   return next_cmsg;
 }
 
@@ -820,10 +814,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(length)) {
-    traced_buffer_mu_.Lock();
     traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + length),
                                 fd_, outgoing_buffer_arg_);
-    traced_buffer_mu_.Unlock();
     outgoing_buffer_arg_ = nullptr;
   }
   return true;
@@ -861,10 +853,8 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 // release operations needed can be performed on the arg.
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_arg_ != nullptr) {
-    traced_buffer_mu_.Lock();
     traced_buffers_.Shutdown(outgoing_buffer_arg_,
                              absl::InternalError("TracedBuffer list shutdown"));
-    traced_buffer_mu_.Unlock();
     outgoing_buffer_arg_ = nullptr;
   }
 }
@@ -939,8 +929,9 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
             "Tx0cp encountered an ENOBUFS error possibly because one or "
             "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
             "small for the intended user. Current system value of "
-            "RLIMIT_MEMLOCK is %lu and hard memlock ulimit is %lu. Consider "
-            "increasing these values appropriately for the intended user.",
+            "RLIMIT_MEMLOCK is %" PRIu64 " and hard memlock ulimit is %" PRIu64
+            ".Consider increasing these values appropriately for the intended "
+            "user.",
             GetRLimitMemLockMax(), GetUlimitHardMemLock());
 #endif
       }
@@ -1211,7 +1202,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     if (zerocopy_enabled) {
       gpr_log(GPR_INFO,
               "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value = "
-              "%lu, ulimit hard memlock value = %lu",
+              "%" PRIu64 ",ulimit hard memlock value = %" PRIu64,
               GetRLimitMemLockMax(), GetUlimitHardMemLock());
     }
   }

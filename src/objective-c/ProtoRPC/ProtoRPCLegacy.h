@@ -30,7 +30,8 @@
 @class GRXWriter;
 @protocol GRXWriteable;
 
-__attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC : GRPCCall
+__attribute__((deprecated("Please use GRPCProtoCall.")))
+@interface ProtoRPC : GRPCCall
 
 /**
  * host parameter should not contain the scheme (http:// or https://), only the name or IP

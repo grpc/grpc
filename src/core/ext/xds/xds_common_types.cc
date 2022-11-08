@@ -44,7 +44,6 @@
 #include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -76,6 +75,7 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 
 std::string CommonTlsContext::CertificateValidationContext::ToString() const {
   std::vector<std::string> contents;
+  contents.reserve(match_subject_alt_names.size());
   for (const auto& match : match_subject_alt_names) {
     contents.push_back(match.ToString());
   }

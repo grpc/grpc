@@ -946,6 +946,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "basic_seq",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "experiments",
@@ -1506,7 +1507,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
     ],
     deps = [
         "event_engine_poller",
@@ -1540,7 +1540,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/synchronization",
     ],
     deps = [
         "common_event_engine_closures",
@@ -1631,6 +1630,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_common",
         "experiments",
         "iomgr_port",
         "load_file",
@@ -1733,8 +1733,12 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/posix_engine/posix_engine.h"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
+        "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -1748,8 +1752,11 @@ grpc_cc_library(
         "experiments",
         "init_internally",
         "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_default",
+        "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "//:event_engine_base_hdrs",
@@ -1856,7 +1863,6 @@ grpc_cc_library(
     external_deps = ["absl/functional:any_invocable"],
     deps = [
         "channel_args",
-        "channel_args_preconditioning",
         "context",
         "default_event_engine_factory",
         "event_engine_trace",
@@ -2611,6 +2617,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:httpcli",
+        "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri_parser",
     ],
@@ -3080,7 +3087,6 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "slice",
         "//:channel_stack_builder",
@@ -3226,6 +3232,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3534,7 +3541,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "ref_counted",
         "useful",
@@ -3589,7 +3595,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:uri_parser",
-        "//:xds_client",
     ],
 )
 
@@ -3671,7 +3676,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:work_serializer",
-        "//:xds_client",
     ],
 )
 
@@ -3923,7 +3927,6 @@ grpc_cc_library(
         "json",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
         "subchannel_interface",
         "//:config",
         "//:debug_location",
@@ -3962,7 +3965,6 @@ grpc_cc_library(
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
         "subchannel_interface",
         "unique_type_name",
         "validation_errors",
@@ -3998,7 +4000,6 @@ grpc_cc_library(
         "json",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
         "subchannel_interface",
         "//:config",
         "//:debug_location",
@@ -4161,7 +4162,6 @@ grpc_cc_library(
         "//:src/cpp/server/load_reporter/constants.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -4175,7 +4175,6 @@ grpc_cc_library(
     deps = [
         "arena_promise",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "context",
         "grpc_sockaddr",
