@@ -42,7 +42,6 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

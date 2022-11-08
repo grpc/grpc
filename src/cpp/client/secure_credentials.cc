@@ -40,6 +40,7 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 

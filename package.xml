@@ -967,15 +967,21 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_closure.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_heap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_heap.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_manager.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/traced_buffer_list.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/traced_buffer_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc" role="src" />
@@ -1062,6 +1068,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/match.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
