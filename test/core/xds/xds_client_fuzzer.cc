@@ -66,6 +66,7 @@ class Fuzzer {
           case xds_client_fuzzer::ResourceType::kEndpoint:
             StartWatch(&endpoint_watchers_,
                        action.start_watch().resource_name());
+            break;
           case xds_client_fuzzer::ResourceType::RESOURCE_TYPE_NOT_SET:
             break;
         }
@@ -84,6 +85,7 @@ class Fuzzer {
             break;
           case xds_client_fuzzer::ResourceType::kEndpoint:
             StopWatch(&endpoint_watchers_, action.stop_watch().resource_name());
+            break;
           case xds_client_fuzzer::ResourceType::RESOURCE_TYPE_NOT_SET:
             break;
         }
