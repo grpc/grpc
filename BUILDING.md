@@ -126,15 +126,9 @@ If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_S
 
 ### Windows, Using CMake
 
-When using the "Visual Studio" generator,
-cmake will generate a solution (`grpc.sln`) that contains a VS project for
-every target defined in `CMakeLists.txt` (plus a few extra convenience projects
-added automatically by cmake). After opening the solution with Visual Studio
-you will be able to browse and build the code.
+When using the "Visual Studio" generator, `cmake` will generate a solution (`grpc.sln`) that contains a VS project for every target defined in `CMakeLists.txt` (plus a few extra convenience projects added automatically by cmake). For the list of possible generators and to identify your version, check out the [cmake-generator](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#manual:cmake-generators(7)) option. After opening the solution with Visual Studio you will be able to browse and build the code.
 
-> **Note**
-> A Visual C++ compiler is needed when building using CMake directly, which you specify as a [cmake-generator](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#manual:cmake-generators(7)) option.
-
+ 
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
@@ -150,7 +144,7 @@ you will be able to browse and build the code.
 
 ### Windows, Using Visual Studio (interactively)
 
-You can build and install gRPC directly from Visual Studio. Technically, CMake is used to generate Visual C++ projects as above but you can subsequenlty perform the actual builds (and installs) inteactively inside Visual Studio. Note that the steps below differ slightly and reference the [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. 
+You can build and install gRPC interactively from Visual Studio. Technically, CMake is used to generate Visual C++ projects as above but you can subsequenlty perform the actual builds (and installs) inteactively inside Visual Studio. Note that the steps below differ slightly as they cross-reference the [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. 
 
 ```
 > md .build
