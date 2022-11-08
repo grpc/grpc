@@ -146,18 +146,16 @@ When using the "Visual Studio" generator, `cmake` will generate a solution (`grp
 
 You can build and install gRPC interactively from Visual Studio. Technically, CMake is used to generate Visual C++ projects as above but you can subsequenlty perform the actual builds (and installs) inteactively inside Visual Studio. Note that the steps below differ slightly as they cross-reference the [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. 
 
-```
-> md .build
-> cd .build
-> cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR  ../..
-```
+1. Define the `$MY_INSTALL_DIR` environment variable, create the target path ad then use `cmake` to generate the solution files, as follows:
 
-
-1. Ensure you have defined the `$MY_INSTALL_DIR` environment variable and have created the target path it references. 
+    ```
+    > @rem From the same .build subdirectory
+    > cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR  ../..
+    ```
 
 2. Open the `grpc.sln` solution file using Visual Studio and build the 'Release' version of the project. 
 
-3. Install gRPC in the path specificed by `$MY_INSTALL_DIR` by building the `INSTALL` project. 
+3. Build the `INSTALL` project to install gRPC in the path specificed by `$MY_INSTALL_DIR`.
 
 > **Warning** Your Visual Studio instance needs to inherit the `$MY_INSTALL_DIR` environment variable in order to work interactively. 
 
