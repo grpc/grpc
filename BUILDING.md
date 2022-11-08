@@ -290,18 +290,13 @@ can be made about any sort of ABI stability across the same SONAME version.
 
 ## Building with make on UNIX systems (deprecated)
 
-> **Warning**
-> Building gRPC using `make` is no longer recommended. 
+NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. You should use `bazel` or `cmake` instead. The `Makefile` is only intended for internal usage and is not meant for public consumption.
 
-While the `make` build automation tool was gRPC's default build system, we're no longer recommending now. Please considering using  `bazel` or `CMake` instead. 
-
-
-> **Note** The `Makefile` in the gRPC root directory is intended for internal use only and is not meant for public consumption.
-
-From the gRPC repository root
+From the grpc repository root
 ```sh
  $ make
-```
+ ```
+
 
 
 If you happen to get an error on Linux such as 'aclocal-1.15: command not found', which can happen if you ran 'make' before installing the pre-reqs, try the following:
