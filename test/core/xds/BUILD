@@ -171,6 +171,15 @@ grpc_proto_fuzzer(
         ":xds_transport_fake",
         "//src/core:grpc_xds_client",
         "//test/core/util:grpc_test_util",
+        # These proto deps are needed to ensure that we can read these
+        # resource types out of the google.protobuf.Any fields in the
+        # textproto files in the corpora.
+        "//src/proto/grpc/testing/xds/v3:listener_proto",
+        "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
     ],
     proto_deps = [
         "//src/proto/grpc/status:status_proto",
