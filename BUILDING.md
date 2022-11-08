@@ -149,7 +149,7 @@ you will be able to browse and build the code.
 > cmake .. -G "Visual Studio 14 2015"
 > cmake --build . --config Release
 ```
-> **Note** If you need to figure our our Visual Studio version, Wikipedia details the [mapping between Visual Studio product name and version number](https://en.wikipedia.org/wiki/Microsoft_Visual_Studio) in the 'History' section (e.g. Visual Studio 2022 == Version 17.0).
+> **Note** If you need to figure out your Visual Studio version, Wikipedia details the [mapping between Visual Studio product name and version number](https://en.wikipedia.org/wiki/Microsoft_Visual_Studio) in the 'History' section (e.g. Visual Studio 2022 == Version 17.0).
 
 ### Windows, Using Visual Studio
 
@@ -207,6 +207,8 @@ at your own risk.
 **Debug/Release Installs**
 
 There are both Debug and Release builds and their respective installs differ slightly (e.g. debug/release verions of libs). If you want a 'complete' install that includes both Debug and Release artefacts, then you'll need to perform two builds to separate install target-locations and then merge the differences. 
+
+> **Note** On Windows, the libraries libprotobuf.lib, libprotobuf-lite.lib and libprotoc.lib as well as the helper libs zlib.lib and zlibstatic.lib all have a postfix 'd' added to the debug versions - i.e. libprotobufd.lib, libprotobuf-lited.lib and libprotocd.lib, zlibd.lib, zlibstaticd.lib . 
 
 ### Dependency management
 
