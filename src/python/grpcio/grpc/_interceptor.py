@@ -71,34 +71,34 @@ def _unwrap_client_call_details(
 ) -> Tuple[str, float, MetadataType, grpc.CallCredentials, bool,
            grpc.Compression]:
     try:
-        method = call_details.method
+        method = call_details.method  # pytype: disable=attribute-error
     except AttributeError:
-        method = default_details.method
+        method = default_details.method  # pytype: disable=attribute-error
 
     try:
-        timeout = call_details.timeout
+        timeout = call_details.timeout  # pytype: disable=attribute-error
     except AttributeError:
-        timeout = default_details.timeout
+        timeout = default_details.timeout  # pytype: disable=attribute-error
 
     try:
-        metadata = call_details.metadata
+        metadata = call_details.metadata  # pytype: disable=attribute-error
     except AttributeError:
-        metadata = default_details.metadata
+        metadata = default_details.metadata  # pytype: disable=attribute-error
 
     try:
-        credentials = call_details.credentials
+        credentials = call_details.credentials  # pytype: disable=attribute-error
     except AttributeError:
-        credentials = default_details.credentials
+        credentials = default_details.credentials  # pytype: disable=attribute-error
 
     try:
-        wait_for_ready = call_details.wait_for_ready
+        wait_for_ready = call_details.wait_for_ready  # pytype: disable=attribute-error
     except AttributeError:
-        wait_for_ready = default_details.wait_for_ready
+        wait_for_ready = default_details.wait_for_ready  # pytype: disable=attribute-error
 
     try:
-        compression = call_details.compression
+        compression = call_details.compression  # pytype: disable=attribute-error
     except AttributeError:
-        compression = default_details.compression
+        compression = default_details.compression  # pytype: disable=attribute-error
 
     return method, timeout, metadata, credentials, wait_for_ready, compression
 
@@ -490,16 +490,10 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
     _thunk: Callable
     _method: str
-    _interceptor: Union[grpc.StreamStreamClientInterceptor,
-                        grpc.StreamUnaryClientInterceptor,
-                        grpc.UnaryStreamClientInterceptor,
-                        grpc.UnaryUnaryClientInterceptor]
+    _interceptor: grpc.StreamStreamClientInterceptor
 
     def __init__(self, thunk: Callable, method: str,
-                 interceptor: Union[grpc.StreamStreamClientInterceptor,
-                                    grpc.StreamUnaryClientInterceptor,
-                                    grpc.UnaryStreamClientInterceptor,
-                                    grpc.UnaryUnaryClientInterceptor]):
+                 interceptor: grpc.StreamStreamClientInterceptor):
         self._thunk = thunk
         self._method = method
         self._interceptor = interceptor
