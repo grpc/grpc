@@ -67,24 +67,17 @@ Before building, you need to clone the gRPC github repository and download submo
 for gRPC's dependencies (that's done by the `submodule` command or `--recursive` flag). Use following commands
 to clone the gRPC repository at the [latest stable release tag](https://github.com/grpc/grpc/releases)
 
-## Unix
+The same commands apply across Linux, macOS and Windows:
 
-```sh
+```
  $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
  $ cd grpc
  $ git submodule update --init
  ```
 
-## Windows
-
-```
-> git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
-> cd grpc
-> git submodule update --init
-```
 
 > **Note**
-> The `bazel` build tool uses a different model for dependencies. You only need to worry about downloading submodules if you're building with something else than `bazel` (e.g. `cmake`).
+> The `bazel` build tool uses a different model for dependencies. You only need to worry about downloading submodules if you're building with something else than `bazel` (e.g. `make`).
 
 
 # Build from source
