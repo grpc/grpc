@@ -181,6 +181,56 @@ TEST_F(XdsRouteConfigTest, MinimumValidConfig) {
 
 using VirtualHostTest = XdsRouteConfigTest;
 
+TEST_F(VirtualHostTest, MultipleVirtualHosts) {
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("foo.example.com");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster2");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
+  ASSERT_EQ(resource.virtual_hosts.size(), 2UL);
+  EXPECT_THAT(resource.virtual_hosts[0].domains, ::testing::ElementsAre("*"));
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto* route = &resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+  ASSERT_NE(action, nullptr);
+  auto* cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster1");
+  EXPECT_THAT(resource.virtual_hosts[1].domains,
+              ::testing::ElementsAre("foo.example.com"));
+  ASSERT_EQ(resource.virtual_hosts[1].routes.size(), 1UL);
+  route = &resource.virtual_hosts[1].routes[0];
+  action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+  ASSERT_NE(action, nullptr);
+  cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster2");
+}
+
 TEST_F(VirtualHostTest, BadDomainPattern) {
   RouteConfiguration route_config;
   route_config.set_name("foo");
@@ -1644,15 +1694,8 @@ TEST_F(RlsTest, Basic) {
           "\"grpcKeybuilders\":[{\"names\":[{\"service\":\"service\"}]}],"
           "\"lookupService\":\"rls.example.com\"}}}]")));
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
-  EXPECT_THAT(resource.virtual_hosts[0].domains, ::testing::ElementsAre("*"));
-  EXPECT_THAT(resource.virtual_hosts[0].typed_per_filter_config,
-              ::testing::ElementsAre());
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
-  auto& matchers = route.matchers;
-  EXPECT_EQ(matchers.path_matcher.ToString(), "StringMatcher{prefix=}");
-  EXPECT_THAT(matchers.header_matchers, ::testing::ElementsAre());
-  EXPECT_FALSE(matchers.fraction_per_million.has_value());
   auto* action =
       absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
@@ -1661,6 +1704,122 @@ TEST_F(RlsTest, Basic) {
       &action->action);
   ASSERT_NE(plugin_name, nullptr);
   EXPECT_EQ(plugin_name->cluster_specifier_plugin_name, "rls");
+}
+
+TEST_F(RlsTest, PluginDefinedButNotUsed) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  RouteLookupClusterSpecifier rls_cluster_specifier;
+  auto* rls_config = rls_cluster_specifier.mutable_route_lookup_config();
+  rls_config->set_cache_size_bytes(1024);
+  rls_config->set_lookup_service("rls.example.com");
+  auto* grpc_keybuilder = rls_config->add_grpc_keybuilders();
+  grpc_keybuilder->add_names()->set_service("service");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      rls_cluster_specifier);
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
+  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto& route = resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+  ASSERT_NE(action, nullptr);
+  auto* cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster1");
+}
+
+TEST_F(RlsTest, NotUsedInAllVirtualHosts) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration route_config;
+  route_config.set_name("foo");
+  auto* cluster_specifier_plugin = route_config.add_cluster_specifier_plugins();
+  auto* typed_extension_config = cluster_specifier_plugin->mutable_extension();
+  typed_extension_config->set_name("rls");
+  RouteLookupClusterSpecifier rls_cluster_specifier;
+  auto* rls_config = rls_cluster_specifier.mutable_route_lookup_config();
+  rls_config->set_cache_size_bytes(1024);
+  rls_config->set_lookup_service("rls.example.com");
+  auto* grpc_keybuilder = rls_config->add_grpc_keybuilders();
+  grpc_keybuilder->add_names()->set_service("service");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      rls_cluster_specifier);
+  auto* vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("*");
+  auto* route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster_specifier_plugin("rls");
+  vhost = route_config.add_virtual_hosts();
+  vhost->add_domains("foo.example.com");
+  route_proto = vhost->add_routes();
+  route_proto->mutable_match()->set_prefix("");
+  route_proto->mutable_route()->set_cluster("cluster1");
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+  EXPECT_THAT(
+      resource.cluster_specifier_plugin_map,
+      ::testing::ElementsAre(::testing::Pair(
+          "rls",
+          "[{\"rls_experimental\":{"
+          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicyConfigTargetFieldName\":\"cluster\","
+          "\"routeLookupConfig\":{"
+          "\"cacheSizeBytes\":\"1024\","
+          "\"grpcKeybuilders\":[{\"names\":[{\"service\":\"service\"}]}],"
+          "\"lookupService\":\"rls.example.com\"}}}]")));
+  ASSERT_EQ(resource.virtual_hosts.size(), 2UL);
+  EXPECT_THAT(resource.virtual_hosts[0].domains, ::testing::ElementsAre("*"));
+  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
+  auto* route = &resource.virtual_hosts[0].routes[0];
+  auto* action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+  ASSERT_NE(action, nullptr);
+  auto* plugin_name = absl::get_if<
+      XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName>(
+      &action->action);
+  ASSERT_NE(plugin_name, nullptr);
+  EXPECT_EQ(plugin_name->cluster_specifier_plugin_name, "rls");
+  EXPECT_THAT(resource.virtual_hosts[1].domains,
+              ::testing::ElementsAre("foo.example.com"));
+  ASSERT_EQ(resource.virtual_hosts[1].routes.size(), 1UL);
+  route = &resource.virtual_hosts[1].routes[0];
+  action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+  ASSERT_NE(action, nullptr);
+  auto* cluster =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+          &action->action);
+  ASSERT_NE(cluster, nullptr);
+  EXPECT_EQ(cluster->cluster_name, "cluster1");
 }
 
 TEST_F(RlsTest, ClusterSpecifierPluginsIgnoredWhenNotEnabled) {
