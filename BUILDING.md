@@ -149,7 +149,11 @@ you will be able to browse and build the code.
 > cmake .. -G "Visual Studio 14 2015"
 > cmake --build . --config Release
 ```
-> **Note** If you need to figure out your Visual Studio version, Wikipedia details the [mapping between Visual Studio product name and version number](https://en.wikipedia.org/wiki/Microsoft_Visual_Studio) in the 'History' section (e.g. Visual Studio 2022 == Version 17.0).
+
+> **Note** To figure out your Visual Studio _version number_ from the product name, refer to the table under [Visual Studio History](https://en.wikipedia.org/wiki/Visual_Studio#History) on Wikipedia. (e.g. Visual Studio 2022 == Version 17.0).
+
+
+
 
 ### Windows, Using Visual Studio
 
