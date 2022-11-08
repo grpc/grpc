@@ -182,14 +182,9 @@ installed to be able to compile the C/C++ sources.
 **Building shared libs (DLLs)**
 
 > **Warning**
-> Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
+> Using gRPC C++ as a DLL is not recommended.
 
-Windows DLL build is supported on a "best effort" basis and we don't recommend using gRPC C++ as a DLL as there are some known drawbacks around how C++ DLLs work on Windows. For example, there is no stable C++ ABI and you can't safely allocate memory in one DLL, and free it in another etc.
-
-That said, we don't actively prohibit building DLLs on windows (it can be enabled in cmake with `-DBUILD_SHARED_LIBS=ON`), and are free to use the DLL builds
-at your own risk.
-- you've been warned that there are some important drawbacks and some things might not work at all or will be broken in interesting ways.
-- we don't have extensive testing for DLL builds in place (to avoid maintenance costs, increased test duration etc.) so regressions / build breakages might occur
+Although once supported (albeit with some known drawbacks), building gRPC as a Windows DLL is no longer recommended and has not been actively supported for several years. 
 
 
 **Debug/Release Installs**
