@@ -155,11 +155,9 @@ You can build and install gRPC interactively from Visual Studio. Technically, CM
 
 1. Ensure you have defined the `$MY_INSTALL_DIR` environment variable and have created the target path it references. 
 
-2. Start Visual Studio and open the `grpc.sln` solution file.
+2. Open the `grpc.sln` solution file using Visual Studio and build the 'Release' version of the project. 
 
-3. Build the 'Release' version, taking care to ensure a clean build with no errors. 
-
-4. Install gRPC to the path specificed by `$MY_INSTALL_DIR` by building the `INSTALL` project. 
+3. Install gRPC in the path specificed by `$MY_INSTALL_DIR` by building the `INSTALL` project. 
 
 > **Warning** Your Visual Studio instance needs to inherit the `$MY_INSTALL_DIR` environment variable in order to work interactively. 
 
