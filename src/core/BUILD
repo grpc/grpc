@@ -5426,6 +5426,27 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpc_promise_endpoint",
+    srcs = [
+        "lib/event_engine/promise_endpoint.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "//:include/grpc/event_engine/promise_endpoint.h",
+    ],
+    deps = [
+        "event_engine_common",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:promise",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
