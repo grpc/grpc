@@ -148,17 +148,15 @@ you will be able to browse and build the code.
 
 
 
-### Windows, Using Visual Studio
+### Windows, Using Visual Studio (interactively)
 
-You can build gRPC directly in Visual Studio. Technically, CMake is used to generate Visual C++ projects as above but you can perform the actual builds from inside Visual Studio . The steps below reference the  [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. 
+You can build and install gRPC directly from Visual Studio. Technically, CMake is used to generate Visual C++ projects as above but you can subsequenlty perform the actual builds (and installs) inteactively inside Visual Studio. Note that the steps below differ slightly and reference the [gRPC Quick start page](https://grpc.io/docs/languages/cpp/quickstart/), which advises to specify a dedicated install location referenced as `$MY_INSTALL_DIR`. 
 
 ```
-> @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
 > cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR  ../..
 ```
-> **Warning** Your Visual Studio instance needs to inherit the `$MY_INSTALL_DIR` environment variable. If you've only declared this in your local (e.g. Git Bash/CMD-prompt) then you'll need to start your Visual Studio instance from this shell in order to inherit the environment variable. Alternatively, set it globally using the Control Panel and restart Visual Studio.
 
 
 1. Ensure you have defined the `$MY_INSTALL_DIR` environment variable and have created the target path it references. 
@@ -168,6 +166,9 @@ You can build gRPC directly in Visual Studio. Technically, CMake is used to gene
 3. Build the 'Release' version, taking care to ensure a clean build with no errors. 
 
 4. Install gRPC to the path specificed by `$MY_INSTALL_DIR` by building the `INSTALL` project. 
+
+> **Warning** Your Visual Studio instance needs to inherit the `$MY_INSTALL_DIR` environment variable in order to work interactively. 
+
 
 
 
