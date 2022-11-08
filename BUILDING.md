@@ -43,7 +43,7 @@ packages from [Homebrew](https://brew.sh):
 
 If you plan to build using CMake, follow the instructions from https://cmake.org/download/
 
-*Tip*: when building,
+*Tip*: When building,
 you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
 environment variables when running `make` to ensure the version
 installed by `brew` is being used:
@@ -55,9 +55,9 @@ installed by `brew` is being used:
 ## Windows
 
 To prepare for CMake -and- Microsoft Visual C++ compiler build:
-- Install Visual Studio 2017/2019/2022 (i.e. Visual C++).
-- Install [Git](https://git-scm.com/).
-- Install [CMake](https://cmake.org/download/).
+- Install Visual Studio 2017 or higher (i.e. Visual C++)
+- Install [Git](https://git-scm.com/)
+- Install [CMake](https://cmake.org/download/)
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*
 - (Optional) Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 
