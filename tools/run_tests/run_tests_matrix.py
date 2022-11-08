@@ -288,7 +288,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 def _create_portability_test_jobs(extra_args=[],
                                   inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
-    # portability C and C++ x86
+    # portability C and C++ on x86
     test_jobs += _generate_jobs(languages=['c', 'c++'],
                                 configs=['dbg'],
                                 platforms=['linux'],
@@ -314,7 +314,7 @@ def _create_portability_test_jobs(extra_args=[],
                                     timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # portability C on Windows 64-bit (x86 is the default)
-    test_jobs += _generate_jobs(languages=['c',],
+    test_jobs += _generate_jobs(languages=['c'],
                                 configs=['dbg'],
                                 platforms=['windows'],
                                 arch='x64',
