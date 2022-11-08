@@ -1333,8 +1333,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
 
   printer->Print(service->GetLeadingComments("//").c_str());
   printer->Print(*vars,
-                 "class $Service$ final {\n"
-                 " public:\n");
+                 "namespace $Service$ {\n");
   printer->Indent();
 
   // Service metadata
@@ -1402,7 +1401,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(
-      "static std::unique_ptr<Stub> NewStub(const std::shared_ptr< "
+      "std::unique_ptr<Stub> NewStub(const std::shared_ptr< "
       "::grpc::ChannelInterface>& channel, "
       "const ::grpc::StubOptions& options = ::grpc::StubOptions());\n");
 
