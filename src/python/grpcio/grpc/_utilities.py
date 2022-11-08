@@ -61,7 +61,8 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
     def service(
         self, handler_call_details: grpc.HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
-        return self._method_handlers.get(handler_call_details.method)  # pytype: disable=attribute-error
+        details_method = handler_call_details.method
+        return self._method_handlers.get(details_method)  # pytype: disable=attribute-error
 
 
 class _ChannelReadyFuture(grpc.Future):
