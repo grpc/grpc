@@ -55,7 +55,7 @@ installed by `brew` is being used:
 ## Windows
 
 To prepare for CMake -and- Microsoft Visual C++ compiler build:
-- Install Visual Studio 2015/2017/2019/2022 (i.e. Visual C++).
+- Install Visual Studio 2017/2019/2022 (i.e. Visual C++).
 - Install [Git](https://git-scm.com/).
 - Install [CMake](https://cmake.org/download/).
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*
@@ -146,7 +146,7 @@ you will be able to browse and build the code.
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
-> cmake .. -G "Visual Studio 14 2015"
+> cmake .. -G "Visual Studio 15 2017"
 > cmake --build . --config Release
 ```
 
