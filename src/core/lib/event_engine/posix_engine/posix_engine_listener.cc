@@ -27,6 +27,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/status_helper.h"
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
 #include <sys/socket.h>  // IWYU pragma: keep
@@ -97,12 +99,9 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   }
 
   auto result = CreateAndPrepareListenerSocket(options_, res_addr);
-  if (result.ok()) {
-    acceptors_.Append(*result);
-    return result->port;
-  } else {
-    return result.status();
-  }
+  GRPC_RETURN_IF_ERROR(result.status());
+  acceptors_.Append(*result);
+  return result->port;
 }
 
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::Start() {
@@ -188,7 +187,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
             absl::StrCat("on-accept-tcp-server-connection: ", peer_name)));
   }
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
