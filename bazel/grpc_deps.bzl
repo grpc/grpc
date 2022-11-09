@@ -212,11 +212,11 @@ def grpc_deps():
         http_archive(
             name = "zlib",
             build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
-            sha256 = "ef47b0fbe646d69a2fc5ba012cb278de8e8946a8e9649f83a807cc05559f0eff",
-            strip_prefix = "zlib-21767c654d31d2dccdde4330529775c6c5fd5389",
+            sha256 = "90f43a9c998740e8a0db24b0af0147033db2aaaa99423129abbd76640757cac9",
+            strip_prefix = "zlib-04f42ceca40f73e2978b50e93806c2a18c1281fc",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/21767c654d31d2dccdde4330529775c6c5fd5389.tar.gz",
-                "https://github.com/madler/zlib/archive/21767c654d31d2dccdde4330529775c6c5fd5389.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/04f42ceca40f73e2978b50e93806c2a18c1281fc.tar.gz",
+                "https://github.com/madler/zlib/archive/04f42ceca40f73e2978b50e93806c2a18c1281fc.tar.gz",
             ],
         )
 
