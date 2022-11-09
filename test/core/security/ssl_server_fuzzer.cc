@@ -20,6 +20,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -28,6 +29,8 @@
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+
+using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
 // ssl has an array of global gpr_mu's that are never released.
@@ -94,8 +97,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     struct handshake_state state;
     state.done_callback_called = false;
-    auto handshake_mgr =
-        grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
+    auto handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>(
+        GetDefaultEventEngine());
     sc->add_handshakers(grpc_core::ChannelArgs(), nullptr, handshake_mgr.get());
     handshake_mgr->DoHandshake(mock_endpoint, grpc_core::ChannelArgs(),
                                deadline, nullptr /* acceptor */,

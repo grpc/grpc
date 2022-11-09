@@ -82,8 +82,10 @@
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
-
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
+
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
                           grpc_error_handle error) {
   grpc_closure* c = *closure;
@@ -118,7 +120,8 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
       args_.channel_args
           .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value())
           .Set(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, 1);
-  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  handshake_mgr_ = MakeRefCounted<HandshakeManager>(
+      channel_args.GetObjectRef<EventEngine>());
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());

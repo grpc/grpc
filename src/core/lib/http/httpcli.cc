@@ -56,6 +56,8 @@
 
 namespace grpc_core {
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 namespace {
 
 grpc_httpcli_get_override g_get_override;
@@ -342,7 +344,8 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   args = args.SetObject(std::move(sc))
              .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value());
   // Start the handshake
-  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  handshake_mgr_ =
+      MakeRefCounted<HandshakeManager>(args.GetObjectRef<EventEngine>());
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, args, pollset_set_, handshake_mgr_.get());
   Ref().release();  // ref held by pending handshake

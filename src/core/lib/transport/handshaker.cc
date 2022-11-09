@@ -36,18 +36,17 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 TraceFlag grpc_handshaker_trace(false, "handshaker");
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 std::string HandshakerArgsString(HandshakerArgs* args) {
   size_t read_buffer_length =
@@ -61,11 +60,11 @@ std::string HandshakerArgsString(HandshakerArgs* args) {
 
 }  // namespace
 
-HandshakeManager::HandshakeManager()
+HandshakeManager::HandshakeManager(std::shared_ptr<EventEngine> event_engine)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)
                      ? "HandshakeManager"
                      : nullptr),
-      event_engine_(GetDefaultEventEngine()) {}
+      event_engine_(event_engine) {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);

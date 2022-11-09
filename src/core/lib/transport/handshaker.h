@@ -100,7 +100,9 @@ class Handshaker : public RefCounted<Handshaker> {
 
 class HandshakeManager : public RefCounted<HandshakeManager> {
  public:
-  HandshakeManager();
+  explicit HandshakeManager(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine);
   ~HandshakeManager() override;
 
   /// Adds a handshaker to the handshake manager.
