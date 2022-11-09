@@ -156,6 +156,7 @@ grpc_cc_test(
     deps = [
         ":client",
         ":oracle_event_engine_posix",
+        ":server",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
