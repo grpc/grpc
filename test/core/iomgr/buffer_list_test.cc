@@ -20,8 +20,8 @@
 
 #include <gtest/gtest.h>
 
-#include "grpc/support/time.h"
 #include <grpc/grpc.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
@@ -52,13 +52,6 @@ void InitGlobals() {
   g_now = {1, 0, GPR_CLOCK_MONOTONIC};
   grpc_core::TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;
-}
-
-void ResetClock() {
-  grpc_core::ExecCtx exec_ctx;
-  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
-  grpc_core::TestOnlySetProcessEpoch(g_now);
-  exec_ctx.InvalidateNow();
 }
 
 void AdvanceClockMillis(uint64_t millis) {
@@ -173,7 +166,6 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
   struct sock_extended_err serr[3];
   gpr_atm verifier_called[3];
   struct grpc_core::scm_timestamping tss;
-  ResetClock();
   grpc_core::grpc_tcp_set_write_timestamps_callback(
       TestVerifierCalledOnDelayedAckVerifier);
   grpc_core::TracedBufferList tb_list;
@@ -239,7 +231,6 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
   struct grpc_core::scm_timestamping tss;
   tss.ts[0].tv_sec = 123;
   tss.ts[0].tv_nsec = 456;
-  ResetClock();
   grpc_core::grpc_tcp_set_write_timestamps_callback(
       TestVerifierCalledOnAckVerifier);
   grpc_core::TracedBufferList tb_list;

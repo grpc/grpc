@@ -56,13 +56,6 @@ void InitGlobals() {
   gpr_now_impl = now_impl;
 }
 
-void ResetClock() {
-  grpc_core::ExecCtx exec_ctx;
-  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
-  grpc_core::TestOnlySetProcessEpoch(g_now);
-  exec_ctx.InvalidateNow();
-}
-
 void AdvanceClockMillis(uint64_t millis) {
   grpc_core::ExecCtx exec_ctx;
   g_now = gpr_time_add(
@@ -176,7 +169,6 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
   struct sock_extended_err serr[3];
   gpr_atm verifier_called[3];
   struct scm_timestamping tss;
-  ResetClock();
   TcpSetWriteTimestampsCallback(TestVerifierCalledOnDelayedAckVerifier);
   TracedBufferList tb_list;
   serr[0].ee_data = 1;
@@ -241,7 +233,6 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
   struct scm_timestamping tss;
   tss.ts[0].tv_sec = 123;
   tss.ts[0].tv_nsec = 456;
-  ResetClock();
   TcpSetWriteTimestampsCallback(TestVerifierCalledOnAckVerifier);
   TracedBufferList tb_list;
   for (int i = 0; i < kNumTracedBuffers; i++) {

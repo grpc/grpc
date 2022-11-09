@@ -20,8 +20,8 @@
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
-#include "grpc/support/time.h"
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/sync.h"
