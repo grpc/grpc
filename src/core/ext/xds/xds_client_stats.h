@@ -119,13 +119,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
       return *this;
     }
 
-    bool IsZero() const {
-      if (uncategorized_drops != 0) return false;
-      for (const auto& p : categorized_drops) {
-        if (p.second != 0) return false;
-      }
-      return true;
-    }
+    bool IsZero() const { return uncategorized_drops == 0; }
   };
 
   XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
@@ -191,14 +185,9 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
     }
 
     bool IsZero() const {
-      if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
-          total_error_requests != 0 || total_issued_requests != 0) {
-        return false;
-      }
-      for (const auto& p : backend_metrics) {
-        if (!p.second.IsZero()) return false;
-      }
-      return true;
+      return !(total_successful_requests != 0 ||
+               total_requests_in_progress != 0 || total_error_requests != 0 ||
+               total_issued_requests != 0);
     }
   };
 
