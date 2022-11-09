@@ -20,14 +20,14 @@ readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 ## xDS test server/client Docker images
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
-readonly SERVER_LANG="cpp go java"
-readonly CLIENT_LANG="cpp go java"
+readonly SERVER_LANGS="cpp go java"
+readonly CLIENT_LANGS="cpp go java"
 readonly MAIN_BRANCH="${MAIN_BRANCH:-master}"
 readonly LATEST_BRANCH_FROM_GITHUB="$((git ls-remote -t --refs https://github.com/grpc/${GITHUB_REPOSITORY_NAME}.git | cut -f 2 | sed s#refs/tags/##) | sort -V | tail -n 1 | cut -f 1-2 -d.)".x
 readonly OLDEST_BRANCH_FROM_GITHUB=v1.$(expr $(echo ${LATEST_BRANCH_FROM_GITHUB} | cut -f 2 -d.) - 9).x
 readonly LATEST_BRANCH="${LATEST_BRANCH:-${LATEST_BRANCH_FROM_GITHUB}}"
 readonly OLDEST_BRANCH="${OLDEST_BRANCH:-${OLDEST_BRANCH_FROM_GITHUB}}"
-readonly XLANG_VERSIONS="${MASTER_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
+readonly XLANG_VERSIONS="${MAIN_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
 
 #######################################
 # Executes the test case
@@ -47,16 +47,20 @@ readonly XLANG_VERSIONS="${MASTER_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
 #   Test xUnit report to ${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml
 #######################################
 run_test() {
+  if [ "$#" -ne 4 ]; then
+    echo "Usage: run_test client_lang client_branch server_lang server_branch" >&2
+    exit 1
+  fi
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
-  local stag="${1:?Usage: run_test server_tag client_tag server_lang client_lang}"
-  local ctag="${2:?Usage: run_test server_tag client_tag server_lang client_lang}"
-  local slang="${3:?Usage: run_test server_tag client_tag server_lang client_lang}"
-  local clang="${4:?Usage: run_test server_tag client_tag server_lang client_lang}"
-  local server_image_name="${IMAGE_REPO}/${slang}-server:${stag}"
-  local client_image_name="${IMAGE_REPO}/${clang}-client:${ctag}"
+  local client_lang="$1"
+  local client_branch="$2"
+  local server_lang="$3"
+  local server_branch="$4"
+  local server_image_name="${IMAGE_REPO}/${server_lang}-server:${server_branch}"
+  local client_image_name="${IMAGE_REPO}/${client_lang}-client:${client_branch}"
   # TODO(sanjaypujare): skip test if image not found (by using gcloud_gcr_list_image_tags)
-  local out_dir="${TEST_XML_OUTPUT_DIR}/${ctag}-${stag}/${clang}-${slang}"
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${client_branch}-${server_branch}/${client_lang}-${server_lang}"
   mkdir -pv "${out_dir}"
   set -x
   python -m "tests.security_test" \
@@ -121,18 +125,18 @@ main() {
   local successful_string
   local failed_string
   # Run cross lang tests: for given cross lang versions
-  for TAG in ${XLANG_VERSIONS}
+  for VERSION in ${XLANG_VERSIONS}
   do
-    for CLANG in ${CLIENT_LANG}
+    for CLIENT_LANG in ${CLIENT_LANGS}
     do
-    for SLANG in ${SERVER_LANG}
+    for SERVER_LANG in ${SERVER_LANGS}
     do
-      if [ "${CLANG}" != "${SLANG}" ]; then
-        if run_test "${TAG}" "${TAG}" "${SLANG}" "${CLANG}"; then
-          successful_string="${successful_string} ${TAG}/${CLANG}-${SLANG}"
+      if [ "${CLIENT_LANG}" != "${SERVER_LANG}" ]; then
+        if run_test "${CLIENT_LANG}" "${VERSION}" "${SERVER_LANG}" "${VERSION}"; then
+          successful_string="${successful_string} ${VERSION}/${CLIENT_LANG}-${SERVER_LANG}"
         else
           failed_tests=$((failed_tests+1))
-          failed_string="${failed_string} ${TAG}/${CLANG}-${SLANG}"
+          failed_string="${failed_string} ${VERSION}/${CLIENT_LANG}-${SERVER_LANG}"
         fi
       fi
     done
@@ -140,31 +144,31 @@ main() {
     done
   done
   # Run cross branch tests per language: master x latest and master x oldest
-  for LANG in ${CLIENT_LANG}
+  for LANG in ${CLIENT_LANGS}
   do
-    if run_test "${MASTER_BRANCH}" "${LATEST_BRANCH}" "${LANG}" "${LANG}"; then
-      successful_string="${successful_string} ${MASTER_BRANCH}-${LATEST_BRANCH}/${LANG}"
+    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${LATEST_BRANCH}"; then
+      successful_string="${successful_string} ${MAIN_BRANCH}-${LATEST_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests+1))
-      failed_string="${failed_string} ${MASTER_BRANCH}-${LATEST_BRANCH}/${LANG}"
+      failed_string="${failed_string} ${MAIN_BRANCH}-${LATEST_BRANCH}/${LANG}"
     fi
-    if run_test "${LATEST_BRANCH}" "${MASTER_BRANCH}" "${LANG}" "${LANG}"; then
-      successful_string="${successful_string} ${LATEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+    if run_test "${LANG}" "${LATEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}"; then
+      successful_string="${successful_string} ${LATEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests+1))
-      failed_string="${failed_string} ${LATEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+      failed_string="${failed_string} ${LATEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
     fi
-    if run_test "${MASTER_BRANCH}" "${OLDEST_BRANCH}" "${LANG}" "${LANG}"; then
-      successful_string="${successful_string} ${MASTER_BRANCH}-${OLDEST_BRANCH}/${LANG}"
+    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${OLDEST_BRANCH}"; then
+      successful_string="${successful_string} ${MAIN_BRANCH}-${OLDEST_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests+1))
-      failed_string="${failed_string} ${MASTER_BRANCH}-${OLDEST_BRANCH}/${LANG}"
+      failed_string="${failed_string} ${MAIN_BRANCH}-${OLDEST_BRANCH}/${LANG}"
     fi
-    if run_test "${OLDEST_BRANCH}" "${MASTER_BRANCH}" "${LANG}" "${LANG}"; then
-      successful_string="${successful_string} ${OLDEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+    if run_test "${LANG}" "${OLDEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}"; then
+      successful_string="${successful_string} ${OLDEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests+1))
-      failed_string="${failed_string} ${OLDEST_BRANCH}-${MASTER_BRANCH}/${LANG}"
+      failed_string="${failed_string} ${OLDEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
     fi
   done
   set +x
