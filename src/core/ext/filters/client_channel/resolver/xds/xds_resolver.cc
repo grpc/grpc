@@ -673,7 +673,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       RouteListIterator(&route_table_), StringViewFromSlice(*args.path),
       args.initial_metadata);
   if (!route_index.has_value()) {
-    return CallConfig();
+    CallConfig call_config;
+    call_config.status =
+        absl::UnavailableError("No matching route found in xDS route config");
+    return call_config;
   }
   auto& entry = route_table_[*route_index];
   // Found a route match
