@@ -114,20 +114,19 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto listener = oracle_ee->CreateListener(
+  auto listener = *oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  ASSERT_TRUE(listener.ok());
 
-  ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
-  ASSERT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
+  ASSERT_TRUE(listener->Start().ok());
 
   test_ee->Connect(
       [&client_endpoint,
-       &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
-        ASSERT_TRUE(status.ok());
-        client_endpoint = std::move(*status);
+       &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
+        ASSERT_TRUE(endpoint.ok());
+        client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
@@ -183,20 +182,19 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto listener = oracle_ee->CreateListener(
+  auto listener = *oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  ASSERT_TRUE(listener.ok());
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
     std::string target_addr = absl::StrCat(
         "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-    ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
+    ASSERT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
     target_addrs.push_back(target_addr);
   }
-  ASSERT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE(listener->Start().ok());
   absl::SleepFor(absl::Milliseconds(500));
   for (int i = 0; i < kNumConnections; i++) {
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
@@ -210,9 +208,9 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     ChannelArgsEndpointConfig client_config(client_args);
     test_ee->Connect(
         [&client_endpoint,
-         &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
-          ASSERT_TRUE(status.ok());
-          client_endpoint = std::move(*status);
+         &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
+          ASSERT_TRUE(endpoint.ok());
+          client_endpoint = std::move(*endpoint);
           client_signal.Notify();
         },
         URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),

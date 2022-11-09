@@ -89,19 +89,18 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto listener = test_ee->CreateListener(
+  auto listener = *test_ee->CreateListener(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  ASSERT_TRUE(listener.ok());
 
-  ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
-  ASSERT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
+  ASSERT_TRUE(listener->Start().ok());
 
   oracle_ee->Connect(
       [&client_endpoint,
-       &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
-        ASSERT_TRUE(status.ok());
-        client_endpoint = std::move(*status);
+       &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
+        ASSERT_TRUE(endpoint.ok());
+        client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
@@ -127,7 +126,7 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   }
   client_endpoint.reset();
   server_endpoint.reset();
-  (*listener).reset();
+  listener.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
@@ -159,19 +158,18 @@ TEST_F(EventEngineServerTest,
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto listener = test_ee->CreateListener(
+  auto listener = *test_ee->CreateListener(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  ASSERT_TRUE(listener.ok());
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
     std::string target_addr = absl::StrCat(
         "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-    ASSERT_TRUE((*listener)->Bind(URIToResolvedAddress(target_addr)).ok());
+    ASSERT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
     target_addrs.push_back(target_addr);
   }
-  ASSERT_TRUE((*listener)->Start().ok());
+  ASSERT_TRUE(listener->Start().ok());
   absl::SleepFor(absl::Milliseconds(500));
   for (int i = 0; i < kNumConnections; i++) {
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
@@ -185,9 +183,9 @@ TEST_F(EventEngineServerTest,
     ChannelArgsEndpointConfig client_config(client_args);
     oracle_ee->Connect(
         [&client_endpoint,
-         &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
-          ASSERT_TRUE(status.ok());
-          client_endpoint = std::move(*status);
+         &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
+          ASSERT_TRUE(endpoint.ok());
+          client_endpoint = std::move(*endpoint);
           client_signal.Notify();
         },
         URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
@@ -254,7 +252,7 @@ TEST_F(EventEngineServerTest,
     t.join();
   }
   server_endpoint.reset();
-  (*listener).reset();
+  listener.reset();
   WaitForSingleOwner(std::move(test_ee));
 }
 
