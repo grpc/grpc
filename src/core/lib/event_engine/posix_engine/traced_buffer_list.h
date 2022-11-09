@@ -112,6 +112,8 @@ struct Timestamps {
 
 class TracedBufferList {
  public:
+  TracedBufferList() = default;
+  ~TracedBufferList() = default;
   // Add a new entry in the TracedBuffer list pointed to by head. Also saves
   // sendmsg_time with the current timestamp.
   void AddNewEntry(int32_t seq_no, int fd, void* arg);
@@ -141,8 +143,11 @@ class TracedBufferList {
    public:
     TracedBuffer(uint32_t seq_no, void* arg) : seq_no_(seq_no), arg_(arg) {}
 
+    bool Finished();
+
    private:
     friend class TracedBufferList;
+    gpr_timespec last_timestamp_;
     TracedBuffer* next_ = nullptr;
     uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
     void* arg_;       /* The arg to pass to timestamps_callback */

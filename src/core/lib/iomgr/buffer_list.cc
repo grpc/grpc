@@ -20,8 +20,10 @@
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
+#include "grpc/support/time.h"
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -29,6 +31,10 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <time.h>
+
+GPR_GLOBAL_CONFIG_DEFINE_INT32(
+    grpc_max_pending_ack_time_millis, 10000,
+    "Maximum time to wait (in milliseconds) for an ack of a pending trace.");
 
 namespace grpc_core {
 namespace {
@@ -195,6 +201,14 @@ int GetSocketTcpInfo(struct tcp_info* info, int fd) {
 
 }  // namespace.
 
+bool TracedBufferList::TracedBuffer::Finished() {
+  static const int kGrpcMaxPendingAckTimeMillis =
+      GPR_GLOBAL_CONFIG_GET(grpc_max_pending_ack_time_millis);
+  return gpr_time_to_millis(
+             gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_timestamp_)) >
+         kGrpcMaxPendingAckTimeMillis;
+}
+
 void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   // Store the current time as the sendmsg time.
@@ -206,6 +220,7 @@ void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
     ExtractOptStatsFromTcpInfo(&(new_elem->ts_.sendmsg_time.metrics),
                                &(new_elem->ts_.info));
   }
+  new_elem->last_timestamp_ = new_elem->ts_.sendmsg_time.time;
   MutexLock lock(&mu_);
   if (!head_) {
     head_ = tail_ = new_elem;
@@ -220,6 +235,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
                                         struct scm_timestamping* tss) {
   MutexLock lock(&mu_);
   TracedBuffer* elem = head_;
+  TracedBuffer* prev = nullptr;
   while (elem != nullptr) {
     // The byte number refers to the sequence number of the last byte which this
     // timestamp relates to.
@@ -229,11 +245,13 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
           FillGprFromTimestamp(&(elem->ts_.scheduled_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.scheduled_time.metrics),
                                   opt_stats);
+          elem->last_timestamp_ = elem->ts_.scheduled_time.time;
           elem = elem->next_;
           break;
         case SCM_TSTAMP_SND:
           FillGprFromTimestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.sent_time.metrics), opt_stats);
+          elem->last_timestamp_ = elem->ts_.sent_time.time;
           elem = elem->next_;
           break;
         case SCM_TSTAMP_ACK:
@@ -257,12 +275,30 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
       break;
     }
   }
-  tail_ = !head_ ? head_ : tail_;
+
+  elem = head_;
+  while (elem != nullptr) {
+    if (!elem->Finished()) {
+      prev = elem;
+      elem = elem->next_;
+      continue;
+    }
+    if (prev != nullptr) {
+      prev->next_ = elem->next_;
+      delete elem;
+      elem = prev->next_;
+    } else {
+      head_ = elem->next_;
+      delete elem;
+      elem = head_;
+    }
+  }
+  tail_ = head_ == nullptr ? head_ : prev;
 }
 
 void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
   MutexLock lock(&mu_);
-  while (head_) {
+  while (head_ != nullptr) {
     TracedBuffer* elem = head_;
     g_timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
     head_ = head_->next_;
@@ -271,7 +307,7 @@ void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
   if (remaining != nullptr) {
     g_timestamps_callback(remaining, nullptr, shutdown_err);
   }
-  tail_ = head_;
+  tail_ = head_ = nullptr;
 }
 
 void grpc_tcp_set_write_timestamps_callback(
