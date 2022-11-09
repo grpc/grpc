@@ -42,8 +42,8 @@ class ObservabilityLoggingSink : public LoggingSink {
 
   ~ObservabilityLoggingSink() override = default;
 
-  LoggingSink::ParsedConfig Parse(bool is_client,
-                                  absl::string_view path) override;
+  LoggingSink::Config FindMatch(bool is_client,
+                                absl::string_view path) override;
 
  private:
   struct Configuration {

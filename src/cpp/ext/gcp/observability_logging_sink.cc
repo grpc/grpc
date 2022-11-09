@@ -37,12 +37,12 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
   }
 }
 
-LoggingSink::ParsedConfig ObservabilityLoggingSink::Parse(
+LoggingSink::Config ObservabilityLoggingSink::FindMatch(
     bool is_client, absl::string_view path) {
   size_t pos = path.find('/');
   if (pos == absl::string_view::npos) {
     // bad path - did not find '/'
-    return LoggingSink::ParsedConfig(0, 0);
+    return LoggingSink::Config(0, 0);
   }
   absl::string_view service =
       path.substr(0, pos);  // service name is before the '/'
@@ -56,14 +56,14 @@ LoggingSink::ParsedConfig ObservabilityLoggingSink::Parse(
            ((config_method.method == "*") ||
             (method == config_method.method)))) {
         if (config.exclude) {
-          return LoggingSink::ParsedConfig(0, 0);
+          return LoggingSink::Config(0, 0);
         }
-        return LoggingSink::ParsedConfig(config.max_metadata_bytes,
-                                         config.max_message_bytes);
+        return LoggingSink::Config(config.max_metadata_bytes,
+                                   config.max_message_bytes);
       }
     }
   }
-  return LoggingSink::ParsedConfig(0, 0);
+  return LoggingSink::Config(0, 0);
 }
 
 ObservabilityLoggingSink::Configuration::Configuration(

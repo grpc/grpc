@@ -29,9 +29,9 @@ namespace internal {
 // Interface for a logging sink that will be used by the logging filter.
 class LoggingSink {
  public:
-  class ParsedConfig {
+  class Config {
    public:
-    ParsedConfig(uint32_t max_metadata_bytes, uint32_t max_message_bytes)
+    Config(uint32_t max_metadata_bytes, uint32_t max_message_bytes)
         : max_metadata_bytes_(max_metadata_bytes),
           max_message_bytes_(max_message_bytes) {}
     bool MetadataLoggingEnabled() { return max_metadata_bytes_ != 0; }
@@ -40,7 +40,7 @@ class LoggingSink {
       return MetadataLoggingEnabled() || MessageLoggingEnabled();
     }
 
-    bool operator==(const ParsedConfig& other) const {
+    bool operator==(const Config& other) const {
       return max_metadata_bytes_ == other.max_metadata_bytes_ &&
              max_message_bytes_ == other.max_message_bytes_;
     }
@@ -52,7 +52,7 @@ class LoggingSink {
 
   virtual ~LoggingSink() = default;
 
-  virtual ParsedConfig Parse(bool is_client, absl::string_view path) = 0;
+  virtual Config FindMatch(bool is_client, absl::string_view path) = 0;
 };
 
 }  // namespace internal
