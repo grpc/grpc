@@ -2866,6 +2866,7 @@ libs:
   - include/grpcpp/support/sync_stream.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
+  - include/grpcpp/version_info.h
   - include/grpcpp/xds_server_builder.h
   headers:
   - src/core/ext/transport/binder/client/binder_connector.h
@@ -3281,6 +3282,7 @@ libs:
   - include/grpcpp/support/sync_stream.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
+  - include/grpcpp/version_info.h
   headers:
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
@@ -8256,6 +8258,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+  - test/core/event_engine/test_suite/server_test.cc
   deps:
   - grpc_test_util
   platforms:

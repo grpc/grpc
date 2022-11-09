@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.51.0-dev")
-set(gRPC_CORE_VERSION     "28.0.0")
-set(gRPC_CORE_SOVERSION   "28")
+set(gRPC_CORE_VERSION     "29.0.0")
+set(gRPC_CORE_SOVERSION   "29")
 set(gRPC_CPP_VERSION      "1.51.0-dev")
 set(gRPC_CPP_SOVERSION    "1.51")
 set(gRPC_CSHARP_VERSION   "2.51.0-dev")
@@ -3483,6 +3483,7 @@ foreach(_hdr
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
+  include/grpcpp/version_info.h
   include/grpcpp/xds_server_builder.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -4155,6 +4156,7 @@ foreach(_hdr
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
+  include/grpcpp/version_info.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -14110,6 +14112,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+    test/core/event_engine/test_suite/server_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )

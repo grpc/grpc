@@ -80,6 +80,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//src/core:env",
+        "//src/core:error",
         "//src/core:json",
         "//src/core:json_args",
         "//src/core:json_object_loader",

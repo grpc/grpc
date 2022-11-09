@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "galaxy"  # @unused
 
-core_version = "28.0.0"  # @unused
+core_version = "29.0.0"  # @unused
 
 version = "1.51.0-dev"  # @unused
 
@@ -363,6 +363,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_context.h",
     "include/grpcpp/server_posix.h",
+    "include/grpcpp/version_info.h",
     "include/grpcpp/support/async_stream.h",
     "include/grpcpp/support/async_unary_call.h",
     "include/grpcpp/support/byte_buffer.h",
@@ -841,6 +842,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "ref_counted_ptr",
+        "//src/core:error",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",
@@ -1334,7 +1336,6 @@ grpc_cc_library(
     # re-export these headers from here for now, and when LSC's have completed
     # to clean this up, we'll remove these.
     [
-        "//src/core:lib/iomgr/error.h",
         "//src/core:lib/slice/slice_internal.h",
         "//src/core:lib/slice/slice_string_helpers.h",
         "//src/core:lib/iomgr/exec_ctx.h",
@@ -1617,6 +1618,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:closure",
         "//src/core:context",
+        "//src/core:error",
         "//src/core:event_engine_memory_allocator",
         "//src/core:gpr_atm",
         "//src/core:handshaker_factory",
@@ -1824,6 +1826,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:channel_init",
         "//src/core:closure",
+        "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_insecure_credentials",
@@ -2285,6 +2288,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:error",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -2320,6 +2324,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:error",
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
@@ -2684,6 +2689,7 @@ grpc_cc_library(
         "//src/core:construct_destruct",
         "//src/core:dual_ref_counted",
         "//src/core:env",
+        "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_deadline_filter",
@@ -2761,6 +2767,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "uri_parser",
         "//src/core:closure",
+        "//src/core:error",
         "//src/core:event_engine_common",
         "//src/core:grpc_resolver_dns_selection",
         "//src/core:grpc_service_config",
@@ -2815,6 +2822,7 @@ grpc_cc_library(
         "uri_parser",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
+        "//src/core:error",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
@@ -2859,6 +2867,7 @@ grpc_cc_library(
         "tsi_base",
         "//src/core:arena_promise",
         "//src/core:closure",
+        "//src/core:error",
         "//src/core:iomgr_fwd",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -2924,6 +2933,7 @@ grpc_cc_library(
         "uri_parser",
         "//src/core:arena_promise",
         "//src/core:closure",
+        "//src/core:error",
         "//src/core:gpr_manual_constructor",
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
@@ -2958,6 +2968,7 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_security_base",
+        "//src/core:error",
         "//src/core:json",
         "//src/core:useful",
     ],
@@ -3086,6 +3097,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "tsi_base",
         "tsi_ssl_session_cache",
+        "//src/core:error",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
         "//src/core:tsi_ssl_types",
@@ -3135,6 +3147,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:context",
+        "//src/core:error",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
         "//src/core:percent_encoding",
@@ -3361,6 +3374,7 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:decode_huff",
+        "//src/core:error",
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:hpack_constants",
