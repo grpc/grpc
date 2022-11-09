@@ -32,7 +32,6 @@
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
 

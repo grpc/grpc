@@ -156,7 +156,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
     }
   }
 
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {

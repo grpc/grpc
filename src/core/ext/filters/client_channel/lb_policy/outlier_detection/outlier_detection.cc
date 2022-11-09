@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
-#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>

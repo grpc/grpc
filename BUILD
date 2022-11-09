@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "galaxy"  # @unused
 
-core_version = "28.0.0"  # @unused
+core_version = "29.0.0"  # @unused
 
 version = "1.51.0-dev"  # @unused
 
@@ -363,6 +363,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_context.h",
     "include/grpcpp/server_posix.h",
+    "include/grpcpp/version_info.h",
     "include/grpcpp/support/async_stream.h",
     "include/grpcpp/support/async_unary_call.h",
     "include/grpcpp/support/byte_buffer.h",
@@ -1192,7 +1193,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/resolve_address_posix.cc",
         "//src/core:lib/iomgr/resolve_address_windows.cc",
         "//src/core:lib/iomgr/socket_factory_posix.cc",
-        "//src/core:lib/iomgr/socket_mutator.cc",
         "//src/core:lib/iomgr/socket_utils_common_posix.cc",
         "//src/core:lib/iomgr/socket_utils_linux.cc",
         "//src/core:lib/iomgr/socket_utils_posix.cc",
@@ -1296,7 +1296,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/sockaddr_posix.h",
         "//src/core:lib/iomgr/sockaddr_windows.h",
         "//src/core:lib/iomgr/socket_factory_posix.h",
-        "//src/core:lib/iomgr/socket_mutator.h",
         "//src/core:lib/iomgr/socket_utils_posix.h",
         "//src/core:lib/iomgr/socket_windows.h",
         "//src/core:lib/iomgr/tcp_client.h",
@@ -1431,6 +1430,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
+        "//src/core:socket_mutator",
         "//src/core:stats_data",
         "//src/core:status_helper",
         "//src/core:strerror",
@@ -1778,6 +1778,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
+        "//src/core:socket_mutator",
         "//src/core:status_helper",
         "//src/core:thread_quota",
         "//src/core:time",
@@ -1831,6 +1832,7 @@ grpc_cc_library(
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
+        "//src/core:socket_mutator",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -2102,6 +2104,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
         "absl/time",
@@ -3119,6 +3122,7 @@ grpc_cc_library(
         "promise",
         "//src/core:arena",
         "//src/core:arena_promise",
+        "//src/core:basic_seq",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",

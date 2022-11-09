@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 28.0.0
+PROJECT_NUMBER         = 29.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1763,10 +1763,6 @@ src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
 src/core/lib/event_engine/posix_engine/posix_engine_closure.h \
-src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
-src/core/lib/event_engine/posix_engine/posix_engine_listener.h \
-src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
-src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/posix_engine/timer.cc \

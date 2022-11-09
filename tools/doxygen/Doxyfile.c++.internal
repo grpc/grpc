@@ -1059,6 +1059,7 @@ include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
+include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.cc \
@@ -1978,10 +1979,6 @@ src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
 src/core/lib/event_engine/posix_engine/posix_engine_closure.h \
-src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
-src/core/lib/event_engine/posix_engine/posix_engine_listener.h \
-src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
-src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/posix_engine/timer.cc \

@@ -194,6 +194,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
                       'include/grpcpp/support/validate_service_config.h',
+                      'include/grpcpp/version_info.h',
                       'include/grpcpp/xds_server_builder.h'
   end
 
@@ -702,8 +703,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
-                      'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
-                      'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/posix_engine/timer.h',
                       'src/core/lib/event_engine/posix_engine/timer_heap.h',
@@ -1588,8 +1587,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
-                              'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
-                              'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                               'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',

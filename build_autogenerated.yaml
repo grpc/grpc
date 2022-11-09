@@ -759,8 +759,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -1491,8 +1489,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -2032,8 +2028,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -2409,8 +2403,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -2874,6 +2866,7 @@ libs:
   - include/grpcpp/support/sync_stream.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
+  - include/grpcpp/version_info.h
   - include/grpcpp/xds_server_builder.h
   headers:
   - src/core/ext/transport/binder/client/binder_connector.h
@@ -3289,6 +3282,7 @@ libs:
   - include/grpcpp/support/sync_stream.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
+  - include/grpcpp/version_info.h
   headers:
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
@@ -8656,9 +8650,30 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   src:
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - test/core/event_engine/posix/posix_engine_listener_utils_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: posix_event_engine_connect_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  src:
+  - test/core/event_engine/posix/posix_event_engine_connect_test.cc
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   deps:
   - grpc_test_util
   platforms:
@@ -8674,6 +8689,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.h
   - test/core/event_engine/test_suite/oracle_event_engine_posix.h
   src:
+  - test/core/event_engine/test_suite/client_test.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
