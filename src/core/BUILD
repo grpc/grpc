@@ -880,6 +880,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "error",
         "handshaker_factory",
         "handshaker_registry",
         "iomgr_fwd",
@@ -1119,6 +1120,7 @@ grpc_cc_library(
         "absl/status",
         "absl/strings:str_format",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_spinlock",
         "slice",
@@ -1735,7 +1737,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/container:flat_hash_map",
-        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/hash",
         "absl/meta:type_traits",
@@ -2298,6 +2299,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "dual_ref_counted",
+        "error",
         "grpc_service_config",
         "ref_counted",
         "service_config_parser",
@@ -2329,6 +2331,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
+        "error",
         "grpc_server_config_selector",
         "grpc_service_config",
         "status_helper",
@@ -2438,6 +2441,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "error",
         "iomgr_fwd",
         "slice",
         "unique_type_name",
@@ -2471,6 +2475,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "error",
         "iomgr_fwd",
         "tsi_local_credentials",
         "unique_type_name",
@@ -2521,6 +2526,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "error",
         "grpc_sockaddr",
         "iomgr_fwd",
         "resolved_address",
@@ -2560,6 +2566,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "error",
         "iomgr_fwd",
         "unique_type_name",
         "useful",
@@ -2596,6 +2603,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "env",
+        "error",
         "grpc_external_account_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_oauth2_credentials",
@@ -2667,6 +2675,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "error",
         "iomgr_fwd",
         "ref_counted",
         "slice",
@@ -2739,6 +2748,7 @@ grpc_cc_library(
         "activity",
         "arena_promise",
         "context",
+        "error",
         "httpcli_ssl_credentials",
         "json",
         "poll",
@@ -2791,6 +2801,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "env",
+        "error",
         "grpc_oauth2_credentials",
         "httpcli_ssl_credentials",
         "json",
@@ -2825,6 +2836,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "error",
         "iomgr_fwd",
         "unique_type_name",
         "//:debug_location",
@@ -3012,6 +3024,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "closure",
+        "error",
         "exec_ctx_wakeup_scheduler",
         "http2_errors",
         "idle_filter_state",
@@ -3055,6 +3068,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "closure",
+        "error",
         "status_helper",
         "time",
         "//:channel_stack_builder",
@@ -3117,6 +3131,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "closure",
+        "error",
         "grpc_service_config",
         "json",
         "json_args",
@@ -3195,6 +3210,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "closure",
+        "error",
         "grpc_authorization_base",
         "grpc_matchers",
         "grpc_rbac_engine",
@@ -3246,6 +3262,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
+        "error",
         "gpr_atm",
         "grpc_sockaddr",
         "json",
@@ -3317,6 +3334,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "dual_ref_counted",
+        "error",
         "grpc_fake_credentials",
         "json",
         "json_args",
@@ -3570,6 +3588,7 @@ grpc_cc_library(
         "channel_args",
         "channel_args_preconditioning",
         "channel_fwd",
+        "error",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
         "grpc_service_config",
@@ -3652,6 +3671,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "grpc_matchers",
         "grpc_outlier_detection_header",
         "grpc_tls_credentials",
@@ -3959,6 +3979,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "closure",
+        "error",
         "grpc_lb_subchannel_list",
         "json",
         "json_args",
@@ -4045,6 +4066,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "error",
         "grpc_outlier_detection_header",
         "iomgr_fwd",
         "json",
@@ -4085,6 +4107,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "error",
         "grpc_lb_address_filtering",
         "json",
         "json_args",
@@ -4357,6 +4380,7 @@ grpc_cc_library(
         "arena",
         "channel_fwd",
         "dual_ref_counted",
+        "error",
         "grpc_lb_policy_ring_hash",
         "grpc_service_config",
         "grpc_xds_client",
@@ -4398,6 +4422,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "env",
+        "error",
         "grpc_xds_client",
         "json",
         "resource_quota",
@@ -4542,6 +4567,7 @@ grpc_cc_library(
     deps = [
         "channel_args_preconditioning",
         "channel_stack_type",
+        "error",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "resolved_address",
@@ -4585,6 +4611,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
@@ -4632,6 +4659,7 @@ grpc_cc_library(
         "arena",
         "channel_args_preconditioning",
         "channel_stack_type",
+        "error",
         "iomgr_fwd",
         "slice",
         "slice_buffer",

@@ -90,6 +90,11 @@ py_library(
 )
 
 py_library(
+    name = "_typing",
+    srcs = ["_typing.py"],
+)
+
+py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
     data = [
@@ -99,6 +104,7 @@ py_library(
     deps = [
         ":_runtime_protos",
         ":_simple_stubs",
+        ":_typing",
         ":aio",
         ":auth",
         ":channel",
