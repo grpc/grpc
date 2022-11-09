@@ -217,7 +217,9 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 
 TEST_P(LdsRdsTest, NoMatchingRoute) {
   RouteConfiguration route_config = default_route_config_;
-  route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_match()
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
       ->set_prefix("/unknown/method");
   SetRouteConfiguration(balancer_.get(), route_config);
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
