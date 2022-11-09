@@ -116,8 +116,13 @@ class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
         "-----END RSA PRIVATE KEY-----\n";
 
     // Create the context objects.
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
     SSL_CTX* client_ctx(SSL_CTX_new(TLS_method()));
     SSL_CTX* server_ctx(SSL_CTX_new(TLS_method()));
+#else
+    SSL_CTX* client_ctx(SSL_CTX_new(TLSv1_2_method()));
+    SSL_CTX* server_ctx(SSL_CTX_new(TLSv1_2_method()));
+#endif
 
     BIO* client_cert_bio(BIO_new_mem_buf(cert_pem.c_str(), cert_pem.size()));
     X509* client_cert = PEM_read_bio_X509(client_cert_bio, /*x=*/nullptr,
@@ -168,11 +173,20 @@ class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
     SSL_CTX_set_session_cache_mode(client_ctx, SSL_SESS_CACHE_OFF);
     SSL_CTX_set_session_cache_mode(server_ctx, SSL_SESS_CACHE_OFF);
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if defined(TLS1_3_VERSION)
     // Set both the min and max TLS version to 1.3
     SSL_CTX_set_min_proto_version(client_ctx, TLS1_3_VERSION);
     SSL_CTX_set_min_proto_version(server_ctx, TLS1_3_VERSION);
     SSL_CTX_set_max_proto_version(client_ctx, TLS1_3_VERSION);
     SSL_CTX_set_max_proto_version(server_ctx, TLS1_3_VERSION);
+#else
+    SSL_CTX_set_min_proto_version(client_ctx, TLS1_2_VERSION);
+    SSL_CTX_set_min_proto_version(server_ctx, TLS1_2_VERSION);
+    SSL_CTX_set_max_proto_version(client_ctx, TLS1_2_VERSION);
+    SSL_CTX_set_max_proto_version(server_ctx, TLS1_2_VERSION);
+#endif
+#endif
 
     // Create client and server connection objects and configure their BIOs.
     SSL* client(SSL_new(client_ctx));
