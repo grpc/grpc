@@ -24,7 +24,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
-#include "test/core/util/test_config.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
@@ -42,7 +41,7 @@ namespace {
 
 constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
 
-static gpr_timespec g_now;
+gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
@@ -275,7 +274,6 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_event_engine::posix_engine::InitGlobals();
   return RUN_ALL_TESTS();

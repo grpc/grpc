@@ -30,7 +30,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
-#include "test/core/util/test_config.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
@@ -271,10 +270,8 @@ TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   InitGlobals();
-  grpc::testing::TestGrpcScope grpc_scope;
   return RUN_ALL_TESTS();
 }
 
