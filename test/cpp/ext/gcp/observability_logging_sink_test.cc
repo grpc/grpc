@@ -50,7 +50,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientWildCardEntries) {
         "client_rpc_events": [
           {
             "methods": ["*"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           }
         ]
@@ -64,7 +64,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientWildCardEntries) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(4096, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
   // server test
   EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
 }
@@ -75,7 +75,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigBadPath) {
         "client_rpc_events": [
           {
             "methods": ["*"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           }
         ]
@@ -98,7 +98,7 @@ TEST(GcpObservabilityLoggingSinkTest,
         "client_rpc_events": [
           {
             "methods": ["service/*"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           }
         ]
@@ -113,7 +113,7 @@ TEST(GcpObservabilityLoggingSinkTest,
   ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "service/bar"),
-            LoggingSink::Config(4096, 4096));
+            LoggingSink::Config(1024, 4096));
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   // server test
   EXPECT_EQ(sink.FindMatch(false, "service/bar"), LoggingSink::Config(0, 0));
@@ -127,7 +127,7 @@ TEST(GcpObservabilityLoggingSinkTest,
         "client_rpc_events": [
           {
             "methods": ["foo/bar", "foo/baz"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           }
         ]
@@ -141,8 +141,8 @@ TEST(GcpObservabilityLoggingSinkTest,
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(4096, 4096));
-  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(4096, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(1024, 4096));
   // server test
   EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
   EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(0, 0));
@@ -154,12 +154,12 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientMultipleEventEntries) {
         "client_rpc_events": [
           {
             "methods": ["foo/bar"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           },
           {
             "methods": ["foo/baz"],
-            "max_metadata_bytes": 2048,
+            "max_metadata_bytes": 512,
             "max_message_bytes": 2048
           }
         ]
@@ -173,8 +173,8 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientMultipleEventEntries) {
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
-  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(4096, 4096));
-  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(2048, 2048));
+  EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(512, 2048));
   // server test
   EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
   EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(0, 0));
@@ -186,7 +186,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerWildCardEntries) {
         "server_rpc_events": [
           {
             "methods": ["*"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           }
         ]
@@ -202,7 +202,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerWildCardEntries) {
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(4096, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(1024, 4096));
 }
 
 TEST(GcpObservabilityLoggingSinkTest,
@@ -212,7 +212,7 @@ TEST(GcpObservabilityLoggingSinkTest,
         "server_rpc_events": [
           {
             "methods": ["service/*"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           }
         ]
@@ -230,7 +230,7 @@ TEST(GcpObservabilityLoggingSinkTest,
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   // server test
   EXPECT_EQ(sink.FindMatch(false, "service/bar"),
-            LoggingSink::Config(4096, 4096));
+            LoggingSink::Config(1024, 4096));
   EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(0, 0));
 }
 
@@ -241,7 +241,7 @@ TEST(GcpObservabilityLoggingSinkTest,
         "server_rpc_events": [
           {
             "methods": ["foo/bar", "foo/baz"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           }
         ]
@@ -258,8 +258,8 @@ TEST(GcpObservabilityLoggingSinkTest,
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(0, 0));
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(4096, 4096));
-  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(4096, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(1024, 4096));
 }
 
 TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerMultipleEventEntries) {
@@ -268,12 +268,12 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerMultipleEventEntries) {
         "server_rpc_events": [
           {
             "methods": ["foo/bar"],
-            "max_metadata_bytes": 4096,
+            "max_metadata_bytes": 1024,
             "max_message_bytes": 4096
           },
           {
             "methods": ["foo/baz"],
-            "max_metadata_bytes": 2048,
+            "max_metadata_bytes": 512,
             "max_message_bytes": 2048
           }
         ]
@@ -290,8 +290,8 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerMultipleEventEntries) {
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(0, 0));
   // server test
-  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(4096, 4096));
-  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(2048, 2048));
+  EXPECT_EQ(sink.FindMatch(false, "foo/bar"), LoggingSink::Config(1024, 4096));
+  EXPECT_EQ(sink.FindMatch(false, "foo/baz"), LoggingSink::Config(512, 2048));
 }
 
 }  // namespace
