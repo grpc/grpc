@@ -415,9 +415,10 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   tmp_root_cert.RewriteFile(root_cert_2_);
   tmp_identity_key.RewriteFile(private_key_2_);
   tmp_identity_cert.RewriteFile(cert_chain_2_);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  // Wait 10 seconds for the provider's refresh thread to read the updated
+  // files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+                               gpr_time_from_seconds(10, GPR_TIMESPAN)));
   // Expect to see new credential data loaded by the security connector.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   ASSERT_TRUE(tls_connector->RootCertsForTesting().has_value());
@@ -430,9 +431,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnDeletedFiles) {
   // Create temporary files and copy cert data into it.
-  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
-  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
-  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
+  auto tmp_root_cert = std::make_unique<TmpFile>(root_cert_);
+  auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create ClientOptions using FileWatcherCertificateProvider.
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
@@ -461,9 +462,10 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   tmp_root_cert.reset();
   tmp_identity_key.reset();
   tmp_identity_cert.reset();
-  // Wait 2 seconds for the provider's refresh thread to read the deleted files.
+  // Wait 10 seconds for the provider's refresh thread to read the deleted
+  // files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+                               gpr_time_from_seconds(10, GPR_TIMESPAN)));
   // It's a bit hard to test if errors are sent to the security connector,
   // because the security connector simply logs the error. We will see the err
   // messages if we open the log.

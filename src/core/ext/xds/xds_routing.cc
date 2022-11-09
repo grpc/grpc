@@ -220,6 +220,7 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
 
 absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
 XdsRouting::GeneratePerHTTPFilterConfigs(
+    const XdsHttpFilterRegistry& http_filter_registry,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
     const XdsRouteConfigResource::VirtualHost& vhost,
@@ -233,7 +234,7 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(
+        http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
     // If there is not actually any C-core filter associated with this

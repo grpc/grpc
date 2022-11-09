@@ -153,6 +153,17 @@ inline uint32_t MixHash32(uint32_t a, uint32_t b) {
   return RotateLeft(a, 2u) ^ b;
 }
 
+inline uint32_t RoundUpToPowerOf2(uint32_t v) {
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  return v;
+}
+
 }  // namespace grpc_core
 
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))

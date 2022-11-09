@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <atomic>
 #include <chrono>
+#include <cstdint>
+#include <memory>
 #include <random>
+#include <ratio>
 #include <thread>
+#include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
+#include "absl/base/thread_annotations.h"
 #include "absl/functional/bind_front.h"
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -33,7 +40,8 @@ using namespace std::chrono_literals;
 
 class EventEngineTimerTest : public EventEngineTest {
  public:
-  void ScheduleCheckCB(absl::Time when, std::atomic<int>* call_count,
+  void ScheduleCheckCB(std::chrono::steady_clock::time_point when,
+                       std::atomic<int>* call_count,
                        std::atomic<int>* fail_count, int total_expected);
 
  protected:
@@ -91,7 +99,7 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
   grpc_core::MutexLock lock(&mu_);
   {
     auto engine = this->NewEventEngine();
-    engine->RunAfter(100ms, [&]() {
+    engine->RunAfter(3000ms, [&]() {
       grpc_core::MutexLock lock(&mu_);
       ordered.push_back(2);
       ++count;
@@ -125,11 +133,10 @@ TEST_F(EventEngineTimerTest, CancellingExecutedCallbackIsNoopAndReturnsFalse) {
   ASSERT_FALSE(engine->Cancel(handle));
 }
 
-void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
-                                           std::atomic<int>* call_count,
-                                           std::atomic<int>* fail_count,
-                                           int total_expected) {
-  auto now = absl::Now();
+void EventEngineTimerTest::ScheduleCheckCB(
+    std::chrono::steady_clock::time_point when, std::atomic<int>* call_count,
+    std::atomic<int>* fail_count, int total_expected) {
+  auto now = std::chrono::steady_clock::now();
   EXPECT_LE(when, now);
   if (when > now) ++(*fail_count);
   if (++(*call_count) == total_expected) {
@@ -141,7 +148,7 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
 
 TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   auto engine = this->NewEventEngine();
-  constexpr int thread_count = 100;
+  constexpr int thread_count = 10;
   constexpr int call_count_per_thread = 100;
   constexpr float timeout_min_seconds = 1;
   constexpr float timeout_max_seconds = 10;
@@ -157,7 +164,8 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
                                            timeout_max_seconds);
       for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
         const auto dur = static_cast<int64_t>(1e9 * dis(gen));
-        auto deadline = absl::Now() + absl::Nanoseconds(dur);
+        auto deadline =
+            std::chrono::steady_clock::now() + std::chrono::nanoseconds(dur);
         engine->RunAfter(
             std::chrono::nanoseconds(dur),
             absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB, this,
@@ -174,7 +182,9 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   while (!signaled_) {
     cv_.Wait(&mu_);
   }
-  gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
-          thread_count * call_count);
+  if (failed_call_count.load() != 0) {
+    gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
+            thread_count * call_count);
+  }
   ASSERT_EQ(0, failed_call_count.load());
 }

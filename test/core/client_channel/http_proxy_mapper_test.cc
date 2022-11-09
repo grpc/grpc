@@ -16,11 +16,16 @@
 //
 //
 
-#include <gmock/gmock.h>
+#include <string>
+
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "test/core/util/test_config.h"
 
@@ -30,10 +35,10 @@ namespace {
 
 class ScopedSetEnv {
  public:
-  explicit ScopedSetEnv(const char* value) { gpr_setenv("no_proxy", value); }
+  explicit ScopedSetEnv(const char* value) { SetEnv("no_proxy", value); }
   ScopedSetEnv(const ScopedSetEnv&) = delete;
   ScopedSetEnv& operator=(const ScopedSetEnv&) = delete;
-  ~ScopedSetEnv() { gpr_unsetenv("no_proxy"); }
+  ~ScopedSetEnv() { UnsetEnv("no_proxy"); }
 };
 
 // Test that an empty no_proxy works as expected, i.e., proxy is used.

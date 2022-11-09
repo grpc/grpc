@@ -19,23 +19,35 @@
 #include "src/core/lib/http/httpcli.h"
 
 #include <string.h>
+#include <sys/socket.h>
 
-#include <gmock/gmock.h>
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <thread>
+#include <utility>
+
+#include <ares.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
@@ -149,10 +161,10 @@ void OnFinish(void* arg, grpc_error_handle error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
-          grpc_error_std_string(error).c_str());
+          grpc_core::StatusToString(error).c_str());
   GPR_ASSERT(response.status == 200);
   GPR_ASSERT(response.body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
@@ -170,8 +182,8 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   }
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
-          grpc_error_std_string(error).c_str());
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+          grpc_core::StatusToString(error).c_str());
+  GPR_ASSERT(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -255,7 +267,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
@@ -309,7 +321,7 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
@@ -372,7 +384,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       absl::StrCat("[::1]:", std::to_string(fake_server_port));
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {

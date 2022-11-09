@@ -18,10 +18,18 @@
 #include <chrono>
 #include <cstdint>
 #include <map>
+#include <memory>
+#include <ratio>
+#include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/sync.h"
@@ -40,7 +48,7 @@ class FuzzingEventEngine : public EventEngine {
   };
   explicit FuzzingEventEngine(Options options,
                               const fuzzing_event_engine::Actions& actions);
-  ~FuzzingEventEngine() override;
+  ~FuzzingEventEngine() override = default;
 
   void FuzzingDone();
   void Tick();
@@ -76,6 +84,11 @@ class FuzzingEventEngine : public EventEngine {
 
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
+  static void SetGlobalNowImplEngine(FuzzingEventEngine* engine)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  static void UnsetGlobalNowImplEngine(FuzzingEventEngine* engine)
+      ABSL_LOCKS_EXCLUDED(mu_);
+
  private:
   struct Task {
     Task(intptr_t id, absl::AnyInvocable<void()> closure)
@@ -88,7 +101,6 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static gpr_timespec GlobalNowImpl(gpr_clock_type clock_type)
       ABSL_LOCKS_EXCLUDED(mu_);
-
   const Duration final_tick_length_;
 
   grpc_core::Mutex mu_;

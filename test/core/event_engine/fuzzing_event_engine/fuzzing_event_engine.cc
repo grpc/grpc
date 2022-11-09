@@ -14,11 +14,16 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include <inttypes.h>
+#include <stdlib.h>
 
+#include <algorithm>
 #include <chrono>
+#include <ratio>
+#include <vector>
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -31,16 +36,12 @@ namespace experimental {
 namespace {
 const intptr_t kTaskHandleSalt = 12345;
 FuzzingEventEngine* g_fuzzing_event_engine = nullptr;
+gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
 }  // namespace
 
 FuzzingEventEngine::FuzzingEventEngine(
     Options options, const fuzzing_event_engine::Actions& actions)
     : final_tick_length_(options.final_tick_length) {
-  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
-  g_fuzzing_event_engine = this;
-
-  gpr_now_impl = GlobalNowImpl;
-
   tick_increments_.clear();
   task_delays_.clear();
   tasks_by_id_.clear();
@@ -57,7 +58,8 @@ FuzzingEventEngine::FuzzingEventEngine(
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
 
   auto update_delay = [](std::map<intptr_t, Duration>* map,
-                         fuzzing_event_engine::Delay delay, Duration max) {
+                         const fuzzing_event_engine::Delay& delay,
+                         Duration max) {
     auto& value = (*map)[delay.id()];
     if (delay.delay_us() > static_cast<uint64_t>(max.count() / GPR_NS_PER_US)) {
       value = max;
@@ -84,11 +86,6 @@ void FuzzingEventEngine::FuzzingDone() {
   tick_increments_.clear();
 }
 
-FuzzingEventEngine::~FuzzingEventEngine() {
-  GPR_ASSERT(g_fuzzing_event_engine == this);
-  g_fuzzing_event_engine = nullptr;
-}
-
 gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
   // TODO(ctiller): add a facility to track realtime and monotonic clocks
   // separately to simulate divergence.
@@ -96,12 +93,6 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
   const Duration d = now_.time_since_epoch();
   auto secs = std::chrono::duration_cast<std::chrono::seconds>(d);
   return {secs.count(), static_cast<int32_t>((d - secs).count()), clock_type};
-}
-
-gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
-  GPR_ASSERT(g_fuzzing_event_engine != nullptr);
-  grpc_core::MutexLock lock(&g_fuzzing_event_engine->mu_);
-  return g_fuzzing_event_engine->NowAsTimespec(clock_type);
 }
 
 void FuzzingEventEngine::Tick() {
@@ -121,8 +112,11 @@ void FuzzingEventEngine::Tick() {
     ++current_tick_;
     // Find newly expired timers.
     while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
-      tasks_by_id_.erase(tasks_by_time_.begin()->second->id);
-      to_run.push_back(std::move(tasks_by_time_.begin()->second->closure));
+      auto& task = *tasks_by_time_.begin()->second;
+      tasks_by_id_.erase(task.id);
+      if (task.closure != nullptr) {
+        to_run.push_back(std::move(task.closure));
+      }
       tasks_by_time_.erase(tasks_by_time_.begin());
     }
   }
@@ -197,11 +191,34 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
   if (it == tasks_by_id_.end()) {
     return false;
   }
-  if (it->second == nullptr) {
+  if (it->second->closure == nullptr) {
     return false;
   }
-  it->second = nullptr;
+  it->second->closure = nullptr;
   return true;
+}
+
+gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
+  if (g_fuzzing_event_engine == nullptr) {
+    return gpr_inf_future(clock_type);
+  }
+  GPR_ASSERT(g_fuzzing_event_engine != nullptr);
+  grpc_core::MutexLock lock(&g_fuzzing_event_engine->mu_);
+  return g_fuzzing_event_engine->NowAsTimespec(clock_type);
+}
+
+void FuzzingEventEngine::SetGlobalNowImplEngine(FuzzingEventEngine* engine) {
+  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
+  g_fuzzing_event_engine = engine;
+  g_orig_gpr_now_impl = gpr_now_impl;
+  gpr_now_impl = GlobalNowImpl;
+}
+
+void FuzzingEventEngine::UnsetGlobalNowImplEngine(FuzzingEventEngine* engine) {
+  GPR_ASSERT(g_fuzzing_event_engine == engine);
+  g_fuzzing_event_engine = nullptr;
+  gpr_now_impl = g_orig_gpr_now_impl;
+  g_orig_gpr_now_impl = nullptr;
 }
 
 }  // namespace experimental

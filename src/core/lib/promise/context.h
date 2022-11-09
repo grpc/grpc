@@ -19,7 +19,7 @@
 
 #include <utility>
 
-#include "src/core/lib/gpr/tls.h"
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
@@ -44,12 +44,11 @@ class Context : public ContextType<T> {
 
  private:
   T* const old_;
-  static GPR_THREAD_LOCAL(T*) current_;
+  static thread_local T* current_;
 };
 
 template <typename T>
-GPR_THREAD_LOCAL(T*)
-Context<T>::current_;
+thread_local T* Context<T>::current_;
 
 template <typename T, typename F>
 class WithContext {
@@ -68,16 +67,24 @@ class WithContext {
 
 }  // namespace promise_detail
 
-// Retrieve the current value of a context.
+// Return true if a context of type T is currently active.
+template <typename T>
+bool HasContext() {
+  return promise_detail::Context<T>::get() != nullptr;
+}
+
+// Retrieve the current value of a context, or abort if the value is unset.
 template <typename T>
 T* GetContext() {
-  return promise_detail::Context<T>::get();
+  auto* p = promise_detail::Context<T>::get();
+  GPR_ASSERT(p != nullptr);
+  return p;
 }
 
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
 promise_detail::WithContext<T, F> WithContext(F f, T* context) {
-  return promise_detail::WithContext<T, F>(f, context);
+  return promise_detail::WithContext<T, F>(std::move(f), context);
 }
 
 }  // namespace grpc_core

@@ -45,16 +45,15 @@ class ServerCallbackImpl final
 
   grpc::ServerUnaryReactor* UnaryCall(
       grpc::CallbackServerContext* context,
-      const grpc::testing::SimpleRequest* request,
-      grpc::testing::SimpleResponse* response) override {
-    gpr_log(GPR_INFO, "UnaryCall RPC CALL RECEIVED");
+      const grpc::testing::SimpleRequest* /* request */,
+      grpc::testing::SimpleResponse* /* response */) override {
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
   grpc::ServerUnaryReactor* GetBeforeSnapshot(
       grpc::CallbackServerContext* context,
-      const grpc::testing::SimpleRequest* request,
+      const grpc::testing::SimpleRequest* /* request */,
       grpc::testing::MemorySize* response) override {
     gpr_log(GPR_INFO, "BeforeSnapshot RPC CALL RECEIVED");
     response->set_rss(before_server_create);
@@ -91,7 +90,6 @@ int main(int argc, char** argv) {
 
   // Get initial process memory usage before creating server
   long before_server_create = GetMemUsage();
-  gpr_log(GPR_INFO, "Server Before Mem: %ld", before_server_create);
   ServerCallbackImpl callback_server(before_server_create);
   grpc::ServerBuilder builder;
 

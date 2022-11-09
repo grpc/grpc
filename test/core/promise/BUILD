@@ -26,7 +26,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -37,7 +37,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -49,7 +49,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:poll",
+        "//src/core:poll",
     ],
 )
 
@@ -61,7 +61,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:context",
+        "//src/core:context",
     ],
 )
 
@@ -82,12 +82,17 @@ grpc_cc_test(
     srcs = ["arena_promise_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "promise_test",
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":test_context",
-        "//:arena_promise",
-        "//:resource_quota",
+        "//src/core:arena_promise",
+        "//src/core:resource_quota",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -101,11 +106,12 @@ grpc_cc_test(
     srcs = ["map_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:map",
         "//:promise",
+        "//src/core:map",
     ],
 )
 
@@ -114,10 +120,11 @@ grpc_cc_test(
     srcs = ["race_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:race",
+        "//src/core:race",
     ],
 )
 
@@ -129,11 +136,12 @@ grpc_cc_test(
         "absl/functional:bind_front",
     ],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:promise",
-        "//:promise_factory",
+        "//src/core:promise_factory",
     ],
 )
 
@@ -142,10 +150,11 @@ grpc_cc_test(
     srcs = ["if_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:if",
+        "//src/core:if",
     ],
 )
 
@@ -154,11 +163,12 @@ grpc_cc_test(
     srcs = ["loop_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:loop",
-        "//:seq",
+        "//src/core:loop",
+        "//src/core:seq",
     ],
 )
 
@@ -167,10 +177,11 @@ grpc_cc_test(
     srcs = ["join_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:join",
+        "//src/core:join",
     ],
 )
 
@@ -179,10 +190,11 @@ grpc_cc_test(
     srcs = ["try_join_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:try_join",
+        "//src/core:try_join",
     ],
 )
 
@@ -191,10 +203,11 @@ grpc_cc_test(
     srcs = ["seq_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:seq",
+        "//src/core:seq",
     ],
 )
 
@@ -203,10 +216,11 @@ grpc_cc_test(
     srcs = ["try_seq_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:try_seq",
+        "//src/core:try_seq",
     ],
 )
 
@@ -215,12 +229,13 @@ grpc_cc_test(
     srcs = ["try_seq_metadata_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc",
         "//:grpc_base",
-        "//:try_seq",
+        "//src/core:try_seq",
     ],
 )
 
@@ -228,16 +243,18 @@ grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:activity",
-        "//:join",
         "//:promise",
-        "//:seq",
-        "//:wait_set",
+        "//src/core:activity",
+        "//src/core:join",
+        "//src/core:seq",
+        "//src/core:wait_set",
     ],
 )
 
@@ -246,13 +263,14 @@ grpc_cc_test(
     srcs = ["latch_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:join",
-        "//:latch",
-        "//:seq",
+        "//src/core:join",
+        "//src/core:latch",
+        "//src/core:seq",
     ],
 )
 
@@ -261,13 +279,14 @@ grpc_cc_test(
     srcs = ["observable_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:observable",
         "//:promise",
-        "//:seq",
+        "//src/core:observable",
+        "//src/core:seq",
     ],
 )
 
@@ -276,17 +295,41 @@ grpc_cc_test(
     srcs = ["for_each_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:for_each",
-        "//:join",
-        "//:map",
-        "//:observable",
-        "//:pipe",
-        "//:resource_quota",
-        "//:seq",
+        "//src/core:for_each",
+        "//src/core:join",
+        "//src/core:map",
+        "//src/core:observable",
+        "//src/core:pipe",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:try_seq",
+    ],
+)
+
+grpc_cc_test(
+    name = "map_pipe_test",
+    srcs = ["map_pipe_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//src/core:for_each",
+        "//src/core:join",
+        "//src/core:map",
+        "//src/core:map_pipe",
+        "//src/core:observable",
+        "//src/core:pipe",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:try_seq",
     ],
 )
 
@@ -295,15 +338,16 @@ grpc_cc_test(
     srcs = ["pipe_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:join",
-        "//:pipe",
         "//:promise",
-        "//:resource_quota",
-        "//:seq",
+        "//src/core:join",
+        "//src/core:pipe",
+        "//src/core:resource_quota",
+        "//src/core:seq",
     ],
 )
 
@@ -316,12 +360,12 @@ grpc_proto_fuzzer(
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
-        "//:activity",
-        "//:join",
-        "//:map",
         "//:promise",
-        "//:race",
-        "//:seq",
+        "//src/core:activity",
+        "//src/core:join",
+        "//src/core:map",
+        "//src/core:race",
+        "//src/core:seq",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -331,11 +375,12 @@ grpc_cc_test(
     srcs = ["exec_ctx_wakeup_scheduler_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:activity",
-        "//:exec_ctx_wakeup_scheduler",
+        "//src/core:activity",
+        "//src/core:exec_ctx_wakeup_scheduler",
     ],
 )
 
@@ -347,28 +392,31 @@ grpc_cc_test(
         "absl/synchronization",
     ],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
-        "//:activity",
         "//:exec_ctx",
         "//:grpc",
-        "//:sleep",
+        "//src/core:activity",
+        "//src/core:sleep",
+        "//test/core/event_engine:mock_event_engine",
     ],
 )
 
 grpc_cc_test(
-    name = "call_push_pull_test",
-    srcs = ["call_push_pull_test.cc"],
+    name = "try_concurrently_test",
+    srcs = ["try_concurrently_test.cc"],
     external_deps = [
         "gtest",
         "absl/status",
     ],
     language = "c++",
+    tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:call_push_pull",
+        "//src/core:try_concurrently",
     ],
 )

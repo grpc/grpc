@@ -17,12 +17,14 @@ from typing import List
 from absl import flags
 from absl.testing import absltest
 
+from framework import xds_k8s_flags
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
 from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
+flags.mark_flag_as_required('server_image_canonical')
 
 # Type aliases
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
@@ -45,14 +47,30 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     requests.
     """
 
+    @classmethod
+    def setUpClass(cls):
+        """Force the java test server for languages not yet supporting
+        the `rpc-behavior` feature.
+
+        https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#server
+        """
+        super().setUpClass()
+        if cls.lang_spec.client_lang != _Lang.JAVA:
+            # TODO(mlumish): Once rpc-behavior supported by a language, make the
+            #                override version-conditional.
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
+
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.server_lang != _Lang.JAVA:
-            return False
         if config.client_lang in _Lang.CPP | _Lang.PYTHON:
             return config.version_gte('v1.48.x')
+        if config.client_lang == _Lang.JAVA:
+            return config.version_gte('v1.49.x')
         if config.client_lang == _Lang.NODE:
             return config.version_gte('v1.6.x')
+        if config.client_lang == _Lang.GO:
+            # TODO(zasweq): Update when the feature makes in a version branch.
+            return config.version_gte('master')
         return False
 
     def test_outlier_detection(self) -> None:
@@ -102,7 +120,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 rpc_types=rpc_types,
                 metadata=(
                     (RpcTypeUnaryCall, 'rpc-behavior',
-                     f'hostname={test_servers[0].pod_name} error-code-2'),))
+                     f'hostname={test_servers[0].hostname} error-code-2'),))
             self.assertRpcsEventuallyGoToGivenServers(test_client,
                                                       test_servers[1:])
 

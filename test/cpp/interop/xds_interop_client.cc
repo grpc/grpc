@@ -40,7 +40,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -469,12 +469,12 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   grpc::ChannelArguments channel_args;
   channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
   TestClient client(
-      grpc::CreateCustomChannel(absl::GetFlag(FLAGS_server),
-                                absl::GetFlag(FLAGS_secure_mode)
-                                    ? grpc::experimental::XdsCredentials(
-                                          grpc::InsecureChannelCredentials())
-                                    : grpc::InsecureChannelCredentials(),
-                                channel_args),
+      grpc::CreateCustomChannel(
+          absl::GetFlag(FLAGS_server),
+          absl::GetFlag(FLAGS_secure_mode)
+              ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
+              : grpc::InsecureChannelCredentials(),
+          channel_args),
       stats_watchers);
   std::chrono::time_point<std::chrono::system_clock> start =
       std::chrono::system_clock::now();

@@ -278,7 +278,8 @@ class CLanguage(object):
             self._cmake_architecture_windows = 'x64' if self.args.arch == 'x64' else 'Win32'
             # when builing with Ninja, the VS common tools need to be activated first
             self._activate_vs_tools_windows = activate_vs_tools
-            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x86'
+            # "x64_x86" means create 32bit binaries, but use 64bit toolkit to secure more memory for the build
+            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x64_x86'
 
         else:
             if self.platform == 'linux':
@@ -477,8 +478,8 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc6':
-            return ('gcc_6', [])
+        elif compiler == 'gcc7':
+            return ('gcc_7', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
@@ -491,8 +492,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang6':
             return ('clang_6', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang13':
-            return ('clang_13', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang15':
+            return ('clang_15', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -644,10 +645,6 @@ class PythonLanguage(object):
             if io_platform != 'native':
                 environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
             for python_config in self.pythons:
-                # TODO(https://github.com/grpc/grpc/issues/23784) allow gevent
-                # to run on later version once issue solved.
-                if io_platform == 'gevent' and python_config.name != 'py36':
-                    continue
                 jobs.extend([
                     self.config.job_spec(
                         python_config.run + [self._TEST_COMMAND[io_platform]],
@@ -727,11 +724,6 @@ class PythonLanguage(object):
         config_vars = _PythonConfigVars(shell, builder,
                                         builder_prefix_arguments,
                                         venv_relative_python, toolchain, runner)
-        python36_config = _python_config_generator(name='py36',
-                                                   major='3',
-                                                   minor='6',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
         python37_config = _python_config_generator(name='py37',
                                                    major='3',
                                                    minor='7',
@@ -774,11 +766,9 @@ class PythonLanguage(object):
                 return (python39_config,)
             else:
                 return (
-                    python36_config,
+                    python37_config,
                     python38_config,
                 )
-        elif args.compiler == 'python3.6':
-            return (python36_config,)
         elif args.compiler == 'python3.7':
             return (python37_config,)
         elif args.compiler == 'python3.8':
@@ -795,7 +785,6 @@ class PythonLanguage(object):
             return (python38_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
-                python36_config,
                 python37_config,
                 python38_config,
                 python39_config,
@@ -821,11 +810,15 @@ class RubyLanguage(object):
                                  timeout_seconds=10 * 60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
+        # TODO(apolcyn): re-enable the following tests after
+        # https://bugs.ruby-lang.org/issues/15499 is fixed:
+        # They previously worked on ruby 2.5 but needed to be disabled
+        # after dropping support for ruby 2.5:
+        #   - src/ruby/end2end/channel_state_test.rb
+        #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
         for test in [
                 'src/ruby/end2end/sig_handling_test.rb',
-                'src/ruby/end2end/channel_state_test.rb',
                 'src/ruby/end2end/channel_closing_test.rb',
-                'src/ruby/end2end/sig_int_during_channel_watch_test.rb',
                 'src/ruby/end2end/killed_client_thread_test.rb',
                 'src/ruby/end2end/forking_client_test.rb',
                 'src/ruby/end2end/grpc_class_init_test.rb',
@@ -1021,29 +1014,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
-        # (how does one add the cronet dependency in bazel?)
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-cronettests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'CronetTests'}))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='ios-perf-test',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'PerfTests'}))
-        # TODO(jtattermusch): Clarify what's the difference between PerfTests and PerfTestsPosix
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='ios-perf-test-posix',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'PerfTestsPosix'}))
         # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
         # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
         out.append(
@@ -1052,17 +1022,6 @@ class ObjCLanguage(object):
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=30 * 60,
-                                 shortname='tvos-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'TvTests',
-                                     'PLATFORM': 'tvos'
-                                 }))
-
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1087,6 +1046,9 @@ class ObjCLanguage(object):
 
 class Sanity(object):
 
+    def __init__(self, config_file):
+        self.config_file = config_file
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1094,7 +1056,7 @@ class Sanity(object):
 
     def test_specs(self):
         import yaml
-        with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
+        with open('tools/run_tests/sanity/%s' % self.config_file, 'r') as f:
             environ = {'TEST': 'true'}
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
@@ -1147,7 +1109,9 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
-    'sanity': Sanity()
+    'sanity': Sanity('sanity_tests.yaml'),
+    'clang-tidy': Sanity('clang_tidy_tests.yaml'),
+    'iwyu': Sanity('iwyu_tests.yaml'),
 }
 
 _MSBUILD_CONFIG = {
@@ -1493,16 +1457,15 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc6',
+        'gcc7',
         'gcc10.2',
         'gcc10.2_openssl102',
         'gcc12',
         'gcc_musl',
         'clang6',
-        'clang13',
+        'clang15',
         'python2.7',
         'python3.5',
-        'python3.6',
         'python3.7',
         'python3.8',
         'python3.9',

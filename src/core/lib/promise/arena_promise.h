@@ -19,10 +19,12 @@
 
 #include <stdlib.h>
 
+#include <memory>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
 
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -31,59 +33,81 @@ namespace grpc_core {
 
 namespace arena_promise_detail {
 
-// Type erased promise stored in the arena.
+using ArgType = std::aligned_storage_t<sizeof(void*)>;
 template <typename T>
-class ImplInterface {
- public:
+T*& ArgAsPtr(ArgType* arg) {
+  static_assert(sizeof(ArgType) >= sizeof(T**),
+                "Must have ArgType of at least one pointer size");
+  return *reinterpret_cast<T**>(arg);
+}
+
+template <typename T>
+struct Vtable {
   // Poll the promise, once.
-  virtual Poll<T> PollOnce() = 0;
+  Poll<T> (*poll_once)(ArgType* arg);
   // Destroy the underlying callable object if there is one.
   // Since we don't delete (the arena owns the memory) but we may need to call a
   // destructor, we expose this for when the ArenaPromise object is destroyed.
-  virtual void Destroy() = 0;
-
- protected:
-  ~ImplInterface() = default;
+  void (*destroy)(ArgType* arg);
 };
 
-// Implementation of ImplInterface for an empty object.
+template <typename T>
+struct VtableAndArg {
+  const Vtable<T>* vtable;
+  ArgType arg;
+};
+
+// Implementation of Vtable for an empty object.
 // Used when an empty ArenaPromise is created, or when the ArenaPromise is moved
 // from. Since in either case these objects should not be polled, we simply
 // crash if it is.
 template <typename T>
-class NullImpl final : public ImplInterface<T> {
- public:
-  Poll<T> PollOnce() override {
+struct Null {
+  static const Vtable<T> vtable;
+
+  static Poll<T> PollOnce(ArgType*) {
     abort();
     GPR_UNREACHABLE_CODE(return Pending{});
   }
-  void Destroy() override {}
 
-  static ImplInterface<T>* Get() {
-    static NullImpl<T> instance;
-    return &instance;
-  }
-
- private:
-  ~NullImpl() = default;
+  static void Destroy(ArgType*) {}
 };
+
+template <typename T>
+const Vtable<T> Null<T>::vtable = {PollOnce, Destroy};
 
 // Implementation of ImplInterface for a callable object.
 template <typename T, typename Callable>
-class CallableImpl final : public ImplInterface<T> {
- public:
-  explicit CallableImpl(Callable&& callable) : callable_(std::move(callable)) {}
-  // Forward polls to the callable object.
-  Poll<T> PollOnce() override { return poll_cast<T>(callable_()); }
-  // Destroy destructs the callable object.
-  void Destroy() override { this->~CallableImpl(); }
+struct AllocatedCallable {
+  static const Vtable<T> vtable;
 
- private:
-  // Should only be called by Destroy().
-  ~CallableImpl() = default;
+  static Poll<T> PollOnce(ArgType* arg) {
+    return poll_cast<T>((*ArgAsPtr<Callable>(arg))());
+  }
 
-  Callable callable_;
+  static void Destroy(ArgType* arg) { Destruct(ArgAsPtr<Callable>(arg)); }
 };
+
+template <typename T, typename Callable>
+const Vtable<T> AllocatedCallable<T, Callable>::vtable = {PollOnce, Destroy};
+
+// Implementation of ImplInterface for a small callable object (one that fits
+// within the ArgType arg)
+template <typename T, typename Callable>
+struct Inlined {
+  static const Vtable<T> vtable;
+
+  static Poll<T> PollOnce(ArgType* arg) {
+    return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
+  }
+
+  static void Destroy(ArgType* arg) {
+    Destruct(reinterpret_cast<Callable*>(arg));
+  }
+};
+
+template <typename T, typename Callable>
+const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Destroy};
 
 // If a callable object is empty we can substitute any instance of that callable
 // for the one we call (for how could we tell the difference)?
@@ -93,27 +117,17 @@ class CallableImpl final : public ImplInterface<T> {
 // (this comes up often when the promise only accesses context data from the
 // containing activity).
 template <typename T, typename Callable>
-class SharedImpl final : public ImplInterface<T>, private Callable {
- public:
-  // Call the callable, or at least an exact duplicate of it - if you have no
-  // members, all your instances look the same.
-  Poll<T> PollOnce() override { return Callable::operator()(); }
-  // Nothing to destroy.
-  void Destroy() override {}
-  // Return a pointer to the shared instance - these are singletons, and are
-  // needed just to get the vtable in place.
-  static SharedImpl* Get(Callable&& callable) {
-    static_assert(sizeof(SharedImpl) == sizeof(void*),
-                  "SharedImpl should be pointer sized");
-    static SharedImpl impl(std::forward<Callable>(callable));
-    return &impl;
-  }
+struct SharedCallable {
+  static const Vtable<T> vtable;
 
- private:
-  explicit SharedImpl(Callable&& callable)
-      : Callable(std::forward<Callable>(callable)) {}
-  ~SharedImpl() = default;
+  static Poll<T> PollOnce(ArgType* arg) {
+    return (*reinterpret_cast<Callable*>(arg))();
+  }
 };
+
+template <typename T, typename Callable>
+const Vtable<T> SharedCallable<T, Callable>::vtable = {PollOnce,
+                                                       Null<T>::Destroy};
 
 // Redirector type: given a callable type, expose a Make() function that creates
 // the appropriate underlying implementation.
@@ -122,26 +136,41 @@ struct ChooseImplForCallable;
 
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
-    T, Callable, absl::enable_if_t<!std::is_empty<Callable>::value>> {
-  static ImplInterface<T>* Make(Callable&& callable) {
-    return GetContext<Arena>()->template New<CallableImpl<T, Callable>>(
+    T, Callable,
+    absl::enable_if_t<!std::is_empty<Callable>::value &&
+                      (sizeof(Callable) > sizeof(ArgType))>> {
+  static void Make(Callable&& callable, VtableAndArg<T>* out) {
+    out->vtable = &AllocatedCallable<T, Callable>::vtable;
+    ArgAsPtr<Callable>(&out->arg) = GetContext<Arena>()->template New<Callable>(
         std::forward<Callable>(callable));
   }
 };
 
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
+    T, Callable,
+    absl::enable_if_t<!std::is_empty<Callable>::value &&
+                      (sizeof(Callable) <= sizeof(ArgType))>> {
+  static void Make(Callable&& callable, VtableAndArg<T>* out) {
+    out->vtable = &Inlined<T, Callable>::vtable;
+    Construct(reinterpret_cast<Callable*>(&out->arg),
+              std::forward<Callable>(callable));
+  }
+};
+
+template <typename T, typename Callable>
+struct ChooseImplForCallable<
     T, Callable, absl::enable_if_t<std::is_empty<Callable>::value>> {
-  static ImplInterface<T>* Make(Callable&& callable) {
-    return SharedImpl<T, Callable>::Get(std::forward<Callable>(callable));
+  static void Make(Callable&&, VtableAndArg<T>* out) {
+    out->vtable = &SharedCallable<T, Callable>::vtable;
   }
 };
 
 // Wrap ChooseImplForCallable with a friend approachable syntax.
 template <typename T, typename Callable>
-ImplInterface<T>* MakeImplForCallable(Callable&& callable) {
-  return ChooseImplForCallable<T, Callable>::Make(
-      std::forward<Callable>(callable));
+void MakeImplForCallable(Callable&& callable, VtableAndArg<T>* out) {
+  ChooseImplForCallable<T, Callable>::Make(std::forward<Callable>(callable),
+                                           out);
 }
 
 }  // namespace arena_promise_detail
@@ -158,38 +187,42 @@ class ArenaPromise {
             typename Ignored =
                 absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ArenaPromise(Callable&& callable)
-      : impl_(arena_promise_detail::MakeImplForCallable<T>(
-            std::forward<Callable>(callable))) {}
+  ArenaPromise(Callable&& callable) {
+    arena_promise_detail::MakeImplForCallable(std::forward<Callable>(callable),
+                                              &vtable_and_arg_);
+  }
 
   // ArenaPromise is not copyable.
   ArenaPromise(const ArenaPromise&) = delete;
   ArenaPromise& operator=(const ArenaPromise&) = delete;
   // ArenaPromise is movable.
-  ArenaPromise(ArenaPromise&& other) noexcept : impl_(other.impl_) {
-    other.impl_ = arena_promise_detail::NullImpl<T>::Get();
+  ArenaPromise(ArenaPromise&& other) noexcept
+      : vtable_and_arg_(other.vtable_and_arg_) {
+    other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
-    impl_->Destroy();
-    impl_ = other.impl_;
-    other.impl_ = arena_promise_detail::NullImpl<T>::Get();
+    vtable_and_arg_.vtable->destroy(&vtable_and_arg_.arg);
+    vtable_and_arg_ = other.vtable_and_arg_;
+    other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
     return *this;
   }
 
   // Destruction => call Destroy on the underlying impl object.
-  ~ArenaPromise() { impl_->Destroy(); }
+  ~ArenaPromise() { vtable_and_arg_.vtable->destroy(&vtable_and_arg_.arg); }
 
   // Expose the promise interface: a call operator that returns Poll<T>.
-  Poll<T> operator()() { return impl_->PollOnce(); }
+  Poll<T> operator()() {
+    return vtable_and_arg_.vtable->poll_once(&vtable_and_arg_.arg);
+  }
 
   bool has_value() const {
-    return impl_ != arena_promise_detail::NullImpl<T>::Get();
+    return vtable_and_arg_.vtable != &arena_promise_detail::Null<T>::vtable;
   }
 
  private:
   // Underlying impl object.
-  arena_promise_detail::ImplInterface<T>* impl_ =
-      arena_promise_detail::NullImpl<T>::Get();
+  arena_promise_detail::VtableAndArg<T> vtable_and_arg_ = {
+      &arena_promise_detail::Null<T>::vtable, {}};
 };
 
 }  // namespace grpc_core

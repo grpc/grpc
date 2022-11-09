@@ -33,7 +33,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -74,11 +73,6 @@ class XdsTestType {
     return *this;
   }
 
-  XdsTestType& set_use_v2() {
-    use_v2_ = true;
-    return *this;
-  }
-
   XdsTestType& set_use_xds_credentials() {
     use_xds_credentials_ = true;
     return *this;
@@ -106,7 +100,6 @@ class XdsTestType {
 
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
-  bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
   bool use_csds_streaming() const { return use_csds_streaming_; }
   HttpFilterConfigLocation filter_config_setup() const {
@@ -118,7 +111,7 @@ class XdsTestType {
   }
 
   std::string AsString() const {
-    std::string retval = use_v2_ ? "V2" : "V3";
+    std::string retval = "V3";
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     if (use_xds_credentials_) retval += "XdsCreds";
@@ -147,7 +140,6 @@ class XdsTestType {
  private:
   bool enable_load_reporting_ = false;
   bool enable_rds_testing_ = false;
-  bool use_v2_ = false;
   bool use_xds_credentials_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
@@ -193,7 +185,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Default values for locality fields.
   static const char kDefaultLocalityRegion[];
   static const char kDefaultLocalityZone[];
-  static const int kDefaultLocalityWeight = 3;
+  static const uint32_t kDefaultLocalityWeight = 3;
   static const int kDefaultLocalityPriority = 0;
 
   // Default resource names.
@@ -216,7 +208,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
    public:
     // A status notifier for xDS-enabled servers.
     class XdsServingStatusNotifier
-        : public grpc::experimental::XdsServerServingStatusNotifierInterface {
+        : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
@@ -398,10 +390,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   class BootstrapBuilder {
    public:
     BootstrapBuilder() {}
-    BootstrapBuilder& SetV2() {
-      v2_ = true;
-      return *this;
-    }
     BootstrapBuilder& SetIgnoreResourceDeletion() {
       ignore_resource_deletion_ = true;
       return *this;
@@ -453,7 +441,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::string MakeCertificateProviderText();
     std::string MakeAuthorityText();
 
-    bool v2_ = false;
     bool ignore_resource_deletion_ = false;
     std::string top_server_;
     std::string client_default_listener_resource_name_template_;
@@ -461,18 +448,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
     std::string server_listener_resource_name_template_ =
         "grpc/server?xds.resource.listening_address=%s";
-  };
-
-  class ScopedExperimentalEnvVar {
-   public:
-    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      gpr_setenv(env_var_, "true");
-    }
-
-    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
-
-   private:
-    const char* env_var_;
   };
 
   // RPC services used to talk to the backends.
@@ -582,7 +557,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // A locality.
     struct Locality {
       Locality(std::string sub_zone, std::vector<Endpoint> endpoints,
-               int lb_weight = kDefaultLocalityWeight,
+               uint32_t lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority)
           : sub_zone(std::move(sub_zone)),
             endpoints(std::move(endpoints)),
@@ -591,7 +566,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
       const std::string sub_zone;
       std::vector<Endpoint> endpoints;
-      int lb_weight;
+      uint32_t lb_weight;
       int priority;
     };
 
@@ -717,7 +692,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct RpcOptions {
     RpcService service = SERVICE_ECHO;
     RpcMethod method = METHOD_ECHO;
-    int timeout_ms = 1000;
+    // Will be multiplied by grpc_test_slowdown_factor().
+    int timeout_ms = 5000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
     // These options are used by the backend service impl.
@@ -741,6 +717,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     RpcOptions& set_timeout_ms(int rpc_timeout_ms) {
       timeout_ms = rpc_timeout_ms;
+      return *this;
+    }
+
+    RpcOptions& set_timeout(grpc_core::Duration timeout) {
+      timeout_ms = timeout.millis();
       return *this;
     }
 
@@ -814,7 +795,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
   void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
                      std::function<bool(const RpcResult&)> continue_predicate,
-                     int timeout_ms = 5000,
+                     int timeout_ms = 15000,
                      const RpcOptions& rpc_options = RpcOptions());
 
   // Sends the specified number of RPCs and fails if the RPC fails.
@@ -881,7 +862,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // If true, resets the backend counters before returning.
     bool reset_counters = true;
     // How long to wait for the backend(s) to see requests.
-    int timeout_ms = 5000;
+    // Will be multiplied by grpc_test_slowdown_factor().
+    int timeout_ms = 15000;
 
     WaitForBackendOptions() {}
 
@@ -927,55 +909,62 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
       const grpc_core::DebugLocation& debug_location,
       std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE);
 
   // Sends RPCs until an LDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
         debug_location,
         [&]() { return balancer_->ads_service()->lds_response_state(); },
-        expected_status);
+        rpc_options, expected_status);
   }
 
   // Sends RPCs until an RDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
         debug_location,
         [&]() { return RouteConfigurationResponseState(balancer_.get()); },
-        expected_status);
+        rpc_options, expected_status);
   }
 
   // Sends RPCs until a CDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
         debug_location,
         [&]() { return balancer_->ads_service()->cds_response_state(); },
-        expected_status);
+        rpc_options, expected_status);
   }
 
   // Sends RPCs until an EDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
-      const grpc_core::DebugLocation& debug_location) {
-    return WaitForNack(debug_location, [&]() {
-      return balancer_->ads_service()->eds_response_state();
-    });
+      const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions()) {
+    return WaitForNack(
+        debug_location,
+        [&]() { return balancer_->ads_service()->eds_response_state(); },
+        rpc_options);
   }
 
   // Convenient front-end to wait for RouteConfiguration to be NACKed,
   // regardless of whether it's sent in LDS or RDS.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     if (GetParam().enable_rds_testing()) {
-      return WaitForRdsNack(debug_location, expected_status);
+      return WaitForRdsNack(debug_location, rpc_options, expected_status);
     }
-    return WaitForLdsNack(debug_location, expected_status);
+    return WaitForLdsNack(debug_location, rpc_options, expected_status);
   }
 
   // Convenient front-end for accessing xDS response state for a
@@ -1002,6 +991,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
         gpr_now(GPR_CLOCK_MONOTONIC));
   }
 
+  // Sets duration_proto to duration times grpc_test_slowdown_factor().
+  static void SetProtoDuration(grpc_core::Duration duration,
+                               google::protobuf::Duration* duration_proto);
+
   // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
   // chance. Rolling dices in drop/fault-injection generates a binomial
   // distribution (if our code is not horribly wrong). Let's make "n" the number
@@ -1018,6 +1011,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // the equation:
   //
   //   kn <= 5.00 * sqrt(np(1-p))
+  // TODO(yashykt): The above explanation assumes a normal distribution, but we
+  // use a uniform distribution instead. We need a better estimate of how many
+  // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
     GPR_ASSERT(p >= 0 && p <= 1);
     size_t num_rpcs =

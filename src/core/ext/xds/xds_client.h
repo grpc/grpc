@@ -32,7 +32,8 @@
 #include "absl/strings/string_view.h"
 #include "upb/def.hpp"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -46,7 +47,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -77,17 +77,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
-    // bootstrap_ is guaranteed to be non-null since XdsClient::GetOrCreate()
-    // would return a null object if bootstrap_ was null.
-    return *bootstrap_;
+    return *bootstrap_;  // ctor asserts that it is non-null
   }
 
   XdsTransportFactory* transport_factory() const {
     return transport_factory_.get();
-  }
-
-  CertificateProviderStore& certificate_provider_store() {
-    return *certificate_provider_store_;
   }
 
   void Orphan() override;
@@ -151,6 +145,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // implementation.
   std::string DumpClientConfigBinary();
 
+  grpc_event_engine::experimental::EventEngine* engine() {
+    return engine_.get();
+  }
+
  private:
   struct XdsResourceKey {
     std::string id;
@@ -193,8 +191,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void MaybeStartLrsCall();
     void StopLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    bool HasAdsCall() const;
-    bool HasActiveAdsCall() const;
+    // Returns non-OK if there has been an error since the last time the
+    // ADS stream saw a response.
+    const absl::Status& status() const { return status_; }
 
     void SubscribeLocked(const XdsResourceType* type,
                          const XdsResourceName& name)
@@ -205,14 +204,17 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
-    void OnConnectivityStateChange(absl::Status status);
-    void OnConnectivityStateChangeLocked(absl::Status status)
+    void OnConnectivityFailure(absl::Status status);
+
+    // Enqueues error notifications to watchers.  Caller must drain
+    // XdsClient::work_serializer_ after releasing the lock.
+    void SetChannelStatusLocked(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     // The owning xds client.
     WeakRefCountedPtr<XdsClient> xds_client_;
 
-    const XdsBootstrap::XdsServer& server_;
+    const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
     OrphanablePtr<XdsTransportFactory::XdsTransport> transport_;
 
@@ -225,6 +227,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // Stores the most recent accepted resource version for each resource type.
     std::map<const XdsResourceType*, std::string /*version*/>
         resource_type_version_map_;
+
+    absl::Status status_;
   };
 
   struct ResourceState {
@@ -253,7 +257,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
-    Timestamp last_report_time = ExecCtx::Get()->Now();
+    Timestamp last_report_time = Timestamp::Now();
   };
 
   // Load report data.
@@ -266,9 +270,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LoadReportMap load_report_map;
   };
 
-  // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Sends an error notification to a specific set of watchers.
   void NotifyWatchersOnErrorLocked(
       const std::map<ResourceWatcherInterface*,
@@ -304,27 +305,27 @@ class XdsClient : public DualRefCounted<XdsClient> {
   OrphanablePtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
-  OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
   WorkSerializer work_serializer_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 
   Mutex mu_;
 
   // Stores resource type objects seen by type URL.
   std::map<absl::string_view /*resource_type*/, const XdsResourceType*>
       resource_types_ ABSL_GUARDED_BY(mu_);
-  std::map<absl::string_view /*v2_resource_type*/, const XdsResourceType*>
-      v2_resource_types_ ABSL_GUARDED_BY(mu_);
   upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
 
-  //  Map of existing xDS server channels.
-  std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_
-      ABSL_GUARDED_BY(mu_);
+  // Map of existing xDS server channels.
+  // Key is owned by the bootstrap config.
+  std::map<const XdsBootstrap::XdsServer*, ChannelState*>
+      xds_server_channel_map_ ABSL_GUARDED_BY(mu_);
 
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  std::map<XdsBootstrap::XdsServer, LoadReportServer>
+  // Key is owned by the bootstrap config.
+  std::map<const XdsBootstrap::XdsServer*, LoadReportServer>
       xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,

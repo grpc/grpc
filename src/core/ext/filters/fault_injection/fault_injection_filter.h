@@ -21,17 +21,18 @@
 
 #include <stddef.h>
 
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
-
-// Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
-  "grpc.parse_fault_injection_method_config"
 
 namespace grpc_core {
 
@@ -60,6 +61,9 @@ class FaultInjectionFilter : public ChannelFilter {
   // The relative index of instances of the same filter.
   size_t index_;
   const size_t service_config_parser_index_;
+  std::unique_ptr<Mutex> mu_;
+  absl::InsecureBitGen abort_rand_generator_ ABSL_GUARDED_BY(mu_);
+  absl::InsecureBitGen delay_rand_generator_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

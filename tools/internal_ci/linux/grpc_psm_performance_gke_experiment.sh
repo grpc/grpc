@@ -26,7 +26,7 @@ gcloud auth configure-docker
 
 # Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-prod2 \
+gcloud container clusters get-credentials psm-benchmarks-performance \
     --zone us-central1-b --project grpc-testing
 
 # Set up environment variables.
@@ -56,18 +56,13 @@ WORKER_POOL_8CORE=workers-c2-8core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
-# Update go version.
-TEST_INFRA_GOVERSION=go1.17.1
-go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
-"${TEST_INFRA_GOVERSION}" download
-
 # Clone test-infra repository and build all tools.
 pushd ..
 git clone https://github.com/grpc/test-infra.git
 cd test-infra
 # Tools are built from HEAD.
 git checkout --detach
-make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
+make all-tools
 
 # Find latest release tag of test-infra.
 git fetch --all --tags
@@ -100,6 +95,7 @@ psmBuildConfigs() {
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
+        -a enablePrometheus=true \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" -u "${proxy_type}"\
         -a pool="${pool}" \
         --category=psm \
@@ -129,6 +125,7 @@ buildConfigs() {
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
+        -a enablePrometheus=true \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=psm \
         --allow_client_language=c++ --allow_server_language=c++ \

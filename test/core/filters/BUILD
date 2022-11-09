@@ -20,6 +20,20 @@ licenses(["notice"])
 grpc_package(name = "test/core/filters")
 
 grpc_cc_test(
+    name = "client_auth_filter_test",
+    srcs = ["client_auth_filter_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//:grpc_security_base",
+        "//test/core/promise:test_context",
+    ],
+)
+
+grpc_cc_test(
     name = "client_authority_filter_test",
     srcs = ["client_authority_filter_test.cc"],
     external_deps = ["gtest"],
@@ -28,7 +42,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//:grpc_client_authority_filter",
+        "//src/core:grpc_client_authority_filter",
         "//test/core/promise:test_context",
     ],
 )

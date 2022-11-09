@@ -25,11 +25,11 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
@@ -54,12 +54,6 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
-
-GRPC_DEPRECATED(
-    "Use grpc::XdsCredentials instead. The experimental version will be "
-    "deleted after the 1.41 release.")
-std::shared_ptr<ChannelCredentials> XdsCredentials(
-    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 }  // namespace experimental
 
 /// Builds XDS Credentials.

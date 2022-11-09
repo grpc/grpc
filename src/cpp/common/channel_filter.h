@@ -20,13 +20,13 @@
 #define GRPCXX_CHANNEL_FILTER_H
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <functional>
 #include <new>
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -87,7 +87,7 @@ class TransportOp {
   grpc_error_handle disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return !GRPC_ERROR_IS_NONE(op_->goaway_error); }
+  bool send_goaway() const { return !op_->goaway_error.ok(); }
 
   // TODO(roth): Add methods for additional fields as needed.
 
@@ -136,12 +136,6 @@ class TransportStreamOpBatch {
   }
   MetadataBatch* recv_trailing_metadata() {
     return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
-  }
-
-  uint32_t* send_initial_metadata_flags() const {
-    return op_->send_initial_metadata ? &op_->payload->send_initial_metadata
-                                             .send_initial_metadata_flags
-                                      : nullptr;
   }
 
   grpc_closure* recv_initial_metadata_ready() const {
@@ -208,7 +202,7 @@ class ChannelData {
   /// Initializes the channel data.
   virtual grpc_error_handle Init(grpc_channel_element* /*elem*/,
                                  grpc_channel_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   // Called before destruction.
@@ -231,7 +225,7 @@ class CallData {
   /// Initializes the call data.
   virtual grpc_error_handle Init(grpc_call_element* /*elem*/,
                                  const grpc_call_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   // Called before destruction.

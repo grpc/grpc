@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -30,12 +29,13 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -75,14 +75,15 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
 
   auto args = grpc_core::CoreConfiguration::Get()
                   .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr)
-                  .ToC();
+                  .PreconditionChannelArgs(nullptr);
   grpc_error_handle error = grpc_tcp_server_create(
-      &server->shutdown_complete, args.get(), &server->tcp_server);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+      &server->shutdown_complete,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &server->tcp_server);
+  GPR_ASSERT(error.ok());
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset,

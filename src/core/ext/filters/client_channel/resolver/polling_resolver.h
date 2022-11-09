@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include "src/core/lib/backoff/backoff.h"
@@ -77,6 +78,8 @@ class PollingResolver : public Resolver {
 
   void OnRequestCompleteLocked(Result result);
 
+  void GetResultStatus(absl::Status status);
+
   static void OnNextResolution(void* arg, grpc_error_handle error);
   void OnNextResolutionLocked(grpc_error_handle error);
 
@@ -105,6 +108,14 @@ class PollingResolver : public Resolver {
   absl::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
+  /// state for handling interactions between re-resolution requests and
+  /// result health callbacks
+  enum class ResultStatusState {
+    kNone,
+    kResultHealthCallbackPending,
+    kReresolutionRequestedWhileCallbackWasPending,
+  };
+  ResultStatusState result_status_state_ = ResultStatusState::kNone;
 };
 
 }  // namespace grpc_core

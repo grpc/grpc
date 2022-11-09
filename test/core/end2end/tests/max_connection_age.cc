@@ -22,8 +22,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
@@ -38,7 +36,7 @@
 #include "test/core/util/test_config.h"
 
 #define MAX_CONNECTION_AGE_MS 500
-#define MAX_CONNECTION_AGE_GRACE_MS 1000
+#define MAX_CONNECTION_AGE_GRACE_MS 2000
 #define MAX_CONNECTION_IDLE_MS 9999
 
 #define MAX_CONNECTION_AGE_JITTER_MULTIPLIER 1.1
@@ -87,7 +85,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  auto cqv = absl::make_unique<grpc_core::CqVerifier>(f.cq);
+  auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
@@ -230,7 +228,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 
 static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  auto cqv = absl::make_unique<grpc_core::CqVerifier>(f.cq);
+  auto cqv = std::make_unique<grpc_core::CqVerifier>(f.cq);
   grpc_arg server_a[3];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);

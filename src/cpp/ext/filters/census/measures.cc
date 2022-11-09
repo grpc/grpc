@@ -22,7 +22,7 @@
 
 #include "opencensus/stats/stats.h"
 
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include <grpcpp/opencensus.h>
 
 namespace grpc {
 
@@ -45,21 +45,21 @@ constexpr char kCount[] = "1";
 // Client
 MeasureDouble RpcClientSentBytesPerRpc() {
   static const auto measure = MeasureDouble::Register(
-      kRpcClientSentBytesPerRpcMeasureName,
+      experimental::kRpcClientSentBytesPerRpcMeasureName,
       "Total bytes sent across all request messages per RPC", kUnitBytes);
   return measure;
 }
 
 MeasureDouble RpcClientReceivedBytesPerRpc() {
   static const auto measure = MeasureDouble::Register(
-      kRpcClientReceivedBytesPerRpcMeasureName,
+      experimental::kRpcClientReceivedBytesPerRpcMeasureName,
       "Total bytes received across all response messages per RPC", kUnitBytes);
   return measure;
 }
 
 MeasureDouble RpcClientRoundtripLatency() {
   static const auto measure = MeasureDouble::Register(
-      kRpcClientRoundtripLatencyMeasureName,
+      experimental::kRpcClientRoundtripLatencyMeasureName,
       "Time between first byte of request sent to last byte of response "
       "received, or terminal error",
       kUnitMilliseconds);
@@ -68,7 +68,7 @@ MeasureDouble RpcClientRoundtripLatency() {
 
 MeasureDouble RpcClientServerLatency() {
   static const auto measure = MeasureDouble::Register(
-      kRpcClientServerLatencyMeasureName,
+      experimental::kRpcClientServerLatencyMeasureName,
       "Time between first byte of request received to last byte of response "
       "sent, or terminal error (propagated from the server)",
       kUnitMilliseconds);
@@ -76,23 +76,32 @@ MeasureDouble RpcClientServerLatency() {
 }
 
 MeasureInt64 RpcClientSentMessagesPerRpc() {
-  static const auto measure =
-      MeasureInt64::Register(kRpcClientSentMessagesPerRpcMeasureName,
-                             "Number of messages sent per RPC", kCount);
+  static const auto measure = MeasureInt64::Register(
+      experimental::kRpcClientSentMessagesPerRpcMeasureName,
+      "Number of messages sent per RPC", kCount);
   return measure;
 }
 
 MeasureInt64 RpcClientReceivedMessagesPerRpc() {
+  static const auto measure = MeasureInt64::Register(
+      experimental::kRpcClientReceivedMessagesPerRpcMeasureName,
+      "Number of messages received per RPC", kCount);
+  return measure;
+}
+
+MeasureInt64 RpcClientStartedRpcs() {
   static const auto measure =
-      MeasureInt64::Register(kRpcClientReceivedMessagesPerRpcMeasureName,
-                             "Number of messages received per RPC", kCount);
+      MeasureInt64::Register(experimental::kRpcClientStartedRpcsMeasureName,
+                             "The total number of client RPCs ever opened, "
+                             "including those that have not been completed.",
+                             kCount);
   return measure;
 }
 
 // Client per-overall-client-call measures
 MeasureInt64 RpcClientRetriesPerCall() {
   static const auto measure =
-      MeasureInt64::Register(kRpcClientRetriesPerCallMeasureName,
+      MeasureInt64::Register(experimental::kRpcClientRetriesPerCallMeasureName,
                              "Number of retry or hedging attempts excluding "
                              "transparent retries made during the client call",
                              kCount);
@@ -101,55 +110,64 @@ MeasureInt64 RpcClientRetriesPerCall() {
 
 MeasureInt64 RpcClientTransparentRetriesPerCall() {
   static const auto measure = MeasureInt64::Register(
-      kRpcClientTransparentRetriesPerCallMeasureName,
+      experimental::kRpcClientTransparentRetriesPerCallMeasureName,
       "Number of transparent retries made during the client call", kCount);
   return measure;
 }
 
 MeasureDouble RpcClientRetryDelayPerCall() {
-  static const auto measure =
-      MeasureDouble::Register(kRpcClientRetryDelayPerCallMeasureName,
-                              "Total time of delay while there is no active "
-                              "attempt during the client call",
-                              kUnitMilliseconds);
+  static const auto measure = MeasureDouble::Register(
+      experimental::kRpcClientRetryDelayPerCallMeasureName,
+      "Total time of delay while there is no active "
+      "attempt during the client call",
+      kUnitMilliseconds);
   return measure;
 }
 
 // Server
 MeasureDouble RpcServerSentBytesPerRpc() {
   static const auto measure = MeasureDouble::Register(
-      kRpcServerSentBytesPerRpcMeasureName,
+      experimental::kRpcServerSentBytesPerRpcMeasureName,
       "Total bytes sent across all messages per RPC", kUnitBytes);
   return measure;
 }
 
 MeasureDouble RpcServerReceivedBytesPerRpc() {
   static const auto measure = MeasureDouble::Register(
-      kRpcServerReceivedBytesPerRpcMeasureName,
+      experimental::kRpcServerReceivedBytesPerRpcMeasureName,
       "Total bytes received across all messages per RPC", kUnitBytes);
   return measure;
 }
 
 MeasureDouble RpcServerServerLatency() {
   static const auto measure = MeasureDouble::Register(
-      kRpcServerServerLatencyMeasureName,
+      experimental::kRpcServerServerLatencyMeasureName,
       "Time between first byte of request received to last byte of response "
       "sent, or terminal error",
       kUnitMilliseconds);
   return measure;
 }
 
-MeasureInt64 RpcServerSentMessagesPerRpc() {
+MeasureInt64 RpcServerStartedRpcs() {
   static const auto measure =
-      MeasureInt64::Register(kRpcServerSentMessagesPerRpcMeasureName,
-                             "Number of messages sent per RPC", kCount);
+      MeasureInt64::Register(experimental::kRpcServerStartedRpcsMeasureName,
+                             "The total number of server RPCs ever opened, "
+                             "including those that have not been completed.",
+                             kCount);
+  return measure;
+}
+
+MeasureInt64 RpcServerSentMessagesPerRpc() {
+  static const auto measure = MeasureInt64::Register(
+      experimental::kRpcServerSentMessagesPerRpcMeasureName,
+      "Number of messages sent per RPC", kCount);
   return measure;
 }
 
 MeasureInt64 RpcServerReceivedMessagesPerRpc() {
-  static const auto measure =
-      MeasureInt64::Register(kRpcServerReceivedMessagesPerRpcMeasureName,
-                             "Number of messages received per RPC", kCount);
+  static const auto measure = MeasureInt64::Register(
+      experimental::kRpcServerReceivedMessagesPerRpcMeasureName,
+      "Number of messages received per RPC", kCount);
   return measure;
 }
 

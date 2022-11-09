@@ -20,6 +20,7 @@ load(
     "grpc_cc_library",
     "grpc_sh_test",
 )
+load("flaky.bzl", "FLAKY_TESTS")
 
 def _fixture_options(
         fullstack = True,
@@ -32,12 +33,12 @@ def _fixture_options(
         is_inproc = False,
         is_1byte = False,
         is_http2 = True,
+        is_minstack = False,
         supports_proxy_auth = False,
         supports_write_buffering = True,
         client_channel = True,
         supports_msvc = True,
         supports_retry = None,
-        flaky_tests = [],
         tags = []):
     if supports_retry == None:
         supports_retry = client_channel
@@ -51,12 +52,12 @@ def _fixture_options(
         is_inproc = is_inproc,
         is_1byte = is_1byte,
         is_http2 = is_http2,
+        is_minstack = is_minstack,
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
         supports_msvc = supports_msvc,
         _platforms = _platforms,
-        flaky_tests = flaky_tests,
         supports_retry = supports_retry,
         tags = tags,
     )
@@ -82,7 +83,8 @@ END2END_FIXTURES = {
     "h2_full+trace": _fixture_options(tracing = True),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
     "h2_insecure": _fixture_options(secure = True),
-    "h2_oauth2": _fixture_options(),
+    "h2_oauth2_tls12": _fixture_options(),
+    "h2_oauth2_tls13": _fixture_options(),
     "h2_proxy": _fixture_options(includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
         fullstack = False,
@@ -95,15 +97,26 @@ END2END_FIXTURES = {
         dns_resolver = False,
         client_channel = False,
     ),
+    "h2_sockpair_with_minstack": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+        is_minstack = True,
+    ),
     "h2_sockpair+trace": _fixture_options(
         fullstack = False,
         dns_resolver = False,
         tracing = True,
         client_channel = False,
     ),
-    "h2_ssl": _fixture_options(secure = True),
-    "h2_ssl_cred_reload": _fixture_options(secure = True),
-    "h2_tls": _fixture_options(secure = True),
+    "h2_ssl_tls12": _fixture_options(secure = True),
+    "h2_ssl_tls13": _fixture_options(secure = True),
+    "h2_ssl_cred_reload_tls12": _fixture_options(secure = True),
+    "h2_ssl_cred_reload_tls13": _fixture_options(secure = True),
+    "h2_tls_simple": _fixture_options(secure = True),
+    "h2_tls_static_async_tls1_3": _fixture_options(secure = True),
+    "h2_tls_certwatch_sync_tls1_2": _fixture_options(secure = True),
+    "h2_tls_certwatch_async_tls1_3": _fixture_options(secure = True),
     "h2_local_abstract_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
@@ -123,7 +136,7 @@ END2END_FIXTURES = {
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
-        tags = ["requires-net:ipv4", "requires-net:loopback"],
+        tags = ["requires-net:ipv4", "requires-net:loopback", "event_engine_client"],
     ),
     "h2_local_ipv6": _fixture_options(
         secure = True,
@@ -134,6 +147,10 @@ END2END_FIXTURES = {
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_uds_abstract": _fixture_options(
+        dns_resolver = False,
+        _platforms = ["linux", "posix"],
     ),
     "inproc": _fixture_options(
         secure = True,
@@ -156,12 +173,14 @@ def _test_options(
         traceable = False,
         exclude_inproc = False,
         exclude_1byte = False,
+        exclude_minstack = False,
         needs_http2 = False,
         needs_proxy_auth = False,
         needs_write_buffering = False,
         needs_client_channel = False,
         needs_retry = False,
         short_name = None,
+        tags = [],
         exclude_pollers = []):
     return struct(
         needs_fullstack = needs_fullstack,
@@ -172,12 +191,14 @@ def _test_options(
         traceable = traceable,
         exclude_inproc = exclude_inproc,
         exclude_1byte = exclude_1byte,
+        exclude_minstack = exclude_minstack,
         needs_http2 = needs_http2,
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
         needs_client_channel = needs_client_channel,
         needs_retry = needs_retry,
         short_name = short_name,
+        tags = tags,
         exclude_pollers = exclude_pollers,
     )
 
@@ -206,7 +227,7 @@ END2END_TESTS = {
     "cancel_in_a_vacuum": _test_options(),
     "cancel_with_status": _test_options(),
     "client_streaming": _test_options(),
-    "compressed_payload": _test_options(proxyable = False, exclude_inproc = True),
+    "compressed_payload": _test_options(proxyable = False, exclude_inproc = True, exclude_minstack = True),
     "connectivity": _test_options(
         needs_fullstack = True,
         needs_names = True,
@@ -232,18 +253,18 @@ END2END_TESTS = {
         exclude_inproc = True,
     ),
     "high_initial_seqno": _test_options(),
-    "invoke_large_request": _test_options(exclude_1byte = True),
+    "invoke_large_request": _test_options(exclude_1byte = True, tags = ["flow_control_test"]),
     "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
     "large_metadata": _test_options(exclude_1byte = True),
     "max_concurrent_streams": _test_options(
         proxyable = False,
         exclude_inproc = True,
+        exclude_minstack = True,
     ),
     "max_connection_age": _test_options(exclude_inproc = True),
     "max_connection_idle": _test_options(needs_fullstack = True, proxyable = False),
-    "max_message_length": _test_options(),
-    "negative_deadline": _test_options(),
-    "no_error_on_hotpath": _test_options(proxyable = False),
+    "max_message_length": _test_options(exclude_minstack = True),
+    "negative_deadline": _test_options(exclude_minstack = True),
     "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
     "payload": _test_options(exclude_1byte = True),
@@ -251,7 +272,7 @@ END2END_TESTS = {
     # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
     # OpenCensus can only be built via Bazel so far.
     # 'load_reporting_hook': _test_options(),
-    "ping_pong_streaming": _test_options(),
+    "ping_pong_streaming": _test_options(tags = ["flow_control_test"]),
     "ping": _test_options(needs_fullstack = True, proxyable = False),
     "proxy_auth": _test_options(needs_proxy_auth = True),
     "registered_call": _test_options(),
@@ -378,6 +399,9 @@ def _compatible(fopt, topt):
     if topt.exclude_1byte:
         if fopt.is_1byte:
             return False
+    if topt.exclude_minstack:
+        if fopt.is_minstack:
+            return False
     if topt.needs_http2:
         if not fopt.is_http2:
             return False
@@ -428,13 +452,17 @@ def grpc_end2end_tests():
             "//:grpc_authorization_provider",
             "//test/core/compression:args_utils",
             "//:grpc_http_filters",
+            "//src/core:event_log",
+        ],
+        visibility = [
+            "//src/objective-c/tests:__subpackages__",
         ],
     )
     for f, fopt in END2END_FIXTURES.items():
         bin_name = "%s_test" % f
         grpc_cc_binary(
             name = bin_name,
-            srcs = ["fixtures/%s.cc" % f],
+            srcs = ["fixtures/%s.cc" % f, "fixtures/h2_tls_common.h"],
             language = "C++",
             testonly = 1,
             data = [
@@ -456,14 +484,16 @@ def grpc_end2end_tests():
             if not _compatible(fopt, topt):
                 continue
             test_short_name = str(t) if not topt.short_name else topt.short_name
+            name = "%s_test@%s" % (f, test_short_name)
             grpc_sh_test(
-                name = "%s_test@%s" % (f, test_short_name),
+                name = name,
                 srcs = ["run.sh"],
                 data = [":" + bin_name],
                 args = ["$(location %s)" % bin_name, t],
-                tags = _platform_support_tags(fopt) + fopt.tags + [
+                tags = _platform_support_tags(fopt) + fopt.tags + topt.tags + [
                     "no_test_ios",
+                    "core_end2end_test",
                 ],
-                flaky = t in fopt.flaky_tests,
+                flaky = name in FLAKY_TESTS,
                 exclude_pollers = topt.exclude_pollers,
             )

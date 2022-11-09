@@ -2240,6 +2240,16 @@ UPB_INLINE void google_protobuf_FieldOptions_clear_weak(const google_protobuf_Fi
 UPB_INLINE bool google_protobuf_FieldOptions_weak(const google_protobuf_FieldOptions* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), bool);
 }
+UPB_INLINE bool google_protobuf_FieldOptions_has_unverified_lazy(const google_protobuf_FieldOptions* msg) {
+  return _upb_hasbit(msg, 7);
+}
+UPB_INLINE void google_protobuf_FieldOptions_clear_unverified_lazy(const google_protobuf_FieldOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(17, 17), bool) = 0;
+  _upb_clearhas(msg, 7);
+}
+UPB_INLINE bool google_protobuf_FieldOptions_unverified_lazy(const google_protobuf_FieldOptions* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(17, 17), bool);
+}
 UPB_INLINE bool google_protobuf_FieldOptions_has_uninterpreted_option(const google_protobuf_FieldOptions* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(20, 24));
 }
@@ -2273,6 +2283,10 @@ UPB_INLINE void google_protobuf_FieldOptions_set_jstype(google_protobuf_FieldOpt
 UPB_INLINE void google_protobuf_FieldOptions_set_weak(google_protobuf_FieldOptions *msg, bool value) {
   _upb_sethas(msg, 6);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 16), bool) = value;
+}
+UPB_INLINE void google_protobuf_FieldOptions_set_unverified_lazy(google_protobuf_FieldOptions *msg, bool value) {
+  _upb_sethas(msg, 7);
+  *UPB_PTR_AT(msg, UPB_SIZE(17, 17), bool) = value;
 }
 UPB_INLINE google_protobuf_UninterpretedOption** google_protobuf_FieldOptions_mutable_uninterpreted_option(google_protobuf_FieldOptions* msg, size_t* len) {
   return (google_protobuf_UninterpretedOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 24), len);

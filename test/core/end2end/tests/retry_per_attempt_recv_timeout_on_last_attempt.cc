@@ -237,7 +237,6 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
   GPR_ASSERT(
       0 == grpc_slice_str_cmp(details, "retry perAttemptRecvTimeout exceeded"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

@@ -12,15 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <limits>
-#include <queue>
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#include <algorithm>
+#include <deque>
+#include <functional>
+#include <limits>
+#include <map>
+#include <memory>
+#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/attributes.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 bool squelch = true;
 
@@ -50,8 +75,8 @@ class FlowControlFuzzer {
  public:
   explicit FlowControlFuzzer(bool enable_bdp) {
     ExecCtx exec_ctx;
-    tfc_ = absl::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
-                                                   &memory_owner_);
+    tfc_ = std::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
+                                                  &memory_owner_);
   }
 
   ~FlowControlFuzzer() {
@@ -135,7 +160,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                                             kMaxAdvanceTimeMillis),
                                       GPR_TIMESPAN));
       exec_ctx.InvalidateNow();
-      if (exec_ctx.Now() >= next_bdp_ping_) {
+      if (Timestamp::Now() >= next_bdp_ping_) {
         scheduled_write_ = true;
       }
     } break;
@@ -262,7 +287,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
   }
   if (scheduled_write_) {
     SendToRemote send;
-    if (exec_ctx.Now() >= next_bdp_ping_) {
+    if (Timestamp::Now() >= next_bdp_ping_) {
       if (auto* bdp = tfc_->bdp_estimator()) {
         bdp->SchedulePing();
         bdp->StartPing();
@@ -274,7 +299,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         queued_initial_window_size_.has_value()) {
       sending_initial_window_size_ = true;
       send.initial_window_size =
-          absl::exchange(queued_initial_window_size_, absl::nullopt);
+          std::exchange(queued_initial_window_size_, absl::nullopt);
     }
     while (!streams_to_update_.empty()) {
       auto* stream = GetStream(streams_to_update_.front());
@@ -314,7 +339,6 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                [this, stream]() { streams_to_update_.push(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
   with_urgency(action.send_initial_window_update(), [this, &action]() {
-    GPR_ASSERT(action.initial_window_size() >= chttp2::kMinInitialWindowSize);
     GPR_ASSERT(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
     queued_initial_window_size_ = action.initial_window_size();
   });

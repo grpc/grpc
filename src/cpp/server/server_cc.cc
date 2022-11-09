@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -43,8 +43,8 @@
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/call_op_set.h>
-#include <grpcpp/impl/codegen/call_op_set_interface.h>
+#include <grpcpp/impl/call_op_set.h>
+#include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
@@ -61,7 +61,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/method_handler.h>
 #include <grpcpp/support/server_interceptor.h>
@@ -70,10 +69,8 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
@@ -219,7 +216,7 @@ void ServerInterface::BaseAsyncRequest::
   grpc_core::ExecCtx exec_ctx;
   grpc_cq_begin_op(notification_cq_->cq(), this);
   grpc_cq_end_op(
-      notification_cq_->cq(), this, GRPC_ERROR_NONE,
+      notification_cq_->cq(), this, absl::OkStatus(),
       [](void* /*arg*/, grpc_cq_completion* completion) { delete completion; },
       nullptr, new grpc_cq_completion());
 }
@@ -813,7 +810,6 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     GPR_DEBUG_ASSERT(sync_req != nullptr);
     GPR_DEBUG_ASSERT(ok);
 
-    GPR_TIMER_SCOPE("sync_req->Run()", 0);
     sync_req->Run(global_callbacks_, resources);
   }
 
@@ -829,7 +825,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
   void AddUnknownSyncMethod() {
     if (has_sync_method_) {
-      unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
+      unknown_method_ = std::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
           new grpc::internal::UnknownMethodHandler(kUnknownRpcMethod));
       grpc_core::Server::FromC(server_->server())
@@ -1151,7 +1147,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       grpc::DefaultHealthCheckServiceEnabled()) {
-    auto default_hc_service = absl::make_unique<DefaultHealthCheckService>();
+    auto default_hc_service = std::make_unique<DefaultHealthCheckService>();
     auto* hc_service_impl = default_hc_service->GetHealthCheckService();
     health_check_service_ = std::move(default_hc_service);
     RegisterService(nullptr, hc_service_impl);
@@ -1184,7 +1180,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   bool unknown_rpc_needed =
       !has_async_generic_service_ && !has_callback_generic_service_;
   if (unknown_rpc_needed && has_callback_methods_) {
-    unimplemented_service_ = absl::make_unique<grpc::CallbackGenericService>();
+    unimplemented_service_ = std::make_unique<grpc::CallbackGenericService>();
     RegisterCallbackGenericService(unimplemented_service_.get());
     unknown_rpc_needed = false;
   }
@@ -1209,7 +1205,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // to deal with the case of thread exhaustion
   if (sync_server_cqs_ != nullptr && !sync_server_cqs_->empty()) {
     resource_exhausted_handler_ =
-        absl::make_unique<grpc::internal::ResourceExhaustedHandler>(
+        std::make_unique<grpc::internal::ResourceExhaustedHandler>(
             kServerThreadpoolExhausted);
   }
 

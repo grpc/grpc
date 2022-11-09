@@ -74,9 +74,10 @@ class grpc_security_connector
   }
 
   // Checks the peer. Callee takes ownership of the peer object.
+  // The channel args represent the args after the handshaking is performed.
   // When done, sets *auth_context and invokes on_peer_checked.
   virtual void check_peer(
-      tsi_peer peer, grpc_endpoint* ep,
+      tsi_peer peer, grpc_endpoint* ep, const grpc_core::ChannelArgs& args,
       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
       grpc_closure* on_peer_checked) = 0;
 

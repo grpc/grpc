@@ -92,8 +92,8 @@ class EchoTest : public ::testing::Test {
     simple_server_ = simple_builder.BuildAndStart();
     // Start the EchoTestServiceImpl server
     ServerBuilder builder;
-    echo_test_service_impl_ =
-        std::make_unique<EchoTestServiceImpl>("hostname", forwarding_address_);
+    echo_test_service_impl_ = std::make_unique<EchoTestServiceImpl>(
+        "hostname", "v1", forwarding_address_);
     builder.RegisterService(echo_test_service_impl_.get());
     int port = grpc_pick_unused_port_or_die();
     server_address_ = grpc_core::JoinHostPort("localhost", port);
@@ -125,7 +125,8 @@ TEST_F(EchoTest, SimpleEchoTest) {
                                ::testing::HasSubstr("Hostname=hostname\n"),
                                ::testing::HasSubstr("Echo=hello\n"),
                                ::testing::HasSubstr("Host="),
-                               ::testing::HasSubstr("IP=")));
+                               ::testing::HasSubstr("IP="),
+                               ::testing::HasSubstr("ServiceVersion=v1")));
 }
 
 TEST_F(EchoTest, ForwardEchoTest) {
@@ -149,7 +150,8 @@ TEST_F(EchoTest, ForwardEchoTest) {
                 absl::StrFormat("[%d body] Hostname=hostname\n", i)),
             ::testing::HasSubstr(absl::StrFormat("[%d body] Echo=hello\n", i)),
             ::testing::HasSubstr(absl::StrFormat("[%d body] Host=", i)),
-            ::testing::HasSubstr(absl::StrFormat("[%d body] IP=", i))));
+            ::testing::HasSubstr(
+                absl::StrFormat("[%d body] ServiceVersion=v1", i))));
   }
 }
 

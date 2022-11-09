@@ -85,7 +85,7 @@ TEST_F(ChannelCredsRegistryTest, Register) {
       [](CoreConfiguration::Builder* builder) {
         BuildCoreConfiguration(builder);
         builder->channel_creds_registry()->RegisterChannelCredsFactory(
-            absl::make_unique<TestChannelCredsFactory>());
+            std::make_unique<TestChannelCredsFactory>());
       });
 
   RefCountedPtr<grpc_channel_credentials> test_cred(

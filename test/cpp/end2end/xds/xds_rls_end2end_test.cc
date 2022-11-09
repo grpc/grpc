@@ -22,10 +22,11 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -35,6 +36,8 @@ namespace {
 
 using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
 using ::grpc::lookup::v1::RouteLookupConfig;
+
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 constexpr char kRlsTestKey[] = "test_key";
 constexpr char kRlsTestKey1[] = "key1";
@@ -73,7 +76,7 @@ class RlsTest : public XdsEnd2endTest {
   };
 
   RlsTest() {
-    rls_server_ = absl::make_unique<RlsServerThread>(this);
+    rls_server_ = std::make_unique<RlsServerThread>(this);
     rls_server_->Start();
   }
 
@@ -88,9 +91,7 @@ class RlsTest : public XdsEnd2endTest {
 // Test both with and without RDS.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, RlsTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
-                      // Also test with xDS v2.
-                      XdsTestType().set_enable_rds_testing().set_use_v2()),
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
@@ -301,7 +302,9 @@ TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
-      ::testing::HasSubstr("field:requiredMatch error:must not be present"));
+      ::testing::HasSubstr(
+          "field:routeLookupConfig.grpcKeybuilders[0].headers[0].requiredMatch "
+          "error:must not be present"));
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
@@ -354,7 +357,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();

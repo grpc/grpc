@@ -167,7 +167,6 @@ static void test_retry_transparent_max_concurrent_streams(
   cqv.Expect(tag(101), true);
   cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&request_metadata_recv);
 
@@ -285,7 +284,6 @@ static void test_retry_transparent_max_concurrent_streams(
   cqv.Expect(tag(201), true);
   cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   grpc_call_details_destroy(&call_details);
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.

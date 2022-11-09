@@ -18,13 +18,14 @@ Includes fuzzer rules.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_proto_library")
 
-def grpc_fuzzer(name, corpus, srcs = [], tags = [], deps = [], data = [], size = "large", **kwargs):
+def grpc_fuzzer(name, corpus, srcs = [], tags = [], external_deps = [], deps = [], data = [], size = "large", **kwargs):
     """Instantiates a fuzzer test.
 
     Args:
         name: The name of the test.
         corpus: The corpus for the test.
         srcs: The source files for the test.
+        external_deps: External deps.
         deps: The dependencies of the test.
         data: The data dependencies of the test.
         size: The size of the test.
@@ -41,7 +42,7 @@ def grpc_fuzzer(name, corpus, srcs = [], tags = [], deps = [], data = [], size =
             "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
         }),
         data = data + native.glob([corpus + "/**"]),
-        external_deps = [
+        external_deps = external_deps + [
             "gtest",
         ],
         size = size,
@@ -52,7 +53,7 @@ def grpc_fuzzer(name, corpus, srcs = [], tags = [], deps = [], data = [], size =
         **kwargs
     )
 
-def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], srcs = [], tags = [], deps = [], data = [], size = "large", **kwargs):
+def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], external_deps = [], srcs = [], tags = [], deps = [], data = [], size = "large", **kwargs):
     """Instantiates a protobuf mutator fuzzer test.
 
     Args:
@@ -60,6 +61,7 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], srcs = [], tags = []
         corpus: The corpus for the test.
         proto: The proto for the test.
         proto_deps: Deps for proto.
+        external_deps: External deps.
         srcs: The source files for the test.
         deps: The dependencies of the test.
         data: The data dependencies of the test.
@@ -89,7 +91,7 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], srcs = [], tags = []
             "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
         }),
         data = data + native.glob([corpus + "/**"]),
-        external_deps = [
+        external_deps = external_deps + [
             "gtest",
         ],
         size = size,

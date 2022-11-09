@@ -161,6 +161,9 @@ class CallInvokerChangeRequestCall
 
 class CallInvokerTest extends \PHPUnit\Framework\TestCase
 {
+    private $server;
+    private $port;
+
     public function setUp(): void
     {
         $this->server = new Grpc\Server([]);

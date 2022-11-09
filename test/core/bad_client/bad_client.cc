@@ -18,25 +18,31 @@
 
 #include "test/core/bad_client/bad_client.h"
 
+#include <inttypes.h>
 #include <limits.h>
-#include <stdio.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 #define MIN_HTTP2_FRAME_SIZE 9
 
@@ -84,8 +90,7 @@ static void set_read_done(void* arg, grpc_error_handle /*error*/) {
 /* shutdown client */
 static void shutdown_client(grpc_endpoint** client_fd) {
   if (*client_fd != nullptr) {
-    grpc_endpoint_shutdown(
-        *client_fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
+    grpc_endpoint_shutdown(*client_fd, GRPC_ERROR_CREATE("Forced Disconnect"));
     grpc_endpoint_destroy(*client_fd);
     grpc_core::ExecCtx::Get()->Flush();
     *client_fd = nullptr;
@@ -167,7 +172,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                 "client validator failed; trying additional read "
                 "in case we didn't get all the data");
       }
-      grpc_slice_buffer_destroy_internal(&incoming);
+      grpc_slice_buffer_destroy(&incoming);
     }
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -186,7 +191,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
             .type == GRPC_QUEUE_TIMEOUT);
   }
 
-  grpc_slice_buffer_destroy_internal(&outgoing);
+  grpc_slice_buffer_destroy(&outgoing);
   grpc_core::ExecCtx::Get()->Flush();
 }
 

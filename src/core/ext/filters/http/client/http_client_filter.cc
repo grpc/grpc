@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +32,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -39,12 +39,11 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/promise/call_push_pull.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_concurrently.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/status_conversion.h"
@@ -121,23 +120,22 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
 
   auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
   auto* write_latch =
-      absl::exchange(call_args.server_initial_metadata, read_latch);
+      std::exchange(call_args.server_initial_metadata, read_latch);
 
-  return CallPushPull(
-      Seq(next_promise_factory(std::move(call_args)),
-          [](ServerMetadataHandle md) -> ServerMetadataHandle {
-            auto r = CheckServerMetadata(md.get());
-            if (!r.ok()) return ServerMetadataHandle(r);
-            return md;
-          }),
-      []() { return absl::OkStatus(); },
-      Seq(read_latch->Wait(),
-          [write_latch](ServerMetadata** md) -> absl::Status {
-            auto r =
-                *md == nullptr ? absl::OkStatus() : CheckServerMetadata(*md);
-            write_latch->Set(*md);
-            return r;
-          }));
+  return TryConcurrently(
+             Seq(next_promise_factory(std::move(call_args)),
+                 [](ServerMetadataHandle md) -> ServerMetadataHandle {
+                   auto r = CheckServerMetadata(md.get());
+                   if (!r.ok()) return ServerMetadataFromStatus(r);
+                   return md;
+                 }))
+      .NecessaryPull(Seq(read_latch->Wait(),
+                         [write_latch](ServerMetadata** md) -> absl::Status {
+                           auto r = *md == nullptr ? absl::OkStatus()
+                                                   : CheckServerMetadata(*md);
+                           write_latch->Set(*md);
+                           return r;
+                         }));
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,

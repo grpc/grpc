@@ -19,15 +19,12 @@
 /* Test of gpr time support. */
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
 #include "test/core/util/test_config.h"
@@ -109,14 +106,21 @@ TEST(TimeTest, Values) {
   x = gpr_time_from_micros(-(INT64_MAX - 999997), GPR_TIMESPAN);
   ASSERT_LT(x.tv_sec, 0);
   ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  EXPECT_EQ((x.tv_sec * GPR_US_PER_SEC +
+             x.tv_nsec / (GPR_NS_PER_SEC / GPR_US_PER_SEC)),
+            -(INT64_MAX - 999997));
 
   x = gpr_time_from_nanos(-(INT64_MAX - 999999997), GPR_TIMESPAN);
   ASSERT_LT(x.tv_sec, 0);
   ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  EXPECT_EQ((x.tv_sec * GPR_NS_PER_SEC + x.tv_nsec), -(INT64_MAX - 999999997));
 
   x = gpr_time_from_millis(-(INT64_MAX - 997), GPR_TIMESPAN);
   ASSERT_LT(x.tv_sec, 0);
   ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
+  EXPECT_EQ((x.tv_sec * GPR_MS_PER_SEC +
+             x.tv_nsec / (GPR_NS_PER_SEC / GPR_MS_PER_SEC)),
+            -(INT64_MAX - 997));
 
   /* Test general -ve values. */
   for (i = -1; i > -1000 * 1000 * 1000; i *= 7) {

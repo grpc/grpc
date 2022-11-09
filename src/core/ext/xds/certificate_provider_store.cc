@@ -20,11 +20,69 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {
+
+//
+// CertificateProviderStore::PluginDefinition
+//
+
+const JsonLoaderInterface*
+CertificateProviderStore::PluginDefinition::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<PluginDefinition>()
+          .Field("plugin_name", &PluginDefinition::plugin_name)
+          .Finish();
+  return loader;
+}
+
+void CertificateProviderStore::PluginDefinition::JsonPostLoad(
+    const Json& json, const JsonArgs&, ValidationErrors* errors) {
+  // Check that plugin is supported.
+  CertificateProviderFactory* factory = nullptr;
+  if (!plugin_name.empty()) {
+    ValidationErrors::ScopedField field(errors, ".plugin_name");
+    factory = CoreConfiguration::Get()
+                  .certificate_provider_registry()
+                  .LookupCertificateProviderFactory(plugin_name);
+    if (factory == nullptr) {
+      errors->AddError(absl::StrCat("Unrecognized plugin name: ", plugin_name));
+      return;  // No point checking config.
+    }
+  }
+  // Parse the config field.
+  {
+    ValidationErrors::ScopedField field(errors, ".config");
+    auto it = json.object_value().find("config");
+    // The config field is optional; if not present, we use an empty JSON
+    // object.
+    Json::Object config_json;
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        errors->AddError("is not an object");
+        return;  // No point parsing config.
+      } else {
+        config_json = it->second.object_value();
+      }
+    }
+    if (factory == nullptr) return;
+    // Use plugin to validate and parse config.
+    grpc_error_handle parse_error;
+    config =
+        factory->CreateCertificateProviderConfig(config_json, &parse_error);
+    if (!parse_error.ok()) {
+      errors->AddError(StatusToString(parse_error));
+    }
+  }
+}
 
 //
 // CertificateProviderStore::CertificateProviderWrapper
@@ -70,8 +128,10 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   CertificateProviderFactory* factory =
-      CertificateProviderRegistry::LookupCertificateProviderFactory(
-          plugin_config_it->second.plugin_name);
+      CoreConfiguration::Get()
+          .certificate_provider_registry()
+          .LookupCertificateProviderFactory(
+              plugin_config_it->second.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing

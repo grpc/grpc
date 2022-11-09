@@ -26,8 +26,8 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/resource_quota/call_checker.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -70,6 +70,7 @@ TEST(MemoryQuotaTest, CreateAllocatorNoOp) {
 }
 
 TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
+  ExecCtx exec_ctx;
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   auto object = memory_allocator.MakeUnique<Sized<4096>>();
@@ -113,6 +114,7 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   size_t total = 0;
   for (int i = 0; i < 10000; i++) {
+    ExecCtx exec_ctx;
     auto n = memory_allocator.Reserve(MemoryRequest(100, 40000));
     EXPECT_EQ(n, 40000);
     total += n;
@@ -125,16 +127,19 @@ TEST(MemoryQuotaTest, MakeSlice) {
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   std::vector<grpc_slice> slices;
   for (int i = 1; i < 1000; i++) {
+    ExecCtx exec_ctx;
     int min = i;
     int max = 10 * i - 9;
     slices.push_back(memory_allocator.MakeSlice(MemoryRequest(min, max)));
   }
+  ExecCtx exec_ctx;
   for (grpc_slice slice : slices) {
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
   }
 }
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
+  ExecCtx exec_ctx;
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   Vector<int> vec(&memory_allocator);
@@ -166,12 +171,33 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
 
 }  // namespace testing
 
+namespace memory_quota_detail {
+namespace testing {
+
+//
+// PressureControllerTest
+//
+
+TEST(PressureControllerTest, Init) {
+  PressureController c{100, 3};
+  EXPECT_EQ(c.Update(-1.0), 0.0);
+  EXPECT_EQ(c.Update(1.0), 1.0);
+}
+
+TEST(PressureControllerTest, LowDecays) {
+  PressureController c{100, 3};
+  EXPECT_EQ(c.Update(1.0), 1.0);
+  double last = 1.0;
+  while (last > 1e-30) {
+    double x = c.Update(-1.0);
+    EXPECT_LE(x, last);
+    last = x;
+  }
+}
+
 //
 // PressureTrackerTest
 //
-
-namespace memory_quota_detail {
-namespace testing {
 
 TEST(PressureTrackerTest, NoOp) { PressureTracker(); }
 
@@ -187,14 +213,14 @@ TEST(PressureTrackerTest, Decays) {
   {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.0), 0.0);
+    EXPECT_EQ(tracker.AddSampleAndGetControlValue(0.0), 0.0);
   }
   // If memory pressure goes to 100% or higher, we should *immediately* snap to
   // reporting 100%.
   {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    EXPECT_EQ(tracker.AddSampleAndGetEstimate(1.0), 1.0);
+    EXPECT_EQ(tracker.AddSampleAndGetControlValue(1.0), 1.0);
   }
   // Once memory pressure reduces, we should *eventually* get back to reporting
   // close to zero, and monotonically decrease.
@@ -203,13 +229,13 @@ TEST(PressureTrackerTest, Decays) {
   while (true) {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    double new_reported = tracker.AddSampleAndGetEstimate(0.0);
+    double new_reported = tracker.AddSampleAndGetControlValue(0.0);
     EXPECT_LE(new_reported, last_reported);
     last_reported = new_reported;
     if (new_reported < 0.1) break;
   }
   // Verify the above happened in a somewhat reasonable time.
-  ASSERT_LE(cur_ms, got_full + 200000);
+  ASSERT_LE(cur_ms, got_full + 1000000);
 }
 
 TEST(PressureTrackerTest, ManyThreads) {
@@ -223,7 +249,7 @@ TEST(PressureTrackerTest, ManyThreads) {
       std::uniform_real_distribution<double> dist(0.0, 1.0);
       while (!shutdown.load(std::memory_order_relaxed)) {
         ExecCtx exec_ctx;
-        tracker.AddSampleAndGetEstimate(dist(rng));
+        tracker.AddSampleAndGetControlValue(dist(rng));
       }
     });
   }
@@ -239,10 +265,8 @@ TEST(PressureTrackerTest, ManyThreads) {
 
 }  // namespace grpc_core
 
-// Hook needed to run ExecCtx outside of iomgr.
-void grpc_set_default_iomgr_platform() {}
-
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   gpr_log_verbosity_init();
   return RUN_ALL_TESTS();

@@ -53,7 +53,6 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -131,8 +130,8 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   }
   grpc_error_handle error;
   if (!is_endpoint_local) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Endpoint is neither UDS or TCP loopback address.");
+    error =
+        GRPC_ERROR_CREATE("Endpoint is neither UDS or TCP loopback address.");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     return;
   }
@@ -160,9 +159,9 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
    */
   *auth_context = local_auth_context_create(&peer);
   tsi_peer_destruct(&peer);
-  error = *auth_context != nullptr ? GRPC_ERROR_NONE
-                                   : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "Could not create local auth context");
+  error = *auth_context != nullptr
+              ? absl::OkStatus()
+              : GRPC_ERROR_CREATE("Could not create local auth context");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
@@ -199,6 +198,7 @@ class grpc_local_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     grpc_local_credentials* creds =
@@ -208,9 +208,7 @@ class grpc_local_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context*) override {
@@ -246,6 +244,7 @@ class grpc_local_server_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     grpc_local_server_credentials* creds =
@@ -255,9 +254,7 @@ class grpc_local_server_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other) const override {
     return server_security_connector_cmp(

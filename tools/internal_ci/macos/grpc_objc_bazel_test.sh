@@ -23,6 +23,11 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+# Make sure actions run by bazel can find python3.
+# Without this the build will fail with "env: python3: No such file or directory".
+# When on kokoro MacOS Mojave image.
+sudo ln -s $(which python3) /usr/bin/python3 || true
+
 # make sure bazel is available
 tools/bazel version
 
@@ -46,12 +51,14 @@ EXAMPLE_TARGETS=(
 
 TEST_TARGETS=(
   # TODO(jtattermusch): ideally we'd say "//src/objective-c/tests/..." but not all the targets currently build
-  # TODO(jtattermusch): make //src/objective-c/tests:TvTests test pass with bazel
   //src/objective-c/tests:InteropTestsLocalCleartext
   //src/objective-c/tests:InteropTestsLocalSSL
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:CronetTests
+  //src/objective-c/tests:PerfTests
+  //src/objective-c/tests:tvtests_build_test
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test
   //src/objective-c/tests:objc_codegen_plugin_option_test
@@ -86,6 +93,12 @@ INTEROP_SERVER_BINARY=bazel-bin/test/cpp/interop/interop_server
 trap 'echo "KILLING interop_server binaries running on the background"; kill -9 $(jobs -p)' EXIT
 # === END SECTION: run interop_server on the background ====
 
+# Environment variables that will be visible to objc tests.
+OBJC_TEST_ENV_ARGS=(
+  --test_env=HOST_PORT_LOCAL=localhost:$PLAIN_PORT
+  --test_env=HOST_PORT_LOCALSSL=localhost:$TLS_PORT
+)
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_bazel_tests
 
 # NOTE: When using bazel to run the tests, test env variables like GRPC_VERBOSITY or GRPC_TRACE
@@ -98,9 +111,7 @@ objc_bazel_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
-  --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
-  --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-  --test_env FLAKE_TEST_REPEATS=3 \
+  "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
   "${TEST_TARGETS[@]}"

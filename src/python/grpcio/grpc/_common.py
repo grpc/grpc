@@ -15,10 +15,12 @@
 
 import logging
 import time
+from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
-import six
+from grpc._typing import DeserializingFunction
+from grpc._typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,8 +57,8 @@ CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
     cygrpc.StatusCode.data_loss: grpc.StatusCode.DATA_LOSS,
 }
 STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
-    grpc_code: cygrpc_code for cygrpc_code, grpc_code in six.iteritems(
-        CYGRPC_STATUS_CODE_TO_STATUS_CODE)
+    grpc_code: cygrpc_code
+    for cygrpc_code, grpc_code in CYGRPC_STATUS_CODE_TO_STATUS_CODE.items()
 }
 
 MAXIMUM_WAIT_TIMEOUT = 0.1
@@ -65,20 +67,22 @@ _ERROR_MESSAGE_PORT_BINDING_FAILED = 'Failed to bind to address %s; set ' \
     'GRPC_VERBOSITY=debug environment variable to see detailed error message.'
 
 
-def encode(s):
+def encode(s: AnyStr) -> bytes:
     if isinstance(s, bytes):
         return s
     else:
         return s.encode('utf8')
 
 
-def decode(b):
+def decode(b: AnyStr) -> str:
     if isinstance(b, bytes):
         return b.decode('utf-8', 'replace')
     return b
 
 
-def _transform(message, transformer, exception_message):
+def _transform(message: Any, transformer: Union[SerializingFunction,
+                                                DeserializingFunction, None],
+               exception_message: str) -> Any:
     if transformer is None:
         return message
     else:
@@ -89,26 +93,31 @@ def _transform(message, transformer, exception_message):
             return None
 
 
-def serialize(message, serializer):
+def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
     return _transform(message, serializer, 'Exception serializing message!')
 
 
-def deserialize(serialized_message, deserializer):
+def deserialize(serialized_message: bytes,
+                deserializer: Optional[DeserializingFunction]) -> Any:
     return _transform(serialized_message, deserializer,
                       'Exception deserializing message!')
 
 
-def fully_qualified_method(group, method):
+def fully_qualified_method(group: str, method: str) -> str:
     return '/{}/{}'.format(group, method)
 
 
-def _wait_once(wait_fn, timeout, spin_cb):
+def _wait_once(wait_fn: Callable[..., None], timeout: float,
+               spin_cb: Optional[Callable[[], None]]):
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()
 
 
-def wait(wait_fn, wait_complete_fn, timeout=None, spin_cb=None):
+def wait(wait_fn: Callable[..., None],
+         wait_complete_fn: Callable[[], bool],
+         timeout: Optional[float] = None,
+         spin_cb: Optional[Callable[[], None]] = None) -> bool:
     """Blocks waiting for an event without blocking the thread indefinitely.
 
     See https://github.com/grpc/grpc/issues/19464 for full context. CPython's
@@ -149,7 +158,7 @@ def wait(wait_fn, wait_complete_fn, timeout=None, spin_cb=None):
     return False
 
 
-def validate_port_binding_result(address, port):
+def validate_port_binding_result(address: str, port: int) -> int:
     """Validates if the port binding succeed.
 
     If the port returned by Core is 0, the binding is failed. However, in that

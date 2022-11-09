@@ -28,7 +28,8 @@ grpc_cc_library(
     deps = [
         ":fuzzing_event_engine_proto",
         "//:event_engine_base_hdrs",
-        "//:time",
+        "//src/core:default_event_engine",
+        "//src/core:time",
     ],
 )
 

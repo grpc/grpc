@@ -20,7 +20,6 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <string>
 
@@ -33,7 +32,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
@@ -94,24 +92,18 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 namespace {
 void RmArg(int i, int* argc, char** argv) {
   --(*argc);
-  if (i < *argc) {
-    memmove(argv + i, argv + i + 1, *argc - i);
+  while (i < *argc) {
+    argv[i] = argv[i + 1];
+    ++i;
   }
 }
 
 void ParseTestArgs(int* argc, char** argv) {
   if (argc == nullptr || *argc <= 1) return;
   // flags to look for and consume
-  const absl::string_view poller_flag{"--poller="};
   const absl::string_view engine_flag{"--engine="};
   int i = 1;
   while (i < *argc) {
-    if (absl::StartsWith(argv[i], poller_flag)) {
-      gpr_setenv("GRPC_POLL_STRATEGY", argv[i] + poller_flag.length());
-      // remove the spent argv
-      RmArg(i, argc, argv);
-      continue;
-    }
     if (absl::StartsWith(argv[i], engine_flag)) {
       absl::Status engine_set =
           grpc_event_engine::experimental::InitializeTestingEventEngineFactory(

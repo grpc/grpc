@@ -22,9 +22,9 @@
 #include <memory>
 
 #include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc {

@@ -12,21 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 26.0.0
+  core_version: 29.0.0
   csharp_major_version: 2
-  g_stands_for: gamma
-  protobuf_version: 3.19.4
-  version: 1.49.0-dev
-targets:
-- name: gen_hpack_tables
-  build: tool
-  language: c++
-  src:
-  - tools/codegen/core/gen_hpack_tables.cc
-  deps:
-  - grpc
-  - gpr
-  uses_polling: false
+  g_stands_for: galaxy
+  protobuf_version: 3.21.6
+  version: 1.51.0-dev
 configs:
   asan:
     CC: clang
@@ -64,20 +54,10 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
-  basicprof:
-    CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
-    DEFINES: NDEBUG
   c++-compat:
     CFLAGS: -Wc++-compat
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
-  counters:
-    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
-    DEFINES: NDEBUG
-  counters_with_memory_counter:
-    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
-    DEFINES: NDEBUG
-    LDFLAGS: -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -117,19 +97,12 @@ configs:
     compile_the_world: true
     test_environ:
       MSAN_OPTIONS: poison_in_dtor=1
-  mutrace:
-    CPPFLAGS: -O3 -fno-omit-frame-pointer
-    DEFINES: NDEBUG
-    LDFLAGS: -rdynamic
   noexcept:
     CPPFLAGS: -O2 -Wframe-larger-than=16384
     CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   opt:
     CPPFLAGS: -O2 -Wframe-larger-than=16384
-    DEFINES: NDEBUG
-  stapprof:
-    CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
     DEFINES: NDEBUG
   tsan:
     CC: clang

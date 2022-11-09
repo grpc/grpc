@@ -22,8 +22,8 @@ from absl.testing import parameterized
 from framework import bootstrap_generator_testcase
 from framework import xds_k8s_testcase
 from framework.helpers import retryers
-from framework.test_app import client_app
-from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -31,8 +31,8 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 XdsTestServer = xds_k8s_testcase.XdsTestServer
 XdsTestClient = xds_k8s_testcase.XdsTestClient
-KubernetesServerRunner = server_app.KubernetesServerRunner
-KubernetesClientRunner = client_app.KubernetesClientRunner
+KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 _timedelta = datetime.timedelta
 
 

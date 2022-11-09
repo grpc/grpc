@@ -25,14 +25,16 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -106,6 +108,10 @@ class ChildPolicyHandler::Helper
     return parent_->channel_control_helper()->GetAuthority();
   }
 
+  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+    return parent_->channel_control_helper()->GetEventEngine();
+  }
+
   void AddTraceEvent(TraceSeverity severity,
                      absl::string_view message) override {
     if (parent_->shutting_down_) return;
@@ -160,7 +166,7 @@ void ChildPolicyHandler::ShutdownLocked() {
   }
 }
 
-void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
+absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -252,7 +258,7 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(std::move(args));
+  return policy_to_update->UpdateLocked(std::move(args));
 }
 
 void ChildPolicyHandler::ExitIdleLocked() {
@@ -311,8 +317,9 @@ bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
 OrphanablePtr<LoadBalancingPolicy>
 ChildPolicyHandler::CreateLoadBalancingPolicy(
     absl::string_view name, LoadBalancingPolicy::Args args) const {
-  return LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      name, std::move(args));
+  return CoreConfiguration::Get()
+      .lb_policy_registry()
+      .CreateLoadBalancingPolicy(name, std::move(args));
 }
 
 }  // namespace grpc_core

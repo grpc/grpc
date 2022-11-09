@@ -316,7 +316,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
   /* 64 is a somewhat arbitary number, the important thing is that it
    * exceeds the value of MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL (16), which
    * is enough to repro a bug at time of writing. */
-  const int kNumCalls = 64;
+  const int kNumCalls = 32;
   size_t ping_pong_round = 0;
   size_t ping_pongs_done = 0;
   grpc_core::Mutex ping_pong_round_mu;
@@ -334,7 +334,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
   // hit test timeouts because of that.
   test_servers.reserve(kNumCalls);
   for (int i = 0; i < kNumCalls; i++) {
-    test_servers.push_back(absl::make_unique<TestServer>());
+    test_servers.push_back(std::make_unique<TestServer>());
   }
   for (int i = 0; i < kNumCalls; i++) {
     auto test_server = test_servers[i].get();
@@ -374,7 +374,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
           grpc_slice_from_static_string("/foo"), nullptr,
           gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      auto test_call = absl::make_unique<TestCall>(channel, call, cq);
+      auto test_call = std::make_unique<TestCall>(channel, call, cq);
       // Start a call, and ensure that round_robin load balancing is configured
       StartCall(test_call.get());
       // Make sure the test is doing what it's meant to be doing

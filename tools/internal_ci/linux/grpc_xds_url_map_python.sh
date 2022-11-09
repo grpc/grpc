@@ -49,6 +49,9 @@ build_test_app_docker_images() {
   gcloud -q auth configure-docker
 
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
+  if is_version_branch "${TESTING_VERSION}"; then
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+  fi
 }
 
 #######################################
@@ -96,15 +99,19 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
+  mkdir -pv "${out_dir}"
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
+    --flagfile="config/url-map.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --testing_version="${TESTING_VERSION}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    --flagfile="config/url-map.cfg"
-  set +x
+    --collect_app_logs \
+    --log_dir="${out_dir}" \
+    --xml_output_file="${out_dir}/sponge_log.xml" \
+    |& tee "${out_dir}/sponge_log.log"
 }
 
 #######################################

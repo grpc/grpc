@@ -49,7 +49,7 @@ struct SeqStateTypes {
   // Wrap the factory callable in our factory wrapper to deal with common edge
   // cases. We use the 'unwrapped type' from the traits, so for instance, TrySeq
   // can pass back a T from a StatusOr<T>.
-  using Next = promise_detail::PromiseFactory<
+  using Next = promise_detail::OncePromiseFactory<
       typename PromiseResultTraits::UnwrappedType, FNext>;
 };
 
@@ -402,20 +402,22 @@ class BasicSeq {
 
 // As above, but models a sequence of unknown size
 // At each element, the accumulator A and the current value V is passed to some
-// function of type F as f(V, A); f is expected to return a promise that
-// resolves to Traits::WrappedType.
-template <template <typename Wrapped> class Traits, typename F, typename Arg,
-          typename Iter>
+// function of type IterTraits::Factory as f(V, IterTraits::Argument); f is
+// expected to return a promise that resolves to IterTraits::Wrapped.
+template <class IterTraits>
 class BasicSeqIter {
  private:
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
+  using Traits = typename IterTraits::Traits;
+  using Iter = typename IterTraits::Iter;
+  using Factory = typename IterTraits::Factory;
+  using Argument = typename IterTraits::Argument;
+  using IterValue = typename IterTraits::IterValue;
+  using StateCreated = typename IterTraits::StateCreated;
+  using State = typename IterTraits::State;
+  using Wrapped = typename IterTraits::Wrapped;
 
  public:
-  BasicSeqIter(Iter begin, Iter end, F f, Arg arg)
+  BasicSeqIter(Iter begin, Iter end, Factory f, Argument arg)
       : cur_(begin), end_(end), f_(std::move(f)) {
     if (cur_ == end_) {
       Construct(&result_, std::move(arg));
@@ -465,7 +467,7 @@ class BasicSeqIter {
   Poll<Wrapped> PollNonEmpty() {
     Poll<Wrapped> r = state_();
     if (absl::holds_alternative<Pending>(r)) return r;
-    return Traits<Wrapped>::template CheckResultAndRunNext<Wrapped>(
+    return Traits::template CheckResultAndRunNext<Wrapped>(
         std::move(absl::get<Wrapped>(r)), [this](Wrapped arg) -> Poll<Wrapped> {
           auto next = cur_;
           ++next;
@@ -475,17 +477,17 @@ class BasicSeqIter {
           cur_ = next;
           state_.~State();
           Construct(&state_,
-                    Traits<Wrapped>::CallSeqFactory(f_, *cur_, std::move(arg)));
+                    Traits::template CallSeqFactory(f_, *cur_, std::move(arg)));
           return PollNonEmpty();
         });
   }
 
   Iter cur_;
   const Iter end_;
-  GPR_NO_UNIQUE_ADDRESS F f_;
+  GPR_NO_UNIQUE_ADDRESS Factory f_;
   union {
     GPR_NO_UNIQUE_ADDRESS State state_;
-    GPR_NO_UNIQUE_ADDRESS Arg result_;
+    GPR_NO_UNIQUE_ADDRESS Argument result_;
   };
 };
 

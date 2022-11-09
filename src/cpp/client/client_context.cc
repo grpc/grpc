@@ -41,7 +41,6 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 
@@ -79,6 +78,7 @@ ClientContext::ClientContext()
 ClientContext::~ClientContext() {
   if (call_) {
     grpc_call_unref(call_);
+    call_ = nullptr;
   }
   g_client_callbacks->Destructor(this);
 }

@@ -16,15 +16,13 @@
  *
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/slice/percent_encoding.h"
+#include "src/core/lib/slice/slice.h"
 
 bool squelch = true;
 bool leak_check = true;

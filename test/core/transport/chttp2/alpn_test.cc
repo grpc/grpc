@@ -18,9 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
-#include <gtest/gtest.h>
-
-#include <grpc/support/log.h>
+#include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
 

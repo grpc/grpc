@@ -171,7 +171,7 @@ static void offload(void* arg, grpc_error_handle /*error*/) {
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  grpc_core::Executor::Run(&lock->offload, GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
 }
 
 bool grpc_combiner_continue_exec_ctx() {
@@ -316,7 +316,7 @@ static void enqueue_finally(void* closure, grpc_error_handle error) {
   grpc_core::Combiner* lock =
       reinterpret_cast<grpc_core::Combiner*>(cl->error_data.scratch);
   cl->error_data.scratch = 0;
-  combiner_finally_exec(lock, cl, GRPC_ERROR_REF(error));
+  combiner_finally_exec(lock, cl, error);
 }
 
 namespace grpc_core {

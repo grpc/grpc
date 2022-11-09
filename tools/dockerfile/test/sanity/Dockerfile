@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:13
+FROM silkeh/clang:15-bullseye
 
 #=================
 # Basic C core dependencies
@@ -103,7 +103,7 @@ RUN apt-get update && apt-get install -y jq git
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 4.2.1
+ENV BAZEL_VERSION 5.3.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

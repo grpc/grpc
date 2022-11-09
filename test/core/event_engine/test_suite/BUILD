@@ -75,10 +75,34 @@ grpc_cc_library(
 # -- EventEngine implementations --
 
 grpc_cc_test(
-    name = "iomgr_event_engine_test",
-    srcs = ["iomgr_event_engine_test.cc"],
+    name = "posix_event_engine_test",
+    srcs = ["posix_event_engine_test.cc"],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        ":client",
+        ":oracle_event_engine_posix",
+        "//src/core:posix_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
+)
+
+grpc_cc_test(
+    name = "windows_event_engine_test",
+    srcs = ["windows_event_engine_test.cc"],
+    tags = [
+        "bazel_only",
+        "no_linux",
+        "no_mac",
+    ],
     uses_polling = False,
-    deps = ["//test/core/event_engine/test_suite:timer"],
+    deps = [
+        "//src/core:windows_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
 )
 
 grpc_cc_test(
@@ -103,8 +127,10 @@ grpc_cc_library(
     srcs = ["oracle_event_engine_posix.cc"],
     hdrs = ["oracle_event_engine_posix.h"],
     tags = [
+        "cpu:10",
         "no_windows",
     ],
+    visibility = ["//test:__subpackages__"],
     deps = [
         ":conformance_test_base_lib",
         "//:grpc",
@@ -130,6 +156,7 @@ grpc_cc_test(
     deps = [
         ":client",
         ":oracle_event_engine_posix",
+        ":server",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -144,6 +171,7 @@ grpc_cc_library(
     ],
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
+    visibility = ["@grpc:public"],
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",

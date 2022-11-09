@@ -33,4 +33,4 @@ bazel_rbe/bazel_wrapper \
   test \
   $BAZEL_FLAGS \
   "$@" \
-  -- //test/...
+  -- ${BAZEL_TESTS:-//test/...}

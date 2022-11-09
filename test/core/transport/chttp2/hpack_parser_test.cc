@@ -18,15 +18,30 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
-#include <gtest/gtest.h>
+#include <stdlib.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
@@ -49,7 +64,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
  public:
   ParseTest() {
     grpc_init();
-    parser_ = absl::make_unique<grpc_core::HPackParser>();
+    parser_ = std::make_unique<grpc_core::HPackParser>();
   }
 
   ~ParseTest() override {
@@ -66,7 +81,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
       EXPECT_EQ(parser_->hpack_table()->SetCurrentTableSize(
                     GetParam().table_size.value()),
-                GRPC_ERROR_NONE);
+                absl::OkStatus());
     }
   }
 
@@ -93,9 +108,9 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     for (i = 0; i < nslices; i++) {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
-      if (!GRPC_ERROR_IS_NONE(err)) {
+      if (!err.ok()) {
         gpr_log(GPR_ERROR, "Unexpected parse error: %s",
-                grpc_error_std_string(err).c_str());
+                grpc_core::StatusToString(err).c_str());
         abort();
       }
     }

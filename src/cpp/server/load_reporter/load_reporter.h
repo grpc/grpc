@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <atomic>
 #include <chrono>
@@ -38,8 +37,6 @@
 
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
-
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"

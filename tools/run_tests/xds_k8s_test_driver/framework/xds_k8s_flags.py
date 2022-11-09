@@ -34,6 +34,12 @@ TD_BOOTSTRAP_IMAGE = flags.DEFINE_string(
 SERVER_IMAGE = flags.DEFINE_string("server_image",
                                    default=None,
                                    help="Server Docker image name")
+SERVER_IMAGE_CANONICAL = flags.DEFINE_string(
+    "server_image_canonical",
+    default=None,
+    help=("The canonical implementation of the xDS test server.\n"
+          "Can be used in tests where language-specific xDS test server"
+          "does not exist, or missing a feature required for the test."))
 CLIENT_IMAGE = flags.DEFINE_string("client_image",
                                    default=None,
                                    help="Client Docker image name")

@@ -25,7 +25,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -133,7 +132,6 @@ static void BM_StreamingPingPong(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
@@ -183,7 +181,6 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     }
 
     for (auto _ : state) {
-      GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       request_rw->Write(send_request, tag(0));   // Start client send
       response_rw.Read(&recv_request, tag(1));   // Start server recv
       request_rw->Read(&recv_response, tag(2));  // Start client recv
@@ -220,7 +217,6 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     GPR_ASSERT(recv_status.ok());
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * 2);
 }
@@ -396,7 +392,6 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
