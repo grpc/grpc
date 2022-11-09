@@ -23,7 +23,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -31,10 +30,6 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <time.h>
-
-GPR_GLOBAL_CONFIG_DEFINE_INT32(
-    grpc_max_pending_ack_time_millis, 10000,
-    "Maximum time to wait (in milliseconds) for an ack of a pending trace.");
 
 namespace grpc_core {
 namespace {
@@ -201,11 +196,9 @@ int GetSocketTcpInfo(struct tcp_info* info, int fd) {
 
 }  // namespace.
 
-bool TracedBufferList::TracedBuffer::Finished() {
-  static const int kGrpcMaxPendingAckTimeMillis =
-      GPR_GLOBAL_CONFIG_GET(grpc_max_pending_ack_time_millis);
-  return gpr_time_to_millis(
-             gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_timestamp_)) >
+bool TracedBufferList::TracedBuffer::Finished(gpr_timespec ts) {
+  constexpr int kGrpcMaxPendingAckTimeMillis = 10000;
+  return gpr_time_to_millis(gpr_time_sub(ts, last_timestamp_)) >
          kGrpcMaxPendingAckTimeMillis;
 }
 
@@ -277,8 +270,9 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
   }
 
   elem = head_;
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   while (elem != nullptr) {
-    if (!elem->Finished()) {
+    if (!elem->Finished(now)) {
       prev = elem;
       elem = elem->next_;
       continue;

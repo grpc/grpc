@@ -24,7 +24,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -32,8 +31,6 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
-
-GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_max_pending_ack_time_millis);
 
 constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
 
@@ -160,8 +157,7 @@ TEST(BufferListTest, Testrepeatedshutdown) {
 }
 
 TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
-  int kMaxPendingAckMillis =
-      GPR_GLOBAL_CONFIG_GET(grpc_max_pending_ack_time_millis);
+  constexpr int kMaxPendingAckMillis = 10000;
   struct sock_extended_err serr[3];
   gpr_atm verifier_called[3];
   struct grpc_core::scm_timestamping tss;
@@ -223,8 +219,7 @@ TEST(BufferListTest, TestLongPendingAckForOneTracedBuffer) {
 
 TEST(BufferListTest, TestLongPendingAckForSomeTracedBuffers) {
   constexpr int kNumTracedBuffers = 10;
-  int kMaxPendingAckMillis =
-      GPR_GLOBAL_CONFIG_GET(grpc_max_pending_ack_time_millis);
+  constexpr int kMaxPendingAckMillis = 10000;
   struct sock_extended_err serr[kNumTracedBuffers];
   gpr_atm verifier_called[kNumTracedBuffers];
   struct grpc_core::scm_timestamping tss;

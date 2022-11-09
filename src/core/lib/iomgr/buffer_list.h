@@ -143,7 +143,7 @@ class TracedBufferList {
    public:
     TracedBuffer(uint32_t seq_no, void* arg) : seq_no_(seq_no), arg_(arg) {}
 
-    bool Finished();
+    bool Finished(gpr_timespec ts);
 
    private:
     friend class TracedBufferList;

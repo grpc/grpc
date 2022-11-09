@@ -142,8 +142,9 @@ class TracedBufferList {
   class TracedBuffer {
    public:
     TracedBuffer(uint32_t seq_no, void* arg) : seq_no_(seq_no), arg_(arg) {}
-
-    bool Finished();
+    // Returns true if the TracedBuffer is considered stale at the given
+    // timestamp.
+    bool Finished(gpr_timespec ts);
 
    private:
     friend class TracedBufferList;
