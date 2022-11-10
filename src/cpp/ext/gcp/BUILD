@@ -98,6 +98,9 @@ grpc_cc_library(
     hdrs = [
         "observability_logging_sink.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     tags = ["nofixdeps"],
     visibility = ["//test:__subpackages__"],
