@@ -228,6 +228,8 @@ class XdsClientTest : public ::testing::Test {
             XdsTestResourceType<ResourceStruct, all_resources_required_in_sotw>,
             ResourceStruct> {
    public:
+    using ResourceStructType = ResourceStruct;
+
     // A watcher implementation that queues delivered watches.
     class Watcher : public XdsResourceTypeImpl<
                         XdsTestResourceType<ResourceStruct,
@@ -492,7 +494,7 @@ class XdsClientTest : public ::testing::Test {
 
     template <typename ResourceType>
     ResponseBuilder& AddResource(
-        const typename ResourceType::ResourceType& resource,
+        const typename ResourceType::ResourceStructType& resource,
         bool in_resource_wrapper = false) {
       auto* res = response_.add_resources();
       *res = ResourceType::EncodeAsAny(resource);
