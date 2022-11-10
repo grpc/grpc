@@ -597,6 +597,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
         if (s->trailing_metadata_available != nullptr) {
           *s->trailing_metadata_available = true;
         }
+        s->parsed_trailers_only = true;
         incoming_metadata_buffer = &s->trailing_metadata_buffer;
         frame_type = HPackParser::LogInfo::kTrailers;
       } else {

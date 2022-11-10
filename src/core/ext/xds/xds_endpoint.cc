@@ -83,6 +83,7 @@ bool XdsEndpointResource::Priority::operator==(const Priority& other) const {
 
 std::string XdsEndpointResource::Priority::ToString() const {
   std::vector<std::string> locality_strings;
+  locality_strings.reserve(localities.size());
   for (const auto& p : localities) {
     locality_strings.emplace_back(p.second.ToString());
   }

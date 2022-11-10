@@ -42,21 +42,20 @@ namespace grpc_core {
 // FakeXdsTransportFactory::FakeStreamingCall
 //
 
+FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
+  // Can't call event_handler_->OnStatusReceived() or unref event_handler_
+  // synchronously, since those operations will trigger code in
+  // XdsClient that acquires its mutex, but it was already holding its
+  // mutex when it called us, so it would deadlock.
+  GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
+                                status_sent = status_sent_]() mutable {
+    ExecCtx exec_ctx;
+    if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
+    event_handler.reset();
+  });
+}
+
 void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
-  {
-    MutexLock lock(&mu_);
-    // Can't call event_handler_->OnStatusReceived() or unref event_handler_
-    // synchronously, since those operations will trigger code in
-    // XdsClient that acquires its mutex, but it was already holding its
-    // mutex when it called us, so it would deadlock.
-    GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
-                                  status_sent = status_sent_]() mutable {
-      ExecCtx exec_ctx;
-      if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
-      event_handler.reset();
-    });
-    status_sent_ = true;
-  }
   transport_->RemoveStream(method_, this);
   Unref();
 }
@@ -206,7 +205,7 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
 //
 
 constexpr char FakeXdsTransportFactory::kAdsMethod[];
-constexpr char FakeXdsTransportFactory::kAdsV2Method[];
+constexpr char FakeXdsTransportFactory::kLrsMethod[];
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>
 FakeXdsTransportFactory::Create(

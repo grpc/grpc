@@ -111,7 +111,6 @@ namespace {
 
 using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::rbac::v3::Policy;
-using ::envoy::config::rbac::v3::RBAC_Action;
 using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
 using ::envoy::config::rbac::v3::RBAC_Action_DENY;
 using ::envoy::config::rbac::v3::RBAC_Action_LOG;
@@ -2029,7 +2028,7 @@ TEST_P(XdsRbacTest, AbsentRbacPolicy) {
 TEST_P(XdsRbacTest, LogAction) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_LOG);
+  rules->set_action(RBAC_Action_LOG);
   SetServerRbacPolicy(rbac);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(

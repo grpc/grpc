@@ -27,7 +27,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
-#include <grpcpp/support/config.h>
+#include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/slice.h>
 
 namespace grpc {
