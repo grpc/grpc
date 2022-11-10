@@ -361,7 +361,7 @@ TEST_P(End2EndBinderTransportTest, ClientStreamingCall) {
   std::unique_ptr<grpc::ClientWriter<grpc::testing::EchoRequest>> writer =
       stub->RequestStream(&context, &response);
   constexpr size_t kClientStreamingCounts = 100;
-  std::string expected = "";
+  std::string expected;
   for (size_t i = 0; i < kClientStreamingCounts; ++i) {
     grpc::testing::EchoRequest request;
     request.set_message("ClientStreamingCall" + std::to_string(i));
