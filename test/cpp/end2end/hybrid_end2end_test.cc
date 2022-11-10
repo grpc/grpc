@@ -540,7 +540,7 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream) {
 }
 
 // Add a second service with one sync method.
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
+TEST_F(HybridEnd2endTest, asyncRequestStreamResponseStreamSyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -579,7 +579,7 @@ class StreamedUnaryDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncStreamedUnaryDupService) {
+       asyncRequestStreamResponseStreamSyncStreamedUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -617,7 +617,7 @@ class FullyStreamedUnaryDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncFullyStreamedUnaryDupService) {
+       asyncRequestStreamResponseStreamSyncFullyStreamedUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -658,7 +658,7 @@ class SplitResponseStreamDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncSplitStreamedDupService) {
+       asyncRequestStreamResponseStreamSyncSplitStreamedDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -698,7 +698,7 @@ class FullySplitStreamedDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_FullySplitStreamedDupService) {
+       asyncRequestStreamResponseStreamFullySplitStreamedDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -750,7 +750,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_FullyStreamedDupService) {
+       asyncRequestStreamResponseStreamFullyStreamedDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -770,7 +770,7 @@ TEST_F(HybridEnd2endTest,
 }
 
 // Add a second service with one async method.
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_AsyncDupService) {
+TEST_F(HybridEnd2endTest, asyncRequestStreamResponseStreamAsyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -866,7 +866,7 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
 }
 
 // Add a second service with one sync method.
-TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
+TEST_F(HybridEnd2endTest, genericEchoAsyncRequestStreamSyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<TestServiceImpl>>
       SType;
@@ -886,7 +886,7 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
 }
 
 // Add a second service with one async method.
-TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_AsyncDupService) {
+TEST_F(HybridEnd2endTest, genericEchoAsyncRequestStreamAsyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<TestServiceImpl>>
       SType;
