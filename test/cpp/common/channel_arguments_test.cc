@@ -99,7 +99,7 @@ class ChannelArgumentsTest : public ::testing::Test {
   void VerifyDefaultChannelArgs() {
     grpc_channel_args args;
     SetChannelArgs(channel_args_, &args);
-    EXPECT_EQ(static_cast<size_t>(1), args.num_args);
+    EXPECT_EQ(size_t{1}, args.num_args);
     EXPECT_STREQ(GRPC_ARG_PRIMARY_USER_AGENT_STRING, args.args[0].key);
     EXPECT_EQ(GetDefaultUserAgentPrefix(),
               std::string(args.args[0].value.string));

@@ -58,7 +58,7 @@ void TestExecuteFlushesListVerifier(void* arg, Timestamps* ts,
     EXPECT_EQ(ts->byte_offset, kByteOffset);
   }
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
-  gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
+  gpr_atm_rel_store(done, gpr_atm{1});
 }
 
 void discard_write(grpc_slice /*slice*/) {}
@@ -97,13 +97,13 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
                                nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
-    gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
+    gpr_atm_rel_store(&verifier_called[i], gpr_atm{0});
     ContextList::Append(&list, s[i]);
   }
   Timestamps ts;
   ContextList::Execute(list, &ts, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
-    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
+    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), gpr_atm{1});
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
                                   reinterpret_cast<grpc_stream*>(s[i]),
                                   nullptr);
@@ -151,12 +151,12 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
                                nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
-    gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
+    gpr_atm_rel_store(&verifier_called[i], gpr_atm{0});
     ContextList::Append(&list, s[i]);
   }
   ContextList::Execute(list, nullptr, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
-    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
+    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), gpr_atm{1});
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
                                   reinterpret_cast<grpc_stream*>(s[i]),
                                   nullptr);

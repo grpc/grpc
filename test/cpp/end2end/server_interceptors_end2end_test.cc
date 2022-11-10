@@ -79,7 +79,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), unsigned{0});
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {

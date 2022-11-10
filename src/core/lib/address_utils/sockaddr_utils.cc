@@ -371,7 +371,7 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
     } else if (mask_bits >= 32) {
       return;
     }
-    uint32_t mask_ip_addr = (~(static_cast<uint32_t>(0))) << (32 - mask_bits);
+    uint32_t mask_ip_addr = (~(uint32_t{0})) << (32 - mask_bits);
     addr4->sin_addr.s_addr &= grpc_htonl(mask_ip_addr);
   } else if (addr->sa_family == GRPC_AF_INET6) {
     grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr);
@@ -387,25 +387,25 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
     GPR_ASSERT(sizeof(addr6->sin6_addr) == sizeof(address_parts));
     memcpy(address_parts, &addr6->sin6_addr, sizeof(grpc_in6_addr));
     if (mask_bits <= 32) {
-      uint32_t mask_ip_addr = (~(static_cast<uint32_t>(0))) << (32 - mask_bits);
+      uint32_t mask_ip_addr = (~(uint32_t{0})) << (32 - mask_bits);
       address_parts[0] &= grpc_htonl(mask_ip_addr);
       memset(&address_parts[1], 0, sizeof(uint32_t));
       memset(&address_parts[2], 0, sizeof(uint32_t));
       memset(&address_parts[3], 0, sizeof(uint32_t));
     } else if (mask_bits <= 64) {
       mask_bits -= 32;
-      uint32_t mask_ip_addr = (~(static_cast<uint32_t>(0))) << (32 - mask_bits);
+      uint32_t mask_ip_addr = (~(uint32_t{0})) << (32 - mask_bits);
       address_parts[1] &= grpc_htonl(mask_ip_addr);
       memset(&address_parts[2], 0, sizeof(uint32_t));
       memset(&address_parts[3], 0, sizeof(uint32_t));
     } else if (mask_bits <= 96) {
       mask_bits -= 64;
-      uint32_t mask_ip_addr = (~(static_cast<uint32_t>(0))) << (32 - mask_bits);
+      uint32_t mask_ip_addr = (~(uint32_t{0})) << (32 - mask_bits);
       address_parts[2] &= grpc_htonl(mask_ip_addr);
       memset(&address_parts[3], 0, sizeof(uint32_t));
     } else {
       mask_bits -= 96;
-      uint32_t mask_ip_addr = (~(static_cast<uint32_t>(0))) << (32 - mask_bits);
+      uint32_t mask_ip_addr = (~(uint32_t{0})) << (32 - mask_bits);
       address_parts[3] &= grpc_htonl(mask_ip_addr);
     }
     memcpy(&addr6->sin6_addr, address_parts, sizeof(grpc_in6_addr));

@@ -70,7 +70,7 @@ TEST_F(ByteBufferTest, Clear) {
   Slice s(kContent1);
   ByteBuffer buffer(&s, 1);
   buffer.Clear();
-  EXPECT_EQ(static_cast<size_t>(0), buffer.Length());
+  EXPECT_EQ(size_t{0}, buffer.Length());
 }
 
 TEST_F(ByteBufferTest, Length) {

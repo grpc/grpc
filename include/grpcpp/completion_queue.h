@@ -379,11 +379,10 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// registration must take place before CQ shutdown (which must be maintained
   /// elsehwere)
   void InitialAvalanching() {
-    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
+    gpr_atm_rel_store(&avalanches_in_flight_, gpr_atm{1});
   }
   void RegisterAvalanching() {
-    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                 static_cast<gpr_atm>(1));
+    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, gpr_atm{1});
   }
   void CompleteAvalanching() {
     if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,

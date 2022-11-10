@@ -151,15 +151,14 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       break;
     case flow_control_fuzzer::Action::kSetMemoryQuota: {
       memory_quota_->SetSize(
-          Clamp(action.set_memory_quota(), static_cast<uint64_t>(1),
+          Clamp(action.set_memory_quota(), uint64_t{1},
                 static_cast<uint64_t>(std::numeric_limits<int64_t>::max())));
     } break;
     case flow_control_fuzzer::Action::kStepTimeMs: {
       g_now = gpr_time_add(
-          g_now, gpr_time_from_millis(
-                     Clamp(action.step_time_ms(), static_cast<uint64_t>(1),
-                           kMaxAdvanceTimeMillis),
-                     GPR_TIMESPAN));
+          g_now, gpr_time_from_millis(Clamp(action.step_time_ms(), uint64_t{1},
+                                            kMaxAdvanceTimeMillis),
+                                      GPR_TIMESPAN));
       exec_ctx.InvalidateNow();
       if (Timestamp::Now() >= next_bdp_ping_) {
         scheduled_write_ = true;
