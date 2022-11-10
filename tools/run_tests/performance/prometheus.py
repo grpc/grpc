@@ -31,6 +31,7 @@ import argparse
 import json
 import logging
 import statistics
+import time
 from typing import Any, Dict, List
 
 from dateutil import parser
@@ -269,6 +270,12 @@ def main() -> None:
         default=False,
         help='Suppress informative output',
     )
+    argp.add_argument(
+        '--delay_seconds',
+        default=0,
+        type=int,
+        help='Configure delay in seconds to perform Prometheus queries, default is 0s',
+    )
     args = argp.parse_args()
 
     if not args.quiet:
@@ -285,6 +292,8 @@ def main() -> None:
             end=end_time,
         )
 
+    time.sleep(args.delay_seconds)
+    
     pod_dict = construct_pod_dict(args.node_info_file, args.pod_type)
     processed_data = p.fetch_cpu_and_memory_data(
         container_list=args.container_name, pod_dict=pod_dict)
