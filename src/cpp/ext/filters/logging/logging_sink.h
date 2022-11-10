@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include "absl/strings/string_view.h"
 
 namespace grpc {
