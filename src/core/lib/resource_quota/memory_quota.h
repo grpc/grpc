@@ -360,8 +360,7 @@ class BasicMemoryQuota final
 
   // Reclaimer queues.
   ReclaimerQueue reclaimers_[kNumReclamationPasses];
-  // List of all allocators sorted into 2 buckets, small (<1MB free bytes) and
-  // large (>1MB free bytes).
+  // List of all allocators sorted into 2 buckets, small (<100 KB free bytes) and large (>500 KB free bytes).
   std::array<AllocatorBucket, 2> allocators_;
   // The reclaimer activity consumes reclaimers whenever we are in overcommit to
   // try and get back under memory limits.
@@ -434,10 +433,10 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Return all free bytes to quota.
   void ReturnFree() {
     size_t ret = free_bytes_.exchange(0, std::memory_order_acq_rel);
-    // if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Allocator %ld, %p returning %zu bytes to quota\n",
-            allocator_id_, this, ret);
-    // }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+      gpr_log(GPR_INFO, "Allocator %ld, %p returning %zu bytes to quota\n",
+              allocator_id_, this, ret);
+    }
     if (ret == 0) return;
     memory_quota_->MoveAllocatorBigToSmall(allocator_id_, this);
     is_big_.store(false, std::memory_order_relaxed);
