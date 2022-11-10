@@ -259,7 +259,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   class SubchannelPicker : public RefCounted<SubchannelPicker> {
    public:
     SubchannelPicker() = default;
-    virtual ~SubchannelPicker() = default;
 
     virtual PickResult Pick(PickArgs args) = 0;
   };
