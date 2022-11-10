@@ -1664,8 +1664,7 @@ TEST(CredentialsTest,
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST(CredentialsTest,
-     TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
+TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1688,8 +1687,7 @@ TEST(CredentialsTest,
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST(CredentialsTest,
-     TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
+TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();

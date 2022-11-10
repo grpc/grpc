@@ -276,7 +276,7 @@ bool ValidateUrlField(const Json& json, const std::string& field) {
   grpc_core::SplitHostPort(url->authority(), &host, &port);
   if (absl::ConsumeSuffix(&host, ".p.googleapis.com")) {
     if (absl::StartsWith(host, "sts-") ||
-               absl::StartsWith(host, "iamcredentials-")) {
+        absl::StartsWith(host, "iamcredentials-")) {
       return true;
     }
   } else if (absl::ConsumeSuffix(&host, ".googleapis.com")) {
