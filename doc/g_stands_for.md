@@ -50,4 +50,4 @@
 - 1.48 'g' stands for ['garum'](https://github.com/grpc/grpc/tree/v1.48.x)
 - 1.49 'g' stands for ['gamma'](https://github.com/grpc/grpc/tree/v1.49.x)
 - 1.50 'g' stands for ['galley'](https://github.com/grpc/grpc/tree/v1.50.x)
-- 1.51 'g' stands for ['galaxy'](https://github.com/grpc/grpc/tree/v1.51.x)
+- 1.51 'g' stands for ['galaxy'](https://github.com/grpc/grpc/tree/master)
