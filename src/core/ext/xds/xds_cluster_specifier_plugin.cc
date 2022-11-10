@@ -80,7 +80,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
       grpc_lookup_v1_RouteLookupConfig_getmsgdef(symtab);
   size_t json_size = upb_JsonEncode(plugin_config, msg_type, symtab, 0, nullptr,
                                     0, status.ptr());
-  if (json_size == static_cast<size_t>(-1)) {
+  if (json_size == size_t{-1}) {
     return absl::InvalidArgumentError(
         absl::StrCat("failed to dump proto to JSON: ",
                      upb_Status_ErrorMessage(status.ptr())));

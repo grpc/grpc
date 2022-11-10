@@ -319,8 +319,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                                       Stream* stream) {
   if (!squelch) {
     fprintf(stderr, "[%" PRId64 "]: ACTION: %s\n",
-            stream == nullptr ? static_cast<int64_t>(-1)
-                              : static_cast<int64_t>(stream->id),
+            stream == nullptr ? int64_t{-1} : static_cast<int64_t>(stream->id),
             action.DebugString().c_str());
   }
 

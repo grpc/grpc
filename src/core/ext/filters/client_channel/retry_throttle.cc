@@ -88,8 +88,8 @@ bool ServerRetryThrottleData::RecordFailure() {
   // We decrement milli_tokens by 1000 (1 token) for each failure.
   const uintptr_t new_value =
       static_cast<uintptr_t>(gpr_atm_no_barrier_clamped_add(
-          &throttle_data->milli_tokens_, static_cast<gpr_atm>(-1000),
-          gpr_atm{0}, static_cast<gpr_atm>(throttle_data->max_milli_tokens_)));
+          &throttle_data->milli_tokens_, gpr_atm{-1000}, gpr_atm{0},
+          static_cast<gpr_atm>(throttle_data->max_milli_tokens_)));
   // Retries are allowed as long as the new value is above the threshold
   // (max_milli_tokens / 2).
   return new_value > throttle_data->max_milli_tokens_ / 2;

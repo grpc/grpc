@@ -22,6 +22,6 @@
 
 namespace grpc {
 
-const size_t string_ref::npos = static_cast<size_t>(-1);
+const size_t string_ref::npos = size_t{-1};
 
 }  // namespace grpc

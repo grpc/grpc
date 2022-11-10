@@ -421,7 +421,7 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
   size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
                                     nullptr, 0, status.ptr());
-  if (json_size == static_cast<size_t>(-1)) {
+  if (json_size == size_t{-1}) {
     return absl::InvalidArgumentError(
         absl::StrCat("error encoding google::Protobuf::Struct as JSON: ",
                      upb_Status_ErrorMessage(status.ptr())));
