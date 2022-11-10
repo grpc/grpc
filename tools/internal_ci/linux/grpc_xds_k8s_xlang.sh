@@ -23,11 +23,6 @@ readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 readonly SERVER_LANGS="cpp go java"
 readonly CLIENT_LANGS="cpp go java"
 readonly MAIN_BRANCH="${MAIN_BRANCH:-master}"
-readonly LATEST_BRANCH_FROM_GITHUB="$((git ls-remote -t --refs https://github.com/grpc/${GITHUB_REPOSITORY_NAME}.git | cut -f 2 | sed s#refs/tags/##) | sort -V | tail -n 1 | cut -f 1-2 -d.)".x
-readonly OLDEST_BRANCH_FROM_GITHUB=v1.$(expr $(echo ${LATEST_BRANCH_FROM_GITHUB} | cut -f 2 -d.) - 9).x
-readonly LATEST_BRANCH="${LATEST_BRANCH:-${LATEST_BRANCH_FROM_GITHUB}}"
-readonly OLDEST_BRANCH="${OLDEST_BRANCH:-${OLDEST_BRANCH_FROM_GITHUB}}"
-readonly XLANG_VERSIONS="${MAIN_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
 
 #######################################
 # Executes the test case
@@ -57,17 +52,27 @@ run_test() {
   local client_branch="$2"
   local server_lang="$3"
   local server_branch="$4"
-  local server_image_name="${IMAGE_REPO}/${server_lang}-server:${server_branch}"
-  local client_image_name="${IMAGE_REPO}/${client_lang}-client:${client_branch}"
-  # TODO(sanjaypujare): skip test if image not found (by using gcloud_gcr_list_image_tags)
+  local server_image_name="${IMAGE_REPO}/${server_lang}-server"
+  local client_image_name="${IMAGE_REPO}/${client_lang}-client"
+
+  # Check if images exist
+  server_tags="$(gcloud_gcr_list_image_tags "${server_image_name}" "${server_branch}")"
+  echo "${server_tags:?Server image not found}"
+
+  client_tags="$(gcloud_gcr_list_image_tags "${client_image_name}" "${client_branch}")"
+  echo "${client_tags:?Client image not found}"
+
+  local server_image_name_tag="${server_image_name}:${server_branch}"
+  local client_image_name_tag="${client_image_name}:${client_branch}"
+
   local out_dir="${TEST_XML_OUTPUT_DIR}/${client_branch}-${server_branch}/${client_lang}-${server_lang}"
   mkdir -pv "${out_dir}"
   set -x
   python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
-    --server_image="${server_image_name}" \
-    --client_image="${client_image_name}" \
+    --server_image="${server_image_name_tag}" \
+    --client_image="${client_image_name_tag}" \
     --testing_version="${TESTING_VERSION}" \
     --nocheck_local_certs \
     --force_cleanup \
@@ -109,6 +114,16 @@ main() {
     echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
     exit 0
   fi
+
+  # Get the latest version
+  source ${script_dir}/VERSION.sh
+  if [ "${LATEST_BRANCH}" == "" ]; then
+    LATEST_BRANCH=v"$(echo $VERSION | cut -f 1-2 -d.)".x
+  fi
+  if [ "${OLDEST_BRANCH}" == "" ]; then
+    OLDEST_BRANCH=v1.$(expr $(echo ${LATEST_BRANCH} | cut -f 2 -d.) - 9).x
+  fi
+  local XLANG_VERSIONS="${MAIN_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
 
   activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
