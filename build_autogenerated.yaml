@@ -5123,6 +5123,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
+  - absl/container:flat_hash_map
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6398,6 +6399,7 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/container:flat_hash_map
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6494,6 +6496,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   deps:
+  - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
@@ -7941,6 +7944,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
   deps:
+  - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
@@ -8590,6 +8594,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/container:flat_hash_map
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -10916,6 +10921,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/try_concurrently_test.cc
   deps:
+  - absl/container:flat_hash_map
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash

@@ -7631,6 +7631,7 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_map
   absl::any_invocable
   absl::function_ref
   absl::hash
@@ -10242,6 +10243,7 @@ target_include_directories(flow_control_test
 target_link_libraries(flow_control_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_map
   absl::any_invocable
   absl::function_ref
   absl::hash
@@ -10308,6 +10310,7 @@ target_include_directories(for_each_test
 target_link_libraries(for_each_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_map
   absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
@@ -13380,6 +13383,7 @@ target_include_directories(map_pipe_test
 target_link_libraries(map_pipe_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_map
   absl::flat_hash_set
   absl::any_invocable
   absl::function_ref
@@ -14748,6 +14752,7 @@ target_include_directories(pipe_test
 target_link_libraries(pipe_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_map
   absl::any_invocable
   absl::function_ref
   absl::hash
@@ -19715,6 +19720,7 @@ target_include_directories(try_concurrently_test
 target_link_libraries(try_concurrently_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_map
   absl::any_invocable
   absl::function_ref
   absl::hash

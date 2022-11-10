@@ -463,7 +463,7 @@ void BasicMemoryQuota::Take(size_t amount) {
     if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
   }
 
-  if(IsFreeLargeAllocatorEnabled()) {
+  if (IsFreeLargeAllocatorEnabled()) {
     GrpcMemoryAllocatorImpl* chosen_allocator = nullptr;
     int shard_idx = rand() % allocators_[1].shards.size();
     auto& shard = allocators_[1].shards[shard_idx];
