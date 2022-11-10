@@ -164,7 +164,6 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "xds_client_fuzzer.proto",
     proto_deps = [
-        "//src/proto/grpc/status:status_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
     ],
     tags = ["no_windows"],
