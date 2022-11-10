@@ -64,7 +64,6 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = SockaddrGetPort(res_addr);
-  absl::StatusOr<int> err;
   absl::MutexLock lock(&this->mu_);
   GPR_ASSERT(!this->started_);
   GPR_ASSERT(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
