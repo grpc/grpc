@@ -167,6 +167,31 @@ const char test_external_account_credentials_multi_pattern_iam_str[] =
     "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
     "secret\"}";
 
+const char test_external_account_credentials_psc_sts_str[] =
+    "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+    "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+    "url\":\"https://sts-xyz.p.googleapis.com:5555/"
+    "service_account_impersonation_url\",\"token_url\":\"https://"
+    "sts-xyz-123.p.googleapis.com:5555/token\",\"token_info_url\":\"https://"
+    "sts-xyz.p.googleapis.com:5555/introspect"
+    "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+    "\"quota_project_id\":\"quota_"
+    "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+    "secret\"}";
+
+const char test_external_account_credentials_psc_iam_str[] =
+    "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+    "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+    "url\":\"https://iamcredentials-xyz.p.googleapis.com:5555/"
+    "service_account_impersonation_url\",\"token_url\":\"https://"
+    "iamcredentials-xyz-123.p.googleapis.com:5555/"
+    "token\",\"token_info_url\":\"https://"
+    "iamcredentials-xyz-123.p.googleapis.com:5555/introspect"
+    "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+    "\"quota_project_id\":\"quota_"
+    "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+    "secret\"}";
+
 const char valid_oauth2_json_response[] =
     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
     " \"expires_in\":3599, "
@@ -1623,6 +1648,54 @@ TEST(CredentialsTest,
   set_google_default_creds_env_var_with_file_contents(
       "google_default_creds_external_account_credentials_multi_pattern_iam",
       test_external_account_credentials_multi_pattern_iam_str);
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create(nullptr));
+  auto* default_creds =
+      reinterpret_cast<const grpc_google_default_channel_credentials*>(
+          creds->inner_creds());
+  GPR_ASSERT(default_creds->ssl_creds() != nullptr);
+  auto* external =
+      reinterpret_cast<const ExternalAccountCredentials*>(creds->call_creds());
+  GPR_ASSERT(external != nullptr);
+  creds->Unref();
+  SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(nullptr);
+}
+
+TEST(CredentialsTest,
+     TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
+  ExecCtx exec_ctx;
+  grpc_composite_channel_credentials* creds;
+  grpc_flush_cached_google_default_credentials();
+  set_google_default_creds_env_var_with_file_contents(
+      "google_default_creds_external_account_credentials_psc_sts",
+      test_external_account_credentials_psc_sts_str);
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create(nullptr));
+  auto* default_creds =
+      reinterpret_cast<const grpc_google_default_channel_credentials*>(
+          creds->inner_creds());
+  GPR_ASSERT(default_creds->ssl_creds() != nullptr);
+  auto* external =
+      reinterpret_cast<const ExternalAccountCredentials*>(creds->call_creds());
+  GPR_ASSERT(external != nullptr);
+  creds->Unref();
+  SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(nullptr);
+}
+
+TEST(CredentialsTest,
+     TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
+  ExecCtx exec_ctx;
+  grpc_composite_channel_credentials* creds;
+  grpc_flush_cached_google_default_credentials();
+  set_google_default_creds_env_var_with_file_contents(
+      "google_default_creds_external_account_credentials_psc_iam",
+      test_external_account_credentials_psc_iam_str);
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
