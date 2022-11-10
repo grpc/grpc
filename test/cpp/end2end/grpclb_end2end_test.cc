@@ -371,7 +371,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
@@ -382,7 +382,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_init();
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
     bool localhost_resolves_to_ipv4 = false;
