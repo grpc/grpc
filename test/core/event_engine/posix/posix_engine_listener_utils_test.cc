@@ -33,7 +33,6 @@
 
 #include <ifaddrs.h>
 
-#include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 

@@ -35,7 +35,6 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
 
