@@ -337,7 +337,8 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
   }
 
   if (*body_length == parser->body_capacity) {
-    parser->body_capacity = std::max(size_t(8), parser->body_capacity * 3 / 2);
+    parser->body_capacity =
+        std::max(static_cast<size_t>(8), parser->body_capacity * 3 / 2);
     *body = static_cast<char*>(gpr_realloc(*body, parser->body_capacity));
   }
   (*body)[*body_length] = static_cast<char>(byte);

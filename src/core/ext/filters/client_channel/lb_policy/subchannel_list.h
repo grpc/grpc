@@ -324,8 +324,8 @@ void SubchannelData<SubchannelListType,
   pending_watcher_ =
       new Watcher(this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
-      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
-          pending_watcher_));
+      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>{
+          pending_watcher_});
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>

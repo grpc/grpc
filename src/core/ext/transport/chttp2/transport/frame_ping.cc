@@ -118,7 +118,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity =
-              std::max(t->ping_ack_capacity * 3 / 2, size_t(3));
+              std::max(t->ping_ack_capacity * 3 / 2, static_cast<size_t>(3));
           t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
         }
