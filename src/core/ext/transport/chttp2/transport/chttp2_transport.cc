@@ -973,9 +973,15 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   }
   t->goaway_error = grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
-                             grpc_core::StatusIntProperty::kHttp2Error,
-                             static_cast<intptr_t>(goaway_error)),
+          grpc_error_set_int(
+              grpc_core::StatusCreate(
+                  absl::StatusCode::kUnavailable,
+                  absl::StrFormat(
+                      "GOAWAY received; Error code: %u; Debug Text: %s",
+                      goaway_error, goaway_text),
+                  DEBUG_LOCATION, {}),
+              grpc_core::StatusIntProperty::kHttp2Error,
+              static_cast<intptr_t>(goaway_error)),
           grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
       grpc_core::StatusStrProperty::kRawBytes, goaway_text);
 
