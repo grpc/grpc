@@ -419,7 +419,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
       if (free_bytes_.load(std::memory_order_relaxed) >
           kBigAllocatorThreshold) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_INFO, "Moving allocator %ld, %p to big\n", allocator_id_,
+          gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to big\n", allocator_id_,
                   this);
         }
         memory_quota_->MoveAllocatorSmallToBig(allocator_id_, this);
@@ -434,7 +434,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   void ReturnFree() {
     size_t ret = free_bytes_.exchange(0, std::memory_order_acq_rel);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "Allocator %ld, %p returning %zu bytes to quota\n",
+      gpr_log(GPR_INFO, "Allocator %" PRIu64 ", %p returning %zu bytes to quota\n",
               allocator_id_, this, ret);
     }
     if (ret == 0) return;

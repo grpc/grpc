@@ -161,7 +161,7 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
   memory_quota_->Take(taken_bytes_);
   allocator_id_ = memory_quota_->AddNewAllocator(this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Adding allocator %ld, %p\n", allocator_id_, this);
+    gpr_log(GPR_INFO, "Adding allocator %" PRIu64 ", %p\n", allocator_id_, this);
   }
 }
 
@@ -172,7 +172,7 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
   memory_quota_->Return(taken_bytes_);
   memory_quota_->RemoveAllocator(allocator_id_, this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Removing allocator %ld, %p\n", allocator_id_, this);
+    gpr_log(GPR_INFO, "Removing allocator %" PRIu64 ", %p\n", allocator_id_, this);
   }
 }
 
@@ -204,7 +204,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
           free_bytes_.load(std::memory_order_relaxed) <
               kSmallAllocatorThreshold) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_INFO, "Moving allocator %ld, %p to small\n",
+          gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to small\n",
                   allocator_id_, this);
         }
         memory_quota_->MoveAllocatorBigToSmall(allocator_id_, this);
@@ -217,7 +217,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
     if (!is_big_.load(std::memory_order_relaxed) &&
         free_bytes_.load(std::memory_order_relaxed) > kBigAllocatorThreshold) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-        gpr_log(GPR_INFO, "Moving allocator %ld, %p to big\n", allocator_id_,
+        gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to big\n", allocator_id_,
                 this);
       }
       memory_quota_->MoveAllocatorSmallToBig(allocator_id_, this);
@@ -334,7 +334,7 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
     size_t return_bytes = p->free_bytes_.exchange(0, std::memory_order_acq_rel);
     if (p->is_big_.load(std::memory_order_relaxed)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-        gpr_log(GPR_INFO, "Moving allocator %ld, %p to small\n",
+        gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to small\n",
                 p->allocator_id_, p);
       }
       p->memory_quota_->MoveAllocatorBigToSmall(p->allocator_id_, p);
@@ -515,7 +515,7 @@ uint64_t BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
 void BasicMemoryQuota::RemoveAllocator(uint64_t id,
                                        GrpcMemoryAllocatorImpl* allocator) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Removing allocator %ld, %p\n", allocator->allocator_id_,
+    gpr_log(GPR_INFO, "Removing allocator %" PRIu64 ", %p\n", allocator->allocator_id_,
             allocator);
   }
 
@@ -537,7 +537,7 @@ void BasicMemoryQuota::RemoveAllocator(uint64_t id,
 void BasicMemoryQuota::MoveAllocatorBigToSmall(
     uint64_t id, GrpcMemoryAllocatorImpl* allocator) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Moving allocator %ld, %p to small",
+    gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to small",
             allocator->allocator_id_, allocator);
   }
 
@@ -558,7 +558,7 @@ void BasicMemoryQuota::MoveAllocatorBigToSmall(
 void BasicMemoryQuota::MoveAllocatorSmallToBig(
     uint64_t id, GrpcMemoryAllocatorImpl* allocator) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Moving allocator %ld, %p to big",
+    gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to big",
             allocator->allocator_id_, allocator);
   }
 
