@@ -158,8 +158,12 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
             Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+        ]);
+        $this->assertSame($req_text, $event->message);
+
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
             Grpc\OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
                 'code' => Grpc\STATUS_OK,
@@ -173,7 +177,6 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($event->send_status);
         $this->assertTrue($event->send_message);
         $this->assertFalse($event->cancelled);
-        $this->assertSame($req_text, $event->message);
 
         $event = $call->startBatch([
             Grpc\OP_RECV_INITIAL_METADATA => true,
