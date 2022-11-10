@@ -31,7 +31,6 @@
 # - clang-diagnostic-deprecated-declarations
 # - clang-diagnostic-unused-function
 # - google-readability-avoid-underscore-in-googletest-name
-# - google-readability-casting
 # - google-runtime-int
 # - google-runtime-references
 # - modernize-avoid-bind
@@ -72,7 +71,6 @@ Checks: '-*,
   -bugprone-unchecked-optional-access,
   google-*,
   -google-readability-avoid-underscore-in-googletest-name,
-  -google-readability-casting,
   -google-runtime-int,
   -google-runtime-references,
   -google-upgrade-googletest-case,
