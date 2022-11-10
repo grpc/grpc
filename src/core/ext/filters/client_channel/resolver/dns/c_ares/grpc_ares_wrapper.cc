@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
+// IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
 // IWYU pragma: no_include <inttypes.h>
 // IWYU pragma: no_include <netdb.h>
@@ -362,17 +363,17 @@ static void on_readable(void* arg, grpc_error_handle error) {
   fdn->readable_registered = false;
   GRPC_CARES_TRACE_LOG("request:%p readable on %s", fdn->ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
-  if (error.ok()) {
+  if (error.ok() && !ev_driver->shutting_down) {
     do {
       ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
     } while (fdn->grpc_polled_fd->IsFdStillReadableLocked());
   } else {
-    // If error is not absl::OkStatus(), it means the fd has been shutdown or
-    // timed out. The pending lookups made on this ev_driver will be cancelled
-    // by the following ares_cancel() and the on_done callbacks will be invoked
-    // with a status of ARES_ECANCELLED. The remaining file descriptors in this
-    // ev_driver will be cleaned up in the follwing
-    // grpc_ares_notify_on_event_locked().
+    // If error is not absl::OkStatus() or the resolution was cancelled, it
+    // means the fd has been shutdown or timed out. The pending lookups made on
+    // this ev_driver will be cancelled by the following ares_cancel() and the
+    // on_done callbacks will be invoked with a status of ARES_ECANCELLED. The
+    // remaining file descriptors in this ev_driver will be cleaned up in the
+    // follwing grpc_ares_notify_on_event_locked().
     ares_cancel(ev_driver->channel);
   }
   grpc_ares_notify_on_event_locked(ev_driver);
@@ -388,15 +389,15 @@ static void on_writable(void* arg, grpc_error_handle error) {
   fdn->writable_registered = false;
   GRPC_CARES_TRACE_LOG("request:%p writable on %s", ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
-  if (error.ok()) {
+  if (error.ok() && !ev_driver->shutting_down) {
     ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD, as);
   } else {
-    // If error is not absl::OkStatus(), it means the fd has been shutdown or
-    // timed out. The pending lookups made on this ev_driver will be cancelled
-    // by the following ares_cancel() and the on_done callbacks will be invoked
-    // with a status of ARES_ECANCELLED. The remaining file descriptors in this
-    // ev_driver will be cleaned up in the follwing
-    // grpc_ares_notify_on_event_locked().
+    // If error is not absl::OkStatus() or the resolution was cancelled, it
+    // means the fd has been shutdown or timed out. The pending lookups made on
+    // this ev_driver will be cancelled by the following ares_cancel() and the
+    // on_done callbacks will be invoked with a status of ARES_ECANCELLED. The
+    // remaining file descriptors in this ev_driver will be cleaned up in the
+    // follwing grpc_ares_notify_on_event_locked().
     ares_cancel(ev_driver->channel);
   }
   grpc_ares_notify_on_event_locked(ev_driver);
@@ -743,7 +744,6 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
             r, srv_it->host, htons(srv_it->port), true /* is_balancer */, "A");
         ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
                            on_hostbyname_done_locked, hr);
-        grpc_ares_notify_on_event_locked(r->ev_driver);
       }
     }
     if (reply != nullptr) {

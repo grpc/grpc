@@ -18,9 +18,15 @@
 
 #include "src/cpp/ext/gcp/observability_config.h"
 
+#include <stddef.h>
+
+#include <algorithm>
 #include <utility>
 
 #include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -29,6 +35,7 @@
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
@@ -94,6 +101,67 @@ std::string GetProjectIdFromGcpEnvVar() {
 }
 
 }  // namespace
+
+//
+// GcpObservabilityConfig::CloudLogging::RpcEventConfiguration
+//
+
+const grpc_core::JsonLoaderInterface*
+GcpObservabilityConfig::CloudLogging::RpcEventConfiguration::JsonLoader(
+    const grpc_core::JsonArgs&) {
+  static const auto* loader =
+      grpc_core::JsonObjectLoader<RpcEventConfiguration>()
+          .OptionalField("methods", &RpcEventConfiguration::qualified_methods)
+          .OptionalField("exclude", &RpcEventConfiguration::exclude)
+          .OptionalField("max_metadata_bytes",
+                         &RpcEventConfiguration::max_metadata_bytes)
+          .OptionalField("max_message_bytes",
+                         &RpcEventConfiguration::max_message_bytes)
+          .Finish();
+  return loader;
+}
+
+void GcpObservabilityConfig::CloudLogging::RpcEventConfiguration::JsonPostLoad(
+    const grpc_core::Json& /* json */, const grpc_core::JsonArgs& /* args */,
+    grpc_core::ValidationErrors* errors) {
+  grpc_core::ValidationErrors::ScopedField methods_field(errors, ".methods");
+  parsed_methods.reserve(qualified_methods.size());
+  for (size_t i = 0; i < qualified_methods.size(); ++i) {
+    grpc_core::ValidationErrors::ScopedField methods_index(
+        errors, absl::StrCat("[", i, "]"));
+    std::vector<absl::string_view> parts =
+        absl::StrSplit(qualified_methods[i], '/', absl::SkipEmpty());
+    if (parts.size() > 2) {
+      errors->AddError("methods[] can have at most a single '/'");
+      continue;
+    } else if (parts.empty()) {
+      errors->AddError("Empty configuration");
+      continue;
+    } else if (parts.size() == 1) {
+      if (parts[0] != "*") {
+        errors->AddError("Illegal methods[] configuration");
+        continue;
+      }
+      if (exclude) {
+        errors->AddError(
+            "Wildcard match '*' not allowed when 'exclude' is set");
+        continue;
+      }
+      parsed_methods.push_back(ParsedMethod{parts[0], ""});
+    } else {
+      // parts.size() == 2
+      if (absl::StrContains(parts[0], '*')) {
+        errors->AddError("Configuration of type '*/method' not allowed");
+        continue;
+      }
+      if (absl::StrContains(parts[1], '*') && parts[1].size() != 1) {
+        errors->AddError("Wildcard specified for method in incorrect manner");
+        continue;
+      }
+      parsed_methods.push_back(ParsedMethod{parts[0], parts[1]});
+    }
+  }
+}
 
 absl::StatusOr<GcpObservabilityConfig> GcpObservabilityConfig::ReadFromEnv() {
   auto config_contents = GetGcpObservabilityConfigContents();

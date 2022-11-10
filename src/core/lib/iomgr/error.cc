@@ -54,10 +54,6 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
   return s;
 }
 
-std::string grpc_error_std_string(absl::Status error) {
-  return grpc_core::StatusToString(error);
-}
-
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
   auto err_string = grpc_core::StrError(err);
@@ -172,9 +168,6 @@ bool grpc_error_get_str(grpc_error_handle error,
         switch (error.code()) {
           case absl::StatusCode::kOk:
             *s = "";
-            return true;
-          case absl::StatusCode::kResourceExhausted:
-            *s = "RESOURCE_EXHAUSTED";
             return true;
           case absl::StatusCode::kCancelled:
             *s = "CANCELLED";

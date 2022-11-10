@@ -43,11 +43,13 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
@@ -79,7 +81,6 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -248,7 +249,9 @@ RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                             GlobalObjects* globals) {
-  ChannelArgs args = ChannelArgs().SetObject(ResourceQuota::Default());
+  ChannelArgs args = CoreConfiguration::Get()
+                         .channel_args_preconditioning()
+                         .PreconditionChannelArgs(nullptr);
   for (const auto& arg : fuzz_args) {
     if (arg.key() == ResourceQuota::ChannelArgName()) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kResourceQuota) {
@@ -586,7 +589,7 @@ class MainLoop {
     };
 
     template <typename R>
-    absl::optional<FragmentHandle<R>> LoadMetadata(
+    absl::optional<Arena::PoolPtr<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
       if (*out != nullptr) return absl::nullopt;
       *out = std::make_unique<R>(arena_.get());
@@ -594,7 +597,7 @@ class MainLoop {
         (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
                        [](absl::string_view, const Slice&) {});
       }
-      return FragmentHandle<R>::TestOnlyWrap(out->get());
+      return Arena::PoolPtr<R>(out->get(), Arena::PooledDeleter(nullptr));
     }
 
     void Step() {
@@ -608,8 +611,8 @@ class MainLoop {
 
     Poll<ServerMetadataHandle> CheckCompletion() {
       if (server_trailing_metadata_ != nullptr) {
-        return ServerMetadataHandle::TestOnlyWrap(
-            server_trailing_metadata_.get());
+        return ServerMetadataHandle(server_trailing_metadata_.get(),
+                                    Arena::PooledDeleter(nullptr));
       }
       server_trailing_metadata_waker_ = MakeOwningWaker();
       return Pending{};
@@ -676,8 +679,8 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
 
   grpc_core::ChannelStackBuilderImpl builder(
       msg.stack_name().c_str(),
-      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
-  builder.SetChannelArgs(channel_args);
+      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()),
+      channel_args);
   builder.AppendFilter(filter);
   const bool is_client =
       grpc_channel_stack_type_is_client(builder.channel_stack_type());

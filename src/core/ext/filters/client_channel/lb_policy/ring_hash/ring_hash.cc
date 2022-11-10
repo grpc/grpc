@@ -63,7 +63,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -82,8 +81,8 @@ UniqueTypeName RequestHashAttributeName() {
 const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<RingHashConfig>()
-          .OptionalField("min_ring_size", &RingHashConfig::min_ring_size)
-          .OptionalField("max_ring_size", &RingHashConfig::max_ring_size)
+          .OptionalField("minRingSize", &RingHashConfig::min_ring_size)
+          .OptionalField("maxRingSize", &RingHashConfig::max_ring_size)
           .Finish();
   return loader;
 }
@@ -91,14 +90,14 @@ const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
 void RingHashConfig::JsonPostLoad(const Json&, const JsonArgs&,
                                   ValidationErrors* errors) {
   {
-    ValidationErrors::ScopedField field(errors, ".min_ring_size");
+    ValidationErrors::ScopedField field(errors, ".minRingSize");
     if (!errors->FieldHasErrors() &&
         (min_ring_size == 0 || min_ring_size > 8388608)) {
       errors->AddError("must be in the range [1, 8388608]");
     }
   }
   {
-    ValidationErrors::ScopedField field(errors, ".max_ring_size");
+    ValidationErrors::ScopedField field(errors, ".maxRingSize");
     if (!errors->FieldHasErrors() &&
         (max_ring_size == 0 || max_ring_size > 8388608)) {
       errors->AddError("must be in the range [1, 8388608]");

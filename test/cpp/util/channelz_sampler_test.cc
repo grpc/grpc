@@ -69,7 +69,7 @@ std::string output_json("output.json");
 
 // Creata an echo server
 class EchoServerImpl final : public grpc::testing::TestService::Service {
-  Status EmptyCall(grpc::ServerContext* /*context*/,
+  Status EmptyCall(ServerContext* /*context*/,
                    const grpc::testing::Empty* /*request*/,
                    grpc::testing::Empty* /*response*/) override {
     return Status::OK;
@@ -118,7 +118,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   // start server
   grpc::channelz::experimental::InitChannelzService();
   EchoServerImpl service;
-  grpc::ServerBuilder builder;
+  ServerBuilder builder;
   auto server_creds =
       grpc::testing::GetCredentialsProvider()->GetServerCredentials(
           custom_credentials_type);

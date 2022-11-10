@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <ratio>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"

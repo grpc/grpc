@@ -37,6 +37,8 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/util/port.h"
 
+// IWYU pragma: no_include <arpa/inet.h>
+
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"

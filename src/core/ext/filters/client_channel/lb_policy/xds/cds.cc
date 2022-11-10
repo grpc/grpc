@@ -30,6 +30,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -37,13 +38,10 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -176,6 +174,7 @@ class CdsLb : public LoadBalancingPolicy {
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -261,6 +260,10 @@ void CdsLb::Helper::RequestReresolution() {
 
 absl::string_view CdsLb::Helper::GetAuthority() {
   return parent_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine* CdsLb::Helper::GetEventEngine() {
+  return parent_->channel_control_helper()->GetEventEngine();
 }
 
 void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,

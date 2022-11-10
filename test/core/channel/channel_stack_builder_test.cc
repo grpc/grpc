@@ -35,7 +35,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -119,7 +118,8 @@ bool AddOriginalFilter(ChannelStackBuilder* builder) {
 }
 
 TEST(ChannelStackBuilder, UnknownTarget) {
-  ChannelStackBuilderImpl builder("alpha-beta-gamma", GRPC_CLIENT_CHANNEL);
+  ChannelStackBuilderImpl builder("alpha-beta-gamma", GRPC_CLIENT_CHANNEL,
+                                  ChannelArgs());
   EXPECT_EQ(builder.target(), "unknown");
 }
 

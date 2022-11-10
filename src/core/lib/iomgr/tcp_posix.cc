@@ -21,6 +21,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -517,8 +518,7 @@ struct grpc_tcp {
   grpc_core::MemoryOwner memory_owner;
   grpc_core::MemoryAllocator::Reservation self_reservation;
 
-  grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
-  gpr_mu tb_mu; /* Lock for access to list of traced buffers */
+  grpc_core::TracedBufferList tb_list; /* List of traced buffers */
 
   /* grpc_endpoint_write takes an argument which if non-null means that the
    * transport layer wants the TCP layer to collect timestamps for this write.
@@ -542,7 +542,6 @@ struct grpc_tcp {
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 
-  bool frame_size_tuning_enabled;
   int min_progress_size; /* A hint from upper layers specifying the minimum
                             number of bytes that need to be read to make
                             meaningful progress */
@@ -735,13 +734,9 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
-  /* The lock is not really necessary here, since all refs have been released */
-  gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, tcp->outgoing_buffer_arg,
-                                    GRPC_ERROR_CREATE("endpoint destroyed"));
-  gpr_mu_unlock(&tcp->tb_mu);
+  tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
+                        GRPC_ERROR_CREATE("endpoint destroyed"));
   tcp->outgoing_buffer_arg = nullptr;
-  gpr_mu_destroy(&tcp->tb_mu);
   delete tcp;
 }
 
@@ -820,7 +815,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", dump);
+        gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
         gpr_free(dump);
       }
     }
@@ -928,38 +923,35 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    if (read_bytes < 0 && errno == EAGAIN) {
+      /* NB: After calling call_read_cb a parallel call of the read handler may
+       * be running. */
+      if (total_read_bytes > 0) {
+        break;
+      }
+      finish_estimate(tcp);
+      tcp->inq = 0;
+      return false;
+    }
+
     /* We have read something in previous reads. We need to deliver those
      * bytes to the upper layer. */
-    if (read_bytes <= 0 &&
-        total_read_bytes >= static_cast<size_t>(tcp->min_progress_size)) {
+    if (read_bytes <= 0 && total_read_bytes >= 1) {
       tcp->inq = 1;
       break;
     }
 
-    if (read_bytes < 0) {
-      /* NB: After calling call_read_cb a parallel call of the read handler may
-       * be running. */
-      if (errno == EAGAIN) {
-        if (total_read_bytes > 0) {
-          break;
-        }
-        finish_estimate(tcp);
-        tcp->inq = 0;
-        return false;
-      } else {
-        grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
-        return true;
-      }
-    }
-    if (read_bytes == 0) {
-      /* 0 read size ==> end of stream
-       *
-       * We may have read something, i.e., total_read_bytes > 0, but
-       * since the connection is closed we will drop the data here, because we
-       * can't call the callback multiple times. */
+    if (read_bytes <= 0) {
+      /* 0 read size ==> end of stream */
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-      *error = tcp_annotate_error(GRPC_ERROR_CREATE("Socket closed"), tcp);
+      if (read_bytes == 0) {
+        *error = tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
+      } else {
+        *error =
+            tcp_annotate_error(absl::InternalError(absl::StrCat(
+                                   "recvmsg:", grpc_core::StrError(errno))),
+                               tcp);
+      }
       return true;
     }
 
@@ -1015,7 +1007,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   *error = absl::OkStatus();
-  if (tcp->frame_size_tuning_enabled) {
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
     // this round.
     tcp->min_progress_size -= total_read_bytes;
@@ -1153,7 +1145,7 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
   tcp->min_progress_size =
-      tcp->frame_size_tuning_enabled ? min_progress_size : 1;
+      grpc_core::IsTcpFrameSizeTuningEnabled() ? min_progress_size : 1;
   grpc_slice_buffer_reset_and_unref(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
@@ -1281,11 +1273,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
-    gpr_mu_lock(&tcp->tb_mu);
-    grpc_core::TracedBuffer::AddNewEntry(
-        &tcp->tb_head, static_cast<uint32_t>(tcp->bytes_counter + length),
-        tcp->fd, tcp->outgoing_buffer_arg);
-    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->tb_list.AddNewEntry(static_cast<uint32_t>(tcp->bytes_counter + length),
+                             tcp->fd, tcp->outgoing_buffer_arg);
     tcp->outgoing_buffer_arg = nullptr;
   }
   return true;
@@ -1379,13 +1368,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     gpr_log(GPR_ERROR, "Unexpected control message");
     return cmsg;
   }
-  /* The error handling can potentially be done on another thread so we need
-   * to protect the traced buffer list. A lock free list might be better. Using
-   * a simple mutex for now. */
-  gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, opt_stats,
-                                            tss);
-  gpr_mu_unlock(&tcp->tb_mu);
+  tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
   return next_cmsg;
 }
 
@@ -1523,11 +1506,8 @@ static void tcp_handle_error(void* /*arg*/ /* grpc_tcp */,
  * release operations needed can be performed on the arg */
 void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   if (tcp->outgoing_buffer_arg) {
-    gpr_mu_lock(&tcp->tb_mu);
-    grpc_core::TracedBuffer::Shutdown(
-        &tcp->tb_head, tcp->outgoing_buffer_arg,
-        GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
-    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
+                          GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
     tcp->outgoing_buffer_arg = nullptr;
   }
 }
@@ -1844,7 +1824,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", data);
+        gpr_log(GPR_DEBUG, "WRITE DATA: %s", data);
         gpr_free(data);
       }
     }
@@ -1987,7 +1967,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  tcp->frame_size_tuning_enabled = grpc_core::IsTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
   if (options.tcp_tx_zero_copy_enabled &&
       !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
@@ -2008,8 +1987,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  gpr_mu_init(&tcp->tb_mu);
-  tcp->tb_head = nullptr;
   GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
                     grpc_schedule_on_exec_ctx);
   if (grpc_event_engine_run_in_background()) {
