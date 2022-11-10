@@ -16,6 +16,7 @@
  *
  */
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
@@ -30,6 +31,7 @@
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
+using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
@@ -97,10 +99,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     struct handshake_state state;
     state.done_callback_called = false;
-    auto handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>(
-        GetDefaultEventEngine());
+    auto handshake_mgr =
+        grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
     sc->add_handshakers(grpc_core::ChannelArgs(), nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint, grpc_core::ChannelArgs(),
+    grpc_core::ChannelArgs channel_args;
+    channel_args = channel_args.SetObject<EventEngine>(GetDefaultEventEngine());
+    handshake_mgr->DoHandshake(mock_endpoint, channel_args,
                                deadline, nullptr /* acceptor */,
                                on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();

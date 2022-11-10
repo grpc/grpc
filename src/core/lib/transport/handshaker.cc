@@ -60,11 +60,10 @@ std::string HandshakerArgsString(HandshakerArgs* args) {
 
 }  // namespace
 
-HandshakeManager::HandshakeManager(std::shared_ptr<EventEngine> event_engine)
+HandshakeManager::HandshakeManager()
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)
                      ? "HandshakeManager"
-                     : nullptr),
-      event_engine_(event_engine) {}
+                     : nullptr) {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
@@ -191,6 +190,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
       grpc_slice_buffer_swap(args_.read_buffer,
                              &(acceptor->pending_data->data.raw.slice_buffer));
     }
+    event_engine_ = args_.args.GetObjectRef<EventEngine>();
     // Initialize state needed for calling handshakers.
     acceptor_ = acceptor;
     GRPC_CLOSURE_INIT(&call_next_handshaker_,

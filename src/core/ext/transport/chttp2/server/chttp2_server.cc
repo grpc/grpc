@@ -39,7 +39,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -94,8 +93,6 @@
 
 namespace grpc_core {
 namespace {
-
-using ::grpc_event_engine::experimental::EventEngine;
 
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
@@ -374,8 +371,7 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
     : connection_(std::move(connection_ref)),
       accepting_pollset_(accepting_pollset),
       acceptor_(acceptor),
-      handshake_mgr_(
-          MakeRefCounted<HandshakeManager>(args.GetObjectRef<EventEngine>())),
+      handshake_mgr_(MakeRefCounted<HandshakeManager>()),
       deadline_(GetConnectionDeadline(args)),
       interested_parties_(grpc_pollset_set_create()) {
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);

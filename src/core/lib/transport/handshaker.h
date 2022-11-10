@@ -100,9 +100,7 @@ class Handshaker : public RefCounted<Handshaker> {
 
 class HandshakeManager : public RefCounted<HandshakeManager> {
  public:
-  explicit HandshakeManager(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+  HandshakeManager();
   ~HandshakeManager() override;
 
   /// Adds a handshaker to the handshake manager.
@@ -158,7 +156,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   grpc_closure on_handshake_done_ ABSL_GUARDED_BY(mu_);
   // Handshaker args.
   HandshakerArgs args_ ABSL_GUARDED_BY(mu_);
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

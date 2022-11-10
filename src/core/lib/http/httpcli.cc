@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice_buffer.h>
@@ -56,8 +55,6 @@
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 namespace grpc_core {
-
-using ::grpc_event_engine::experimental::EventEngine;
 
 namespace {
 
@@ -345,8 +342,7 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   args = args.SetObject(std::move(sc))
              .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value());
   // Start the handshake
-  handshake_mgr_ =
-      MakeRefCounted<HandshakeManager>(args.GetObjectRef<EventEngine>());
+  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, args, pollset_set_, handshake_mgr_.get());
   Ref().release();  // ref held by pending handshake
