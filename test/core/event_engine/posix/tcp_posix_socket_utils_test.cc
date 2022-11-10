@@ -42,7 +42,6 @@
 #include <sys/un.h>
 #endif
 
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

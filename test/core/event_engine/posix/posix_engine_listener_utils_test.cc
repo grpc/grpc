@@ -33,7 +33,6 @@
 
 #include <ifaddrs.h>
 
-
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
