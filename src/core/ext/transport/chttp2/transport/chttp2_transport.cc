@@ -968,9 +968,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
-  // Discard the error from a previous goaway frame (if any)
-  if (!t->goaway_error.ok()) {
-  }
   t->goaway_error = grpc_error_set_str(
       grpc_error_set_int(
           grpc_error_set_int(
