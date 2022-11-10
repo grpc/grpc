@@ -450,7 +450,6 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 }
 
 void BasicMemoryQuota::Take(size_t amount) {
-  // gpr_log(GPR_ERROR, "Call to Take\n");
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
   GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
