@@ -944,6 +944,7 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
         "absl/types:optional",
+        "absl/container:flat_hash_map",
     ],
     deps = [
         "activity",

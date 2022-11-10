@@ -159,6 +159,10 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
     std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name)
     : memory_quota_(memory_quota), name_(std::move(name)) {
   memory_quota_->Take(taken_bytes_);
+  allocator_id_ = memory_quota_->AddNewAllocator(this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Adding allocator %ld, %p\n", allocator_id_, this);
+  }
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
@@ -166,6 +170,10 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_);
+  memory_quota_->RemoveAllocator(allocator_id_, this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Removing allocator %ld, %p\n", allocator_id_, this);
+  }
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
@@ -192,10 +200,29 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);
     if (reservation.has_value()) {
+      if (is_big_.load(std::memory_order_relaxed) &&
+          free_bytes_.load(std::memory_order_relaxed) <
+              kSmallAllocatorThreshold) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+          gpr_log(GPR_INFO, "Moving allocator %ld, %p to small\n",
+                  allocator_id_, this);
+        }
+        memory_quota_->MoveAllocatorBigToSmall(allocator_id_, this);
+        is_big_.store(false, std::memory_order_relaxed);
+      }
       return *reservation;
     }
     // If that failed, grab more from the quota and retry.
     Replenish();
+    if (!is_big_.load(std::memory_order_relaxed) &&
+        free_bytes_.load(std::memory_order_relaxed) > kBigAllocatorThreshold) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+        gpr_log(GPR_INFO, "Moving allocator %ld, %p to big\n", allocator_id_,
+                this);
+      }
+      memory_quota_->MoveAllocatorSmallToBig(allocator_id_, this);
+      is_big_.store(true, std::memory_order_relaxed);
+    }
   }
 }
 
@@ -305,6 +332,14 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
     p->registered_reclaimer_.store(false, std::memory_order_relaxed);
     // Figure out how many bytes we can return to the quota.
     size_t return_bytes = p->free_bytes_.exchange(0, std::memory_order_acq_rel);
+    if (p->is_big_.load(std::memory_order_relaxed)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+        gpr_log(GPR_INFO, "Moving allocator %ld, %p to small\n",
+                p->allocator_id_, p);
+      }
+      p->memory_quota_->MoveAllocatorBigToSmall(p->allocator_id_, p);
+      p->is_big_.store(false, std::memory_order_relaxed);
+    }
     if (return_bytes == 0) return;
     // Subtract that from our outstanding balance.
     p->taken_bytes_.fetch_sub(return_bytes);
@@ -417,6 +452,7 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 }
 
 void BasicMemoryQuota::Take(size_t amount) {
+  // gpr_log(GPR_ERROR, "Call to Take\n");
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
   GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
@@ -425,6 +461,21 @@ void BasicMemoryQuota::Take(size_t amount) {
   // If we push into overcommit, awake the reclaimer.
   if (prior >= 0 && prior < static_cast<intptr_t>(amount)) {
     if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
+  }
+
+  if(IsFreeLargeAllocatorEnabled()) {
+    GrpcMemoryAllocatorImpl* chosen_allocator = nullptr;
+    int shard_idx = rand() % allocators_[1].shards.size();
+    auto& shard = allocators_[1].shards[shard_idx];
+
+    if (shard.shard_mu.TryLock()) {
+      if (!shard.allocator_map.empty()) {
+        chosen_allocator = shard.allocator_map.begin()->second;
+      }
+      shard.shard_mu.Unlock();
+    }
+
+    if (chosen_allocator != nullptr) chosen_allocator->ReturnFree();
   }
 }
 
@@ -448,6 +499,82 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
 
 void BasicMemoryQuota::Return(size_t amount) {
   free_bytes_.fetch_add(amount, std::memory_order_relaxed);
+}
+
+uint64_t BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
+  uint64_t curr_id = curr_allocator_id_.fetch_add(1, std::memory_order_seq_cst);
+
+  AllocatorBucket::Shard& shard = allocators_[0].SelectShard(allocator);
+
+  shard.shard_mu.Lock();
+  shard.allocator_map.insert({curr_id, allocator});
+  shard.shard_mu.Unlock();
+
+  return curr_id;
+}
+
+void BasicMemoryQuota::RemoveAllocator(uint64_t id,
+                                       GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Removing allocator %ld, %p\n", allocator->allocator_id_,
+            allocator);
+  }
+
+  AllocatorBucket::Shard& small_shard = allocators_[0].SelectShard(allocator);
+  {
+    absl::MutexLock l(&small_shard.shard_mu);
+    if (small_shard.allocator_map.erase(id) == 1) {
+      return;
+    }
+  }
+
+  AllocatorBucket::Shard& big_shard = allocators_[1].SelectShard(allocator);
+
+  big_shard.shard_mu.Lock();
+  big_shard.allocator_map.erase(id);
+  big_shard.shard_mu.Unlock();
+}
+
+void BasicMemoryQuota::MoveAllocatorBigToSmall(
+    uint64_t id, GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Moving allocator %ld, %p to small",
+            allocator->allocator_id_, allocator);
+  }
+
+  AllocatorBucket::Shard& old_shard = allocators_[1].SelectShard(allocator);
+
+  {
+    absl::MutexLock l(&old_shard.shard_mu);
+    if (old_shard.allocator_map.erase(id) == 0) return;
+  }
+
+  AllocatorBucket::Shard& new_shard = allocators_[0].SelectShard(allocator);
+
+  new_shard.shard_mu.Lock();
+  new_shard.allocator_map.emplace(id, allocator);
+  new_shard.shard_mu.Unlock();
+}
+
+void BasicMemoryQuota::MoveAllocatorSmallToBig(
+    uint64_t id, GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Moving allocator %ld, %p to big",
+            allocator->allocator_id_, allocator);
+  }
+
+  AllocatorBucket::Shard& old_shard = allocators_[0].SelectShard(allocator);
+
+  {
+    absl::MutexLock l(&old_shard.shard_mu);
+    if (old_shard.allocator_map.erase(id) == 0) return;
+  }
+
+  AllocatorBucket::Shard& new_shard = allocators_[1].SelectShard(allocator);
+
+  new_shard.shard_mu.Lock();
+  new_shard.allocator_map.emplace(id, allocator);
+  new_shard.shard_mu.Unlock();
 }
 
 BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {

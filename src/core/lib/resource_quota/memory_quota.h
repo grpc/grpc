@@ -16,9 +16,9 @@
 #define GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <limits>
@@ -29,6 +29,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/container/flat_hash_map.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
@@ -42,11 +43,14 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
+#include "src/core/lib/resource_quota/trace.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
 class BasicMemoryQuota;
 class MemoryQuota;
+class GrpcMemoryAllocatorImpl;
 
 using grpc_event_engine::experimental::MemoryRequest;
 
@@ -307,6 +311,14 @@ class BasicMemoryQuota final
   void FinishReclamation(uint64_t token, Waker waker);
   // Return some memory to the quota.
   void Return(size_t amount);
+  // Add allocator to list of allocators in small bucket. Returns allocator id.
+  uint64_t AddNewAllocator(GrpcMemoryAllocatorImpl* allocator);
+  // Remove allocator from list of allocators.
+  void RemoveAllocator(uint64_t id, GrpcMemoryAllocatorImpl* allocator);
+  // Move allocator from big bucket to small bucket.
+  void MoveAllocatorBigToSmall(uint64_t id, GrpcMemoryAllocatorImpl* allocator);
+  // Move allocator from small bucket to big bucket.
+  void MoveAllocatorSmallToBig(uint64_t id, GrpcMemoryAllocatorImpl* allocator);
   // Instantaneous memory pressure approximation.
   PressureInfo GetPressureInfo();
   // Get a reclamation queue
@@ -319,6 +331,21 @@ class BasicMemoryQuota final
   friend class ReclamationSweep;
   class WaitForSweepPromise;
 
+  class AllocatorBucket {
+   public:
+    struct Shard {
+      absl::flat_hash_map<uint64_t, GrpcMemoryAllocatorImpl*> allocator_map;
+      absl::Mutex shard_mu;
+    };
+
+    Shard& SelectShard(void* key) {
+      const size_t hash = HashPointer(key, shards.size());
+      return shards[hash % shards.size()];
+    }
+
+    std::array<Shard, 16> shards;
+  };
+
   static constexpr intptr_t kInitialSize = std::numeric_limits<intptr_t>::max();
 
   // The amount of memory that's free in this quota.
@@ -327,9 +354,14 @@ class BasicMemoryQuota final
   std::atomic<intptr_t> free_bytes_{kInitialSize};
   // The total number of bytes in this quota.
   std::atomic<size_t> quota_size_{kInitialSize};
+  // Assign a unique ID to each allocator.
+  std::atomic<uint64_t> curr_allocator_id_{0};
 
   // Reclaimer queues.
   ReclaimerQueue reclaimers_[kNumReclamationPasses];
+  // List of all allocators sorted into 2 buckets, small (<1MB free bytes) and
+  // large (>1MB free bytes).
+  std::array<AllocatorBucket, 2> allocators_;
   // The reclaimer activity consumes reclaimers whenever we are in overcommit to
   // try and get back under memory limits.
   ActivityPtr reclaimer_activity_;
@@ -372,8 +404,44 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }
+    if (is_big_.load(std::memory_order_relaxed)) {
+      if (free_bytes_.load(std::memory_order_relaxed) <
+          kSmallAllocatorThreshold) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+          gpr_log(GPR_INFO, "Moving allocator %ld, %p to small\n",
+                  allocator_id_, this);
+        }
+        memory_quota_->MoveAllocatorBigToSmall(allocator_id_, this);
+
+        is_big_.store(false, std::memory_order_relaxed);
+      }
+    } else {
+      if (free_bytes_.load(std::memory_order_relaxed) >
+          kBigAllocatorThreshold) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+          gpr_log(GPR_INFO, "Moving allocator %ld, %p to big\n", allocator_id_,
+                  this);
+        }
+        memory_quota_->MoveAllocatorSmallToBig(allocator_id_, this);
+        is_big_.store(true, std::memory_order_relaxed);
+      }
+    }
     if (prev_free != 0) return;
     MaybeRegisterReclaimer();
+  }
+
+  // Return all free bytes to quota.
+  void ReturnFree() {
+    size_t ret = free_bytes_.exchange(0, std::memory_order_acq_rel);
+    // if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Allocator %ld, %p returning %zu bytes to quota\n",
+            allocator_id_, this, ret);
+    // }
+    if (ret == 0) return;
+    memory_quota_->MoveAllocatorBigToSmall(allocator_id_, this);
+    is_big_.store(false, std::memory_order_relaxed);
+    taken_bytes_.fetch_sub(ret, std::memory_order_relaxed);
+    memory_quota_->Return(ret);
   }
 
   // Post a reclamation function.
@@ -395,8 +463,16 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Name of this allocator
   absl::string_view name() const { return name_; }
 
+  uint64_t allocator_id_;
+
  private:
   static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
+  // Minimum number of free bytes in order for allocator to move to big bucket.
+  static constexpr size_t kBigAllocatorThreshold = 0.5 * 1024 * 1024;
+  // Maximum number of free bytes in order for allocator to move to small
+  // bucket.
+  static constexpr size_t kSmallAllocatorThreshold = 0.1 * 1024 * 1024;
+
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
   // This function may be invoked during a memory release operation.
@@ -425,6 +501,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Amount of memory taken from the quota by this allocator.
   std::atomic<size_t> taken_bytes_{sizeof(GrpcMemoryAllocatorImpl)};
   std::atomic<bool> registered_reclaimer_{false};
+  // Whether this allocator is classified as big or small.
+  std::atomic<bool> is_big_{false};
   // We try to donate back some memory periodically to the central quota.
   PeriodicUpdate donate_back_{Duration::Seconds(10)};
   Mutex reclaimer_mu_;
@@ -434,6 +512,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   OrphanablePtr<ReclaimerQueue::Handle>
       reclamation_handles_[kNumReclamationPasses] ABSL_GUARDED_BY(
           reclaimer_mu_);
+
   // Name of this allocator.
   std::string name_;
 };
