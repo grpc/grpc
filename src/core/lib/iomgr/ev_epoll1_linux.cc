@@ -156,8 +156,6 @@ struct grpc_fd {
 
   /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
-
-  bool is_pre_allocated;
 };
 
 static void fd_global_init(void);
@@ -352,7 +350,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   new_fd->error_closure->InitEvent();
 
   new_fd->freelist_next = nullptr;
-  new_fd->is_pre_allocated = false;
 
   std::string fd_name = absl::StrCat(name, " fd=", fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name.c_str());
@@ -389,9 +386,7 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
                                  bool releasing_fd) {
   if (fd->read_closure->SetShutdown(why)) {
     if (!releasing_fd) {
-      if (!fd->is_pre_allocated) {
-        shutdown(fd->fd, SHUT_RDWR);
-      }
+      shutdown(fd->fd, SHUT_RDWR);
     } else {
       /* we need a phony event for earlier linux versions. */
       epoll_event phony_event;
@@ -425,9 +420,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   if (is_release_fd) {
     *release_fd = fd->fd;
   } else {
-    if (!fd->is_pre_allocated) {
-      close(fd->fd);
-    }
+    close(fd->fd);
   }
 
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
@@ -465,8 +458,6 @@ static void fd_become_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
 static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
 
 static void fd_has_errors(grpc_fd* fd) { fd->error_closure->SetReady(); }
-
-static void fd_set_pre_allocated(grpc_fd* fd) { fd->is_pre_allocated = true; }
 
 /*******************************************************************************
  * Pollset Definitions
@@ -1283,8 +1274,6 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
     shutdown_background_closure,
     /* shutdown_engine = */ []() {},
     add_closure_to_background_poller,
-
-    fd_set_pre_allocated,
 };
 
 /* Called by the child process's post-fork handler to close open fds, including
@@ -1370,7 +1359,6 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
     nullptr,
     /* name = */ "epoll1",
     /* check_engine_available = */ [](bool) { return false; },
-    nullptr,
     nullptr,
     nullptr,
     nullptr,
