@@ -3135,7 +3135,6 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:for_each",
-        "//src/core:error",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
         "//src/core:map_pipe",
