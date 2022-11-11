@@ -26,6 +26,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -36,6 +37,8 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -53,6 +56,8 @@ class PromiseEndpoint {
   ~PromiseEndpoint();
 
   auto Write(grpc_core::SliceBuffer data) {
+    grpc_core::MutexLock lock(&write_mutex_);
+
     /// Previous write result has not been polled.
     GPR_ASSERT(!write_result_.has_value());
 
@@ -60,11 +65,19 @@ class PromiseEndpoint {
     grpc_slice_buffer_swap(data.c_slice_buffer(),
                            write_buffer_.c_slice_buffer());
 
-    endpoint_->Write([this](absl::Status status) { write_result_ = status; },
-                     &write_buffer_, nullptr /* uses default arguments */);
+    const std::function<void(absl::Status)> write_callback =
+        [this](absl::Status status) {
+          grpc_core::MutexLock lock(&write_mutex_);
+          write_result_ = status;
+          write_waker_.Wakeup();
+        };
+    endpoint_->Write(write_callback, &write_buffer_,
+                     nullptr /* uses default arguments */);
 
     return [this]() -> grpc_core::Poll<absl::Status> {
+      grpc_core::MutexLock lock(&write_mutex_);
       if (!write_result_.has_value()) {
+        write_waker_ = grpc_core::Activity::current()->MakeNonOwningWaker();
         return grpc_core::Pending();
       } else {
         const auto ret = *write_result_;
@@ -75,6 +88,8 @@ class PromiseEndpoint {
   }
 
   auto Read(size_t num_bytes) {
+    grpc_core::MutexLock lock(&read_mutex_);
+
     /// Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
 
@@ -87,7 +102,10 @@ class PromiseEndpoint {
             if (!status.ok()) {
               pending_read_buffer_.Clear();
               temporary_read_buffer_.Clear();
+
+              grpc_core::MutexLock lock(&read_mutex_);
               read_result_ = status;
+              read_waker_.Wakeup();
             } else {
               while (temporary_read_buffer_.Count() > 0u) {
                 pending_read_buffer_.Append(temporary_read_buffer_.TakeFirst());
@@ -105,7 +123,9 @@ class PromiseEndpoint {
                       pending_read_buffer_.TakeFirst().c_slice());
                 }
 
+                grpc_core::MutexLock lock(&read_mutex_);
                 read_result_ = status;
+                read_waker_.Wakeup();
               }
             }
           };
@@ -118,7 +138,9 @@ class PromiseEndpoint {
 
     return [this, num_bytes]()
                -> grpc_core::Poll<absl::StatusOr<grpc_core::SliceBuffer>> {
+      grpc_core::MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
+        read_waker_ = grpc_core::Activity::current()->MakeNonOwningWaker();
         return grpc_core::Pending();
       } else if (!read_result_->ok()) {
         const absl::Status ret = *read_result_;
@@ -137,6 +159,8 @@ class PromiseEndpoint {
   }
 
   auto ReadSlice(size_t num_bytes) {
+    grpc_core::MutexLock lock(&read_mutex_);
+
     /// Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
 
@@ -151,7 +175,10 @@ class PromiseEndpoint {
             if (!status.ok()) {
               pending_read_buffer_.Clear();
               temporary_read_buffer_.Clear();
+
+              grpc_core::MutexLock lock(&read_mutex_);
               read_result_ = status;
+              read_waker_.Wakeup();
             } else {
               while (temporary_read_buffer_.Count() > 0u) {
                 pending_read_buffer_.Append(temporary_read_buffer_.TakeFirst());
@@ -169,7 +196,9 @@ class PromiseEndpoint {
                       pending_read_buffer_.TakeFirst().c_slice());
                 }
 
+                grpc_core::MutexLock lock(&read_mutex_);
                 read_result_ = status;
+                read_waker_.Wakeup();
               }
             }
           };
@@ -182,7 +211,9 @@ class PromiseEndpoint {
 
     return [this,
             num_bytes]() -> grpc_core::Poll<absl::StatusOr<grpc_core::Slice>> {
+      grpc_core::MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
+        read_waker_ = grpc_core::Activity::current()->MakeNonOwningWaker();
         return grpc_core::Pending();
       } else if (!read_result_->ok()) {
         const auto ret = *read_result_;
@@ -202,15 +233,19 @@ class PromiseEndpoint {
   }
 
   auto ReadByte() {
+    grpc_core::MutexLock lock(&read_mutex_);
+
     /// Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
 
     if (read_buffer_.Count() == 0u) {
       const std::function<void(absl::Status)> read_callback =
           [this](absl::Status status) {
+            grpc_core::MutexLock lock(&read_mutex_);
             if (!status.ok()) {
               pending_read_buffer_.Clear();
               temporary_read_buffer_.Clear();
+
               read_result_ = status;
             } else {
               while (temporary_read_buffer_.Count() > 0u) {
@@ -221,6 +256,7 @@ class PromiseEndpoint {
 
               read_result_ = status;
             }
+            read_waker_.Wakeup();
           };
 
       temporary_read_buffer_.Clear();  /// may be redundant
@@ -230,7 +266,9 @@ class PromiseEndpoint {
     }
 
     return [this]() -> grpc_core::Poll<absl::StatusOr<uint8_t>> {
+      grpc_core::MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
+        read_waker_ = grpc_core::Activity::current()->MakeNonOwningWaker();
         return grpc_core::Pending();
       } else if (!read_result_->ok()) {
         const auto ret = *read_result_;
@@ -256,16 +294,18 @@ class PromiseEndpoint {
       endpoint_;
 
   /// data for writes
-  /// TODO: handle race condition
+  grpc_core::Mutex write_mutex_;
   grpc_event_engine::experimental::SliceBuffer write_buffer_;
-  absl::optional<absl::Status> write_result_;
+  absl::optional<absl::Status> write_result_ ABSL_GUARDED_BY(write_mutex_);
+  grpc_core::Waker write_waker_ ABSL_GUARDED_BY(write_mutex_);
 
   /// data for reads
-  /// TODO: handle race condition
+  grpc_core::Mutex read_mutex_;
   grpc_core::SliceBuffer read_buffer_;
   grpc_event_engine::experimental::SliceBuffer pending_read_buffer_;
   grpc_event_engine::experimental::SliceBuffer temporary_read_buffer_;
-  absl::optional<absl::Status> read_result_;
+  absl::optional<absl::Status> read_result_ ABSL_GUARDED_BY(read_mutex_);
+  grpc_core::Waker read_waker_ ABSL_GUARDED_BY(read_mutex_);
 };
 
 }  // namespace internal

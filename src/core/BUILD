@@ -5432,6 +5432,7 @@ grpc_cc_library(
         "lib/transport/promise_endpoint.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -5441,6 +5442,7 @@ grpc_cc_library(
         "lib/transport/promise_endpoint.h",
     ],
     deps = [
+        "activity",
         "event_engine_common",
         "poll",
         "slice",
