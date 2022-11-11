@@ -801,8 +801,10 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["lib/promise/for_each.h"],
     deps = [
+        "construct_destruct",
         "poll",
         "promise_factory",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
