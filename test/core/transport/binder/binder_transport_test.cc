@@ -192,8 +192,9 @@ class MetadataEncoder {
   template <typename Which>
   void Encode(Which, const typename Which::ValueType& value) {
     metadata_.emplace_back(
-        std::string{Which::key()},
-        std::string{grpc_core::Slice(Which::Encode(value)).as_string_view()});
+        std::string(Which::key()),
+        // NOLINTNEXTLINE(google-readability-casting)
+        std::string(grpc_core::Slice(Which::Encode(value)).as_string_view()));
   }
 
   const Metadata& metadata() const { return metadata_; }
