@@ -1094,7 +1094,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
   EchoResponse resp;
   req.mutable_param()->set_echo_metadata(true);
   req.set_message("Hello");
-  string expected_resp = "";
+  string expected_resp;
   auto writer = stub->RequestStream(&ctx, &resp);
   for (int i = 0; i < 10; i++) {
     EXPECT_TRUE(writer->Write(req));

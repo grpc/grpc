@@ -22,6 +22,7 @@ namespace grpc_core {
 // Avoids a build dependency cycle between grpc and grpc_base (and friends).
 extern void (*InitInternally)();
 extern void (*ShutdownInternally)();
+extern bool (*IsInitializedInternally)();
 
 class KeepsGrpcInitialized {
  public:

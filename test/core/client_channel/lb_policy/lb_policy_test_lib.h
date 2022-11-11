@@ -137,7 +137,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
 
       void RequestConnection() override {
-        MutexLock lock(&state_->mu_);
+        MutexLock lock(&state_->requested_connection_mu_);
         state_->requested_connection_ = true;
       }
 
@@ -168,7 +168,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // have requested a connection attempt since the last time this
     // method was called.
     bool ConnectionRequested() {
-      MutexLock lock(&mu_);
+      MutexLock lock(&requested_connection_mu_);
       return std::exchange(requested_connection_, false);
     }
 
@@ -182,8 +182,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
    private:
     Mutex mu_;
-    bool requested_connection_ ABSL_GUARDED_BY(&mu_) = false;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(&mu_);
+    Mutex requested_connection_mu_;
+    bool requested_connection_ ABSL_GUARDED_BY(&requested_connection_mu_) =
+        false;
   };
 
   // A fake helper to be passed to the LB policy.
@@ -193,7 +195,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     struct StateUpdate {
       grpc_connectivity_state state;
       absl::Status status;
-      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker;
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     };
 
     // Represents a re-resolution request from the LB policy.
@@ -225,9 +227,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                                work_serializer_);
     }
 
-    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>
-                         picker) override {
+    void UpdateState(
+        grpc_connectivity_state state, const absl::Status& status,
+        RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
       MutexLock lock(&mu_);
       queue_.push_back(StateUpdate{state, status, std::move(picker)});
     }
@@ -354,9 +356,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // not a state update; otherwise (if continue_predicate() tells us to
   // stop) returns true.
   bool WaitForStateUpdate(
-      std::function<
-          bool(grpc_connectivity_state, absl::Status,
-               std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>)>
+      std::function<bool(grpc_connectivity_state, absl::Status,
+                         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
           continue_predicate,
       SourceLocation location = SourceLocation()) {
     while (true) {
@@ -376,14 +377,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Expects that the LB policy has reported the specified connectivity
   // state to helper_.  Returns the picker from the state update.
-  std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> ExpectState(
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectState(
       grpc_connectivity_state expected_state,
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
-    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> final_picker;
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
     WaitForStateUpdate(
         [&](grpc_connectivity_state state, absl::Status status,
-            std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
+            RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
           EXPECT_EQ(state, expected_state)
               << "got " << ConnectivityStateName(state) << ", expected "
               << ConnectivityStateName(expected_state) << "\n"
@@ -400,12 +401,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Waits for the LB policy to get connected.
-  std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
-    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> final_picker;
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
     WaitForStateUpdate(
         [&](grpc_connectivity_state state, absl::Status status,
-            std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
+            RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
           if (state == GRPC_CHANNEL_CONNECTING) {
             EXPECT_TRUE(status.ok()) << status;
             ExpectPickQueued(picker.get(), location);

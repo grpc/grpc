@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
-#include <memory>
 #include <vector>
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \

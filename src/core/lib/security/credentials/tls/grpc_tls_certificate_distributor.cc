@@ -19,7 +19,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 
 #include <algorithm>
-#include <vector>
 
 #include "absl/status/status.h"
 

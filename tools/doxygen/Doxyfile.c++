@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.51.0-dev
+PROJECT_NUMBER         = 1.52.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1059,6 +1059,7 @@ include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
+include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h
 
 # This tag can be used to specify the character encoding of the source files

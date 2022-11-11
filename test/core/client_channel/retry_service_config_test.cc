@@ -16,8 +16,6 @@
 
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 
-#include <vector>
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
