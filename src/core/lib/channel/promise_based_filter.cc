@@ -546,7 +546,6 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
       state_ = State::kForwardedBatch;
       break;
     case State::kCancelledWhilstForwarding:
-    case State::kCancelledWhilstIdle:
     case State::kBatchCompletedButCancelled:
     case State::kForwardedBatch:
     case State::kForwardedBatchNoPipe:
@@ -555,6 +554,7 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
       abort();
+    case State::kCancelledWhilstIdle:
     case State::kCancelled:
       return;
   }
