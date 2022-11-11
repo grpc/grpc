@@ -4357,6 +4357,9 @@ grpc_cc_library(
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
+    ],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -4383,6 +4386,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:sockaddr_utils",
     ],
 )
 

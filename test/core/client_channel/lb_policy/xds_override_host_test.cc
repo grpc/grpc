@@ -14,6 +14,10 @@
 // limitations under the License.
 //
 
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
+
+#include <unordered_set>
+
 #include "gmock/gmock.h"
 
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
@@ -74,6 +78,76 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
       absl::InvalidArgumentError("Missing policy config"));
 }
 
+TEST_F(XdsOverrideHostTest, UseHostCookie) {
+  std::array<absl::string_view, 2> addresses = {"ipv4:127.0.0.1:441",
+                                                "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses,
+                                    MakeXdsOverrideHostConfig("round_robin")),
+                        policy_.get()),
+            absl::OkStatus());
+  for (absl::string_view address : addresses) {
+    auto subchannel = FindSubchannel({address});
+    ASSERT_TRUE(subchannel);
+    subchannel->ConnectionRequested();
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  }
+  WaitForConnected();
+  WaitForConnected();
+  auto picker = WaitForConnected();
+  std::unordered_set<std::string> picked;
+  for (size_t i = 0; i < addresses.size(); i++) {
+    auto pick = ExpectPickComplete(
+        picker.get(),
+        {{"Cookie",
+          "cookie1=1;global-session-cookie=<anaddress>; another-cookie=boop"}});
+    EXPECT_TRUE(pick.has_value());
+    picked.insert(*pick);
+  }
+  EXPECT_THAT(picked, ::testing::UnorderedElementsAreArray(addresses));
+}
+
+// Disabled tests act as TODOs to outline missing features
+TEST_F(XdsOverrideHostTest, DISABLED_CustomCookieName) {}
+
+TEST_F(XdsOverrideHostTest, DISABLED_CustomTTL) {}
+
+TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
+  // 1. We use pick_first as a child
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
+                                    MakeXdsOverrideHostConfig("round_robin")),
+                        policy_.get()),
+            absl::OkStatus());
+  ExpectConnectingUpdate();
+  EXPECT_NE(ExpectState(GRPC_CHANNEL_CONNECTING), nullptr);
+  EXPECT_NE(ExpectState(GRPC_CHANNEL_CONNECTING), nullptr);
+  // Ready up both subchannels
+  for (auto address : kAddresses) {
+    auto subchannel = FindSubchannel({address});
+    ASSERT_NE(subchannel, nullptr);
+    ASSERT_TRUE(subchannel->ConnectionRequested());
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  }
+  ASSERT_NE(WaitForConnected(), nullptr);
+  ASSERT_NE(ExpectState(GRPC_CHANNEL_READY), nullptr);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure child policy works
+  EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
+  // Check that the host is overridden
+  std::map<std::string, std::string> pick_arg{
+      {std::string(kOverrideHostHeaderName), "127.0.0.1:442"}};
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  pick_arg[std::string(kOverrideHostHeaderName)] = std::string("127.0.0.1:441");
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
+}
+
+TEST_F(XdsOverrideHostTest, DISABLED_OverridenHostFailure) {}
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

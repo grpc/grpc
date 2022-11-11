@@ -421,6 +421,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return address;
   }
 
+  static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
+      std::map<std::string, std::string> init = {}) {
+    return std::make_unique<FakeMetadata>(init);
+  }
+
   // Constructs an update containing a list of addresses.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,
@@ -556,9 +561,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
-      LoadBalancingPolicy::SubchannelPicker* picker) {
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<std::string, std::string>& metadata_map = {}) {
     ExecCtx exec_ctx;
-    FakeMetadata metadata({});
+    FakeMetadata metadata{metadata_map};
     FakeCallState call_state;
     return picker->Pick({"/service/method", &metadata, &call_state});
   }
@@ -578,8 +584,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // the result was something other than Complete.
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
+      const std::map<std::string, std::string>& metadata = {},
       SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker);
+    auto pick_result = DoPick(picker, metadata);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
