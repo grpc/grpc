@@ -24,6 +24,11 @@ cd $(dirname $0)/../..
 git_root=$(pwd)
 cd -
 
+# Recognized env variables that can be used as params.
+#  LOCAL_ONLY_MODE: if set (e.g. LOCAL_ONLY_MODE=true), script will only operate locally and it won't query artifact registry and won't upload to it.
+#  CHECK_MODE: if set, the script will check that all the .current_version files are up-to-date (used by sanity tests).
+#  SKIP_UPLOAD: if set, script won't push docker images it built to artifact registry.
+
 # How to configure docker before running this script for the first time:
 # Configure docker:
 # $ gcloud auth configure-docker us-docker.pkg.dev
@@ -54,6 +59,8 @@ ALL_DOCKERFILE_DIRS=(
   third_party/rake-compiler-dock/*/
 )
 
+CHECK_FAILED=""
+
 for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
 do
   # Generate image name based on Dockerfile checksum. That works well as long
@@ -71,8 +78,7 @@ do
 
   echo "Visiting ${DOCKERFILE_DIR}"
 
-  # SKIP_REMOTE controls whether artifact registry are going to be queried at all.
-  if [ "${SKIP_REMOTE}" == "" ]
+  if [ "${LOCAL_ONLY_MODE}" == "" ]
   then
     DOCKER_IMAGE_DIGEST_REMOTE=$(gcloud artifacts docker images describe "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" --format=json | jq -r '.image_summary.digest')
 
@@ -81,7 +87,21 @@ do
       # skip building the image if it already exists in the destination registry
       echo "Docker image ${DOCKER_IMAGE_NAME} already exists in artifact registry at the right version (tag ${DOCKER_IMAGE_TAG})."
 
-      # TODO: (sanity check) if remote check requested, check that the remote digest matches what's currently in the .current_version file.
+      VERSION_FILE_OUT_OF_DATE=""
+      grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}$" ${DOCKERFILE_DIR}.current_version >/dev/null || VERSION_FILE_OUT_OF_DATE="true"
+
+      if [ "${VERSION_FILE_OUT_OF_DATE}" == "" ]
+      then
+        echo "Version file for ${DOCKER_IMAGE_NAME} is in sync with info from artifact registry."
+        continue
+      fi
+
+      if [ "${CHECK_MODE}" != "" ]
+      then
+        echo "CHECK FAILED: Version file ${DOCKERFILE_DIR}.current_version is not in sync with info from artifact registry."
+        CHECK_FAILED=true
+        continue
+      fi
 
       # update info on what we consider to be the current version of the docker image (which will be used to run tests)
       # we consider the sha256 image digest info from the artifact registry to be the canonical one
@@ -90,21 +110,34 @@ do
       continue
     fi
 
-    # TODO: (sanity check) if remote check requested, fail here since not all images have been uploaded to artifact registry
+    if [ "${CHECK_MODE}" != "" ]
+    then
+      echo "CHECK FAILED: Docker image ${DOCKER_IMAGE_NAME} not found in artifact registry."
+      CHECK_FAILED=true
+      continue
+    fi
+
+  else
+    echo "Skipped querying artifact registry (running in local-only mode)."
   fi
 
   # if the .current_version file doesn't exist or it doesn't contain the right SHA checksum,
   # it is out of date and we will need to rebuild the docker image locally.
   LOCAL_BUILD_REQUIRED=""
-  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@sha256:.*" ${DOCKERFILE_DIR}.current_version >/dev/null && LOCAL_BUILD_REQUIRED=true
+  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@sha256:.*" ${DOCKERFILE_DIR}.current_version >/dev/null || LOCAL_BUILD_REQUIRED=true
 
-  if [ "${LOCAL_BUILD_REQUIRED}" != "" ]
+  if [ "${LOCAL_BUILD_REQUIRED}" == "" ]
   then
     echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
     continue
   fi
 
-  # TODO: (sanity check) if in check mode, fail here since the .current_version file is either missing or out of date
+  if [ "${CHECK_MODE}" != "" ]
+  then
+    echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed, but the ${DOCKERFILE_DIR}.current_version is not up to date."
+    CHECK_FAILED=true
+    continue
+  fi
 
   if [ "${TRANSFER_FROM_DOCKERHUB}" == "" ]
   then
@@ -127,12 +160,22 @@ do
   # update info on what we consider to be the current version of the docker image (which will be used to run tests)
   echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_LOCAL}" >${DOCKERFILE_DIR}.current_version
 
-  if [ "${SKIP_UPLOAD}" == "" ]
+  if [ "${SKIP_UPLOAD}" == "" ] && [ "${LOCAL_ONLY_MODE}" != "" ]
   then
     docker push ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
   fi
 done
 
-# TODO: extra sanity checks - check there are no extra current_version files (for which there isn't a corresponding Dockerfile)
+if [ "${CHECK_MODE}" != "" ]
+then
+  # TODO(jtattermusch): check there are no extra current_version files (for which there isn't a corresponding Dockerfile)
+  true
+fi
+
+if [ "${CHECK_FAILED}" != "" ]
+then
+  echo "ERROR: Some checks have failed."
+  exit 1
+fi
 
 echo "All done."
