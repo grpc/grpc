@@ -305,28 +305,17 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     std::set<SubchannelWrapper*> subchannels_;
   };
 
-  // A simple wrapper for ref-counting a picker from the child policy.
-  class RefCountedPicker : public RefCounted<RefCountedPicker> {
-   public:
-    explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-   private:
-    std::unique_ptr<SubchannelPicker> picker_;
-  };
-
   // A picker that wraps the picker from the child to perform outlier detection.
   class Picker : public SubchannelPicker {
    public:
     Picker(OutlierDetectionLb* outlier_detection_lb,
-           RefCountedPtr<RefCountedPicker> picker, bool counting_enabled);
+           RefCountedPtr<SubchannelPicker> picker, bool counting_enabled);
 
     PickResult Pick(PickArgs args) override;
 
    private:
     class SubchannelCallTracker;
-    RefCountedPtr<RefCountedPicker> picker_;
+    RefCountedPtr<SubchannelPicker> picker_;
     bool counting_enabled_;
   };
 
@@ -342,7 +331,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
@@ -396,7 +385,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   // Latest state and picker reported by the child policy.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
-  RefCountedPtr<RefCountedPicker> picker_;
+  RefCountedPtr<SubchannelPicker> picker_;
   std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
 };
@@ -490,7 +479,7 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
 //
 
 OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
-                                   RefCountedPtr<RefCountedPicker> picker,
+                                   RefCountedPtr<SubchannelPicker> picker,
                                    bool counting_enabled)
     : picker_(std::move(picker)), counting_enabled_(counting_enabled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
@@ -682,7 +671,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
     auto outlier_detection_picker =
-        std::make_unique<Picker>(this, picker_, config_->CountingEnabled());
+        MakeRefCounted<Picker>(this, picker_, config_->CountingEnabled());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
               "[outlier_detection_lb %p] updating connectivity: state=%s "
@@ -743,7 +732,7 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
 
 void OutlierDetectionLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (outlier_detection_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
@@ -755,8 +744,7 @@ void OutlierDetectionLb::Helper::UpdateState(
   // Save the state and picker.
   outlier_detection_policy_->state_ = state;
   outlier_detection_policy_->status_ = status;
-  outlier_detection_policy_->picker_ =
-      MakeRefCounted<RefCountedPicker>(std::move(picker));
+  outlier_detection_policy_->picker_ = std::move(picker);
   // Wrap the picker and return it to the channel.
   outlier_detection_policy_->MaybeUpdatePickerLocked();
 }
