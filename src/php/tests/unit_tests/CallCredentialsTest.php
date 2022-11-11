@@ -56,6 +56,7 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    
     public function tearDown(): void
     {
         unset($this->channel);
