@@ -67,6 +67,60 @@ TEST_F(XdsOverrideHostTest, DelegatesToChild) {
   EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
 }
 
+TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
+  ASSERT_NE(policy_, nullptr);
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
+  // 1. We use pick_first as a child
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig()),
+                        policy_.get()),
+            absl::OkStatus());
+  // Pick first will only request connection on a first child
+  ExpectConnectingUpdate();
+  auto subchannel =
+      FindSubchannel({kAddresses[0]},
+                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_NE(subchannel, nullptr);
+  ASSERT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  ExpectPickComplete(picker.get());
+
+  subchannel =
+      FindSubchannel({kAddresses[1]},
+                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_NE(subchannel, nullptr);
+  ASSERT_FALSE(subchannel->ConnectionRequested());
+  ExpectQueueEmpty();
+  // 2. Now we switch to a round-robin
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
+                                    MakeXdsOverrideHostConfig("round_robin")),
+                        policy_.get()),
+            absl::OkStatus());
+  for (absl::string_view address : kAddresses) {
+    auto subchannel = FindSubchannel({address});
+    ASSERT_NE(subchannel, nullptr);
+    ASSERT_TRUE(subchannel->ConnectionRequested());
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    picker = ExpectState(GRPC_CHANNEL_READY);
+    ASSERT_NE(picker, nullptr);
+    ExpectPickComplete(picker.get());
+  }
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  std::set<std::string> picked;
+  for (size_t i = 0; i < kAddresses.size(); i++) {
+    auto pick = ExpectPickComplete(picker.get());
+    ASSERT_TRUE(pick.has_value());
+    picked.insert(*pick);
+  }
+  EXPECT_THAT(picked, ::testing::UnorderedElementsAreArray(kAddresses));
+}
+
 TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
