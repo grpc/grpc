@@ -103,7 +103,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   Timestamps ts;
   ContextList::Execute(list, &ts, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
-    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), gpr_atm{1});
+    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), 1);
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
                                   reinterpret_cast<grpc_stream*>(s[i]),
                                   nullptr);
@@ -156,7 +156,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   }
   ContextList::Execute(list, nullptr, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
-    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), gpr_atm{1});
+    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), 1);
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
                                   reinterpret_cast<grpc_stream*>(s[i]),
                                   nullptr);

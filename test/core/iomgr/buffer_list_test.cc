@@ -52,7 +52,7 @@ TEST(BufferListTest, Testshutdownflusheslist) {
   }
   tb_list.Shutdown(nullptr, absl::OkStatus());
   for (auto i = 0; i < NUM_ELEM; i++) {
-    ASSERT_EQ(gpr_atm_acq_load(&verifier_called[i]), gpr_atm{1});
+    ASSERT_EQ(gpr_atm_acq_load(&verifier_called[i]), 1);
   }
 }
 
@@ -85,7 +85,7 @@ TEST(BufferListTest, Testverifiercalledonack) {
   gpr_atm_rel_store(&verifier_called, gpr_atm{0});
   tb_list.AddNewEntry(213, 0, &verifier_called);
   tb_list.ProcessTimestamp(&serr, nullptr, &tss);
-  ASSERT_EQ(gpr_atm_acq_load(&verifier_called), gpr_atm{1});
+  ASSERT_EQ(gpr_atm_acq_load(&verifier_called), 1);
   tb_list.Shutdown(nullptr, absl::OkStatus());
 }
 
@@ -105,7 +105,7 @@ TEST(BufferListTest, Testrepeatedshutdown) {
   gpr_atm_rel_store(&verifier_called, gpr_atm{0});
   tb_list.AddNewEntry(213, 0, &verifier_called);
   tb_list.ProcessTimestamp(&serr, nullptr, &tss);
-  ASSERT_EQ(gpr_atm_acq_load(&verifier_called), gpr_atm{1});
+  ASSERT_EQ(gpr_atm_acq_load(&verifier_called), 1);
   tb_list.Shutdown(nullptr, absl::OkStatus());
   tb_list.Shutdown(nullptr, absl::OkStatus());
   tb_list.Shutdown(nullptr, absl::OkStatus());

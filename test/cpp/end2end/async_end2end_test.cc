@@ -979,7 +979,7 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
             ToString(client_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(meta3.second,
             ToString(client_initial_metadata.find(meta3.first)->second));
-  EXPECT_GE(client_initial_metadata.size(), size_t{2});
+  EXPECT_GE(client_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
@@ -1023,7 +1023,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(size_t{2}, server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(5));
@@ -1066,7 +1066,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(size_t{2}, server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(3));
 
@@ -1126,7 +1126,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(size_t{2}, server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(5));
   cli_stream->Read(&recv_response, tag(6));
@@ -1184,7 +1184,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
             ToString(server_trailing_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_trailing_metadata.find(meta2.first)->second));
-  EXPECT_EQ(size_t{2}, server_trailing_metadata.size());
+  EXPECT_EQ(2, server_trailing_metadata.size());
 }
 
 TEST_P(AsyncEnd2endTest, MetadataRpc) {
@@ -1232,7 +1232,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(client_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(client_initial_metadata.find(meta2.first)->second));
-  EXPECT_GE(client_initial_metadata.size(), size_t{2});
+  EXPECT_GE(client_initial_metadata.size(), 2);
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
@@ -1243,7 +1243,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(server_initial_metadata.find(meta3.first)->second));
   EXPECT_EQ(meta4.second,
             ToString(server_initial_metadata.find(meta4.first)->second));
-  EXPECT_GE(server_initial_metadata.size(), size_t{2});
+  EXPECT_GE(server_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
   srv_ctx.AddTrailingMetadata(meta5.first, meta5.second);
@@ -1260,7 +1260,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(server_trailing_metadata.find(meta5.first)->second));
   EXPECT_EQ(meta6.second,
             ToString(server_trailing_metadata.find(meta6.first)->second));
-  EXPECT_GE(server_trailing_metadata.size(), size_t{2});
+  EXPECT_GE(server_trailing_metadata.size(), 2);
 }
 
 // Server uses AsyncNotifyWhenDone API to check for cancellation

@@ -334,7 +334,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   }
   // If this test allows resource exhaustion, expect that it actually sees some
   if (this->common_.AllowExhaustion()) {
-    EXPECT_GT(error_cnt, uint64_t{0});
+    EXPECT_GT(error_cnt, 0);
   }
 }
 

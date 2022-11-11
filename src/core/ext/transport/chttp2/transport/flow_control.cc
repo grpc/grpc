@@ -255,8 +255,7 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   //                                                                pressure
   const double kAnythingGoesPressure = 0.2;
   const double kAdjustedToBdpPressure = 0.5;
-  const double kAnythingGoesWindow =
-      std::max(static_cast<double>(1 << 24), bdp);
+  const double kAnythingGoesWindow = std::max(double{1 << 24}, bdp);
   if (memory_pressure < kAnythingGoesPressure) {
     return kAnythingGoesWindow;
   } else if (memory_pressure < kAdjustedToBdpPressure) {
