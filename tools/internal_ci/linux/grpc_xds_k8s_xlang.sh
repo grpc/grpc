@@ -110,10 +110,11 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
-  if [ "${TESTING_VERSION}" != "master" ]; then
-    echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
-    exit 0
-  fi
+# temporary commenting to test on kokoro  
+#  if [ "${TESTING_VERSION}" != "master" ]; then
+#    echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
+#    exit 1
+#  fi
 
   # Get the latest version
   source ${script_dir}/VERSION.sh
