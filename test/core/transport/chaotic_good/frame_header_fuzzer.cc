@@ -12,14 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "src/core/lib/surface/init_internally.h"
+#include "absl/status/statusor.h"
 
-namespace grpc_core {
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 
-void (*InitInternally)();
-void (*ShutdownInternally)();
-bool (*IsInitializedInternally)();
+bool squelch = false;
 
-}  // namespace grpc_core
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+  if (size != 64) return 0;
+  auto r = grpc_core::chaotic_good::FrameHeader::Parse(data);
+  if (!r.ok()) return 0;
+  uint8_t reserialized[64];
+  r->Serialize(reserialized);
+  // If it parses, we insist that the bytes reserialize to the same thing.
+  if (memcmp(data, reserialized, 64) != 0) abort();
+  return 0;
+}
