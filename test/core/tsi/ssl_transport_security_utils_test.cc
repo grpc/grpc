@@ -212,19 +212,15 @@ class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
       int client_ret = SSL_do_handshake(client);
       int client_err = SSL_get_error(client, client_ret);
       if (client_err != SSL_ERROR_NONE && client_err != SSL_ERROR_WANT_READ &&
-          client_err != SSL_ERROR_WANT_WRITE &&
-          client_err != SSL_ERROR_PENDING_TICKET) {
-        return absl::InternalError(
-            absl::StrCat("Client error:", SSL_error_description(client_err)));
+          client_err != SSL_ERROR_WANT_WRITE) {
+        return absl::InternalError(absl::StrCat("Client error:", client_err));
       }
 
       int server_ret = SSL_do_handshake(server);
       int server_err = SSL_get_error(server, server_ret);
       if (server_err != SSL_ERROR_NONE && server_err != SSL_ERROR_WANT_READ &&
-          server_err != SSL_ERROR_WANT_WRITE &&
-          server_err != SSL_ERROR_PENDING_TICKET) {
-        return absl::InternalError(
-            absl::StrCat("Server error:", SSL_error_description(server_err)));
+          server_err != SSL_ERROR_WANT_WRITE) {
+        return absl::InternalError(absl::StrCat("Server error:", server_err));
       }
       if (client_ret == 1 && server_ret == 1) {
         break;
