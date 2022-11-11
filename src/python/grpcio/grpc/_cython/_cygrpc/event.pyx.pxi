@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef class ConnectivityEvent(BaseEvent):
+
+cdef class ConnectivityEvent:
 
   def __cinit__(
       self, grpc_completion_type completion_type, bint success, object tag):
@@ -21,7 +22,7 @@ cdef class ConnectivityEvent(BaseEvent):
     self.tag = tag
 
 
-cdef class RequestCallEvent(BaseEvent):
+cdef class RequestCallEvent:
 
   def __cinit__(
       self, grpc_completion_type completion_type, bint success, object tag,
@@ -34,7 +35,7 @@ cdef class RequestCallEvent(BaseEvent):
     self.invocation_metadata = invocation_metadata
 
 
-cdef class BatchOperationEvent(BaseEvent):
+cdef class BatchOperationEvent:
 
   def __cinit__(
       self, grpc_completion_type completion_type, bint success, object tag,
@@ -45,7 +46,7 @@ cdef class BatchOperationEvent(BaseEvent):
     self.batch_operations = batch_operations
 
 
-cdef class ServerShutdownEvent(BaseEvent):
+cdef class ServerShutdownEvent:
 
   def __cinit__(
       self, grpc_completion_type completion_type, bint success, object tag):

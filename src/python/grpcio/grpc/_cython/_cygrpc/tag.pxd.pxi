@@ -15,7 +15,7 @@
 
 cdef class _Tag:
 
-  cdef BaseEvent event(self, grpc_event c_event)
+  cdef object event(self, grpc_event c_event)
 
 
 cdef class _ConnectivityTag(_Tag):
