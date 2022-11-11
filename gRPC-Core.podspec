@@ -255,6 +255,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
                       'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
+                      'src/core/ext/filters/client_channel/lb_policy/session_affinity/session_affinity.cc',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',

@@ -740,6 +740,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_ring_hash",
         "//src/core:grpc_lb_policy_round_robin",
         "//src/core:grpc_lb_policy_weighted_target",
+        "//src/core:grpc_lb_policy_xds_override_host",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_message_size_filter",
         "//src/core:grpc_resolver_binder",

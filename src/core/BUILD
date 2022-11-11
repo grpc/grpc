@@ -4237,6 +4237,39 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_xds_override_host",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/xds_override_host/xds_override_host.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "env",
+        "grpc_lb_subchannel_list",
+        "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "pollset_set",
+        "subchannel_interface",
+        "//:config",
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:server_address",
+    ],
+)
+
+grpc_cc_library(
     name = "lb_server_load_reporting_filter",
     srcs = [
         "ext/filters/load_reporting/server_load_reporting_filter.cc",
