@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef GRPC_EVENT_ENGINE_PROMISE_ENDPOINT_H
-#define GRPC_EVENT_ENGINE_PROMISE_ENDPOINT_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
+#define GRPC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 #include <stdint.h>
 
+#include <functional>
 #include <memory>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -80,15 +82,36 @@ class PromiseEndpoint {
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
 
     if (read_buffer_.Count() < num_bytes) {
-      /// TODO: handle potential integer overflow
-      /// TODO: evaluate the lifespan of `read_args`
-      const struct grpc_event_engine::experimental::EventEngine::Endpoint::
-          ReadArgs read_args = {
-              static_cast<int64_t>(num_bytes - read_buffer_.Count())};
+      const std::function<void(absl::Status)> read_callback =
+          [this, num_bytes, &read_callback](absl::Status status) {
+            if (!status.ok()) {
+              pending_read_buffer_.Clear();
+              temporary_read_buffer_.Clear();
+              read_result_ = status;
+            } else {
+              while (temporary_read_buffer_.Count() > 0u) {
+                pending_read_buffer_.Append(temporary_read_buffer_.TakeFirst());
+              }
 
+              if (read_buffer_.Count() + pending_read_buffer_.Count() <
+                  num_bytes) {
+                /// A further read is needed.
+                endpoint_->Read(read_callback, &temporary_read_buffer_,
+                                nullptr /* uses default arguments */);
+              } else {
+                while (pending_read_buffer_.Count() > 0u) {
+                  grpc_slice_buffer_add(
+                      read_buffer_.c_slice_buffer(),
+                      pending_read_buffer_.TakeFirst().c_slice());
+                }
+
+                read_result_ = status;
+              }
+            }
+          };
       temporary_read_buffer_.Clear();  /// may be redundant
-      endpoint_->Read([this](absl::Status status) { read_result_ = status; },
-                      &temporary_read_buffer_, &read_args);
+      endpoint_->Read(read_callback, &temporary_read_buffer_,
+                      nullptr /* uses default arguments */);
     } else {
       read_result_ = absl::OkStatus();
     }
@@ -98,50 +121,11 @@ class PromiseEndpoint {
       if (!read_result_.has_value()) {
         return grpc_core::Pending();
       } else if (!read_result_->ok()) {
-        /// drops pending data
-        pending_read_buffer_.Clear();
-
         const absl::Status ret = *read_result_;
         read_result_.reset();
 
         return ret;
-      } else if (read_buffer_.Count() + pending_read_buffer_.Count() +
-                     temporary_read_buffer_.Count() <
-                 num_bytes) {
-        while (temporary_read_buffer_.Count() > 0u) {
-          pending_read_buffer_.Append(temporary_read_buffer_.TakeFirst());
-        }
-
-        read_result_.reset();
-
-        /// Makes another read request since the buffer does not have enough
-        /// data.
-        /// TODO: handle potential integer overflow
-        /// TODO: evaluate the lifespan of `read_args`
-        const struct grpc_event_engine::experimental::EventEngine::Endpoint::
-            ReadArgs read_args = {
-                static_cast<int64_t>(num_bytes - read_buffer_.Count() -
-                                     pending_read_buffer_.Count())};
-
-        temporary_read_buffer_.Clear();  /// may be redundant
-        endpoint_->Read([this](absl::Status status) { read_result_ = status; },
-                        &temporary_read_buffer_, &read_args);
-
-        /// TODO: It seems to be a bad idea to make subsequent read requests
-        /// only on polling. I would assume this would be a rare case given that
-        /// the `read_hint_bytes` should take some effect.
-        return grpc_core::Pending();
       } else {
-        while (pending_read_buffer_.Count() > 0u) {
-          grpc_slice_buffer_add(read_buffer_.c_slice_buffer(),
-                                pending_read_buffer_.TakeFirst().c_slice());
-        }
-
-        while (temporary_read_buffer_.Count() > 0u) {
-          grpc_slice_buffer_add(read_buffer_.c_slice_buffer(),
-                                temporary_read_buffer_.TakeFirst().c_slice());
-        }
-
         grpc_core::SliceBuffer ret;
         grpc_slice_buffer_move_first(read_buffer_.c_slice_buffer(), num_bytes,
                                      ret.c_slice_buffer());
@@ -156,20 +140,48 @@ class PromiseEndpoint {
     /// Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
 
-    if (read_buffer_.Count() == 0u) {
+    if (read_buffer_.Count() < num_bytes) {
       /// TODO: handle potential integer overflow
       /// TODO: evaluate the lifespan of `read_args`
       const struct grpc_event_engine::experimental::EventEngine::Endpoint::
           ReadArgs read_args = {static_cast<int64_t>(num_bytes)};
 
+      const std::function<void(absl::Status)> read_callback =
+          [this, num_bytes, read_args, &read_callback](absl::Status status) {
+            if (!status.ok()) {
+              pending_read_buffer_.Clear();
+              temporary_read_buffer_.Clear();
+              read_result_ = status;
+            } else {
+              while (temporary_read_buffer_.Count() > 0u) {
+                pending_read_buffer_.Append(temporary_read_buffer_.TakeFirst());
+              }
+
+              if (read_buffer_.Count() + pending_read_buffer_.Count() <
+                  num_bytes) {
+                /// A further read is needed.
+                endpoint_->Read(read_callback, &temporary_read_buffer_,
+                                &read_args);
+              } else {
+                while (pending_read_buffer_.Count() > 0u) {
+                  grpc_slice_buffer_add(
+                      read_buffer_.c_slice_buffer(),
+                      pending_read_buffer_.TakeFirst().c_slice());
+                }
+
+                read_result_ = status;
+              }
+            }
+          };
+
       temporary_read_buffer_.Clear();  /// may be redundant
-      endpoint_->Read([this](absl::Status status) { read_result_ = status; },
-                      &temporary_read_buffer_, &read_args);
+      endpoint_->Read(read_callback, &temporary_read_buffer_, &read_args);
     } else {
       read_result_ = absl::OkStatus();
     }
 
-    return [this]() -> grpc_core::Poll<absl::StatusOr<grpc_core::Slice>> {
+    return [this,
+            num_bytes]() -> grpc_core::Poll<absl::StatusOr<grpc_core::Slice>> {
       if (!read_result_.has_value()) {
         return grpc_core::Pending();
       } else if (!read_result_->ok()) {
@@ -177,14 +189,14 @@ class PromiseEndpoint {
         read_result_.reset();
 
         return ret;
-      } else {
-        while (temporary_read_buffer_.Count() > 0u) {
-          grpc_slice_buffer_add(read_buffer_.c_slice_buffer(),
-                                temporary_read_buffer_.TakeFirst().c_slice());
-        }
-
-        read_result_.reset();
+      } else if (read_buffer_.RefSlice(0).size() == num_bytes) {
         return read_buffer_.TakeFirst();
+      } else {
+        grpc_core::MutableSlice ret =
+            grpc_core::MutableSlice::CreateUninitialized(num_bytes);
+        read_buffer_.MoveFirstNBytesIntoBuffer(num_bytes, ret.data());
+
+        return grpc_core::Slice(std::move(ret));
       }
     };
   }
@@ -194,9 +206,25 @@ class PromiseEndpoint {
     GPR_ASSERT(!read_result_.has_value());
 
     if (read_buffer_.Count() == 0u) {
+      const std::function<void(absl::Status)> read_callback =
+          [this](absl::Status status) {
+            if (!status.ok()) {
+              pending_read_buffer_.Clear();
+              temporary_read_buffer_.Clear();
+              read_result_ = status;
+            } else {
+              while (temporary_read_buffer_.Count() > 0u) {
+                grpc_slice_buffer_add(
+                    read_buffer_.c_slice_buffer(),
+                    temporary_read_buffer_.TakeFirst().c_slice());
+              }
+
+              read_result_ = status;
+            }
+          };
+
       temporary_read_buffer_.Clear();  /// may be redundant
-      endpoint_->Read([this](absl::Status status) { read_result_ = status; },
-                      &temporary_read_buffer_, nullptr);
+      endpoint_->Read(read_callback, &temporary_read_buffer_, nullptr);
     } else {
       read_result_ = absl::OkStatus();
     }
@@ -210,11 +238,6 @@ class PromiseEndpoint {
 
         return ret;
       } else {
-        while (temporary_read_buffer_.Count() > 0u) {
-          grpc_slice_buffer_add(read_buffer_.c_slice_buffer(),
-                                temporary_read_buffer_.TakeFirst().c_slice());
-        }
-
         uint8_t ret = 0u;
         read_buffer_.MoveFirstNBytesIntoBuffer(1, &ret);
 
@@ -249,4 +272,4 @@ class PromiseEndpoint {
 
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
