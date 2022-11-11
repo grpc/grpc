@@ -360,7 +360,8 @@ class BasicMemoryQuota final
 
   // Reclaimer queues.
   ReclaimerQueue reclaimers_[kNumReclamationPasses];
-  // List of all allocators sorted into 2 buckets, small (<100 KB free bytes) and large (>500 KB free bytes).
+  // List of all allocators sorted into 2 buckets, small (<100 KB free bytes)
+  // and large (>500 KB free bytes).
   std::array<AllocatorBucket, 2> allocators_;
   // The reclaimer activity consumes reclaimers whenever we are in overcommit to
   // try and get back under memory limits.
@@ -408,7 +409,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
       if (free_bytes_.load(std::memory_order_relaxed) <
           kSmallAllocatorThreshold) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_INFO, "Moving allocator %ld, %p to small\n",
+          gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to small",
                   allocator_id_, this);
         }
         memory_quota_->MoveAllocatorBigToSmall(allocator_id_, this);
@@ -419,8 +420,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
       if (free_bytes_.load(std::memory_order_relaxed) >
           kBigAllocatorThreshold) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to big\n", allocator_id_,
-                  this);
+          gpr_log(GPR_INFO, "Moving allocator %" PRIu64 ", %p to big",
+                  allocator_id_, this);
         }
         memory_quota_->MoveAllocatorSmallToBig(allocator_id_, this);
         is_big_.store(true, std::memory_order_relaxed);
@@ -434,7 +435,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   void ReturnFree() {
     size_t ret = free_bytes_.exchange(0, std::memory_order_acq_rel);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "Allocator %" PRIu64 ", %p returning %zu bytes to quota\n",
+      gpr_log(GPR_INFO,
+              "Allocator %" PRIu64 ", %p returning %zu bytes to quota",
               allocator_id_, this, ret);
     }
     if (ret == 0) return;
