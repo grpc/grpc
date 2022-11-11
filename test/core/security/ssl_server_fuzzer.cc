@@ -101,9 +101,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     state.done_callback_called = false;
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-    sc->add_handshakers(grpc_core::ChannelArgs(), nullptr, handshake_mgr.get());
-    grpc_core::ChannelArgs channel_args;
-    channel_args = channel_args.SetObject<EventEngine>(GetDefaultEventEngine());
+    auto channel_args = grpc_core::ChannelArgs().SetObject<EventEngine>(
+        GetDefaultEventEngine());
+    sc->add_handshakers(channel_args, nullptr, handshake_mgr.get());
     handshake_mgr->DoHandshake(mock_endpoint, channel_args, deadline,
                                nullptr /* acceptor */, on_handshake_done,
                                &state);

@@ -190,7 +190,6 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
       grpc_slice_buffer_swap(args_.read_buffer,
                              &(acceptor->pending_data->data.raw.slice_buffer));
     }
-    event_engine_ = args_.args.GetObjectRef<EventEngine>();
     // Initialize state needed for calling handshakers.
     acceptor_ = acceptor;
     GRPC_CLOSURE_INIT(&call_next_handshaker_,
@@ -200,6 +199,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
                       grpc_schedule_on_exec_ctx);
     // Start deadline timer, which owns a ref.
     const Duration time_to_deadline = deadline - Timestamp::Now();
+    event_engine_ = args_.args.GetObjectRef<EventEngine>();
     deadline_timer_handle_ =
         event_engine_->RunAfter(time_to_deadline, [self = Ref()]() mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
