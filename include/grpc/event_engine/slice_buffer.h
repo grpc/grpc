@@ -22,9 +22,6 @@
 #include <cstdint>
 #include <string>
 
-#include "absl/strings/string_view.h"
-#include "absl/utility/utility.h"
-
 #include <grpc/event_engine/slice.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
@@ -51,7 +48,13 @@ namespace experimental {
 /// an experimental API.
 class SliceBuffer {
  public:
-  explicit SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
+  SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
+  // Transfers slices into this new SliceBuffer, leaving the parameter empty.
+  // Does not take ownership of the slice_buffer argument.
+  explicit SliceBuffer(grpc_slice_buffer* slice_buffer) {
+    grpc_slice_buffer_init(&slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, slice_buffer);
+  }
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
