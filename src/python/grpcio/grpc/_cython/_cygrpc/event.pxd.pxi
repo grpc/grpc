@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef class BaseEvent:
-  pass
 
-cdef class ConnectivityEvent(BaseEvent):
+cdef class ConnectivityEvent:
 
   cdef readonly grpc_completion_type completion_type
   cdef readonly bint success
   cdef readonly object tag
 
 
-cdef class RequestCallEvent(BaseEvent):
+cdef class RequestCallEvent:
 
   cdef readonly grpc_completion_type completion_type
   cdef readonly bint success
@@ -32,7 +30,7 @@ cdef class RequestCallEvent(BaseEvent):
   cdef readonly tuple invocation_metadata
 
 
-cdef class BatchOperationEvent(BaseEvent):
+cdef class BatchOperationEvent:
 
   cdef readonly grpc_completion_type completion_type
   cdef readonly bint success
@@ -40,7 +38,7 @@ cdef class BatchOperationEvent(BaseEvent):
   cdef readonly object batch_operations
 
 
-cdef class ServerShutdownEvent(BaseEvent):
+cdef class ServerShutdownEvent:
 
   cdef readonly grpc_completion_type completion_type
   cdef readonly bint success
