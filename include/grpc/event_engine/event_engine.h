@@ -400,7 +400,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
-  /// run. Unlike the overloaded \a Closure alternative, the absl::AnyInvocable
+  /// run. Unilke the overloaded \a Closure alternative, the absl::AnyInvocable
   /// version's \a closure will be deleted by the EventEngine after the closure
   /// has been run, or upon cancellation.
   ///
@@ -414,12 +414,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// If the associated closure has already been scheduled to run, it will not
   /// be cancelled, and this function will return false.
   ///
-  /// If the associated closure has not been scheduled to run, it will be
+  /// If the associated callback has not been scheduled to run, it will be
   /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
   /// be executed. In this case, Cancel will return true.
   ///
   /// Implementation note: closures should be destroyed in a timely manner after
-  /// execution or cancellation (milliseconds), since any state bound to the
+  /// execution or cancelliation (milliseconds), since any state bound to the
   /// closure may need to be destroyed for things to progress (e.g., if a
   /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
