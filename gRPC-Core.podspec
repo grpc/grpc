@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.51.0-dev'
+  version = '1.52.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1324,8 +1324,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/socket_utils_windows.cc',
                       'src/core/lib/iomgr/socket_windows.cc',
                       'src/core/lib/iomgr/socket_windows.h',
-                      'src/core/lib/iomgr/systemd_utils.cc',
-                      'src/core/lib/iomgr/systemd_utils.h',
                       'src/core/lib/iomgr/tcp_client.cc',
                       'src/core/lib/iomgr/tcp_client.h',
                       'src/core/lib/iomgr/tcp_client_cfstream.cc',
@@ -2349,7 +2347,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/socket_utils.h',
                               'src/core/lib/iomgr/socket_utils_posix.h',
                               'src/core/lib/iomgr/socket_windows.h',
-                              'src/core/lib/iomgr/systemd_utils.h',
                               'src/core/lib/iomgr/tcp_client.h',
                               'src/core/lib/iomgr/tcp_client_posix.h',
                               'src/core/lib/iomgr/tcp_posix.h',

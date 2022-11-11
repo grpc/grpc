@@ -75,11 +75,6 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
-config_setting(
-    name = "systemd",
-    values = {"define": "use_systemd=true"},
-)
-
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
@@ -156,11 +151,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "galaxy"  # @unused
+g_stands_for = "gribkoff"  # @unused
 
 core_version = "29.0.0"  # @unused
 
-version = "1.51.0-dev"  # @unused
+version = "1.52.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1203,7 +1198,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/socket_utils_linux.cc",
         "//src/core:lib/iomgr/socket_utils_posix.cc",
         "//src/core:lib/iomgr/socket_windows.cc",
-        "//src/core:lib/iomgr/systemd_utils.cc",
         "//src/core:lib/iomgr/tcp_client.cc",
         "//src/core:lib/iomgr/tcp_client_cfstream.cc",
         "//src/core:lib/iomgr/tcp_client_posix.cc",
@@ -1305,7 +1299,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/socket_factory_posix.h",
         "//src/core:lib/iomgr/socket_utils_posix.h",
         "//src/core:lib/iomgr/socket_windows.h",
-        "//src/core:lib/iomgr/systemd_utils.h",
         "//src/core:lib/iomgr/tcp_client.h",
         "//src/core:lib/iomgr/tcp_client_posix.h",
         "//src/core:lib/iomgr/tcp_posix.h",
@@ -1353,10 +1346,6 @@ grpc_cc_library(
         "//src/core:lib/channel/channel_args.h",
         "//src/core:lib/channel/channel_stack_builder.h",
     ],
-    defines = select({
-        "systemd": ["HAVE_LIBSYSTEMD"],
-        "//conditions:default": [],
-    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
@@ -1377,10 +1366,6 @@ grpc_cc_library(
         "madler_zlib",
     ],
     language = "c++",
-    linkopts = select({
-        "systemd": ["-lsystemd"],
-        "//conditions:default": [],
-    }),
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [

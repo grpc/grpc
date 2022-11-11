@@ -36,7 +36,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

@@ -149,7 +149,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    std::unique_ptr<SubchannelPicker> GetPicker();
+    RefCountedPtr<SubchannelPicker> GetPicker();
 
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
@@ -162,28 +162,6 @@ class PriorityLb : public LoadBalancingPolicy {
     bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
 
    private:
-    // A simple wrapper for ref-counting a picker from the child policy.
-    class RefCountedPicker : public RefCounted<RefCountedPicker> {
-     public:
-      explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-          : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-     private:
-      std::unique_ptr<SubchannelPicker> picker_;
-    };
-
-    // A non-ref-counted wrapper for RefCountedPicker.
-    class RefCountedPickerWrapper : public SubchannelPicker {
-     public:
-      explicit RefCountedPickerWrapper(RefCountedPtr<RefCountedPicker> picker)
-          : picker_(std::move(picker)) {}
-      PickResult Pick(PickArgs args) override { return picker_->Pick(args); }
-
-     private:
-      RefCountedPtr<RefCountedPicker> picker_;
-    };
-
     class Helper : public ChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ChildPriority> priority)
@@ -195,7 +173,7 @@ class PriorityLb : public LoadBalancingPolicy {
           ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
-                       std::unique_ptr<SubchannelPicker> picker) override;
+                       RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
       grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
@@ -244,7 +222,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
-        std::unique_ptr<SubchannelPicker> picker);
+        RefCountedPtr<SubchannelPicker> picker);
 
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
@@ -254,7 +232,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     absl::Status connectivity_status_;
-    RefCountedPtr<RefCountedPicker> picker_wrapper_;
+    RefCountedPtr<SubchannelPicker> picker_;
 
     bool seen_ready_or_idle_since_transient_failure_ = true;
 
@@ -422,7 +400,7 @@ void PriorityLb::ChoosePriorityLocked() {
         absl::UnavailableError("priority policy has empty priority list");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        std::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return;
   }
   // Iterate through priorities, searching for one in READY or IDLE,
@@ -681,17 +659,17 @@ void PriorityLb::ChildPriority::Orphan() {
   child_policy_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
-  picker_wrapper_.reset();
+  picker_.reset();
   Unref(DEBUG_LOCATION, "ChildPriority+Orphan");
 }
 
-std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>
+RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
 PriorityLb::ChildPriority::GetPicker() {
-  if (picker_wrapper_ == nullptr) {
-    return std::make_unique<QueuePicker>(
+  if (picker_ == nullptr) {
+    return MakeRefCounted<QueuePicker>(
         priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"));
   }
-  return std::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
+  return picker_;
 }
 
 absl::Status PriorityLb::ChildPriority::UpdateLocked(
@@ -760,7 +738,7 @@ void PriorityLb::ChildPriority::ResetBackoffLocked() {
 
 void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
             "[priority_lb %p] child %s (%p): state update: %s (%s) picker %p",
@@ -776,9 +754,7 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   // TRANSIENT_FAILURE, but we have no new picker to report.  In that case,
   // just keep using the old picker, in case we wind up delegating to this
   // child when all priorities are failing.
-  if (picker != nullptr) {
-    picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
-  }
+  if (picker != nullptr) picker_ = std::move(picker);
   // If we transition to state CONNECTING and we've not seen
   // TRANSIENT_FAILURE more recently than READY or IDLE, start failover
   // timer if not already pending.
@@ -833,7 +809,7 @@ PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
 
 void PriorityLb::ChildPriority::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (priority_->priority_policy_->shutting_down_) return;
   // Notify the priority.
   priority_->OnConnectivityStateUpdateLocked(state, status, std::move(picker));

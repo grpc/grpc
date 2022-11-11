@@ -125,8 +125,6 @@ struct grpc_fd {
 
   /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
-
-  bool is_pre_allocated;
 };
 
 /* True when GRPC_ENABLE_FORK_SUPPORT=1. */
@@ -386,7 +384,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   r->on_done_closure = nullptr;
   r->closed = 0;
   r->released = 0;
-  r->is_pre_allocated = false;
   gpr_atm_no_barrier_store(&r->pollhup, 0);
 
   std::string name2 = absl::StrCat(name, " fd=", fd);
@@ -441,9 +438,7 @@ static int has_watchers(grpc_fd* fd) {
 static void close_fd_locked(grpc_fd* fd) {
   fd->closed = 1;
   if (!fd->released) {
-    if (!fd->is_pre_allocated) {
-      close(fd->fd);
-    }
+    close(fd->fd);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure,
                           absl::OkStatus());
@@ -552,9 +547,7 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
     fd->shutdown = 1;
     fd->shutdown_error = why;
     /* signal read/write closed to OS so that future operations fail */
-    if (!fd->is_pre_allocated) {
-      shutdown(fd->fd, SHUT_RDWR);
-    }
+    shutdown(fd->fd, SHUT_RDWR);
     set_ready_locked(fd, &fd->read_closure);
     set_ready_locked(fd, &fd->write_closure);
   }
@@ -712,8 +705,6 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
 
   GRPC_FD_UNREF(fd, "poll");
 }
-
-static void fd_set_pre_allocated(grpc_fd* fd) { fd->is_pre_allocated = true; }
 
 /*******************************************************************************
  * pollset_posix.c
@@ -1414,8 +1405,6 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
     /* shutdown_engine = */ shutdown_background_closure,
     []() {},
     add_closure_to_background_poller,
-
-    fd_set_pre_allocated,
 };
 
 namespace {

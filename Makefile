@@ -411,8 +411,8 @@ Q = @
 endif
 
 CORE_VERSION = 29.0.0
-CPP_VERSION = 1.51.0-dev
-CSHARP_VERSION = 2.51.0-dev
+CPP_VERSION = 1.52.0-dev
+CSHARP_VERSION = 2.52.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1482,7 +1482,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/socket_utils_posix.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
-    src/core/lib/iomgr/systemd_utils.cc \
     src/core/lib/iomgr/tcp_client.cc \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
@@ -2001,7 +2000,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_posix.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
-    src/core/lib/iomgr/systemd_utils.cc \
     src/core/lib/iomgr/tcp_client.cc \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
