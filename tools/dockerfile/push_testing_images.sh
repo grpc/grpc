@@ -28,6 +28,7 @@ cd -
 #  LOCAL_ONLY_MODE: if set (e.g. LOCAL_ONLY_MODE=true), script will only operate locally and it won't query artifact registry and won't upload to it.
 #  CHECK_MODE: if set, the script will check that all the .current_version files are up-to-date (used by sanity tests).
 #  SKIP_UPLOAD: if set, script won't push docker images it built to artifact registry.
+#  TRANSFER_FROM_DOCKERHUB: if set, will attempt to grab docker images missing in artifact registry from dockerhub instead of building them from scratch locally.
 
 # How to configure docker before running this script for the first time:
 # Configure docker:
@@ -153,6 +154,7 @@ do
   else
     # TRANSFER_FROM_DOCKERHUB is a temporary feature that pulls the corresponding image from dockerhub instead
     # of building it from scratch locally. This should simplify the dockerhub -> artifact registry migration.
+    # TODO(jtattermusch): remove this feature in Q1 2023.
     DOCKERHUB_ORGANIZATION=grpctesting
     # pull image from dockerhub
     docker pull ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
