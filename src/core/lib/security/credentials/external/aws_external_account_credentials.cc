@@ -37,6 +37,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
@@ -46,6 +47,9 @@
 namespace grpc_core {
 
 namespace {
+
+const char* awsEc2MetadataIpv4Address = "169.254.169.254";
+const char* awsEc2MetadataIpv6Address = "fd00:ec2::254";
 
 const char* kExpectedEnvironmentId = "aws1";
 
@@ -71,6 +75,18 @@ std::string UrlEncode(const absl::string_view& s) {
     }
   }
   return result;
+}
+
+bool ValidateAwsUrl(const std::string& urlString) {
+  absl::StatusOr<grpc_core::URI> url = grpc_core::URI::Parse(urlString);
+  if (!url.ok()) return false;
+  absl::string_view host;
+  absl::string_view port;
+  grpc_core::SplitHostPort(url->authority(), &host, &port);
+  if (host == awsEc2MetadataIpv4Address || host == awsEc2MetadataIpv6Address) {
+    return true;
+  }
+  return false;
 }
 
 }  // namespace
@@ -115,10 +131,22 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
     return;
   }
   region_url_ = it->second.string_value();
+  if (!ValidateAwsUrl(region_url_)) {
+    *error = GRPC_ERROR_CREATE(absl::StrFormat(
+        "Invalid host for region_url field, expecting %s or %s.",
+        awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
+    return;
+  }
   it = options.credential_source.object_value().find("url");
   if (it != options.credential_source.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     url_ = it->second.string_value();
+    if (!ValidateAwsUrl(url_)) {
+      *error = GRPC_ERROR_CREATE(absl::StrFormat(
+          "Invalid host for url field, expecting %s or %s.",
+          awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
+      return;
+    }
   }
   it = options.credential_source.object_value().find(
       "regional_cred_verification_url");
@@ -138,6 +166,13 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   if (it != options.credential_source.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     imdsv2_session_token_url_ = it->second.string_value();
+    if (!ValidateAwsUrl(imdsv2_session_token_url_)) {
+      *error = GRPC_ERROR_CREATE(absl::StrFormat(
+          "Invalid host for imdsv2_session_token_url field, expecting %s or "
+          "%s.",
+          awsEc2MetadataIpv4Address, awsEc2MetadataIpv6Address));
+      return;
+    }
   }
 }
 
@@ -298,12 +333,6 @@ void AwsExternalAccountCredentials::OnRetrieveRegionInternal(
 
 void AwsExternalAccountCredentials::RetrieveRoleName() {
   absl::StatusOr<URI> uri = URI::Parse(url_);
-  if (!uri.ok()) {
-    FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE(
-                absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
-    return;
-  }
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
@@ -363,12 +392,6 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   }
   std::string url_with_role_name = absl::StrCat(url_, "/", role_name_);
   absl::StatusOr<URI> uri = URI::Parse(url_with_role_name);
-  if (!uri.ok()) {
-    FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE(absl::StrFormat("Invalid url with role name: %s.",
-                                              uri.status().ToString())));
-    return;
-  }
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
