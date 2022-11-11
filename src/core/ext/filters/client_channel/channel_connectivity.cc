@@ -32,6 +32,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -196,7 +197,9 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     WeakRef().release();  // Take a weak ref until completion is finished.
     grpc_error_handle error =
         timer_fired_
-            ? GRPC_ERROR_CREATE("Timed out waiting for connection state change")
+            ? GRPC_ERROR_BUILDER(
+                  kUnknown, "Timed out waiting for connection state change")
+                  .Build()
             : absl::OkStatus();
     grpc_cq_end_op(cq_, tag_, error, FinishedCompletion, this,
                    &completion_storage_);
