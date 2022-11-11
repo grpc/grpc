@@ -333,7 +333,7 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
         "", GRPC_ERROR_CREATE(
-                absl::StrFormat("Invalid url. %s", uri.status().ToString())));
+                absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
     return;
   }
   grpc_http_request request;
