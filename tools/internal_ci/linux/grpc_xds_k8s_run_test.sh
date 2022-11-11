@@ -16,9 +16,17 @@
 ## xDS test server/client Docker images
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 
+find_latest() {
+  (git ls-remote -t --refs https://github.com/grpc/$1.git | cut -f 2 | sed s#refs/tags/##) | sort -V | tail -n 1 | cut -f 1-2 -d. |sed s/^v//
+}
+
 if [ "${LATEST_BRANCH}" == "" ]; then
-  LATEST_BRANCH=v"$(echo $VERSION | cut -f 1-2 -d.)".x
+  java_last=$(find_latest grpc-java)
+  go_last=$(find_latest grpc-go)
+  core_last=$(find_latest grpc)
+  LATEST_BRANCH=v"$((echo $java_last; echo $go_last; echo $core_last) | sort -g | head -1)".x
 fi
+
 if [ "${OLDEST_BRANCH}" == "" ]; then
   OLDEST_BRANCH=v1.$(expr $(echo ${LATEST_BRANCH} | cut -f 2 -d.) - 9).x
 fi
