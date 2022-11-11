@@ -149,13 +149,13 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   grpc_closure call_next_handshaker_ ABSL_GUARDED_BY(mu_);
   // The acceptor to call the handshakers with.
   grpc_tcp_server_acceptor* acceptor_ ABSL_GUARDED_BY(mu_);
-  // Deadline timer across all handshakers.
-  grpc_event_engine::experimental::EventEngine::TaskHandle
-      deadline_timer_handle_ ABSL_GUARDED_BY(mu_);
   // The final callback and user_data to invoke after the last handshaker.
   grpc_closure on_handshake_done_ ABSL_GUARDED_BY(mu_);
   // Handshaker args.
   HandshakerArgs args_ ABSL_GUARDED_BY(mu_);
+  // Deadline timer across all handshakers.
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      deadline_timer_handle_ ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
       ABSL_GUARDED_BY(mu_);
 };
