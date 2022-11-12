@@ -258,7 +258,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (reresolution == nullptr) return absl::nullopt;
       ReresolutionRequested result = *reresolution;
       queue_.pop_front();
-      return std::move(result);
+      return result;
     }
 
    private:
