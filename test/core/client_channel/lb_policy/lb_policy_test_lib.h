@@ -441,17 +441,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // not a state update; otherwise (if continue_predicate() tells us to
   // stop) returns true.
   bool WaitForStateUpdate(
-      std::function<bool(grpc_connectivity_state, absl::Status,
-                         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
-          continue_predicate,
+      std::function<bool(FakeHelper::StateUpdate update)> continue_predicate,
       SourceLocation location = SourceLocation()) {
     while (true) {
       auto update = helper_->GetNextStateUpdate(location);
       if (!update.has_value()) return false;
-      if (!continue_predicate(update->state, std::move(update->status),
-                              std::move(update->picker))) {
-        return true;
-      }
+      if (!continue_predicate(std::move(*update))) return true;
     }
   }
 
@@ -476,26 +471,56 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Waits for the LB policy to get connected, then returns the final
-  // picker.
+  // picker.  There can be any number of CONNECTING updates, each of
+  // which must return a picker that queues picks, followed by one
+  // update for state READY, whose picker is returned.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
-    WaitForStateUpdate(
-        [&](grpc_connectivity_state state, absl::Status status,
-            RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-          if (state == GRPC_CHANNEL_CONNECTING) {
-            EXPECT_TRUE(status.ok()) << status << " at " << location.file()
-                                     << ":" << location.line();
-            ExpectPickQueued(picker.get(), location);
-            return true;  // Keep going.
-          }
-          EXPECT_EQ(state, GRPC_CHANNEL_READY)
-              << ConnectivityStateName(state) << " at " << location.file()
-              << ":" << location.line();
-          final_picker = std::move(picker);
-          return false;  // Stop.
-        });
+    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
+      if (update.state == GRPC_CHANNEL_CONNECTING) {
+        EXPECT_TRUE(update.status.ok())
+            << update.status << " at " << location.file() << ":"
+            << location.line();
+        ExpectPickQueued(update.picker.get(), location);
+        return true;  // Keep going.
+      }
+      EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
+          << ConnectivityStateName(update.state) << " at " << location.file()
+          << ":" << location.line();
+      final_picker = std::move(update.picker);
+      return false;  // Stop.
+    });
     return final_picker;
+  }
+
+  // Waits for the LB policy to fail a connection attempt.  There can be
+  // any number of CONNECTING updates, each of which must return a picker
+  // that queues picks, followed by one update for state TRANSIENT_FAILURE,
+  // whose status is passed to check_status() and whose picker must fail
+  // picks with a status that is passed to check_status().
+  // Returns true if the reported states match expectations.
+  bool WaitForConnectionFailed(
+      std::function<void(const absl::Status&)> check_status,
+      SourceLocation location = SourceLocation()) {
+    bool retval = false;
+    WaitForStateUpdate([&](FakeHelper::StateUpdate update) {
+      if (update.state == GRPC_CHANNEL_CONNECTING) {
+        EXPECT_TRUE(update.status.ok())
+            << update.status << " at " << location.file() << ":"
+            << location.line();
+        ExpectPickQueued(update.picker.get(), location);
+        return true;  // Keep going.
+      }
+      EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
+          << ConnectivityStateName(update.state) << " at " << location.file()
+          << ":" << location.line();
+      check_status(update.status);
+      ExpectPickFail(update.picker.get(), check_status, location);
+      retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+      return false;  // Stop.
+    });
+    return retval;
   }
 
   // Expects a state update for the specified state and status, and then
@@ -529,7 +554,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto pick_result = DoPick(picker);
     ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
-        << location.file() << ":" << location.line();
+        << PickResultString(pick_result) << " at " << location.file() << ":"
+        << location.line();
   }
 
   // Requests a pick on picker and expects a Complete result.
@@ -541,7 +567,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto pick_result = DoPick(picker);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
-    EXPECT_NE(complete, nullptr) << location.file() << ":" << location.line();
+    EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
+                                 << location.file() << ":" << location.line();
     if (complete == nullptr) return absl::nullopt;
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
@@ -556,8 +583,33 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto pick_result = DoPick(picker);
     auto* fail = absl::get_if<LoadBalancingPolicy::PickResult::Fail>(
         &pick_result.result);
-    ASSERT_NE(fail, nullptr) << location.file() << ":" << location.line();
+    ASSERT_NE(fail, nullptr) << PickResultString(pick_result) << " at "
+                             << location.file() << ":" << location.line();
     check_status(fail->status);
+  }
+
+  // Returns a human-readable string for a pick result.
+  static std::string PickResultString(
+      const LoadBalancingPolicy::PickResult& result) {
+    return Match(
+        result.result,
+        [](const LoadBalancingPolicy::PickResult::Complete& complete) {
+          auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
+              complete.subchannel.get());
+          return absl::StrFormat(
+              "COMPLETE{subchannel=%s, subchannel_call_tracker=%p}",
+              subchannel->state()->address(),
+              complete.subchannel_call_tracker.get());
+        },
+        [](const LoadBalancingPolicy::PickResult::Queue&) -> std::string {
+          return "QUEUE{}";
+        },
+        [](const LoadBalancingPolicy::PickResult::Fail& fail) -> std::string {
+          return absl::StrFormat("FAIL{%s}", fail.status.ToString());
+        },
+        [](const LoadBalancingPolicy::PickResult::Drop& drop) -> std::string {
+          return absl::StrFormat("FAIL{%s}", drop.status.ToString());
+        });
   }
 
   // Returns the entry in the subchannel pool, or null if not present.
