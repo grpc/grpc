@@ -281,8 +281,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address.address());
         GPR_ASSERT(address_uri.ok());
-        it =
-            test_->subchannel_pool_.emplace(key, std::move(*address_uri)).first;
+        it = test_->subchannel_pool_
+                 .emplace(std::piecewise_construct, std::forward_as_tuple(key),
+                          std::forward_as_tuple(std::move(*address_uri)))
+                 .first;
       }
       return it->second.CreateSubchannel(work_serializer_);
     }
@@ -575,7 +577,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   SubchannelState* CreateSubchannel(absl::string_view address,
                                     const ChannelArgs& args = ChannelArgs()) {
     SubchannelKey key(MakeAddress(address), args);
-    auto it = subchannel_pool_.emplace(key, address).first;
+    auto it = subchannel_pool_
+                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
+                           std::forward_as_tuple(address))
+                  .first;
     return &it->second;
   }
 
