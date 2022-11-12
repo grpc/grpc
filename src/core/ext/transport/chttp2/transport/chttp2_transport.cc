@@ -55,7 +55,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
@@ -128,6 +127,7 @@ static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
 static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
+grpc_core::TraceFlag grpc_http_trace(false, "http");
 grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
 grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
                                                          "chttp2_refcount");

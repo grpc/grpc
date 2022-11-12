@@ -131,9 +131,6 @@ class BitSet {
     return true;
   }
 
-  // Returns true if any bites are set.
-  bool any() const { return !none(); }
-
   // Return a count of how many bits are set.
   uint32_t count() const {
     uint32_t count = 0;
@@ -158,15 +155,6 @@ class BitSet {
     Int result = 0;
     for (size_t i = 0; i < kTotalBits; i++) {
       if (is_set(i)) result |= (Int(1) << i);
-    }
-    return result;
-  }
-
-  template <typename Int>
-  static BitSet<kTotalBits, kUnitBits> FromInt(Int value) {
-    BitSet<kTotalBits, kUnitBits> result;
-    for (size_t i = 0; i < kTotalBits; i++) {
-      result.set(i, (value & (Int(1) << i)) != 0);
     }
     return result;
   }

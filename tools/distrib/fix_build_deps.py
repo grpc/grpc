@@ -409,9 +409,7 @@ for dirname in [
         "test/core/util",
         "test/core/end2end",
         "test/core/event_engine",
-        "test/core/promise",
         "test/core/resource_quota",
-        "test/core/transport/chaotic_good",
 ]:
     parsing_path = dirname
     exec(

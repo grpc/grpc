@@ -262,8 +262,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http_trace.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
