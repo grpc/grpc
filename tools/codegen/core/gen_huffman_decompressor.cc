@@ -948,6 +948,8 @@ class TableBuilder {
     global_values->Add("};");
   }
 
+  // Try to create a simple function equivalent to a mapping implied by a set of
+  // values.
   template <typename T>
   static std::unique_ptr<Array> ArrayToFunction(const std::vector<T>& values,
                                                 bool recurse = true) {
