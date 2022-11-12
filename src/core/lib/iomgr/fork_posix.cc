@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/surface/init_internally.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -53,7 +54,7 @@ void grpc_prefork() {
   skipped_handler = true;
   // This  may be called after core shuts down, so verify initialized before
   // instantiating an ExecCtx.
-  if (!grpc_is_initialized()) {
+  if (!grpc_core::IsInitializedInternally()) {
     return;
   }
   grpc_core::ExecCtx exec_ctx;
