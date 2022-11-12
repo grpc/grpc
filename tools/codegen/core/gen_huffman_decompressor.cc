@@ -876,6 +876,30 @@ class TableBuilder {
     std::string ArrayName() override { abort(); }
   };
 
+  class ConstantArray : public Array {
+   public:
+    explicit ConstantArray(std::string value) : value_(std::move(value)) {}
+    std::string Index(absl::string_view index) override {
+      return absl::StrCat("((void)", index, ", ", value_, ")");
+    }
+    std::string ArrayName() override { abort(); }
+
+   private:
+    std::string value_;
+  };
+
+  class OffsetArray : public Array {
+   public:
+    explicit OffsetArray(int offset) : offset_(offset) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(value, " + ", offset_);
+    }
+    std::string ArrayName() override { abort(); }
+
+   private:
+    int offset_;
+  };
+
   // Helper to generate a compound table (an array of arrays)
   static void GenCompound(int id,
                           const std::vector<std::unique_ptr<Array>>& arrays,
@@ -900,6 +924,18 @@ class TableBuilder {
                                   Sink* global_decls,
                                   Sink* global_values) const {
     if (!force_array) {
+      // constant => k,k,k,k,...
+      bool is_constant = true;
+      for (size_t i = 1; i < values.size(); i++) {
+        if (values[i] != values[0]) {
+          is_constant = false;
+          break;
+        }
+      }
+      if (is_constant) {
+        return std::make_unique<ConstantArray>(absl::StrCat(values[0]));
+      }
+      // identity => 0,1,2,3,...
       bool is_identity = true;
       for (size_t i = 0; i < values.size(); i++) {
         if (values[i] != i) {
@@ -909,6 +945,17 @@ class TableBuilder {
       }
       if (is_identity) {
         return std::make_unique<IdentityArray>();
+      }
+      // offset => k,k+1,k+2,k+3,...
+      bool is_offset = true;
+      for (size_t i = 1; i < values.size(); i++) {
+        if (values[i] - values[0] != i) {
+          is_offset = false;
+          break;
+        }
+      }
+      if (is_offset) {
+        return std::make_unique<OffsetArray>(values[0]);
       }
     }
     auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
