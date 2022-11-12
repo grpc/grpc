@@ -46,14 +46,21 @@ struct Hash {
   bool operator<(const Hash& other) const {
     return memcmp(bytes, other.bytes, SHA256_DIGEST_LENGTH) < 0;
   }
+  std::string ToString() const {
+    std::string result;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+      absl::StrAppend(&result, absl::Hex(bytes[i], absl::kZeroPad2));
+    }
+    return result;
+  }
 };
 
 // Given a vector of ints (T), return a Hash object with the sha256
 template <typename T>
 Hash HashVec(const std::vector<T>& v) {
   Hash h;
-  SHA1(reinterpret_cast<const uint8_t*>(v.data()), v.size() * sizeof(T),
-       h.bytes);
+  SHA256(reinterpret_cast<const uint8_t*>(v.data()), v.size() * sizeof(T),
+         h.bytes);
   return h;
 }
 
