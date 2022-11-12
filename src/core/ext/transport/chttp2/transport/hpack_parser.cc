@@ -43,13 +43,19 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
+#include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
 
@@ -1308,3 +1314,69 @@ bool HPackParser::ParseInputInner(Input* input) {
 void HPackParser::FinishFrame() { metadata_buffer_ = nullptr; }
 
 }  // namespace grpc_core
+
+// TODO(ctiller): this serves as an eviction notice for the remainder of this
+// file... it belongs elsewhere!
+
+typedef void (*maybe_complete_func_type)(grpc_chttp2_transport* t,
+                                         grpc_chttp2_stream* s);
+static const maybe_complete_func_type maybe_complete_funcs[] = {
+    grpc_chttp2_maybe_complete_recv_initial_metadata,
+    grpc_chttp2_maybe_complete_recv_trailing_metadata};
+
+static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
+  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
+  grpc_chttp2_transport* t = s->t;
+  if (!s->write_closed) {
+    grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
+                                             &s->stats.outgoing);
+    grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM);
+    grpc_chttp2_mark_stream_closed(t, s, true, true, absl::OkStatus());
+  }
+  GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
+}
+
+grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
+                                                  grpc_chttp2_transport* t,
+                                                  grpc_chttp2_stream* s,
+                                                  const grpc_slice& slice,
+                                                  int is_last) {
+  auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
+  if (s != nullptr) {
+    s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
+  }
+  grpc_error_handle error = parser->Parse(slice, is_last != 0);
+  if (!error.ok()) {
+    return error;
+  }
+  if (is_last) {
+    /* need to check for null stream: this can occur if we receive an invalid
+       stream id on a header */
+    if (s != nullptr) {
+      if (parser->is_boundary()) {
+        if (s->header_frames_received == 2) {
+          return GRPC_ERROR_CREATE("Too many trailer frames");
+        }
+        s->published_metadata[s->header_frames_received] =
+            GRPC_METADATA_PUBLISHED_FROM_WIRE;
+        maybe_complete_funcs[s->header_frames_received](t, s);
+        s->header_frames_received++;
+      }
+      if (parser->is_eof()) {
+        if (t->is_client && !s->write_closed) {
+          /* server eof ==> complete closure; we may need to forcefully close
+             the stream. Wait until the combiner lock is ready to be released
+             however -- it might be that we receive a RST_STREAM following this
+             and can avoid the extra write */
+          GRPC_CHTTP2_STREAM_REF(s, "final_rst");
+          t->combiner->FinallyRun(
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
+              absl::OkStatus());
+        }
+        grpc_chttp2_mark_stream_closed(t, s, true, false, absl::OkStatus());
+      }
+    }
+    parser->FinishFrame();
+  }
+  return absl::OkStatus();
+}
