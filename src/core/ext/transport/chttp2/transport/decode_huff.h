@@ -46,9 +46,7 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit1(size_t, size_t emit) {
     return table1_0_emit_[emit];
   }
-  static inline uint64_t GetOp5(size_t i) {
-    return table5_0_inner_[table5_0_outer_[i]];
-  }
+  static inline uint64_t GetOp5(size_t i) { return table5_0_inner_[i]; }
   static inline uint64_t GetEmit5(size_t, size_t emit) {
     return table5_0_emit_[emit];
   }
@@ -108,57 +106,39 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit12(size_t, size_t emit) {
     return table12_0_emit_[emit];
   }
-  static inline uint64_t GetOp17(size_t i) {
-    return table17_0_inner_[table17_0_outer_[i]];
-  }
+  static inline uint64_t GetOp17(size_t i) { return table17_0_inner_[i]; }
   static inline uint64_t GetEmit17(size_t, size_t emit) {
     return table17_0_emit_[emit];
   }
-  static inline uint64_t GetOp18(size_t i) {
-    return table17_0_inner_[table17_0_outer_[i]];
-  }
+  static inline uint64_t GetOp18(size_t i) { return table17_0_inner_[i]; }
   static inline uint64_t GetEmit18(size_t, size_t emit) {
     return table18_0_emit_[emit];
   }
-  static inline uint64_t GetOp19(size_t i) {
-    return table17_0_inner_[table17_0_outer_[i]];
-  }
+  static inline uint64_t GetOp19(size_t i) { return table17_0_inner_[i]; }
   static inline uint64_t GetEmit19(size_t, size_t emit) {
     return table19_0_emit_[emit];
   }
-  static inline uint64_t GetOp20(size_t i) {
-    return table17_0_inner_[table17_0_outer_[i]];
-  }
+  static inline uint64_t GetOp20(size_t i) { return table17_0_inner_[i]; }
   static inline uint64_t GetEmit20(size_t, size_t emit) {
     return table20_0_emit_[emit];
   }
-  static inline uint64_t GetOp21(size_t i) {
-    return table17_0_inner_[table17_0_outer_[i]];
-  }
+  static inline uint64_t GetOp21(size_t i) { return table17_0_inner_[i]; }
   static inline uint64_t GetEmit21(size_t, size_t emit) {
     return table21_0_emit_[emit];
   }
-  static inline uint64_t GetOp22(size_t i) {
-    return table17_0_inner_[table17_0_outer_[i]];
-  }
+  static inline uint64_t GetOp22(size_t i) { return table17_0_inner_[i]; }
   static inline uint64_t GetEmit22(size_t, size_t emit) {
     return table22_0_emit_[emit];
   }
-  static inline uint64_t GetOp23(size_t i) {
-    return table5_0_inner_[table5_0_outer_[i]];
-  }
+  static inline uint64_t GetOp23(size_t i) { return table5_0_inner_[i]; }
   static inline uint64_t GetEmit23(size_t, size_t emit) {
     return table23_0_emit_[emit];
   }
-  static inline uint64_t GetOp24(size_t i) {
-    return table24_0_inner_[table24_0_outer_[i]];
-  }
+  static inline uint64_t GetOp24(size_t i) { return table24_0_inner_[i]; }
   static inline uint64_t GetEmit24(size_t, size_t emit) {
     return table24_0_emit_[emit];
   }
-  static inline uint64_t GetOp25(size_t i) {
-    return table25_0_inner_[table25_0_outer_[i]];
-  }
+  static inline uint64_t GetOp25(size_t i) { return table25_0_inner_[i]; }
   static inline uint64_t GetEmit25(size_t, size_t emit) {
     return table25_0_emit_[emit];
   }
@@ -174,15 +154,11 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit26(size_t, size_t emit) {
     return table26_0_emit_[emit];
   }
-  static inline uint64_t GetOp28(size_t i) {
-    return table28_0_inner_[table5_0_outer_[i]];
-  }
+  static inline uint64_t GetOp28(size_t i) { return table28_0_inner_[i]; }
   static inline uint64_t GetEmit28(size_t, size_t emit) {
     return table28_0_emit_[emit];
   }
-  static inline uint64_t GetOp30(size_t i) {
-    return table30_0_inner_[table24_0_outer_[i]];
-  }
+  static inline uint64_t GetOp30(size_t i) { return table30_0_inner_[i]; }
   static inline uint64_t GetEmit30(size_t, size_t emit) {
     return table30_0_emit_[emit];
   }
@@ -209,7 +185,6 @@ class HuffDecoderCommon {
   static const uint8_t table1_0_outer_[256];
   static const uint8_t table5_0_emit_[4];
   static const uint8_t table5_0_inner_[4];
-  static const uint8_t table5_0_outer_[4];
   static const uint8_t table7_0_emit_[1];
   static const uint8_t table7_0_inner_[3];
   static const uint8_t table7_0_outer_[4];
@@ -243,7 +218,6 @@ class HuffDecoderCommon {
   static const uint8_t table12_0_outer_[256];
   static const uint8_t table17_0_emit_[2];
   static const uint8_t table17_0_inner_[2];
-  static const uint8_t table17_0_outer_[2];
   static const uint8_t table18_0_emit_[2];
   static const uint8_t table19_0_emit_[2];
   static const uint8_t table20_0_emit_[2];
@@ -252,10 +226,8 @@ class HuffDecoderCommon {
   static const uint8_t table23_0_emit_[4];
   static const uint8_t table24_0_emit_[8];
   static const uint8_t table24_0_inner_[8];
-  static const uint8_t table24_0_outer_[8];
   static const uint8_t table25_0_emit_[16];
   static const uint8_t table25_0_inner_[16];
-  static const uint8_t table25_0_outer_[16];
   static const uint8_t table27_0_emit_[1];
   static const uint8_t table27_0_outer_[16];
   static const uint8_t table26_0_emit_[30];

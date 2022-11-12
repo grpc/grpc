@@ -17,6 +17,7 @@
 #include <fstream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <queue>
 #include <set>
@@ -686,27 +687,29 @@ class TableBuilder {
       std::vector<std::string> lines;
       const uint64_t max_inner = MaxInner();
       const uint64_t max_outer = MaxOuter();
-      std::vector<std::string> emit_names;
-      std::vector<std::string> inner_names;
-      std::vector<std::string> outer_names;
+      std::vector<std::unique_ptr<Array>> emit_names;
+      std::vector<std::unique_ptr<Array>> inner_names;
+      std::vector<std::unique_ptr<Array>> outer_names;
       for (size_t i = 0; i < slices.size(); i++) {
         emit_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-            slices[i].emit, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_emit"),
+            "uint8_t", slices[i].emit, true, global_decls, global_values));
         inner_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_inner"), TypeForMax(max_inner),
-            slices[i].inner, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_inner"),
+            TypeForMax(max_inner), slices[i].inner, true, global_decls,
+            global_values));
         outer_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_outer"), TypeForMax(max_outer),
-            slices[i].outer, false, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_outer"),
+            TypeForMax(max_outer), slices[i].outer, false, global_decls,
+            global_values));
       }
       if (slice_bits == 0) {
-        global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
-                                     "(size_t i) { return ", inner_names[0],
-                                     "[", outer_names[0], "[i]]; }"));
+        global_fns->Add(absl::StrCat(
+            "static inline uint64_t GetOp", id, "(size_t i) { return ",
+            inner_names[0]->Index(outer_names[0]->Index("i")), "; }"));
         global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
-                                     emit_names[0], "[emit]; }"));
+                                     emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
@@ -772,23 +775,24 @@ class TableBuilder {
       Sink* const global_values = builder->ctx_->global_values();
       uint64_t max_op = MaxOp();
       const int id = builder->id_;
-      std::vector<std::string> emit_names;
-      std::vector<std::string> ops_names;
+      std::vector<std::unique_ptr<Array>> emit_names;
+      std::vector<std::unique_ptr<Array>> ops_names;
       for (size_t i = 0; i < slices.size(); i++) {
         emit_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-            slices[i].emit, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_emit"),
+            "uint8_t", slices[i].emit, true, global_decls, global_values));
         ops_names.push_back(builder->GenArray(
-            absl::StrCat("table", id, "_", i, "_ops"), TypeForMax(max_op),
-            slices[i].ops, true, global_decls, global_values));
+            slice_bits != 0, absl::StrCat("table", id, "_", i, "_ops"),
+            TypeForMax(max_op), slices[i].ops, true, global_decls,
+            global_values));
       }
       if (slice_bits == 0) {
         global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
-                                     "(size_t i) { return ", ops_names[0],
-                                     "[i]; }"));
+                                     "(size_t i) { return ",
+                                     ops_names[0]->Index("i"), "; }"));
         global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
-                                     emit_names[0], "[emit]; }"));
+                                     emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
@@ -845,29 +849,71 @@ class TableBuilder {
     return table;
   }
 
+  class Array {
+   public:
+    virtual ~Array() = default;
+    virtual std::string Index(absl::string_view value) = 0;
+    virtual std::string ArrayName() = 0;
+  };
+
+  class NamedArray : public Array {
+   public:
+    explicit NamedArray(std::string name) : name_(std::move(name)) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(name_, "[", value, "]");
+    }
+    std::string ArrayName() override { return name_; }
+
+   private:
+    std::string name_;
+  };
+
+  class IdentityArray : public Array {
+   public:
+    std::string Index(absl::string_view value) override {
+      return std::string(value);
+    }
+    std::string ArrayName() override { abort(); }
+  };
+
   // Helper to generate a compound table (an array of arrays)
-  static void GenCompound(int id, std::vector<std::string> names,
+  static void GenCompound(int id,
+                          const std::vector<std::unique_ptr<Array>>& arrays,
                           std::string ext, std::string type, Sink* global_decls,
                           Sink* global_values) {
     global_decls->Add(absl::StrCat("static const ", type, "* const table", id,
-                                   "_", ext, "_[", names.size(), "];"));
+                                   "_", ext, "_[", arrays.size(), "];"));
     global_values->Add(absl::StrCat("const ", type,
                                     "* const HuffDecoderCommon::table", id, "_",
-                                    ext, "_[", names.size(), "] = {"));
-    for (const std::string& name : names) {
-      global_values->Add(absl::StrCat("  ", name, ","));
+                                    ext, "_[", arrays.size(), "] = {"));
+    for (const std::unique_ptr<Array>& array : arrays) {
+      global_values->Add(absl::StrCat("  ", array->ArrayName(), ","));
     }
     global_values->Add("};");
   }
 
   // Helper to generate an array of values
   template <typename T>
-  std::string GenArray(std::string name, std::string type,
-                       const std::vector<T>& values, bool hex,
-                       Sink* global_decls, Sink* global_values) const {
+  std::unique_ptr<Array> GenArray(bool force_array, std::string name,
+                                  std::string type,
+                                  const std::vector<T>& values, bool hex,
+                                  Sink* global_decls,
+                                  Sink* global_values) const {
+    if (!force_array) {
+      bool is_identity = true;
+      for (size_t i = 0; i < values.size(); i++) {
+        if (values[i] != i) {
+          is_identity = false;
+          break;
+        }
+      }
+      if (is_identity) {
+        return std::make_unique<IdentityArray>();
+      }
+    }
     auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
     if (previous_name.has_value()) {
-      return absl::StrCat(*previous_name, "_");
+      return std::make_unique<NamedArray>(absl::StrCat(*previous_name, "_"));
     }
     std::vector<std::string> elems;
     elems.reserve(values.size());
@@ -891,7 +937,7 @@ class TableBuilder {
                                     name, "_[", values.size(), "] = {"));
     global_values->Add(absl::StrCat("  ", data));
     global_values->Add("};");
-    return absl::StrCat(name, "_");
+    return std::make_unique<NamedArray>(absl::StrCat(name, "_"));
   }
 
   // Choose an encoding for this set of tables.
