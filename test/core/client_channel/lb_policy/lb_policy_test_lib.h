@@ -256,7 +256,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << "unexpected event " << EventString(event) << " at "
           << location.file() << ":" << location.line();
       if (reresolution == nullptr) return absl::nullopt;
-      ReresolutionRequested result = std::move(*reresolution);
+      ReresolutionRequested result = *reresolution;
       queue_.pop_front();
       return std::move(result);
     }
