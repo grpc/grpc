@@ -914,6 +914,24 @@ class TableBuilder {
     std::string value1_;
   };
 
+  class Composite2Array : public Array {
+   public:
+    Composite2Array(std::unique_ptr<Array> a, std::unique_ptr<Array> b,
+                    int split)
+        : a_(std::move(a)), b_(std::move(b)), split_(split) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(
+          "(", value, " < ", split_, " ? (", a_->Index(value), ") : (",
+          b_->Index(absl::StrCat("(", value, "-", split_, ")")), "))");
+    }
+    std::string ArrayName() override { abort(); }
+
+   private:
+    std::unique_ptr<Array> a_;
+    std::unique_ptr<Array> b_;
+    int split_;
+  };
+
   // Helper to generate a compound table (an array of arrays)
   static void GenCompound(int id,
                           const std::vector<std::unique_ptr<Array>>& arrays,
@@ -930,6 +948,62 @@ class TableBuilder {
     global_values->Add("};");
   }
 
+  template <typename T>
+  static std::unique_ptr<Array> ArrayToFunction(const std::vector<T>& values,
+                                                bool recurse = true) {
+    // constant => k,k,k,k,...
+    bool is_constant = true;
+    for (size_t i = 1; i < values.size(); i++) {
+      if (values[i] != values[0]) {
+        is_constant = false;
+        break;
+      }
+    }
+    if (is_constant) {
+      return std::make_unique<ConstantArray>(absl::StrCat(values[0]));
+    }
+    // identity => 0,1,2,3,...
+    bool is_identity = true;
+    for (size_t i = 0; i < values.size(); i++) {
+      if (values[i] != i) {
+        is_identity = false;
+        break;
+      }
+    }
+    if (is_identity) {
+      return std::make_unique<IdentityArray>();
+    }
+    // offset => k,k+1,k+2,k+3,...
+    bool is_offset = true;
+    for (size_t i = 1; i < values.size(); i++) {
+      if (values[i] - values[0] != i) {
+        is_offset = false;
+        break;
+      }
+    }
+    if (is_offset) {
+      return std::make_unique<OffsetArray>(values[0]);
+    }
+    // Two items can be resolved with a conditional
+    if (values.size() == 2) {
+      return std::make_unique<TwoElemArray>(absl::StrCat(values[0]),
+                                            absl::StrCat(values[1]));
+    }
+    if (recurse && values.size() >= 8) {
+      for (size_t i = 1; i < values.size() - 1; i++) {
+        std::vector<T> left(values.begin(), values.begin() + i);
+        std::vector<T> right(values.begin() + i, values.end());
+        std::unique_ptr<Array> left_array = ArrayToFunction(left, false);
+        std::unique_ptr<Array> right_array = ArrayToFunction(right, false);
+        if (left_array && right_array) {
+          return std::make_unique<Composite2Array>(std::move(left_array),
+                                                   std::move(right_array), i);
+        }
+      }
+    }
+    return nullptr;
+  }
+
   // Helper to generate an array of values
   template <typename T>
   std::unique_ptr<Array> GenArray(bool force_array, std::string name,
@@ -938,44 +1012,8 @@ class TableBuilder {
                                   Sink* global_decls,
                                   Sink* global_values) const {
     if (!force_array) {
-      // constant => k,k,k,k,...
-      bool is_constant = true;
-      for (size_t i = 1; i < values.size(); i++) {
-        if (values[i] != values[0]) {
-          is_constant = false;
-          break;
-        }
-      }
-      if (is_constant) {
-        return std::make_unique<ConstantArray>(absl::StrCat(values[0]));
-      }
-      // identity => 0,1,2,3,...
-      bool is_identity = true;
-      for (size_t i = 0; i < values.size(); i++) {
-        if (values[i] != i) {
-          is_identity = false;
-          break;
-        }
-      }
-      if (is_identity) {
-        return std::make_unique<IdentityArray>();
-      }
-      // offset => k,k+1,k+2,k+3,...
-      bool is_offset = true;
-      for (size_t i = 1; i < values.size(); i++) {
-        if (values[i] - values[0] != i) {
-          is_offset = false;
-          break;
-        }
-      }
-      if (is_offset) {
-        return std::make_unique<OffsetArray>(values[0]);
-      }
-      // Two items can be resolved with a conditional
-      if (values.size() == 2) {
-        return std::make_unique<TwoElemArray>(absl::StrCat(values[0]),
-                                              absl::StrCat(values[1]));
-      }
+      auto fn = ArrayToFunction(values);
+      if (fn != nullptr) return fn;
     }
     auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
     if (previous_name.has_value()) {

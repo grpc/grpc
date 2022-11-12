@@ -145,7 +145,7 @@ class HuffDecoderCommon {
     return ((void)emit, 254);
   }
   static inline uint64_t GetOp26(size_t i) {
-    return table26_0_inner_[table26_0_outer_[i]];
+    return table26_0_inner_[(i < 1 ? (((void)i, 0)) : ((i - 1)))];
   }
   static inline uint64_t GetEmit26(size_t, size_t emit) {
     return table26_0_emit_[emit];
@@ -219,7 +219,6 @@ class HuffDecoderCommon {
   static const uint8_t table27_0_outer_[16];
   static const uint8_t table26_0_emit_[30];
   static const uint16_t table26_0_inner_[31];
-  static const uint8_t table26_0_outer_[32];
   static const uint8_t table28_0_emit_[3];
   static const uint8_t table28_0_inner_[4];
   static const uint8_t table30_0_emit_[7];
