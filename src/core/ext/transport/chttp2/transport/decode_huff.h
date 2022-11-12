@@ -106,25 +106,25 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit12(size_t, size_t emit) {
     return table12_0_emit_[emit];
   }
-  static inline uint64_t GetOp17(size_t i) { return table17_0_inner_[i]; }
+  static inline uint64_t GetOp17(size_t i) { return i ? 3 : 1; }
   static inline uint64_t GetEmit17(size_t, size_t emit) {
-    return table17_0_emit_[emit];
+    return emit ? 142 : 9;
   }
-  static inline uint64_t GetOp18(size_t i) { return table17_0_inner_[i]; }
+  static inline uint64_t GetOp18(size_t i) { return i ? 3 : 1; }
   static inline uint64_t GetEmit18(size_t, size_t emit) { return emit + 144; }
-  static inline uint64_t GetOp19(size_t i) { return table17_0_inner_[i]; }
+  static inline uint64_t GetOp19(size_t i) { return i ? 3 : 1; }
   static inline uint64_t GetEmit19(size_t, size_t emit) {
-    return table19_0_emit_[emit];
+    return emit ? 159 : 148;
   }
-  static inline uint64_t GetOp20(size_t i) { return table17_0_inner_[i]; }
+  static inline uint64_t GetOp20(size_t i) { return i ? 3 : 1; }
   static inline uint64_t GetEmit20(size_t, size_t emit) {
-    return table20_0_emit_[emit];
+    return emit ? 206 : 171;
   }
-  static inline uint64_t GetOp21(size_t i) { return table17_0_inner_[i]; }
+  static inline uint64_t GetOp21(size_t i) { return i ? 3 : 1; }
   static inline uint64_t GetEmit21(size_t, size_t emit) {
-    return table21_0_emit_[emit];
+    return emit ? 225 : 215;
   }
-  static inline uint64_t GetOp22(size_t i) { return table17_0_inner_[i]; }
+  static inline uint64_t GetOp22(size_t i) { return i ? 3 : 1; }
   static inline uint64_t GetEmit22(size_t, size_t emit) { return emit + 236; }
   static inline uint64_t GetOp23(size_t i) { return table5_0_inner_[i]; }
   static inline uint64_t GetEmit23(size_t, size_t emit) {
@@ -211,11 +211,6 @@ class HuffDecoderCommon {
   static const uint8_t table12_0_emit_[79];
   static const uint16_t table12_0_inner_[90];
   static const uint8_t table12_0_outer_[256];
-  static const uint8_t table17_0_emit_[2];
-  static const uint8_t table17_0_inner_[2];
-  static const uint8_t table19_0_emit_[2];
-  static const uint8_t table20_0_emit_[2];
-  static const uint8_t table21_0_emit_[2];
   static const uint8_t table23_0_emit_[4];
   static const uint8_t table24_0_emit_[8];
   static const uint8_t table24_0_inner_[8];

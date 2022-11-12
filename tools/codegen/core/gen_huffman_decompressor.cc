@@ -900,6 +900,20 @@ class TableBuilder {
     int offset_;
   };
 
+  class TwoElemArray : public Array {
+   public:
+    TwoElemArray(std::string value0, std::string value1)
+        : value0_(std::move(value0)), value1_(std::move(value1)) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(value, " ? ", value1_, " : ", value0_);
+    }
+    std::string ArrayName() override { abort(); }
+
+   private:
+    std::string value0_;
+    std::string value1_;
+  };
+
   // Helper to generate a compound table (an array of arrays)
   static void GenCompound(int id,
                           const std::vector<std::unique_ptr<Array>>& arrays,
@@ -956,6 +970,11 @@ class TableBuilder {
       }
       if (is_offset) {
         return std::make_unique<OffsetArray>(values[0]);
+      }
+      // Two items can be resolved with a conditional
+      if (values.size() == 2) {
+        return std::make_unique<TwoElemArray>(absl::StrCat(values[0]),
+                                              absl::StrCat(values[1]));
       }
     }
     auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
