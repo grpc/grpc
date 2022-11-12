@@ -551,8 +551,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void ExpectPickFail(LoadBalancingPolicy::SubchannelPicker* picker,
                       std::function<void(const absl::Status&)> check_status,
                       SourceLocation location = SourceLocation()) {
-    auto pick_result = PerformPick(picker);
-    auto* fail = absl::get_id<LoadBalancingPolicy::PickResult::Fail>(
+    auto pick_result = DoPick(picker);
+    auto* fail = absl::get_if<LoadBalancingPolicy::PickResult::Fail>(
         &pick_result.result);
     ASSERT_NE(fail, nullptr) << location.file() << ":" << location.line();
     check_status(fail->status);
