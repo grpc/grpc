@@ -158,6 +158,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // will be reported to all associated SubchannelInterface objects.
     void SetConnectivityState(grpc_connectivity_state state,
                               const absl::Status& status = absl::OkStatus()) {
+      if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        EXPECT_FALSE(status.ok())
+            << "bug in test: TRANSIENT_FAILURE must have non-OK status";
+      } else {
+        EXPECT_TRUE(status.ok())
+            << "bug in test: " << ConnectivityStateName(state)
+            << " must have OK status: " << status;
+      }
       MutexLock lock(&mu_);
       state_tracker_.SetState(state, status, "set from test");
     }
