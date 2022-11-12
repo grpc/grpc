@@ -3331,7 +3331,8 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "gpr_public_hdrs",
+        "gpr",
+        "gpr_platform",
         "grpc_base",
         "grpc_trace",
         "http_trace",
@@ -3361,7 +3362,8 @@ grpc_cc_library(
     ],
     deps = [
         "chttp2_frame",
-        "gpr_public_hdrs",
+        "gpr",
+        "gpr_platform",
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
@@ -3389,7 +3391,8 @@ grpc_cc_library(
         "chttp2_bin_encoder",
         "chttp2_frame",
         "chttp2_varint",
-        "gpr_public_hdrs",
+        "gpr",
+        "gpr_platform",
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
@@ -3411,7 +3414,8 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/bin_encoder.h",
     ],
     deps = [
-        "gpr_public_hdrs",
+        "gpr",
+        "gpr_platform",
         "//src/core:huffsyms",
         "//src/core:slice",
     ],
@@ -3426,7 +3430,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/varint.h",
     ],
     external_deps = ["absl/base:core_headers"],
-    deps = ["gpr_public_hdrs"],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
