@@ -546,6 +546,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return subchannel->state()->address();
   }
 
+  // Requests a picker on picker and expects a Fail result.
+  // The failing status is passed to check_status.
+  void ExpectPickFail(LoadBalancingPolicy::SubchannelPicker* picker,
+                      std::function<void(const absl::Status&)> check_status,
+                      SourceLocation location = SourceLocation()) {
+    auto pick_result = PerformPick(picker);
+    auto* fail = absl::get_id<LoadBalancingPolicy::PickResult::Fail>(
+        &pick_result.result);
+    ASSERT_NE(fail, nullptr) << location.file() << ":" << location.line();
+    check_status(fail->status);
+  }
+
   // Returns the entry in the subchannel pool, or null if not present.
   SubchannelState* FindSubchannel(absl::string_view address,
                                   const ChannelArgs& args = ChannelArgs()) {
