@@ -278,16 +278,25 @@ const char aws_imdsv2_session_token[] = "imdsv2_session_token";
 
 const char valid_aws_external_account_creds_options_credential_source[] =
     "{\"environment_id\":\"aws1\","
-    "\"region_url\":\"https://foo.com:5555/region_url\","
-    "\"url\":\"https://foo.com:5555/url\","
+    "\"region_url\":\"https://169.254.169.254:5555/region_url\","
+    "\"url\":\"https://169.254.169.254:5555/url\","
     "\"regional_cred_verification_url\":\"https://foo.com:5555/"
     "regional_cred_verification_url_{region}\"}";
 
 const char valid_aws_imdsv2_external_account_creds_options_credential_source[] =
     "{\"environment_id\":\"aws1\","
-    "\"region_url\":\"https://foo.com:5555/region_url\","
-    "\"url\":\"https://foo.com:5555/url\","
-    "\"imdsv2_session_token_url\":\"https://foo.com:5555/"
+    "\"region_url\":\"http://169.254.169.254:5555/region_url\","
+    "\"url\":\"https://169.254.169.254:5555/url\","
+    "\"imdsv2_session_token_url\":\"https://169.254.169.254/"
+    "imdsv2_session_token_url\","
+    "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+    "regional_cred_verification_url_{region}\"}";
+
+const char valid_aws_external_account_creds_options_credential_source_ipv6[] =
+    "{\"environment_id\":\"aws1\","
+    "\"region_url\":\"https://[fd00:ec2::254]:5555/region_url\","
+    "\"url\":\"http://[fd00:ec2::254]:5555/url\","
+    "\"imdsv2_session_token_url\":\"https://[fd00:ec2::254]/"
     "imdsv2_session_token_url\","
     "\"regional_cred_verification_url\":\"https://foo.com:5555/"
     "regional_cred_verification_url_{region}\"}";
@@ -295,42 +304,52 @@ const char valid_aws_imdsv2_external_account_creds_options_credential_source[] =
 const char
     invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id
         [] = "{\"environment_id\":\"unsupported_aws_version\","
-             "\"region_url\":\"https://foo.com:5555/region_url\","
-             "\"url\":\"https://foo.com:5555/url\","
+             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
+             "\"url\":\"https://169.254.169.254:5555/url\","
              "\"regional_cred_verification_url\":\"https://foo.com:5555/"
              "regional_cred_verification_url_{region}\"}";
 
 const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_region_url
+    invalid_aws_external_account_creds_options_credential_source_invalid_region_url_host
         [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"invalid_region_url\","
-             "\"url\":\"https://foo.com:5555/url\","
+             "\"region_url\":\"https://fakeurl.com/url\","
+             "\"url\":\"https://169.254.169.254:5555/url\","
              "\"regional_cred_verification_url\":\"https://foo.com:5555/"
              "regional_cred_verification_url_{region}\"}";
 
 const char
-    invalid_aws_external_account_creds_options_credential_source_invalid_url[] =
-        "{\"environment_id\":\"aws1\","
-        "\"region_url\":\"https://foo.com:5555/region_url\","
-        "\"url\":\"invalid_url\","
-        "\"regional_cred_verification_url\":\"https://foo.com:5555/"
-        "regional_cred_verification_url_{region}\"}";
+    invalid_aws_external_account_creds_options_credential_source_invalid_url_host
+        [] = "{\"environment_id\":\"aws1\","
+             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
+             "\"url\":\"https://fake.com/url\","
+             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+             "regional_cred_verification_url_{region}\"}";
 
 const char
     invalid_aws_external_account_creds_options_credential_source_missing_role_name
         [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://foo.com:5555/region_url\","
-             "\"url\":\"https://foo.com:5555/url_no_role_name\","
+             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
+             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
              "\"regional_cred_verification_url\":\"https://foo.com:5555/"
              "regional_cred_verification_url_{region}\"}";
 
 const char
     invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url
         [] = "{\"environment_id\":\"aws1\","
-             "\"region_url\":\"https://foo.com:5555/region_url\","
-             "\"url\":\"https://foo.com:5555/url_no_role_name\","
+             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
+             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
              "\"regional_cred_verification_url\":\"invalid_regional_cred_"
              "verification_url\"}";
+
+const char
+    invalid_aws_external_account_creds_options_credential_source_invalid_imdsv2_url_host
+        [] = "{\"environment_id\":\"aws1\","
+             "\"region_url\":\"https://169.254.169.254:5555/region_url\","
+             "\"url\":\"https://169.254.169.254:5555/url\","
+             "\"imdsv2_session_token_url\":\"https://foo.com/"
+             "imdsv2_session_token_url\","
+             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+             "regional_cred_verification_url_{region}\"}";
 
 /*  -- Global state flags. -- */
 
@@ -3030,6 +3049,41 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
+  ExecCtx exec_ctx;
+  auto credential_source = Json::Parse(
+      valid_aws_external_account_creds_options_credential_source_ipv6);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(
+      aws_imdsv2_external_account_creds_httpcli_get_success,
+      aws_external_account_creds_httpcli_post_success,
+      aws_imdsv2_external_account_creds_httpcli_put_success);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   SetEnv("AWS_REGION", "test_regionz");
@@ -3344,78 +3398,6 @@ TEST(CredentialsTest,
   GPR_ASSERT(expected_error == actual_error);
 }
 
-TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
-  ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_region_url);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE("Invalid region url: invalid_region_url.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
-  auto state = RequestMetadataState::NewInstance(expected_error, {});
-  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
-                           aws_external_account_creds_httpcli_post_success,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
-TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
-  ExecCtx exec_ctx;
-  auto credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_url);
-  GPR_ASSERT(credential_source.ok());
-  ExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
-      "",                                 // service_account_impersonation_url;
-      "https://foo.com:5555/token",       // token_url;
-      "https://foo.com:5555/token_info",  // token_info_url;
-      *credential_source,                 // credential_source;
-      "quota_project_id",                 // quota_project_id;
-      "client_id",                        // client_id;
-      "client_secret",                    // client_secret;
-      "",                                 // workforce_pool_user_project;
-  };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE("Invalid url: invalid_url.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
-  auto state = RequestMetadataState::NewInstance(expected_error, {});
-  HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
-                           aws_external_account_creds_httpcli_post_success,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   ExecCtx exec_ctx;
   auto credential_source = Json::Parse(
@@ -3489,6 +3471,92 @@ TEST(CredentialsTest,
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrlHost) {
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_url_host);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds == nullptr);
+  std::string expected_error =
+      "Invalid host for url field, expecting 169.254.169.254 or fd00:ec2::254.";
+  std::string actual_error;
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
+  GPR_ASSERT(expected_error == actual_error);
+}
+
+TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrlHost) {
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_region_url_host);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds == nullptr);
+  std::string expected_error =
+      "Invalid host for region_url field, expecting 169.254.169.254 or "
+      "fd00:ec2::254.";
+  std::string actual_error;
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
+  GPR_ASSERT(expected_error == actual_error);
+}
+
+TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidImdsv2UrlHost) {
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_imdsv2_url_host);
+  GPR_ASSERT(credential_source.ok());
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds == nullptr);
+  std::string expected_error =
+      "Invalid host for imdsv2_session_token_url field, expecting "
+      "169.254.169.254 or fd00:ec2::254.";
+  std::string actual_error;
+  GPR_ASSERT(grpc_error_get_str(error, StatusStrProperty::kDescription,
+                                &actual_error));
+  GPR_ASSERT(expected_error == actual_error);
+}
+
 TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   // url credentials
   const char* url_options_string =
@@ -3529,8 +3597,9 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
       "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
       "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"environment_id\":\"aws1\","
-      "\"region_url\":\"https://foo.com:5555/region_url\",\"url\":\"https://"
-      "foo.com:5555/url\",\"regional_cred_verification_url\":\"https://"
+      "\"region_url\":\"https://169.254.169.254:5555/"
+      "region_url\",\"url\":\"https://"
+      "169.254.169.254:5555/url\",\"regional_cred_verification_url\":\"https://"
       "foo.com:5555/regional_cred_verification_url_{region}\"},"
       "\"quota_project_id\":\"quota_"
       "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
