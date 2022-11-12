@@ -854,6 +854,7 @@ class TableBuilder {
     virtual ~Array() = default;
     virtual std::string Index(absl::string_view value) = 0;
     virtual std::string ArrayName() = 0;
+    virtual int Cost() = 0;
   };
 
   class NamedArray : public Array {
@@ -863,6 +864,7 @@ class TableBuilder {
       return absl::StrCat(name_, "[", value, "]");
     }
     std::string ArrayName() override { return name_; }
+    int Cost() override { abort(); }
 
    private:
     std::string name_;
@@ -874,6 +876,7 @@ class TableBuilder {
       return std::string(value);
     }
     std::string ArrayName() override { abort(); }
+    int Cost() override { return 0; }
   };
 
   class ConstantArray : public Array {
@@ -883,6 +886,7 @@ class TableBuilder {
       return absl::StrCat("((void)", index, ", ", value_, ")");
     }
     std::string ArrayName() override { abort(); }
+    int Cost() override { return 0; }
 
    private:
     std::string value_;
@@ -895,6 +899,7 @@ class TableBuilder {
       return absl::StrCat(value, " + ", offset_);
     }
     std::string ArrayName() override { abort(); }
+    int Cost() override { return 10; }
 
    private:
     int offset_;
@@ -908,6 +913,7 @@ class TableBuilder {
       return absl::StrCat(value, "/", divisor_, " + ", offset_);
     }
     std::string ArrayName() override { abort(); }
+    int Cost() override { return 20 + (offset_ != 0 ? 10 : 0); }
 
    private:
     int offset_;
@@ -922,6 +928,7 @@ class TableBuilder {
       return absl::StrCat(value, " ? ", value1_, " : ", value0_);
     }
     std::string ArrayName() override { abort(); }
+    int Cost() override { return 40; }
 
    private:
     std::string value0_;
@@ -939,6 +946,7 @@ class TableBuilder {
           b_->Index(absl::StrCat("(", value, "-", split_, ")")), "))");
     }
     std::string ArrayName() override { abort(); }
+    int Cost() override { return 40 + a_->Cost() + b_->Cost(); }
 
    private:
     std::unique_ptr<Array> a_;
@@ -964,9 +972,16 @@ class TableBuilder {
 
   // Try to create a simple function equivalent to a mapping implied by a set of
   // values.
+  static const int kMaxArrayToFunctionRecursions = 3;
   template <typename T>
-  static std::unique_ptr<Array> ArrayToFunction(const std::vector<T>& values,
-                                                int recurse = 2) {
+  static std::unique_ptr<Array> ArrayToFunction(
+      const std::vector<T>& values,
+      int recurse = kMaxArrayToFunctionRecursions) {
+    std::unique_ptr<Array> best = nullptr;
+    auto note_solution = [&best](std::unique_ptr<Array> a) {
+      if (best != nullptr && best->Cost() <= a->Cost()) return;
+      best = std::move(a);
+    };
     // constant => k,k,k,k,...
     bool is_constant = true;
     for (size_t i = 1; i < values.size(); i++) {
@@ -976,7 +991,7 @@ class TableBuilder {
       }
     }
     if (is_constant) {
-      return std::make_unique<ConstantArray>(absl::StrCat(values[0]));
+      note_solution(std::make_unique<ConstantArray>(absl::StrCat(values[0])));
     }
     // identity => 0,1,2,3,...
     bool is_identity = true;
@@ -987,7 +1002,7 @@ class TableBuilder {
       }
     }
     if (is_identity) {
-      return std::make_unique<IdentityArray>();
+      note_solution(std::make_unique<IdentityArray>());
     }
     // offset => k,k+1,k+2,k+3,...
     bool is_offset = true;
@@ -998,7 +1013,7 @@ class TableBuilder {
       }
     }
     if (is_offset) {
-      return std::make_unique<OffsetArray>(values[0]);
+      note_solution(std::make_unique<OffsetArray>(values[0]));
     }
     // offset => k,k,k+1,k+1,...
     for (int d = 2; d < 32; d++) {
@@ -1010,15 +1025,16 @@ class TableBuilder {
         }
       }
       if (is_linear) {
-        return std::make_unique<LinearDivideArray>(values[0], d);
+        note_solution(std::make_unique<LinearDivideArray>(values[0], d));
       }
     }
     // Two items can be resolved with a conditional
     if (values.size() == 2) {
-      return std::make_unique<TwoElemArray>(absl::StrCat(values[0]),
-                                            absl::StrCat(values[1]));
+      note_solution(std::make_unique<TwoElemArray>(absl::StrCat(values[0]),
+                                                   absl::StrCat(values[1])));
     }
-    if ((recurse > 0 && values.size() >= 6) || (recurse == 2)) {
+    if ((recurse > 0 && values.size() >= 6) ||
+        (recurse == kMaxArrayToFunctionRecursions)) {
       for (size_t i = 1; i < values.size() - 1; i++) {
         std::vector<T> left(values.begin(), values.begin() + i);
         std::vector<T> right(values.begin() + i, values.end());
@@ -1026,12 +1042,12 @@ class TableBuilder {
         std::unique_ptr<Array> right_array =
             ArrayToFunction(right, recurse - 1);
         if (left_array && right_array) {
-          return std::make_unique<Composite2Array>(std::move(left_array),
-                                                   std::move(right_array), i);
+          note_solution(std::make_unique<Composite2Array>(
+              std::move(left_array), std::move(right_array), i));
         }
       }
     }
-    return nullptr;
+    return best;
   }
 
   // Helper to generate an array of values

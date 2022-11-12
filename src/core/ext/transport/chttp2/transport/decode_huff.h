@@ -42,9 +42,12 @@ class HuffDecoderCommon {
   }
   static inline uint64_t GetOp1(size_t i) {
     return table1_0_inner_[(
-        i < 182 ? ((i < 76 ? (i / 8 + 0) : ((i - 76) / 4 + 9)))
-                : (((i - 182) < 65 ? ((i - 182) / 2 + 35)
-                                   : (((i - 182) - 65) + 67))))];
+        i < 76
+            ? (i / 8 + 0)
+            : (((i - 76) < 106 ? ((i - 76) / 4 + 9)
+                               : ((((i - 76) - 106) < 65
+                                       ? (((i - 76) - 106) / 2 + 35)
+                                       : ((((i - 76) - 106) - 65) + 67))))))];
   }
   static inline uint64_t GetEmit1(size_t, size_t emit) {
     return table1_0_emit_[emit];
@@ -56,9 +59,9 @@ class HuffDecoderCommon {
     return (emit < 2 ? (emit + 33) : ((emit - 2) + 40));
   }
   static inline uint64_t GetOp7(size_t i) {
-    return ((i < 1 ? (((void)i, 0)) : ((i - 1) / 2 + 1)) < 1
-                ? (((void)(i < 1 ? (((void)i, 0)) : ((i - 1) / 2 + 1)), 2))
-                : (((i < 1 ? (((void)i, 0)) : ((i - 1) / 2 + 1)) - 1) ? 0 : 1));
+    return ((i < 2 ? (i) : ((i - 2) + 1)) < 1
+                ? (((void)(i < 2 ? (i) : ((i - 2) + 1)), 2))
+                : (((i < 2 ? (i) : ((i - 2) + 1)) - 1) ? 0 : 1));
   }
   static inline uint64_t GetEmit7(size_t, size_t emit) {
     return ((void)emit, 63);
@@ -91,9 +94,7 @@ class HuffDecoderCommon {
     return table6_emit_[i >> 6][emit];
   }
   static inline uint64_t GetOp13(size_t i) {
-    return table13_0_inner_[(
-        i < 1 ? (((void)i, 0))
-              : (((i - 1) < 2 ? ((i - 1) + 1) : (((i - 1) - 2) / 12 + 3))))];
+    return table13_0_inner_[(i < 3 ? (i) : ((i - 3) / 12 + 3))];
   }
   static inline uint64_t GetEmit13(size_t, size_t emit) {
     return (emit < 1 ? (((void)emit, 92)) : ((emit - 1) ? 208 : 195));
@@ -111,7 +112,14 @@ class HuffDecoderCommon {
     return table16_0_emit_[emit];
   }
   static inline uint64_t GetOp12(size_t i) {
-    return table12_0_inner_[table12_0_outer_[i]];
+    return table12_0_inner_[(
+        i < 40
+            ? (i / 16 + 0)
+            : (((i - 40) < 122 ? (((i - 40) < 68 ? ((i - 40) / 8 + 2)
+                                                 : (((i - 40) - 68) / 4 + 10)))
+                               : ((((i - 40) - 122) < 53
+                                       ? (((i - 40) - 122) / 2 + 23)
+                                       : ((((i - 40) - 122) - 53) + 49))))))];
   }
   static inline uint64_t GetEmit12(size_t, size_t emit) {
     return table12_0_emit_[emit];
@@ -163,7 +171,15 @@ class HuffDecoderCommon {
     return table26_0_inner_[(i < 1 ? (((void)i, 0)) : ((i - 1)))];
   }
   static inline uint64_t GetEmit26(size_t, size_t emit) {
-    return table26_0_emit_[emit];
+    return (
+        emit < 18
+            ? ((emit < 8 ? ((emit < 1 ? (((void)emit, 254)) : ((emit - 1) + 2)))
+                         : (((emit - 8) < 2 ? ((emit - 8) + 11)
+                                            : (((emit - 8) - 2) + 14)))))
+            : (((emit - 18) < 10
+                    ? (((emit - 18) < 8 ? ((emit - 18) + 23)
+                                        : (((emit - 18) - 8) ? 127 : 31)))
+                    : (((emit - 18) - 10) ? 249 : 220))));
   }
   static inline uint64_t GetOp28(size_t i) {
     return (i < 2 ? (i ? 10 : 2) : ((i - 2) ? 6 : 18));
@@ -176,9 +192,7 @@ class HuffDecoderCommon {
     return table30_0_emit_[emit];
   }
   static inline uint64_t GetOp29(size_t i) {
-    return table29_0_inner_[(
-        i < 2 ? (((void)i, 0))
-              : (((i - 2) < 11 ? ((i - 2) / 2 + 1) : (((i - 2) - 11) + 6))))];
+    return table29_0_inner_[(i < 13 ? (i / 2 + 0) : ((i - 13) + 6))];
   }
   static inline uint64_t GetEmit29(size_t, size_t emit) {
     return table29_0_emit_[emit];
@@ -220,12 +234,10 @@ class HuffDecoderCommon {
   static const uint8_t table16_0_ops_[128];
   static const uint8_t table12_0_emit_[79];
   static const uint16_t table12_0_inner_[90];
-  static const uint8_t table12_0_outer_[256];
   static const uint8_t table24_0_emit_[8];
   static const uint8_t table24_0_inner_[8];
   static const uint8_t table25_0_emit_[16];
   static const uint8_t table25_0_inner_[16];
-  static const uint8_t table26_0_emit_[30];
   static const uint16_t table26_0_inner_[31];
   static const uint8_t table30_0_emit_[7];
   static const uint8_t table30_0_inner_[8];
