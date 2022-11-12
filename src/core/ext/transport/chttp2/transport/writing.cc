@@ -32,6 +32,8 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
+
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"

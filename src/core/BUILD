@@ -4625,6 +4625,7 @@ grpc_cc_library(
         "time",
         "transport_fwd",
         "unique_type_name",
+        "//:chttp2_frame",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4675,6 +4676,54 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_frame",
+    srcs = [
+        "ext/transport/chaotic_good/frame.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/frame.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:variant",
+    ],
+    deps = [
+        "arena",
+        "bitset",
+        "chaotic_good_frame_header",
+        "context",
+        "no_destruct",
+        "slice",
+        "slice_buffer",
+        "status_helper",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_frame_header",
+    srcs = [
+        "ext/transport/chaotic_good/frame_header.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/frame_header.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "bitset",
+        "//:gpr_platform",
     ],
 )
 
