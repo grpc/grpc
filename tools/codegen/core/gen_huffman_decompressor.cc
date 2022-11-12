@@ -900,6 +900,20 @@ class TableBuilder {
     int offset_;
   };
 
+  class LinearDivideArray : public Array {
+   public:
+    LinearDivideArray(int offset, int divisor)
+        : offset_(offset), divisor_(divisor) {}
+    std::string Index(absl::string_view value) override {
+      return absl::StrCat(value, "/", divisor_, " + ", offset_);
+    }
+    std::string ArrayName() override { abort(); }
+
+   private:
+    int offset_;
+    int divisor_;
+  };
+
   class TwoElemArray : public Array {
    public:
     TwoElemArray(std::string value0, std::string value1)
@@ -952,7 +966,7 @@ class TableBuilder {
   // values.
   template <typename T>
   static std::unique_ptr<Array> ArrayToFunction(const std::vector<T>& values,
-                                                bool recurse = true) {
+                                                int recurse = 2) {
     // constant => k,k,k,k,...
     bool is_constant = true;
     for (size_t i = 1; i < values.size(); i++) {
@@ -986,17 +1000,31 @@ class TableBuilder {
     if (is_offset) {
       return std::make_unique<OffsetArray>(values[0]);
     }
+    // offset => k,k,k+1,k+1,...
+    for (int d = 2; d < 32; d++) {
+      bool is_linear = true;
+      for (size_t i = 1; i < values.size(); i++) {
+        if (values[i] - values[0] != (i / d)) {
+          is_linear = false;
+          break;
+        }
+      }
+      if (is_linear) {
+        return std::make_unique<LinearDivideArray>(values[0], d);
+      }
+    }
     // Two items can be resolved with a conditional
     if (values.size() == 2) {
       return std::make_unique<TwoElemArray>(absl::StrCat(values[0]),
                                             absl::StrCat(values[1]));
     }
-    if (recurse && values.size() >= 8) {
+    if ((recurse > 0 && values.size() >= 6) || (recurse == 2)) {
       for (size_t i = 1; i < values.size() - 1; i++) {
         std::vector<T> left(values.begin(), values.begin() + i);
         std::vector<T> right(values.begin() + i, values.end());
-        std::unique_ptr<Array> left_array = ArrayToFunction(left, false);
-        std::unique_ptr<Array> right_array = ArrayToFunction(right, false);
+        std::unique_ptr<Array> left_array = ArrayToFunction(left, recurse - 1);
+        std::unique_ptr<Array> right_array =
+            ArrayToFunction(right, recurse - 1);
         if (left_array && right_array) {
           return std::make_unique<Composite2Array>(std::move(left_array),
                                                    std::move(right_array), i);
