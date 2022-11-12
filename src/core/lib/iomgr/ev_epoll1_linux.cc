@@ -669,9 +669,8 @@ static grpc_error_handle process_epoll_events(grpc_pollset* /*pollset*/) {
                    err_desc);
     } else {
       grpc_fd* fd = reinterpret_cast<grpc_fd*>(
-          reinterpret_cast<intptr_t>(data_ptr) & ~static_cast<intptr_t>(1));
-      bool track_err =
-          reinterpret_cast<intptr_t>(data_ptr) & static_cast<intptr_t>(1);
+          reinterpret_cast<intptr_t>(data_ptr) & ~intptr_t{1});
+      bool track_err = reinterpret_cast<intptr_t>(data_ptr) & intptr_t{1};
       bool cancel = (ev->events & EPOLLHUP) != 0;
       bool error = (ev->events & EPOLLERR) != 0;
       bool read_ev = (ev->events & (EPOLLIN | EPOLLPRI)) != 0;

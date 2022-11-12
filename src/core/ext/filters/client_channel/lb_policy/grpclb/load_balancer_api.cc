@@ -65,7 +65,7 @@ grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_Arena* arena) {
   grpc_lb_v1_InitialLoadBalanceRequest* initial_request =
       grpc_lb_v1_LoadBalanceRequest_mutable_initial_request(req, arena);
   size_t name_len = std::min(strlen(lb_service_name),
-                             size_t(GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH));
+                             size_t{GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH});
   grpc_lb_v1_InitialLoadBalanceRequest_set_name(
       initial_request,
       upb_StringView_FromDataAndSize(lb_service_name, name_len));
