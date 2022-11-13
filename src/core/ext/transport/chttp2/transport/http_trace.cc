@@ -14,12 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/init_internally.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 
-namespace grpc_core {
-
-void (*InitInternally)();
-void (*ShutdownInternally)();
-bool (*IsInitializedInternally)();
-
-}  // namespace grpc_core
+grpc_core::TraceFlag grpc_http_trace(false, "http");
