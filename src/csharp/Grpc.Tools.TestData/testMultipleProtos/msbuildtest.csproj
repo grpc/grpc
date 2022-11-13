@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--<Target Name="Build">
+    <Message Text="Building msbuildintro" />
+    <MSBuild Projects="msbuildintro.csproj" Targets="Build" />
+  </Target>-->
+
+    <Import Project="$(GrpcToolsBuildDir)\_grpc\_Grpc.Tools.props"/>
+    <Import Project="$(GrpcToolsBuildDir)\_protobuf\Google.Protobuf.Tools.props"/>
+
+  <PropertyGroup>
+    <Protobuf_Generator>CSharp</Protobuf_Generator>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Protobuf_IntermediatePath>obj/Debug/netstandard2.0</Protobuf_IntermediatePath>
+  </PropertyGroup>
+
+
+    <ItemGroup>
+        <Protobuf Include="**/*.proto" />
+    </ItemGroup>
+	
+  <Import Project="$(GrpcToolsBuildDir)\_grpc\_Grpc.Tools.targets"/>
+  <Import Project="$(GrpcToolsBuildDir)\_protobuf\Google.Protobuf.Tools.targets"/>
+  
+</Project>
