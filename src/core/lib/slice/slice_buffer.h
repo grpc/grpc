@@ -17,7 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
 #include <string.h>
 
 #include <string>
@@ -63,9 +62,6 @@ class SliceBuffer {
   /// Appends a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
   void Append(Slice slice);
-  /// Appends a SliceBuffer into the SliceBuffer and makes an attempt to merge
-  /// this slice with the last slice in the SliceBuffer.
-  void Append(const SliceBuffer& other);
 
   /// Adds a new slice into the SliceBuffer at the next available index.
   /// Returns the index at which the new slice is added.
@@ -82,17 +78,6 @@ class SliceBuffer {
   /// Move the first n bytes of the SliceBuffer into a memory pointed to by dst.
   void MoveFirstNBytesIntoBuffer(size_t n, void* dst) {
     grpc_slice_buffer_move_first_into_buffer(&slice_buffer_, n, dst);
-  }
-
-  /// Removes/deletes the last n bytes in the SliceBuffer and add it to the
-  /// other SliceBuffer
-  void MoveLastNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
-    grpc_slice_buffer_trim_end(&slice_buffer_, n, &other.slice_buffer_);
-  }
-
-  /// Move the first n bytes of the SliceBuffer into the other SliceBuffer
-  void MoveFirstNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
-    grpc_slice_buffer_move_first(&slice_buffer_, n, &other.slice_buffer_);
   }
 
   /// Removes and unrefs all slices in the SliceBuffer.
@@ -126,11 +111,6 @@ class SliceBuffer {
       copy.Append(RefSlice(i));
     }
     return copy;
-  }
-
-  /// Add a small amount to the end of the slice buffer.
-  uint8_t* AddTiny(size_t n) {
-    return grpc_slice_buffer_tiny_add(&slice_buffer_, n);
   }
 
   /// Return a pointer to the back raw grpc_slice_buffer

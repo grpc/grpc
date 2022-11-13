@@ -20,6 +20,5 @@ namespace grpc_core {
 
 void (*InitInternally)();
 void (*ShutdownInternally)();
-bool (*IsInitializedInternally)();
 
 }  // namespace grpc_core
