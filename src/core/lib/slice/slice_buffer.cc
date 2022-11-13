@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <cstdint>
 #include <utility>
 
 #include <grpc/slice.h>
@@ -35,12 +36,6 @@ namespace grpc_core {
 
 void SliceBuffer::Append(Slice slice) {
   grpc_slice_buffer_add(&slice_buffer_, slice.TakeCSlice());
-}
-
-void SliceBuffer::Append(const SliceBuffer& other) {
-  for (size_t i = 0; i < other.Count(); i++) {
-    Append(other.RefSlice(i));
-  }
 }
 
 size_t SliceBuffer::AppendIndexed(Slice slice) {

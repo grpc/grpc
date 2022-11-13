@@ -697,6 +697,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
+// extern grpc_core::TraceFlag grpc_http_trace;
 // extern grpc_core::TraceFlag grpc_flowctl_trace;
 
 #define GRPC_CHTTP2_IF_TRACING(stmt)                \
