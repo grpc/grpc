@@ -74,6 +74,7 @@ struct grpc_binder_transport {
   void (*accept_stream_fn)(void* user_data, grpc_transport* transport,
                            const void* server_data) = nullptr;
   void* accept_stream_user_data = nullptr;
+  int accept_stream_fn_called_count_{0};
 
   grpc_core::ConnectivityStateTracker state_tracker;
   grpc_core::RefCount refs;
