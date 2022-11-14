@@ -189,6 +189,7 @@ absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
   // Swap the decompressed slices into the message.
   message->payload()->Swap(&decompressed_slices);
   message->mutable_flags() &= ~GRPC_WRITE_INTERNAL_COMPRESS;
+  message->mutable_flags() |= GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
   return std::move(message);
 }
 
