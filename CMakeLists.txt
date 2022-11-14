@@ -1496,6 +1496,7 @@ target_include_directories(end2end_tests
     third_party/googletest/googlemock
 )
 target_link_libraries(end2end_tests
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -1579,6 +1580,7 @@ target_include_directories(gpr
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(gpr
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
@@ -2543,6 +2545,7 @@ target_include_directories(grpc_test_util
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_test_util
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::failure_signal_handler
@@ -2600,6 +2603,7 @@ target_include_directories(grpc_test_util_unsecure
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_test_util_unsecure
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::failure_signal_handler
@@ -3170,6 +3174,7 @@ target_include_directories(benchmark_helpers
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(benchmark_helpers
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3609,6 +3614,7 @@ target_include_directories(grpc++_error_details
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_error_details
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3678,6 +3684,7 @@ target_include_directories(grpc++_reflection
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_reflection
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3749,6 +3756,7 @@ target_include_directories(grpc++_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3813,6 +3821,7 @@ target_include_directories(grpc++_test_config
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_test_config
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3883,6 +3892,7 @@ target_include_directories(grpc++_test_util
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_test_util
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4229,6 +4239,7 @@ target_include_directories(grpc_plugin_support
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc_plugin_support
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -4300,6 +4311,7 @@ target_include_directories(grpcpp_channelz
     ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpcpp_channelz
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4387,6 +4399,7 @@ target_include_directories(upb
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(upb
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
@@ -4425,6 +4438,7 @@ target_include_directories(bad_server_response_test
 )
 
 target_link_libraries(bad_server_response_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4467,6 +4481,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bad_ssl_alpn_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -4510,6 +4525,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bad_ssl_cert_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -4540,6 +4556,7 @@ target_include_directories(connection_refused_test
 )
 
 target_link_libraries(connection_refused_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4570,6 +4587,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(dualstack_socket_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -4612,6 +4630,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fd_conservation_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -4642,6 +4661,7 @@ target_include_directories(goaway_server_test
 )
 
 target_link_libraries(goaway_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4671,6 +4691,7 @@ target_include_directories(inproc_callback_test
 )
 
 target_link_libraries(inproc_callback_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4700,6 +4721,7 @@ target_include_directories(invalid_call_argument_test
 )
 
 target_link_libraries(invalid_call_argument_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4728,6 +4750,7 @@ target_include_directories(minimal_stack_is_minimal_test
 )
 
 target_link_libraries(minimal_stack_is_minimal_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4756,6 +4779,7 @@ target_include_directories(multiple_server_queues_test
 )
 
 target_link_libraries(multiple_server_queues_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4785,6 +4809,7 @@ target_include_directories(no_server_test
 )
 
 target_link_libraries(no_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4814,6 +4839,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   )
 
   target_link_libraries(pollset_windows_starvation_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -4845,6 +4871,7 @@ target_include_directories(public_headers_must_be_c89
 )
 
 target_link_libraries(public_headers_must_be_c89
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4887,6 +4914,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -4928,6 +4956,7 @@ target_include_directories(test_core_iomgr_timer_list_test
 )
 
 target_link_libraries(test_core_iomgr_timer_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -4964,6 +4993,7 @@ target_include_directories(activity_test
 )
 
 target_link_libraries(activity_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5006,6 +5036,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(address_sorting_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5060,6 +5091,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(address_sorting_test_unsecure
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5117,6 +5149,7 @@ target_include_directories(admin_services_end2end_test
 )
 
 target_link_libraries(admin_services_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5168,6 +5201,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(alarm_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5206,6 +5240,7 @@ target_include_directories(alloc_test
 )
 
 target_link_libraries(alloc_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5242,6 +5277,7 @@ target_include_directories(alpn_test
 )
 
 target_link_libraries(alpn_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5290,6 +5326,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(alts_concurrent_connectivity_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5329,6 +5366,7 @@ target_include_directories(alts_counter_test
 )
 
 target_link_libraries(alts_counter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5366,6 +5404,7 @@ target_include_directories(alts_crypt_test
 )
 
 target_link_libraries(alts_crypt_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5403,6 +5442,7 @@ target_include_directories(alts_crypter_test
 )
 
 target_link_libraries(alts_crypter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5441,6 +5481,7 @@ target_include_directories(alts_frame_protector_test
 )
 
 target_link_libraries(alts_frame_protector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5478,6 +5519,7 @@ target_include_directories(alts_grpc_record_protocol_test
 )
 
 target_link_libraries(alts_grpc_record_protocol_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5515,6 +5557,7 @@ target_include_directories(alts_handshaker_client_test
 )
 
 target_link_libraries(alts_handshaker_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5552,6 +5595,7 @@ target_include_directories(alts_iovec_record_protocol_test
 )
 
 target_link_libraries(alts_iovec_record_protocol_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5600,6 +5644,7 @@ target_include_directories(alts_security_connector_test
 )
 
 target_link_libraries(alts_security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5637,6 +5682,7 @@ target_include_directories(alts_tsi_handshaker_test
 )
 
 target_link_libraries(alts_tsi_handshaker_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5674,6 +5720,7 @@ target_include_directories(alts_tsi_utils_test
 )
 
 target_link_libraries(alts_tsi_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5710,6 +5757,7 @@ target_include_directories(alts_util_test
 )
 
 target_link_libraries(alts_util_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5748,6 +5796,7 @@ target_include_directories(alts_zero_copy_grpc_protector_test
 )
 
 target_link_libraries(alts_zero_copy_grpc_protector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5784,6 +5833,7 @@ target_include_directories(arena_promise_test
 )
 
 target_link_libraries(arena_promise_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5820,6 +5870,7 @@ target_include_directories(arena_test
 )
 
 target_link_libraries(arena_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5880,6 +5931,7 @@ target_include_directories(async_end2end_test
 )
 
 target_link_libraries(async_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5928,6 +5980,7 @@ target_include_directories(auth_context_test
 )
 
 target_link_libraries(auth_context_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5964,6 +6017,7 @@ target_include_directories(auth_property_iterator_test
 )
 
 target_link_libraries(auth_property_iterator_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6012,6 +6066,7 @@ target_include_directories(authorization_matchers_test
 )
 
 target_link_libraries(authorization_matchers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6051,6 +6106,7 @@ target_include_directories(authorization_policy_provider_test
 )
 
 target_link_libraries(authorization_policy_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6088,6 +6144,7 @@ target_include_directories(avl_test
 )
 
 target_link_libraries(avl_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6137,6 +6194,7 @@ target_include_directories(aws_request_signer_test
 )
 
 target_link_libraries(aws_request_signer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6173,6 +6231,7 @@ target_include_directories(b64_test
 )
 
 target_link_libraries(b64_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6209,6 +6268,7 @@ target_include_directories(backoff_test
 )
 
 target_link_libraries(backoff_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6247,6 +6307,7 @@ target_include_directories(bad_streaming_id_bad_client_test
 )
 
 target_link_libraries(bad_streaming_id_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6285,6 +6346,7 @@ target_include_directories(badreq_bad_client_test
 )
 
 target_link_libraries(badreq_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6322,6 +6384,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bdp_estimator_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6359,6 +6422,7 @@ target_include_directories(bin_decoder_test
 )
 
 target_link_libraries(bin_decoder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6395,6 +6459,7 @@ target_include_directories(bin_encoder_test
 )
 
 target_link_libraries(bin_encoder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6431,6 +6496,7 @@ target_include_directories(binder_resolver_test
 )
 
 target_link_libraries(binder_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6485,6 +6551,7 @@ target_include_directories(binder_server_test
 )
 
 target_link_libraries(binder_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6588,6 +6655,7 @@ target_include_directories(binder_transport_test
 )
 
 target_link_libraries(binder_transport_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6624,6 +6692,7 @@ target_include_directories(bitset_test
 )
 
 target_link_libraries(bitset_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6673,6 +6742,7 @@ target_include_directories(buffer_list_test
 )
 
 target_link_libraries(buffer_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6709,6 +6779,7 @@ target_include_directories(byte_buffer_test
 )
 
 target_link_libraries(byte_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6745,6 +6816,7 @@ target_include_directories(c_slice_buffer_test
 )
 
 target_link_libraries(c_slice_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6781,6 +6853,7 @@ target_include_directories(call_finalization_test
 )
 
 target_link_libraries(call_finalization_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6819,6 +6892,7 @@ target_include_directories(cancel_ares_query_test
 )
 
 target_link_libraries(cancel_ares_query_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6946,6 +7020,7 @@ target_include_directories(cel_authorization_engine_test
 )
 
 target_link_libraries(cel_authorization_engine_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -6982,6 +7057,7 @@ target_include_directories(certificate_provider_registry_test
 )
 
 target_link_libraries(certificate_provider_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7018,6 +7094,7 @@ target_include_directories(certificate_provider_store_test
 )
 
 target_link_libraries(certificate_provider_store_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7071,6 +7148,7 @@ target_include_directories(cfstream_test
 )
 
 target_link_libraries(cfstream_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7107,6 +7185,7 @@ target_include_directories(channel_args_test
 )
 
 target_link_libraries(channel_args_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7143,6 +7222,7 @@ target_include_directories(channel_arguments_test
 )
 
 target_link_libraries(channel_arguments_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7192,6 +7272,7 @@ target_include_directories(channel_creds_registry_test
 )
 
 target_link_libraries(channel_creds_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7228,6 +7309,7 @@ target_include_directories(channel_filter_test
 )
 
 target_link_libraries(channel_filter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7265,6 +7347,7 @@ target_include_directories(channel_stack_builder_test
 )
 
 target_link_libraries(channel_stack_builder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7301,6 +7384,7 @@ target_include_directories(channel_stack_test
 )
 
 target_link_libraries(channel_stack_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7342,6 +7426,7 @@ target_include_directories(channel_trace_test
 )
 
 target_link_libraries(channel_trace_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7379,6 +7464,7 @@ target_include_directories(channelz_registry_test
 )
 
 target_link_libraries(channelz_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7433,6 +7519,7 @@ target_include_directories(channelz_service_test
 )
 
 target_link_libraries(channelz_service_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7475,6 +7562,7 @@ target_include_directories(channelz_test
 )
 
 target_link_libraries(channelz_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7524,6 +7612,7 @@ target_include_directories(check_gcp_environment_linux_test
 )
 
 target_link_libraries(check_gcp_environment_linux_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7572,6 +7661,7 @@ target_include_directories(check_gcp_environment_windows_test
 )
 
 target_link_libraries(check_gcp_environment_windows_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7631,6 +7721,7 @@ target_include_directories(chunked_vector_test
 )
 
 target_link_libraries(chunked_vector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7700,6 +7791,7 @@ target_include_directories(cli_call_test
 )
 
 target_link_libraries(cli_call_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7736,6 +7828,7 @@ target_include_directories(client_auth_filter_test
 )
 
 target_link_libraries(client_auth_filter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7772,6 +7865,7 @@ target_include_directories(client_authority_filter_test
 )
 
 target_link_libraries(client_authority_filter_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7826,6 +7920,7 @@ target_include_directories(client_callback_end2end_test
 )
 
 target_link_libraries(client_callback_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7862,6 +7957,7 @@ target_include_directories(client_channel_service_config_test
 )
 
 target_link_libraries(client_channel_service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7924,6 +8020,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(client_channel_stress_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7961,6 +8058,7 @@ target_include_directories(client_channel_test
 )
 
 target_link_libraries(client_channel_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -7997,6 +8095,7 @@ target_include_directories(client_context_test_peer_test
 )
 
 target_link_libraries(client_context_test_peer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8052,6 +8151,7 @@ target_include_directories(client_interceptors_end2end_test
 )
 
 target_link_libraries(client_interceptors_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8114,6 +8214,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(client_lb_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8152,6 +8253,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(client_ssl_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8201,6 +8303,7 @@ target_include_directories(cmdline_test
 )
 
 target_link_libraries(cmdline_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8237,6 +8340,7 @@ target_include_directories(codegen_test_full
 )
 
 target_link_libraries(codegen_test_full
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8274,6 +8378,7 @@ target_include_directories(codegen_test_minimal
 )
 
 target_link_libraries(codegen_test_minimal
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8324,6 +8429,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(combiner_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8361,6 +8467,7 @@ target_include_directories(common_closures_test
 )
 
 target_link_libraries(common_closures_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8399,6 +8506,7 @@ target_include_directories(completion_queue_threading_test
 )
 
 target_link_libraries(completion_queue_threading_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8436,6 +8544,7 @@ target_include_directories(compression_test
 )
 
 target_link_libraries(compression_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8472,6 +8581,7 @@ target_include_directories(concurrent_connectivity_test
 )
 
 target_link_libraries(concurrent_connectivity_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8510,6 +8620,7 @@ target_include_directories(connection_prefix_bad_client_test
 )
 
 target_link_libraries(connection_prefix_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8558,6 +8669,7 @@ target_include_directories(connectivity_state_test
 )
 
 target_link_libraries(connectivity_state_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8611,6 +8723,7 @@ target_include_directories(context_allocator_end2end_test
 )
 
 target_link_libraries(context_allocator_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8659,6 +8772,7 @@ target_include_directories(context_list_test
 )
 
 target_link_libraries(context_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8695,6 +8809,7 @@ target_include_directories(context_test
 )
 
 target_link_libraries(context_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8731,6 +8846,7 @@ target_include_directories(core_configuration_test
 )
 
 target_link_libraries(core_configuration_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8767,6 +8883,7 @@ target_include_directories(cpp_impl_of_test
 )
 
 target_link_libraries(cpp_impl_of_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8802,6 +8919,7 @@ target_include_directories(cpu_test
 )
 
 target_link_libraries(cpu_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8840,6 +8958,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(crl_ssl_transport_security_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8877,6 +8996,7 @@ target_include_directories(default_engine_methods_test
 )
 
 target_link_libraries(default_engine_methods_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8930,6 +9050,7 @@ target_include_directories(delegating_channel_test
 )
 
 target_link_libraries(delegating_channel_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8966,6 +9087,7 @@ target_include_directories(destroy_grpclb_channel_with_active_connect_stress_tes
 )
 
 target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9002,6 +9124,7 @@ target_include_directories(dns_resolver_cooldown_test
 )
 
 target_link_libraries(dns_resolver_cooldown_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9038,6 +9161,7 @@ target_include_directories(dns_resolver_test
 )
 
 target_link_libraries(dns_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9074,6 +9198,7 @@ target_include_directories(dual_ref_counted_test
 )
 
 target_link_libraries(dual_ref_counted_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9112,6 +9237,7 @@ target_include_directories(duplicate_header_bad_client_test
 )
 
 target_link_libraries(duplicate_header_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9168,6 +9294,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(end2end_binder_transport_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9227,6 +9354,7 @@ target_include_directories(end2end_test
 )
 
 target_link_libraries(end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9331,6 +9459,7 @@ target_include_directories(endpoint_binder_pool_test
 )
 
 target_link_libraries(endpoint_binder_pool_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9367,6 +9496,7 @@ target_include_directories(endpoint_config_test
 )
 
 target_link_libraries(endpoint_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9416,6 +9546,7 @@ target_include_directories(endpoint_pair_test
 )
 
 target_link_libraries(endpoint_pair_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9452,6 +9583,7 @@ target_include_directories(env_test
 )
 
 target_link_libraries(env_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9500,6 +9632,7 @@ target_include_directories(error_details_test
 )
 
 target_link_libraries(error_details_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9550,6 +9683,7 @@ target_include_directories(error_test
 )
 
 target_link_libraries(error_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9598,6 +9732,7 @@ target_include_directories(error_utils_test
 )
 
 target_link_libraries(error_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9646,6 +9781,7 @@ target_include_directories(evaluate_args_test
 )
 
 target_link_libraries(evaluate_args_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9684,6 +9820,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(event_poller_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9722,6 +9859,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(examine_stack_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9775,6 +9913,7 @@ target_include_directories(exception_test
 )
 
 target_link_libraries(exception_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9825,6 +9964,7 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 )
 
 target_link_libraries(exec_ctx_wakeup_scheduler_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9867,6 +10007,7 @@ target_include_directories(factory_test
 )
 
 target_link_libraries(factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -9970,6 +10111,7 @@ target_include_directories(fake_binder_test
 )
 
 target_link_libraries(fake_binder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10006,6 +10148,7 @@ target_include_directories(fake_resolver_test
 )
 
 target_link_libraries(fake_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10043,6 +10186,7 @@ target_include_directories(fake_transport_security_test
 )
 
 target_link_libraries(fake_transport_security_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10092,6 +10236,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fd_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10129,6 +10274,7 @@ target_include_directories(file_watcher_certificate_provider_factory_test
 )
 
 target_link_libraries(file_watcher_certificate_provider_factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10185,6 +10331,7 @@ target_include_directories(filter_end2end_test
 )
 
 target_link_libraries(filter_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10238,6 +10385,7 @@ target_include_directories(flaky_network_test
 )
 
 target_link_libraries(flaky_network_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10300,6 +10448,7 @@ target_include_directories(flow_control_test
 )
 
 target_link_libraries(flow_control_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10367,6 +10516,7 @@ target_include_directories(for_each_test
 )
 
 target_link_libraries(for_each_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10411,6 +10561,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fork_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10449,6 +10600,7 @@ target_include_directories(forkable_test
 )
 
 target_link_libraries(forkable_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10504,6 +10656,7 @@ target_include_directories(format_request_test
 )
 
 target_link_libraries(format_request_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10541,6 +10694,7 @@ target_include_directories(frame_handler_test
 )
 
 target_link_libraries(frame_handler_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10578,6 +10732,7 @@ target_include_directories(frame_header_test
 )
 
 target_link_libraries(frame_header_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10828,6 +10983,7 @@ target_include_directories(frame_test
 )
 
 target_link_libraries(frame_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10885,6 +11041,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(fuzzing_event_engine_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10942,6 +11099,7 @@ target_include_directories(generic_end2end_test
 )
 
 target_link_libraries(generic_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -10979,6 +11137,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(global_config_env_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11016,6 +11175,7 @@ target_include_directories(global_config_test
 )
 
 target_link_libraries(global_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11053,6 +11213,7 @@ target_include_directories(google_c2p_resolver_test
 )
 
 target_link_libraries(google_c2p_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11090,6 +11251,7 @@ target_include_directories(google_mesh_ca_certificate_provider_factory_test
 )
 
 target_link_libraries(google_mesh_ca_certificate_provider_factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11127,6 +11289,7 @@ target_include_directories(graceful_shutdown_test
 )
 
 target_link_libraries(graceful_shutdown_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11175,6 +11338,7 @@ target_include_directories(grpc_alts_credentials_options_test
 )
 
 target_link_libraries(grpc_alts_credentials_options_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11223,6 +11387,7 @@ target_include_directories(grpc_authorization_engine_test
 )
 
 target_link_libraries(grpc_authorization_engine_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11273,6 +11438,7 @@ target_include_directories(grpc_authorization_policy_provider_test
 )
 
 target_link_libraries(grpc_authorization_policy_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11329,6 +11495,7 @@ target_include_directories(grpc_authz_end2end_test
 )
 
 target_link_libraries(grpc_authz_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11365,6 +11532,7 @@ target_include_directories(grpc_byte_buffer_reader_test
 )
 
 target_link_libraries(grpc_byte_buffer_reader_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11411,6 +11579,7 @@ target_include_directories(grpc_cli
 )
 
 target_link_libraries(grpc_cli
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11449,6 +11618,7 @@ target_include_directories(grpc_completion_queue_test
 )
 
 target_link_libraries(grpc_completion_queue_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11479,6 +11649,7 @@ target_include_directories(grpc_cpp_plugin
 )
 
 target_link_libraries(grpc_cpp_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -11520,6 +11691,7 @@ target_include_directories(grpc_csharp_plugin
 )
 
 target_link_libraries(grpc_csharp_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -11579,6 +11751,7 @@ target_include_directories(grpc_ipv6_loopback_available_test
 )
 
 target_link_libraries(grpc_ipv6_loopback_available_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11609,6 +11782,7 @@ target_include_directories(grpc_node_plugin
 )
 
 target_link_libraries(grpc_node_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -11650,6 +11824,7 @@ target_include_directories(grpc_objective_c_plugin
 )
 
 target_link_libraries(grpc_objective_c_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -11691,6 +11866,7 @@ target_include_directories(grpc_php_plugin
 )
 
 target_link_libraries(grpc_php_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -11732,6 +11908,7 @@ target_include_directories(grpc_python_plugin
 )
 
 target_link_libraries(grpc_python_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -11773,6 +11950,7 @@ target_include_directories(grpc_ruby_plugin
 )
 
 target_link_libraries(grpc_ruby_plugin
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -11832,6 +12010,7 @@ target_include_directories(grpc_tls_certificate_distributor_test
 )
 
 target_link_libraries(grpc_tls_certificate_distributor_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11880,6 +12059,7 @@ target_include_directories(grpc_tls_certificate_provider_test
 )
 
 target_link_libraries(grpc_tls_certificate_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11928,6 +12108,7 @@ target_include_directories(grpc_tls_certificate_verifier_test
 )
 
 target_link_libraries(grpc_tls_certificate_verifier_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -11976,6 +12157,7 @@ target_include_directories(grpc_tls_credentials_options_comparator_test
 )
 
 target_link_libraries(grpc_tls_credentials_options_comparator_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12024,6 +12206,7 @@ target_include_directories(grpc_tls_credentials_options_test
 )
 
 target_link_libraries(grpc_tls_credentials_options_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12083,6 +12266,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(grpc_tool_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12126,6 +12310,7 @@ target_include_directories(grpclb_api_test
 )
 
 target_link_libraries(grpclb_api_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12188,6 +12373,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(grpclb_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12227,6 +12413,7 @@ target_include_directories(h2_ssl_session_reuse_test
 )
 
 target_link_libraries(h2_ssl_session_reuse_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12265,6 +12452,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(handshake_server_with_readahead_handshaker_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12304,6 +12492,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
 )
 
 target_link_libraries(head_of_line_blocking_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12342,6 +12531,7 @@ target_include_directories(headers_bad_client_test
 )
 
 target_link_libraries(headers_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12404,6 +12594,7 @@ target_include_directories(health_service_end2end_test
 )
 
 target_link_libraries(health_service_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12452,6 +12643,7 @@ target_include_directories(histogram_test
 )
 
 target_link_libraries(histogram_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12488,6 +12680,7 @@ target_include_directories(host_port_test
 )
 
 target_link_libraries(host_port_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12536,6 +12729,7 @@ target_include_directories(hpack_encoder_test
 )
 
 target_link_libraries(hpack_encoder_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12584,6 +12778,7 @@ target_include_directories(hpack_parser_table_test
 )
 
 target_link_libraries(hpack_parser_table_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12632,6 +12827,7 @@ target_include_directories(hpack_parser_test
 )
 
 target_link_libraries(hpack_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12680,6 +12876,7 @@ target_include_directories(http2_client
 )
 
 target_link_libraries(http2_client
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12717,6 +12914,7 @@ target_include_directories(http_proxy_mapper_test
 )
 
 target_link_libraries(http_proxy_mapper_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12756,6 +12954,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(httpcli_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12796,6 +12995,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(httpscli_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12854,6 +13054,7 @@ target_include_directories(hybrid_end2end_test
 )
 
 target_link_libraries(hybrid_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12891,6 +13092,7 @@ target_include_directories(idle_filter_state_test
 )
 
 target_link_libraries(idle_filter_state_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12926,6 +13128,7 @@ target_include_directories(if_test
 )
 
 target_link_libraries(if_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -12964,6 +13167,7 @@ target_include_directories(init_test
 )
 
 target_link_libraries(init_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13002,6 +13206,7 @@ target_include_directories(initial_settings_frame_bad_client_test
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13050,6 +13255,7 @@ target_include_directories(insecure_security_connector_test
 )
 
 target_link_libraries(insecure_security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13101,6 +13307,7 @@ target_include_directories(interop_client
 )
 
 target_link_libraries(interop_client
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13152,6 +13359,7 @@ target_include_directories(interop_server
 )
 
 target_link_libraries(interop_server
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13191,6 +13399,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   )
 
   target_link_libraries(iocp_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13233,6 +13442,7 @@ target_include_directories(istio_echo_server_test
 )
 
 target_link_libraries(istio_echo_server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13271,6 +13481,7 @@ target_include_directories(join_test
 )
 
 target_link_libraries(join_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13310,6 +13521,7 @@ target_include_directories(json_object_loader_test
 )
 
 target_link_libraries(json_object_loader_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13346,6 +13558,7 @@ target_include_directories(json_test
 )
 
 target_link_libraries(json_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13394,6 +13607,7 @@ target_include_directories(json_token_test
 )
 
 target_link_libraries(json_token_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13442,6 +13656,7 @@ target_include_directories(jwt_verifier_test
 )
 
 target_link_libraries(jwt_verifier_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13479,6 +13694,7 @@ target_include_directories(lame_client_test
 )
 
 target_link_libraries(lame_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13517,6 +13733,7 @@ target_include_directories(large_metadata_bad_client_test
 )
 
 target_link_libraries(large_metadata_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13554,6 +13771,7 @@ target_include_directories(latch_test
 )
 
 target_link_libraries(latch_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13597,6 +13815,7 @@ target_include_directories(lb_get_cpu_stats_test
 )
 
 target_link_libraries(lb_get_cpu_stats_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13634,6 +13853,7 @@ target_include_directories(lb_load_data_store_test
 )
 
 target_link_libraries(lb_load_data_store_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13672,6 +13892,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(lock_free_event_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13709,6 +13930,7 @@ target_include_directories(log_test
 )
 
 target_link_libraries(log_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13745,6 +13967,7 @@ target_include_directories(loop_test
 )
 
 target_link_libraries(loop_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13809,6 +14032,7 @@ target_include_directories(map_pipe_test
 )
 
 target_link_libraries(map_pipe_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13852,6 +14076,7 @@ target_include_directories(match_test
 )
 
 target_link_libraries(match_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13900,6 +14125,7 @@ target_include_directories(matchers_test
 )
 
 target_link_libraries(matchers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13937,6 +14163,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(memory_quota_stress_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -13974,6 +14201,7 @@ target_include_directories(memory_quota_test
 )
 
 target_link_libraries(memory_quota_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14027,6 +14255,7 @@ target_include_directories(message_allocator_end2end_test
 )
 
 target_link_libraries(message_allocator_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14075,6 +14304,7 @@ target_include_directories(message_compress_test
 )
 
 target_link_libraries(message_compress_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14111,6 +14341,7 @@ target_include_directories(message_size_service_config_test
 )
 
 target_link_libraries(message_size_service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14159,6 +14390,7 @@ target_include_directories(metadata_map_test
 )
 
 target_link_libraries(metadata_map_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14195,6 +14427,7 @@ target_include_directories(miscompile_with_no_unique_address_test
 )
 
 target_link_libraries(miscompile_with_no_unique_address_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14246,6 +14479,7 @@ target_include_directories(mock_stream_test
 )
 
 target_link_libraries(mock_stream_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14303,6 +14537,7 @@ target_include_directories(mock_test
 )
 
 target_link_libraries(mock_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14341,6 +14576,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(mpscq_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14378,6 +14614,7 @@ target_include_directories(no_destruct_test
 )
 
 target_link_libraries(no_destruct_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14429,6 +14666,7 @@ target_include_directories(nonblocking_test
 )
 
 target_link_libraries(nonblocking_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14465,6 +14703,7 @@ target_include_directories(notification_test
 )
 
 target_link_libraries(notification_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14501,6 +14740,7 @@ target_include_directories(num_external_connectivity_watchers_test
 )
 
 target_link_libraries(num_external_connectivity_watchers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14538,6 +14778,7 @@ target_include_directories(observable_test
 )
 
 target_link_libraries(observable_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14585,6 +14826,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(oracle_event_engine_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14631,6 +14873,7 @@ target_include_directories(orca_service_end2end_test
 )
 
 target_link_libraries(orca_service_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14667,6 +14910,7 @@ target_include_directories(orphanable_test
 )
 
 target_link_libraries(orphanable_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14705,6 +14949,7 @@ target_include_directories(out_of_bounds_bad_client_test
 )
 
 target_link_libraries(out_of_bounds_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14741,6 +14986,7 @@ target_include_directories(outlier_detection_lb_config_parser_test
 )
 
 target_link_libraries(outlier_detection_lb_config_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14777,6 +15023,7 @@ target_include_directories(outlier_detection_test
 )
 
 target_link_libraries(outlier_detection_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14813,6 +15060,7 @@ target_include_directories(overload_test
 )
 
 target_link_libraries(overload_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14848,6 +15096,7 @@ target_include_directories(parse_address_test
 )
 
 target_link_libraries(parse_address_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14885,6 +15134,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(parse_address_with_named_scope_id_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14922,6 +15172,7 @@ target_include_directories(parsed_metadata_test
 )
 
 target_link_libraries(parsed_metadata_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -14974,6 +15225,7 @@ target_include_directories(parser_test
 )
 
 target_link_libraries(parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15010,6 +15262,7 @@ target_include_directories(percent_encoding_test
 )
 
 target_link_libraries(percent_encoding_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15060,6 +15313,7 @@ target_include_directories(periodic_update_test
 )
 
 target_link_libraries(periodic_update_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15101,6 +15355,7 @@ target_include_directories(pick_first_test
 )
 
 target_link_libraries(pick_first_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15149,6 +15404,7 @@ target_include_directories(pid_controller_test
 )
 
 target_link_libraries(pid_controller_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15209,6 +15465,7 @@ target_include_directories(pipe_test
 )
 
 target_link_libraries(pipe_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15252,6 +15509,7 @@ target_include_directories(poll_test
 )
 
 target_link_libraries(poll_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15305,6 +15563,7 @@ target_include_directories(port_sharing_end2end_test
 )
 
 target_link_libraries(port_sharing_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15346,6 +15605,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(posix_endpoint_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15385,6 +15645,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(posix_engine_listener_utils_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15426,6 +15687,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(posix_event_engine_connect_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15469,6 +15731,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(posix_event_engine_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15506,6 +15769,7 @@ target_include_directories(promise_factory_test
 )
 
 target_link_libraries(promise_factory_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15546,6 +15810,7 @@ target_include_directories(promise_map_test
 )
 
 target_link_libraries(promise_map_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15585,6 +15850,7 @@ target_include_directories(promise_test
 )
 
 target_link_libraries(promise_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15646,6 +15912,7 @@ target_include_directories(proto_server_reflection_test
 )
 
 target_link_libraries(proto_server_reflection_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15683,6 +15950,7 @@ target_include_directories(proto_utils_test
 )
 
 target_link_libraries(proto_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15761,6 +16029,7 @@ target_include_directories(qps_json_driver
 )
 
 target_link_libraries(qps_json_driver
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15831,6 +16100,7 @@ target_include_directories(qps_worker
 )
 
 target_link_libraries(qps_worker
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15868,6 +16138,7 @@ target_include_directories(race_test
 )
 
 target_link_libraries(race_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15925,6 +16196,7 @@ target_include_directories(raw_end2end_test
 )
 
 target_link_libraries(raw_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -15961,6 +16233,7 @@ target_include_directories(rbac_service_config_parser_test
 )
 
 target_link_libraries(rbac_service_config_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16011,6 +16284,7 @@ target_include_directories(rbac_translator_test
 )
 
 target_link_libraries(rbac_translator_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16047,6 +16321,7 @@ target_include_directories(ref_counted_ptr_test
 )
 
 target_link_libraries(ref_counted_ptr_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16083,6 +16358,7 @@ target_include_directories(ref_counted_test
 )
 
 target_link_libraries(ref_counted_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16120,6 +16396,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(remove_stream_from_stalled_lists_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16170,6 +16447,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(resolve_address_using_ares_resolver_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16222,6 +16500,7 @@ target_include_directories(resolve_address_using_ares_resolver_test
 )
 
 target_link_libraries(resolve_address_using_ares_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16272,6 +16551,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(resolve_address_using_native_resolver_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16324,6 +16604,7 @@ target_include_directories(resolve_address_using_native_resolver_test
 )
 
 target_link_libraries(resolve_address_using_native_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16361,6 +16642,7 @@ target_include_directories(resource_quota_test
 )
 
 target_link_libraries(resource_quota_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16397,6 +16679,7 @@ target_include_directories(retry_service_config_test
 )
 
 target_link_libraries(retry_service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16433,6 +16716,7 @@ target_include_directories(retry_throttle_test
 )
 
 target_link_libraries(retry_throttle_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16496,6 +16780,7 @@ target_include_directories(rls_end2end_test
 )
 
 target_link_libraries(rls_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16533,6 +16818,7 @@ target_include_directories(rls_lb_config_parser_test
 )
 
 target_link_libraries(rls_lb_config_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16569,6 +16855,7 @@ target_include_directories(secure_auth_context_test
 )
 
 target_link_libraries(secure_auth_context_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16605,6 +16892,7 @@ target_include_directories(secure_channel_create_test
 )
 
 target_link_libraries(secure_channel_create_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16654,6 +16942,7 @@ target_include_directories(secure_endpoint_test
 )
 
 target_link_libraries(secure_endpoint_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16702,6 +16991,7 @@ target_include_directories(security_connector_test
 )
 
 target_link_libraries(security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16738,6 +17028,7 @@ target_include_directories(seq_test
 )
 
 target_link_libraries(seq_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16776,6 +17067,7 @@ target_include_directories(sequential_connectivity_test
 )
 
 target_link_libraries(sequential_connectivity_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16833,6 +17125,7 @@ target_include_directories(server_builder_plugin_test
 )
 
 target_link_libraries(server_builder_plugin_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16898,6 +17191,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_builder_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -16965,6 +17259,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_builder_with_socket_mutator_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17003,6 +17298,7 @@ target_include_directories(server_chttp2_test
 )
 
 target_link_libraries(server_chttp2_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17039,6 +17335,7 @@ target_include_directories(server_config_selector_test
 )
 
 target_link_libraries(server_config_selector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17075,6 +17372,7 @@ target_include_directories(server_context_test_spouse_test
 )
 
 target_link_libraries(server_context_test_spouse_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17128,6 +17426,7 @@ target_include_directories(server_early_return_test
 )
 
 target_link_libraries(server_early_return_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17182,6 +17481,7 @@ target_include_directories(server_interceptors_end2end_test
 )
 
 target_link_libraries(server_interceptors_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17220,6 +17520,7 @@ target_include_directories(server_registered_method_bad_client_test
 )
 
 target_link_libraries(server_registered_method_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17285,6 +17586,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_request_call_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17325,6 +17627,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(server_ssl_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17362,6 +17665,7 @@ target_include_directories(server_test
 )
 
 target_link_libraries(server_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17419,6 +17723,7 @@ target_include_directories(service_config_end2end_test
 )
 
 target_link_libraries(service_config_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17455,6 +17760,7 @@ target_include_directories(service_config_test
 )
 
 target_link_libraries(service_config_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17503,6 +17809,7 @@ target_include_directories(settings_timeout_test
 )
 
 target_link_libraries(settings_timeout_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17559,6 +17866,7 @@ target_include_directories(shutdown_test
 )
 
 target_link_libraries(shutdown_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17597,6 +17905,7 @@ target_include_directories(simple_request_bad_client_test
 )
 
 target_link_libraries(simple_request_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17633,6 +17942,7 @@ target_include_directories(single_set_ptr_test
 )
 
 target_link_libraries(single_set_ptr_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17669,6 +17979,7 @@ target_include_directories(sleep_test
 )
 
 target_link_libraries(sleep_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17707,6 +18018,7 @@ target_include_directories(slice_string_helpers_test
 )
 
 target_link_libraries(slice_string_helpers_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17746,6 +18058,7 @@ target_include_directories(smoke_test
 )
 
 target_link_libraries(smoke_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17782,6 +18095,7 @@ target_include_directories(sockaddr_resolver_test
 )
 
 target_link_libraries(sockaddr_resolver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17818,6 +18132,7 @@ target_include_directories(sockaddr_utils_test
 )
 
 target_link_libraries(sockaddr_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17867,6 +18182,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(socket_utils_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17904,6 +18220,7 @@ target_include_directories(sorted_pack_test
 )
 
 target_link_libraries(sorted_pack_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17939,6 +18256,7 @@ target_include_directories(spinlock_test
 )
 
 target_link_libraries(spinlock_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -17987,6 +18305,7 @@ target_include_directories(ssl_credentials_test
 )
 
 target_link_libraries(ssl_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18025,6 +18344,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(ssl_transport_security_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18063,6 +18383,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(stack_tracer_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18100,6 +18421,7 @@ target_include_directories(stat_test
 )
 
 target_link_libraries(stat_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18136,6 +18458,7 @@ target_include_directories(stats_test
 )
 
 target_link_libraries(stats_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18184,6 +18507,7 @@ target_include_directories(status_conversion_test
 )
 
 target_link_libraries(status_conversion_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18220,6 +18544,7 @@ target_include_directories(status_helper_test
 )
 
 target_link_libraries(status_helper_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18256,6 +18581,7 @@ target_include_directories(status_util_test
 )
 
 target_link_libraries(status_util_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18306,6 +18632,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(stranded_event_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18343,6 +18670,7 @@ target_include_directories(stream_leak_with_queued_flow_control_update_test
 )
 
 target_link_libraries(stream_leak_with_queued_flow_control_update_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18391,6 +18719,7 @@ target_include_directories(stream_map_test
 )
 
 target_link_libraries(stream_map_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18448,6 +18777,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(streaming_throughput_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18498,6 +18828,7 @@ target_include_directories(streams_not_seen_test
 )
 
 target_link_libraries(streams_not_seen_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18534,6 +18865,7 @@ target_include_directories(string_ref_test
 )
 
 target_link_libraries(string_ref_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18571,6 +18903,7 @@ target_include_directories(string_test
 )
 
 target_link_libraries(string_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18607,6 +18940,7 @@ target_include_directories(sync_test
 )
 
 target_link_libraries(sync_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18655,6 +18989,7 @@ target_include_directories(system_roots_test
 )
 
 target_link_libraries(system_roots_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18691,6 +19026,7 @@ target_include_directories(table_test
 )
 
 target_link_libraries(table_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18744,6 +19080,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_client_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18782,6 +19119,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_posix_socket_utils_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18832,6 +19170,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(tcp_server_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18873,6 +19212,7 @@ target_include_directories(test_core_event_engine_posix_timer_heap_test
 )
 
 target_link_libraries(test_core_event_engine_posix_timer_heap_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18915,6 +19255,7 @@ target_include_directories(test_core_event_engine_posix_timer_list_test
 )
 
 target_link_libraries(test_core_event_engine_posix_timer_list_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -18959,6 +19300,7 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 )
 
 target_link_libraries(test_core_event_engine_slice_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19000,6 +19342,7 @@ target_include_directories(test_core_gpr_time_test
 )
 
 target_link_libraries(test_core_gpr_time_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19036,6 +19379,7 @@ target_include_directories(test_core_gprpp_load_file_test
 )
 
 target_link_libraries(test_core_gprpp_load_file_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19073,6 +19417,7 @@ target_include_directories(test_core_gprpp_time_test
 )
 
 target_link_libraries(test_core_gprpp_time_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19123,6 +19468,7 @@ target_include_directories(test_core_iomgr_load_file_test
 )
 
 target_link_libraries(test_core_iomgr_load_file_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19171,6 +19517,7 @@ target_include_directories(test_core_iomgr_timer_heap_test
 )
 
 target_link_libraries(test_core_iomgr_timer_heap_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19219,6 +19566,7 @@ target_include_directories(test_core_security_credentials_test
 )
 
 target_link_libraries(test_core_security_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19255,6 +19603,7 @@ target_include_directories(test_core_slice_slice_buffer_test
 )
 
 target_link_libraries(test_core_slice_slice_buffer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19292,6 +19641,7 @@ target_include_directories(test_core_slice_slice_test
 )
 
 target_link_libraries(test_core_slice_slice_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19329,6 +19679,7 @@ target_include_directories(test_cpp_client_credentials_test
 )
 
 target_link_libraries(test_cpp_client_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19367,6 +19718,7 @@ target_include_directories(test_cpp_server_credentials_test
 )
 
 target_link_libraries(test_cpp_server_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19404,6 +19756,7 @@ target_include_directories(test_cpp_util_slice_test
 )
 
 target_link_libraries(test_cpp_util_slice_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19440,6 +19793,7 @@ target_include_directories(test_cpp_util_time_test
 )
 
 target_link_libraries(test_cpp_util_time_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19476,6 +19830,7 @@ target_include_directories(thd_test
 )
 
 target_link_libraries(thd_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19512,6 +19867,7 @@ target_include_directories(thread_manager_test
 )
 
 target_link_libraries(thread_manager_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19552,6 +19908,7 @@ target_include_directories(thread_pool_test
 )
 
 target_link_libraries(thread_pool_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19592,6 +19949,7 @@ target_include_directories(thread_quota_test
 )
 
 target_link_libraries(thread_quota_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19649,6 +20007,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(thread_stress_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19687,6 +20046,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(time_jump_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19725,6 +20085,7 @@ target_include_directories(time_util_test
 )
 
 target_link_libraries(time_util_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19773,6 +20134,7 @@ target_include_directories(timeout_encoding_test
 )
 
 target_link_libraries(timeout_encoding_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19809,6 +20171,7 @@ target_include_directories(timer_manager_test
 )
 
 target_link_libraries(timer_manager_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19845,6 +20208,7 @@ target_include_directories(timer_test
 )
 
 target_link_libraries(timer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19883,6 +20247,7 @@ target_include_directories(tls_certificate_verifier_test
 )
 
 target_link_libraries(tls_certificate_verifier_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19936,6 +20301,7 @@ target_include_directories(tls_key_export_test
 )
 
 target_link_libraries(tls_key_export_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -19984,6 +20350,7 @@ target_include_directories(tls_security_connector_test
 )
 
 target_link_libraries(tls_security_connector_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20021,6 +20388,7 @@ target_include_directories(too_many_pings_test
 )
 
 target_link_libraries(too_many_pings_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20059,6 +20427,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(traced_buffer_list_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20096,6 +20465,7 @@ target_include_directories(transport_security_common_api_test
 )
 
 target_link_libraries(transport_security_common_api_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20132,6 +20502,7 @@ target_include_directories(transport_security_test
 )
 
 target_link_libraries(transport_security_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20234,6 +20605,7 @@ target_include_directories(transport_stream_receiver_test
 )
 
 target_link_libraries(transport_stream_receiver_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20292,6 +20664,7 @@ target_include_directories(try_concurrently_test
 )
 
 target_link_libraries(try_concurrently_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20335,6 +20708,7 @@ target_include_directories(try_join_test
 )
 
 target_link_libraries(try_join_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20376,6 +20750,7 @@ target_include_directories(try_seq_metadata_test
 )
 
 target_link_libraries(try_seq_metadata_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20412,6 +20787,7 @@ target_include_directories(try_seq_test
 )
 
 target_link_libraries(try_seq_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20452,6 +20828,7 @@ target_include_directories(unique_type_name_test
 )
 
 target_link_libraries(unique_type_name_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20492,6 +20869,7 @@ target_include_directories(unknown_frame_bad_client_test
 )
 
 target_link_libraries(unknown_frame_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20528,6 +20906,7 @@ target_include_directories(uri_parser_test
 )
 
 target_link_libraries(uri_parser_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20564,6 +20943,7 @@ target_include_directories(useful_test
 )
 
 target_link_libraries(useful_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20601,6 +20981,7 @@ target_include_directories(validation_errors_test
 )
 
 target_link_libraries(validation_errors_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20637,6 +21018,7 @@ target_include_directories(varint_test
 )
 
 target_link_libraries(varint_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20674,6 +21056,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(wakeup_fd_posix_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20713,6 +21096,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   )
 
   target_link_libraries(win_socket_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20752,6 +21136,7 @@ target_include_directories(window_overflow_bad_client_test
 )
 
 target_link_libraries(window_overflow_bad_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20855,6 +21240,7 @@ target_include_directories(wire_reader_test
 )
 
 target_link_libraries(wire_reader_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20958,6 +21344,7 @@ target_include_directories(wire_writer_test
 )
 
 target_link_libraries(wire_writer_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -20995,6 +21382,7 @@ target_include_directories(work_queue_test
 )
 
 target_link_libraries(work_queue_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21032,6 +21420,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(work_serializer_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21098,6 +21487,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(writes_per_rpc_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21136,6 +21526,7 @@ target_include_directories(xds_bootstrap_test
 )
 
 target_link_libraries(xds_bootstrap_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21172,6 +21563,7 @@ target_include_directories(xds_certificate_provider_test
 )
 
 target_link_libraries(xds_certificate_provider_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21221,6 +21613,7 @@ target_include_directories(xds_client_test
 )
 
 target_link_libraries(xds_client_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21383,6 +21776,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_cluster_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21480,6 +21874,7 @@ target_include_directories(xds_cluster_resource_type_test
 )
 
 target_link_libraries(xds_cluster_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21646,6 +22041,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_cluster_type_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21724,6 +22120,7 @@ target_include_directories(xds_common_types_test
 )
 
 target_link_libraries(xds_common_types_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21887,6 +22284,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_core_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21941,6 +22339,7 @@ target_include_directories(xds_credentials_end2end_test
 )
 
 target_link_libraries(xds_credentials_end2end_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -21989,6 +22388,7 @@ target_include_directories(xds_credentials_test
 )
 
 target_link_libraries(xds_credentials_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22159,6 +22559,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_csds_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22337,6 +22738,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22391,6 +22793,7 @@ target_include_directories(xds_endpoint_resource_type_test
 )
 
 target_link_libraries(xds_endpoint_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22560,6 +22963,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_fault_injection_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22670,6 +23074,7 @@ target_include_directories(xds_http_filters_test
 )
 
 target_link_libraries(xds_http_filters_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22738,6 +23143,7 @@ target_include_directories(xds_interop_client
 )
 
 target_link_libraries(xds_interop_client
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22813,6 +23219,7 @@ target_include_directories(xds_interop_server
 )
 
 target_link_libraries(xds_interop_server
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -22914,6 +23321,7 @@ target_include_directories(xds_lb_policy_registry_test
 )
 
 target_link_libraries(xds_lb_policy_registry_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -23049,6 +23457,7 @@ target_include_directories(xds_listener_resource_type_test
 )
 
 target_link_libraries(xds_listener_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -23220,6 +23629,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_outlier_detection_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -23387,6 +23797,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_ring_hash_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -23558,6 +23969,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_rls_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -23720,6 +24132,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(xds_routing_end2end_test
+    ${_gRPC_BASELIB_LIBRARIES}
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
