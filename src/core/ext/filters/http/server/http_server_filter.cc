@@ -21,9 +21,11 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 
 #include <functional>
+#include <memory>
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -31,16 +33,15 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/promise/call_push_pull.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_concurrently.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -75,11 +76,11 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
       case HttpMethodMetadata::kInvalid:
       case HttpMethodMetadata::kGet:
         return Immediate(
-            ServerMetadataHandle(absl::UnknownError("Bad method header")));
+            ServerMetadataFromStatus(absl::UnknownError("Bad method header")));
     }
   } else {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :method header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :method header")));
   }
 
   auto te = md->Take(TeMetadata());
@@ -87,21 +88,21 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
     // Do nothing, ok.
   } else if (!te.has_value()) {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :te header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :te header")));
   } else {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Bad :te header")));
+        ServerMetadataFromStatus(absl::UnknownError("Bad :te header")));
   }
 
   auto scheme = md->Take(HttpSchemeMetadata());
   if (scheme.has_value()) {
     if (*scheme == HttpSchemeMetadata::kInvalid) {
       return Immediate(
-          ServerMetadataHandle(absl::UnknownError("Bad :scheme header")));
+          ServerMetadataFromStatus(absl::UnknownError("Bad :scheme header")));
     }
   } else {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :scheme header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :scheme header")));
   }
 
   md->Remove(ContentTypeMetadata());
@@ -109,7 +110,7 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   Slice* path_slice = md->get_pointer(HttpPathMetadata());
   if (path_slice == nullptr) {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :path header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :path header")));
   }
 
   if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
@@ -120,8 +121,8 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   }
 
   if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :authority header")));
+    return Immediate(ServerMetadataFromStatus(
+        absl::UnknownError("Missing :authority header")));
   }
 
   if (!surface_user_agent_) {
@@ -132,21 +133,20 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   auto* write_latch =
       std::exchange(call_args.server_initial_metadata, read_latch);
 
-  return CallPushPull(Seq(next_promise_factory(std::move(call_args)),
-                          [](ServerMetadataHandle md) -> ServerMetadataHandle {
-                            FilterOutgoingMetadata(md.get());
-                            return md;
-                          }),
-                      Seq(read_latch->Wait(),
-                          [write_latch](ServerMetadata** md) {
-                            FilterOutgoingMetadata(*md);
-                            (*md)->Set(HttpStatusMetadata(), 200);
-                            (*md)->Set(ContentTypeMetadata(),
-                                       ContentTypeMetadata::kApplicationGrpc);
-                            write_latch->Set(*md);
-                            return absl::OkStatus();
-                          }),
-                      []() { return absl::OkStatus(); });
+  return TryConcurrently(
+             Seq(next_promise_factory(std::move(call_args)),
+                 [](ServerMetadataHandle md) -> ServerMetadataHandle {
+                   FilterOutgoingMetadata(md.get());
+                   return md;
+                 }))
+      .Push(Seq(read_latch->Wait(), [write_latch](ServerMetadata** md) {
+        FilterOutgoingMetadata(*md);
+        (*md)->Set(HttpStatusMetadata(), 200);
+        (*md)->Set(ContentTypeMetadata(),
+                   ContentTypeMetadata::kApplicationGrpc);
+        write_latch->Set(*md);
+        return absl::OkStatus();
+      }));
 }
 
 absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(

@@ -76,9 +76,6 @@
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
 namespace grpc {
 namespace testing {
 namespace {
@@ -562,7 +559,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
         "Failed to connect to remote host: FD shutdown|"
         "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-        "Socket closed)");
+        "(Socket closed|Connection reset by peer))");
   }
 
   const std::string server_host_;
@@ -2801,10 +2798,9 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    CallConfig GetCallConfig(GetCallConfigArgs /*args*/) override {
-      CallConfig config;
-      config.status = status_;
-      return config;
+    absl::StatusOr<CallConfig> GetCallConfig(
+        GetCallConfigArgs /*args*/) override {
+      return status_;
     }
 
    private:

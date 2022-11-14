@@ -53,6 +53,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -332,9 +333,10 @@ class RlsLb : public LoadBalancingPolicy {
           ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
-                       std::unique_ptr<SubchannelPicker> picker) override;
+                       RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -352,7 +354,7 @@ class RlsLb : public LoadBalancingPolicy {
 
     grpc_connectivity_state connectivity_state_ ABSL_GUARDED_BY(&RlsLb::mu_) =
         GRPC_CHANNEL_IDLE;
-    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
         ABSL_GUARDED_BY(&RlsLb::mu_);
   };
 
@@ -728,7 +730,7 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
                                                      : nullptr),
       lb_policy_(lb_policy),
       target_(std::move(target)),
-      picker_(std::make_unique<QueuePicker>(std::move(lb_policy))) {
+      picker_(MakeRefCounted<QueuePicker>(std::move(lb_policy))) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -809,7 +811,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
               config.status().ToString().c_str());
     }
     pending_config_.reset();
-    picker_ = std::make_unique<TransientFailurePicker>(
+    picker_ = MakeRefCounted<TransientFailurePicker>(
         absl::UnavailableError(config.status().message()));
     child_policy_.reset();
   } else {
@@ -874,7 +876,7 @@ RlsLb::ChildPolicyWrapper::ChildPolicyHelper::CreateSubchannel(
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
             "[rlslb %p] ChildPolicyWrapper=%p [%s] ChildPolicyHelper=%p: "
@@ -913,6 +915,11 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
 
 absl::string_view RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetAuthority() {
   return wrapper_->lb_policy_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine*
+RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetEventEngine() {
+  return wrapper_->lb_policy_->channel_control_helper()->GetEventEngine();
 }
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
@@ -2140,7 +2147,7 @@ void RlsLb::UpdatePickerLocked() {
     status = absl::UnavailableError("no children available");
   }
   channel_control_helper()->UpdateState(
-      state, status, std::make_unique<Picker>(Ref(DEBUG_LOCATION, "Picker")));
+      state, status, MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "Picker")));
 }
 
 //
@@ -2419,13 +2426,8 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error;
-    rls_channel_service_config_ = it->second.Dump();
-    auto service_config = MakeRefCounted<ServiceConfigImpl>(
-        ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
-    if (!child_error.ok()) {
-      errors->AddError(StatusToString(child_error));
-    }
+    // Don't need to save the result here, just need the errors (if any).
+    ServiceConfigImpl::Create(ChannelArgs(), it->second, errors);
   }
   // Validate childPolicyConfigTargetFieldName.
   {

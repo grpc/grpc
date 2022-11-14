@@ -60,23 +60,30 @@ struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   }
 };
 
-WindowsEventEngine::WindowsEventEngine() : iocp_(&executor_) {
+WindowsEventEngine::WindowsEventEngine()
+    : executor_(std::make_shared<ThreadPool>()),
+      iocp_(executor_.get()),
+      timer_manager_(executor_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
-  grpc_core::MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    for (auto handle : known_handles_) {
-      gpr_log(GPR_ERROR,
-              "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s", this,
-              HandleToString(handle).c_str());
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+      for (auto handle : known_handles_) {
+        gpr_log(GPR_ERROR,
+                "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                this, HandleToString(handle).c_str());
+      }
     }
+    GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    GPR_ASSERT(WSACleanup() == 0);
+    timer_manager_.Shutdown();
   }
-  GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
-  GPR_ASSERT(WSACleanup() == 0);
+  executor_->Quiesce();
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
@@ -100,11 +107,11 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfter(
 }
 
 void WindowsEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  executor_.Run(std::move(closure));
+  executor_->Run(std::move(closure));
 }
 
 void WindowsEventEngine::Run(EventEngine::Closure* closure) {
-  executor_.Run(closure);
+  executor_->Run(closure);
 }
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(

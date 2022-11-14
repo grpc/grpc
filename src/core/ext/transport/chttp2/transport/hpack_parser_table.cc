@@ -34,10 +34,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
-
-extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 

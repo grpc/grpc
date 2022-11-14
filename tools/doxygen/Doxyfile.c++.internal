@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.51.0-dev
+PROJECT_NUMBER         = 1.52.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -956,8 +956,10 @@ include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
 include/grpcpp/impl/call_hook.h \
+include/grpcpp/impl/call_op_set.h \
 include/grpcpp/impl/call_op_set_interface.h \
 include/grpcpp/impl/channel_argument_option.h \
+include/grpcpp/impl/channel_interface.h \
 include/grpcpp/impl/client_unary_call.h \
 include/grpcpp/impl/codegen/async_generic_service.h \
 include/grpcpp/impl/codegen/async_stream.h \
@@ -1037,6 +1039,7 @@ include/grpcpp/server_posix.h \
 include/grpcpp/support/async_stream.h \
 include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/byte_buffer.h \
+include/grpcpp/support/callback_common.h \
 include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/client_callback.h \
 include/grpcpp/support/client_interceptor.h \
@@ -1056,6 +1059,7 @@ include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
+include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.cc \
@@ -1074,6 +1078,8 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.h \
 src/core/ext/filters/client_channel/config_selector.cc \
 src/core/ext/filters/client_channel/config_selector.h \
 src/core/ext/filters/client_channel/connector.h \
@@ -1113,11 +1119,13 @@ src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
 src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
@@ -1140,8 +1148,6 @@ src/core/ext/filters/client_channel/resolver/polling_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
-src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-src/core/ext/filters/client_channel/resolver_result_parsing.h \
 src/core/ext/filters/client_channel/retry_filter.cc \
 src/core/ext/filters/client_channel/retry_filter.h \
 src/core/ext/filters/client_channel/retry_service_config.cc \
@@ -1160,8 +1166,8 @@ src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
-src/core/ext/filters/fault_injection/service_config_parser.cc \
-src/core/ext/filters/fault_injection/service_config_parser.h \
+src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
+src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
 src/core/ext/filters/http/client/http_client_filter.h \
 src/core/ext/filters/http/client_authority_filter.cc \
@@ -1263,6 +1269,8 @@ src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http_trace.cc \
+src/core/ext/transport/chttp2/transport/http_trace.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
@@ -1884,7 +1892,6 @@ src/core/ext/xds/xds_lb_policy_registry.cc \
 src/core/ext/xds/xds_lb_policy_registry.h \
 src/core/ext/xds/xds_listener.cc \
 src/core/ext/xds/xds_listener.h \
-src/core/ext/xds/xds_resource_type.cc \
 src/core/ext/xds/xds_resource_type.h \
 src/core/ext/xds/xds_resource_type_impl.h \
 src/core/ext/xds/xds_route_config.cc \
@@ -1947,6 +1954,7 @@ src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
+src/core/lib/event_engine/common_closures.h \
 src/core/lib/event_engine/default_event_engine.cc \
 src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
@@ -1957,14 +1965,39 @@ src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/memory_allocator.cc \
 src/core/lib/event_engine/poller.h \
+src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
+src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h \
+src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
+src/core/lib/event_engine/posix_engine/ev_poll_posix.h \
+src/core/lib/event_engine/posix_engine/event_poller.h \
+src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
+src/core/lib/event_engine/posix_engine/event_poller_posix_default.h \
+src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
+src/core/lib/event_engine/posix_engine/internal_errqueue.h \
+src/core/lib/event_engine/posix_engine/lockfree_event.cc \
+src/core/lib/event_engine/posix_engine/lockfree_event.h \
+src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
+src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
+src/core/lib/event_engine/posix_engine/posix_engine_closure.h \
+src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
+src/core/lib/event_engine/posix_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/posix_engine/timer.cc \
 src/core/lib/event_engine/posix_engine/timer.h \
 src/core/lib/event_engine/posix_engine/timer_heap.cc \
 src/core/lib/event_engine/posix_engine/timer_heap.h \
 src/core/lib/event_engine/posix_engine/timer_manager.cc \
 src/core/lib/event_engine/posix_engine/timer_manager.h \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.cc \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
+src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
+src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
+src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
@@ -2042,6 +2075,8 @@ src/core/lib/gprpp/global_config_env.h \
 src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
+src/core/lib/gprpp/load_file.cc \
+src/core/lib/gprpp/load_file.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
@@ -2228,6 +2263,7 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.h \
 src/core/lib/json/json_args.h \
+src/core/lib/json/json_channel_args.h \
 src/core/lib/json/json_object_loader.cc \
 src/core/lib/json/json_object_loader.h \
 src/core/lib/json/json_reader.cc \
@@ -2245,17 +2281,20 @@ src/core/lib/matchers/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
-src/core/lib/promise/call_push_pull.h \
 src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
+src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
+src/core/lib/promise/for_each.h \
 src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
+src/core/lib/promise/map_pipe.h \
+src/core/lib/promise/pipe.cc \
 src/core/lib/promise/pipe.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
@@ -2263,6 +2302,7 @@ src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
 src/core/lib/promise/sleep.cc \
 src/core/lib/promise/sleep.h \
+src/core/lib/promise/try_concurrently.h \
 src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
@@ -2460,8 +2500,6 @@ src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
-src/core/lib/transport/call_fragments.cc \
-src/core/lib/transport/call_fragments.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \

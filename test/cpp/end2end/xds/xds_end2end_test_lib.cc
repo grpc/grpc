@@ -283,10 +283,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
-  builder->RegisterService(ads_service_->v2_rpc_service());
-  builder->RegisterService(ads_service_->v3_rpc_service());
-  builder->RegisterService(lrs_service_->v2_rpc_service());
-  builder->RegisterService(lrs_service_->v3_rpc_service());
+  builder->RegisterService(ads_service_.get());
+  builder->RegisterService(lrs_service_.get());
 }
 
 void XdsEnd2endTest::BalancerServerThread::StartAllServices() {
@@ -337,7 +335,6 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeXdsServersText(
       "        }\n"
       "      ]";
   std::vector<std::string> server_features;
-  if (!v2_) server_features.push_back("\"xds_v3\"");
   if (ignore_resource_deletion_) {
     server_features.push_back("\"ignore_resource_deletion\"");
   }
@@ -470,12 +467,10 @@ XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
   // Construct LDS resource.
   default_listener_.set_name(kServerName);
   HttpConnectionManager http_connection_manager;
-  if (!GetParam().use_v2()) {
-    auto* filter = http_connection_manager.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
-  }
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
   default_listener_.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   // Construct RDS resource.
@@ -748,7 +743,6 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   xds_channel_args_.args = xds_channel_args_to_add_.data();
   // Initialize XdsClient state.
   builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
-  if (GetParam().use_v2()) builder.SetV2();
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
@@ -866,7 +860,7 @@ void XdsEnd2endTest::CheckRpcSendOk(
     const RpcOptions& rpc_options) {
   SendRpcsUntil(
       debug_location,
-      [debug_location, times, n = size_t(0)](const RpcResult& result) mutable {
+      [debug_location, times, n = size_t{0}](const RpcResult& result) mutable {
         EXPECT_TRUE(result.status.ok())
             << "code=" << result.status.error_code()
             << " message=" << result.status.error_message() << " at "
@@ -897,7 +891,7 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
   size_t num_failed = 0;
   SendRpcsUntil(
       debug_location,
-      [&, n = size_t(0)](const RpcResult& result) mutable {
+      [&, n = size_t{0}](const RpcResult& result) mutable {
         if (!result.status.ok()) {
           EXPECT_EQ(result.status.error_code(), expected_status)
               << debug_location.file() << ":" << debug_location.line();

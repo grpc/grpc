@@ -16,14 +16,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/gcp/observability.h"
-
 #include <stdint.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
@@ -34,10 +33,10 @@
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
+#include <grpcpp/ext/gcp_observability.h>
 #include <grpcpp/opencensus.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/config.h>
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"

@@ -58,8 +58,7 @@ class MockCensusViewProvider : public CensusViewProvider {
  public:
   MOCK_METHOD0(FetchViewData, CensusViewProvider::ViewDataMap());
 
-  const ::opencensus::stats::ViewDescriptor& FindViewDescriptor(
-      const std::string& view_name) {
+  const ViewDescriptor& FindViewDescriptor(const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
     GPR_ASSERT(it != view_descriptor_map().end());
     return it->second;

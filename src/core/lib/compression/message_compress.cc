@@ -40,7 +40,7 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
   int flush;
   size_t i;
   grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
-  const uInt uint_max = ~static_cast<uInt>(0);
+  const uInt uint_max = ~uInt{0};
 
   GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
   zs->avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);

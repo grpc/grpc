@@ -28,14 +28,13 @@ package(
     ],
 )
 
-# This is an EXPERIMENTAL target subject to change.
 grpc_cc_library(
     name = "observability",
     srcs = [
         "observability.cc",
     ],
     hdrs = [
-        "observability.h",
+        "//:include/grpcpp/ext/gcp_observability.h",
     ],
     external_deps = [
         "absl/status",
@@ -50,7 +49,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":observability_config",
         "//:gpr",
@@ -77,14 +76,37 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
-        "//:env",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
-        "//:json",
-        "//:json_args",
-        "//:json_object_loader",
-        "//:slice_refcount",
-        "//:status_helper",
+        "//src/core:env",
+        "//src/core:error",
+        "//src/core:json",
+        "//src/core:json_args",
+        "//src/core:json_object_loader",
+        "//src/core:slice_refcount",
+        "//src/core:status_helper",
+        "//src/core:validation_errors",
+    ],
+)
+
+grpc_cc_library(
+    name = "observability_logging_sink",
+    srcs = [
+        "observability_logging_sink.cc",
+    ],
+    hdrs = [
+        "observability_logging_sink.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        ":observability_config",
+        "//:gpr_platform",
+        "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )

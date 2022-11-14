@@ -44,7 +44,7 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpcpp/support/config.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
@@ -233,8 +233,9 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   }
   if (OpenCensusTracingEnabled() && parent_->tracing_enabled_) {
     if (status_code_ != absl::StatusCode::kOk) {
-      context_.Span().SetStatus(opencensus::trace::StatusCode(status_code_),
-                                StatusCodeToString(status_code_));
+      context_.Span().SetStatus(
+          static_cast<opencensus::trace::StatusCode>(status_code_),
+          StatusCodeToString(status_code_));
     }
     context_.EndSpan();
   }

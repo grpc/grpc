@@ -28,6 +28,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/mpscq.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -370,7 +371,7 @@ void BasicMemoryQuota::Start() {
           std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
         auto reclaimer = std::move(std::get<1>(arg));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          double free = std::max(intptr_t(0), self->free_bytes_.load());
+          double free = std::max(intptr_t{0}, self->free_bytes_.load());
           size_t quota_size = self->quota_size_.load();
           gpr_log(GPR_INFO,
                   "RQ: %s perform %s reclamation. Available free bytes: %f, "
@@ -434,7 +435,7 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      double free = std::max(intptr_t(0), free_bytes_.load());
+      double free = std::max(intptr_t{0}, free_bytes_.load());
       size_t quota_size = quota_size_.load();
       gpr_log(GPR_INFO,
               "RQ: %s reclamation complete. Available free bytes: %f, "

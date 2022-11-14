@@ -31,7 +31,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
-extern grpc_core::TraceFlag grpc_http_trace;
 extern grpc_core::TraceFlag grpc_keepalive_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;

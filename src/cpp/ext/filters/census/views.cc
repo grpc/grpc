@@ -25,8 +25,6 @@
 
 #include <grpcpp/opencensus.h>
 
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
-
 namespace grpc {
 
 using ::opencensus::stats::Aggregation;
@@ -74,19 +72,21 @@ ViewDescriptor HourDescriptor() {
 }  // namespace
 
 void RegisterOpenCensusViewsForExport() {
-  ClientSentMessagesPerRpcCumulative().RegisterForExport();
-  ClientSentBytesPerRpcCumulative().RegisterForExport();
-  ClientReceivedMessagesPerRpcCumulative().RegisterForExport();
-  ClientReceivedBytesPerRpcCumulative().RegisterForExport();
-  ClientRoundtripLatencyCumulative().RegisterForExport();
-  ClientServerLatencyCumulative().RegisterForExport();
+  experimental::ClientSentMessagesPerRpcCumulative().RegisterForExport();
+  experimental::ClientSentBytesPerRpcCumulative().RegisterForExport();
+  experimental::ClientReceivedMessagesPerRpcCumulative().RegisterForExport();
+  experimental::ClientReceivedBytesPerRpcCumulative().RegisterForExport();
+  experimental::ClientRoundtripLatencyCumulative().RegisterForExport();
+  experimental::ClientServerLatencyCumulative().RegisterForExport();
 
-  ServerSentMessagesPerRpcCumulative().RegisterForExport();
-  ServerSentBytesPerRpcCumulative().RegisterForExport();
-  ServerReceivedMessagesPerRpcCumulative().RegisterForExport();
-  ServerReceivedBytesPerRpcCumulative().RegisterForExport();
-  ServerServerLatencyCumulative().RegisterForExport();
+  experimental::ServerSentMessagesPerRpcCumulative().RegisterForExport();
+  experimental::ServerSentBytesPerRpcCumulative().RegisterForExport();
+  experimental::ServerReceivedMessagesPerRpcCumulative().RegisterForExport();
+  experimental::ServerReceivedBytesPerRpcCumulative().RegisterForExport();
+  experimental::ServerServerLatencyCumulative().RegisterForExport();
 }
+
+namespace experimental {
 
 // client cumulative
 const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
@@ -699,5 +699,7 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
           .add_column(ServerMethodTagKey());
   return descriptor;
 }
+
+}  // namespace experimental
 
 }  // namespace grpc
