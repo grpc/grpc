@@ -485,6 +485,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "config",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
@@ -552,6 +553,7 @@ grpc_cc_library(
     ],
     deps = [
         "config",
+        "exec_ctx",
         "gpr",
         "grpc_alts_credentials",
         "grpc_base",
@@ -972,6 +974,7 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
+        "exec_ctx",
         "gpr",
         "gpr_platform",
         "grpc",
@@ -1004,6 +1007,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
+        "exec_ctx",
         "gpr",
         "grpc",
         "grpc++_base",
@@ -1339,10 +1343,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/closure.h",
         "//src/core:lib/slice/slice_internal.h",
         "//src/core:lib/slice/slice_string_helpers.h",
-        "//src/core:lib/iomgr/exec_ctx.h",
-        "//src/core:lib/iomgr/executor.h",
-        "//src/core:lib/iomgr/combiner.h",
-        "//src/core:lib/iomgr/iomgr_internal.h",
         "//src/core:lib/channel/channel_args.h",
         "//src/core:lib/channel/channel_stack_builder.h",
     ],
@@ -1749,6 +1749,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
         "config",
+        "exec_ctx",
         "gpr",
         "grpc",
         "grpc++_codegen_proto",
@@ -1813,6 +1814,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "config",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_health_upb",
@@ -1963,6 +1965,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "debug_location",
+        "exec_ctx",
         "gpr",
         "grpc++",
         "grpc_base",
@@ -2346,7 +2349,10 @@ grpc_cc_library(
         "//src/core:lib/iomgr/executor.h",
         "//src/core:lib/iomgr/iomgr_internal.h",
     ],
-    visibility = ["@grpc:exec_ctx"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+        "@grpc:exec_ctx",
+    ],
     deps = [
         "debug_location",
         "gpr",
@@ -2661,6 +2667,7 @@ grpc_cc_library(
         "backoff",
         "config",
         "debug_location",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_health_upb",
@@ -2752,6 +2759,7 @@ grpc_cc_library(
         "backoff",
         "config",
         "debug_location",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_grpclb_balancer_addresses",
@@ -2807,6 +2815,7 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
@@ -2852,6 +2861,7 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "debug_location",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
@@ -2916,6 +2926,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_credentials_util",
@@ -3021,6 +3032,7 @@ grpc_cc_library(
         "alts_upb",
         "alts_util",
         "config",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "tsi_base",
@@ -3352,6 +3364,7 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "debug_location",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
