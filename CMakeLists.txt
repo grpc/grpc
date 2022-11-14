@@ -4461,8 +4461,8 @@ target_link_libraries(grpc_authorization_provider
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::cleanup
   absl::flat_hash_map
   absl::flat_hash_set
