@@ -167,14 +167,13 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator=(
 bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator==(
     const Header& other) const {
   if (header_name != other.header_name) return false;
-  if (regex_substitution != other.regex_substitution) return false;
   if (regex == nullptr) {
     if (other.regex != nullptr) return false;
   } else {
     if (other.regex == nullptr) return false;
-    return regex->pattern() == other.regex->pattern();
+    if (regex->pattern() != other.regex->pattern()) return false;
   }
-  return true;
+  return regex_substitution == other.regex_substitution;
 }
 
 std::string
