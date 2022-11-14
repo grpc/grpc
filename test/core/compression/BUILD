@@ -30,7 +30,10 @@ grpc_cc_library(
     srcs = ["args_utils.cc"],
     hdrs = ["args_utils.h"],
     visibility = ["//visibility:public"],
-    deps = ["//:grpc"],
+    deps = [
+        "//:grpc",
+        "//src/core:channel_args",
+    ],
 )
 
 grpc_cc_test(
@@ -44,6 +47,7 @@ grpc_cc_test(
         ":args_utils",
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )

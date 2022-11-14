@@ -86,6 +86,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base",
         "//:grpc_opencensus_plugin",
+        "//src/core:channel_args",
         "//src/core:grpc_xds_channel_stack_modifier",
         "//test/core/util:grpc_test_util",
     ],
@@ -277,6 +278,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//test/core/util:grpc_test_util",

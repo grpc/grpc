@@ -29,6 +29,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//:grpc_security_base",
+        "//src/core:channel_args",
         "//test/core/promise:test_context",
     ],
 )
@@ -58,6 +59,7 @@ grpc_proto_fuzzer(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
