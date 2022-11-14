@@ -131,6 +131,9 @@ class BitSet {
     return true;
   }
 
+  // Returns true if any bites are set.
+  bool any() const { return !none(); }
+
   // Return a count of how many bits are set.
   uint32_t count() const {
     uint32_t count = 0;
