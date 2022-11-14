@@ -107,7 +107,7 @@ class WireReaderImpl : public WireReader {
   std::shared_ptr<TransportStreamReceiver> transport_stream_receiver_;
   grpc_core::Notification connection_noti_;
   grpc_core::Mutex mu_;
-  bool connected_ ABSL_GUARDED_BY(mu_) = false;
+  std::atomic_bool connected_{false};
   bool recvd_setup_transport_ ABSL_GUARDED_BY(mu_) = false;
   // NOTE: other_end_binder_ will be moved out when RecvSetupTransport() is
   // called. Be cautious not to access it afterward.
@@ -130,6 +130,7 @@ class WireReaderImpl : public WireReader {
 
   // Used to send ACK.
   std::shared_ptr<WireWriter> wire_writer_;
+  grpc_core::Notification wire_writer_set_notification_;
 };
 
 }  // namespace grpc_binder
