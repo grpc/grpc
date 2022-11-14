@@ -233,6 +233,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
+        "//:channel_stack_builder",
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:cq_verifier",
