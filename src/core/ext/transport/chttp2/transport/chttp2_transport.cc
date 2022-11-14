@@ -61,7 +61,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -323,6 +322,13 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(false);
+  // Only send the prefered rx frame size http2 setting if we are instructed
+  // to auto size the buffers allocated at tcp level and we also can adjust
+  // sending frame size.
+  t->enable_preferred_rx_crypto_frame_advertisement =
+      channel_args
+          .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
+          .value_or(false);
 
   if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -392,6 +398,16 @@ static void read_channel_args(grpc_chttp2_transport* t,
               std::string(setting.channel_arg_name).c_str(),
               is_client ? "clients" : "servers");
     }
+  }
+
+  if (t->enable_preferred_rx_crypto_frame_advertisement) {
+    const grpc_chttp2_setting_parameters* sp =
+        &grpc_chttp2_settings_parameters
+            [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE];
+    queue_setting_update(
+        t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+        grpc_core::Clamp(INT_MAX, static_cast<int>(sp->min_value),
+                         static_cast<int>(sp->max_value)));
   }
 }
 
@@ -864,16 +880,17 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
-  // If the peer_state_based_framing experiment is set to true,
-  // choose max_frame_size as 2 * max http2 frame size of peer. If peer is under
-  // high memory pressure, then it would advertise a smaller max http2 frame
-  // size. With this logic, the sender would automatically reduce the sending
-  // frame size as well.
+  // Choose max_frame_size as the prefered rx crypto frame size indicated by the
+  // peer.
   int max_frame_size =
-      grpc_core::IsPeerStateBasedFramingEnabled()
-          ? 2 * t->settings[GRPC_PEER_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
-          : INT_MAX;
+      t->settings
+          [GRPC_PEER_SETTINGS]
+          [GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE];
+  // Note: max frame size is 0 if the remote peer does not support adjusting the
+  // sending frame size.
+  if (max_frame_size == 0) {
+    max_frame_size = INT_MAX;
+  }
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
@@ -2301,6 +2318,15 @@ void grpc_chttp2_act_on_flowctl_action(
                 queue_setting_update(t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
                                      action.max_frame_size());
               });
+  if (t->enable_preferred_rx_crypto_frame_advertisement) {
+    WithUrgency(
+        t, action.preferred_rx_crypto_frame_size_update(),
+        GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
+          queue_setting_update(
+              t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+              action.preferred_rx_crypto_frame_size());
+        });
+  }
 }
 
 static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {

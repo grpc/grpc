@@ -59,7 +59,7 @@ class DropPolicy : public LoadBalancingPolicy {
 
   absl::Status UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                          std::make_unique<DropPicker>());
+                                          MakeRefCounted<DropPicker>());
     return absl::OkStatus();
   }
 
