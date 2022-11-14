@@ -24081,7 +24081,9 @@ target_include_directories(xds_route_config_resource_type_test
 )
 
 target_link_libraries(xds_route_config_resource_type_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
   grpc++
