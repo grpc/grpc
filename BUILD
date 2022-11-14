@@ -483,6 +483,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -494,7 +495,6 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
-        ":channel_stack_builder",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:default_event_engine",
@@ -551,6 +551,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -572,7 +573,6 @@ grpc_cc_library(
         "sockaddr_utils",
         "tsi_base",
         "uri_parser",
-        ":channel_stack_builder",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:default_event_engine",
@@ -1747,6 +1747,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -1762,7 +1763,6 @@ grpc_cc_library(
         "grpcpp_call_metric_recorder",
         "iomgr_timer",
         "ref_counted_ptr",
-        ":channel_stack_builder",
         "//src/core:arena",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -1813,6 +1813,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -1825,7 +1826,6 @@ grpc_cc_library(
         "grpcpp_call_metric_recorder",
         "iomgr_timer",
         "ref_counted_ptr",
-        ":channel_stack_builder",
         "//src/core:arena",
         "//src/core:channel_init",
         "//src/core:error",
