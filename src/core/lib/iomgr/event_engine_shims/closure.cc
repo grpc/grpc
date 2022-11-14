@@ -1,4 +1,4 @@
-// Copyright 2021 The gRPC Authors
+// Copyright 2021 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 
 #include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -59,7 +60,7 @@ absl::AnyInvocable<void(absl::Status)> GrpcClosureToStatusCallback(
 }
 
 absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure) {
-  return [closure]() { RunClosure(closure, GRPC_ERROR_NONE); };
+  return [closure]() { RunClosure(closure, absl::OkStatus()); };
 }
 
 absl::AnyInvocable<void()> GrpcClosureToCallback(grpc_closure* closure,

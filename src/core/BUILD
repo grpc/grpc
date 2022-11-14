@@ -1347,6 +1347,33 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_iomgr_shims",
+    srcs = [
+        "lib/iomgr/event_engine_shims/closure.cc",
+        "lib/iomgr/event_engine_shims/endpoint.cc",
+        "lib/iomgr/event_engine_shims/resolved_address.cc",
+    ],
+    hdrs = [
+        "lib/iomgr/event_engine_shims/closure.h",
+        "lib/iomgr/event_engine_shims/endpoint.h",
+        "lib/iomgr/event_engine_shims/resolved_address.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/time",
+    ],
+    deps = [
+        "event_engine_executor",
+        "forkable",
+        "time",
+        "useful",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine_timer_manager",
     srcs = ["lib/event_engine/posix_engine/timer_manager.cc"],
     hdrs = [

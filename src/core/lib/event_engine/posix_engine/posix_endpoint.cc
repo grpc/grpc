@@ -1134,7 +1134,9 @@ void PosixEndpointImpl::Write(
     current_zerocopy_send_ = zerocopy_send_record;
     handle_->NotifyOnWrite(on_write_);
   } else {
-    on_writable(status);
+    engine_->Run([on_writable = std::move(on_writable), status]() mutable {
+      on_writable(status);
+    });
   }
 }
 

@@ -18,16 +18,107 @@
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
 
+#include <chrono>
+
 #include <gtest/gtest.h>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/iomgr/endpoint_tests.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+
+using namespace std::chrono_literals;
+
+namespace {
+
+using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
+  grpc_resolved_address addr;
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "Failed to parse. Error: %s",
+            uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
+  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
+}
+
+grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
+    grpc_channel_args* c_args) {
+  grpc_core::ExecCtx ctx;
+  grpc_endpoint_pair p;
+  auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  std::unique_ptr<EventEngine::Endpoint> client_endpoint;
+  std::unique_ptr<EventEngine::Endpoint> server_endpoint;
+  grpc_core::Notification client_signal;
+  grpc_core::Notification server_signal;
+
+  EventEngine::Listener::AcceptCallback accept_cb =
+      [&server_endpoint, &server_signal](
+          std::unique_ptr<EventEngine::Endpoint> ep,
+          grpc_core::MemoryAllocator /*memory_allocator*/) {
+        server_endpoint = std::move(ep);
+        server_signal.Notify();
+      };
+
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(c_args);
+  ChannelArgsEndpointConfig config(args);
+  auto listener = *ee->CreateListener(
+      std::move(accept_cb), [](absl::Status /*status*/) {}, config,
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
+
+  GPR_ASSERT(listener->Bind(URIToResolvedAddress(target_addr)).ok());
+  GPR_ASSERT(listener->Start().ok());
+
+  ee->Connect(
+      [&client_endpoint, &client_signal](
+          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
+        GPR_ASSERT(endpoint.ok());
+        client_endpoint = std::move(*endpoint);
+        client_signal.Notify();
+      },
+      URIToResolvedAddress(target_addr), config,
+      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
+
+  client_signal.WaitForNotification();
+  server_signal.WaitForNotification();
+
+  p.client = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+      std::move(client_endpoint));
+  p.server = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+      std::move(server_endpoint));
+  return p;
+}
+
+}  // namespace
+
+#endif  // GRPC_POSIX_SOCKET_TCP
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -43,7 +134,17 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
+#ifdef GRPC_POSIX_SOCKET_TCP
+  grpc_endpoint_pair p;
+  if (grpc_core::IsEventEngineClientEnabled() &&
+      grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+    p = grpc_iomgr_event_engine_shim_endpoint_pair(&args);
+  } else {
+    p = grpc_iomgr_create_endpoint_pair("test", &args);
+  }
+#else
   grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", &args);
+#endif
   f.client_ep = p.client;
   f.server_ep = p.server;
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);

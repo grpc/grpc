@@ -1244,6 +1244,14 @@ grpc_cc_library(
         "//src/core:lib/transport/timeout_encoding.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
+    ] +
+    # TODO(vigneshbabu): remove these
+    # These headers used to be vended by this target, but they have to be
+    # removed after landing event engine.
+    [
+        "//src/core:lib/iomgr/event_engine_shims/closure.cc",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
+        "//src/core:lib/iomgr/event_engine_shims/resolved_address.cc",
     ],
     hdrs = [
         "//src/core:lib/transport/error_utils.h",
@@ -1345,6 +1353,14 @@ grpc_cc_library(
         "//src/core:lib/iomgr/iomgr_internal.h",
         "//src/core:lib/channel/channel_args.h",
         "//src/core:lib/channel/channel_stack_builder.h",
+    ] +
+    # TODO(vigneshbabu): remove these
+    # These headers used to be vended by this target, but they have to be
+    # removed after landing event engine.
+    [
+        "//src/core:lib/iomgr/event_engine_shims/closure.h",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
+        "//src/core:lib/iomgr/event_engine_shims/resolved_address.h",
     ],
     external_deps = [
         "absl/base:core_headers",

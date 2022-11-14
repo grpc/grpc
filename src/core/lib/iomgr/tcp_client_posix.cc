@@ -28,29 +28,42 @@
 #include <unistd.h>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
+#include "grpc/event_engine/memory_allocator.h"
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/event_engine_shims/resolved_address.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/error_utils.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
+using ::grpc_event_engine::experimental::CreateResolvedAddress;
 using ::grpc_event_engine::experimental::EndpointConfig;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 struct async_connect {
   gpr_mu mu;
@@ -83,6 +96,40 @@ std::atomic<int64_t> g_connection_id{1};
 void do_tcp_client_global_init(void) {
   size_t num_shards = std::max(2 * gpr_cpu_num_cores(), 1u);
   g_connection_shards = new std::vector<struct ConnectionShard>(num_shards);
+}
+
+int64_t event_engine_tcp_client_connect(
+    grpc_closure* on_connect, grpc_endpoint** endpoint,
+    const grpc_event_engine::experimental::EndpointConfig& config,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
+  *endpoint = nullptr;
+  auto resource_quota = reinterpret_cast<grpc_core::ResourceQuota*>(
+      config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA));
+  auto addr_uri = grpc_sockaddr_to_uri(addr);
+  EventEngine::ConnectionHandle handle = GetDefaultEventEngine()->Connect(
+      [on_connect,
+       endpoint](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
+        grpc_core::ExecCtx exec_ctx;
+        if (ep.ok()) {
+          *endpoint = grpc_event_engine_endpoint_create(std::move(*ep));
+        }
+        grpc_core::Closure::Run(DEBUG_LOCATION, on_connect,
+                                absl_status_to_grpc_error(
+                                    ep.ok() ? absl::OkStatus() : ep.status()));
+        exec_ctx.Flush();
+      },
+      CreateResolvedAddress(*addr), config,
+      resource_quota != nullptr
+          ? resource_quota->memory_quota()->CreateMemoryOwner(
+                absl::StrCat("tcp-client:", addr_uri.value()))
+          : grpc_event_engine::experimental::MemoryAllocator(),
+      std::max(grpc_core::Duration::Milliseconds(1),
+               deadline - grpc_core::Timestamp::Now()));
+  return handle.keys[0];
+}
+
+bool event_engine_tcp_client_cancel_connect(int64_t connection_handle) {
+  return GetDefaultEventEngine()->CancelConnect({connection_handle, 0});
 }
 
 }  // namespace
@@ -399,6 +446,10 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
+  if (grpc_core::IsEventEngineClientEnabled() &&
+      grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+    return event_engine_tcp_client_connect(closure, ep, config, addr, deadline);
+  }
   grpc_resolved_address mapped_addr;
   grpc_core::PosixTcpOptions options(TcpOptionsFromEndpointConfig(config));
   int fd = -1;
@@ -414,6 +465,10 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 static bool tcp_cancel_connect(int64_t connection_handle) {
+  if (grpc_core::IsEventEngineClientEnabled() &&
+      grpc_core::IsPosixEventEngineEnablePollingEnabled()) {
+    return event_engine_tcp_client_cancel_connect(connection_handle);
+  }
   if (connection_handle <= 0) {
     return false;
   }
