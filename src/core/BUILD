@@ -2149,6 +2149,9 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "avl",
         "channel_stack_type",
