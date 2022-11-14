@@ -373,7 +373,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
     void RequestReresolution() override {}
@@ -435,7 +435,7 @@ XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
 
 void XdsClusterResolverLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (xds_cluster_resolver_policy_->shutting_down_ ||
       xds_cluster_resolver_policy_->child_policy_ == nullptr) {
     return;
@@ -961,7 +961,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "config");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        std::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return nullptr;
   }
   return std::move(*config);

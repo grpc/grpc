@@ -85,12 +85,15 @@ shared_examples 'basic GRPC message delivery is OK' do
     # confirm the server can read the inbound message
     server_thread.join
     server_ops = {
-      CallOps::RECV_MESSAGE => nil,
+      CallOps::RECV_MESSAGE => nil
+    }
+    server_batch = server_call.run_batch(server_ops)
+    expect(server_batch.message).to eq(sent_message)
+    server_ops = {
       CallOps::RECV_CLOSE_ON_SERVER => nil,
       CallOps::SEND_STATUS_FROM_SERVER => ok_status
     }
     server_batch = server_call.run_batch(server_ops)
-    expect(server_batch.message).to eq(sent_message)
     expect(server_batch.send_close).to be true
     expect(server_batch.send_status).to be true
 
@@ -123,13 +126,16 @@ shared_examples 'basic GRPC message delivery is OK' do
     # confirm the server can read the inbound message
     server_thread.join
     server_ops = {
-      CallOps::RECV_MESSAGE => nil,
+      CallOps::RECV_MESSAGE => nil
+    }
+    server_batch = server_call.run_batch(server_ops)
+    expect(server_batch.message).to eq(sent_message)
+    server_ops = {
       CallOps::RECV_CLOSE_ON_SERVER => nil,
       CallOps::SEND_MESSAGE => reply_text,
       CallOps::SEND_STATUS_FROM_SERVER => ok_status
     }
     server_batch = server_call.run_batch(server_ops)
-    expect(server_batch.message).to eq(sent_message)
     expect(server_batch.send_close).to be true
     expect(server_batch.send_message).to be true
     expect(server_batch.send_status).to be true
@@ -168,13 +174,16 @@ shared_examples 'basic GRPC message delivery is OK' do
     # confirm the server can read the inbound message
     server_thread.join
     server_ops = {
-      CallOps::RECV_MESSAGE => nil,
+      CallOps::RECV_MESSAGE => nil
+    }
+    server_batch = server_call.run_batch(server_ops)
+    expect(server_batch.message).to eq(long_request_str)
+    server_ops = {
       CallOps::RECV_CLOSE_ON_SERVER => nil,
       CallOps::SEND_MESSAGE => long_response_str,
       CallOps::SEND_STATUS_FROM_SERVER => ok_status
     }
     server_batch = server_call.run_batch(server_ops)
-    expect(server_batch.message).to eq(long_request_str)
     expect(server_batch.send_close).to be true
     expect(server_batch.send_message).to be true
     expect(server_batch.send_status).to be true
@@ -245,12 +254,15 @@ shared_examples 'basic GRPC message delivery is OK' do
     the_status = Struct::Status.new(StatusCodes::OK, 'OK', {})
     server_thread.join
     server_ops = {
-      CallOps::RECV_MESSAGE => nil,
+      CallOps::RECV_MESSAGE => nil
+    }
+    server_batch = server_call.run_batch(server_ops)
+    expect(server_batch.message).to eq sent_message
+    server_ops = {
       CallOps::SEND_MESSAGE => reply_text,
       CallOps::SEND_STATUS_FROM_SERVER => the_status
     }
     server_batch = server_call.run_batch(server_ops)
-    expect(server_batch.message).to eq sent_message
     expect(server_batch.send_status).to be true
     expect(server_batch.send_message).to be true
 

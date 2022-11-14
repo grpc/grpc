@@ -31,7 +31,6 @@
 # - clang-diagnostic-deprecated-declarations
 # - clang-diagnostic-unused-function
 # - google-readability-avoid-underscore-in-googletest-name
-# - google-readability-casting
 # - google-runtime-int
 # - google-runtime-references
 # - modernize-avoid-bind
@@ -72,7 +71,6 @@ Checks: '-*,
   -bugprone-unchecked-optional-access,
   google-*,
   -google-readability-avoid-underscore-in-googletest-name,
-  -google-readability-casting,
   -google-runtime-int,
   -google-runtime-references,
   -google-upgrade-googletest-case,
@@ -118,6 +116,7 @@ Checks: '-*,
   readability-container-size-empty,
   readability-delete-null-pointer,
   readability-deleted-default,
+  readability-duplicate-include,
   readability-function-size,
   readability-inconsistent-declaration-parameter-name,
   readability-misleading-indentation,
@@ -125,6 +124,7 @@ Checks: '-*,
   readability-redundant-control-flow,
   readability-redundant-function-ptr-dereference,
   readability-redundant-smartptr-get,
+  readability-redundant-string-init,
   readability-simplify-boolean-expr,
   readability-static-definition-in-anonymous-namespace,
   readability-string-compare,
