@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.51.0-dev'
+  version = '1.52.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -121,7 +121,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
                       'include/grpcpp/impl/codegen/delegating_channel.h',
-                      'include/grpcpp/impl/codegen/grpc_library.h',
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
                       'include/grpcpp/impl/codegen/interceptor_common.h',
@@ -343,6 +342,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http_trace.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
                       'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -1227,6 +1227,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/stream_map.h',

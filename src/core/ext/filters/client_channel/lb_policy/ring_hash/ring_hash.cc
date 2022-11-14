@@ -659,7 +659,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
       state, status,
-      std::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
+      MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
@@ -846,7 +846,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
               : args.addresses.status();
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-          std::make_unique<TransientFailurePicker>(status));
+          MakeRefCounted<TransientFailurePicker>(status));
       return status;
     }
     // Otherwise, report IDLE.

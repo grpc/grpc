@@ -24,7 +24,6 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc {

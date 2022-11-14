@@ -32,6 +32,8 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
+
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -220,7 +222,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         t->flow_control.remote_window(),
         static_cast<uint32_t>(std::max(
-            int64_t(0),
+            int64_t{0},
             s->flow_control.remote_window_delta() +
                 static_cast<int64_t>(
                     t->settings[GRPC_PEER_SETTINGS]
@@ -378,7 +380,7 @@ class DataSendContext {
 
   uint32_t stream_remote_window() const {
     return static_cast<uint32_t>(std::max(
-        int64_t(0),
+        int64_t{0},
         s_->flow_control.remote_window_delta() +
             static_cast<int64_t>(
                 t_->settings[GRPC_PEER_SETTINGS]
@@ -388,15 +390,17 @@ class DataSendContext {
   uint32_t max_outgoing() const {
     return static_cast<uint32_t>(std::min(
         t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-        static_cast<uint32_t>(std::min(int64_t(stream_remote_window()),
-                                       t_->flow_control.remote_window()))));
+        static_cast<uint32_t>(
+            std::min(static_cast<int64_t>(stream_remote_window()),
+                     t_->flow_control.remote_window()))));
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
 
   void FlushBytes() {
-    uint32_t send_bytes = static_cast<uint32_t>(
-        std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
+    uint32_t send_bytes =
+        static_cast<uint32_t>(std::min(static_cast<size_t>(max_outgoing()),
+                                       s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();

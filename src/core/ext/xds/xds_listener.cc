@@ -615,8 +615,8 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
         google_protobuf_UInt32Value_value(prefix_len_proto),
         (reinterpret_cast<const grpc_sockaddr*>(cidr_range.address.addr))
                     ->sa_family == GRPC_AF_INET
-            ? uint32_t(32)
-            : uint32_t(128));
+            ? uint32_t{32}
+            : uint32_t{128});
   }
   // Normalize the network address by masking it with prefix_len
   grpc_sockaddr_mask_bits(&cidr_range.address, cidr_range.prefix_len);

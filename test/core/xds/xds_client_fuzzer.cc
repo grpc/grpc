@@ -179,7 +179,7 @@ class Fuzzer {
     watchers_set.erase(it);
   }
 
-  static absl::Status ToAbslStatus(const google::rpc::Status& status) {
+  static absl::Status ToAbslStatus(const xds_client_fuzzer::Status& status) {
     return absl::Status(static_cast<absl::StatusCode>(status.code()),
                         status.message());
   }

@@ -156,7 +156,7 @@ class MessageAllocatorEnd2endTestBase
   }
 
   void SendRpcs(int num_rpcs) {
-    std::string test_string("");
+    std::string test_string;
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       EchoResponse response;

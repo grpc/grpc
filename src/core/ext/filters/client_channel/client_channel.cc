@@ -883,10 +883,9 @@ class ClientChannel::ClientChannelControlHelper
         chand_, std::move(subchannel), std::move(health_check_service_name));
   }
 
-  void UpdateState(
-      grpc_connectivity_state state, const absl::Status& status,
-      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
+      override ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
       const char* extra = chand_->disconnect_error_.ok()
@@ -1331,7 +1330,7 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
     // Update connectivity state.
     UpdateStateAndPickerLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
-        std::make_unique<LoadBalancingPolicy::TransientFailurePicker>(status));
+        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
   }
 }
 
@@ -1511,7 +1510,7 @@ void ClientChannel::CreateResolverLocked() {
   GPR_ASSERT(resolver_ != nullptr);
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      std::make_unique<LoadBalancingPolicy::QueuePicker>(nullptr));
+      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
   resolver_->StartLocked();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p: created resolver=%p", this, resolver_.get());
@@ -1540,7 +1539,7 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
 void ClientChannel::UpdateStateAndPickerLocked(
     grpc_connectivity_state state, const absl::Status& status,
     const char* reason,
-    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
   // Special case for IDLE and SHUTDOWN states.
   if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
     saved_service_config_.reset();
@@ -1717,7 +1716,7 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
       disconnect_error_ = op->disconnect_with_error;
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
-          std::make_unique<LoadBalancingPolicy::TransientFailurePicker>(
+          MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(
               grpc_error_to_absl_status(op->disconnect_with_error)));
     }
   }
