@@ -471,7 +471,7 @@ static void test_connect(size_t num_connects,
   ASSERT_EQ(weak_ref.server, nullptr);
 }
 
-static void pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
+static int pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
                                    int* fd) {
   struct sockaddr_in6 address;
   memset(&address, 0, sizeof(address));
@@ -479,13 +479,30 @@ static void pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
   address.sin6_port = htons(port);
 
   int pre_fd = socket(address.sin6_family, SOCK_STREAM, 0);
-  ASSERT_GE(pre_fd, 0);
-  ASSERT_EQ(bind(pre_fd, (struct sockaddr*)&address, sizeof(address)), 0);
-  ASSERT_EQ(listen(pre_fd, SOMAXCONN), 0);
+  if (pre_fd < 0) {
+    gpr_log(GPR_ERROR, "Unable to create inet socket: %m");
+    return -1;
+  }
+
+  const int enable = 1;
+  setsockopt(pre_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+
+  int b = bind(pre_fd, (struct sockaddr*)&address, sizeof(address));
+  if (b < 0) {
+    gpr_log(GPR_ERROR, "Unable to bind inet socket: %m");
+    return -1;
+  }
+
+  int l = listen(pre_fd, SOMAXCONN);
+  if (l < 0) {
+    gpr_log(GPR_ERROR, "Unable to listen on inet socket: %m");
+    return -1;
+  }
 
   grpc_tcp_server_set_pre_allocated_fd(s, pre_fd);
-  ASSERT_EQ(grpc_tcp_server_pre_allocated_fd(s), pre_fd);
   *fd = pre_fd;
+
+  return 0;
 }
 
 static void test_pre_allocated_inet_fd() {
@@ -508,7 +525,14 @@ static void test_pre_allocated_inet_fd() {
   // Pre allocate FD
   int pre_fd;
   int port = grpc_pick_unused_port_or_die();
-  pre_allocate_inet_sock(s, AF_INET6, port, &pre_fd);
+
+  int res_pre = pre_allocate_inet_sock(s, AF_INET6, port, &pre_fd);
+  if (res_pre < 0) {
+    grpc_tcp_server_unref(s);
+    close(pre_fd);
+    return;
+  }
+  ASSERT_EQ(grpc_tcp_server_pre_allocated_fd(s), pre_fd);
 
   // Add port
   int pt;
@@ -546,22 +570,35 @@ static void test_pre_allocated_inet_fd() {
 }
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-static void pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
+static int pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
                                    int* fd) {
   struct sockaddr_un address;
   memset(&address, 0, sizeof(struct sockaddr_un));
   address.sun_family = AF_UNIX;
   strcpy(address.sun_path, path);
-  unlink(path);
 
   int pre_fd = socket(address.sun_family, SOCK_STREAM, 0);
-  ASSERT_GE(pre_fd, 0);
-  ASSERT_EQ(bind(pre_fd, (struct sockaddr*)&address, sizeof(address)), 0);
-  ASSERT_EQ(listen(pre_fd, SOMAXCONN), 0);
+  if (pre_fd < 0) {
+    gpr_log(GPR_ERROR, "Unable to create unix socket: %m");
+    return -1;
+  }
+
+  int b = bind(pre_fd, (struct sockaddr*)&address, sizeof(address));
+  if (b < 0) {
+    gpr_log(GPR_ERROR, "Unable to bind unix socket: %m");
+    return -1;
+  }
+
+  int l = listen(pre_fd, SOMAXCONN);
+  if (b < 0) {
+    gpr_log(GPR_ERROR, "Unable to listen on unix socket: %m");
+    return -1;
+  }
 
   grpc_tcp_server_set_pre_allocated_fd(s, pre_fd);
-  ASSERT_EQ(grpc_tcp_server_pre_allocated_fd(s), pre_fd);
   *fd = pre_fd;
+
+  return 0;
 }
 
 static void test_pre_allocated_unix_fd() {
@@ -583,8 +620,20 @@ static void test_pre_allocated_unix_fd() {
 
   // Pre allocate FD
   int pre_fd;
-  char path[50] = "/tmp/pre_fd_test.sock";
-  pre_allocate_unix_sock(s, path, &pre_fd);
+  char path[100];
+  srand(time(0));
+  memset(path, 0, sizeof(path));
+  sprintf(path, "/tmp/pre_fd_test_%d", rand());
+
+  int res_pre = pre_allocate_unix_sock(s, path, &pre_fd);
+  if (res_pre < 0) {
+    grpc_tcp_server_unref(s);
+    close(pre_fd);
+    unlink(path);
+    return;
+  }
+
+  ASSERT_EQ(grpc_tcp_server_pre_allocated_fd(s), pre_fd);
 
   // Add port
   int pt;
@@ -611,7 +660,18 @@ static void test_pre_allocated_unix_fd() {
   test_addr_init_str(&dst);
   on_connect_result result;
   on_connect_result_init(&result);
-  ASSERT_EQ(tcp_connect(&dst, &result), absl::OkStatus());
+
+  grpc_error_handle res_conn = tcp_connect(&dst, &result);
+  // If the path no longer exists, errno is 2. This can happen when
+  // runninig the test multiple times in parallel. Do not fail the test
+  if (absl::IsUnknown(res_conn) && res_conn.raw_code() == 2) {
+    gpr_log(GPR_ERROR, "Unable to test pre_allocated unix socket: path does not exist");
+    grpc_tcp_server_unref(s);
+    close(pre_fd);
+    return;
+  }
+
+  ASSERT_EQ(res_conn, absl::OkStatus());
   ASSERT_EQ(result.server_fd, pre_fd);
   ASSERT_EQ(result.server, s);
   ASSERT_EQ(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index),
@@ -619,6 +679,7 @@ static void test_pre_allocated_unix_fd() {
 
   grpc_tcp_server_unref(s);
   close(pre_fd);
+  unlink(path);
 }
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
