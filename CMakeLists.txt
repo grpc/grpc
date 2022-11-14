@@ -20300,7 +20300,9 @@ target_include_directories(tls_creds_options_test
 )
 
 target_link_libraries(tls_creds_options_test
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
