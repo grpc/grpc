@@ -43,7 +43,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -122,17 +121,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  // A simple wrapper for ref-counting a picker from the child policy.
-  class ChildPickerWrapper : public RefCounted<ChildPickerWrapper> {
-   public:
-    explicit ChildPickerWrapper(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-   private:
-    std::unique_ptr<SubchannelPicker> picker_;
-  };
-
   // Picks a child using stateless WRR and then delegates to that
   // child's picker.
   class WeightedPicker : public SubchannelPicker {
@@ -142,7 +130,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // range proportional to the child's weight. The start of the range
     // is the previous value in the vector and is 0 for the first element.
     using PickerList =
-        std::vector<std::pair<uint64_t, RefCountedPtr<ChildPickerWrapper>>>;
+        std::vector<std::pair<uint64_t, RefCountedPtr<SubchannelPicker>>>;
 
     explicit WeightedPicker(PickerList pickers)
         : pickers_(std::move(pickers)) {}
@@ -174,9 +162,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
     }
-    RefCountedPtr<ChildPickerWrapper> picker_wrapper() const {
-      return picker_wrapper_;
-    }
+    RefCountedPtr<SubchannelPicker> picker() const { return picker_; }
 
    private:
     class Helper : public ChannelControlHelper {
@@ -190,9 +176,10 @@ class WeightedTargetLb : public LoadBalancingPolicy {
           ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
-                       std::unique_ptr<SubchannelPicker> picker) override;
+                       RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
+      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -212,7 +199,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
       RefCountedPtr<WeightedChild> weighted_child_;
       absl::optional<EventEngine::TaskHandle> timer_handle_;
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
     };
 
     // Methods for dealing with the child policy.
@@ -221,7 +207,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
-        std::unique_ptr<SubchannelPicker> picker);
+        RefCountedPtr<SubchannelPicker> picker);
 
     // The owning LB policy.
     RefCountedPtr<WeightedTargetLb> weighted_target_policy_;
@@ -232,7 +218,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
-    RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
+    RefCountedPtr<SubchannelPicker> picker_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
 
     OrphanablePtr<DelayedRemovalTimer> delayed_removal_timer_;
@@ -365,7 +351,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
         "no children in weighted_target policy: ", args.resolution_note));
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        std::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return absl::OkStatus();
   }
   UpdateStateLocked();
@@ -410,18 +396,19 @@ void WeightedTargetLb::UpdateStateLocked() {
     if (config_->target_map().find(child_name) == config_->target_map().end()) {
       continue;
     }
+    auto child_picker = child->picker();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
       gpr_log(GPR_INFO,
               "[weighted_target_lb %p]   child=%s state=%s weight=%u picker=%p",
               this, child_name.c_str(),
               ConnectivityStateName(child->connectivity_state()),
-              child->weight(), child->picker_wrapper().get());
+              child->weight(), child_picker.get());
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
         GPR_ASSERT(child->weight() > 0);
         ready_end += child->weight();
-        ready_picker_list.emplace_back(ready_end, child->picker_wrapper());
+        ready_picker_list.emplace_back(ready_end, std::move(child_picker));
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
@@ -435,11 +422,11 @@ void WeightedTargetLb::UpdateStateLocked() {
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
         GPR_ASSERT(child->weight() > 0);
         tf_end += child->weight();
-        tf_picker_list.emplace_back(tf_end, child->picker_wrapper());
+        tf_picker_list.emplace_back(tf_end, std::move(child_picker));
         break;
       }
       default:
-        GPR_UNREACHABLE_CODE(return );
+        GPR_UNREACHABLE_CODE(return);
     }
   }
   // Determine aggregated connectivity state.
@@ -457,19 +444,18 @@ void WeightedTargetLb::UpdateStateLocked() {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] connectivity changed to %s",
             this, ConnectivityStateName(connectivity_state));
   }
-  std::unique_ptr<SubchannelPicker> picker;
+  RefCountedPtr<SubchannelPicker> picker;
   absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = std::make_unique<WeightedPicker>(std::move(ready_picker_list));
+      picker = MakeRefCounted<WeightedPicker>(std::move(ready_picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
-      picker =
-          std::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
+      picker = MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      picker = std::make_unique<WeightedPicker>(std::move(tf_picker_list));
+      picker = MakeRefCounted<WeightedPicker>(std::move(tf_picker_list));
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));
@@ -481,16 +467,19 @@ void WeightedTargetLb::UpdateStateLocked() {
 
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
-    : weighted_child_(std::move(weighted_child)),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+    : weighted_child_(std::move(weighted_child)) {
   timer_handle_ =
-      engine_->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx app_exec_ctx;
-        ExecCtx exec_ctx;
-        self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
-            [self = std::move(self)] { self->OnTimerLocked(); },
-            DEBUG_LOCATION);
-      });
+      weighted_child_->weighted_target_policy_->channel_control_helper()
+          ->GetEventEngine()
+          ->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
+            ApplicationCallbackExecCtx app_exec_ctx;
+            ExecCtx exec_ctx;
+            auto* self_ptr = self.get();  // Avoid use-after-move problem.
+            self_ptr->weighted_child_->weighted_target_policy_
+                ->work_serializer()
+                ->Run([self = std::move(self)] { self->OnTimerLocked(); },
+                      DEBUG_LOCATION);
+          });
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
@@ -502,7 +491,9 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    engine_->Cancel(*timer_handle_);
+    weighted_child_->weighted_target_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(*timer_handle_);
   }
   Unref();
 }
@@ -551,7 +542,7 @@ void WeightedTargetLb::WeightedChild::Orphan() {
   child_policy_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
-  picker_wrapper_.reset();
+  picker_.reset();
   delayed_removal_timer_.reset();
   Unref();
 }
@@ -631,16 +622,16 @@ void WeightedTargetLb::WeightedChild::ResetBackoffLocked() {
 
 void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   // Cache the picker in the WeightedChild.
-  picker_wrapper_ = MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  picker_ = std::move(picker);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] WeightedChild %p %s: connectivity "
-            "state update: state=%s (%s) picker_wrapper=%p",
+            "state update: state=%s (%s) picker=%p",
             weighted_target_policy_.get(), this, name_.c_str(),
             ConnectivityStateName(state), status.ToString().c_str(),
-            picker_wrapper_.get());
+            picker_.get());
   }
   // If the child reports IDLE, immediately tell it to exit idle.
   if (state == GRPC_CHANNEL_IDLE) child_policy_->ExitIdleLocked();
@@ -684,7 +675,7 @@ WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
 
 void WeightedTargetLb::WeightedChild::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
   weighted_child_->OnConnectivityStateUpdateLocked(state, status,
                                                    std::move(picker));
@@ -699,6 +690,12 @@ void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
 absl::string_view WeightedTargetLb::WeightedChild::Helper::GetAuthority() {
   return weighted_child_->weighted_target_policy_->channel_control_helper()
       ->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine*
+WeightedTargetLb::WeightedChild::Helper::GetEventEngine() {
+  return weighted_child_->weighted_target_policy_->channel_control_helper()
+      ->GetEventEngine();
 }
 
 void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
@@ -754,7 +751,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<WeightedTargetLb>(std::move(args));
-  }  // namespace
+  }
 
   absl::string_view name() const override { return kWeightedTarget; }
 
@@ -771,7 +768,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     return LoadRefCountedFromJson<WeightedTargetLbConfig>(
         json, JsonArgs(), "errors validating weighted_target LB policy config");
   }
-};  // namespace grpc_core
+};
 
 }  // namespace
 

@@ -58,7 +58,7 @@ class IdleFilterState {
   static constexpr uintptr_t kCallsInProgressShift = 2;
   // How much to increment/decrement the state_ when a call is started/stopped.
   // Ensures we don't clobber the preceding bits.
-  static constexpr uintptr_t kCallIncrement = uintptr_t(1)
+  static constexpr uintptr_t kCallIncrement = uintptr_t{1}
                                               << kCallsInProgressShift;
   std::atomic<uintptr_t> state_;
 };

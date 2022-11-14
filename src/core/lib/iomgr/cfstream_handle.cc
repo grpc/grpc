@@ -88,7 +88,7 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
       handle->read_event_.SetShutdown(error);
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
 }
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
@@ -122,7 +122,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
       handle->read_event_.SetShutdown(error);
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
 }
 

@@ -462,7 +462,7 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
   if (storage != nullptr && g_cached_cq == cq) {
     *tag = storage->tag;
     grpc_core::ExecCtx exec_ctx;
-    *ok = (storage->next & static_cast<uintptr_t>(1)) == 1;
+    *ok = (storage->next & uintptr_t{1}) == 1;
     storage->done(storage->done_arg, storage);
     ret = 1;
     cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
@@ -1134,7 +1134,7 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
       return;
     }
   }
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 class ExecCtxPluck : public grpc_core::ExecCtx {
@@ -1159,11 +1159,9 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
       grpc_cq_completion* c;
       grpc_cq_completion* prev = &cqd->completed_head;
       while ((c = reinterpret_cast<grpc_cq_completion*>(
-                  prev->next & ~static_cast<uintptr_t>(1))) !=
-             &cqd->completed_head) {
+                  prev->next & ~uintptr_t{1})) != &cqd->completed_head) {
         if (c->tag == a->tag) {
-          prev->next = (prev->next & static_cast<uintptr_t>(1)) |
-                       (c->next & ~static_cast<uintptr_t>(1));
+          prev->next = (prev->next & uintptr_t{1}) | (c->next & ~uintptr_t{1});
           if (c == cqd->completed_tail) {
             cqd->completed_tail = prev;
           }
@@ -1230,11 +1228,9 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
     }
     prev = &cqd->completed_head;
     while ((c = reinterpret_cast<grpc_cq_completion*>(
-                prev->next & ~static_cast<uintptr_t>(1))) !=
-           &cqd->completed_head) {
+                prev->next & ~uintptr_t{1})) != &cqd->completed_head) {
       if (c->tag == tag) {
-        prev->next = (prev->next & static_cast<uintptr_t>(1)) |
-                     (c->next & ~static_cast<uintptr_t>(1));
+        prev->next = (prev->next & uintptr_t{1}) | (c->next & ~uintptr_t{1});
         if (c == cqd->completed_tail) {
           cqd->completed_tail = prev;
         }

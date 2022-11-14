@@ -409,7 +409,9 @@ for dirname in [
         "test/core/util",
         "test/core/end2end",
         "test/core/event_engine",
+        "test/core/promise",
         "test/core/resource_quota",
+        "test/core/transport/chaotic_good",
 ]:
     parsing_path = dirname
     exec(
@@ -537,7 +539,7 @@ def make_library(library):
         if hdr.startswith('src/libfuzzer/'):
             continue
 
-        if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
+        if hdr == 'grpc/grpc.h' and library.startswith('//test:'):
             # not the root build including grpc.h ==> //:grpc
             deps.add_one_of(['//:grpc', '//:grpc_unsecure'], hdr)
             continue

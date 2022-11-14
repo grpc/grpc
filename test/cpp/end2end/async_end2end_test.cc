@@ -21,6 +21,7 @@
 #include <thread>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -35,6 +36,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -67,23 +69,29 @@ class Verifier {
  public:
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
-    return ExpectUnless(i, expect_ok, false);
+  Verifier& Expect(
+      int i, bool expect_ok,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
+    return ExpectUnless(i, expect_ok, false, whence);
   }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
-  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+  Verifier& ExpectUnless(
+      int i, bool expect_ok, bool seen,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
     if (!seen) {
-      expectations_[tag(i)] = expect_ok;
+      expectations_[tag(i)] = {expect_ok, whence};
     }
     return *this;
   }
   // ExpectMaybe sets the expected ok value for a specific tag, but does not
   // require it to appear
   // If it does, sets *seen to true
-  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+  Verifier& ExpectMaybe(
+      int i, bool expect_ok, bool* seen,
+      grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
     if (!*seen) {
-      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen, whence};
     }
     return *this;
   }
@@ -172,7 +180,7 @@ class Verifier {
     auto it = expectations_.find(got_tag);
     if (it != expectations_.end()) {
       if (!ignore_ok) {
-        EXPECT_EQ(it->second, ok);
+        EXPECT_EQ(it->second.ok, ok) << it->second.ToString(it->first);
       }
       expectations_.erase(it);
     } else {
@@ -183,7 +191,7 @@ class Verifier {
           *it2->second.seen = true;
         }
         if (!ignore_ok) {
-          EXPECT_EQ(it2->second.ok, ok);
+          EXPECT_EQ(it2->second.ok, ok) << it->second.ToString(it->first);
         }
         maybe_expectations_.erase(it2);
       } else {
@@ -196,9 +204,25 @@ class Verifier {
   struct MaybeExpect {
     bool ok;
     bool* seen;
+    grpc_core::SourceLocation whence;
+    std::string ToString(void* tag) const {
+      return absl::StrCat(
+          "[MaybeExpect] tag=", reinterpret_cast<uintptr_t>(tag),
+          " expect_ok=", ok, " whence=", whence.file(), ":", whence.line());
+    }
   };
 
-  std::map<void*, bool> expectations_;
+  struct DefinitelyExpect {
+    bool ok;
+    grpc_core::SourceLocation whence;
+    std::string ToString(void* tag) const {
+      return absl::StrCat("[Expect] tag=", reinterpret_cast<uintptr_t>(tag),
+                          " expect_ok=", ok, " whence=", whence.file(), ":",
+                          whence.line());
+    }
+  };
+
+  std::map<void*, DefinitelyExpect> expectations_;
   std::map<void*, MaybeExpect> maybe_expectations_;
   bool lambda_run_;
 };
@@ -955,7 +979,7 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
             ToString(client_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(meta3.second,
             ToString(client_initial_metadata.find(meta3.first)->second));
-  EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(client_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
@@ -999,7 +1023,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(5));
@@ -1042,7 +1066,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(3));
 
@@ -1102,7 +1126,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
             ToString(server_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+  EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(5));
   cli_stream->Read(&recv_response, tag(6));
@@ -1160,7 +1184,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
             ToString(server_trailing_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(server_trailing_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_trailing_metadata.size());
+  EXPECT_EQ(2, server_trailing_metadata.size());
 }
 
 TEST_P(AsyncEnd2endTest, MetadataRpc) {
@@ -1208,7 +1232,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(client_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(client_initial_metadata.find(meta2.first)->second));
-  EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(client_initial_metadata.size(), 2);
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
@@ -1219,7 +1243,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(server_initial_metadata.find(meta3.first)->second));
   EXPECT_EQ(meta4.second,
             ToString(server_initial_metadata.find(meta4.first)->second));
-  EXPECT_GE(server_initial_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(server_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
   srv_ctx.AddTrailingMetadata(meta5.first, meta5.second);
@@ -1236,7 +1260,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(server_trailing_metadata.find(meta5.first)->second));
   EXPECT_EQ(meta6.second,
             ToString(server_trailing_metadata.find(meta6.first)->second));
-  EXPECT_GE(server_trailing_metadata.size(), static_cast<size_t>(2));
+  EXPECT_GE(server_trailing_metadata.size(), 2);
 }
 
 // Server uses AsyncNotifyWhenDone API to check for cancellation

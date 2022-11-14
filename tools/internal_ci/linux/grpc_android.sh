@@ -15,52 +15,11 @@
 
 set -ex
 
-# Accept the Android SDK licences.
-yes | /opt/android-sdk/current/tools/bin/sdkmanager --licenses
-
-# change to grpc repo root
+# Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-REPO_ROOT="$(pwd)"
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-git submodule update --init
-
-# Build protoc and grpc_cpp_plugin. Codegen is not cross-compiled to Android
-mkdir -p cmake/build
-pushd cmake/build
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
-make protoc grpc_cpp_plugin -j2
-popd
-
-PROTOC=${REPO_ROOT}/cmake/build/third_party/protobuf/protoc
-PLUGIN=${REPO_ROOT}/cmake/build/grpc_cpp_plugin
-
-# Build and run interop instrumentation tests on Firebase Test Lab
-
-cd "${REPO_ROOT}/src/android/test/interop/"
-./gradlew assembleDebug \
-    "-Pprotoc=${PROTOC}" \
-    "-Pgrpc_cpp_plugin=${PLUGIN}"
-./gradlew assembleDebugAndroidTest \
-    "-Pprotoc=${PROTOC}" \
-    "-Pgrpc_cpp_plugin=${PLUGIN}"
-gcloud firebase test android run \
-    --type instrumentation \
-    --app app/build/outputs/apk/debug/app-debug.apk \
-    --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
-    --device model=Nexus6P,version=27,locale=en,orientation=portrait \
-    --device model=Nexus6P,version=26,locale=en,orientation=portrait \
-    --device model=Nexus6P,version=25,locale=en,orientation=portrait \
-    --device model=Nexus6P,version=24,locale=en,orientation=portrait \
-    --device model=Nexus6P,version=23,locale=en,orientation=portrait \
-    --device model=Nexus6,version=22,locale=en,orientation=portrait \
-    --device model=Nexus6,version=21,locale=en,orientation=portrait \
-    --device model=walleye,version=28,locale=en,orientation=portrait
-
-
-# Build hello world example
-
-cd "${REPO_ROOT}/examples/android/helloworld"
-./gradlew build \
-    "-Pprotoc=${PROTOC}" \
-    "-Pgrpc_cpp_plugin=${PLUGIN}"
+export DOCKERFILE_DIR=tools/dockerfile/test/android_ndk
+export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_android_in_docker.sh
+exec tools/run_tests/dockerize/build_and_run_docker.sh

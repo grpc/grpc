@@ -35,6 +35,7 @@ python3 -m bin.cleanup.cleanup \
     --project=grpc-testing \
     --network=default-vpc \
     --kube_context="${KUBE_CONTEXT}" \
+    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
 
@@ -52,6 +53,7 @@ python3 -m bin.cleanup.namespace \
     --network=default-vpc \
     --keep_hours=6 \
     --kube_context="${TARGET_KUBE_CONTEXT}" \
+    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
 
@@ -66,5 +68,6 @@ python3 -m bin.cleanup.namespace \
     --network=default-vpc \
     --keep_hours=6 \
     --kube_context="${TARGET_KUBE_CONTEXT}" \
+    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'

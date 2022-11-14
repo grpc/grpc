@@ -26,7 +26,6 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace experimental {

@@ -46,15 +46,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "no_op_http_filter",
-    testonly = True,
-    hdrs = ["no_op_http_filter.h"],
-    deps = [
-        "//:grpc",
-    ],
-)
-
-grpc_cc_library(
     name = "xds_end2end_test_lib",
     testonly = True,
     srcs = ["xds_end2end_test_lib.cc"],
@@ -112,7 +103,6 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":no_op_http_filter",
         ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",
@@ -279,7 +269,6 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":no_op_http_filter",
         ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",
@@ -360,12 +349,10 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":no_op_http_filter",
         ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/util:grpc_test_util",
     ],

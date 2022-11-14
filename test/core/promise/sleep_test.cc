@@ -51,7 +51,7 @@ TEST(Sleep, Zzzz) {
   ExecCtx exec_ctx;
   Notification done;
   Timestamp done_time = Timestamp::Now() + Duration::Seconds(1);
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine = GetDefaultEventEngine();
   // Sleep for one second then set done to true.
   auto activity = MakeActivity(
       Sleep(done_time), InlineWakeupScheduler(),
@@ -96,7 +96,7 @@ TEST(Sleep, AlreadyDone) {
   ExecCtx exec_ctx;
   Notification done;
   Timestamp done_time = Timestamp::Now() - Duration::Seconds(1);
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine = GetDefaultEventEngine();
   // Sleep for no time at all then set done to true.
   auto activity = MakeActivity(
       Sleep(done_time), InlineWakeupScheduler(),
@@ -112,7 +112,7 @@ TEST(Sleep, Cancel) {
   ExecCtx exec_ctx;
   Notification done;
   Timestamp done_time = Timestamp::Now() + Duration::Seconds(1);
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine = GetDefaultEventEngine();
   // Sleep for one second but race it to complete immediately
   auto activity = MakeActivity(
       Race(Sleep(done_time), [] { return absl::CancelledError(); }),
@@ -134,7 +134,7 @@ TEST(Sleep, MoveSemantics) {
   Timestamp done_time = Timestamp::Now() + Duration::Milliseconds(111);
   Sleep donor(done_time);
   Sleep sleeper = std::move(donor);
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine = GetDefaultEventEngine();
   auto activity = MakeActivity(
       std::move(sleeper), InlineWakeupScheduler(),
       [&done](absl::Status r) {
@@ -153,7 +153,7 @@ TEST(Sleep, StressTest) {
   ExecCtx exec_ctx;
   std::vector<std::shared_ptr<Notification>> notifications;
   std::vector<ActivityPtr> activities;
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine = GetDefaultEventEngine();
   gpr_log(GPR_INFO, "Starting %d sleeps for 1sec", kNumActivities);
   for (int i = 0; i < kNumActivities; i++) {
     auto notification = std::make_shared<Notification>();

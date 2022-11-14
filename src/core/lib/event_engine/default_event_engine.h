@@ -21,6 +21,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/context.h"
 
 namespace grpc_core {
@@ -36,6 +37,11 @@ namespace experimental {
 /// The concept of a global EventEngine may go away in a post-iomgr world.
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
+
+/// On ingress, ensure that an EventEngine exists in channel args via
+/// preconditioning.
+void RegisterEventEngineChannelArgPreconditioning(
+    grpc_core::CoreConfiguration::Builder* builder);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

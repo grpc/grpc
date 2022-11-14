@@ -93,7 +93,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:slice",
+        "//src/core:slice",
         "//test/core/util:build",
     ],
 )
@@ -107,7 +107,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//:slice",
+        "//src/core:slice",
     ],
 )
 

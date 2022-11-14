@@ -34,12 +34,17 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
 namespace grpc_core {
+
+//
+// XdsRouteLookupClusterSpecifierPlugin
+//
 
 const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
     "grpc.lookup.v1.RouteLookupClusterSpecifier";
@@ -114,41 +119,34 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   return lb_policy_config.Dump();
 }
 
-namespace {
+//
+// XdsClusterSpecifierPluginRegistry
+//
 
-using PluginRegistryMap =
-    std::map<absl::string_view, std::unique_ptr<XdsClusterSpecifierPluginImpl>>;
-
-PluginRegistryMap* g_plugin_registry = nullptr;
-
-}  // namespace
-
-const XdsClusterSpecifierPluginImpl*
-XdsClusterSpecifierPluginRegistry::GetPluginForType(
-    absl::string_view config_proto_type_name) {
-  auto it = g_plugin_registry->find(config_proto_type_name);
-  if (it == g_plugin_registry->end()) return nullptr;
-  return it->second.get();
-}
-
-void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_DefPool* symtab) {
-  for (const auto& p : *g_plugin_registry) {
-    p.second->PopulateSymtab(symtab);
-  }
+XdsClusterSpecifierPluginRegistry::XdsClusterSpecifierPluginRegistry() {
+  RegisterPlugin(std::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
+                 kXdsRouteLookupClusterSpecifierPluginConfigName);
 }
 
 void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
     std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
     absl::string_view config_proto_type_name) {
-  (*g_plugin_registry)[config_proto_type_name] = std::move(plugin);
+  registry_[config_proto_type_name] = std::move(plugin);
 }
 
-void XdsClusterSpecifierPluginRegistry::Init() {
-  g_plugin_registry = new PluginRegistryMap;
-  RegisterPlugin(std::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
-                 kXdsRouteLookupClusterSpecifierPluginConfigName);
+const XdsClusterSpecifierPluginImpl*
+XdsClusterSpecifierPluginRegistry::GetPluginForType(
+    absl::string_view config_proto_type_name) const {
+  auto it = registry_.find(config_proto_type_name);
+  if (it == registry_.end()) return nullptr;
+  return it->second.get();
 }
 
-void XdsClusterSpecifierPluginRegistry::Shutdown() { delete g_plugin_registry; }
+void XdsClusterSpecifierPluginRegistry::PopulateSymtab(
+    upb_DefPool* symtab) const {
+  for (const auto& p : registry_) {
+    p.second->PopulateSymtab(symtab);
+  }
+}
 
 }  // namespace grpc_core

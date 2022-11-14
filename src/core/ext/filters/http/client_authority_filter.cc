@@ -23,6 +23,7 @@
 #include <limits.h>
 
 #include <functional>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -33,9 +34,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
