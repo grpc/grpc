@@ -92,7 +92,7 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
       gpr_atm* should_exit) {
     EchoResponse response;
     response.set_message(kLargeString);
-    while (gpr_atm_acq_load(should_exit) == static_cast<gpr_atm>(0)) {
+    while (gpr_atm_acq_load(should_exit) == gpr_atm{0}) {
       struct timespec tv = {0, 1000000};  // 1 ms
       struct timespec rem;
       // TODO (vpai): Mark this blocking
@@ -110,7 +110,7 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;
-    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
+    gpr_atm_rel_store(&should_exit, gpr_atm{0});
 
     std::thread sender(
         std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
@@ -123,7 +123,7 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
         tv = rem;
       };
     }
-    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(1));
+    gpr_atm_rel_store(&should_exit, gpr_atm{1});
     sender.join();
     return Status::OK;
   }

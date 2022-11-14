@@ -90,3 +90,24 @@ grpc_cc_library(
         "//src/core:validation_errors",
     ],
 )
+
+grpc_cc_library(
+    name = "observability_logging_sink",
+    srcs = [
+        "observability_logging_sink.cc",
+    ],
+    hdrs = [
+        "observability_logging_sink.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        ":observability_config",
+        "//:gpr_platform",
+        "//src/cpp/ext/filters/logging:logging_sink",
+    ],
+)

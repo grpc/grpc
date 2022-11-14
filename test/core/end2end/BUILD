@@ -64,6 +64,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:httpcli",
@@ -113,6 +114,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -174,6 +176,7 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -259,6 +262,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",

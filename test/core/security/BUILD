@@ -45,8 +45,10 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
+        "//src/core:default_event_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_BUFFER_Habc_SLICE_BUFFER_H
-#define GRPC_CORE_LIB_SLICE_SLICE_BUFFER_Habc_SLICE_BUFFER_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H
+#define GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H
 
 #include <grpc/support/port_platform.h>
 
