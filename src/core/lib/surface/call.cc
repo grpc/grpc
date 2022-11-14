@@ -1362,6 +1362,15 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     seen_ops |= (1u << ops[i].op);
   }
 
+  if (!is_client() &&
+      (seen_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER)) != 0 &&
+      (seen_ops & (1u << GRPC_OP_RECV_MESSAGE)) != 0) {
+    gpr_log(GPR_ERROR,
+            "******************* SEND_STATUS WITH RECV_MESSAGE "
+            "*******************");
+    return GRPC_CALL_ERROR;
+  }
+
   GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
 
   if (nops == 0) {
@@ -2454,7 +2463,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_GUARDED_BY(mu());
   absl::optional<PipeReceiver<MessageHandle>::NextType> outstanding_recv_
       ABSL_GUARDED_BY(mu());
-  absl::optional<Latch<ServerMetadata*>::WaitPromise>
+  absl::optional<LatchWaitPromise<ServerMetadata*>>
       server_initial_metadata_ready_;
   absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
@@ -2537,7 +2546,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =
             op.data.recv_initial_metadata.recv_initial_metadata;
-        server_initial_metadata_ready_ = server_initial_metadata_.Wait();
+        server_initial_metadata_ready_.emplace(server_initial_metadata_.Wait());
         recv_initial_metadata_completion_ =
             AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata);
       } break;

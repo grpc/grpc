@@ -80,15 +80,28 @@ inline constexpr uint32_t BitCount(uint32_t i) {
 }
 
 inline constexpr uint32_t BitCount(uint64_t i) {
-  return BitCount(uint32_t(i)) + BitCount(uint32_t(i >> 32));
+  return BitCount(static_cast<uint32_t>(i)) +
+         BitCount(static_cast<uint32_t>(i >> 32));
 }
 
-inline constexpr uint32_t BitCount(uint16_t i) { return BitCount(uint32_t(i)); }
-inline constexpr uint32_t BitCount(uint8_t i) { return BitCount(uint32_t(i)); }
-inline constexpr uint32_t BitCount(int64_t i) { return BitCount(uint64_t(i)); }
-inline constexpr uint32_t BitCount(int32_t i) { return BitCount(uint32_t(i)); }
-inline constexpr uint32_t BitCount(int16_t i) { return BitCount(uint16_t(i)); }
-inline constexpr uint32_t BitCount(int8_t i) { return BitCount(uint8_t(i)); }
+inline constexpr uint32_t BitCount(uint16_t i) {
+  return BitCount(static_cast<uint32_t>(i));
+}
+inline constexpr uint32_t BitCount(uint8_t i) {
+  return BitCount(static_cast<uint32_t>(i));
+}
+inline constexpr uint32_t BitCount(int64_t i) {
+  return BitCount(static_cast<uint64_t>(i));
+}
+inline constexpr uint32_t BitCount(int32_t i) {
+  return BitCount(static_cast<uint32_t>(i));
+}
+inline constexpr uint32_t BitCount(int16_t i) {
+  return BitCount(static_cast<uint16_t>(i));
+}
+inline constexpr uint32_t BitCount(int8_t i) {
+  return BitCount(static_cast<uint8_t>(i));
+}
 
 // This function uses operator< to implement a qsort-style comparison, whereby:
 // if a is smaller than b, a number smaller than 0 is returned.
