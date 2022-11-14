@@ -2612,6 +2612,7 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
+        "channel_args",
         "env",
         "error",
         "grpc_external_account_credentials",
@@ -2626,7 +2627,6 @@ grpc_cc_library(
         "time",
         "unique_type_name",
         "useful",
-        ":channel_args",
         "//:alts_util",
         "//:exec_ctx",
         "//:gpr",
@@ -3469,6 +3469,7 @@ grpc_cc_library(
     deps = [
         "certificate_provider_factory",
         "certificate_provider_registry",
+        "channel_args",
         "channel_creds_registry",
         "channel_fwd",
         "default_event_engine",
@@ -3547,7 +3548,6 @@ grpc_cc_library(
         "validation_errors",
         "xds_type_upb",
         "xds_type_upbdefs",
-        ":channel_args",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
