@@ -60,7 +60,6 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/hash",
         "absl/strings",
-        "absl/utility",
     ],
     deps = [
         "slice",
@@ -1359,17 +1358,17 @@ grpc_cc_library(
         "lib/iomgr/event_engine_shims/resolved_address.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
         "absl/functional:any_invocable",
-        "absl/time",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
-        "event_engine_executor",
-        "forkable",
-        "time",
-        "useful",
+        "error",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_base",
+        "//:sockaddr_utils",
     ],
 )
 
