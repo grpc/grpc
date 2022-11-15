@@ -41,6 +41,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+#include "call.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -1819,7 +1820,11 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class PromiseBasedCall : public Call, public Activity, public Wakeable {
+class PromiseBasedCall : public Call,
+                         public Activity,
+                         public Wakeable,
+                         public grpc_event_engine::experimental::EventEngine::
+                             Closure /* for deadlines */ {
  public:
   PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
 
@@ -1945,6 +1950,10 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
+
+  void UpdateDeadline(Timestamp deadline);
+  // Implementation of EventEngine::Closure, called when deadline expires
+  void Run() override;
 
  protected:
   class ScopedContext
@@ -2186,6 +2195,9 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
   CallFinalization finalization_;
+  // Current deadline.
+  Timestamp deadline_ = Timestamp::InfFuture();
+  grpc_event_engine::experimental::EventEngine::TaskHandle deadline_task_;
 };
 
 template <typename T>
@@ -2352,6 +2364,22 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
       grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
 }
 
+void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
+  if (deadline >= deadline_) return;
+  auto* const event_engine = channel()->event_engine();
+  if (deadline_ != Timestamp::InfFuture()) {
+    if (!event_engine->Cancel(deadline_task_)) return;
+  } else {
+    InternalRef("deadline");
+  }
+  event_engine->RunAfter(deadline - Timestamp::Now(), this);
+}
+
+void PromiseBasedCall::Run() {
+  CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
+  InternalUnref("deadline");
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // CallContext
 
@@ -2364,6 +2392,10 @@ void CallContext::IncrementRefCount(const char* reason) {
 }
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
+
+void CallContext::UpdateDeadline(Timestamp deadline) {
+  call_->UpdateDeadline(deadline);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
