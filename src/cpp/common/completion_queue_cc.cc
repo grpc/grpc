@@ -33,6 +33,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/thread_quota.h"
 
 namespace grpc {
 namespace {
@@ -52,7 +54,7 @@ struct CallbackAlternativeCQ {
   std::vector<grpc_core::Thread>* nexting_threads
       ABSL_GUARDED_BY(g_callback_alternative_mu);
 
-  CompletionQueue* Ref() {
+  CompletionQueue* Ref(grpc_resource_quota* server_rq = nullptr) {
     grpc_core::MutexLock lock(&*g_callback_alternative_mu);
     refs++;
     if (refs == 1) {
@@ -60,6 +62,14 @@ struct CallbackAlternativeCQ {
       int num_nexting_threads =
           grpc_core::Clamp(gpr_cpu_num_cores() / 2, 2u, 16u);
       nexting_threads = new std::vector<grpc_core::Thread>;
+      if (server_rq) {
+        grpc_core::ThreadQuotaPtr thread_quota(
+            grpc_core::ResourceQuota::FromC(server_rq)->thread_quota());
+        num_nexting_threads = 0;
+        while (thread_quota->Reserve(1)) {
+          num_nexting_threads++;
+        }
+      }
       for (int i = 0; i < num_nexting_threads; i++) {
         nexting_threads->emplace_back(
             "nexting_thread",
@@ -193,10 +203,11 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
   return false;
 }
 
-CompletionQueue* CompletionQueue::CallbackAlternativeCQ() {
+CompletionQueue* CompletionQueue::CallbackAlternativeCQ(
+    grpc_resource_quota* server_rq) {
   gpr_once_init(&g_once_init_callback_alternative,
                 [] { g_callback_alternative_mu = new grpc_core::Mutex(); });
-  return g_callback_alternative_cq.Ref();
+  return g_callback_alternative_cq.Ref(server_rq);
 }
 
 void CompletionQueue::ReleaseCallbackAlternativeCQ(CompletionQueue* cq)

@@ -219,8 +219,12 @@ class ServerBuilder {
   ServerBuilder& SetDefaultCompressionAlgorithm(
       grpc_compression_algorithm algorithm);
 
-  /// Set the attached buffer pool for this server
+  /// Set the attached buffer pool for synchronous calls on this server
   ServerBuilder& SetResourceQuota(const grpc::ResourceQuota& resource_quota);
+
+  /// Set the attached buffer pool for callbacks on this server
+  ServerBuilder& SetCallbackResourceQuota(
+      const grpc::ResourceQuota& resource_quota);
 
   ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 
@@ -390,6 +394,7 @@ class ServerBuilder {
   std::shared_ptr<grpc::ServerCredentials> creds_;
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
+  grpc_resource_quota* callback_resource_quota_;
   grpc::AsyncGenericService* generic_service_{nullptr};
   std::unique_ptr<ContextAllocator> context_allocator_;
   grpc::CallbackGenericService* callback_generic_service_{nullptr};

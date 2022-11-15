@@ -256,7 +256,11 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
     return max_receive_message_size_;
   }
 
-  CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;
+  CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override {
+    return CallbackCQ(nullptr);
+  };
+  CompletionQueue* CallbackCQ(grpc_resource_quota* server_rq)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   ServerInitializer* initializer();
 

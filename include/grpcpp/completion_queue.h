@@ -413,7 +413,8 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
     return true;
   }
 
-  static CompletionQueue* CallbackAlternativeCQ();
+  static CompletionQueue* CallbackAlternativeCQ(
+      grpc_resource_quota* server_rq = nullptr);
   static void ReleaseCallbackAlternativeCQ(CompletionQueue* cq);
 
   grpc_completion_queue* cq_;  // owned

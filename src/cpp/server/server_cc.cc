@@ -1339,7 +1339,7 @@ grpc::ServerInitializer* Server::initializer() {
   return server_initializer_.get();
 }
 
-grpc::CompletionQueue* Server::CallbackCQ() {
+grpc::CompletionQueue* Server::CallbackCQ(grpc_resource_quota* server_rq) {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-server CQ registered
   CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_acquire);
@@ -1364,7 +1364,7 @@ grpc::CompletionQueue* Server::CallbackCQ() {
     shutdown_callback->TakeCQ(callback_cq);
   } else {
     // Otherwise we need to use the alternative CQ variant
-    callback_cq = CompletionQueue::CallbackAlternativeCQ();
+    callback_cq = CompletionQueue::CallbackAlternativeCQ(server_rq);
   }
 
   callback_cq_.store(callback_cq, std::memory_order_release);

@@ -66,7 +66,8 @@ ServerBuilder::ServerBuilder()
     : max_receive_message_size_(INT_MIN),
       max_send_message_size_(INT_MIN),
       sync_server_settings_(SyncServerSettings()),
-      resource_quota_(nullptr) {
+      resource_quota_(nullptr),
+      callback_resource_quota_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (const auto& value : *g_plugin_factory_list) {
     plugins_.emplace_back(value());
@@ -84,6 +85,9 @@ ServerBuilder::ServerBuilder()
 ServerBuilder::~ServerBuilder() {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref(resource_quota_);
+  }
+  if (callback_resource_quota_ != nullptr) {
+    grpc_resource_quota_unref(callback_resource_quota_);
   }
 }
 
@@ -215,6 +219,16 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
   }
   resource_quota_ = resource_quota.c_resource_quota();
   grpc_resource_quota_ref(resource_quota_);
+  return *this;
+}
+
+ServerBuilder& ServerBuilder::SetCallbackResourceQuota(
+    const grpc::ResourceQuota& resource_quota) {
+  if (callback_resource_quota_ != nullptr) {
+    grpc_resource_quota_unref(callback_resource_quota_);
+  }
+  callback_resource_quota_ = resource_quota.c_resource_quota();
+  grpc_resource_quota_ref(callback_resource_quota_);
   return *this;
 }
 
@@ -382,7 +396,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   if (has_callback_methods || callback_generic_service_ != nullptr) {
-    auto* cq = server->CallbackCQ();
+    auto* cq = server->CallbackCQ(callback_resource_quota_);
     grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
   }
 
