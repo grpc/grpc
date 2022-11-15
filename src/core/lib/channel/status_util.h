@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
-
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -49,10 +47,7 @@ class StatusCodeSet {
  public:
   bool Empty() const { return status_code_mask_ == 0; }
 
-  StatusCodeSet& Add(grpc_status_code status) {
-    status_code_mask_ |= (1 << status);
-    return *this;
-  }
+  void Add(grpc_status_code status) { status_code_mask_ |= (1 << status); }
 
   bool Contains(grpc_status_code status) const {
     return status_code_mask_ & (1 << status);
@@ -61,8 +56,6 @@ class StatusCodeSet {
   bool operator==(const StatusCodeSet& other) const {
     return status_code_mask_ == other.status_code_mask_;
   }
-
-  std::string ToString() const;
 
  private:
   int status_code_mask_ = 0;  // A bitfield of status codes in the set.

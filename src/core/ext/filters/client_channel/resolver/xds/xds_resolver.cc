@@ -638,21 +638,23 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
 }
 
 absl::optional<uint64_t> HeaderHashHelper(
-    const XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header&
-        header_policy,
+    const XdsRouteConfigResource::Route::RouteAction::HashPolicy& policy,
     grpc_metadata_batch* initial_metadata) {
+  GPR_ASSERT(policy.type ==
+             XdsRouteConfigResource::Route::RouteAction::HashPolicy::HEADER);
   std::string value_buffer;
   absl::optional<absl::string_view> header_value = XdsRouting::GetHeaderValue(
-      initial_metadata, header_policy.header_name, &value_buffer);
-  if (!header_value.has_value()) return absl::nullopt;
-  if (header_policy.regex != nullptr) {
+      initial_metadata, policy.header_name, &value_buffer);
+  if (!header_value.has_value()) {
+    return absl::nullopt;
+  }
+  if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
     if (header_value->data() != value_buffer.data()) {
       value_buffer = std::string(*header_value);
     }
-    RE2::GlobalReplace(&value_buffer, *header_policy.regex,
-                       header_policy.regex_substitution);
+    RE2::GlobalReplace(&value_buffer, *policy.regex, policy.regex_substitution);
     header_value = value_buffer;
   }
   return XXH64(header_value->data(), header_value->size(), 0);
@@ -730,16 +732,17 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   // Generate a hash.
   absl::optional<uint64_t> hash;
   for (const auto& hash_policy : route_action->hash_policies) {
-    absl::optional<uint64_t> new_hash = Match(
-        hash_policy.policy,
-        [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
-                Header& header) {
-          return HeaderHashHelper(header, args.initial_metadata);
-        },
-        [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
-                ChannelId&) -> absl::optional<uint64_t> {
-          return resolver_->channel_id();
-        });
+    absl::optional<uint64_t> new_hash;
+    switch (hash_policy.type) {
+      case XdsRouteConfigResource::Route::RouteAction::HashPolicy::HEADER:
+        new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
+        break;
+      case XdsRouteConfigResource::Route::RouteAction::HashPolicy::CHANNEL_ID:
+        new_hash = resolver_->channel_id();
+        break;
+      default:
+        GPR_ASSERT(0);
+    }
     if (new_hash.has_value()) {
       // Rotating the old value prevents duplicate hash rules from cancelling
       // each other out and preserves all of the entropy
