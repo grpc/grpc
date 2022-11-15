@@ -1087,6 +1087,7 @@ grpc_cc_library(
         "absl/hash",
         "absl/strings",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "slice_refcount",
         "//:event_engine_base_hdrs",
@@ -4415,6 +4416,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "match",
         "pollset_set",
+        "slice",
         "time",
         "unique_type_name",
         "//:config",

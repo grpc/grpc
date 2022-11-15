@@ -1336,8 +1336,6 @@ grpc_cc_library(
     # re-export these headers from here for now, and when LSC's have completed
     # to clean this up, we'll remove these.
     [
-        "//src/core:lib/slice/slice_internal.h",
-        "//src/core:lib/slice/slice_string_helpers.h",
         "//src/core:lib/channel/channel_args.h",
         "//src/core:lib/channel/channel_stack_builder.h",
     ],
@@ -1348,7 +1346,6 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
-        "absl/hash",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -3081,12 +3078,14 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/ssl_utils_config.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
+        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:lib/security/security_connector/ssl_utils.h",
         "//src/core:lib/security/security_connector/ssl_utils_config.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
+        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3109,6 +3108,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
+        "//src/core:slice",
         "//src/core:tsi_ssl_types",
         "//src/core:useful",
     ],

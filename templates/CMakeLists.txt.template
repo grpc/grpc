@@ -82,6 +82,8 @@
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    if target_dict['name'] in ['grpc_authorization_provider']:
+      deps.append("${_gRPC_RE2_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -903,3 +905,13 @@
     "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
     ""
     "grpc++_unsecure.pc")
+
+  # grpc_authorization_provider.pc file
+  generate_pkgconfig(
+    "grpc_authorization_provider"
+    "A library that adds authorization"
+    "<%text>${gRPC_CPP_VERSION}</%text>"
+    "${" ".join(["grpc_authorization_provider"] + list_abseil_pkg_targets("grpc_authorization_provider"))}"
+    "${" ".join(("-l" + l) for l in ["grpc_authorization_provider", "re2"])}"
+    ""
+    "grpc_authorization_provider.pc")
