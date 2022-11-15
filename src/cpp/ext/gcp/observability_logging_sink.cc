@@ -98,7 +98,7 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
   return LoggingSink::Config(0, 0);
 }
 
-void ObservabilityLoggingSink::LogEntry(Entry entry) {
+void ObservabilityLoggingSink::LogEntry(Entry /* entry */) {
   struct CallContext {
     ClientContext context;
     google::logging::v2::WriteLogEntriesRequest request;
@@ -106,8 +106,9 @@ void ObservabilityLoggingSink::LogEntry(Entry entry) {
   };
   // TODO(yashykt): Implement batching so that we can batch a bunch of log
   // entries into a single entry. Also, set a reasonable deadline on the
-  // context.
+  // context, and actually use the entry.
   CallContext* call = new CallContext;
+  call->context.set_authority(authority_);
   stub_->async()->WriteLogEntries(&(call->context), &(call->request),
                                   &(call->response), [call](Status status) {
                                     if (!status.ok()) {
