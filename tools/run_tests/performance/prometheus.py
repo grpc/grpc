@@ -274,7 +274,7 @@ def main() -> None:
         '--delay_seconds',
         default=0,
         type=int,
-        help='Configure delay in seconds to perform Prometheus queries, default is 0s',
+        help='Configure delay in seconds to perform Prometheus queries, default is 0',
     )
     args = argp.parse_args()
 
