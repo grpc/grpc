@@ -17,14 +17,17 @@
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 
 find_latest() {
-  (git ls-remote -t --refs https://github.com/grpc/$1.git | cut -f 2 | sed s#refs/tags/##) | sort -V | tail -n 1 | cut -f 1-2 -d. |sed s/^v//
+  gcloud container images list-tags --filter="tags\~v1\.\\d\\d\.x" "${IMAGE_REPO}/${1}-${2}" '--format=table[no-heading](tags)' | awk -F, '{print $2}' | sort | tail -n 1
 }
 
 if [ "${LATEST_BRANCH}" == "" ]; then
-  java_last=$(find_latest grpc-java)
-  go_last=$(find_latest grpc-go)
-  core_last=$(find_latest grpc)
-  LATEST_BRANCH=v"$((echo $java_last; echo $go_last; echo $core_last) | sort -g | head -1)".x
+  cpp_server=$(find_latest cpp server)
+  cpp_client=$(find_latest cpp client)
+  go_server=$(find_latest go server)
+  go_client=$(find_latest go client)
+  java_server=$(find_latest java server)
+  java_client=$(find_latest java client)
+  LATEST_BRANCH="$((echo $cpp_server; echo $cpp_client; echo $go_server; echo $go_client; echo $java_server; echo $java_client;) | sort -g | head -1)"
 fi
 
 if [ "${OLDEST_BRANCH}" == "" ]; then
