@@ -81,6 +81,9 @@ class CallContext {
  public:
   explicit CallContext(PromiseBasedCall* call) : call_(call) {}
 
+  // Update the deadline (if new_val < the current deadline).
+  void UpdateDeadline(Timestamp new_val);
+
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion
   // is complete.
