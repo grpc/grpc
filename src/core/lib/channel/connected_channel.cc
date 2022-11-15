@@ -243,22 +243,94 @@ static void connected_channel_get_channel_info(
 namespace grpc_core {
 namespace {
 
-class ClientStream : public Orphanable {
+class ConnectedChannelStream : public Orphanable {
+ public:
+  grpc_transport* transport() { return transport_; }
+  grpc_closure* stream_destroyed_closure() { return &stream_destroyed_; }
+
+  void IncrementRefCount(const char* reason) {
+#ifndef NDEBUG
+    grpc_stream_ref(&stream_refcount_, reason);
+#else
+    (void)reason;
+    grpc_stream_ref(&stream_refcount_);
+#endif
+  }
+
+  void Unref(const char* reason) {
+#ifndef NDEBUG
+    grpc_stream_unref(&stream_refcount_, reason);
+#else
+    (void)reason;
+    grpc_stream_unref(&stream_refcount_);
+#endif
+  }
+
+ protected:
+  explicit ConnectedChannelStream(grpc_transport* transport)
+      : transport_(transport), stream_(nullptr, StreamDeleter(this)) {
+    call_context_->IncrementRefCount("connected_channel_stream");
+    GRPC_STREAM_REF_INIT(
+        &stream_refcount_, 1,
+        [](void* p, grpc_error_handle) {
+          static_cast<ConnectedChannelStream*>(p)->BeginDestroy();
+        },
+        this, "client_stream");
+  }
+
+  grpc_stream* stream() { return stream_.get(); }
+  void SetStream(grpc_stream* stream) { stream_.reset(stream); }
+  grpc_stream_refcount* stream_refcount() { return &stream_refcount_; }
+
+ private:
+  class StreamDeleter {
+   public:
+    explicit StreamDeleter(ConnectedChannelStream* impl) : impl_(impl) {}
+    void operator()(grpc_stream* stream) const {
+      if (stream == nullptr) return;
+      grpc_transport_destroy_stream(impl_->transport(), stream,
+                                    impl_->stream_destroyed_closure());
+    }
+
+   private:
+    ConnectedChannelStream* impl_;
+  };
+  using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
+
+  void StreamDestroyed() {
+    call_context_->RunInContext([this] {
+      auto* cc = call_context_;
+      this->~ConnectedChannelStream();
+      cc->Unref("child_stream");
+    });
+  }
+
+  void BeginDestroy() {
+    if (stream_ != nullptr) {
+      stream_.reset();
+    } else {
+      StreamDestroyed();
+    }
+  }
+
+  grpc_transport* const transport_;
+  CallContext* const call_context_{GetContext<CallContext>()};
+  grpc_closure stream_destroyed_ =
+      MakeMemberClosure<ConnectedChannelStream,
+                        &ConnectedChannelStream::StreamDestroyed>(
+          this, DEBUG_LOCATION);
+  grpc_stream_refcount stream_refcount_;
+  StreamPtr stream_;
+};
+
+class ClientStream : public ConnectedChannelStream {
  public:
   ClientStream(grpc_transport* transport, CallArgs call_args)
-      : transport_(transport),
-        stream_(nullptr, StreamDeleter(this)),
+      : ConnectedChannelStream(transport),
         server_initial_metadata_latch_(call_args.server_initial_metadata),
         client_to_server_messages_(call_args.client_to_server_messages),
         server_to_client_messages_(call_args.server_to_client_messages),
         client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
-    call_context_->IncrementRefCount("client_stream");
-    GRPC_STREAM_REF_INIT(
-        &stream_refcount_, 1,
-        [](void* p, grpc_error_handle) {
-          static_cast<ClientStream*>(p)->BeginDestroy();
-        },
-        this, "client_stream");
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO, "%sInitImpl: intitial_metadata=%s",
               Activity::current()->DebugTag().c_str(),
@@ -285,39 +357,13 @@ class ClientStream : public Orphanable {
           GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
       cancel_op->cancel_stream = true;
       cancel_op->payload = &batch_payload_;
-      auto* stream = stream_.get();
+      auto* s = stream();
       cancel_op->on_complete = NewClosure(
           [this](grpc_error_handle) { Unref("shutdown client stream"); });
       batch_payload_.cancel_stream.cancel_error = absl::CancelledError();
-      grpc_transport_perform_stream_op(transport_, stream, cancel_op);
+      grpc_transport_perform_stream_op(transport(), s, cancel_op);
     }
     Unref("orphan client stream");
-  }
-
-  void IncrementRefCount(const char* reason) {
-#ifndef NDEBUG
-    grpc_stream_ref(&stream_refcount_, reason);
-#else
-    (void)reason;
-    grpc_stream_ref(&stream_refcount_);
-#endif
-  }
-
-  void Unref(const char* reason) {
-#ifndef NDEBUG
-    grpc_stream_unref(&stream_refcount_, reason);
-#else
-    (void)reason;
-    grpc_stream_unref(&stream_refcount_);
-#endif
-  }
-
-  void BeginDestroy() {
-    if (stream_ != nullptr) {
-      stream_.reset();
-    } else {
-      StreamDestroyed();
-    }
   }
 
   Poll<ServerMetadataHandle> PollOnce() {
@@ -354,11 +400,11 @@ class ClientStream : public Orphanable {
         gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting metadata",
                 Activity::current()->DebugTag().c_str());
       }
-      stream_.reset(static_cast<grpc_stream*>(
-          GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
-      grpc_transport_init_stream(transport_, stream_.get(), &stream_refcount_,
+      SetStream(static_cast<grpc_stream*>(
+          GetContext<Arena>()->Alloc(transport()->vtable->sizeof_stream)));
+      grpc_transport_init_stream(transport(), stream(), stream_refcount(),
                                  nullptr, GetContext<Arena>());
-      grpc_transport_set_pops(transport_, stream_.get(),
+      grpc_transport_set_pops(transport(), stream(),
                               GetContext<CallContext>()->polling_entity());
       memset(&metadata_, 0, sizeof(metadata_));
       metadata_.send_initial_metadata = true;
@@ -593,8 +639,8 @@ class ClientStream : public Orphanable {
   // Called from outside the activity to push work down to the transport.
   void Push() {
     auto do_push = [this](grpc_transport_stream_op_batch* batch) {
-      if (stream_ != nullptr) {
-        grpc_transport_perform_stream_op(transport_, stream_.get(), batch);
+      if (stream() != nullptr) {
+        grpc_transport_perform_stream_op(transport(), stream(), batch);
       } else {
         grpc_transport_stream_op_batch_finish_with_failure_from_transport(
             batch, absl::CancelledError());
@@ -616,14 +662,6 @@ class ClientStream : public Orphanable {
     Unref("push");
   }
 
-  void StreamDestroyed() {
-    call_context_->RunInContext([this] {
-      auto* cc = call_context_;
-      this->~ClientStream();
-      cc->Unref("child_stream");
-    });
-  }
-
  private:
   struct Idle {};
   struct Closed {};
@@ -639,20 +677,6 @@ class ClientStream : public Orphanable {
     // has been set on the latch to publish it up the call stack.
     kSet,
   };
-
-  class StreamDeleter {
-   public:
-    explicit StreamDeleter(ClientStream* impl) : impl_(impl) {}
-    void operator()(grpc_stream* stream) const {
-      if (stream == nullptr) return;
-      grpc_transport_destroy_stream(impl_->transport_, stream,
-                                    &impl_->stream_destroyed_);
-    }
-
-   private:
-    ClientStream* impl_;
-  };
-  using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
 
   void SchedulePush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (std::exchange(scheduled_push_, true)) return;
@@ -734,14 +758,10 @@ class ClientStream : public Orphanable {
       ABSL_GUARDED_BY(mu_) = ServerInitialMetadataState::kNotReceived;
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu_) = false;
   bool finished_ ABSL_GUARDED_BY(mu_) = false;
-  CallContext* const call_context_{GetContext<CallContext>()};
   Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu_);
   Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu_);
   Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
   Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
-  grpc_transport* const transport_;
-  grpc_stream_refcount stream_refcount_;
-  StreamPtr stream_;
   Latch<ServerMetadata*>* server_initial_metadata_latch_;
   PipeReceiver<MessageHandle>* client_to_server_messages_;
   PipeSender<MessageHandle>* server_to_client_messages_;
@@ -783,9 +803,6 @@ class ClientStream : public Orphanable {
   grpc_transport_stream_op_batch recv_message_;
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
-  grpc_closure stream_destroyed_ =
-      MakeMemberClosure<ClientStream, &ClientStream::StreamDestroyed>(
-          this, DEBUG_LOCATION);
 };
 
 class ClientConnectedCallPromise {
@@ -817,14 +834,18 @@ class ClientConnectedCallPromise {
   OrphanablePtr<ClientStream> impl_;
 };
 
-class ServerStream final : public Orphanable {
+class ServerStream final : public ConnectedChannelStream {
  public:
-  ServerStream(grpc_transport* transport, CallArgs call_args);
+  ServerStream(grpc_transport* transport, CallArgs call_args)
+      : ConnectedChannelStream(transport) {}
 
-  void Orphan() override;
+  void Orphan() override { abort(); }
 
-  absl::Status PrePoll();
-  absl::Status PostPoll();
+  absl::Status PrePoll() { return absl::OkStatus(); }
+
+  absl::Status PostPoll() { return absl::OkStatus(); }
+
+ private:
 };
 
 class ServerConnectedCallPromise {

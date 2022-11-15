@@ -2919,6 +2919,10 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   global_stats().IncrementServerCallsCreated();
 }
 
+Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
+  return Pending{};  // TODO
+}
+
 }  // namespace grpc_core
 
 ///////////////////////////////////////////////////////////////////////////////
