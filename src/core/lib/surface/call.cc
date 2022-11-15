@@ -1952,6 +1952,7 @@ class PromiseBasedCall : public Call,
   grpc_call_stack* call_stack() override { return nullptr; }
 
   void UpdateDeadline(Timestamp deadline);
+  void ResetDeadline();
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() override;
 
@@ -2375,6 +2376,14 @@ void PromiseBasedCall::UpdateDeadline(Timestamp deadline) {
   event_engine->RunAfter(deadline - Timestamp::Now(), this);
 }
 
+void PromiseBasedCall::ResetDeadline() {
+  if (deadline_ == Timestamp::InfFuture()) return;
+  auto* const event_engine = channel()->event_engine();
+  if (!event_engine->Cancel(deadline_task_)) return;
+  deadline_ = Timestamp::InfFuture();
+  InternalUnref("deadline");
+}
+
 void PromiseBasedCall::Run() {
   CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
   InternalUnref("deadline");
@@ -2789,6 +2798,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
             trailing_metadata->DebugString().c_str());
   }
   promise_ = ArenaPromise<ServerMetadataHandle>();
+  ResetDeadline();
   completed_ = true;
   if (recv_initial_metadata_ != nullptr) {
     ForceImmediateRepoll();
