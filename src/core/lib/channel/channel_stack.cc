@@ -32,7 +32,7 @@
 
 using grpc_event_engine::experimental::EventEngine;
 
-grpc_core::TraceFlag grpc_trace_channel(true, "channel");
+grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 grpc_core::TraceFlag grpc_trace_channel_stack(false, "channel_stack");
 
 /* Memory layouts.

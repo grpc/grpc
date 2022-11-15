@@ -16,4 +16,4 @@
 
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 
-grpc_core::TraceFlag grpc_http_trace(true, "http");
+grpc_core::TraceFlag grpc_http_trace(false, "http");
