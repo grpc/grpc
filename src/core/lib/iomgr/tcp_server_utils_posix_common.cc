@@ -111,6 +111,12 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   sp->server = s;
   sp->fd = fd;
   sp->emfd = grpc_fd_create(fd, name.c_str(), true);
+
+  // Check and set fd as prellocated
+  if (grpc_tcp_server_pre_allocated_fd(s) == fd) {
+    grpc_fd_set_pre_allocated(sp->emfd);
+  }
+
   memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
   sp->port = port;
   sp->port_index = port_index;
@@ -132,8 +138,36 @@ grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
                                            unsigned fd_index,
                                            grpc_dualstack_mode* dsmode,
                                            grpc_tcp_listener** listener) {
-  grpc_resolved_address addr4_copy;
   int fd;
+  fd = grpc_tcp_server_pre_allocated_fd(s);
+
+  // Check if FD has been pre-allocated
+  if (fd > 0) {
+    int family = grpc_sockaddr_get_family(addr);
+    // Set dsmode value
+    if (family == AF_INET6) {
+      const int off = 0;
+      if (setsockopt(fd, 0, IPV6_V6ONLY, &off, sizeof(off)) == 0) {
+        *dsmode = GRPC_DSMODE_DUALSTACK;
+      } else if (!grpc_sockaddr_is_v4mapped(addr, nullptr)) {
+        *dsmode = GRPC_DSMODE_IPV6;
+      } else {
+        *dsmode = GRPC_DSMODE_IPV4;
+      }
+    } else {
+      *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
+    }
+
+    grpc_resolved_address addr4_copy;
+    if (*dsmode == GRPC_DSMODE_IPV4 &&
+        grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
+      addr = &addr4_copy;
+    }
+
+    return add_socket_to_server(s, fd, addr, port_index, fd_index, listener);
+  }
+
+  grpc_resolved_address addr4_copy;
   grpc_error_handle err =
       grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, dsmode, &fd);
   if (!err.ok()) {
@@ -187,15 +221,19 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
                                           s->options);
   if (!err.ok()) goto error;
 
-  if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
-           addr->len) < 0) {
-    err = GRPC_OS_ERROR(errno, "bind");
-    goto error;
-  }
+  // Only bind/listen if fd has not been already preallocated
+  if (grpc_tcp_server_pre_allocated_fd(s) != fd) {
+    if (bind(fd,
+             reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
+             addr->len) < 0) {
+      err = GRPC_OS_ERROR(errno, "bind");
+      goto error;
+    }
 
-  if (listen(fd, get_max_accept_queue_size()) < 0) {
-    err = GRPC_OS_ERROR(errno, "listen");
-    goto error;
+    if (listen(fd, get_max_accept_queue_size()) < 0) {
+      err = GRPC_OS_ERROR(errno, "listen");
+      goto error;
+    }
   }
 
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
