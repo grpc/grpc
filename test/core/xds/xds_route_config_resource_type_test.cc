@@ -340,8 +340,7 @@ class TypedPerFilterConfigTest
     route_proto->mutable_route()->set_cluster("cluster1");
   }
 
-  static google::protobuf::Map<std::string, google::protobuf::Any>*
-  GetTypedPerFilterConfigProto(RouteConfiguration* route_config) {
+  static auto* GetTypedPerFilterConfigProto(RouteConfiguration* route_config) {
     switch (GetParam().scope()) {
       case TypedPerFilterConfigScope::kVirtualHost:
         return route_config->mutable_virtual_hosts(0)
@@ -363,7 +362,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    GPR_UNREACHABLE_CODE(return nullptr);
+    GPR_ASSERT(false && "unknown typed_per_filter_config scope");
   }
 
   static const XdsRouteConfigResource::TypedPerFilterConfig&
