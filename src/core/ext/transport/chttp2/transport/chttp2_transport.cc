@@ -1960,10 +1960,6 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
   }
-  gpr_log(GPR_ERROR,
-          "FAKE STATUS: error:%s status:%d published_metadata={%d,%d}",
-          error.ToString().c_str(), status, s->published_metadata[0],
-          s->published_metadata[1]);
   // stream_global->recv_trailing_metadata_finished gives us a
   //   last chance replacement: we've received trailing metadata,
   //   but something more important has become available to signal
@@ -1971,7 +1967,8 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   //   what we want - which is safe because we haven't told anyone
   //   about the metadata yet
   if (s->published_metadata[1] == GRPC_METADATA_NOT_PUBLISHED ||
-      s->recv_trailing_metadata_finished != nullptr) {
+      s->recv_trailing_metadata_finished != nullptr ||
+      !s->final_metadata_requested) {
     s->trailing_metadata_buffer.Set(grpc_core::GrpcStatusMetadata(), status);
     if (!message.empty()) {
       s->trailing_metadata_buffer.Set(
