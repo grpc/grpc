@@ -1337,8 +1337,6 @@ grpc_cc_library(
     # to clean this up, we'll remove these.
     [
         "//src/core:lib/iomgr/closure.h",
-        "//src/core:lib/slice/slice_internal.h",
-        "//src/core:lib/slice/slice_string_helpers.h",
         "//src/core:lib/channel/channel_args.h",
         "//src/core:lib/channel/channel_stack_builder.h",
     ],
@@ -1349,7 +1347,6 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
-        "absl/hash",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -3103,6 +3100,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
+        "//src/core:slice",
         "//src/core:tsi_ssl_types",
         "//src/core:useful",
     ],
