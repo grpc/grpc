@@ -23,7 +23,6 @@ cd $(dirname $0)/../../..
 
 export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
 export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
