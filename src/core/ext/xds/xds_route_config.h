@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -43,7 +44,6 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -102,35 +102,25 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
 
     struct RouteAction {
       struct HashPolicy {
-        struct Header {
-          std::string header_name;
-          std::unique_ptr<RE2> regex;
-          std::string regex_substitution;
-
-          Header() = default;
-
-          // Copyable.
-          Header(const Header& other);
-          Header& operator=(const Header& other);
-
-          // Movable.
-          Header(Header&& other) noexcept;
-          Header& operator=(Header&& other) noexcept;
-
-          bool operator==(const Header& other) const;
-          std::string ToString() const;
-        };
-
-        struct ChannelId {
-          bool operator==(const ChannelId&) const { return true; }
-        };
-
-        absl::variant<Header, ChannelId> policy;
+        enum Type { HEADER, CHANNEL_ID };
+        Type type;
         bool terminal = false;
+        // Fields used for type HEADER.
+        std::string header_name;
+        std::unique_ptr<RE2> regex = nullptr;
+        std::string regex_substitution;
 
-        bool operator==(const HashPolicy& other) const {
-          return policy == other.policy && terminal == other.terminal;
-        }
+        HashPolicy() {}
+
+        // Copyable.
+        HashPolicy(const HashPolicy& other);
+        HashPolicy& operator=(const HashPolicy& other);
+
+        // Moveable.
+        HashPolicy(HashPolicy&& other) noexcept;
+        HashPolicy& operator=(HashPolicy&& other) noexcept;
+
+        bool operator==(const HashPolicy& other) const;
         std::string ToString() const;
       };
 
@@ -220,10 +210,9 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   }
   std::string ToString() const;
 
-  static XdsRouteConfigResource Parse(
+  static absl::StatusOr<XdsRouteConfigResource> Parse(
       const XdsResourceType::DecodeContext& context,
-      const envoy_config_route_v3_RouteConfiguration* route_config,
-      ValidationErrors* errors);
+      const envoy_config_route_v3_RouteConfiguration* route_config);
 };
 
 class XdsRouteConfigResourceType

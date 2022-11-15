@@ -161,6 +161,224 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
 }
 
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNotUsedInAllVhosts) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  CreateAndStartBackends(2);
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  const size_t kNumEchoRpcs = 5;
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Prepare the RLSLookupConfig and configure all the keys; change route
+  // configurations to use cluster specifier plugin.
+  rls_server_->rls_service()->SetResponse(
+      BuildRlsRequest({{kRlsTestKey, kRlsTestValue},
+                       {kRlsHostKey, kServerName},
+                       {kRlsServiceKey, kRlsServiceValue},
+                       {kRlsMethodKey, kRlsMethodValue},
+                       {kRlsConstantKey, kRlsConstantValue}}),
+      BuildRlsResponse({kNewClusterName}));
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kRlsTestKey);
+  header->add_names(kRlsTestKey1);
+  header->add_names("key2");
+  auto* extra_keys = key_builder->mutable_extra_keys();
+  extra_keys->set_host(kRlsHostKey);
+  extra_keys->set_service(kRlsServiceKey);
+  extra_keys->set_method(kRlsMethodKey);
+  (*key_builder->mutable_constant_keys())[kRlsConstantKey] = kRlsConstantValue;
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  // Duplicate the virtual host, but with a different domain.
+  *new_route_config.add_virtual_hosts() = new_route_config.virtual_hosts(0);
+  new_route_config.mutable_virtual_hosts(1)->clear_domains();
+  new_route_config.mutable_virtual_hosts(1)->add_domains("www.example.com");
+  // In the original virtual host, set the default route to use the RLS plugin.
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(), rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs, rpc_options);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
+}
+
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  // Set Cluster Specifier Plugin to something that does not exist.
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr(absl::StrCat(
+                  "RouteAction cluster contains cluster specifier plugin "
+                  "name not configured: ",
+                  kRlsClusterSpecifierPluginInstanceName)));
+}
+
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  // Prepare the RLSLookupConfig: change route configurations to use cluster
+  // specifier plugin.
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kRlsTestKey);
+  header->add_names(kRlsTestKey1);
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* duplicate_plugin = new_route_config.add_cluster_specifier_plugins();
+  duplicate_plugin->mutable_extension()->set_name(
+      kRlsClusterSpecifierPluginInstanceName);
+  duplicate_plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr(absl::StrCat(
+                  "Duplicated definition of cluster_specifier_plugin ",
+                  kRlsClusterSpecifierPluginInstanceName)));
+}
+
+TEST_P(RlsTest,
+       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  // Prepare the RLSLookupConfig: change route configurations to use cluster
+  // specifier plugin.
+  RouteLookupConfig route_lookup_config;
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  // Instead of grpc.lookup.v1.RouteLookupClusterSpecifier, let's say we
+  // mistakenly packed the inner RouteLookupConfig instead.
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(
+      route_lookup_config);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type "
+                                   "grpc.lookup.v1.RouteLookupConfig"));
+}
+
+TEST_P(RlsTest,
+       XdsRoutingClusterSpecifierPluginIgnoreUnknownSpecifierProtoOptional) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Prepare the RLSLookupConfig: change route configurations to use cluster
+  // specifier plugin.
+  RouteLookupConfig route_lookup_config;
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  // Instead of grpc.lookup.v1.RouteLookupClusterSpecifier, let's say we
+  // mistakenly packed the inner RouteLookupConfig instead.
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(
+      route_lookup_config);
+  plugin->set_is_optional(true);
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Ensure we ignore the cluster specifier plugin and send traffic according to
+  // the default route.
+  WaitForAllBackends(DEBUG_LOCATION);
+}
+
+TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  // Prepare the RLSLookupConfig and configure all the keys; add required_match
+  // field which should not be there.
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kRlsTestKey);
+  header->add_names(kRlsTestKey1);
+  header->set_required_match(true);
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(
+      response_state->error_message,
+      ::testing::HasSubstr(
+          "field:routeLookupConfig.grpcKeybuilders[0].headers[0].requiredMatch "
+          "error:must not be present"));
+}
+
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
   CreateAndStartBackends(1);
   // Populate new EDS resources.

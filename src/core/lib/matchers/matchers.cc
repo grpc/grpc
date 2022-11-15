@@ -22,7 +22,6 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 namespace grpc_core {
@@ -38,8 +37,7 @@ absl::StatusOr<StringMatcher> StringMatcher::Create(Type type,
     auto regex_matcher = std::make_unique<RE2>(std::string(matcher));
     if (!regex_matcher->ok()) {
       return absl::InvalidArgumentError(
-          absl::StrCat("Invalid regex string specified in matcher: ",
-                       regex_matcher->error()));
+          "Invalid regex string specified in matcher.");
     }
     return StringMatcher(std::move(regex_matcher));
   } else {
