@@ -27,9 +27,7 @@
 
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
