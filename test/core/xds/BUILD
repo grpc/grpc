@@ -144,9 +144,9 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "xds_client_test",
-    size = "large",
     srcs = ["xds_client_test.cc"],
     external_deps = ["gtest"],
+    shard_count = 10,
     language = "C++",
     uses_event_engine = True,
     uses_polling = False,
