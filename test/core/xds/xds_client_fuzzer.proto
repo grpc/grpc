@@ -110,7 +110,20 @@ message Action {
   }
 }
 
+message SendKnownGoodResources {
+  StreamId stream_id = 1;
+  ResourceType resource_type = 2;
+  repeated string resource_names = 3;
+}
+
+message EndAction {
+  oneof action_type {
+    SendKnownGoodResources send_known_good_resources = 1;
+  }
+}
+
 message Message {
   string bootstrap = 1;
   repeated Action actions = 2;
+  repeated EndAction end_actions = 3;
 }
