@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gamma
   protobuf_version: 3.21.6
-  version: 1.49.1
+  version: 1.49.2
 targets:
 - name: gen_hpack_tables
   build: tool
