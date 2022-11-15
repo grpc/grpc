@@ -170,6 +170,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back("\n");
   // 5. SignedHeaders
   std::vector<absl::string_view> signed_headers_vector;
+  signed_headers_vector.reserve(request_headers_.size());
   for (const auto& header : request_headers_) {
     signed_headers_vector.emplace_back(header.first);
   }

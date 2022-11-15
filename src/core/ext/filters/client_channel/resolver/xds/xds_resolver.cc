@@ -56,11 +56,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -80,11 +78,9 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -313,13 +309,11 @@ class XdsResolver : public Resolver {
              clusters_ == other_xds->clusters_;
     }
 
-    CallConfig GetCallConfig(GetCallConfigArgs args) override;
+    absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override;
 
     std::vector<const grpc_channel_filter*> GetFilters() override {
       return filters_;
     }
-
-    ChannelArgs ModifyChannelArgs(const ChannelArgs& args) override;
 
    private:
     struct Route {
@@ -631,11 +625,6 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
   return nullptr;
 }
 
-ChannelArgs XdsResolver::XdsConfigSelector::ModifyChannelArgs(
-    const ChannelArgs& args) {
-  return args;
-}
-
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (clusters_.find(name) == clusters_.end()) {
     auto it = resolver_->cluster_state_map_.find(name);
@@ -671,13 +660,14 @@ absl::optional<uint64_t> HeaderHashHelper(
   return XXH64(header_value->data(), header_value->size(), 0);
 }
 
-ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
-    GetCallConfigArgs args) {
+absl::StatusOr<ConfigSelector::CallConfig>
+XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   auto route_index = XdsRouting::GetRouteForRequest(
       RouteListIterator(&route_table_), StringViewFromSlice(*args.path),
       args.initial_metadata);
   if (!route_index.has_value()) {
-    return CallConfig();
+    return absl::UnavailableError(
+        "No matching route found in xDS route config");
   }
   auto& entry = route_table_[*route_index];
   // Found a route match
@@ -685,10 +675,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
           &entry.route.action);
   if (route_action == nullptr) {
-    CallConfig call_config;
-    call_config.status =
-        absl::UnavailableError("Matching route has inappropriate action");
-    return call_config;
+    return absl::UnavailableError("Matching route has inappropriate action");
   }
   std::string cluster_name;
   RefCountedPtr<ServiceConfig> method_config;

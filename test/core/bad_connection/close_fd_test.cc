@@ -40,8 +40,6 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
-struct test_ctx;
-
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 

@@ -80,6 +80,7 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
                                   http_max_stream_duration.ToString()));
   if (!http_filters.empty()) {
     std::vector<std::string> filter_strings;
+    filter_strings.reserve(http_filters.size());
     for (const auto& http_filter : http_filters) {
       filter_strings.push_back(http_filter.ToString());
     }
@@ -164,6 +165,7 @@ std::string FilterChain::FilterChainMatch::ToString() const {
   }
   if (!prefix_ranges.empty()) {
     std::vector<std::string> prefix_ranges_content;
+    prefix_ranges_content.reserve(prefix_ranges.size());
     for (const auto& range : prefix_ranges) {
       prefix_ranges_content.push_back(range.ToString());
     }
@@ -179,6 +181,7 @@ std::string FilterChain::FilterChainMatch::ToString() const {
   }
   if (!source_prefix_ranges.empty()) {
     std::vector<std::string> source_prefix_ranges_content;
+    source_prefix_ranges_content.reserve(source_prefix_ranges.size());
     for (const auto& range : source_prefix_ranges) {
       source_prefix_ranges_content.push_back(range.ToString());
     }
@@ -625,8 +628,8 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
         google_protobuf_UInt32Value_value(prefix_len_proto),
         (reinterpret_cast<const grpc_sockaddr*>(cidr_range.address.addr))
                     ->sa_family == GRPC_AF_INET
-            ? uint32_t(32)
-            : uint32_t(128));
+            ? uint32_t{32}
+            : uint32_t{128});
   }
   // Normalize the network address by masking it with prefix_len
   grpc_sockaddr_mask_bits(&cidr_range.address, cidr_range.prefix_len);

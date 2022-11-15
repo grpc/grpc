@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.51.0dev</release>
-  <api>1.51.0dev</api>
+  <release>1.52.0dev</release>
+  <api>1.52.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.51.0 update
+- gRPC Core 1.52.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -109,6 +109,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_plugin.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_service_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/config_selector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
@@ -177,8 +179,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_service_config.cc" role="src" />
@@ -197,8 +197,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
@@ -262,6 +262,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http_trace.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
@@ -967,15 +969,21 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_closure.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_heap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_heap.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_manager.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/traced_buffer_list.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/traced_buffer_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc" role="src" />
@@ -1060,6 +1068,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/match.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
@@ -1246,6 +1256,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_object_loader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_object_loader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
@@ -1269,6 +1280,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/for_each.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/intra_activity_waiter.h" role="src" />
@@ -1566,6 +1578,8 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />

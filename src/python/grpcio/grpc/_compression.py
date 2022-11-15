@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
+from typing import Optional
+
+import grpc
 from grpc._cython import cygrpc
+from grpc._typing import MetadataType
 
 NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate
@@ -25,21 +31,23 @@ _METADATA_STRING_MAPPING = {
 }
 
 
-def _compression_algorithm_to_metadata_value(compression):
+def _compression_algorithm_to_metadata_value(
+        compression: grpc.Compression) -> str:
     return _METADATA_STRING_MAPPING[compression]
 
 
-def compression_algorithm_to_metadata(compression):
+def compression_algorithm_to_metadata(compression: grpc.Compression):
     return (cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
             _compression_algorithm_to_metadata_value(compression))
 
 
-def create_channel_option(compression):
+def create_channel_option(compression: Optional[grpc.Compression]):
     return ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
              int(compression)),) if compression else ()
 
 
-def augment_metadata(metadata, compression):
+def augment_metadata(metadata: Optional[MetadataType],
+                     compression: Optional[grpc.Compression]):
     if not metadata and not compression:
         return None
     base_metadata = tuple(metadata) if metadata else ()

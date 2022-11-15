@@ -61,8 +61,6 @@ ABSL_FLAG(std::string, extra_args, "",
           "Comma-separated list of opaque command args to plumb through to "
           "the binary pointed at by --test_bin_name");
 
-using grpc::SubProcess;
-
 namespace grpc {
 
 namespace testing {

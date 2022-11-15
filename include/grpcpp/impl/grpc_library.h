@@ -24,25 +24,34 @@
 #include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen.h>
-#include <grpcpp/impl/codegen/grpc_library.h>  // IWYU pragma: export
 
 namespace grpc {
 
 namespace internal {
-class GrpcLibrary final : public GrpcLibraryInterface {
+
+/// Classes that require gRPC to be initialized should inherit from this class.
+class GrpcLibrary {
  public:
-  void init() override { grpc_init(); }
-  void shutdown() override { grpc_shutdown(); }
+  explicit GrpcLibrary(bool call_grpc_init = true) : grpc_init_called_(false) {
+    if (call_grpc_init) {
+      grpc_init();
+      grpc_init_called_ = true;
+    }
+  }
+  virtual ~GrpcLibrary() {
+    if (grpc_init_called_) {
+      grpc_shutdown();
+    }
+  }
+
+ private:
+  bool grpc_init_called_;
 };
 
 /// Instantiating this class ensures the proper initialization of gRPC.
 class GrpcLibraryInitializer final {
  public:
   GrpcLibraryInitializer() {
-    if (grpc::g_glip == nullptr) {
-      static auto* const g_gli = new GrpcLibrary();
-      grpc::g_glip = g_gli;
-    }
     if (grpc::g_core_codegen_interface == nullptr) {
       static auto* const g_core_codegen = new CoreCodegen();
       grpc::g_core_codegen_interface = g_core_codegen;

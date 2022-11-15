@@ -47,3 +47,18 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "observability_logging_sink_test",
+    srcs = [
+        "observability_logging_sink_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/cpp/ext/gcp:observability_logging_sink",
+        "//test/cpp/util:test_util",
+    ],
+)

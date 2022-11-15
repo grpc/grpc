@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <memory>
 #include <string>
 
 #include "absl/status/status.h"
@@ -41,8 +40,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer.h"
-
-struct passthru_endpoint;
 
 typedef struct passthru_endpoint passthru_endpoint;
 

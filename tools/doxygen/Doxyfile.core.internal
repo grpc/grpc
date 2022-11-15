@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 28.0.0
+PROJECT_NUMBER         = 29.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -890,6 +890,8 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.h \
 src/core/ext/filters/client_channel/config_selector.cc \
 src/core/ext/filters/client_channel/config_selector.h \
 src/core/ext/filters/client_channel/connector.h \
@@ -962,8 +964,6 @@ src/core/ext/filters/client_channel/resolver/sockaddr/README.md \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
-src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-src/core/ext/filters/client_channel/resolver_result_parsing.h \
 src/core/ext/filters/client_channel/retry_filter.cc \
 src/core/ext/filters/client_channel/retry_filter.h \
 src/core/ext/filters/client_channel/retry_service_config.cc \
@@ -982,8 +982,8 @@ src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
-src/core/ext/filters/fault_injection/service_config_parser.cc \
-src/core/ext/filters/fault_injection/service_config_parser.h \
+src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
+src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
 src/core/ext/filters/http/client/http_client_filter.h \
 src/core/ext/filters/http/client_authority_filter.cc \
@@ -1051,6 +1051,8 @@ src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http_trace.cc \
+src/core/ext/transport/chttp2/transport/http_trace.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
@@ -1758,15 +1760,21 @@ src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
 src/core/lib/event_engine/posix_engine/internal_errqueue.h \
 src/core/lib/event_engine/posix_engine/lockfree_event.cc \
 src/core/lib/event_engine/posix_engine/lockfree_event.h \
+src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
+src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
 src/core/lib/event_engine/posix_engine/posix_engine_closure.h \
+src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
+src/core/lib/event_engine/posix_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/posix_engine/timer.cc \
 src/core/lib/event_engine/posix_engine/timer.h \
 src/core/lib/event_engine/posix_engine/timer_heap.cc \
 src/core/lib/event_engine/posix_engine/timer_heap.h \
 src/core/lib/event_engine/posix_engine/timer_manager.cc \
 src/core/lib/event_engine/posix_engine/timer_manager.h \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.cc \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
 src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
@@ -1853,6 +1861,8 @@ src/core/lib/gprpp/global_config_env.h \
 src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
+src/core/lib/gprpp/load_file.cc \
+src/core/lib/gprpp/load_file.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
@@ -2040,6 +2050,7 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.h \
 src/core/lib/json/json_args.h \
+src/core/lib/json/json_channel_args.h \
 src/core/lib/json/json_object_loader.cc \
 src/core/lib/json/json_object_loader.h \
 src/core/lib/json/json_reader.cc \
@@ -2063,6 +2074,7 @@ src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
+src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/for_each.h \
 src/core/lib/promise/intra_activity_waiter.h \
@@ -2363,6 +2375,8 @@ src/core/tsi/ssl/session_cache/ssl_session_cache.h \
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
+src/core/tsi/ssl_transport_security_utils.cc \
+src/core/tsi/ssl_transport_security_utils.h \
 src/core/tsi/ssl_types.h \
 src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \

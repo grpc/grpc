@@ -51,7 +51,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 
@@ -119,6 +118,9 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
 static void do_basic_init(void) {
   grpc_core::InitInternally = grpc_init;
   grpc_core::ShutdownInternally = grpc_shutdown;
+  grpc_core::IsInitializedInternally = []() {
+    return grpc_is_initialized() != 0;
+  };
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();

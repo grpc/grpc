@@ -29,7 +29,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
         "//src/core:notification",
