@@ -29,6 +29,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
@@ -133,8 +134,12 @@ static void read_and_write_test_read_handler(void* data,
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
 
-  state->bytes_read += count_slices(
-      state->incoming.slices, state->incoming.count, &state->current_read_data);
+  if (error.ok()) {
+    state->bytes_read +=
+        count_slices(state->incoming.slices, state->incoming.count,
+                     &state->current_read_data);
+  }
+
   if (state->bytes_read == state->target_bytes || !error.ok()) {
     gpr_log(GPR_DEBUG, "Read handler done");
     gpr_mu_lock(g_mu);
@@ -225,7 +230,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.target_bytes = num_bytes;
   state.bytes_read = 0;
   state.current_write_size = write_size;
-  state.max_write_frame_size = max_write_frame_size;
+  state.max_write_frame_size = INT_MAX;
   state.bytes_written = 0;
   state.read_done = 0;
   state.write_done = 0;

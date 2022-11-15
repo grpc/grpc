@@ -982,6 +982,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
   size_t unwind_byte_idx;
   int saved_errno;
   status = absl::OkStatus();
+  Slice slice;
 
   // We always start at zero, because we eagerly unref and trim the slice
   // buffer as we write
@@ -994,7 +995,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     for (iov_size = 0; outgoing_slice_idx != outgoing_buffer_->Count() &&
                        iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
-      auto slice = outgoing_buffer_->RefSlice(outgoing_slice_idx);
+      slice = outgoing_buffer_->RefSlice(outgoing_slice_idx);
       iov[iov_size].iov_base =
           const_cast<uint8_t*>(slice.begin()) + outgoing_byte_idx_;
       iov[iov_size].iov_len = slice.length() - outgoing_byte_idx_;
@@ -1134,6 +1135,9 @@ void PosixEndpointImpl::Write(
     current_zerocopy_send_ = zerocopy_send_record;
     handle_->NotifyOnWrite(on_write_);
   } else {
+    // TODO(vigneshbabu): Consider eventually running this callback inline to
+    // avoid a thread hop. At the time of submission, it causes deadlocks which
+    // should be reolved after ExecCtx removal.
     engine_->Run([on_writable = std::move(on_writable), status]() mutable {
       on_writable(status);
     });
