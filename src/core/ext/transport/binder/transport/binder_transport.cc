@@ -610,6 +610,8 @@ static void perform_transport_op_locked(void* transport_op,
   if (op->set_accept_stream) {
     gbt->accept_stream_user_data = op->set_accept_stream_user_data;
     gbt->accept_stream_fn = op->set_accept_stream_fn;
+    gpr_log(GPR_DEBUG, "accept_stream_fn_called_count_ = %d",
+            gbt->accept_stream_fn_called_count_);
     while (gbt->accept_stream_fn_called_count_ > 0) {
       --gbt->accept_stream_fn_called_count_;
       gbt->combiner->Run(
