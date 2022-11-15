@@ -23,17 +23,49 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <utility>
+
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+
+#include "src/core/lib/gprpp/env.h"
+#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
 namespace grpc {
 namespace internal {
 
 ObservabilityLoggingSink::ObservabilityLoggingSink(
-    GcpObservabilityConfig::CloudLogging logging_config) {
+    GcpObservabilityConfig::CloudLogging logging_config, std::string project_id)
+    : project_id_(std::move(project_id)) {
   for (auto& client_rpc_event_config : logging_config.client_rpc_events) {
-    client_configs.emplace_back(client_rpc_event_config);
+    client_configs_.emplace_back(client_rpc_event_config);
   }
   for (auto& server_rpc_event_config : logging_config.server_rpc_events) {
-    server_configs.emplace_back(server_rpc_event_config);
+    server_configs_.emplace_back(server_rpc_event_config);
+  }
+  std::string endpoint;
+  absl::optional<std::string> endpoint_env =
+      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+  if (endpoint_env.has_value() && !endpoint_env->empty()) {
+    endpoint = std::move(*endpoint_env);
+  } else {
+    endpoint = "logging.googleapis.com";
+  }
+  ChannelArguments args;
+  // Disable observability for RPCs on this channel
+  args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+  // Set keepalive time to 24 hrs to effectively disable keepalive ping, but
+  // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
+  args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 24 * 60 * 60 * 1000 /* 24 hours */);
+  args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
+  channel_ = CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args);
+  absl::optional<std::string> authority_env =
+      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+  if (authority_env.has_value() && !authority_env->empty()) {
+    authority_ = std::move(*endpoint_env);
   }
 }
 
@@ -48,7 +80,7 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
       path.substr(0, pos);  // service name is before the '/'
   absl::string_view method =
       path.substr(pos + 1);  // method name starts after the '/'
-  const auto& configs = is_client ? client_configs : server_configs;
+  const auto& configs = is_client ? client_configs_ : server_configs_;
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
       if ((config_method.service == "*") ||
@@ -64,6 +96,10 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
     }
   }
   return LoggingSink::Config(0, 0);
+}
+
+void ObservabilityLoggingSink::LogEntry(Entry entry) {
+  // TODO(yashykt) : Fill this up.
 }
 
 ObservabilityLoggingSink::Configuration::Configuration(

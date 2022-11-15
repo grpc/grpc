@@ -23,10 +23,13 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+
+#include <grpcpp/channel.h>
 
 #include "src/cpp/ext/filters/logging/logging_sink.h"
 #include "src/cpp/ext/gcp/observability_config.h"
@@ -37,13 +40,15 @@ namespace internal {
 // Interface for a logging sink that will be used by the logging filter.
 class ObservabilityLoggingSink : public LoggingSink {
  public:
-  explicit ObservabilityLoggingSink(
-      GcpObservabilityConfig::CloudLogging logging_config);
+  ObservabilityLoggingSink(GcpObservabilityConfig::CloudLogging logging_config,
+                           std::string project_id);
 
   ~ObservabilityLoggingSink() override = default;
 
   LoggingSink::Config FindMatch(bool is_client,
                                 absl::string_view path) override;
+
+  void LogEntry(Entry entry) override;
 
  private:
   struct Configuration {
@@ -60,8 +65,11 @@ class ObservabilityLoggingSink : public LoggingSink {
     uint32_t max_message_bytes = 0;
   };
 
-  std::vector<Configuration> client_configs;
-  std::vector<Configuration> server_configs;
+  std::vector<Configuration> client_configs_;
+  std::vector<Configuration> server_configs_;
+  std::string project_id_;
+  std::shared_ptr<grpc::Channel> channel_;
+  std::string authority_;
 };
 
 }  // namespace internal

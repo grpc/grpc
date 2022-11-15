@@ -107,6 +107,9 @@ grpc_cc_library(
     deps = [
         ":observability_config",
         "//:gpr_platform",
+        "//:grpc++",
+        "//:grpc_opencensus_plugin",
+        "//src/core:env",
         "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )
