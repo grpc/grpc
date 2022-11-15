@@ -144,6 +144,7 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "xds_client_test",
+    size = "large",
     srcs = ["xds_client_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
