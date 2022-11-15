@@ -34,14 +34,14 @@
 
 #include <list>
 
-#include <grpc/support/atm.h>
+#include <grpc/impl/codegen/atm.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/codegen/rpc_service_method.h>
+#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/rpc_service_method.h>
-#include <grpcpp/support/status.h>
-#include <grpcpp/support/time.h>
+#include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/grpc_library.h>
 
 struct grpc_completion_queue;
 
@@ -99,7 +99,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
 /// performance servers.
-class CompletionQueue : private grpc::GrpcLibraryCodegen {
+class CompletionQueue : private grpc::internal::GrpcLibrary {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.

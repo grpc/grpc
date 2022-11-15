@@ -121,7 +121,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
                       'include/grpcpp/impl/codegen/delegating_channel.h',
-                      'include/grpcpp/impl/codegen/grpc_library.h',
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
                       'include/grpcpp/impl/codegen/interceptor_common.h',
