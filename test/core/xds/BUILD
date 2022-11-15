@@ -146,8 +146,8 @@ grpc_cc_test(
     name = "xds_client_test",
     srcs = ["xds_client_test.cc"],
     external_deps = ["gtest"],
-    shard_count = 10,
     language = "C++",
+    shard_count = 10,
     uses_event_engine = True,
     uses_polling = False,
     deps = [
