@@ -3327,7 +3327,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
   include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/proto_utils.h
@@ -3417,7 +3416,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/delegating_channel.h
-  include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
@@ -4015,7 +4013,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
   include/grpc++/impl/codegen/metadata_map.h
   include/grpc++/impl/codegen/method_handler_impl.h
   include/grpc++/impl/codegen/proto_utils.h
@@ -4104,7 +4101,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/delegating_channel.h
-  include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
