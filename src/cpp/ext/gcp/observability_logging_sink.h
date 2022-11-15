@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "google/logging/v2/logging.grpc.pb.h"
 
 #include <grpcpp/channel.h>
 
@@ -69,6 +70,7 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::vector<Configuration> server_configs_;
   std::string project_id_;
   std::shared_ptr<grpc::Channel> channel_;
+  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
   std::string authority_;
 };
 

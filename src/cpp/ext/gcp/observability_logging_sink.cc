@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "absl/types/optional.h"
+#include "google/logging/v2/logging.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -59,7 +60,8 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
   // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
   args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 24 * 60 * 60 * 1000 /* 24 hours */);
   args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
-  channel_ = CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args);
+  stub_ = google::logging::v2::LoggingServiceV2::NewStub(
+      CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args));
   absl::optional<std::string> authority_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
   if (authority_env.has_value() && !authority_env->empty()) {
@@ -97,7 +99,23 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
 }
 
 void ObservabilityLoggingSink::LogEntry(Entry entry) {
-  // TODO(yashykt) : Fill this up.
+  struct CallContext {
+    ClientContext context;
+    google::logging::v2::WriteLogEntriesRequest request;
+    google::logging::v2::WriteLogEntriesResponse response;
+  };
+  // TODO(yashykt): Implement batching so that we can batch a bunch of log
+  // entries into a single entry. Also, set a reasonable deadline on the
+  // context.
+  CallContext* call = new CallContext;
+  stub_->async()->WriteLogEntries(&(call->context), &(call->request),
+                                  &(call->response), [call](Status status) {
+                                    if (!status.ok()) {
+                                      // TODO(yashykt): Log the contents of the
+                                      // request on a failure.
+                                    }
+                                    delete call;
+                                  });
 }
 
 ObservabilityLoggingSink::Configuration::Configuration(
