@@ -22,6 +22,9 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/strings/string_view.h"
+#include "absl/utility/utility.h"
+
 #include <grpc/event_engine/slice.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>

@@ -230,7 +230,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.target_bytes = num_bytes;
   state.bytes_read = 0;
   state.current_write_size = write_size;
-  state.max_write_frame_size = INT_MAX;
+  state.max_write_frame_size = max_write_frame_size;
   state.bytes_written = 0;
   state.read_done = 0;
   state.write_done = 0;

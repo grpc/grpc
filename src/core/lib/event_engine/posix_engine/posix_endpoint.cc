@@ -571,7 +571,6 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: PosixEndpointImpl::%p writing", this);
   read_mu_.Lock();
   GPR_ASSERT(read_cb_ == nullptr);
   read_cb_ = std::move(on_read);
