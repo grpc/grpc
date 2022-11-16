@@ -1385,6 +1385,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
+        "//src/core:avl",
         "//src/core:bitset",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
