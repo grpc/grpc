@@ -37,7 +37,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigEmpty) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   // server test
@@ -62,7 +62,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientWildCardEntries) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
   // server test
@@ -87,7 +87,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigBadPath) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   EXPECT_EQ(sink.FindMatch(true, "foo"), LoggingSink::Config(0, 0));
 }
 
@@ -110,7 +110,7 @@ TEST(GcpObservabilityLoggingSinkTest,
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "service/bar"),
             LoggingSink::Config(1024, 4096));
@@ -139,7 +139,7 @@ TEST(GcpObservabilityLoggingSinkTest,
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
   EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(1024, 4096));
@@ -171,7 +171,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigClientMultipleEventEntries) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(1024, 4096));
   EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(512, 2048));
@@ -198,7 +198,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerWildCardEntries) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   // server test
@@ -224,7 +224,7 @@ TEST(GcpObservabilityLoggingSinkTest,
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "service/bar"), LoggingSink::Config(0, 0));
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
@@ -253,7 +253,7 @@ TEST(GcpObservabilityLoggingSinkTest,
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(0, 0));
@@ -285,7 +285,7 @@ TEST(GcpObservabilityLoggingSinkTest, LoggingConfigServerMultipleEventEntries) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
-  ObservabilityLoggingSink sink(config.cloud_logging.value(), "test");
+  ObservabilityLoggingSink sink(config.cloud_logging.value());
   // client test
   EXPECT_EQ(sink.FindMatch(true, "foo/bar"), LoggingSink::Config(0, 0));
   EXPECT_EQ(sink.FindMatch(true, "foo/baz"), LoggingSink::Config(0, 0));

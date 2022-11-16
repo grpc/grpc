@@ -200,11 +200,6 @@ def grpc_deps():
         actual = "@com_google_googleapis//google/monitoring/v3:monitoring_cc_grpc",
     )
 
-    native.bind(
-        name = "googleapis_logging_grpc_service",
-        actual = "@com_google_googleapis//google/logging/v2:logging_cc_grpc",
-    )
-
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
