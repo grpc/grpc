@@ -883,26 +883,44 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
       &current_listener_.route_config,
       // RDS resource name
       [&](std::string* rds_name) {
-        if (route_config_watcher_ != nullptr) {
-          XdsRouteConfigResourceType::CancelWatch(
-              xds_client_.get(), route_config_name_, route_config_watcher_,
-              /*delay_unsubscription=*/!rds_name->empty());
-          route_config_watcher_ = nullptr;
-        }
-        route_config_name_ = std::move(*rds_name);
-        if (!route_config_name_.empty()) {
-          current_virtual_host_.routes.clear();
+        // If the RDS name changed, update the RDS watcher.
+        // Note that this will be true on the initial update, because
+        // route_config_name_ will be empty.
+        if (route_config_name_ != *rds_name) {
+          // If we already had a watch (i.e., if the previous config had
+          // a different RDS name), stop the previous watch.
+          // There will be no previous watch if either (a) this is the
+          // initial resource update or (b) the previous Listener had an
+          // inlined RouteConfig.
+          if (route_config_watcher_ != nullptr) {
+            XdsRouteConfigResourceType::CancelWatch(
+                xds_client_.get(), route_config_name_, route_config_watcher_,
+                /*delay_unsubscription=*/true);
+            route_config_watcher_ = nullptr;
+          }
+          // Start watch for the new RDS resource name.
+          route_config_name_ = std::move(*rds_name);
           auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
           route_config_watcher_ = watcher.get();
           XdsRouteConfigResourceType::StartWatch(
               xds_client_.get(), route_config_name_, std::move(watcher));
+        } else {
+          // RDS resource name has not changed, so no watch needs to be
+          // updated, but we still need to propagate any changes in the
+          // HCM config (e.g., the list of HTTP filters).
+          GenerateResult();
         }
-        // HCM may contain newer filter config. We need to propagate the
-        // update as config selector to the channel.
-        GenerateResult();
       },
       // inlined RouteConfig
       [&](XdsRouteConfigResource* route_config) {
+        // If the previous update specified an RDS resource instead of
+        // having an inlined RouteConfig, we need to cancel the RDS watch.
+        if (route_config_watcher_ != nullptr) {
+          XdsRouteConfigResourceType::CancelWatch(
+              xds_client_.get(), route_config_name_, route_config_watcher_);
+          route_config_watcher_ = nullptr;
+          route_config_name_.clear();
+        }
         OnRouteConfigUpdate(std::move(*route_config));
       });
 }

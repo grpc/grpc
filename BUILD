@@ -481,6 +481,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -548,6 +549,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -1337,7 +1339,6 @@ grpc_cc_library(
     # to clean this up, we'll remove these.
     [
         "//src/core:lib/channel/channel_args.h",
-        "//src/core:lib/channel/channel_stack_builder.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1740,6 +1741,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -1806,6 +1808,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -2660,6 +2663,7 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "backoff",
+        "channel_stack_builder",
         "config",
         "debug_location",
         "exec_ctx",
@@ -3139,6 +3143,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:http"],
     deps = [
+        "channel_stack_builder",
         "config",
         "gpr",
         "grpc_base",

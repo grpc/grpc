@@ -54,6 +54,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
+        "//:channel_stack_builder",
         "//:gpr",
         "//:grpc",
         "//src/core:closure",
