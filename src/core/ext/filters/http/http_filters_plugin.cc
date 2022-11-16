@@ -25,7 +25,8 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/filters/http/message_compress/compression_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -44,24 +45,25 @@ static bool is_building_http_like_transport(
 
 namespace grpc_core {
 void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
-  auto compression = [builder](grpc_channel_stack_type channel_type,
-                               const grpc_channel_filter* filter) {
+  auto optional = [builder](grpc_channel_stack_type channel_type,
+                            bool enable_in_minimal_stack,
+                            const char* control_channel_arg,
+                            const grpc_channel_filter* filter) {
     builder->channel_init()->RegisterStage(
         channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](ChannelStackBuilder* builder) {
+        [enable_in_minimal_stack, control_channel_arg,
+         filter](ChannelStackBuilder* builder) {
           if (!is_building_http_like_transport(builder)) return true;
           auto args = builder->channel_args();
-          const bool enable =
-              args.GetBool(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION)
-                  .value_or(true) ||
-              args.GetBool(GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION)
-                  .value_or(true);
+          const bool enable = args.GetBool(control_channel_arg)
+                                  .value_or(enable_in_minimal_stack ||
+                                            !args.WantMinimalStack());
           if (enable) builder->PrependFilter(filter);
           return true;
         });
   };
-  auto http = [builder](grpc_channel_stack_type channel_type,
-                        const grpc_channel_filter* filter) {
+  auto required = [builder](grpc_channel_stack_type channel_type,
+                            const grpc_channel_filter* filter) {
     builder->channel_init()->RegisterStage(
         channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
         [filter](ChannelStackBuilder* builder) {
@@ -71,11 +73,25 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
           return true;
         });
   };
-  compression(GRPC_CLIENT_SUBCHANNEL, &ClientCompressionFilter::kFilter);
-  compression(GRPC_CLIENT_DIRECT_CHANNEL, &ClientCompressionFilter::kFilter);
-  compression(GRPC_SERVER_CHANNEL, &ServerCompressionFilter::kFilter);
-  http(GRPC_CLIENT_SUBCHANNEL, &HttpClientFilter::kFilter);
-  http(GRPC_CLIENT_DIRECT_CHANNEL, &HttpClientFilter::kFilter);
-  http(GRPC_SERVER_CHANNEL, &HttpServerFilter::kFilter);
+  // TODO(ctiller): return this flag to true once the promise conversion is
+  // complete.
+  static constexpr bool kMinimalStackHasDecompression = false;
+  optional(GRPC_CLIENT_SUBCHANNEL, false,
+           GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
+           &grpc_message_compress_filter);
+  optional(GRPC_CLIENT_DIRECT_CHANNEL, false,
+           GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
+           &grpc_message_compress_filter);
+  optional(GRPC_SERVER_CHANNEL, false, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
+           &grpc_message_compress_filter);
+  optional(GRPC_CLIENT_SUBCHANNEL, kMinimalStackHasDecompression,
+           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
+  optional(GRPC_CLIENT_DIRECT_CHANNEL, kMinimalStackHasDecompression,
+           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
+  optional(GRPC_SERVER_CHANNEL, kMinimalStackHasDecompression,
+           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
+  required(GRPC_CLIENT_SUBCHANNEL, &HttpClientFilter::kFilter);
+  required(GRPC_CLIENT_DIRECT_CHANNEL, &HttpClientFilter::kFilter);
+  required(GRPC_SERVER_CHANNEL, &HttpServerFilter::kFilter);
 }
 }  // namespace grpc_core

@@ -19,8 +19,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <string>
-
 #include "absl/strings/match.h"
 
 #include <grpc/byte_buffer.h>
@@ -45,10 +43,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "\n\n\nRunning test: %s/%s client_args=%s server_args=%s",
-          test_name, config.name,
-          grpc_core::ChannelArgs::FromC(client_args).ToString().c_str(),
-          grpc_core::ChannelArgs::FromC(server_args).ToString().c_str());
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   // We intentionally do not pass the client and server args to
   // create_fixture(), since we don't want the limit enforced on the
   // proxy, only on the backend server.
@@ -487,8 +482,11 @@ static grpc_metadata gzip_compression_override() {
 
 // Test receive message limit with compressed request larger than the limit
 static void test_max_receive_message_length_on_compressed_request(
-    grpc_end2end_test_config config) {
-  gpr_log(GPR_INFO, "test max receive message length on compressed request");
+    grpc_end2end_test_config config, bool minimal_stack) {
+  gpr_log(GPR_INFO,
+          "test max receive message length on compressed request with "
+          "minimal_stack=%d",
+          minimal_stack);
   grpc_end2end_test_fixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
@@ -505,15 +503,17 @@ static void test_max_receive_message_length_on_compressed_request(
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  grpc_slice details;
+  grpc_slice details, status_details;
   int was_cancelled = 2;
 
   // Set limit via channel args.
-  grpc_arg arg[1];
+  grpc_arg arg[2];
   arg[0] = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
+  arg[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
   grpc_channel_args* server_args =
-      grpc_channel_args_copy_and_add(nullptr, arg, 1);
+      grpc_channel_args_copy_and_add(nullptr, arg, 2);
 
   f = begin_test(config, "test_max_request_message_length", nullptr,
                  server_args);
@@ -592,20 +592,41 @@ static void test_max_receive_message_length_on_compressed_request(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
+  if (minimal_stack) {
+    /* Expect the RPC to proceed normally for a minimal stack */
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count = 0;
+    op->data.send_status_from_server.status = GRPC_STATUS_OK;
+    status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+  }
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), false);
+  cqv.Expect(tag(102), minimal_stack);
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(was_cancelled == 1);
-  GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-  GPR_ASSERT(absl::StartsWith(grpc_core::StringViewFromSlice(details),
-                              "Received message larger than max"));
+  if (minimal_stack) {
+    /* We do not perform message size checks for minimal stack. */
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+  } else {
+    GPR_ASSERT(was_cancelled == 1);
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    GPR_ASSERT(absl::StartsWith(grpc_core::StringViewFromSlice(details),
+                                "Received message larger than max"));
+  }
   grpc_slice_unref(details);
   grpc_slice_unref(request_payload_slice);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -623,9 +644,11 @@ static void test_max_receive_message_length_on_compressed_request(
 
 // Test receive message limit with compressed response larger than the limit.
 static void test_max_receive_message_length_on_compressed_response(
-    grpc_end2end_test_config config) {
+    grpc_end2end_test_config config, bool minimal_stack) {
   gpr_log(GPR_INFO,
-          "testing max receive message length on compressed response");
+          "testing max receive message length on compressed response with "
+          "minimal_stack=%d",
+          minimal_stack);
   grpc_end2end_test_fixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
@@ -646,11 +669,13 @@ static void test_max_receive_message_length_on_compressed_response(
   int was_cancelled = 2;
 
   // Set limit via channel args.
-  grpc_arg arg[1];
+  grpc_arg arg[2];
   arg[0] = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
+  arg[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
   grpc_channel_args* client_args =
-      grpc_channel_args_copy_and_add(nullptr, arg, 1);
+      grpc_channel_args_copy_and_add(nullptr, arg, 2);
 
   f = begin_test(config, "test_max_response_message_length", client_args,
                  nullptr);
@@ -746,9 +771,14 @@ static void test_max_receive_message_length_on_compressed_response(
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-  GPR_ASSERT(absl::StartsWith(grpc_core::StringViewFromSlice(details),
-                              "Received message larger than max"));
+  if (minimal_stack) {
+    /* We do not perform message size checks for minimal stack. */
+    GPR_ASSERT(status == GRPC_STATUS_OK);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
+    GPR_ASSERT(absl::StartsWith(grpc_core::StringViewFromSlice(details),
+                                "Received message larger than max"));
+  }
   grpc_slice_unref(details);
   grpc_slice_unref(response_payload_slice);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -794,8 +824,10 @@ void max_message_length(grpc_end2end_test_config config) {
    * with our simple proxy. */
   if (strcmp(config.name, "inproc") != 0 &&
       (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) == 0) {
-    test_max_receive_message_length_on_compressed_request(config);
-    test_max_receive_message_length_on_compressed_response(config);
+    test_max_receive_message_length_on_compressed_request(config, false);
+    test_max_receive_message_length_on_compressed_request(config, true);
+    test_max_receive_message_length_on_compressed_response(config, false);
+    test_max_receive_message_length_on_compressed_response(config, true);
   }
 }
 

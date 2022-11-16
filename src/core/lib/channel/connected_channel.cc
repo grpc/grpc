@@ -418,10 +418,6 @@ class ClientStream : public Orphanable {
               message_to_send_->payload();
           batch_payload_.send_message.flags = message_to_send_->flags();
         } else {
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%sPollConnectedChannel: half close",
-                    Activity::current()->DebugTag().c_str());
-          }
           GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
           client_trailing_metadata_ =
               GetContext<Arena>()->MakePooled<ClientMetadata>(
@@ -477,7 +473,6 @@ class ClientStream : public Orphanable {
     if (server_initial_metadata_state_ == ServerInitialMetadataState::kSet &&
         !absl::holds_alternative<PipeSender<MessageHandle>::PushType>(
             recv_message_state_) &&
-        !absl::holds_alternative<PendingReceiveMessage>(recv_message_state_) &&
         std::exchange(queued_trailing_metadata_, false)) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
@@ -584,10 +579,6 @@ class ClientStream : public Orphanable {
                   recv_message_waker_.ActivityDebugTag().c_str());
         }
       } else {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received message",
-                  recv_message_waker_.ActivityDebugTag().c_str());
-        }
         auto pending =
             absl::get_if<PendingReceiveMessage>(&recv_message_state_);
         GPR_ASSERT(pending != nullptr);

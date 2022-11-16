@@ -29,8 +29,8 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -46,7 +46,7 @@ const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
 // Retrieve the default compression algorithm from channel args, return nullopt
 // if not found.
 absl::optional<grpc_compression_algorithm>
-DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args);
+DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args);
 
 // A set of grpc_compression_algorithm values.
 class CompressionAlgorithmSet {
@@ -55,7 +55,7 @@ class CompressionAlgorithmSet {
   // algorithm 1, etc.
   static CompressionAlgorithmSet FromUint32(uint32_t value);
   // Locate in channel args and construct from the found value.
-  static CompressionAlgorithmSet FromChannelArgs(const ChannelArgs& args);
+  static CompressionAlgorithmSet FromChannelArgs(const grpc_channel_args* args);
   // Parse a string of comma-separated compression algorithms.
   static CompressionAlgorithmSet FromString(absl::string_view str);
   // Construct an empty set.
