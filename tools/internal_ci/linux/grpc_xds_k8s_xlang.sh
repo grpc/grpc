@@ -51,11 +51,10 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
-# temporary commenting to test on kokoro  
-#  if [ "${TESTING_VERSION}" != "master" ]; then
-#    echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
-#    exit 1
-#  fi
+  if [ "${TESTING_VERSION}" != "master" ]; then
+    echo "Skipping cross lang cross branch testing for non-master branch ${TESTING_VERSION}"
+    exit 0
+  fi
 
   source ${script_dir}/grpc_xds_k8s_run_test.sh
 
