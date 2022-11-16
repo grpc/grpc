@@ -34,7 +34,7 @@ fi
 echo $LATEST_BRANCH
 
 if [ "${OLDEST_BRANCH}" == "" ]; then
-  OLDEST_BRANCH=v1.$(expr $(echo ${LATEST_BRANCH} | cut -f 2 -d.) - 9).x
+  OLDEST_BRANCH="v1.$(expr $(echo ${LATEST_BRANCH} | cut -f 2 -d.) - 9).x"
 fi
 
 echo $OLDEST_BRANCH
