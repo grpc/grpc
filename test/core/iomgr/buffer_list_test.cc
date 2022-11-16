@@ -53,9 +53,10 @@ void InitGlobals() {
 void AdvanceClockMillis(uint64_t millis) {
   grpc_core::ExecCtx exec_ctx;
   g_now = gpr_time_add(
-      g_now, gpr_time_from_millis(
-                 grpc_core::Clamp(millis, uint64_t(1), kMaxAdvanceTimeMillis),
-                 GPR_TIMESPAN));
+      g_now,
+      gpr_time_from_millis(grpc_core::Clamp(millis, static_cast<uint64_t>(1),
+                                            kMaxAdvanceTimeMillis),
+                           GPR_TIMESPAN));
   exec_ctx.InvalidateNow();
 }
 
