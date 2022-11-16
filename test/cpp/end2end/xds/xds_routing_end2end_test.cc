@@ -252,8 +252,7 @@ TEST_P(LdsRdsInteractionTest, SwitchFromInlineRouteConfigToRds) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   listener = default_listener_;
-  http_connection_manager =
-      ClientHcmAccessor().Unpack(listener);
+  http_connection_manager = ClientHcmAccessor().Unpack(listener);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
   auto* filter = http_connection_manager.mutable_http_filters(0);
