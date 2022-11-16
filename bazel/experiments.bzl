@@ -24,9 +24,6 @@ EXPERIMENTS = {
         "event_engine_client_test": [
             "posix_event_engine_enable_polling",
         ],
-        "flow_control_test": [
-            "flow_control_fixes",
-        ],
         "hpack_test": [
             "new_hpack_huffman_decoder",
         ],
@@ -43,6 +40,7 @@ EXPERIMENTS = {
             "event_engine_client",
         ],
         "flow_control_test": [
+            "flow_control_fixes",
             "peer_state_based_framing",
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
