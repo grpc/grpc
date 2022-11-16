@@ -27,17 +27,12 @@ if [ "${LATEST_BRANCH}" == "" ]; then
   go_client=$(find_latest go client)
   java_server=$(find_latest java server)
   java_client=$(find_latest java client)
-  echo $cpp_server; echo $cpp_client; echo $go_server; echo $go_client; echo $java_server; echo $java_client;
   LATEST_BRANCH="$((echo $cpp_server; echo $cpp_client; echo $go_server; echo $go_client; echo $java_server; echo $java_client;) | sort -g | head -1)"
 fi
-
-echo $LATEST_BRANCH
 
 if [ "${OLDEST_BRANCH}" == "" ]; then
   OLDEST_BRANCH="v1.$(expr $(echo ${LATEST_BRANCH} | cut -f 2 -d.) - 9).x"
 fi
-
-echo $OLDEST_BRANCH
 
 export LATEST_BRANCH OLDEST_BRANCH
 
