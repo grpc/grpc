@@ -261,7 +261,7 @@ TEST_P(LdsRdsInteractionTest, SwitchFromInlineRouteConfigToRds) {
   filter->mutable_typed_config()->PackFrom(http_fault);
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
-                                   std::move(route_config));
+                                   route_config);
   // Wait for traffic to switch to backend 1.  There should be no RPC
   // failures here; if there are, that indicates that the client started
   // using the new LDS resource before it saw the new RDS resource.
@@ -358,7 +358,7 @@ TEST_P(LdsRdsInteractionTest, LdsUpdateChangesHcmConfigAndRdsResourceName) {
   filter->mutable_typed_config()->PackFrom(http_fault);
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
-                                   std::move(route_config));
+                                   route_config);
   // Wait for traffic to switch to backend 1.  There should be no RPC
   // failures here; if there are, that indicates that the client started
   // using the new LDS resource before it saw the new RDS resource.
