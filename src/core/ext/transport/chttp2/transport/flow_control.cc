@@ -32,6 +32,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "http2_settings.h"
 
 #include <grpc/support/log.h>
 
@@ -278,16 +279,19 @@ void TransportFlowControl::UpdateSetting(
         Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
-      *desired_value = new_desired_value;
+      fprintf(stderr, "UPDATE SETTING %s from %d to %d\n",
+              grpc_chttp2_settings_parameters[id].name, *desired_value,
+              new_desired_value);
       // Reaching zero can only happen for initial window size, and if it occurs
       // we really want to wake up writes and ensure all the queued stream
       // window updates are flushed, since stream flow control operates
       // differently at zero window size.
       FlowControlAction::Urgency urgency =
           FlowControlAction::Urgency::QUEUE_UPDATE;
-      if (new_desired_value == 0) {
+      if (*desired_value == 0 || new_desired_value == 0) {
         urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
       }
+      *desired_value = new_desired_value;
       (action->*set)(urgency, *desired_value);
     }
   } else {
