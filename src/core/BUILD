@@ -1733,6 +1733,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_listener",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_engine_listener.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_engine_listener.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/types:optional",
+    ],
+    deps = [
+        "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_endpoint",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_listener_utils",
+        "posix_event_engine_tcp_socket_utils",
+        "socket_mutator",
+        "status_helper",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine",
     srcs = ["lib/event_engine/posix_engine/posix_engine.cc"],
     hdrs = ["lib/event_engine/posix_engine/posix_engine.h"],
@@ -1759,6 +1790,7 @@ grpc_cc_library(
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
+        "posix_event_engine_listener",
         "posix_event_engine_poller_posix_default",
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
