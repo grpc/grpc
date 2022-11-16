@@ -207,39 +207,65 @@ TEST_P(LdsRdsInteractionTest, SwitchFromRdsToInlineRouteConfig) {
 TEST_P(LdsRdsInteractionTest, SwitchFromInlineRouteConfigToRds) {
   CreateAndStartBackends(2);
   // Create an LDS resource with an inline RouteConfig pointing to a
-  // different CDS and EDS resource, sending traffic to backend 1.
+  // different CDS and EDS resource, sending traffic to backend 0.
   const char* kNewClusterName = "new_cluster_name";
   const char* kNewEdsResourceName = "new_eds_resource_name";
   auto cluster = default_cluster_;
   cluster.set_name(kNewClusterName);
   cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
   balancer_->ads_service()->SetCdsResource(cluster);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, kNewEdsResourceName));
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
+  RouteConfiguration route_config = default_route_config_;
+  route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
       ->set_cluster(kNewClusterName);
   Listener listener = default_listener_;
   HttpConnectionManager http_connection_manager =
       ClientHcmAccessor().Unpack(listener);
-  *http_connection_manager.mutable_route_config() = new_route_config;
+  *http_connection_manager.mutable_route_config() = route_config;
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
-  // Start the client and make sure traffic goes to backend 1.
-  WaitForBackend(DEBUG_LOCATION, 1);
+  // Start the client and make sure traffic goes to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
   // RDS should not have been ACKed, because the RouteConfig was inlined.
   ASSERT_FALSE(balancer_->ads_service()->rds_response_state().has_value());
-  // Change the LDS resource to point to the RDS resource, which sends
-  // traffic to backend 0.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  // Change the LDS resource to point to an RDS resource.  The LDS resource
+  // configures the fault injection filter with a config that fails all RPCs.
+  // However, the RDS resource has a typed_per_filter_config override that
+  // disables the fault injection filter.  The RDS resource points to a
+  // new cluster that sends traffic to backend 1.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   default_route_config_);
-  // Client should start sending traffic to backend 0.
-  WaitForBackend(DEBUG_LOCATION, 0);
+  route_config = default_route_config_;
+  auto* config_map = route_config.mutable_virtual_hosts(0)
+                         ->mutable_routes(0)
+                         ->mutable_typed_per_filter_config();
+  (*config_map)["envoy.fault"].PackFrom(
+      envoy::extensions::filters::http::fault::v3::HTTPFault());
+  envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(100);
+  abort_percentage->set_denominator(abort_percentage->HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  listener = default_listener_;
+  http_connection_manager =
+      ClientHcmAccessor().Unpack(listener);
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->set_name("envoy.fault");
+  filter->mutable_typed_config()->PackFrom(http_fault);
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
+                                   std::move(route_config));
+  // Wait for traffic to switch to backend 1.  There should be no RPC
+  // failures here; if there are, that indicates that the client started
+  // using the new LDS resource before it saw the new RDS resource.
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
@@ -291,11 +317,11 @@ TEST_P(LdsRdsInteractionTest, LdsUpdateChangesHcmConfigAndRdsResourceName) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 0);
-  // Create a new RDS resource that includes a typed_per_filter_config
-  // entry that disables the fault injection filter.  The new RDS resource
-  // points to a different cluster that sends traffic to backend 1.
-  // Also update the LDS resource to add the fault injection filter with
-  // a config that fails all RPCs.
+  // Change the LDS resource to point to an RDS resource.  The LDS resource
+  // configures the fault injection filter with a config that fails all RPCs.
+  // However, the RDS resource has a typed_per_filter_config override that
+  // disables the fault injection filter.  The RDS resource points to a
+  // new cluster that sends traffic to backend 1.
   const char* kNewClusterName = "new_cluster_name";
   const char* kNewEdsResourceName = "new_eds_resource_name";
   auto cluster = default_cluster_;
