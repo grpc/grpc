@@ -195,8 +195,8 @@ class XdsResolver : public Resolver {
     void OnResourceChanged(XdsRouteConfigResource route_config) override {
       RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self), route_config = std::move(route_config)]()
-              mutable {
+          [self = std::move(self),
+           route_config = std::move(route_config)]() mutable {
             if (self != self->resolver_->route_config_watcher_) return;
             self->resolver_->OnRouteConfigUpdate(std::move(route_config));
           },
