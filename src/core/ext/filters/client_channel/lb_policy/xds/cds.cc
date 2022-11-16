@@ -124,8 +124,8 @@ class CdsLb : public LoadBalancingPolicy {
     void OnResourceChanged(XdsClusterResource cluster_data) override {
       RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [self = std::move(self), cluster_data = std::move(cluster_data)]()
-              mutable {
+          [self = std::move(self),
+           cluster_data = std::move(cluster_data)]() mutable {
             self->parent_->OnClusterChanged(self->name_,
                                             std::move(cluster_data));
           },
