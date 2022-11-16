@@ -326,7 +326,10 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:slice",
+    ],
 )
 
 grpc_cc_test(
@@ -338,7 +341,10 @@ grpc_cc_test(
         "no_windows",
         "nomsan",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:slice",
+    ],
 )
 
 grpc_cc_test(

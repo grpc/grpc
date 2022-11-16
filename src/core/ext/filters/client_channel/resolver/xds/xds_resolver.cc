@@ -638,23 +638,21 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
 }
 
 absl::optional<uint64_t> HeaderHashHelper(
-    const XdsRouteConfigResource::Route::RouteAction::HashPolicy& policy,
+    const XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header&
+        header_policy,
     grpc_metadata_batch* initial_metadata) {
-  GPR_ASSERT(policy.type ==
-             XdsRouteConfigResource::Route::RouteAction::HashPolicy::HEADER);
   std::string value_buffer;
   absl::optional<absl::string_view> header_value = XdsRouting::GetHeaderValue(
-      initial_metadata, policy.header_name, &value_buffer);
-  if (!header_value.has_value()) {
-    return absl::nullopt;
-  }
-  if (policy.regex != nullptr) {
+      initial_metadata, header_policy.header_name, &value_buffer);
+  if (!header_value.has_value()) return absl::nullopt;
+  if (header_policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
     if (header_value->data() != value_buffer.data()) {
       value_buffer = std::string(*header_value);
     }
-    RE2::GlobalReplace(&value_buffer, *policy.regex, policy.regex_substitution);
+    RE2::GlobalReplace(&value_buffer, *header_policy.regex,
+                       header_policy.regex_substitution);
     header_value = value_buffer;
   }
   return XXH64(header_value->data(), header_value->size(), 0);
@@ -732,17 +730,16 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   // Generate a hash.
   absl::optional<uint64_t> hash;
   for (const auto& hash_policy : route_action->hash_policies) {
-    absl::optional<uint64_t> new_hash;
-    switch (hash_policy.type) {
-      case XdsRouteConfigResource::Route::RouteAction::HashPolicy::HEADER:
-        new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
-        break;
-      case XdsRouteConfigResource::Route::RouteAction::HashPolicy::CHANNEL_ID:
-        new_hash = resolver_->channel_id();
-        break;
-      default:
-        GPR_ASSERT(0);
-    }
+    absl::optional<uint64_t> new_hash = Match(
+        hash_policy.policy,
+        [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
+                Header& header) {
+          return HeaderHashHelper(header, args.initial_metadata);
+        },
+        [&](const XdsRouteConfigResource::Route::RouteAction::HashPolicy::
+                ChannelId&) -> absl::optional<uint64_t> {
+          return resolver_->channel_id();
+        });
     if (new_hash.has_value()) {
       // Rotating the old value prevents duplicate hash rules from cancelling
       // each other out and preserves all of the entropy
@@ -886,26 +883,44 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
       &current_listener_.route_config,
       // RDS resource name
       [&](std::string* rds_name) {
-        if (route_config_watcher_ != nullptr) {
-          XdsRouteConfigResourceType::CancelWatch(
-              xds_client_.get(), route_config_name_, route_config_watcher_,
-              /*delay_unsubscription=*/!rds_name->empty());
-          route_config_watcher_ = nullptr;
-        }
-        route_config_name_ = std::move(*rds_name);
-        if (!route_config_name_.empty()) {
-          current_virtual_host_.routes.clear();
+        // If the RDS name changed, update the RDS watcher.
+        // Note that this will be true on the initial update, because
+        // route_config_name_ will be empty.
+        if (route_config_name_ != *rds_name) {
+          // If we already had a watch (i.e., if the previous config had
+          // a different RDS name), stop the previous watch.
+          // There will be no previous watch if either (a) this is the
+          // initial resource update or (b) the previous Listener had an
+          // inlined RouteConfig.
+          if (route_config_watcher_ != nullptr) {
+            XdsRouteConfigResourceType::CancelWatch(
+                xds_client_.get(), route_config_name_, route_config_watcher_,
+                /*delay_unsubscription=*/true);
+            route_config_watcher_ = nullptr;
+          }
+          // Start watch for the new RDS resource name.
+          route_config_name_ = std::move(*rds_name);
           auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
           route_config_watcher_ = watcher.get();
           XdsRouteConfigResourceType::StartWatch(
               xds_client_.get(), route_config_name_, std::move(watcher));
+        } else {
+          // RDS resource name has not changed, so no watch needs to be
+          // updated, but we still need to propagate any changes in the
+          // HCM config (e.g., the list of HTTP filters).
+          GenerateResult();
         }
-        // HCM may contain newer filter config. We need to propagate the
-        // update as config selector to the channel.
-        GenerateResult();
       },
       // inlined RouteConfig
       [&](XdsRouteConfigResource* route_config) {
+        // If the previous update specified an RDS resource instead of
+        // having an inlined RouteConfig, we need to cancel the RDS watch.
+        if (route_config_watcher_ != nullptr) {
+          XdsRouteConfigResourceType::CancelWatch(
+              xds_client_.get(), route_config_name_, route_config_watcher_);
+          route_config_watcher_ = nullptr;
+          route_config_name_.clear();
+        }
         OnRouteConfigUpdate(std::move(*route_config));
       });
 }

@@ -481,6 +481,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -549,6 +550,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -1340,9 +1342,6 @@ grpc_cc_library(
     # to clean this up, we'll remove these.
     [
         "//src/core:lib/iomgr/closure.h",
-        "//src/core:lib/slice/slice_internal.h",
-        "//src/core:lib/slice/slice_string_helpers.h",
-        "//src/core:lib/channel/channel_stack_builder.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1351,7 +1350,6 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
-        "absl/hash",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -1745,6 +1743,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -1811,6 +1810,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "channel_stack_builder",
         "config",
         "exec_ctx",
         "gpr",
@@ -2665,6 +2665,7 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "backoff",
+        "channel_stack_builder",
         "config",
         "debug_location",
         "exec_ctx",
@@ -3082,12 +3083,14 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/ssl_utils_config.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
+        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:lib/security/security_connector/ssl_utils.h",
         "//src/core:lib/security/security_connector/ssl_utils_config.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
+        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3111,6 +3114,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
+        "//src/core:slice",
         "//src/core:tsi_ssl_types",
         "//src/core:useful",
     ],
@@ -3121,14 +3125,12 @@ grpc_cc_library(
     srcs = [
         "//src/core:ext/filters/http/client/http_client_filter.cc",
         "//src/core:ext/filters/http/http_filters_plugin.cc",
-        "//src/core:ext/filters/http/message_compress/message_compress_filter.cc",
-        "//src/core:ext/filters/http/message_compress/message_decompress_filter.cc",
+        "//src/core:ext/filters/http/message_compress/compression_filter.cc",
         "//src/core:ext/filters/http/server/http_server_filter.cc",
     ],
     hdrs = [
         "//src/core:ext/filters/http/client/http_client_filter.h",
-        "//src/core:ext/filters/http/message_compress/message_compress_filter.h",
-        "//src/core:ext/filters/http/message_compress/message_decompress_filter.h",
+        "//src/core:ext/filters/http/message_compress/compression_filter.h",
         "//src/core:ext/filters/http/server/http_server_filter.h",
     ],
     external_deps = [
@@ -3143,8 +3145,8 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:http"],
     deps = [
+        "channel_stack_builder",
         "config",
-        "debug_location",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
@@ -3158,16 +3160,17 @@ grpc_cc_library(
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:context",
-        "//src/core:error",
+        "//src/core:for_each",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
+        "//src/core:map_pipe",
         "//src/core:percent_encoding",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
-        "//src/core:status_helper",
         "//src/core:transport_fwd",
         "//src/core:try_concurrently",
+        "//src/core:try_seq",
     ],
 )
 
