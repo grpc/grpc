@@ -48,7 +48,7 @@
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
-bool squelch = false;
+bool squelch = true;
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
