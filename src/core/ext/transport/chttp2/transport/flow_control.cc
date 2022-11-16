@@ -280,9 +280,11 @@ void TransportFlowControl::UpdateSetting(
         Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
-      fprintf(stderr, "UPDATE SETTING %s from %" PRId64 " to %d\n",
-              grpc_chttp2_settings_parameters[id].name, *desired_value,
-              new_desired_value);
+      if (grpc_flowctl_trace.enabled()) {
+        gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
+                grpc_chttp2_settings_parameters[id].name, *desired_value,
+                new_desired_value);
+      }
       // Reaching zero can only happen for initial window size, and if it occurs
       // we really want to wake up writes and ensure all the queued stream
       // window updates are flushed, since stream flow control operates
