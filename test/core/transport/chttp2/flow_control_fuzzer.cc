@@ -221,7 +221,9 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
           fprintf(stderr, "Received ACK for initial window size %d\n",
                   *sent_from_remote.ack_initial_window_size);
         }
-        tfc_->SetAckedInitialWindow(*sent_from_remote.ack_initial_window_size);
+        PerformAction(tfc_->SetAckedInitialWindow(
+                          *sent_from_remote.ack_initial_window_size),
+                      nullptr);
         sending_initial_window_size_ = false;
       }
       if (sent_from_remote.bdp_pong) {

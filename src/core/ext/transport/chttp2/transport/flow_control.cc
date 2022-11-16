@@ -32,6 +32,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "flow_control.h"
 #include "http2_settings.h"
 
 #include <grpc/support/log.h>
@@ -279,7 +280,7 @@ void TransportFlowControl::UpdateSetting(
         Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
-      fprintf(stderr, "UPDATE SETTING %s from %d to %d\n",
+      fprintf(stderr, "UPDATE SETTING %s from %" PRId64 " to %d\n",
               grpc_chttp2_settings_parameters[id].name, *desired_value,
               new_desired_value);
       // Reaching zero can only happen for initial window size, and if it occurs
@@ -304,6 +305,21 @@ void TransportFlowControl::UpdateSetting(
                      static_cast<uint32_t>(*desired_value));
     }
   }
+}
+
+FlowControlAction TransportFlowControl::SetAckedInitialWindow(uint32_t value) {
+  acked_init_window_ = value;
+  FlowControlAction action;
+  if (IsFlowControlFixesEnabled() &&
+      acked_init_window_ != target_initial_window_size_) {
+    FlowControlAction::Urgency urgency =
+        FlowControlAction::Urgency::QUEUE_UPDATE;
+    if (acked_init_window_ == 0 || target_initial_window_size_ == 0) {
+      urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+    }
+    action.set_send_initial_window_update(urgency, target_initial_window_size_);
+  }
+  return action;
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
@@ -397,7 +413,7 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
-  tfc_upd.MakeAction();
+  std::ignore = tfc_upd.MakeAction();
   return static_cast<uint32_t>(announce);
 }
 
