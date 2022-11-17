@@ -62,7 +62,7 @@ ALL_DOCKERFILE_DIRS=(
   tools/dockerfile/grpc_artifact_*
   tools/dockerfile/interoptest/*
   tools/dockerfile/distribtest/*
-  third_party/rake-compiler-dock/*/
+  third_party/rake-compiler-dock/*
 )
 
 CHECK_FAILED=""
