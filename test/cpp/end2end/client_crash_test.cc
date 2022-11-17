@@ -36,9 +36,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
 static std::string g_root;
 
 namespace grpc {

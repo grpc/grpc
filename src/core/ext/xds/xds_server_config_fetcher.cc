@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <array>
 #include <map>
 #include <memory>
 #include <set>
@@ -58,7 +57,6 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/address_utils/parse_address.h"

@@ -370,6 +370,19 @@ class MetadataEncoder {
 }  // namespace
 }  // namespace grpc_binder
 
+static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
+  grpc_binder_transport* gbt = static_cast<grpc_binder_transport*>(gt);
+  if (gbt->accept_stream_fn) {
+    gpr_log(GPR_INFO, "Accepting a stream");
+    // must pass in a non-null value.
+    (*gbt->accept_stream_fn)(gbt->accept_stream_user_data, &gbt->base, gbt);
+  } else {
+    ++gbt->accept_stream_fn_called_count_;
+    gpr_log(GPR_INFO, "accept_stream_fn not set, current count = %d",
+            gbt->accept_stream_fn_called_count_);
+  }
+}
+
 static void perform_stream_op_locked(void* stream_op,
                                      grpc_error_handle /*error*/) {
   grpc_transport_stream_op_batch* op =
@@ -595,8 +608,16 @@ static void perform_transport_op_locked(void* transport_op,
     gbt->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
   }
   if (op->set_accept_stream) {
-    gbt->accept_stream_fn = op->set_accept_stream_fn;
     gbt->accept_stream_user_data = op->set_accept_stream_user_data;
+    gbt->accept_stream_fn = op->set_accept_stream_fn;
+    gpr_log(GPR_DEBUG, "accept_stream_fn_called_count_ = %d",
+            gbt->accept_stream_fn_called_count_);
+    while (gbt->accept_stream_fn_called_count_ > 0) {
+      --gbt->accept_stream_fn_called_count_;
+      gbt->combiner->Run(
+          GRPC_CLOSURE_CREATE(accept_stream_locked, gbt, nullptr),
+          absl::OkStatus());
+    }
   }
   if (op->on_consumed) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
@@ -683,14 +704,6 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
                                              get_endpoint};
 
 static const grpc_transport_vtable* get_vtable() { return &vtable; }
-
-static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
-  grpc_binder_transport* gbt = static_cast<grpc_binder_transport*>(gt);
-  if (gbt->accept_stream_fn) {
-    // must pass in a non-null value.
-    (*gbt->accept_stream_fn)(gbt->accept_stream_user_data, &gbt->base, gbt);
-  }
-}
 
 grpc_binder_transport::grpc_binder_transport(
     std::unique_ptr<grpc_binder::Binder> binder, bool is_client,

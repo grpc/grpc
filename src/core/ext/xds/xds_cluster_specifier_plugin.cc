@@ -20,11 +20,10 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <map>
 #include <utility>
 
-#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
 #include "upb/json_encode.h"
@@ -33,9 +32,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
@@ -45,34 +42,38 @@ namespace grpc_core {
 // XdsRouteLookupClusterSpecifierPlugin
 //
 
-const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
-    "grpc.lookup.v1.RouteLookupClusterSpecifier";
+absl::string_view XdsRouteLookupClusterSpecifierPlugin::ConfigProtoName()
+    const {
+  return "grpc.lookup.v1.RouteLookupClusterSpecifier";
+}
 
 void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
     upb_DefPool* symtab) const {
   grpc_lookup_v1_RouteLookupConfig_getmsgdef(symtab);
 }
 
-absl::StatusOr<std::string>
-XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
-    XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab) const {
+Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
+    XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab,
+    ValidationErrors* errors) const {
   absl::string_view* serialized_plugin_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_plugin_config == nullptr) {
-    return absl::InvalidArgumentError("could not parse plugin config");
+    errors->AddError("could not parse plugin config");
+    return {};
   }
   const auto* specifier = grpc_lookup_v1_RouteLookupClusterSpecifier_parse(
       serialized_plugin_config->data(), serialized_plugin_config->size(),
       arena);
   if (specifier == nullptr) {
-    return absl::InvalidArgumentError("Could not parse plugin config");
+    errors->AddError("could not parse plugin config");
+    return {};
   }
   const auto* plugin_config =
       grpc_lookup_v1_RouteLookupClusterSpecifier_route_lookup_config(specifier);
   if (plugin_config == nullptr) {
-    return absl::InvalidArgumentError(
-        "Could not get route lookup config from route lookup cluster "
-        "specifier");
+    ValidationErrors::ScopedField field(errors, ".route_lookup_config");
+    errors->AddError("field not present");
+    return {};
   }
   upb::Status status;
   const upb_MessageDef* msg_type =
@@ -80,42 +81,23 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   size_t json_size = upb_JsonEncode(plugin_config, msg_type, symtab, 0, nullptr,
                                     0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("failed to dump proto to JSON: ",
-                     upb_Status_ErrorMessage(status.ptr())));
+    errors->AddError(absl::StrCat("failed to dump proto to JSON: ",
+                                  upb_Status_ErrorMessage(status.ptr())));
+    return {};
   }
   void* buf = upb_Arena_Malloc(arena, json_size + 1);
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  Json::Object rls_policy;
   auto json = Json::Parse(reinterpret_cast<char*>(buf));
   GPR_ASSERT(json.ok());
-  rls_policy["routeLookupConfig"] = std::move(*json);
-  Json::Object cds_policy;
-  cds_policy["cds_experimental"] = Json::Object();
-  Json::Array child_policy;
-  child_policy.emplace_back(std::move(cds_policy));
-  rls_policy["childPolicy"] = std::move(child_policy);
-  rls_policy["childPolicyConfigTargetFieldName"] = "cluster";
-  Json::Object policy;
-  policy["rls_experimental"] = std::move(rls_policy);
-  Json::Array policies;
-  policies.emplace_back(std::move(policy));
-  Json lb_policy_config(std::move(policies));
-  // TODO(roth): If/when we ever add a second plugin, refactor this code
-  // somehow such that we automatically validate the resulting config against
-  // the gRPC LB policy registry instead of requiring each plugin to do that
-  // itself.
-  auto config =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          lb_policy_config);
-  if (!config.ok()) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        kXdsRouteLookupClusterSpecifierPluginConfigName,
-        " ClusterSpecifierPlugin returned invalid LB policy config: ",
-        config.status().message()));
-  }
-  return lb_policy_config.Dump();
+  return Json::Array{Json::Object{
+      {"rls_experimental",
+       Json::Object{
+           {"routeLookupConfig", std::move(*json)},
+           {"childPolicy",
+            Json::Array{Json::Object{{"cds_experimental", Json::Object()}}}},
+           {"childPolicyConfigTargetFieldName", "cluster"},
+       }}}};
 }
 
 //
@@ -123,14 +105,13 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
 //
 
 XdsClusterSpecifierPluginRegistry::XdsClusterSpecifierPluginRegistry() {
-  RegisterPlugin(std::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
-                 kXdsRouteLookupClusterSpecifierPluginConfigName);
+  RegisterPlugin(std::make_unique<XdsRouteLookupClusterSpecifierPlugin>());
 }
 
 void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
-    std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-    absl::string_view config_proto_type_name) {
-  registry_[config_proto_type_name] = std::move(plugin);
+    std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin) {
+  absl::string_view name = plugin->ConfigProtoName();
+  registry_[name] = std::move(plugin);
 }
 
 const XdsClusterSpecifierPluginImpl*

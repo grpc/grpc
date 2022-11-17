@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/config.h>
@@ -65,7 +66,7 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
-class ServerCredentials : private grpc::GrpcLibraryCodegen {
+class ServerCredentials : private grpc::internal::GrpcLibrary {
  public:
   ServerCredentials();
   ~ServerCredentials() override;

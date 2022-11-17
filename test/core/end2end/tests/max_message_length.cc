@@ -576,13 +576,19 @@ static void test_max_receive_message_length_on_compressed_request(
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &recv_payload;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &recv_payload;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -602,11 +608,12 @@ static void test_max_receive_message_length_on_compressed_request(
     op->reserved = nullptr;
     op++;
   }
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(102), minimal_stack);
+  cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
   cqv.Verify();
 

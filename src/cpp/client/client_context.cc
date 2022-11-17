@@ -41,7 +41,6 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 

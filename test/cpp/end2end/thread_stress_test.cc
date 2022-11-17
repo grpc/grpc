@@ -40,9 +40,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
 #if defined(__APPLE__)
 // Use less # of threads on Mac because its test machines are less powerful
 // to finish the test on time. (context: b/185231823)
@@ -297,7 +294,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
         gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
                 s.error_message().c_str());
       }
-      gpr_atm_no_barrier_fetch_add(errors, static_cast<gpr_atm>(1));
+      gpr_atm_no_barrier_fetch_add(errors, gpr_atm{1});
     } else {
       EXPECT_EQ(response.message(), request.message());
     }
@@ -319,7 +316,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> threads;
   gpr_atm errors;
-  gpr_atm_rel_store(&errors, static_cast<gpr_atm>(0));
+  gpr_atm_rel_store(&errors, gpr_atm{0});
   int num_threads = kNumThreads / grpc_test_slowdown_factor();
   // The number of threads should be > 10 to be able to catch errors
   ASSERT_GT(num_threads, 10);
@@ -337,7 +334,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   }
   // If this test allows resource exhaustion, expect that it actually sees some
   if (this->common_.AllowExhaustion()) {
-    EXPECT_GT(error_cnt, static_cast<uint64_t>(0));
+    EXPECT_GT(error_cnt, 0);
   }
 }
 

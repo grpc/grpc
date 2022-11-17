@@ -233,7 +233,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataEmpty) {
 
   // message data
   // TODO(waynetu): message data can also be "parcelable".
-  const std::string kMessageData = "";
+  const std::string kMessageData;
   ExpectReadByteArray(kMessageData);
   EXPECT_CALL(*transport_stream_receiver_,
               NotifyRecvMessage(kFirstCallId, StatusOrStrEq(kMessageData)));

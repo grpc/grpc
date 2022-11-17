@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <functional>
 #include <map>
 #include <string>
@@ -30,7 +31,6 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
