@@ -50,7 +50,6 @@
 #include <grpcpp/impl/interceptor_common.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/callback_common.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/server_interceptor.h>

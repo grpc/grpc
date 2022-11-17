@@ -18,7 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 
-#include <cstdint>
 #include <map>
 #include <string>
 #include <utility>

@@ -38,13 +38,10 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -174,7 +171,7 @@ class CdsLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
@@ -242,7 +239,7 @@ RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
 
 void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 const absl::Status& status,
-                                std::unique_ptr<SubchannelPicker> picker) {
+                                RefCountedPtr<SubchannelPicker> picker) {
   if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s (%s)", this,
@@ -593,7 +590,7 @@ void CdsLb::OnError(const std::string& name, absl::Status status) {
   if (child_policy_ == nullptr) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        std::make_unique<TransientFailurePicker>(absl::UnavailableError(
+        MakeRefCounted<TransientFailurePicker>(absl::UnavailableError(
             absl::StrCat(name, ": ", status.ToString()))));
   }
 }
@@ -607,7 +604,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
       absl::StrCat("CDS resource \"", config_->cluster(), "\" does not exist"));
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-      std::make_unique<TransientFailurePicker>(status));
+      MakeRefCounted<TransientFailurePicker>(status));
   MaybeDestroyChildPolicyLocked();
 }
 

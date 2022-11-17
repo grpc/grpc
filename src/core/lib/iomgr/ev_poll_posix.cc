@@ -1193,7 +1193,7 @@ static void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->pollset_count == pollset_set->pollset_capacity) {
     pollset_set->pollset_capacity =
-        std::max(size_t(8), 2 * pollset_set->pollset_capacity);
+        std::max(size_t{8}, 2 * pollset_set->pollset_capacity);
     pollset_set->pollsets = static_cast<grpc_pollset**>(gpr_realloc(
         pollset_set->pollsets,
         pollset_set->pollset_capacity * sizeof(*pollset_set->pollsets)));
@@ -1243,7 +1243,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
   gpr_mu_lock(&bag->mu);
   if (bag->pollset_set_count == bag->pollset_set_capacity) {
     bag->pollset_set_capacity =
-        std::max(size_t(8), 2 * bag->pollset_set_capacity);
+        std::max(size_t{8}, 2 * bag->pollset_set_capacity);
     bag->pollset_sets = static_cast<grpc_pollset_set**>(
         gpr_realloc(bag->pollset_sets,
                     bag->pollset_set_capacity * sizeof(*bag->pollset_sets)));
@@ -1281,7 +1281,7 @@ static void pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->fd_count == pollset_set->fd_capacity) {
     pollset_set->fd_capacity =
-        std::max(size_t(8), 2 * pollset_set->fd_capacity);
+        std::max(size_t{8}, 2 * pollset_set->fd_capacity);
     pollset_set->fds = static_cast<grpc_fd**>(
         gpr_realloc(pollset_set->fds,
                     pollset_set->fd_capacity * sizeof(*pollset_set->fds)));
