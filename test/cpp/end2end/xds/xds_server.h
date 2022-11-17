@@ -132,6 +132,8 @@ class AdsServiceImpl
   }
 
   // Get the list of response state for each resource type.
+  // TODO(roth): Consider adding an absl::Notification-based mechanism
+  // here to avoid the need for tests to poll the response state.
   absl::optional<ResponseState> GetResponseState(const std::string& type_url) {
     grpc_core::MutexLock lock(&ads_mu_);
     if (resource_type_response_state_[type_url].empty()) {
