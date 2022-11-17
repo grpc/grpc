@@ -23,6 +23,7 @@
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
+#include <google/protobuf/message.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"

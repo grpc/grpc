@@ -20,6 +20,8 @@
 
 #include "src/cpp/server/channelz/channelz_service.h"
 
+#include <google/protobuf/message.h>
+#include <google/protobuf/stubs/status.h>
 #include <google/protobuf/util/json_util.h>
 
 #include <grpc/support/alloc.h>

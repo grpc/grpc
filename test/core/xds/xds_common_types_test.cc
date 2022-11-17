@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <google/protobuf/struct.pb.h>
+#include <google/protobuf/text_format.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
@@ -55,7 +56,6 @@
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/config_grpc_cli.h"
 
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;

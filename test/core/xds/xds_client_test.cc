@@ -30,6 +30,7 @@
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
+#include <google/protobuf/stubs/status.h>
 #include <google/protobuf/util/json_util.h>
 
 #include "absl/strings/str_cat.h"

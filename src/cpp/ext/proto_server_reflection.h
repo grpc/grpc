@@ -23,6 +23,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <google/protobuf/descriptor.h>
+
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
