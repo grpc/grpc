@@ -60,15 +60,6 @@ EXPERIMENTS = {
         "flow_control_test": [
             "tcp_read_chunks",
         ],
-        "hpack_test": [
-            "periodic_resource_quota_reclamation",
-        ],
-        "promise_test": [
-            "periodic_resource_quota_reclamation",
-        ],
-        "resource_quota_test": [
-            "periodic_resource_quota_reclamation",
-        ],
     },
     "opt": {
     },

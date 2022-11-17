@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <stdlib.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/statusor.h"
@@ -58,6 +59,7 @@
 #include "src/core/lib/gprpp/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/stat.h>  // IWYU pragma: keep
 #include <sys/un.h>
 #endif
 
@@ -195,7 +197,7 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec) {
   int fd, flags;
-  socklen_t len = addr.size();
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   fd = accept(sockfd, const_cast<sockaddr*>(addr.address()), &len);
   if (fd >= 0) {
     if (nonblock) {
@@ -224,7 +226,7 @@ int Accept4(int sockfd,
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
-  socklen_t len = addr.size();
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   return accept4(sockfd, const_cast<sockaddr*>(addr.address()), &len, flags);
 }
 
@@ -352,6 +354,124 @@ absl::StatusOr<std::string> SockaddrToString(
   // error.
   errno = save_errno;
   return out;
+}
+
+EventEngine::ResolvedAddress SockaddrMakeWild6(int port) {
+  EventEngine::ResolvedAddress resolved_wild_out;
+  sockaddr_in6* wild_out = reinterpret_cast<sockaddr_in6*>(
+      const_cast<sockaddr*>(resolved_wild_out.address()));
+  GPR_ASSERT(port >= 0 && port < 65536);
+  memset(wild_out, 0, sizeof(sockaddr_in6));
+  wild_out->sin6_family = AF_INET6;
+  wild_out->sin6_port = htons(static_cast<uint16_t>(port));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<sockaddr*>(wild_out),
+      static_cast<socklen_t>(sizeof(sockaddr_in6)));
+}
+
+EventEngine::ResolvedAddress SockaddrMakeWild4(int port) {
+  EventEngine::ResolvedAddress resolved_wild_out;
+  sockaddr_in* wild_out = reinterpret_cast<sockaddr_in*>(
+      const_cast<sockaddr*>(resolved_wild_out.address()));
+  GPR_ASSERT(port >= 0 && port < 65536);
+  memset(wild_out, 0, sizeof(sockaddr_in));
+  wild_out->sin_family = AF_INET;
+  wild_out->sin_port = htons(static_cast<uint16_t>(port));
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<sockaddr*>(wild_out),
+      static_cast<socklen_t>(sizeof(sockaddr_in)));
+}
+
+int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
+  const sockaddr* addr = resolved_addr.address();
+  switch (addr->sa_family) {
+    case AF_INET:
+      return ntohs((reinterpret_cast<const sockaddr_in*>(addr))->sin_port);
+    case AF_INET6:
+      return ntohs((reinterpret_cast<const sockaddr_in6*>(addr))->sin6_port);
+#ifdef GRPC_HAVE_UNIX_SOCKET
+    case AF_UNIX:
+      return 1;
+#endif
+    default:
+      gpr_log(GPR_ERROR, "Unknown socket family %d in SockaddrGetPort",
+              addr->sa_family);
+      abort();
+  }
+}
+
+void SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port) {
+  sockaddr* addr = const_cast<sockaddr*>(resolved_addr.address());
+  switch (addr->sa_family) {
+    case AF_INET:
+      GPR_ASSERT(port >= 0 && port < 65536);
+      (reinterpret_cast<sockaddr_in*>(addr))->sin_port =
+          htons(static_cast<uint16_t>(port));
+      return;
+    case AF_INET6:
+      GPR_ASSERT(port >= 0 && port < 65536);
+      (reinterpret_cast<sockaddr_in6*>(addr))->sin6_port =
+          htons(static_cast<uint16_t>(port));
+      return;
+    default:
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
+              addr->sa_family);
+      abort();
+  }
+}
+
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr) {
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  if (resolved_addr.address()->sa_family != AF_UNIX) {
+    return;
+  }
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
+      const_cast<sockaddr*>(resolved_addr.address()));
+
+  // There is nothing to unlink for an abstract unix socket
+  if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
+    return;
+  }
+
+  struct stat st;
+  if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
+    unlink(un->sun_path);
+  }
+#else
+  (void)resolved_addr;
+#endif
+}
+
+absl::optional<int> SockaddrIsWildcard(
+    const EventEngine::ResolvedAddress& addr) {
+  const EventEngine::ResolvedAddress* resolved_addr = &addr;
+  EventEngine::ResolvedAddress addr4_normalized;
+  if (SockaddrIsV4Mapped(resolved_addr, &addr4_normalized)) {
+    resolved_addr = &addr4_normalized;
+  }
+  if (resolved_addr->address()->sa_family == AF_INET) {
+    // Check for 0.0.0.0
+    const sockaddr_in* addr4 =
+        reinterpret_cast<const sockaddr_in*>(resolved_addr->address());
+    if (addr4->sin_addr.s_addr != 0) {
+      return absl::nullopt;
+    }
+    return static_cast<int>(ntohs(addr4->sin_port));
+  } else if (resolved_addr->address()->sa_family == AF_INET6) {
+    // Check for ::
+    const sockaddr_in6* addr6 =
+        reinterpret_cast<const sockaddr_in6*>(resolved_addr->address());
+    int i;
+    for (i = 0; i < 16; i++) {
+      if (addr6->sin6_addr.s6_addr[i] != 0) {
+        return absl::nullopt;
+      }
+    }
+    return static_cast<int>(ntohs(addr6->sin6_port));
+  } else {
+    return absl::nullopt;
+  }
 }
 
 // Instruct the kernel to wait for specified number of bytes to be received on

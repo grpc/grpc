@@ -407,7 +407,7 @@ class GrpcLb : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(RefCountedPtr<Serverlist> serverlist,
-           std::unique_ptr<SubchannelPicker> child_picker,
+           RefCountedPtr<SubchannelPicker> child_picker,
            RefCountedPtr<GrpcLbClientStats> client_stats)
         : serverlist_(std::move(serverlist)),
           child_picker_(std::move(child_picker)),
@@ -452,7 +452,7 @@ class GrpcLb : public LoadBalancingPolicy {
     // Serverlist to be used for determining drops.
     RefCountedPtr<Serverlist> serverlist_;
 
-    std::unique_ptr<SubchannelPicker> child_picker_;
+    RefCountedPtr<SubchannelPicker> child_picker_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
@@ -464,7 +464,7 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
@@ -816,7 +816,7 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
                                  const absl::Status& status,
-                                 std::unique_ptr<SubchannelPicker> picker) {
+                                 RefCountedPtr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
   // Record whether child policy reports READY.
   parent_->child_policy_ready_ = state == GRPC_CHANNEL_READY;
@@ -851,8 +851,8 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   parent_->channel_control_helper()->UpdateState(
       state, status,
-      std::make_unique<Picker>(std::move(serverlist), std::move(picker),
-                               std::move(client_stats)));
+      MakeRefCounted<Picker>(std::move(serverlist), std::move(picker),
+                             std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {

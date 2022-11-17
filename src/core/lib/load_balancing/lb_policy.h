@@ -256,10 +256,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Currently, pickers are always accessed from within the
   /// client_channel data plane mutex, so they do not have to be
   /// thread-safe.
-  class SubchannelPicker {
+  class SubchannelPicker : public RefCounted<SubchannelPicker> {
    public:
     SubchannelPicker() = default;
-    virtual ~SubchannelPicker() = default;
 
     virtual PickResult Pick(PickArgs args) = 0;
   };
@@ -284,7 +283,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
                              const absl::Status& status,
-                             std::unique_ptr<SubchannelPicker>) = 0;
+                             RefCountedPtr<SubchannelPicker> picker) = 0;
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;

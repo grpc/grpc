@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <stdint.h>
 
 #include <iosfwd>
@@ -59,6 +60,7 @@ static constexpr uint32_t kMinPositiveInitialWindowSize = 1024;
 static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
+static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
 
 // TODO(ctiller): clean up when flow_control_fixes is enabled by default
 static constexpr uint32_t kFrameSize = 1024 * 1024;
@@ -92,8 +94,14 @@ class FlowControlAction {
   Urgency send_max_frame_size_update() const {
     return send_max_frame_size_update_;
   }
+  Urgency preferred_rx_crypto_frame_size_update() const {
+    return preferred_rx_crypto_frame_size_update_;
+  }
   uint32_t initial_window_size() const { return initial_window_size_; }
   uint32_t max_frame_size() const { return max_frame_size_; }
+  uint32_t preferred_rx_crypto_frame_size() const {
+    return preferred_rx_crypto_frame_size_;
+  }
 
   FlowControlAction& set_send_stream_update(Urgency u) {
     send_stream_update_ = u;
@@ -115,6 +123,12 @@ class FlowControlAction {
     max_frame_size_ = update;
     return *this;
   }
+  FlowControlAction& set_preferred_rx_crypto_frame_size_update(
+      Urgency u, uint32_t update) {
+    preferred_rx_crypto_frame_size_update_ = u;
+    preferred_rx_crypto_frame_size_ = update;
+    return *this;
+  }
 
   static const char* UrgencyString(Urgency u);
   std::string DebugString() const;
@@ -129,7 +143,11 @@ class FlowControlAction {
            (send_initial_window_update_ == Urgency::NO_ACTION_NEEDED ||
             initial_window_size_ == other.initial_window_size_) &&
            (send_max_frame_size_update_ == Urgency::NO_ACTION_NEEDED ||
-            max_frame_size_ == other.max_frame_size_);
+            max_frame_size_ == other.max_frame_size_) &&
+           (preferred_rx_crypto_frame_size_update_ ==
+                Urgency::NO_ACTION_NEEDED ||
+            preferred_rx_crypto_frame_size_ ==
+                other.preferred_rx_crypto_frame_size_);
   }
 
  private:
@@ -137,8 +155,10 @@ class FlowControlAction {
   Urgency send_transport_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_initial_window_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_max_frame_size_update_ = Urgency::NO_ACTION_NEEDED;
+  Urgency preferred_rx_crypto_frame_size_update_ = Urgency::NO_ACTION_NEEDED;
   uint32_t initial_window_size_ = 0;
   uint32_t max_frame_size_ = 0;
+  uint32_t preferred_rx_crypto_frame_size_ = 0;
 };
 
 std::ostream& operator<<(std::ostream& out, FlowControlAction::Urgency urgency);
@@ -232,6 +252,9 @@ class TransportFlowControl final {
 
   int64_t target_window() const;
   int64_t target_frame_size() const { return target_frame_size_; }
+  int64_t target_preferred_rx_crypto_frame_size() const {
+    return target_preferred_rx_crypto_frame_size_;
+  }
 
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
@@ -291,6 +314,8 @@ class TransportFlowControl final {
   int64_t remote_window_ = kDefaultWindow;
   int64_t target_initial_window_size_ = kDefaultWindow;
   int64_t target_frame_size_ = kDefaultFrameSize;
+  int64_t target_preferred_rx_crypto_frame_size_ =
+      kDefaultPreferredRxCryptoFrameSize;
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
 };

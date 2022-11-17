@@ -21,7 +21,6 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"

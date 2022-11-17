@@ -20,7 +20,6 @@
 
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/slice.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/proto_utils.h>
 
@@ -58,7 +57,7 @@ class ProtoUtilsTest : public ::testing::Test {
     // Ensure the ProtoBufferWriter internals are initialized.
     grpc::internal::GrpcLibraryInitializer init;
     init.summon();
-    grpc::GrpcLibraryCodegen lib;
+    grpc::internal::GrpcLibrary lib;
     grpc_init();
   }
 
@@ -155,7 +154,7 @@ class WriterTest : public ::testing::Test {
   static void SetUpTestCase() {
     grpc::internal::GrpcLibraryInitializer init;
     init.summon();
-    grpc::GrpcLibraryCodegen lib;
+    grpc::internal::GrpcLibrary lib;
     // Ensure the ProtoBufferWriter internals are initialized.
     grpc_init();
   }
