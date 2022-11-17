@@ -405,6 +405,9 @@ class BaseCallData : public Activity, private Wakeable {
       // On the next poll we'll close things out and forward on completions,
       // then transition to cancelled.
       kBatchCompletedButCancelled,
+      // Completed successfully while we're processing a recv message.
+      kCompletedWhilePushedToPipe,
+      kCompletedWhilePulledFromPipe,
     };
     static const char* StateString(State);
 
