@@ -22,6 +22,6 @@
 // IWYU pragma: private
 
 /// TODO(chengyuc): Remove this file after solving compatibility.
-#include <grpcpp/delegating_channel.h>
+#include <grpcpp/impl/delegating_channel.h>
 
 #endif  // GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
