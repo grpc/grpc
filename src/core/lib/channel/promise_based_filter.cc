@@ -527,8 +527,6 @@ const char* BaseCallData::ReceiveMessage::StateString(State state) {
       return "CANCELLED_WHILST_FORWARDING";
     case State::kBatchCompletedButCancelled:
       return "BATCH_COMPLETED_BUT_CANCELLED";
-    case State::kCancelledWhilstIdle:
-      return "CANCELLED_WHILST_IDLE";
   }
   return "UNKNOWN";
 }
@@ -554,7 +552,6 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
       abort();
-    case State::kCancelledWhilstIdle:
     case State::kCancelled:
       return;
   }
@@ -590,7 +587,6 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
     case State::kCancelledWhilstForwarding:
-    case State::kCancelledWhilstIdle:
     case State::kBatchCompletedButCancelled:
       abort();
     case State::kCancelled:
@@ -614,7 +610,6 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kBatchCompletedNoPipe:
     case State::kCancelled:
     case State::kBatchCompletedButCancelled:
-    case State::kCancelledWhilstIdle:
       abort();
     case State::kForwardedBatchNoPipe:
       state_ = State::kBatchCompletedNoPipe;
@@ -641,10 +636,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
   }
   switch (state_) {
     case State::kInitial:
-      state_ = State::kCancelled;
-      break;
     case State::kIdle:
-      state_ = State::kCancelledWhilstIdle;
+      state_ = State::kCancelled;
       break;
     case State::kForwardedBatch:
     case State::kForwardedBatchNoPipe:
@@ -665,7 +658,6 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
       abort();
-    case State::kCancelledWhilstIdle:
     case State::kCancelledWhilstForwarding:
     case State::kCancelled:
       break;
@@ -685,10 +677,6 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kCancelled:
     case State::kCancelledWhilstForwarding:
     case State::kBatchCompletedNoPipe:
-      break;
-    case State::kCancelledWhilstIdle:
-      sender_->Close();
-      state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
       sender_->Close();
@@ -1524,10 +1512,8 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG,
-            "%s ClientCallData.RecvTrailingMetadataReady "
-            "recv_trailing_state=%s error=%s md=%s",
-            LogTag().c_str(), StateString(recv_trailing_state_),
-            error.ToString().c_str(),
+            "%s ClientCallData.RecvTrailingMetadataReady error=%s md=%s",
+            LogTag().c_str(), error.ToString().c_str(),
             recv_trailing_metadata_->DebugString().c_str());
   }
   // If we were cancelled prior to receiving this callback, we should simply
@@ -1550,9 +1536,6 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   // Record that we've got the callback.
   GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kForwarded);
   recv_trailing_state_ = RecvTrailingState::kComplete;
-  if (receive_message() != nullptr) {
-    receive_message()->Done(*recv_trailing_metadata_, &flusher);
-  }
   // Repoll the promise.
   ScopedContext context(this);
   WakeInsideCombiner(&flusher);

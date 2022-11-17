@@ -17,6 +17,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/compression/args_utils.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
@@ -26,6 +27,7 @@ libs:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/util/test_lb_policies.h
   src:
+  - test/core/compression/args_utils.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
@@ -364,7 +366,8 @@ libs:
   - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
-  - src/core/ext/filters/http/message_compress/compression_filter.h
+  - src/core/ext/filters/http/message_compress/message_compress_filter.h
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/rbac/rbac_filter.h
@@ -754,6 +757,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -1035,7 +1040,6 @@ libs:
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
-  - src/core/tsi/ssl_transport_security_utils.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
@@ -1107,7 +1111,8 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
-  - src/core/ext/filters/http/message_compress/compression_filter.cc
+  - src/core/ext/filters/http/message_compress/message_compress_filter.cc
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
@@ -1485,6 +1490,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -1741,7 +1748,6 @@ libs:
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   - src/core/tsi/ssl_transport_security.cc
-  - src/core/tsi/ssl_transport_security_utils.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
@@ -1932,7 +1938,8 @@ libs:
   - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
-  - src/core/ext/filters/http/message_compress/compression_filter.h
+  - src/core/ext/filters/http/message_compress/message_compress_filter.h
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
@@ -2025,6 +2032,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -2315,7 +2324,8 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
-  - src/core/ext/filters/http/message_compress/compression_filter.cc
+  - src/core/ext/filters/http/message_compress/message_compress_filter.cc
+  - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2400,6 +2410,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -3443,6 +3455,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -3698,6 +3712,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -4134,6 +4150,15 @@ targets:
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
   - grpc_test_util
+- name: minimal_stack_is_minimal_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -5894,8 +5919,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/compression/args_utils.h
   src:
+  - test/core/compression/args_utils.cc
   - test/core/compression/compression_test.cc
   deps:
   - grpc_test_util
@@ -7126,6 +7153,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -7363,6 +7392,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
   - src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -9062,16 +9093,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
-- name: minimal_stack_is_minimal_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/channel/minimal_stack_is_minimal_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test
@@ -9607,10 +9628,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  headers: []
   src:
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - test/core/event_engine/posix/posix_engine_listener_utils_test.cc
   deps:
   - grpc_test_util
@@ -9651,6 +9670,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
+  - test/core/event_engine/test_suite/server_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
@@ -10752,19 +10772,6 @@ targets:
   src:
   - test/core/tsi/ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: ssl_transport_security_utils_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/tsi/ssl_transport_security_utils_test.cc
   deps:
   - grpc_test_util
   platforms:
@@ -13235,6 +13242,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/fault.proto
+  - src/proto/grpc/testing/xds/v3/fault_common.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto

@@ -35,7 +35,7 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/filters/http/message_compress/compression_filter.h"
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -581,10 +581,9 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_core::ClientChannel::kFilterVtable, 0>
     ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
-typedef Fixture<&grpc_core::ClientCompressionFilter::kFilter, CHECKS_NOT_LAST>
-    ClientCompressFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientCompressFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientCompressFilter, SendEmptyMetadata);
+typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
     ClientDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientDeadlineFilter, NoOp);
@@ -602,10 +601,9 @@ typedef Fixture<&grpc_core::HttpServerFilter::kFilter, CHECKS_NOT_LAST>
     HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_core::ServerCompressionFilter::kFilter, CHECKS_NOT_LAST>
-    ServerCompressFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerCompressFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerCompressFilter, SendEmptyMetadata);
+typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, NoOp);
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
 // This cmake target is disabled for now because it depends on OpenCensus, which
 // is Bazel-only.
 // typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
