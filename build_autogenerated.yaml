@@ -2705,7 +2705,6 @@ libs:
   - include/grpc++/impl/codegen/completion_queue.h
   - include/grpc++/impl/codegen/completion_queue_tag.h
   - include/grpc++/impl/codegen/config.h
-  - include/grpc++/impl/codegen/config_protobuf.h
   - include/grpc++/impl/codegen/core_codegen.h
   - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
@@ -2793,7 +2792,6 @@ libs:
   - include/grpcpp/impl/codegen/completion_queue.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
-  - include/grpcpp/impl/codegen/config_protobuf.h
   - include/grpcpp/impl/codegen/core_codegen.h
   - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
@@ -3122,7 +3120,6 @@ libs:
   - include/grpc++/impl/codegen/completion_queue.h
   - include/grpc++/impl/codegen/completion_queue_tag.h
   - include/grpc++/impl/codegen/config.h
-  - include/grpc++/impl/codegen/config_protobuf.h
   - include/grpc++/impl/codegen/core_codegen.h
   - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
@@ -3209,7 +3206,6 @@ libs:
   - include/grpcpp/impl/codegen/completion_queue.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
-  - include/grpcpp/impl/codegen/config_protobuf.h
   - include/grpcpp/impl/codegen/core_codegen.h
   - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
@@ -3919,12 +3915,9 @@ libs:
 - name: grpc_plugin_support
   build: protoc
   language: c++
-  public_headers:
-  - include/grpc++/impl/codegen/config_protobuf.h
-  - include/grpcpp/impl/codegen/config_protobuf.h
+  public_headers: []
   headers:
   - src/compiler/config.h
-  - src/compiler/config_protobuf.h
   - src/compiler/cpp_generator.h
   - src/compiler/cpp_generator_helpers.h
   - src/compiler/cpp_plugin.h
