@@ -42,11 +42,9 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 

@@ -68,7 +68,6 @@ expected_files = [
     "include/grpc++/impl/codegen/call.h",
     "include/grpc++/impl/codegen/client_context.h",
     "include/grpc++/impl/codegen/service_type.h",
-    "include/grpc++/impl/codegen/grpc_library.h",
     "include/grpc++/impl/codegen/async_stream.h",
     "include/grpc++/impl/codegen/slice.h",
     "include/grpc++/impl/codegen/client_unary_call.h",

@@ -35,7 +35,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/fault_injection/service_config_parser.h"
+#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
@@ -206,7 +206,7 @@ FaultInjectionFilter::MakeInjectionDecision(
           initial_metadata->GetStringValue(fi_policy->delay_header, &buffer);
       if (value.has_value()) {
         delay = Duration::Milliseconds(
-            std::max(AsInt<int64_t>(*value).value_or(0), int64_t(0)));
+            std::max(AsInt<int64_t>(*value).value_or(0), int64_t{0}));
       }
     }
     if (!fi_policy->delay_percentage_header.empty()) {

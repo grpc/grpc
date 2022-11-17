@@ -145,6 +145,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",

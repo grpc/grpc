@@ -60,8 +60,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
-struct grpc_transport_stream_op_batch_payload;
-
 /* Minimum and maximum protocol accepted versions. */
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
@@ -103,6 +101,7 @@ class Message {
   Message& operator=(const Message&) = delete;
 
   uint32_t flags() const { return flags_; }
+  uint32_t& mutable_flags() { return flags_; }
   SliceBuffer* payload() { return &payload_; }
   const SliceBuffer* payload() const { return &payload_; }
 

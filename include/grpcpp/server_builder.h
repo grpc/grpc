@@ -328,6 +328,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<NamedService*> services() {
     std::vector<NamedService*> service_refs;
+    service_refs.reserve(services_.size());
     for (auto& ptr : services_) {
       service_refs.push_back(ptr.get());
     }
@@ -337,6 +338,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<grpc::ServerBuilderOption*> options() {
     std::vector<grpc::ServerBuilderOption*> option_refs;
+    option_refs.reserve(options_.size());
     for (auto& ptr : options_) {
       option_refs.push_back(ptr.get());
     }

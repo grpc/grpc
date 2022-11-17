@@ -34,7 +34,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -80,7 +79,6 @@
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -142,7 +140,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
             &service_config_json_, resolver_->query_timeout_ms_));
         GRPC_CARES_TRACE_LOG(
             "resolver:%p Started resolving TXT records. txt_request_:%p",
-            resolver_.get(), srv_request_.get());
+            resolver_.get(), txt_request_.get());
       }
     }
 
