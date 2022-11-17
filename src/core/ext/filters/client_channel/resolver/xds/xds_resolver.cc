@@ -877,8 +877,13 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
   }
   if (xds_client_ == nullptr) return;
-  current_listener_ = std::move(
-      absl::get<XdsListenerResource::HttpConnectionManager>(listener.listener));
+  auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+      &listener.listener);
+  if (hcm == nullptr) {
+    return OnError(lds_resource_name_,
+                   absl::UnavailableError("not an API listener"));
+  }
+  current_listener_ = std::move(*hcm);
   MatchMutable(
       &current_listener_.route_config,
       // RDS resource name

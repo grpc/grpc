@@ -50,6 +50,35 @@ TEST_P(LdsTest, NacksInvalidListener) {
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
+// Tests that we go into TRANSIENT_FAILURE if the Listener is not an API
+// listener.
+TEST_P(LdsTest, NotAnApiListener) {
+  Listener listener = default_server_listener_;
+  listener.set_name(kServerName);
+  auto hcm = ServerHcmAccessor().Unpack(listener);
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name(kDefaultRouteConfigurationName);
+  rds->mutable_config_source()->mutable_self();
+  ServerHcmAccessor().Pack(hcm, &listener);
+  balancer_->ads_service()->SetLdsResource(std::move(listener));
+  // RPCs should fail.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat(kServerName, ": UNAVAILABLE: not an API listener"));
+  // We should have ACKed the LDS resource.
+  const auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (response_state.has_value()) {
+      EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+      break;
+    }
+    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
+  }
+}
+
 class LdsDeletionTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {}  // Individual tests call InitClient().
