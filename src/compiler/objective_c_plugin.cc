@@ -125,7 +125,7 @@ class ObjectiveCGrpcGenerator
         framework = param[1];
       } else if (param[0] == "runtime_import_prefix") {
         if (param.size() != 2) {
-          *error = grpc::string("Format: runtime_import_prefix=dir/");
+          *error = std::string("Format: runtime_import_prefix=dir/");
           return false;
         }
         pb_runtime_import_prefix = param[1];
@@ -133,7 +133,7 @@ class ObjectiveCGrpcGenerator
       } else if (param[0] == "grpc_local_import_prefix") {
         grpc_local_import = true;
         if (param.size() != 2) {
-          *error = grpc::string("Format: grpc_local_import_prefix=dir/");
+          *error = std::string("Format: grpc_local_import_prefix=dir/");
           return false;
         }
         grpc_local_import_prefix = param[1];
