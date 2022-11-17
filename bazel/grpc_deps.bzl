@@ -17,9 +17,170 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
 # buildifier: disable=unnamed-macro
-def grpc_deps():
+def grpc_deps(
+      bind_externals = True,
+      omit_boringssl = False,
+      omit_zlib = False,
+      omit_com_google_protobuf = False,
+      omit_com_google_googletest = False,
+      omit_rules_cc = False,
+      omit_com_github_google_benchmark = False,
+      omit_com_googlesource_code_re2 = False,
+      omit_com_github_cares_cares = False,
+      omit_com_google_absl = False,
+      omit_bazel_toolchains = False,
+      omit_bazel_skylib = False,
+      omit_bazel_compdb = False,
+      omit_io_opencensus_cpp = False,
+      omit_upb = False,
+      omit_envoy_api = False,
+      omit_io_bazel_rules_go = False,
+      omit_build_bazel_rules_apple = False,
+      omit_build_bazel_apple_support = False,
+      omit_com_github_libuv_libuv = False,
+      omit_com_google_googleapis = False,
+      omit_bazel_gazelle = False,
+      omit_opencensus_proto = False,
+      omit_com_envoyproxy_protoc_gen_validate = False,
+      omit_com_github_cncf_udpa = False,
+      omit_com_github_twisted_twisted = False,
+      omit_com_github_yaml_pyyaml = False,
+      omit_com_github_twisted_incremental = False,
+      omit_com_github_zopefoundation_zope_interface = False,
+      omit_com_github_twisted_constantly = False,
+      omit_com_google_libprotobuf_mutator = False,
+      configure_python = True,
+      omit_io_bazel_rules_python = False,
+      omit_cython = False):
     """Loads dependencies need to compile and test the grpc library."""
+    grpc_deps_impl(
+      bind_externals = bind_externals,
+      omit_boringssl = omit_boringssl,
+      omit_zlib = omit_zlib,
+      omit_com_google_protobuf = omit_com_google_protobuf,
+      omit_com_google_googletest = omit_com_google_googletest,
+      omit_rules_cc = omit_rules_cc,
+      omit_com_github_google_benchmark = omit_com_github_google_benchmark,
+      omit_com_googlesource_code_re2 = omit_com_googlesource_code_re2,
+      omit_com_github_cares_cares = omit_com_github_cares_cares,
+      omit_com_google_absl = omit_com_google_absl,
+      omit_bazel_toolchains = omit_bazel_toolchains,
+      omit_bazel_skylib = omit_bazel_skylib,
+      omit_bazel_compdb = omit_bazel_compdb,
+      omit_io_opencensus_cpp = omit_io_opencensus_cpp,
+      omit_upb = omit_upb,
+      omit_envoy_api = omit_envoy_api,
+      omit_io_bazel_rules_go = omit_io_bazel_rules_go,
+      omit_build_bazel_rules_apple = omit_build_bazel_rules_apple,
+      omit_build_bazel_apple_support = omit_build_bazel_apple_support,
+      omit_com_github_libuv_libuv = omit_com_github_libuv_libuv,
+      omit_com_google_googleapis = omit_com_google_googleapis,
+      omit_bazel_gazelle = omit_bazel_gazelle,
+      omit_opencensus_proto = omit_opencensus_proto,
+      omit_com_envoyproxy_protoc_gen_validate = omit_com_envoyproxy_protoc_gen_validate,
+      omit_com_github_cncf_udpa = omit_com_github_cncf_udpa,
+      omit_com_github_twisted_twisted = omit_com_github_twisted_twisted,
+      omit_com_github_yaml_pyyaml = omit_com_github_yaml_pyyaml,
+      omit_com_github_twisted_incremental = omit_com_github_twisted_incremental,
+      omit_com_github_zopefoundation_zope_interface = omit_com_github_zopefoundation_zope_interface,
+      omit_com_github_twisted_constantly = omit_com_github_twisted_constantly,
+      omit_com_google_libprotobuf_mutator = omit_com_google_libprotobuf_mutator)
 
+    grpc_python_deps(
+      bind_externals = bind_externals,
+      configure_python = configure_python,
+      omit_io_bazel_rules_python = omit_io_bazel_rules_python,
+      omit_cython = omit_cython)
+
+
+def grpc_deps_impl(
+      bind_externals = True,
+      omit_boringssl = False,
+      omit_zlib = False,
+      omit_com_google_protobuf = False,
+      omit_com_google_googletest = False,
+      omit_rules_cc = False,
+      omit_com_github_google_benchmark = False,
+      omit_com_googlesource_code_re2 = False,
+      omit_com_github_cares_cares = False,
+      omit_com_google_absl = False,
+      omit_bazel_toolchains = False,
+      omit_bazel_skylib = False,
+      omit_bazel_compdb = False,
+      omit_io_opencensus_cpp = False,
+      omit_upb = False,
+      omit_envoy_api = False,
+      omit_io_bazel_rules_go = False,
+      omit_build_bazel_rules_apple = False,
+      omit_build_bazel_apple_support = False,
+      omit_com_github_libuv_libuv = False,
+      omit_com_google_googleapis = False,
+      omit_bazel_gazelle = False,
+      omit_opencensus_proto = False,
+      omit_com_envoyproxy_protoc_gen_validate = False,
+      omit_com_github_cncf_udpa = False,
+      omit_com_github_twisted_twisted = False,
+      omit_com_github_yaml_pyyaml = False,
+      omit_com_github_twisted_incremental = False,
+      omit_com_github_zopefoundation_zope_interface = False,
+      omit_com_github_twisted_constantly = False,
+      omit_com_google_libprotobuf_mutator = False
+  ):
+    """Loads dependencies need to compile gRPC test the grpc library."""
+    if bind_externals:
+        grpc_bind_externals()
+    if not omit_boringssl:
+        boringssl()
+    if not omit_zlib:
+        zlib()
+    if not omit_com_google_protobuf:
+        com_google_protobuf()
+    if not omit_com_google_googletest:
+        com_google_googletest()
+    if not omit_rules_cc:
+        rules_cc()
+    if not omit_com_github_google_benchmark:
+        com_github_google_benchmark()
+    if not omit_com_googlesource_code_re2:
+        com_googlesource_code_re2()
+    if not omit_com_github_cares_cares:
+        com_github_cares_cares()
+    if not omit_com_google_absl:
+        com_google_absl()
+    if not omit_bazel_toolchains:
+        bazel_toolchains()
+    if not omit_bazel_skylib:
+        bazel_skylib()
+    if not omit_bazel_compdb:
+        bazel_compdb()
+    if not omit_io_opencensus_cpp:
+        io_opencensus_cpp()
+    if not omit_upb:
+        upb()
+    if not omit_envoy_api:
+        envoy_api()
+    if not omit_io_bazel_rules_go:
+        io_bazel_rules_go()
+    if not omit_build_bazel_rules_apple:
+        build_bazel_rules_apple()
+    if not omit_build_bazel_apple_support:
+        build_bazel_apple_support()
+    if not omit_com_github_libuv_libuv:
+        com_github_libuv_libuv()
+    if not omit_com_google_googleapis:
+        com_google_googleapis()
+    if not omit_bazel_gazelle:
+        bazel_gazelle()
+    if not omit_opencensus_proto:
+        opencensus_proto()
+    if not omit_com_envoyproxy_protoc_gen_validate:
+        com_envoyproxy_protoc_gen_validate()
+    if not omit_com_github_cncf_udpa:
+        com_github_cncf_udpa()
+
+
+def grpc_bind_externals():
+    """Adds external bindings used in external_dep mappings."""
     native.bind(
         name = "upb_lib",
         actual = "@upb//:upb",
@@ -200,6 +361,8 @@ def grpc_deps():
         actual = "@com_google_googleapis//google/monitoring/v3:monitoring_cc_grpc",
     )
 
+
+def boringssl():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
@@ -213,6 +376,8 @@ def grpc_deps():
             ],
         )
 
+
+def zlib():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
@@ -225,6 +390,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_google_protobuf():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
@@ -238,6 +405,8 @@ def grpc_deps():
             patch_args = ["-p1"],
         )
 
+
+def com_google_googletest():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
@@ -249,6 +418,8 @@ def grpc_deps():
             ],
         )
 
+
+def rules_cc():
     if "rules_cc" not in native.existing_rules():
         http_archive(
             name = "rules_cc",
@@ -261,6 +432,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_github_google_benchmark():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
@@ -272,6 +445,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_googlesource_code_re2():
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
@@ -283,6 +458,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_github_cares_cares():
     if "com_github_cares_cares" not in native.existing_rules():
         http_archive(
             name = "com_github_cares_cares",
@@ -295,6 +472,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_google_absl():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
@@ -306,6 +485,8 @@ def grpc_deps():
             ],
         )
 
+
+def bazel_toolchains():
     if "bazel_toolchains" not in native.existing_rules():
         # list of releases is at https://github.com/bazelbuild/bazel-toolchains/releases
         http_archive(
@@ -318,6 +499,8 @@ def grpc_deps():
             ],
         )
 
+
+def bazel_skylib():
     if "bazel_skylib" not in native.existing_rules():
         http_archive(
             name = "bazel_skylib",
@@ -328,6 +511,8 @@ def grpc_deps():
             sha256 = "97e70364e9249702246c0e9444bccdc4b847bed1eb03c5a3ece4f83dfe6abc44",
         )
 
+
+def bazel_compdb():
     if "bazel_compdb" not in native.existing_rules():
         http_archive(
             name = "bazel_compdb",
@@ -339,6 +524,8 @@ def grpc_deps():
             ],
         )
 
+
+def io_opencensus_cpp():
     if "io_opencensus_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opencensus_cpp",
@@ -350,6 +537,8 @@ def grpc_deps():
             ],
         )
 
+
+def upb():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
@@ -361,6 +550,8 @@ def grpc_deps():
             ],
         )
 
+
+def envoy_api():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
@@ -372,6 +563,8 @@ def grpc_deps():
             ],
         )
 
+
+def io_bazel_rules_go():
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
@@ -382,6 +575,8 @@ def grpc_deps():
             ],
         )
 
+
+def build_bazel_rules_apple():
     if "build_bazel_rules_apple" not in native.existing_rules():
         http_archive(
             name = "build_bazel_rules_apple",
@@ -392,6 +587,8 @@ def grpc_deps():
             ],
         )
 
+
+def build_bazel_apple_support():
     if "build_bazel_apple_support" not in native.existing_rules():
         http_archive(
             name = "build_bazel_apple_support",
@@ -402,6 +599,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_github_libuv_libuv():
     if "com_github_libuv_libuv" not in native.existing_rules():
         http_archive(
             name = "com_github_libuv_libuv",
@@ -414,6 +613,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_google_googleapis():
     if "com_google_googleapis" not in native.existing_rules():
         http_archive(
             name = "com_google_googleapis",
@@ -425,6 +626,8 @@ def grpc_deps():
             ],
         )
 
+
+def bazel_gazelle():
     if "bazel_gazelle" not in native.existing_rules():
         http_archive(
             name = "bazel_gazelle",
@@ -435,6 +638,8 @@ def grpc_deps():
             ],
         )
 
+
+def opencensus_proto():
     if "opencensus_proto" not in native.existing_rules():
         http_archive(
             name = "opencensus_proto",
@@ -446,6 +651,8 @@ def grpc_deps():
             ],
         )
 
+
+def com_envoyproxy_protoc_gen_validate():
     if "com_envoyproxy_protoc_gen_validate" not in native.existing_rules():
         http_archive(
             name = "com_envoyproxy_protoc_gen_validate",
@@ -458,6 +665,8 @@ def grpc_deps():
             patch_args = ["-p1"],
         )
 
+
+def com_github_cncf_udpa():
     if "com_github_cncf_udpa" not in native.existing_rules():
         http_archive(
             name = "com_github_cncf_udpa",
@@ -469,15 +678,36 @@ def grpc_deps():
             ],
         )
 
-    grpc_python_deps()
-
 # TODO: move some dependencies from "grpc_deps" here?
 # buildifier: disable=unnamed-macro
-def grpc_test_only_deps():
+def grpc_test_only_deps(
+      bind_externals = True,
+      omit_com_github_twisted_twisted = False,
+      omit_com_github_yaml_pyyaml = False,
+      omit_com_github_twisted_incremental = False,
+      omit_com_github_zopefoundation_zope_interface = False,
+      omit_com_github_twisted_constantly = False,
+      omit_com_google_libprotobuf_mutator = False):
     """Internal, not intended for use by packages that are consuming grpc.
 
     Loads dependencies that are only needed to run grpc library's tests.
     """
+    if bind_externals:
+        grpc_bind_externals_test()
+    if not omit_com_github_twisted_twisted:
+        com_github_twisted_twisted()
+    if not omit_com_github_yaml_pyyaml:
+        com_github_yaml_pyyaml()
+    if not omit_com_github_twisted_incremental:
+        com_github_twisted_incremental()
+    if not omit_com_github_zopefoundation_zope_interface:
+        com_github_zopefoundation_zope_interface()
+    if not omit_com_github_twisted_constantly:
+        com_github_twisted_constantly()
+    if not omit_com_google_libprotobuf_mutator:
+        com_google_libprotobuf_mutator()
+
+def grpc_bind_externals_test():
     native.bind(
         name = "twisted",
         actual = "@com_github_twisted_twisted//:twisted",
@@ -488,6 +718,8 @@ def grpc_test_only_deps():
         actual = "@com_github_yaml_pyyaml//:yaml",
     )
 
+
+def com_github_twisted_twisted():
     if "com_github_twisted_twisted" not in native.existing_rules():
         http_archive(
             name = "com_github_twisted_twisted",
@@ -500,6 +732,8 @@ def grpc_test_only_deps():
             build_file = "@com_github_grpc_grpc//third_party:twisted.BUILD",
         )
 
+
+def com_github_yaml_pyyaml():
     if "com_github_yaml_pyyaml" not in native.existing_rules():
         http_archive(
             name = "com_github_yaml_pyyaml",
@@ -512,6 +746,8 @@ def grpc_test_only_deps():
             build_file = "@com_github_grpc_grpc//third_party:yaml.BUILD",
         )
 
+
+def com_github_twisted_incremental():
     if "com_github_twisted_incremental" not in native.existing_rules():
         http_archive(
             name = "com_github_twisted_incremental",
@@ -524,6 +760,8 @@ def grpc_test_only_deps():
             build_file = "@com_github_grpc_grpc//third_party:incremental.BUILD",
         )
 
+
+def com_github_zopefoundation_zope_interface():
     if "com_github_zopefoundation_zope_interface" not in native.existing_rules():
         http_archive(
             name = "com_github_zopefoundation_zope_interface",
@@ -536,6 +774,8 @@ def grpc_test_only_deps():
             build_file = "@com_github_grpc_grpc//third_party:zope_interface.BUILD",
         )
 
+
+def com_github_twisted_constantly():
     if "com_github_twisted_constantly" not in native.existing_rules():
         http_archive(
             name = "com_github_twisted_constantly",
@@ -548,6 +788,8 @@ def grpc_test_only_deps():
             build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
         )
 
+
+def com_google_libprotobuf_mutator():
     if "com_google_libprotobuf_mutator" not in native.existing_rules():
         http_archive(
             name = "com_google_libprotobuf_mutator",
