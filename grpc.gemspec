@@ -1598,8 +1598,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session_openssl.cc )
   s.files += %w( src/core/tsi/ssl_transport_security.cc )
   s.files += %w( src/core/tsi/ssl_transport_security.h )
-  s.files += %w( src/core/tsi/ssl_transport_security_utils.cc )
-  s.files += %w( src/core/tsi/ssl_transport_security_utils.h )
   s.files += %w( src/core/tsi/ssl_types.h )
   s.files += %w( src/core/tsi/transport_security.cc )
   s.files += %w( src/core/tsi/transport_security.h )

@@ -3074,14 +3074,12 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/ssl_utils_config.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
-        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:lib/security/security_connector/ssl_utils.h",
         "//src/core:lib/security/security_connector/ssl_utils_config.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
-        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
         "absl/base:core_headers",
