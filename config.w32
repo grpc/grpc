@@ -99,6 +99,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser_table.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\http2_settings.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\http_trace.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\huffsyms.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\parsing.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\stream_lists.cc " +
@@ -449,6 +450,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\posix_engine\\lockfree_event.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\posix_endpoint.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\posix_engine.cc " +
+    "src\\core\\lib\\event_engine\\posix_engine\\posix_engine_listener.cc " +
+    "src\\core\\lib\\event_engine\\posix_engine\\posix_engine_listener_utils.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\tcp_socket_utils.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\timer.cc " +
     "src\\core\\lib\\event_engine\\posix_engine\\timer_heap.cc " +

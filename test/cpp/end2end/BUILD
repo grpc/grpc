@@ -294,6 +294,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
+        "//src/core:slice",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",

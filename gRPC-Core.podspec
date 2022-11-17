@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.51.0-dev'
+  version = '1.52.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -369,6 +369,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http_trace.cc',
+                      'src/core/ext/transport/chttp2/transport/http_trace.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
@@ -1079,6 +1081,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/posix_engine.cc',
                       'src/core/lib/event_engine/posix_engine/posix_engine.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener.cc',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/posix_engine/timer.cc',
@@ -1867,6 +1873,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -2227,6 +2234,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                               'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',

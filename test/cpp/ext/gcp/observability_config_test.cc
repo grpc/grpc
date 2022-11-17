@@ -158,6 +158,11 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigWildcardEntries) {
           {
             "methods": ["*", "service/*"]
           }
+        ],
+        "server_rpc_events": [
+          {
+            "methods": ["*", "service/*"]
+          }
         ]
       }
     })json";
@@ -170,6 +175,9 @@ TEST(GcpObservabilityConfigJsonParsingTest, LoggingConfigWildcardEntries) {
   ASSERT_TRUE(config.cloud_logging.has_value());
   ASSERT_EQ(config.cloud_logging->client_rpc_events.size(), 1);
   EXPECT_THAT(config.cloud_logging->client_rpc_events[0].qualified_methods,
+              ::testing::ElementsAre("*", "service/*"));
+  ASSERT_EQ(config.cloud_logging->server_rpc_events.size(), 1);
+  EXPECT_THAT(config.cloud_logging->server_rpc_events[0].qualified_methods,
               ::testing::ElementsAre("*", "service/*"));
 }
 

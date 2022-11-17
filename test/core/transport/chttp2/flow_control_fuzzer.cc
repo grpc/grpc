@@ -29,6 +29,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_request.h>
@@ -151,12 +152,12 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       break;
     case flow_control_fuzzer::Action::kSetMemoryQuota: {
       memory_quota_->SetSize(
-          Clamp(action.set_memory_quota(), uint64_t(1),
-                uint64_t(std::numeric_limits<int64_t>::max())));
+          Clamp(action.set_memory_quota(), uint64_t{1},
+                static_cast<uint64_t>(std::numeric_limits<int64_t>::max())));
     } break;
     case flow_control_fuzzer::Action::kStepTimeMs: {
       g_now = gpr_time_add(
-          g_now, gpr_time_from_millis(Clamp(action.step_time_ms(), uint64_t(1),
+          g_now, gpr_time_from_millis(Clamp(action.step_time_ms(), uint64_t{1},
                                             kMaxAdvanceTimeMillis),
                                       GPR_TIMESPAN));
       exec_ctx.InvalidateNow();
@@ -220,7 +221,9 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
           fprintf(stderr, "Received ACK for initial window size %d\n",
                   *sent_from_remote.ack_initial_window_size);
         }
-        tfc_->SetAckedInitialWindow(*sent_from_remote.ack_initial_window_size);
+        PerformAction(tfc_->SetAckedInitialWindow(
+                          *sent_from_remote.ack_initial_window_size),
+                      nullptr);
         sending_initial_window_size_ = false;
       }
       if (sent_from_remote.bdp_pong) {
@@ -252,7 +255,8 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
             {id_stream.second.queued_writes, remote_transport_window_size_,
              remote_initial_window_size_ + id_stream.second.window_delta});
         if (send_amount <= 0) continue;
-        send.stream_writes.push_back({id_stream.first, uint64_t(send_amount)});
+        send.stream_writes.push_back(
+            {id_stream.first, static_cast<uint64_t>(send_amount)});
         id_stream.second.queued_writes -= send_amount;
         id_stream.second.window_delta -= send_amount;
         remote_transport_window_size_ -= send_amount;
@@ -267,14 +271,14 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
     } break;
     case flow_control_fuzzer::Action::kAllocateMemory: {
       auto allocate = std::min(
-          size_t(action.allocate_memory()),
+          static_cast<size_t>(action.allocate_memory()),
           grpc_event_engine::experimental::MemoryRequest::max_allowed_size());
       allocated_memory_ += allocate;
       memory_owner_.Reserve(allocate);
     } break;
     case flow_control_fuzzer::Action::kDeallocateMemory: {
-      auto deallocate =
-          std::min(uint64_t(action.deallocate_memory()), allocated_memory_);
+      auto deallocate = std::min(
+          static_cast<uint64_t>(action.deallocate_memory()), allocated_memory_);
       allocated_memory_ -= deallocate;
       memory_owner_.Release(deallocate);
     } break;
@@ -318,7 +322,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                                       Stream* stream) {
   if (!squelch) {
     fprintf(stderr, "[%" PRId64 "]: ACTION: %s\n",
-            stream == nullptr ? int64_t(-1) : int64_t(stream->id),
+            stream == nullptr ? int64_t{-1} : static_cast<int64_t>(stream->id),
             action.DebugString().c_str());
   }
 
@@ -355,6 +359,7 @@ void FlowControlFuzzer::AssertNoneStuck() const {
   std::map<uint32_t, int64_t> reconciled_stream_deltas;
   int64_t reconciled_transport_window = remote_transport_window_size_;
   int64_t reconciled_initial_window = remote_initial_window_size_;
+  std::vector<uint64_t> inflight_send_initial_windows;
   for (const auto& id_stream : streams_) {
     reconciled_stream_deltas[id_stream.first] = id_stream.second.window_delta;
   }
@@ -364,6 +369,8 @@ void FlowControlFuzzer::AssertNoneStuck() const {
   for (const auto& send_to_remote : send_to_remote_) {
     if (send_to_remote.initial_window_size.has_value()) {
       reconciled_initial_window = *send_to_remote.initial_window_size;
+      inflight_send_initial_windows.push_back(
+          *send_to_remote.initial_window_size);
     }
     reconciled_transport_window += send_to_remote.transport_window_update;
     for (const auto& stream_update : send_to_remote.stream_window_updates) {
@@ -380,6 +387,14 @@ void FlowControlFuzzer::AssertNoneStuck() const {
     }
   }
 
+  // If we're sending an initial window size we get to consider a queued initial
+  // window size too: it'll be sent as soon as the remote acks the settings
+  // change, which it must.
+  if (sending_initial_window_size_ && queued_initial_window_size_.has_value()) {
+    reconciled_initial_window = *queued_initial_window_size_;
+    inflight_send_initial_windows.push_back(*queued_initial_window_size_);
+  }
+
   // Finally, if a stream has indicated it's willing to read, the reconciled
   // remote *MUST* be in a state where it could send at least one byte.
   for (const auto& id_stream : streams_) {
@@ -394,7 +409,11 @@ void FlowControlFuzzer::AssertNoneStuck() const {
               id_stream.first, stream_window, reconciled_transport_window,
               reconciled_stream_deltas[id_stream.first],
               reconciled_initial_window,
-              int64_t(id_stream.second.fc.min_progress_size()));
+              (id_stream.second.fc.min_progress_size()));
+      fprintf(stderr,
+              "initial_window breakdown: remote=%" PRId32 ", in-flight={%s}\n",
+              remote_initial_window_size_,
+              absl::StrJoin(inflight_send_initial_windows, ",").c_str());
       abort();
     }
   }

@@ -34,14 +34,14 @@
 
 #include <list>
 
-#include <grpc/support/atm.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpc/impl/codegen/atm.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/codegen/rpc_service_method.h>
+#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/rpc_service_method.h>
-#include <grpcpp/support/status.h>
-#include <grpcpp/support/time.h>
+#include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
 
 struct grpc_completion_queue;
 
@@ -99,7 +99,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
 /// performance servers.
-class CompletionQueue : private grpc::GrpcLibraryCodegen {
+class CompletionQueue : private grpc::internal::GrpcLibrary {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
@@ -379,15 +379,14 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// registration must take place before CQ shutdown (which must be maintained
   /// elsehwere)
   void InitialAvalanching() {
-    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
+    gpr_atm_rel_store(&avalanches_in_flight_, gpr_atm{1});
   }
   void RegisterAvalanching() {
-    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                 static_cast<gpr_atm>(1));
+    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, gpr_atm{1});
   }
   void CompleteAvalanching() {
-    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                     static_cast<gpr_atm>(-1)) == 1) {
+    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, gpr_atm{-1}) ==
+        1) {
       grpc::g_core_codegen_interface->grpc_completion_queue_shutdown(cq_);
     }
   }

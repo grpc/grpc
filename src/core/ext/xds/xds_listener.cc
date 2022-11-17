@@ -395,15 +395,10 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         const google_protobuf_Any* typed_config =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
                 http_filter);
-        if (typed_config == nullptr) {
-          if (!is_optional) errors->AddError("field not present");
-          continue;
-        }
         auto extension = ExtractXdsExtension(context, typed_config, errors);
-        const XdsHttpFilterImpl* filter_impl = nullptr;
-        if (extension.has_value()) {
-          filter_impl = http_filter_registry.GetFilterForType(extension->type);
-        }
+        if (!extension.has_value()) continue;
+        const XdsHttpFilterImpl* filter_impl =
+            http_filter_registry.GetFilterForType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
@@ -463,13 +458,9 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     const envoy_config_route_v3_RouteConfiguration* route_config =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager_proto);
-    auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
-    if (!rds_update.ok()) {
-      ValidationErrors::ScopedField field(errors, ".route_config");
-      errors->AddError(rds_update.status().message());
-    } else {
-      http_connection_manager.route_config = std::move(*rds_update);
-    }
+    ValidationErrors::ScopedField field(errors, ".route_config");
+    http_connection_manager.route_config =
+        XdsRouteConfigResource::Parse(context, route_config, errors);
   } else {
     // Validate that RDS must be used to get the route_config dynamically.
     const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
@@ -506,14 +497,10 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
   ValidationErrors::ScopedField field(&errors, "api_listener.api_listener");
   auto* api_listener_field =
       envoy_config_listener_v3_ApiListener_api_listener(api_listener);
-  if (api_listener_field == nullptr) {
-    errors.AddError("field not present");
-  } else {
-    auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
-    if (extension.has_value()) {
-      lds_update.listener = HttpConnectionManagerParse(
-          /*is_client=*/true, context, std::move(*extension), &errors);
-    }
+  auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
+  if (extension.has_value()) {
+    lds_update.listener = HttpConnectionManagerParse(
+        /*is_client=*/true, context, std::move(*extension), &errors);
   }
   if (!errors.ok()) return errors.status("errors validating ApiListener");
   return std::move(lds_update);
@@ -628,8 +615,8 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
         google_protobuf_UInt32Value_value(prefix_len_proto),
         (reinterpret_cast<const grpc_sockaddr*>(cidr_range.address.addr))
                     ->sa_family == GRPC_AF_INET
-            ? uint32_t(32)
-            : uint32_t(128));
+            ? uint32_t{32}
+            : uint32_t{128});
   }
   // Normalize the network address by masking it with prefix_len
   grpc_sockaddr_mask_bits(&cidr_range.address, cidr_range.prefix_len);
