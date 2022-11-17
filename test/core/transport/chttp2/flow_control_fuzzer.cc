@@ -29,6 +29,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_request.h>
@@ -220,7 +221,9 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
           fprintf(stderr, "Received ACK for initial window size %d\n",
                   *sent_from_remote.ack_initial_window_size);
         }
-        tfc_->SetAckedInitialWindow(*sent_from_remote.ack_initial_window_size);
+        PerformAction(tfc_->SetAckedInitialWindow(
+                          *sent_from_remote.ack_initial_window_size),
+                      nullptr);
         sending_initial_window_size_ = false;
       }
       if (sent_from_remote.bdp_pong) {
@@ -356,6 +359,7 @@ void FlowControlFuzzer::AssertNoneStuck() const {
   std::map<uint32_t, int64_t> reconciled_stream_deltas;
   int64_t reconciled_transport_window = remote_transport_window_size_;
   int64_t reconciled_initial_window = remote_initial_window_size_;
+  std::vector<uint64_t> inflight_send_initial_windows;
   for (const auto& id_stream : streams_) {
     reconciled_stream_deltas[id_stream.first] = id_stream.second.window_delta;
   }
@@ -365,6 +369,8 @@ void FlowControlFuzzer::AssertNoneStuck() const {
   for (const auto& send_to_remote : send_to_remote_) {
     if (send_to_remote.initial_window_size.has_value()) {
       reconciled_initial_window = *send_to_remote.initial_window_size;
+      inflight_send_initial_windows.push_back(
+          *send_to_remote.initial_window_size);
     }
     reconciled_transport_window += send_to_remote.transport_window_update;
     for (const auto& stream_update : send_to_remote.stream_window_updates) {
@@ -379,6 +385,14 @@ void FlowControlFuzzer::AssertNoneStuck() const {
       reconciled_stream_deltas[stream_write.id] += stream_write.size;
       reconciled_transport_window += stream_write.size;
     }
+  }
+
+  // If we're sending an initial window size we get to consider a queued initial
+  // window size too: it'll be sent as soon as the remote acks the settings
+  // change, which it must.
+  if (sending_initial_window_size_ && queued_initial_window_size_.has_value()) {
+    reconciled_initial_window = *queued_initial_window_size_;
+    inflight_send_initial_windows.push_back(*queued_initial_window_size_);
   }
 
   // Finally, if a stream has indicated it's willing to read, the reconciled
@@ -396,6 +410,10 @@ void FlowControlFuzzer::AssertNoneStuck() const {
               reconciled_stream_deltas[id_stream.first],
               reconciled_initial_window,
               (id_stream.second.fc.min_progress_size()));
+      fprintf(stderr,
+              "initial_window breakdown: remote=%" PRId32 ", in-flight={%s}\n",
+              remote_initial_window_size_,
+              absl::StrJoin(inflight_send_initial_windows, ",").c_str());
       abort();
     }
   }
