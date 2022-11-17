@@ -83,8 +83,8 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
   shutdown_client(f);
+  shutdown_server(f);
 
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
