@@ -41,9 +41,6 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/subprocess.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
 static std::string g_root;
 
 static gpr_mu g_mu;

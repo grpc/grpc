@@ -41,7 +41,6 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 
 #include "src/core/lib/iomgr/iomgr.h"

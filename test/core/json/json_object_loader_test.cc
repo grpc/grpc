@@ -14,7 +14,6 @@
 
 #include "src/core/lib/json/json_object_loader.h"
 
-#include <algorithm>
 #include <cstdint>
 
 #include "absl/status/status.h"

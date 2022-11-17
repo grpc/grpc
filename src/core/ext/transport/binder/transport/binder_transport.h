@@ -74,6 +74,10 @@ struct grpc_binder_transport {
   void (*accept_stream_fn)(void* user_data, grpc_transport* transport,
                            const void* server_data) = nullptr;
   void* accept_stream_user_data = nullptr;
+  // `accept_stream_locked()` could be called before `accept_stream_fn` has been
+  // set, we need to remember those requests that comes too early and call them
+  // later when we can.
+  int accept_stream_fn_called_count_{0};
 
   grpc_core::ConnectivityStateTracker state_tracker;
   grpc_core::RefCount refs;

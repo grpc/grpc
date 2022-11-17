@@ -25,7 +25,6 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/alts_context.h>
-#include <grpcpp/support/config.h>
 
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "src/proto/grpc/gcp/transport_security_common.upb.h"

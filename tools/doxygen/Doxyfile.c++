@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.51.0-dev
+PROJECT_NUMBER         = 1.52.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -830,7 +830,6 @@ include/grpc++/impl/codegen/config_protobuf.h \
 include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
-include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
 include/grpc++/impl/codegen/proto_utils.h \
@@ -983,7 +982,6 @@ include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/delegating_channel.h \
-include/grpcpp/impl/codegen/grpc_library.h \
 include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
 include/grpcpp/impl/codegen/interceptor_common.h \
@@ -1060,6 +1058,7 @@ include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
+include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h
 
 # This tag can be used to specify the character encoding of the source files

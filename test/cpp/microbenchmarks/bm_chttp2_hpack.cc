@@ -87,7 +87,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             static_cast<uint32_t>(state.iterations()),
             true,
             false,
-            static_cast<size_t>(1024),
+            size_t{1024},
             &stats,
         },
         b, &outbuf);
