@@ -466,7 +466,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   size_t property_count;
   tsi_result result;
   GPR_ASSERT(subject_alt_name_count >= 0);
-  property_count = (include_certificate_type ? static_cast<size_t>(1) : 0) +
+  property_count = (include_certificate_type ? size_t{1} : 0) +
                    3 /* subject, common name, certificate */ +
                    static_cast<size_t>(subject_alt_name_count);
   for (int i = 0; i < subject_alt_name_count; i++) {

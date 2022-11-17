@@ -29,6 +29,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+// IWYU pragma: no_include <arpa/inet.h>
+
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -39,8 +41,6 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
-
-#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -384,6 +384,24 @@ TEST(TcpPosixSocketUtilsTest, SockAddrToStringTest) {
 #endif
 }
 
+TEST(TcpPosixSocketUtilsTest, SockAddrPortTest) {
+  EventEngine::ResolvedAddress wild6 = SockaddrMakeWild6(20);
+  EventEngine::ResolvedAddress wild4 = SockaddrMakeWild4(20);
+  // Verify the string description matches the expected wildcard address with
+  // correct port number.
+  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:20");
+  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:20");
+  // Update the port values.
+  SockaddrSetPort(wild4, 21);
+  SockaddrSetPort(wild6, 22);
+  // Read back the port values.
+  EXPECT_EQ(SockaddrGetPort(wild4), 21);
+  EXPECT_EQ(SockaddrGetPort(wild6), 22);
+  // Ensure the string description reflects the updated port values.
+  EXPECT_EQ(SockaddrToString(&wild4, true).value(), "0.0.0.0:21");
+  EXPECT_EQ(SockaddrToString(&wild6, true).value(), "[::]:22");
+}
+
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
@@ -394,6 +412,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-int main(int argc, char** argv) { return 1; }
+int main(int argc, char** argv) { return 0; }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */

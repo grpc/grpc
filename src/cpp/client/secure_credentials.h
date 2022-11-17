@@ -36,7 +36,6 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 // TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -106,7 +105,7 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
 
 }  // namespace experimental
 
-class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
+class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
  public:
   static void Destroy(void* wrapper);
   static int GetMetadata(

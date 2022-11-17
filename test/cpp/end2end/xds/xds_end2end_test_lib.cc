@@ -860,7 +860,7 @@ void XdsEnd2endTest::CheckRpcSendOk(
     const RpcOptions& rpc_options) {
   SendRpcsUntil(
       debug_location,
-      [debug_location, times, n = size_t(0)](const RpcResult& result) mutable {
+      [debug_location, times, n = size_t{0}](const RpcResult& result) mutable {
         EXPECT_TRUE(result.status.ok())
             << "code=" << result.status.error_code()
             << " message=" << result.status.error_message() << " at "
@@ -891,7 +891,7 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
   size_t num_failed = 0;
   SendRpcsUntil(
       debug_location,
-      [&, n = size_t(0)](const RpcResult& result) mutable {
+      [&, n = size_t{0}](const RpcResult& result) mutable {
         if (!result.status.ok()) {
           EXPECT_EQ(result.status.error_code(), expected_status)
               << debug_location.file() << ":" << debug_location.line();

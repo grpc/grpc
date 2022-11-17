@@ -174,7 +174,7 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
     }
 
     EchoRequest req;
-    string response_str = "";
+    string response_str;
     while (reader->Read(&req)) {
       response_str += req.message();
     }

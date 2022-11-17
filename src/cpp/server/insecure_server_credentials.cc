@@ -25,7 +25,6 @@
 #include <grpc/support/log.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace {

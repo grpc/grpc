@@ -32,7 +32,6 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {

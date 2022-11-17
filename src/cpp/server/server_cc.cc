@@ -61,7 +61,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/method_handler.h>
 #include <grpcpp/support/server_interceptor.h>
