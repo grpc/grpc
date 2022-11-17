@@ -694,8 +694,10 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
 
 void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
   if (grpc_trace_channel.enabled()) {
-    gpr_log(GPR_DEBUG, "%s ReceiveMessage.WakeInsideCombiner st=%s",
-            base_->LogTag().c_str(), StateString(state_));
+    gpr_log(GPR_DEBUG,
+            "%s ReceiveMessage.WakeInsideCombiner st=%s push?=%s next?=%s",
+            base_->LogTag().c_str(), StateString(state_),
+            push_.has_value() ? "yes" : "no", next_.has_value() ? "yes" : "no");
   }
   switch (state_) {
     case State::kInitial:
@@ -738,6 +740,11 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       GPR_ASSERT(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = absl::get_if<bool>(&r_push)) {
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "%s ReceiveMessage.WakeInsideCombiner push complete: %s",
+                  base_->LogTag().c_str(), *p ? "true" : "false");
+        }
         // We haven't pulled through yet, so this certainly shouldn't succeed.
         GPR_ASSERT(!*p);
         state_ = State::kCancelled;
@@ -746,6 +753,12 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       GPR_ASSERT(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r_next)) {
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "%s ReceiveMessage.WakeInsideCombiner next complete: %s",
+                  base_->LogTag().c_str(),
+                  p->has_value() ? "got message" : "end of stream");
+        }
         next_.reset();
         if (p->has_value()) {
           *intercepted_slice_buffer_ = std::move(*(**p)->payload());
@@ -771,7 +784,13 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kPulledFromPipe: {
       GPR_ASSERT(push_.has_value());
       if (!absl::holds_alternative<Pending>((*push_)())) {
-        if (state_ == State::kCompletedWhilePushedToPipe) {
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "%s ReceiveMessage.WakeInsideCombiner push complete",
+                  base_->LogTag().c_str());
+        }
+        if (state_ == State::kCompletedWhilePulledFromPipe) {
+          sender_->Close();
           state_ = State::kCancelled;
         } else {
           state_ = State::kIdle;
