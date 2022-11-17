@@ -69,7 +69,7 @@ class ProtoBufferWriter : public google::protobuf::io::ZeroCopyOutputStream {
     slice_buffer_ = &bp->data.raw.slice_buffer;
   }
 
-  ~ProtoBufferWriter() override {
+  ~ProtoBufferWriter() {
     if (have_backup_) {
       g_core_codegen_interface->grpc_slice_unref(backup_slice_);
     }
@@ -77,7 +77,7 @@ class ProtoBufferWriter : public google::protobuf::io::ZeroCopyOutputStream {
 
   /// Give the proto library the next buffer of bytes and its size. It is
   /// safe for the caller to write from data[0, size - 1].
-  bool Next(void** data, int* size) override {
+  bool Next(void** data, int* size) {
     // Protobuf should not ask for more memory than total_size_.
     GPR_CODEGEN_ASSERT(byte_count_ < total_size_);
     // 1. Use the remaining backup slice if we have one
@@ -119,7 +119,7 @@ class ProtoBufferWriter : public google::protobuf::io::ZeroCopyOutputStream {
   /// Backup by \a count bytes because Next returned more bytes than needed
   /// (only used in the last buffer). \a count must be less than or equal too
   /// the last buffer returned from next.
-  void BackUp(int count) override {
+  void BackUp(int count) {
     // count == 0 is invoked by ZeroCopyOutputStream users indicating that any
     // potential buffer obtained through a previous call to Next() is final.
     // ZeroCopyOutputStream implementations such as streaming output can use
@@ -149,7 +149,7 @@ class ProtoBufferWriter : public google::protobuf::io::ZeroCopyOutputStream {
   }
 
   /// Returns the total number of bytes written since this object was created.
-  int64_t ByteCount() const override { return byte_count_; }
+  int64_t ByteCount() const { return byte_count_; }
 
   // These protected members are needed to support internal optimizations.
   // they expose internal bits of grpc core that are NOT stable. If you have
