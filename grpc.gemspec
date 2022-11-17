@@ -232,7 +232,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/rbac/rbac_filter.h )
   s.files += %w( src/core/ext/filters/rbac/rbac_service_config_parser.cc )
   s.files += %w( src/core/ext/filters/rbac/rbac_service_config_parser.h )
-  s.files += %w( src/core/ext/filters/server_config_selector/server_config_selector.cc )
   s.files += %w( src/core/ext/filters/server_config_selector/server_config_selector.h )
   s.files += %w( src/core/ext/filters/server_config_selector/server_config_selector_filter.cc )
   s.files += %w( src/core/ext/filters/server_config_selector/server_config_selector_filter.h )
