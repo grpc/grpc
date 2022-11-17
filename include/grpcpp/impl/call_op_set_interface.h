@@ -21,7 +21,7 @@
 
 // IWYU pragma: private
 
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 
 namespace grpc {
 namespace internal {
