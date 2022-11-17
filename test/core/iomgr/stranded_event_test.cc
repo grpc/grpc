@@ -397,7 +397,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
         {
           grpc_core::MutexLock lock(&ping_pong_round_mu);
           ping_pong_round_cv.SignalAll();
-          while (int(ping_pong_round) != i) {
+          while (static_cast<int>(ping_pong_round) != i) {
             ping_pong_round_cv.Wait(&ping_pong_round_mu);
           }
         }

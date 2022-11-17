@@ -130,7 +130,7 @@ CallbackAlternativeCQ g_callback_alternative_cq;
 // a 'grpc_completion_queue' instance (which is being passed as the input to
 // this constructor), one must have already called grpc_init().
 CompletionQueue::CompletionQueue(grpc_completion_queue* take)
-    : GrpcLibraryCodegen(false), cq_(take) {
+    : GrpcLibrary(false), cq_(take) {
   InitialAvalanching();
 }
 

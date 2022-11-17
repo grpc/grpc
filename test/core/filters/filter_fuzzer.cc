@@ -218,9 +218,9 @@ struct GlobalObjects {
       case filter_fuzzer::GlobalObjectAction::kFinishCheckCallHost:
         channel_security_connector->FinishCheckCallHost(
             action.finish_check_call_host().qry(),
-            absl::Status(
-                absl::StatusCode(action.finish_check_call_host().status()),
-                action.finish_check_call_host().message()));
+            absl::Status(static_cast<absl::StatusCode>(
+                             action.finish_check_call_host().status()),
+                         action.finish_check_call_host().message()));
         break;
     }
   }

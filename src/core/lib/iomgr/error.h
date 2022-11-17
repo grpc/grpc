@@ -37,8 +37,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 /// Opaque representation of an error.
-/// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
-/// full write up of this object.
 
 typedef absl::Status grpc_error_handle;
 

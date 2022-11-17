@@ -29,7 +29,6 @@
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
 

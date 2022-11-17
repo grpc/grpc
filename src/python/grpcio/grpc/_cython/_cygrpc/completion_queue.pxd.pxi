@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cdef int g_interrupt_check_period_ms = 200
+cdef int g_interrupt_check_period_ms
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *
 
