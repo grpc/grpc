@@ -171,18 +171,6 @@ class BitSet {
     return result;
   }
 
-  BitSet& Set(int i, bool value) {
-    set(i, value);
-    return *this;
-  }
-
-  BitSet& SetAll(bool value) {
-    for (size_t i = 0; i < kTotalBits; i++) {
-      set(i, value);
-    }
-    return *this;
-  }
-
  private:
   // Given a bit index, return which unit it's stored in.
   static constexpr size_t unit_for(size_t bit) { return bit / kUnitBits; }

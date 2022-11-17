@@ -22,10 +22,15 @@
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "test/core/compression/args_utils.h"
 #include "test/core/util/test_config.h"
 
 TEST(CompressionTest, CompressionAlgorithmParse) {
@@ -238,6 +243,70 @@ TEST(CompressionTest, CompressionEnableDisableAlgorithm) {
     ASSERT_NE(
         grpc_compression_options_is_algorithm_enabled(&options, algorithm), 0);
   }
+}
+
+TEST(CompressionTest, ChannelArgsSetCompressionAlgorithm) {
+  grpc_core::ExecCtx exec_ctx;
+  const grpc_channel_args* ch_args;
+
+  ch_args = grpc_channel_args_set_channel_default_compression_algorithm(
+      nullptr, GRPC_COMPRESS_GZIP);
+  ASSERT_EQ(ch_args->num_args, 1);
+  ASSERT_STREQ(ch_args->args[0].key,
+               GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
+  ASSERT_EQ(ch_args->args[0].type, GRPC_ARG_INTEGER);
+
+  grpc_channel_args_destroy(ch_args);
+}
+
+TEST(CompressionTest, ChannelArgsCompressionAlgorithmStates) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::CompressionAlgorithmSet states;
+
+  const grpc_channel_args* ch_args =
+      grpc_channel_args_copy_and_add(nullptr, nullptr, 0);
+  /* by default, all enabled */
+  states = grpc_core::CompressionAlgorithmSet::FromChannelArgs(ch_args);
+
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+    ASSERT_TRUE(states.IsSet(static_cast<grpc_compression_algorithm>(i)));
+  }
+
+  /* disable gzip and deflate and stream/gzip */
+  const grpc_channel_args* ch_args_wo_gzip =
+      grpc_channel_args_compression_algorithm_set_state(&ch_args,
+                                                        GRPC_COMPRESS_GZIP, 0);
+  ASSERT_EQ(ch_args, ch_args_wo_gzip);
+  const grpc_channel_args* ch_args_wo_gzip_deflate =
+      grpc_channel_args_compression_algorithm_set_state(
+          &ch_args_wo_gzip, GRPC_COMPRESS_DEFLATE, 0);
+  ASSERT_EQ(ch_args_wo_gzip, ch_args_wo_gzip_deflate);
+
+  states = grpc_core::CompressionAlgorithmSet::FromChannelArgs(
+      ch_args_wo_gzip_deflate);
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+    if (i == GRPC_COMPRESS_GZIP || i == GRPC_COMPRESS_DEFLATE) {
+      ASSERT_FALSE(states.IsSet(static_cast<grpc_compression_algorithm>(i)));
+    } else {
+      ASSERT_TRUE(states.IsSet(static_cast<grpc_compression_algorithm>(i)));
+    }
+  }
+
+  /* re-enabled gzip only */
+  ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
+      &ch_args_wo_gzip_deflate, GRPC_COMPRESS_GZIP, 1);
+  ASSERT_EQ(ch_args_wo_gzip, ch_args_wo_gzip_deflate);
+
+  states = grpc_core::CompressionAlgorithmSet::FromChannelArgs(ch_args_wo_gzip);
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+    if (i == GRPC_COMPRESS_DEFLATE) {
+      ASSERT_FALSE(states.IsSet(static_cast<grpc_compression_algorithm>(i)));
+    } else {
+      ASSERT_TRUE(states.IsSet(static_cast<grpc_compression_algorithm>(i)));
+    }
+  }
+
+  grpc_channel_args_destroy(ch_args);
 }
 
 int main(int argc, char** argv) {
