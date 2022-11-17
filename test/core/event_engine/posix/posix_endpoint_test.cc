@@ -18,6 +18,7 @@
 #include <chrono>
 #include <list>
 #include <memory>
+#include <ratio>
 #include <string>
 #include <thread>
 #include <vector>

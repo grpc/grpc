@@ -95,7 +95,7 @@ class SynchronousClient
           return true;
         } else {
           gpr_sleep_until(one_sec_delay);
-          if (gpr_atm_acq_load(&thread_pool_done_) != static_cast<gpr_atm>(0)) {
+          if (gpr_atm_acq_load(&thread_pool_done_) != gpr_atm{0}) {
             return false;
           }
         }

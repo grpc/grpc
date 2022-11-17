@@ -34,6 +34,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -267,6 +268,7 @@ grpc_cc_test(
         ":endpoint_tests",
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -359,6 +361,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",

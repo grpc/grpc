@@ -21,7 +21,6 @@
 #include "src/core/lib/channel/channel_trace.h"
 
 #include <algorithm>
-#include <map>
 #include <string>
 #include <utility>
 

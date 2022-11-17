@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.51.0-dev'
+  version = '1.52.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -96,6 +96,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/health_check_service_interface.h',
                       'include/grpcpp/impl/call.h',
                       'include/grpcpp/impl/call_hook.h',
+                      'include/grpcpp/impl/call_op_set.h',
                       'include/grpcpp/impl/call_op_set_interface.h',
                       'include/grpcpp/impl/channel_argument_option.h',
                       'include/grpcpp/impl/channel_interface.h',
@@ -121,7 +122,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
                       'include/grpcpp/impl/codegen/delegating_channel.h',
-                      'include/grpcpp/impl/codegen/grpc_library.h',
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
                       'include/grpcpp/impl/codegen/interceptor_common.h',
@@ -174,6 +174,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/async_stream.h',
                       'include/grpcpp/support/async_unary_call.h',
                       'include/grpcpp/support/byte_buffer.h',
+                      'include/grpcpp/support/callback_common.h',
                       'include/grpcpp/support/channel_arguments.h',
                       'include/grpcpp/support/client_callback.h',
                       'include/grpcpp/support/client_interceptor.h',
@@ -193,6 +194,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
                       'include/grpcpp/support/validate_service_config.h',
+                      'include/grpcpp/version_info.h',
                       'include/grpcpp/xds_server_builder.h'
   end
 
@@ -341,6 +343,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http_trace.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
                       'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -698,11 +701,16 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
                       'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
                       'src/core/lib/event_engine/posix_engine/lockfree_event.h',
+                      'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
+                      'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/posix_engine/timer.h',
                       'src/core/lib/event_engine/posix_engine/timer_heap.h',
                       'src/core/lib/event_engine/posix_engine/timer_manager.h',
+                      'src/core/lib/event_engine/posix_engine/traced_buffer_list.h',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
@@ -738,6 +746,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/global_config_env.h',
                       'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/host_port.h',
+                      'src/core/lib/gprpp/load_file.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/match.h',
                       'src/core/lib/gprpp/memory.h',
@@ -849,6 +858,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
                       'src/core/lib/promise/detail/status.h',
+                      'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                       'src/core/lib/promise/for_each.h',
                       'src/core/lib/promise/intra_activity_waiter.h',
@@ -1220,6 +1230,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -1577,11 +1588,16 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
                               'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
                               'src/core/lib/event_engine/posix_engine/lockfree_event.h',
+                              'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
+                              'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',
                               'src/core/lib/event_engine/posix_engine/timer_manager.h',
+                              'src/core/lib/event_engine/posix_engine/traced_buffer_list.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
@@ -1617,6 +1633,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_env.h',
                               'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
+                              'src/core/lib/gprpp/load_file.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/match.h',
                               'src/core/lib/gprpp/memory.h',
@@ -1728,6 +1745,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
                               'src/core/lib/promise/detail/status.h',
+                              'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                               'src/core/lib/promise/for_each.h',
                               'src/core/lib/promise/intra_activity_waiter.h',

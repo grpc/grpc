@@ -49,9 +49,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   static constexpr char kAdsMethod[] =
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
       "StreamAggregatedResources";
-  static constexpr char kAdsV2Method[] =
-      "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
-      "StreamAggregatedResources";
+  static constexpr char kLrsMethod[] =
+      "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
 
   class FakeStreamingCall : public XdsTransport::StreamingCall {
    public:
@@ -62,6 +61,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
           method_(method),
           event_handler_(MakeRefCounted<RefCountedEventHandler>(
               std::move(event_handler))) {}
+
+    ~FakeStreamingCall() override;
 
     void Orphan() override;
 

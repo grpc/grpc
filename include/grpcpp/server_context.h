@@ -30,13 +30,13 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/call_op_set.h>
-#include <grpcpp/impl/codegen/callback_common.h>
+#include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/support/callback_common.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/message_allocator.h>
 #include <grpcpp/support/server_callback.h>
