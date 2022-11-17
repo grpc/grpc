@@ -93,6 +93,8 @@ class CallData {
     }
   }
 
+  ~CallData() { GRPC_ERROR_UNREF(error_); }
+
   void DecompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 

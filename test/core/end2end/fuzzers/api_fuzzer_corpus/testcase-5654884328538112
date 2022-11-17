@@ -1,0 +1,155 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+    channel_args {
+      key: "grpc.default_compression_algorithm"
+      i: 2
+    }
+    channel_actions {
+      add_n_bytes_writable: 1320
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 500
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 1000
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 500
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20000000
+      add_n_bytes_readable: 20000000
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 8640
+    }
+  }
+}
+actions {
+  create_call {
+    propagation_mask: 536870912
+    method {
+      value: "/voo"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      receive_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 5000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "`"
+        }
+      }
+      flags: 2147483648
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
