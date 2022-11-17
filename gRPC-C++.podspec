@@ -146,6 +146,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/sync.h',
                       'include/grpcpp/impl/codegen/sync_stream.h',
                       'include/grpcpp/impl/codegen/time.h',
+                      'include/grpcpp/impl/completion_queue_tag.h',
                       'include/grpcpp/impl/grpc_library.h',
                       'include/grpcpp/impl/interceptor_common.h',
                       'include/grpcpp/impl/method_handler_impl.h',
