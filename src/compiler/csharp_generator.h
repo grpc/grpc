@@ -23,7 +23,7 @@
 
 namespace grpc_csharp_generator {
 
-std::string GetServices(const grpc::protobuf::FileDescriptor* file,
+std::string GetServices(const google::protobuf::FileDescriptor* file,
                         bool generate_client, bool generate_server,
                         bool internal_access);
 

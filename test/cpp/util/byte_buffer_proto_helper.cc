@@ -23,7 +23,8 @@
 namespace grpc {
 namespace testing {
 
-bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
+bool ParseFromByteBuffer(ByteBuffer* buffer,
+                         google::protobuf::Message* message) {
   std::vector<Slice> slices;
   (void)buffer->Dump(&slices);
   std::string buf;
@@ -35,14 +36,14 @@ bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
 }
 
 std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    grpc::protobuf::Message* message) {
+    google::protobuf::Message* message) {
   std::string buf;
   message->SerializeToString(&buf);
   Slice slice(buf);
   return std::make_unique<ByteBuffer>(&slice, 1);
 }
 
-bool SerializeToByteBufferInPlace(grpc::protobuf::Message* message,
+bool SerializeToByteBufferInPlace(google::protobuf::Message* message,
                                   ByteBuffer* buffer) {
   std::string buf;
   if (!message->SerializeToString(&buf)) {

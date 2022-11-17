@@ -258,12 +258,12 @@ std::string ProtoFileParser::GetSerializedProtoFromMessageType(
     LogError("Message type not found");
     return "";
   }
-  std::unique_ptr<grpc::protobuf::Message> msg(
+  std::unique_ptr<google::protobuf::Message> msg(
       dynamic_factory_->GetPrototype(desc)->New());
 
   bool ok;
   if (is_json_format) {
-    ok = grpc::protobuf::json::JsonStringToMessage(formatted_proto, msg.get())
+    ok = google::protobuf::json::JsonStringToMessage(formatted_proto, msg.get())
              .ok();
     if (!ok) {
       LogError("Failed to convert json format to proto.");
@@ -295,7 +295,7 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
     LogError("Message type not found");
     return "";
   }
-  std::unique_ptr<grpc::protobuf::Message> msg(
+  std::unique_ptr<google::protobuf::Message> msg(
       dynamic_factory_->GetPrototype(desc)->New());
   if (!msg->ParseFromString(serialized_proto)) {
     LogError("Failed to deserialize proto.");
@@ -304,10 +304,10 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
   std::string formatted_string;
 
   if (is_json_format) {
-    grpc::protobuf::json::JsonPrintOptions jsonPrintOptions;
+    google::protobuf::json::JsonPrintOptions jsonPrintOptions;
     jsonPrintOptions.add_whitespace = true;
-    if (!grpc::protobuf::json::MessageToJsonString(*msg, &formatted_string,
-                                                   jsonPrintOptions)
+    if (!google::protobuf::json::MessageToJsonString(*msg, &formatted_string,
+                                                     jsonPrintOptions)
              .ok()) {
       LogError("Failed to print proto message to json format");
       return "";

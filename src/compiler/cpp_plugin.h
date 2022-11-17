@@ -28,7 +28,7 @@
 #include "src/compiler/protobuf_plugin.h"
 
 // Cpp Generator for Protobug IDL
-class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class CppGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
   CppGrpcGenerator() {}
   virtual ~CppGrpcGenerator() {}
@@ -37,9 +37,9 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
+  virtual bool Generate(const google::protobuf::FileDescriptor* file,
                         const std::string& parameter,
-                        grpc::protobuf::compiler::GeneratorContext* context,
+                        google::protobuf::compiler::GeneratorContext* context,
                         std::string* error) const override {
     if (file->options().cc_generic_services()) {
       *error =
@@ -111,9 +111,10 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         grpc_cpp_generator::GetHeaderIncludes(&pbfile, generator_parameters) +
         grpc_cpp_generator::GetHeaderServices(&pbfile, generator_parameters) +
         grpc_cpp_generator::GetHeaderEpilogue(&pbfile, generator_parameters);
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> header_output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> header_output(
         context->Open(file_name + ".grpc.pb.h"));
-    grpc::protobuf::io::CodedOutputStream header_coded_out(header_output.get());
+    google::protobuf::io::CodedOutputStream header_coded_out(
+        header_output.get());
     header_coded_out.WriteRaw(header_code.data(), header_code.size());
 
     std::string source_code =
@@ -121,9 +122,10 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         grpc_cpp_generator::GetSourceIncludes(&pbfile, generator_parameters) +
         grpc_cpp_generator::GetSourceServices(&pbfile, generator_parameters) +
         grpc_cpp_generator::GetSourceEpilogue(&pbfile, generator_parameters);
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> source_output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> source_output(
         context->Open(file_name + ".grpc.pb.cc"));
-    grpc::protobuf::io::CodedOutputStream source_coded_out(source_output.get());
+    google::protobuf::io::CodedOutputStream source_coded_out(
+        source_output.get());
     source_coded_out.WriteRaw(source_code.data(), source_code.size());
 
     if (!generator_parameters.generate_mock_code) {
@@ -134,9 +136,9 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         grpc_cpp_generator::GetMockIncludes(&pbfile, generator_parameters) +
         grpc_cpp_generator::GetMockServices(&pbfile, generator_parameters) +
         grpc_cpp_generator::GetMockEpilogue(&pbfile, generator_parameters);
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> mock_output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> mock_output(
         context->Open(file_name + "_mock.grpc.pb.h"));
-    grpc::protobuf::io::CodedOutputStream mock_coded_out(mock_output.get());
+    google::protobuf::io::CodedOutputStream mock_coded_out(mock_output.get());
     mock_coded_out.WriteRaw(mock_code.data(), mock_code.size());
 
     return true;
@@ -144,12 +146,12 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
  private:
   // Insert the given code into the given file at the given insertion point.
-  void Insert(grpc::protobuf::compiler::GeneratorContext* context,
+  void Insert(google::protobuf::compiler::GeneratorContext* context,
               const std::string& filename, const std::string& insertion_point,
               const std::string& code) const {
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         context->OpenForInsert(filename, insertion_point));
-    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    google::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
   }
 };

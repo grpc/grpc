@@ -123,8 +123,8 @@ class ProtoFileParser {
   std::unique_ptr<protobuf::DescriptorDatabase> desc_db_;
   std::unique_ptr<protobuf::DescriptorPool> desc_pool_;
   std::unique_ptr<protobuf::DynamicMessageFactory> dynamic_factory_;
-  std::unique_ptr<grpc::protobuf::Message> request_prototype_;
-  std::unique_ptr<grpc::protobuf::Message> response_prototype_;
+  std::unique_ptr<google::protobuf::Message> request_prototype_;
+  std::unique_ptr<google::protobuf::Message> response_prototype_;
   std::unordered_map<std::string, std::string> known_methods_;
   std::vector<const protobuf::ServiceDescriptor*> service_desc_list_;
 };

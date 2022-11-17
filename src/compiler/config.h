@@ -21,42 +21,15 @@
 
 #include <string>
 
-#include "src/compiler/config_protobuf.h"
+#include <google/protobuf/compiler/code_generator.h>
+#include <google/protobuf/compiler/plugin.h>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/printer.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #ifdef GRPC_CUSTOM_STRING
 #warning GRPC_CUSTOM_STRING is no longer supported. Please use std::string.
 #endif
-
-namespace grpc {
-
-// Using grpc::string and grpc::to_string is discouraged in favor of
-// std::string and std::to_string. This is only for legacy code using
-// them explictly.
-using std::string;     // deprecated
-using std::to_string;  // deprecated
-
-namespace protobuf {
-
-namespace compiler {
-typedef GRPC_CUSTOM_CODEGENERATOR CodeGenerator;
-typedef GRPC_CUSTOM_GENERATORCONTEXT GeneratorContext;
-static inline int PluginMain(int argc, char* argv[],
-                             const CodeGenerator* generator) {
-  return GRPC_CUSTOM_PLUGINMAIN(argc, argv, generator);
-}
-static inline void ParseGeneratorParameter(
-    const string& parameter, std::vector<std::pair<string, string> >* options) {
-  GRPC_CUSTOM_PARSEGENERATORPARAMETER(parameter, options);
-}
-
-}  // namespace compiler
-namespace io {
-typedef GRPC_CUSTOM_PRINTER Printer;
-typedef GRPC_CUSTOM_CODEDOUTPUTSTREAM CodedOutputStream;
-typedef GRPC_CUSTOM_STRINGOUTPUTSTREAM StringOutputStream;
-}  // namespace io
-}  // namespace protobuf
-}  // namespace grpc
 
 namespace grpc_cpp_generator {
 

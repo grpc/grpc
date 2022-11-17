@@ -25,7 +25,7 @@
 
 namespace grpc_ruby_generator {
 
-inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
+inline bool ServicesFilename(const google::protobuf::FileDescriptor* file,
                              std::string* file_name_or_error) {
   // Get output file name.
   static const unsigned proto_suffix_length = 6;  // length of ".proto"
@@ -42,7 +42,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
 }
 
 inline std::string MessagesRequireName(
-    const grpc::protobuf::FileDescriptor* file) {
+    const google::protobuf::FileDescriptor* file) {
   return Replace(file->name(), ".proto", "_pb");
 }
 

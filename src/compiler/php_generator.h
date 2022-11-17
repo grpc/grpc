@@ -23,8 +23,8 @@
 
 namespace grpc_php_generator {
 
-std::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
-                         const grpc::protobuf::ServiceDescriptor* service,
+std::string GenerateFile(const google::protobuf::FileDescriptor* file,
+                         const google::protobuf::ServiceDescriptor* service,
                          const std::string& class_suffix,
                          bool is_server = false);
 

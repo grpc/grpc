@@ -26,7 +26,6 @@
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/slice.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/proto_buffer_reader.h>
 #include <grpcpp/impl/codegen/proto_buffer_writer.h>
@@ -44,9 +43,9 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
 template <class ProtoBufferWriter, class T>
-Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
-                        bool* own_buffer) {
-  static_assert(std::is_base_of<protobuf::io::ZeroCopyOutputStream,
+Status GenericSerialize(const ::google::protobuf::MessageLite& msg,
+                        ByteBuffer* bb, bool* own_buffer) {
+  static_assert(std::is_base_of<::google::protobuf::io::ZeroCopyOutputStream,
                                 ProtoBufferWriter>::value,
                 "ProtoBufferWriter must be a subclass of "
                 "::protobuf::io::ZeroCopyOutputStream");
@@ -71,8 +70,8 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
 // BufferReader must be a subclass of ::protobuf::io::ZeroCopyInputStream.
 template <class ProtoBufferReader, class T>
 Status GenericDeserialize(ByteBuffer* buffer,
-                          grpc::protobuf::MessageLite* msg) {
-  static_assert(std::is_base_of<protobuf::io::ZeroCopyInputStream,
+                          ::google::protobuf::MessageLite* msg) {
+  static_assert(std::is_base_of<::google::protobuf::io::ZeroCopyInputStream,
                                 ProtoBufferReader>::value,
                 "ProtoBufferReader must be a subclass of "
                 "::protobuf::io::ZeroCopyInputStream");
@@ -93,28 +92,24 @@ Status GenericDeserialize(ByteBuffer* buffer,
   return result;
 }
 
-// this is needed so the following class does not conflict with protobuf
-// serializers that utilize internal-only tools.
-#ifdef GRPC_OPEN_SOURCE_PROTO
 // This class provides a protobuf serializer. It translates between protobuf
 // objects and grpc_byte_buffers. More information about SerializationTraits can
 // be found in include/grpcpp/impl/codegen/serialization_traits.h.
 template <class T>
 class SerializationTraits<
     T, typename std::enable_if<
-           std::is_base_of<grpc::protobuf::MessageLite, T>::value>::type> {
+           std::is_base_of<::google::protobuf::MessageLite, T>::value>::type> {
  public:
-  static Status Serialize(const grpc::protobuf::MessageLite& msg,
+  static Status Serialize(const google::protobuf::MessageLite& msg,
                           ByteBuffer* bb, bool* own_buffer) {
     return GenericSerialize<ProtoBufferWriter, T>(msg, bb, own_buffer);
   }
 
   static Status Deserialize(ByteBuffer* buffer,
-                            grpc::protobuf::MessageLite* msg) {
+                            google::protobuf::MessageLite* msg) {
     return GenericDeserialize<ProtoBufferReader, T>(buffer, msg);
   }
 };
-#endif
 
 }  // namespace grpc
 

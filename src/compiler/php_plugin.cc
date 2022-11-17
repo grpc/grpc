@@ -28,7 +28,7 @@ using google::protobuf::compiler::ParseGeneratorParameter;
 using grpc_php_generator::GenerateFile;
 using grpc_php_generator::GetPHPServiceFilename;
 
-class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class PHPGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
   PHPGrpcGenerator() {}
   ~PHPGrpcGenerator() {}
@@ -37,9 +37,9 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
+  bool Generate(const google::protobuf::FileDescriptor* file,
                 const std::string& parameter,
-                grpc::protobuf::compiler::GeneratorContext* context,
+                google::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override {
     if (file->service_count() == 0) {
       return true;
@@ -73,24 +73,24 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
  private:
   void GenerateService(
-      const grpc::protobuf::FileDescriptor* file,
-      const grpc::protobuf::ServiceDescriptor* service,
+      const google::protobuf::FileDescriptor* file,
+      const google::protobuf::ServiceDescriptor* service,
       const std::string& class_suffix, bool is_server,
-      grpc::protobuf::compiler::GeneratorContext* context) const {
+      google::protobuf::compiler::GeneratorContext* context) const {
     std::string code = GenerateFile(file, service, class_suffix, is_server);
 
     // Get output file name
     std::string file_name =
         GetPHPServiceFilename(file, service, class_suffix, is_server);
 
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
-    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    google::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
   }
 };
 
 int main(int argc, char* argv[]) {
   PHPGrpcGenerator generator;
-  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+  return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

@@ -24,7 +24,6 @@
 #include <vector>
 
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/sync_stream.h>
@@ -71,14 +70,14 @@ class ProtoServerReflection final
       reflection::v1alpha::ExtensionNumberResponse* response);
 
   void FillFileDescriptorResponse(
-      const protobuf::FileDescriptor* file_desc,
+      const ::google::protobuf::FileDescriptor* file_desc,
       reflection::v1alpha::ServerReflectionResponse* response,
       std::unordered_set<std::string>* seen_files);
 
   void FillErrorResponse(const Status& status,
                          reflection::v1alpha::ErrorResponse* error_response);
 
-  const protobuf::DescriptorPool* descriptor_pool_;
+  const ::google::protobuf::DescriptorPool* descriptor_pool_;
   const std::vector<string>* services_;
 };
 

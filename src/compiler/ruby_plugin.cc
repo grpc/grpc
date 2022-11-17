@@ -24,7 +24,7 @@
 #include "src/compiler/ruby_generator.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
 
-class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
   RubyGrpcGenerator() {}
   ~RubyGrpcGenerator() {}
@@ -33,9 +33,9 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
+  bool Generate(const google::protobuf::FileDescriptor* file,
                 const std::string& /*parameter*/,
-                grpc::protobuf::compiler::GeneratorContext* context,
+                google::protobuf::compiler::GeneratorContext* context,
                 std::string* /*error*/) const override {
     std::string code = grpc_ruby_generator::GetServices(file);
     if (code.size() == 0) {
@@ -47,9 +47,9 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     if (!grpc_ruby_generator::ServicesFilename(file, &file_name)) {
       return false;
     }
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
-    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    google::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
     return true;
   }
@@ -57,5 +57,5 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
 int main(int argc, char* argv[]) {
   RubyGrpcGenerator generator;
-  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+  return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

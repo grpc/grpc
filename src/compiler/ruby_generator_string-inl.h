@@ -101,7 +101,7 @@ inline std::string Modularize(std::string s) {
 }
 
 // RubyPackage gets the ruby package in either proto or ruby_package format
-inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
+inline std::string RubyPackage(const google::protobuf::FileDescriptor* file) {
   std::string package_name = file->package();
   if (file->options().has_ruby_package()) {
     package_name = file->options().ruby_package();
@@ -116,7 +116,7 @@ inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
-inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
+inline std::string RubyTypeOf(const google::protobuf::Descriptor* descriptor) {
   std::string proto_type = descriptor->full_name();
   if (descriptor->file()->options().has_ruby_package()) {
     // remove the leading package if present

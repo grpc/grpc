@@ -34,7 +34,6 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
@@ -72,7 +71,7 @@ using ::envoy::extensions::filters::http::router::v3::Router;
 
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
-  XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
+  XdsExtension MakeXdsExtension(const google::protobuf::Message& message) {
     google::protobuf::Any any;
     any.PackFrom(message);
     type_url_storage_ =

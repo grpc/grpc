@@ -27,11 +27,11 @@
 #include "src/compiler/config.h"
 #include "src/compiler/objective_c_generator_helpers.h"
 
+using ::google::protobuf::FileDescriptor;
+using ::google::protobuf::MethodDescriptor;
+using ::google::protobuf::ServiceDescriptor;
 using ::google::protobuf::compiler::objectivec::ClassName;
-using ::grpc::protobuf::FileDescriptor;
-using ::grpc::protobuf::MethodDescriptor;
-using ::grpc::protobuf::ServiceDescriptor;
-using ::grpc::protobuf::io::Printer;
+using ::google::protobuf::io::Printer;
 using ::std::map;
 using ::std::set;
 
@@ -293,7 +293,7 @@ void PrintMethodImplementations(Printer* printer,
   if (generator_params.no_v1_compatibility) return output;
 
   // Scope the output stream so it closes and finalizes output to the string.
-  grpc::protobuf::io::StringOutputStream output_stream(&output);
+  google::protobuf::io::StringOutputStream output_stream(&output);
   Printer printer(&output_stream, '$');
 
   map< ::std::string, ::std::string> vars = {
@@ -319,7 +319,7 @@ void PrintMethodImplementations(Printer* printer,
   ::std::string output;
 
   // Scope the output stream so it closes and finalizes output to the string.
-  grpc::protobuf::io::StringOutputStream output_stream(&output);
+  google::protobuf::io::StringOutputStream output_stream(&output);
   Printer printer(&output_stream, '$');
 
   map< ::std::string, ::std::string> vars = {
@@ -339,7 +339,7 @@ void PrintMethodImplementations(Printer* printer,
   ::std::string output;
 
   // Scope the output stream so it closes and finalizes output to the string.
-  grpc::protobuf::io::StringOutputStream output_stream(&output);
+  google::protobuf::io::StringOutputStream output_stream(&output);
   Printer printer(&output_stream, '$');
 
   map< ::std::string, ::std::string> vars = {
@@ -382,7 +382,7 @@ void PrintMethodImplementations(Printer* printer,
   ::std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
-    grpc::protobuf::io::StringOutputStream output_stream(&output);
+    google::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
 
     map< ::std::string, ::std::string> vars = {

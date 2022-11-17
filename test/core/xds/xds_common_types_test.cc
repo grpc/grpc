@@ -611,7 +611,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
 
 TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
   TypedStruct typed_struct;
-  ASSERT_TRUE(grpc::protobuf::TextFormat::ParseFromString(
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(
       R"pb(
         type_url: "type.googleapis.com/envoy.ExtensionType"
         value {

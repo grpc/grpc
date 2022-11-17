@@ -20,16 +20,19 @@
 
 #include <map>
 
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/descriptor.pb.h>
+
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/node_generator_helpers.h"
 
-using grpc::protobuf::Descriptor;
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::MethodDescriptor;
-using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::io::Printer;
-using grpc::protobuf::io::StringOutputStream;
+using google::protobuf::Descriptor;
+using google::protobuf::FileDescriptor;
+using google::protobuf::MethodDescriptor;
+using google::protobuf::ServiceDescriptor;
+using google::protobuf::io::Printer;
+using google::protobuf::io::StringOutputStream;
 using std::map;
 
 namespace grpc_node_generator {

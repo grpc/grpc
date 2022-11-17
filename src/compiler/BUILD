@@ -45,7 +45,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "config.h",
-        "config_protobuf.h",
         "cpp_generator.h",
         "cpp_generator_helpers.h",
         "cpp_plugin.h",
@@ -72,9 +71,6 @@ grpc_cc_library(
         "protobuf_clib",
     ],
     language = "c++",
-    deps = [
-        "//:grpc++_config_proto",
-    ],
 )
 
 grpc_proto_plugin(
