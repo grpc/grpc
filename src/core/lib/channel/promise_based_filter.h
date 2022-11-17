@@ -393,9 +393,6 @@ class BaseCallData : public Activity, private Wakeable {
       kPulledFromPipe,
       // We're done.
       kCancelled,
-      // Call got terminated whilst we were idle: we need to close the sender
-      // pipe next poll.
-      kCancelledWhilstIdle,
       // Call got terminated whilst we had forwarded a recv_message down the
       // stack: we need to keep track of that until we get the completion so
       // that we do the right thing in OnComplete.

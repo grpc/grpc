@@ -341,6 +341,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/channel_interface.h",
     "include/grpcpp/impl/client_unary_call.h",
     "include/grpcpp/impl/codegen/core_codegen.h",
+    "include/grpcpp/impl/completion_queue_tag.h",
     "include/grpcpp/impl/grpc_library.h",
     "include/grpcpp/impl/method_handler_impl.h",
     "include/grpcpp/impl/rpc_method.h",
@@ -3074,14 +3075,12 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/ssl_utils_config.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
-        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:lib/security/security_connector/ssl_utils.h",
         "//src/core:lib/security/security_connector/ssl_utils_config.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
-        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3115,12 +3114,14 @@ grpc_cc_library(
     srcs = [
         "//src/core:ext/filters/http/client/http_client_filter.cc",
         "//src/core:ext/filters/http/http_filters_plugin.cc",
-        "//src/core:ext/filters/http/message_compress/compression_filter.cc",
+        "//src/core:ext/filters/http/message_compress/message_compress_filter.cc",
+        "//src/core:ext/filters/http/message_compress/message_decompress_filter.cc",
         "//src/core:ext/filters/http/server/http_server_filter.cc",
     ],
     hdrs = [
         "//src/core:ext/filters/http/client/http_client_filter.h",
-        "//src/core:ext/filters/http/message_compress/compression_filter.h",
+        "//src/core:ext/filters/http/message_compress/message_compress_filter.h",
+        "//src/core:ext/filters/http/message_compress/message_decompress_filter.h",
         "//src/core:ext/filters/http/server/http_server_filter.h",
     ],
     external_deps = [
@@ -3137,6 +3138,7 @@ grpc_cc_library(
     deps = [
         "channel_stack_builder",
         "config",
+        "debug_location",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
@@ -3149,17 +3151,16 @@ grpc_cc_library(
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:context",
-        "//src/core:for_each",
+        "//src/core:error",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
-        "//src/core:map_pipe",
         "//src/core:percent_encoding",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:status_helper",
         "//src/core:transport_fwd",
         "//src/core:try_concurrently",
-        "//src/core:try_seq",
     ],
 )
 
