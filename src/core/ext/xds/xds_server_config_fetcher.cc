@@ -1200,9 +1200,9 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
       VirtualHostListIterator(&virtual_hosts_), authority);
   if (!vhost_index.has_value()) {
-    return absl::UnavailableError(absl::StrCat(
-        "could not find VirtualHost for ", authority,
-        " in RouteConfiguration"));
+    return absl::UnavailableError(
+        absl::StrCat("could not find VirtualHost for ", authority,
+                     " in RouteConfiguration"));
   }
   auto& virtual_host = virtual_hosts_[vhost_index.value()];
   auto route_index = XdsRouting::GetRouteForRequest(
