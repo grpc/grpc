@@ -39,8 +39,8 @@
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
 struct grpc_completion_queue;
