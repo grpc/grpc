@@ -784,6 +784,23 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
                   "ApiListener]")));
 }
 
+// Verify that a non-TCP listener results in "not serving" status.
+TEST_P(XdsEnabledServerTest, NonTcpListener) {
+  DoSetUp();
+  Listener listener = default_listener_;  // Client-side listener.
+  listener = PopulateServerListenerNameAndPort(listener, backends_[0]->port());
+  auto hcm = ClientHcmAccessor().Unpack(listener);
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name(kDefaultRouteConfigurationName);
+  rds->mutable_config_source()->mutable_self();
+  ClientHcmAccessor().Pack(hcm, &listener);
+  balancer_->ads_service()->SetLdsResource(std::move(listener));
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::FAILED_PRECONDITION);
+}
+
 // Verify that a mismatch of listening address results in "not serving"
 // status.
 TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
