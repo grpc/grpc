@@ -364,6 +364,8 @@ class BaseCallData : public Activity, private Wakeable {
     void WakeInsideCombiner(Flusher* flusher);
     // Call is completed, we have trailing metadata. Close things out.
     void Done(const ServerMetadata& metadata, Flusher* flusher);
+    // Return true if we are processing a message in the promise.
+    bool IsProcessingMessage() const;
 
    private:
     enum class State : uint8_t {
@@ -511,6 +513,9 @@ class ClientCallData : public BaseCallData {
     // The op has completed from below, but we haven't yet forwarded it up
     // (the promise gets to interject and mutate it).
     kComplete,
+    // As per kComplete, but we're also processing a received message in the
+    // promise. Wait for that to be done and then complete.
+    kCompleteButProcessingReceivedMessage,
     // We've called the recv_metadata_ready callback from the original
     // recv_trailing_metadata op that was presented to us.
     kResponded,
