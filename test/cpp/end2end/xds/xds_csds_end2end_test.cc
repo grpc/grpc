@@ -467,7 +467,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
                   kDefaultRouteConfigurationName, kDefaultClusterName)),
               ClientResourceStatus::NACKED,
               EqUpdateFailureState(
-                  ::testing::HasSubstr("VirtualHost has no domains"), "2"))));
+                  ::testing::HasSubstr(
+                      "field:virtual_hosts[0].domains error:must be non-empty"),
+                  "2"))));
     } else {
       ok = ::testing::Value(
           csds_response.config(0).generic_xds_configs(),
@@ -478,7 +480,12 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
                                           kDefaultClusterName))),
               ClientResourceStatus::NACKED,
               EqUpdateFailureState(
-                  ::testing::HasSubstr("VirtualHost has no domains"), "2"))));
+                  ::testing::HasSubstr(
+                      "field:api_listener.api_listener.value[envoy.extensions"
+                      ".filters.network.http_connection_manager.v3"
+                      ".HttpConnectionManager].route_config.virtual_hosts[0]"
+                      ".domains error:must be non-empty"),
+                  "2"))));
     }
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(

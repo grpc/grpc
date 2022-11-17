@@ -51,7 +51,7 @@ void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel) {
   ctx.AddMetadata("testkey", "testvalue");
   req.set_message("Hello");
   EchoResponse resp;
-  string expected_resp = "";
+  string expected_resp;
   auto writer = stub->RequestStream(&ctx, &resp);
   for (int i = 0; i < kNumStreamingMessages; i++) {
     writer->Write(req);

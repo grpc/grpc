@@ -38,6 +38,7 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
   switch (permission.type) {
     case Rbac::Permission::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
+      matchers.reserve(permission.permissions.size());
       for (const auto& rule : permission.permissions) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
       }
@@ -45,6 +46,7 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     }
     case Rbac::Permission::RuleType::kOr: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
+      matchers.reserve(permission.permissions.size());
       for (const auto& rule : permission.permissions) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
       }
@@ -80,6 +82,7 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
   switch (principal.type) {
     case Rbac::Principal::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
+      matchers.reserve(principal.principals.size());
       for (const auto& id : principal.principals) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
       }
@@ -87,6 +90,7 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     }
     case Rbac::Principal::RuleType::kOr: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
+      matchers.reserve(principal.principals.size());
       for (const auto& id : principal.principals) {
         matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
       }

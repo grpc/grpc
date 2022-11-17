@@ -312,7 +312,7 @@ std::string RandomString(size_t length) {
   std::string str;
   std::random_device r;
   for (size_t i = 0; i < length; ++i) {
-    str.push_back(char(r()));
+    str.push_back(static_cast<char>(r()));
   }
   return str;
 }
