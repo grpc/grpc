@@ -35,7 +35,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
