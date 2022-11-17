@@ -3480,6 +3480,7 @@ libs:
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_engine.h
+  - src/core/lib/event_engine/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -3738,6 +3739,7 @@ libs:
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
+  - src/core/lib/event_engine/work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
@@ -7178,6 +7180,7 @@ targets:
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_engine.h
+  - src/core/lib/event_engine/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -7418,6 +7421,7 @@ targets:
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
+  - src/core/lib/event_engine/work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
