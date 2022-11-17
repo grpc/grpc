@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <memory>
 #include <vector>
 
 #include "absl/strings/match.h"

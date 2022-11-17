@@ -127,7 +127,7 @@ class XdsWrrLocalityLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     absl::string_view GetAuthority() override;
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
@@ -240,7 +240,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
         child_config.status().ToString()));
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        std::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return status;
   }
   // Create child policy if needed (i.e., on first update).
@@ -295,7 +295,7 @@ RefCountedPtr<SubchannelInterface> XdsWrrLocalityLb::Helper::CreateSubchannel(
 
 void XdsWrrLocalityLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
     gpr_log(
         GPR_INFO,

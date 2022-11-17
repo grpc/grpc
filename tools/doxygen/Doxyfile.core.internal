@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 28.0.0
+PROJECT_NUMBER         = 29.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1051,6 +1051,8 @@ src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http_trace.cc \
+src/core/ext/transport/chttp2/transport/http_trace.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
@@ -1758,15 +1760,25 @@ src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
 src/core/lib/event_engine/posix_engine/internal_errqueue.h \
 src/core/lib/event_engine/posix_engine/lockfree_event.cc \
 src/core/lib/event_engine/posix_engine/lockfree_event.h \
+src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
+src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
 src/core/lib/event_engine/posix_engine/posix_engine_closure.h \
+src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
+src/core/lib/event_engine/posix_engine/posix_engine_listener.h \
+src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h \
+src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
+src/core/lib/event_engine/posix_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/posix_engine/timer.cc \
 src/core/lib/event_engine/posix_engine/timer.h \
 src/core/lib/event_engine/posix_engine/timer_heap.cc \
 src/core/lib/event_engine/posix_engine/timer_heap.h \
 src/core/lib/event_engine/posix_engine/timer_manager.cc \
 src/core/lib/event_engine/posix_engine/timer_manager.h \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.cc \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
 src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
@@ -1853,6 +1865,8 @@ src/core/lib/gprpp/global_config_env.h \
 src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
+src/core/lib/gprpp/load_file.cc \
+src/core/lib/gprpp/load_file.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \

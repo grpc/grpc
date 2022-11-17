@@ -29,6 +29,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+// IWYU pragma: no_include <arpa/inet.h>
+
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -39,8 +41,6 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
-
-#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

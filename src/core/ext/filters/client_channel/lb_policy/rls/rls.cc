@@ -333,7 +333,7 @@ class RlsLb : public LoadBalancingPolicy {
           ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
-                       std::unique_ptr<SubchannelPicker> picker) override;
+                       RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       absl::string_view GetAuthority() override;
       grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
@@ -354,7 +354,7 @@ class RlsLb : public LoadBalancingPolicy {
 
     grpc_connectivity_state connectivity_state_ ABSL_GUARDED_BY(&RlsLb::mu_) =
         GRPC_CHANNEL_IDLE;
-    std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
         ABSL_GUARDED_BY(&RlsLb::mu_);
   };
 
@@ -730,7 +730,7 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
                                                      : nullptr),
       lb_policy_(lb_policy),
       target_(std::move(target)),
-      picker_(std::make_unique<QueuePicker>(std::move(lb_policy))) {
+      picker_(MakeRefCounted<QueuePicker>(std::move(lb_policy))) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -811,7 +811,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
               config.status().ToString().c_str());
     }
     pending_config_.reset();
-    picker_ = std::make_unique<TransientFailurePicker>(
+    picker_ = MakeRefCounted<TransientFailurePicker>(
         absl::UnavailableError(config.status().message()));
     child_policy_.reset();
   } else {
@@ -876,7 +876,7 @@ RlsLb::ChildPolicyWrapper::ChildPolicyHelper::CreateSubchannel(
 
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
             "[rlslb %p] ChildPolicyWrapper=%p [%s] ChildPolicyHelper=%p: "
@@ -2147,7 +2147,7 @@ void RlsLb::UpdatePickerLocked() {
     status = absl::UnavailableError("no children available");
   }
   channel_control_helper()->UpdateState(
-      state, status, std::make_unique<Picker>(Ref(DEBUG_LOCATION, "Picker")));
+      state, status, MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "Picker")));
 }
 
 //

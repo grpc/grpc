@@ -37,8 +37,6 @@ const char* const description_flow_control_fixes =
     "Various fixes for flow control, max frame size setting.";
 const char* const description_memory_pressure_controller =
     "New memory pressure controller";
-const char* const description_periodic_resource_quota_reclamation =
-    "Periodically return memory to the resource quota";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const description_new_hpack_huffman_decoder =
@@ -70,8 +68,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"flow_control_fixes", description_flow_control_fixes, false},
     {"memory_pressure_controller", description_memory_pressure_controller,
      false},
-    {"periodic_resource_quota_reclamation",
-     description_periodic_resource_quota_reclamation, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
