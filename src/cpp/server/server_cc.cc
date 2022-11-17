@@ -45,11 +45,11 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
 #include <grpcpp/impl/codegen/server_interface.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
