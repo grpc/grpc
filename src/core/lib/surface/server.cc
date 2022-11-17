@@ -1358,10 +1358,11 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     /* do nothing */
-  } else if (error.ok()) {
+  } else {
     /* Pass the error reference to calld->recv_initial_metadata_error */
     grpc_error_handle src_error = error;
-    error = absl::UnknownError("Missing :authority or :path");
+    error = GRPC_ERROR_CREATE_REFERENCING("Missing :authority or :path",
+                                          &src_error, 1);
     calld->recv_initial_metadata_error_ = error;
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
