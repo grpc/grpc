@@ -60,7 +60,7 @@ TEST_P(LdsTest, NotAnApiListener) {
   rds->set_route_config_name(kDefaultRouteConfigurationName);
   rds->mutable_config_source()->mutable_self();
   ServerHcmAccessor().Pack(hcm, &listener);
-  balancer_->ads_service()->SetLdsResource(std::move(listener));
+  balancer_->ads_service()->SetLdsResource(listener);
   // RPCs should fail.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,

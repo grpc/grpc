@@ -794,7 +794,7 @@ TEST_P(XdsEnabledServerTest, NonTcpListener) {
   rds->set_route_config_name(kDefaultRouteConfigurationName);
   rds->mutable_config_source()->mutable_self();
   ClientHcmAccessor().Pack(hcm, &listener);
-  balancer_->ads_service()->SetLdsResource(std::move(listener));
+  balancer_->ads_service()->SetLdsResource(listener);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
