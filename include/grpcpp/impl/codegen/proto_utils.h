@@ -23,6 +23,8 @@
 
 #include <type_traits>
 
+#include <google/protobuf/message_lite.h>
+
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/slice.h>

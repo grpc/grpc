@@ -30,6 +30,7 @@
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
+#include <google/protobuf/util/json_util.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
@@ -54,11 +55,6 @@
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
-
-// IWYU pragma: no_include <google/protobuf/message.h>
-// IWYU pragma: no_include <google/protobuf/stubs/status.h>
-// IWYU pragma: no_include <google/protobuf/unknown_field_set.h>
-// IWYU pragma: no_include <google/protobuf/util/json_util.h>
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
@@ -706,7 +702,7 @@ class XdsClientTest : public ::testing::Test {
       std::string metadata_json_str;
       auto status =
           MessageToJsonString(request.node().metadata(), &metadata_json_str,
-                              GRPC_CUSTOM_JSONUTIL::JsonPrintOptions());
+                              ::google::protobuf::util::JsonPrintOptions());
       ASSERT_TRUE(status.ok())
           << status << " on " << location.file() << ":" << location.line();
       auto metadata_json = Json::Parse(metadata_json_str);

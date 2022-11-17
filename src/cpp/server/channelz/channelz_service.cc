@@ -20,9 +20,9 @@
 
 #include "src/cpp/server/channelz/channelz_service.h"
 
-#include <grpc/support/alloc.h>
+#include <google/protobuf/util/json_util.h>
 
-// IWYU pragma: no_include <google/protobuf/util/json_util.h>
+#include <grpc/support/alloc.h>
 
 namespace grpc {
 
@@ -30,9 +30,9 @@ namespace {
 
 google::protobuf::util::Status ParseJson(const char* json_str,
                                          google::protobuf::Message* message) {
-  google::protobuf::json::JsonParseOptions options;
+  google::protobuf::util::JsonParseOptions options;
   options.case_insensitive_enum_parsing = true;
-  return google::protobuf::json::JsonStringToMessage(json_str, message,
+  return google::protobuf::util::JsonStringToMessage(json_str, message,
                                                      options);
 }
 

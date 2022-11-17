@@ -19,7 +19,10 @@
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 
+#include <climits>
 #include <type_traits>
+
+#include <google/protobuf/io/zero_copy_stream.h>
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>

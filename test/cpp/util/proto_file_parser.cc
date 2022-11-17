@@ -23,6 +23,9 @@
 #include <sstream>
 #include <unordered_set>
 
+#include <google/protobuf/descriptor_database.h>
+#include <google/protobuf/util/json_util.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/str_split.h"
 
@@ -120,11 +123,12 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
         reflection_db_.get(), file_db_.get());
   }
 
-  desc_pool_ = std::make_unique<protobuf::DescriptorPool>(desc_db_.get());
+  desc_pool_ =
+      std::make_unique<::google::protobuf::DescriptorPool>(desc_db_.get());
 
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     if (known_services.find(*it) == known_services.end()) {
-      if (const protobuf::ServiceDescriptor* service_desc =
+      if (const ::google::protobuf::ServiceDescriptor* service_desc =
               desc_pool_->FindServiceByName(*it)) {
         service_desc_list_.push_back(service_desc);
         known_services.insert(*it);
@@ -142,7 +146,7 @@ std::string ProtoFileParser::GetFullMethodName(const std::string& method) {
     return known_methods_[method];
   }
 
-  const protobuf::MethodDescriptor* method_descriptor = nullptr;
+  const ::google::protobuf::MethodDescriptor* method_descriptor = nullptr;
   for (auto it = service_desc_list_.begin(); it != service_desc_list_.end();
        it++) {
     const auto* service_desc = *it;
@@ -193,7 +197,7 @@ std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string& method,
   if (has_error_) {
     return "";
   }
-  const protobuf::MethodDescriptor* method_desc =
+  const ::google::protobuf::MethodDescriptor* method_desc =
       desc_pool_->FindMethodByName(full_method_name);
   if (!method_desc) {
     LogError("Method not found");
@@ -212,7 +216,7 @@ bool ProtoFileParser::IsStreaming(const std::string& method, bool is_request) {
     return false;
   }
 
-  const protobuf::MethodDescriptor* method_desc =
+  const ::google::protobuf::MethodDescriptor* method_desc =
       desc_pool_->FindMethodByName(full_method_name);
   if (!method_desc) {
     LogError("Method not found");
@@ -252,7 +256,7 @@ std::string ProtoFileParser::GetSerializedProtoFromMessageType(
     bool is_json_format) {
   has_error_ = false;
   std::string serialized;
-  const protobuf::Descriptor* desc =
+  const ::google::protobuf::Descriptor* desc =
       desc_pool_->FindMessageTypeByName(message_type_name);
   if (!desc) {
     LogError("Message type not found");
@@ -263,7 +267,7 @@ std::string ProtoFileParser::GetSerializedProtoFromMessageType(
 
   bool ok;
   if (is_json_format) {
-    ok = google::protobuf::json::JsonStringToMessage(formatted_proto, msg.get())
+    ok = google::protobuf::util::JsonStringToMessage(formatted_proto, msg.get())
              .ok();
     if (!ok) {
       LogError("Failed to convert json format to proto.");
@@ -289,7 +293,7 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
     const std::string& message_type_name, const std::string& serialized_proto,
     bool is_json_format) {
   has_error_ = false;
-  const protobuf::Descriptor* desc =
+  const ::google::protobuf::Descriptor* desc =
       desc_pool_->FindMessageTypeByName(message_type_name);
   if (!desc) {
     LogError("Message type not found");
@@ -304,9 +308,9 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
   std::string formatted_string;
 
   if (is_json_format) {
-    google::protobuf::json::JsonPrintOptions jsonPrintOptions;
+    google::protobuf::util::JsonPrintOptions jsonPrintOptions;
     jsonPrintOptions.add_whitespace = true;
-    if (!google::protobuf::json::MessageToJsonString(*msg, &formatted_string,
+    if (!google::protobuf::util::MessageToJsonString(*msg, &formatted_string,
                                                      jsonPrintOptions)
              .ok()) {
       LogError("Failed to print proto message to json format");
