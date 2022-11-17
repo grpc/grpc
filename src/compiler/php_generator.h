@@ -19,6 +19,8 @@
 #ifndef GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
 #define GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
 
+#include <google/protobuf/service.h>
+
 #include "src/compiler/config.h"
 
 namespace grpc_php_generator {
