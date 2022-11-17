@@ -697,9 +697,11 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
     t->hpack_parser.hpack_table()->SetMaxBytes(
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
-    t->flow_control.SetAckedInitialWindow(
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+    grpc_chttp2_act_on_flowctl_action(
+        t->flow_control.SetAckedInitialWindow(
+            t->settings[GRPC_ACKED_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+        t, nullptr);
     t->sent_local_settings = false;
   }
   t->parser = grpc_chttp2_settings_parser_parse;

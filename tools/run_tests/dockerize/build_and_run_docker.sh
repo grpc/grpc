@@ -27,22 +27,12 @@ cd -
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # OUTPUT_DIR - (optional) Directory under the git repo root that will be copied from inside docker container after finishing.
-# DOCKERHUB_ORGANIZATION - (optional) If set, pull a prebuilt image from given dockerhub org (instead of with "docker build" locally)
 # DOCKER_RUN_SCRIPT - (optional) Script to run under docker (relative to grpc repo root). If specified, the cmdline args
 #     passed on the commadline (a.k.a. $@) will be interpreted as extra args to pass to the "docker run" command.
 #     If DOCKER_RUN_SCRIPT is not set, $@ will be interpreted as the command and args to run under the docker container.
 
-# Use image name based on Dockerfile location checksum
-DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR"):$(sha1sum "$DOCKERFILE_DIR/Dockerfile" | cut -f1 -d\ )
-
-if [ "$DOCKERHUB_ORGANIZATION" != "" ]
-then
-  DOCKER_IMAGE_NAME=$DOCKERHUB_ORGANIZATION/$DOCKER_IMAGE_NAME
-  time docker pull "$DOCKER_IMAGE_NAME"
-else
-  # Make sure docker image has been built. Should be instantaneous if so.
-  docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"
-fi
+# The exact docker image to use and its version is determined by the corresponding .current_version file
+DOCKER_IMAGE_NAME="$(cat "${DOCKERFILE_DIR}.current_version")"
 
 # If TTY is available, the running container can be conveniently terminated with Ctrl+C.
 if [[ -t 0 ]]; then

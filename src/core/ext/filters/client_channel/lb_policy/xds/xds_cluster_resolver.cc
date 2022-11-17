@@ -209,31 +209,26 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
       void OnResourceChanged(XdsEndpointResource update) override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            // TODO(yashykt): When we move to C++14, capture update with
-            // std::move
-            [this, update]() mutable {
-              OnResourceChangedHelper(std::move(update));
-              Unref();
+            [self = std::move(self), update = std::move(update)]() mutable {
+              self->OnResourceChangedHelper(std::move(update));
             },
             DEBUG_LOCATION);
       }
       void OnError(absl::Status status) override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this, status]() {
-              OnErrorHelper(status);
-              Unref();
+            [self = std::move(self), status = std::move(status)]() mutable {
+              self->OnErrorHelper(std::move(status));
             },
             DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this]() {
-              OnResourceDoesNotExistHelper();
-              Unref();
+            [self = std::move(self)]() {
+              self->OnResourceDoesNotExistHelper();
             },
             DEBUG_LOCATION);
       }
