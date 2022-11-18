@@ -1011,6 +1011,7 @@ include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
 include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/completion_queue_tag.h \
+include/grpcpp/impl/delegating_channel.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/method_handler_impl.h \
 include/grpcpp/impl/rpc_method.h \
@@ -1020,6 +1021,7 @@ include/grpcpp/impl/server_builder_option.h \
 include/grpcpp/impl/server_builder_plugin.h \
 include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
+include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
