@@ -143,6 +143,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "//:include/grpc/support/atm.h",
+        "//:include/grpc/support/atm_gcc_atomic.h",
+        "//:include/grpc/support/atm_gcc_sync.h",
+        "//:include/grpc/support/atm_windows.h",
         "//:include/grpc/impl/codegen/atm.h",
         "//:include/grpc/impl/codegen/atm_gcc_atomic.h",
         "//:include/grpc/impl/codegen/atm_gcc_sync.h",
