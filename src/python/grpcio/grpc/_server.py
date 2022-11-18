@@ -24,10 +24,10 @@ import time
 from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
                     Sequence, Set, Tuple, Union)
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _interceptor  # pytype: disable=pyi-error
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _interceptor
 from grpc._cython import cygrpc
 from grpc._typing import CallbackType
 from grpc._typing import ChannelArgumentType
@@ -147,8 +147,10 @@ def _possibly_finish_call(
         return None, ()
 
 
-def _send_status_from_server(state: _RPCState,
-                             token: str) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[CallbackType]]]:
+def _send_status_from_server(
+    state: _RPCState, token: str
+) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState],
+                                        Sequence[CallbackType]]]:
 
     def send_status_from_server(unused_send_status_from_server_event):
         with state.condition:
@@ -206,7 +208,9 @@ def _abort(state: _RPCState, call: cygrpc.Call, code: cygrpc.StatusCode,
 
 
 def _receive_close_on_server(
-        state: _RPCState) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[CallbackType]]]:
+    state: _RPCState
+) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState],
+                                        Sequence[CallbackType]]]:
 
     def receive_close_on_server(receive_close_on_server_event):
         with state.condition:
@@ -223,7 +227,8 @@ def _receive_close_on_server(
 def _receive_message(
     state: _RPCState, call: cygrpc.Call,
     request_deserializer: Optional[DeserializingFunction]
-) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[CallbackType]]]:
+) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState],
+                                        Sequence[CallbackType]]]:
 
     def receive_message(receive_message_event):
         serialized_request = _serialized_request(receive_message_event)
@@ -249,7 +254,9 @@ def _receive_message(
 
 
 def _send_initial_metadata(
-        state: _RPCState) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[Callable]]]:
+    state: _RPCState
+) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState],
+                                        Sequence[Callable]]]:
 
     def send_initial_metadata(unused_send_initial_metadata_event):
         with state.condition:
@@ -258,8 +265,10 @@ def _send_initial_metadata(
     return send_initial_metadata
 
 
-def _send_message(state: _RPCState,
-                  token: str) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[Callable]]]:
+def _send_message(
+    state: _RPCState, token: str
+) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState],
+                                        Sequence[Callable]]]:
 
     def send_message(unused_send_message_event):
         with state.condition:
@@ -475,12 +484,13 @@ def _unary_request(
 
 
 def _call_behavior(
-        rpc_event: cygrpc.BaseEvent,
-        state: _RPCState,
-        behavior: Callable,
-        argument: Any,
-        request_deserializer: Optional[DeserializingFunction],
-        send_response_callback: Optional[Callable[[Any], None]] = None) -> Tuple[Any, bool]:
+    rpc_event: cygrpc.BaseEvent,
+    state: _RPCState,
+    behavior: Callable,
+    argument: Any,
+    request_deserializer: Optional[DeserializingFunction],
+    send_response_callback: Optional[Callable[[Any], None]] = None
+) -> Tuple[Any, bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
     with _create_servicer_context(rpc_event, state,
                                   request_deserializer) as context:
@@ -672,7 +682,8 @@ def _is_rpc_state_active(state: _RPCState) -> bool:
 
 def _send_message_callback_to_blocking_iterator_adapter(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        send_response_callback: Callable[[Any], None], response_iterator: Iterator) -> None:
+        send_response_callback: Callable[[Any], None],
+        response_iterator: Iterator) -> None:
     while True:
         response, proceed = _take_response_from_response_iterator(
             rpc_event, state, response_iterator)
@@ -1059,8 +1070,8 @@ def _validate_generic_rpc_handlers(
 
 
 def _augment_options(
-        base_options: Optional[Sequence[ChannelArgumentType]],
-        compression: Optional[grpc.Compression]
+    base_options: Optional[Sequence[ChannelArgumentType]],
+    compression: Optional[grpc.Compression]
 ) -> Optional[Sequence[ChannelArgumentType]]:
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
