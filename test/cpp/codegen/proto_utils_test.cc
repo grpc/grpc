@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/byte_buffer.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/proto_utils.h>

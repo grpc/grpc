@@ -774,7 +774,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c goaway_server_test)
   add_dependencies(buildtests_c inproc_callback_test)
   add_dependencies(buildtests_c invalid_call_argument_test)
-  add_dependencies(buildtests_c minimal_stack_is_minimal_test)
   add_dependencies(buildtests_c multiple_server_queues_test)
   add_dependencies(buildtests_c no_server_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
@@ -1033,6 +1032,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx message_compress_test)
   add_dependencies(buildtests_cxx message_size_service_config_test)
   add_dependencies(buildtests_cxx metadata_map_test)
+  add_dependencies(buildtests_cxx minimal_stack_is_minimal_test)
   add_dependencies(buildtests_cxx miscompile_with_no_unique_address_test)
   add_dependencies(buildtests_cxx mock_stream_test)
   add_dependencies(buildtests_cxx mock_test)
@@ -1354,7 +1354,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
-  test/core/compression/args_utils.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
@@ -1722,8 +1721,7 @@ add_library(grpc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
-  src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  src/core/ext/filters/http/message_compress/compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
@@ -2678,8 +2676,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
-  src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  src/core/ext/filters/http/message_compress/compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -3448,6 +3445,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/proto_utils.h
@@ -3458,6 +3457,7 @@ foreach(_hdr
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
+  include/grpcpp/impl/status.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
@@ -4134,6 +4134,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/proto_utils.h
@@ -4144,6 +4146,7 @@ foreach(_hdr
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
+  include/grpcpp/impl/status.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
@@ -5087,35 +5090,6 @@ target_include_directories(invalid_call_argument_test
 )
 
 target_link_libraries(invalid_call_argument_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(minimal_stack_is_minimal_test
-  test/core/channel/minimal_stack_is_minimal_test.cc
-)
-
-target_include_directories(minimal_stack_is_minimal_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(minimal_stack_is_minimal_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -8882,7 +8856,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(compression_test
-  test/core/compression/args_utils.cc
   test/core/compression/compression_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -14754,6 +14727,43 @@ target_include_directories(metadata_map_test
 )
 
 target_link_libraries(metadata_map_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(minimal_stack_is_minimal_test
+  test/core/channel/minimal_stack_is_minimal_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(minimal_stack_is_minimal_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(minimal_stack_is_minimal_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
