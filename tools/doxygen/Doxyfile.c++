@@ -944,7 +944,6 @@ include/grpcpp/alarm.h \
 include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
-include/grpcpp/create_auth_context.h \
 include/grpcpp/create_channel.h \
 include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
@@ -1012,6 +1011,7 @@ include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
 include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/completion_queue_tag.h \
+include/grpcpp/impl/create_auth_context.h \
 include/grpcpp/impl/delegating_channel.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/method_handler_impl.h \
