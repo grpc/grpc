@@ -137,7 +137,10 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:closure",
+    ],
 )
 
 grpc_cc_test(
@@ -340,6 +343,7 @@ grpc_cc_test(
     ],
     deps = [
         ":helpers",
+        "//src/core:closure",
         "//src/core:slice",
     ],
 )
