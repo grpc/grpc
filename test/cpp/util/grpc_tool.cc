@@ -240,7 +240,7 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   }
   if (!absl::GetFlag(FLAGS_default_service_config).empty()) {
     args.SetString(GRPC_ARG_SERVICE_CONFIG,
-                   absl::GetFlag(FLAGS_default_service_config).c_str());
+                   absl::GetFlag(FLAGS_default_service_config));
   }
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
@@ -319,7 +319,7 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
     const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
   } else {
-    Usage("Invalid command '" + std::string(command.c_str()) + "'");
+    Usage("Invalid command '" + std::string(command) + "'");
   }
   return 1;
 }
