@@ -715,7 +715,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kBatchCompletedNoPipe:
       break;
     case State::kCancelledWhilstIdle:
-      sender_->Close();
+      interceptor_->Push()->Close();
       state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
@@ -796,7 +796,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
                   base_->LogTag().c_str());
         }
         if (state_ == State::kCompletedWhilePulledFromPipe) {
-          sender_->Close();
+          interceptor()->Push()->Close();
           state_ = State::kCancelled;
         } else {
           state_ = State::kIdle;

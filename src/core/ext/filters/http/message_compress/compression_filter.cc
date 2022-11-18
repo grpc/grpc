@@ -195,10 +195,10 @@ absl::StatusOr<MessageHandle> CompressionFilter::DecompressMessage(
 
 class CompressionFilter::DecompressLoop {
  public:
-  explicit DecompressLoop(CompressionFilter* filter, CallArgs& call_args)
+  template <typename PipeEnd>
+  explicit DecompressLoop(CompressionFilter* filter, PipeEnd& intercept)
       : filter_(filter),
-        mapper_(PipeMapper<MessageHandle>::Intercept(
-            *call_args.incoming_messages)) {}
+        mapper_(PipeMapper<MessageHandle>::Intercept(intercept)) {}
 
   // Once we have a compression algorithm we can construct the decompression
   // loop.
@@ -230,10 +230,10 @@ class CompressionFilter::DecompressLoop {
 
 class CompressionFilter::CompressLoop {
  public:
-  explicit CompressLoop(CompressionFilter* filter, CallArgs& call_args)
+  template <typename PipeEnd>
+  explicit CompressLoop(CompressionFilter* filter, PipeEnd& intercept)
       : filter_(filter),
-        mapper_(PipeMapper<MessageHandle>::Intercept(
-            *call_args.outgoing_messages)) {}
+        mapper_(PipeMapper<MessageHandle>::Intercept(intercept)) {}
 
   // Once we're ready to send initial metadata we can construct the compression
   // loop.
@@ -261,9 +261,9 @@ class CompressionFilter::CompressLoop {
 
 ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  auto compress_loop = CompressLoop(this, call_args)
+  auto compress_loop = CompressLoop(this, *call_args.client_to_server_messages)
                            .TakeAndRun(*call_args.client_initial_metadata);
-  DecompressLoop decompress_loop(this, call_args);
+  DecompressLoop decompress_loop(this, *call_args.server_to_client_messages);
   auto* server_initial_metadata = call_args.server_initial_metadata;
   // Concurrently:
   // - call the next filter
@@ -287,11 +287,12 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
 
 ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  CompressLoop compress_loop(this, call_args);
-  auto decompress_loop = DecompressLoop(this, call_args)
-                             .TakeAndRun(call_args.client_initial_metadata
-                                             ->get(GrpcEncodingMetadata())
-                                             .value_or(GRPC_COMPRESS_NONE));
+  CompressLoop compress_loop(this, *call_args.server_to_client_messages);
+  auto decompress_loop =
+      DecompressLoop(this, *call_args.client_to_server_messages)
+          .TakeAndRun(
+              call_args.client_initial_metadata->get(GrpcEncodingMetadata())
+                  .value_or(GRPC_COMPRESS_NONE));
   auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
   auto* write_latch =
       std::exchange(call_args.server_initial_metadata, read_latch);
