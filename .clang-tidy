@@ -112,6 +112,7 @@ Checks: '-*,
   modernize-use-nullptr,
   modernize-use-override,
   modernize-use-transparent-functors,
+  readability-braces-around-statements,
   readability-const-return-type,
   readability-container-size-empty,
   readability-delete-null-pointer,
@@ -137,7 +138,7 @@ CheckOptions:
     value:  'absl::make_unique'
   - key:    modernize-make-unique.MakeSmartPtrFunctionHeader
     value:  'absl/memory/memory.h'
-  - key:    google-readability-braces-around-statements.ShortStatementLines
+  - key:    readability-braces-around-statements.ShortStatementLines
     value:  1
   - key:    readability-simplify-boolean-expr.SimplifyDeMorgan
     value:  false
