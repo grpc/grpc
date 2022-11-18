@@ -21,21 +21,22 @@ import sys
 import threading
 import time
 import types
-from typing import (Any, Callable, Iterable, Iterator, Optional, Sequence, Set,
+from typing import (Any, Callable, Iterator, List, Optional, Sequence, Set,
                     Tuple, Union)
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _grpcio_metadata  # pytype: disable=pyi-error
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
+from grpc._typing import CallbackType
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
-from grpc._typing import DoneCallbackType
 from grpc._typing import MetadataType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
-import grpc.experimental  # pytype: disable=pyi-error
+from grpc._typing import UserTag
+import grpc.experimental
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -110,7 +111,7 @@ class _RPCState(object):
     details: Optional[str]
     debug_error_string: Optional[str]
     cancelled: bool
-    callbacks: Sequence[Callable]
+    callbacks: List[CallbackType]
     fork_epoch: Optional[int]
 
     def __init__(self, due: Sequence[cygrpc.OperationType],
@@ -159,7 +160,7 @@ def _abort(state: _RPCState, code: grpc.StatusCode, details: str) -> None:
 def _handle_event(
     event: cygrpc.BaseEvent, state: _RPCState,
     response_deserializer: Optional[DeserializingFunction]
-) -> Sequence[Callable]:
+) -> List[CallbackType]:
     callbacks = []
     for batch_operation in event.batch_operations:
         operation_type = batch_operation.type()
@@ -196,7 +197,7 @@ def _handle_event(
 
 def _event_handler(
     state: _RPCState, response_deserializer: Optional[DeserializingFunction]
-) -> Callable[[cygrpc.BaseEvent], bool]:
+) -> UserTag:
 
     def handle_event(event):
         with state.condition:
@@ -215,13 +216,13 @@ def _event_handler(
 
     return handle_event
 
-
+# TODO(xuanwn): Create a base class for IntegratedCall and SegregatedCall.
 #pylint: disable=too-many-statements
 def _consume_request_iterator(request_iterator: Iterator, state: _RPCState,
                               call: Union[cygrpc.IntegratedCall,
                                           cygrpc.SegregatedCall],
                               request_serializer: SerializingFunction,
-                              event_handler: Optional[Callable]) -> None:
+                              event_handler: Optional[UserTag]) -> None:
     """Consume a request supplied by the user."""
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
@@ -390,7 +391,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
             return sys.exc_info()[2]
 
     def add_done_callback(self,
-                          fn: DoneCallbackType,
+                          fn: Callable[[grpc.Future], None],
                           timeout: Optional[float] = None) -> None:  # pylint: disable=unused-argument
         """See grpc.Future.add_done_callback."""
         fn(self)
@@ -452,7 +453,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
             else:
                 return False
 
-    def add_callback(self, callback: Callable) -> bool:
+    def add_callback(self, callback: CallbackType) -> bool:
         """See grpc.RpcContext.add_callback"""
         with self._state.condition:
             if self._state.callbacks is None:
@@ -598,7 +599,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
                 except grpc.RpcError:
                     return sys.exc_info()[2]
 
-    def add_done_callback(self, fn: DoneCallbackType) -> None:
+    def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
                 self._state.callbacks.append(functools.partial(fn, self))
@@ -835,7 +836,7 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
                     except grpc.RpcError:
                         return sys.exc_info()[2]
 
-    def add_done_callback(self, fn: DoneCallbackType) -> None:
+    def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
                 self._state.callbacks.append(functools.partial(fn, self))
@@ -880,7 +881,7 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
 def _start_unary_request(
     request: Any, timeout: Optional[float],
     request_serializer: SerializingFunction
-) -> Tuple[Optional[float], Optional[bytes], Optional[_InactiveRpcError]]:
+) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
     if serialized_request is None:
@@ -906,7 +907,7 @@ def _end_unary_response_blocking(
         raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
 
 
-def _stream_unary_invocation_operationses(
+def _stream_unary_invocation_operations(
         metadata: Optional[MetadataType],
         initial_metadata_flags: int) -> Sequence[Sequence[cygrpc.Operation]]:
     return (
@@ -920,13 +921,13 @@ def _stream_unary_invocation_operationses(
     )
 
 
-def _stream_unary_invocation_operationses_and_tags(
+def _stream_unary_invocation_operations_and_tags(
     metadata: Optional[MetadataType], initial_metadata_flags: int
-) -> Sequence[Tuple[Sequence[cygrpc.Operation], None]]:
+) -> Sequence[Tuple[Sequence[cygrpc.Operation], Optional[UserTag]]]:
     return tuple((
         operations,
         None,
-    ) for operations in _stream_unary_invocation_operationses(
+    ) for operations in _stream_unary_invocation_operations(
         metadata, initial_metadata_flags))
 
 
@@ -967,7 +968,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         metadata: Optional[MetadataType], wait_for_ready: Optional[bool],
         compression: Optional[grpc.Compression]
     ) -> Tuple[Optional[_RPCState], Optional[Sequence[cygrpc.Operation]],
-               Optional[float], Optional[_InactiveRpcError]]:
+               Optional[float], Optional[grpc.RpcError]]:
         deadline, serialized_request, rendezvous = _start_unary_request(
             request, timeout, self._request_serializer)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
@@ -1159,7 +1160,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             augmented_metadata = _compression.augment_metadata(
                 metadata, compression)
             state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
-            operationses = (
+            operations = (
                 (
                     cygrpc.SendInitialMetadataOperation(augmented_metadata,
                                                         initial_metadata_flags),
@@ -1174,7 +1175,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method, None, _determine_deadline(deadline), metadata,
                 None if credentials is None else credentials._credentials,
-                operationses, _event_handler(state,
+                operations, _event_handler(state,
                                              self._response_deserializer),
                 self._context)
             return _MultiThreadedRendezvous(state, call,
@@ -1219,7 +1220,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
             None, _determine_deadline(deadline), augmented_metadata,
             None if credentials is None else credentials._credentials,
-            _stream_unary_invocation_operationses_and_tags(
+            _stream_unary_invocation_operations_and_tags(
                 augmented_metadata, initial_metadata_flags), self._context)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, None)
@@ -1276,7 +1277,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
             None, deadline, augmented_metadata,
             None if credentials is None else credentials._credentials,
-            _stream_unary_invocation_operationses(metadata,
+            _stream_unary_invocation_operations(metadata,
                                                   initial_metadata_flags),
             event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,
@@ -1322,7 +1323,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             wait_for_ready)
         augmented_metadata = _compression.augment_metadata(
             metadata, compression)
-        operationses = (
+        operations = (
             (
                 cygrpc.SendInitialMetadataOperation(augmented_metadata,
                                                     initial_metadata_flags),
@@ -1335,7 +1336,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
             None, _determine_deadline(deadline), augmented_metadata,
             None if credentials is None else credentials._credentials,
-            operationses, event_handler, self._context)
+            operations, event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
         return _MultiThreadedRendezvous(state, call,
@@ -1408,8 +1409,8 @@ def _channel_managed_call_management(state: _ChannelCallState):
     def create(flags: int, method: str, host: str, deadline: float,
                metadata: Optional[MetadataType],
                credentials: Optional[cygrpc.CallCredentials],
-               operationses: Iterable[Iterable[cygrpc.Operation]],
-               event_handler: Callable, context) -> cygrpc.IntegratedCall:
+               operations: Sequence[Sequence[cygrpc.Operation]],
+               event_handler: UserTag, context) -> cygrpc.IntegratedCall:
         """Creates a cygrpc.IntegratedCall.
 
         Args:
@@ -1420,7 +1421,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
             the call is to have an infinite deadline.
           metadata: The metadata for the call or None.
           credentials: A cygrpc.CallCredentials or None.
-          operationses: An iterable of iterables of cygrpc.Operations to be
+          operations: A sequence of sequences of cygrpc.Operations to be
             started on the call.
           event_handler: A behavior to call to handle the events resultant from
             the operations on the call.
@@ -1428,14 +1429,14 @@ def _channel_managed_call_management(state: _ChannelCallState):
         Returns:
           A cygrpc.IntegratedCall with which to conduct an RPC.
         """
-        operationses_and_tags = tuple((
-            operations,
+        operations_and_tags = tuple((
+            operation,
             event_handler,
-        ) for operations in operationses)
+        ) for operation in operations)
         with state.lock:
             call = state.channel.integrated_call(flags, method, host, deadline,
                                                  metadata, credentials,
-                                                 operationses_and_tags, context)
+                                                 operations_and_tags, context)
             if state.managed_calls == 0:
                 state.managed_calls = 1
                 _run_channel_spin_thread(state)
@@ -1452,8 +1453,9 @@ class _ChannelConnectivityState(object):
     polling: bool
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
-    callbacks_and_connectivities: Sequence[Sequence[Union[
-        Callable, Optional[grpc.ChannelConnectivity]]]]
+    # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
+    callbacks_and_connectivities: List[Sequence[Union[
+        Callable[[grpc.ChannelConnectivity], None], Optional[grpc.ChannelConnectivity]]]]
     delivering: bool
 
     def __init__(self, channel: grpc.Channel):
@@ -1474,7 +1476,7 @@ class _ChannelConnectivityState(object):
 
 
 def _deliveries(
-        state: _ChannelConnectivityState) -> Optional[Sequence[Callable]]:
+        state: _ChannelConnectivityState) -> List[Callable[[grpc.ChannelConnectivity], None]]:
     callbacks_needing_update = []
     for callback_and_connectivity in state.callbacks_and_connectivities:
         callback, callback_connectivity, = callback_and_connectivity
@@ -1486,7 +1488,7 @@ def _deliveries(
 
 def _deliver(state: _ChannelConnectivityState,
              initial_connectivity: grpc.ChannelConnectivity,
-             initial_callbacks: Sequence[Callable]) -> None:
+             initial_callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]]) -> None:
     connectivity = initial_connectivity
     callbacks = initial_callbacks
     while True:
@@ -1507,7 +1509,7 @@ def _deliver(state: _ChannelConnectivityState,
 
 
 def _spawn_delivery(state: _ChannelConnectivityState,
-                    callbacks: Sequence[Callable]) -> None:
+                    callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]]) -> None:
     delivering_thread = cygrpc.ForkManagedThread(target=_deliver,
                                                  args=(
                                                      state,
@@ -1558,7 +1560,8 @@ def _poll_connectivity(state: _ChannelConnectivityState, channel: grpc.Channel,
                         _spawn_delivery(state, callbacks)
 
 
-def _subscribe(state: _ChannelConnectivityState, callback: Callable,
+def _subscribe(state: _ChannelConnectivityState,
+               callback: Callable[[grpc.ChannelConnectivity], None],
                try_to_connect: bool) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
@@ -1579,7 +1582,8 @@ def _subscribe(state: _ChannelConnectivityState, callback: Callable,
             state.callbacks_and_connectivities.append([callback, None])
 
 
-def _unsubscribe(state: _ChannelConnectivityState, callback: Callable) -> None:
+def _unsubscribe(state: _ChannelConnectivityState,
+                 callback: Callable[[grpc.ChannelConnectivity], None]) -> None:
     with state.lock:
         for index, (subscribed_callback, unused_connectivity) in enumerate(
                 state.callbacks_and_connectivities):
@@ -1589,8 +1593,8 @@ def _unsubscribe(state: _ChannelConnectivityState, callback: Callable) -> None:
 
 
 def _augment_options(
-        base_options: Optional[ChannelArgumentType],
-        compression: Optional[grpc.Compression]) -> Sequence[Tuple[str, Any]]:
+        base_options: Sequence[ChannelArgumentType],
+        compression: Optional[grpc.Compression]) -> Sequence[ChannelArgumentType]:
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option + ((
         cygrpc.ChannelArgKey.primary_user_agent_string,
@@ -1599,8 +1603,8 @@ def _augment_options(
 
 
 def _separate_channel_options(
-    options: Optional[ChannelArgumentType]
-) -> Tuple[ChannelArgumentType, ChannelArgumentType]:
+    options: Sequence[ChannelArgumentType]
+) -> Tuple[Sequence[ChannelArgumentType], Sequence[ChannelArgumentType]]:
     """Separates core channel options from Python channel options."""
     core_options = []
     python_options = []
@@ -1619,7 +1623,7 @@ class Channel(grpc.Channel):
     _call_state: _ChannelCallState
     _connectivity_state: _ChannelConnectivityState
 
-    def __init__(self, target: str, options: Optional[ChannelArgumentType],
+    def __init__(self, target: str, options: Sequence[ChannelArgumentType],
                  credentials: Optional[grpc.ChannelCredentials],
                  compression: Optional[grpc.Compression]):
         """Constructor.
@@ -1644,18 +1648,18 @@ class Channel(grpc.Channel):
             cygrpc.gevent_increment_channel_count()
 
     def _process_python_options(
-            self, python_options: Optional[ChannelArgumentType]) -> None:
+            self, python_options: Sequence[ChannelArgumentType]) -> None:
         """Sets channel attributes according to python-only channel options."""
         for pair in python_options:
             if pair[0] == grpc.experimental.ChannelOptions.SingleThreadedUnaryStream:
                 self._single_threaded_unary_stream = True
 
     def subscribe(self,
-                  callback: Callable,
+                  callback: Callable[[grpc.ChannelConnectivity], None],
                   try_to_connect: Optional[bool] = None) -> None:
         _subscribe(self._connectivity_state, callback, try_to_connect)
 
-    def unsubscribe(self, callback: Callable) -> None:
+    def unsubscribe(self, callback: Callable[[grpc.ChannelConnectivity], None]) -> None:
         _unsubscribe(self._connectivity_state, callback)
 
     def unary_unary(

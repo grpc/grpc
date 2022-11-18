@@ -21,7 +21,7 @@ import enum
 import logging
 import threading
 import time
-from typing import (Any, Callable, Iterable, Iterator, Mapping, Optional,
+from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
                     Sequence, Set, Tuple, Union)
 
 import grpc  # pytype: disable=pyi-error
@@ -29,6 +29,7 @@ from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _interceptor  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
+from grpc._typing import CallbackType
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
@@ -98,7 +99,6 @@ class _HandlerCallDetails(
 class _RPCState(object):
     condition: threading.Condition
     due = Set[str]
-    callbacks: Sequence[Callable]
     request: Any
     clinet: str
     initial_metadata_allowed: bool
@@ -109,7 +109,7 @@ class _RPCState(object):
     details: Optional[bytes]
     statused: bool
     rpc_errors: Sequence[Exception]
-    callbacks: Sequence[Callable]
+    callbacks: Optional[Sequence[CallbackType]]
     aborted: bool
 
     def __init__(self):
@@ -137,7 +137,7 @@ def _raise_rpc_error(state: _RPCState) -> None:
 
 def _possibly_finish_call(
         state: _RPCState,
-        token: str) -> Tuple[Optional[_RPCState], Sequence[Callable]]:
+        token: str) -> Tuple[Optional[_RPCState], Sequence[CallbackType]]:
     state.due.remove(token)
     if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
@@ -148,7 +148,7 @@ def _possibly_finish_call(
 
 
 def _send_status_from_server(state: _RPCState,
-                             token: str) -> Callable[[cygrpc.BaseEvent], Any]:
+                             token: str) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[CallbackType]]]:
 
     def send_status_from_server(unused_send_status_from_server_event):
         with state.condition:
@@ -206,7 +206,7 @@ def _abort(state: _RPCState, call: cygrpc.Call, code: cygrpc.StatusCode,
 
 
 def _receive_close_on_server(
-        state: _RPCState) -> Callable[[cygrpc.BaseEvent], Any]:
+        state: _RPCState) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[CallbackType]]]:
 
     def receive_close_on_server(receive_close_on_server_event):
         with state.condition:
@@ -223,7 +223,7 @@ def _receive_close_on_server(
 def _receive_message(
     state: _RPCState, call: cygrpc.Call,
     request_deserializer: Optional[DeserializingFunction]
-) -> Callable[[cygrpc.BaseEvent], Any]:
+) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[CallbackType]]]:
 
     def receive_message(receive_message_event):
         serialized_request = _serialized_request(receive_message_event)
@@ -249,7 +249,7 @@ def _receive_message(
 
 
 def _send_initial_metadata(
-        state: _RPCState) -> Callable[[cygrpc.BaseEvent], Any]:
+        state: _RPCState) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[Callable]]]:
 
     def send_initial_metadata(unused_send_initial_metadata_event):
         with state.condition:
@@ -259,7 +259,7 @@ def _send_initial_metadata(
 
 
 def _send_message(state: _RPCState,
-                  token: str) -> Callable[[cygrpc.BaseEvent], Any]:
+                  token: str) -> Callable[[cygrpc.BaseEvent], Tuple[Optional[_RPCState], Sequence[Callable]]]:
 
     def send_message(unused_send_message_event):
         with state.condition:
@@ -290,7 +290,7 @@ class _Context(grpc.ServicerContext):
     def cancel(self) -> bool:
         self._rpc_event.call.cancel()
 
-    def add_callback(self, callback: Callable) -> bool:
+    def add_callback(self, callback: CallbackType) -> bool:
         with self._state.condition:
             if self._state.callbacks is None:
                 return False
@@ -308,7 +308,7 @@ class _Context(grpc.ServicerContext):
     def peer(self) -> str:
         return _common.decode(self._rpc_event.call.peer())
 
-    def peer_identities(self) -> Optional[Iterable]:
+    def peer_identities(self) -> Optional[Iterable[bytes]]:
         return cygrpc.peer_identities(self._rpc_event.call)
 
     def peer_identity_key(self) -> Optional[str]:
@@ -480,7 +480,7 @@ def _call_behavior(
         behavior: Callable,
         argument: Any,
         request_deserializer: Optional[DeserializingFunction],
-        send_response_callback: Optional[Callable] = None) -> Tuple[Any, bool]:
+        send_response_callback: Optional[Callable[[Any], None]] = None) -> Tuple[Any, bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
     with _create_servicer_context(rpc_event, state,
                                   request_deserializer) as context:
@@ -635,7 +635,7 @@ def _stream_response_in_pool(
         response_serializer: Optional[SerializingFunction]) -> None:
     cygrpc.install_context_from_request_call_event(rpc_event)
 
-    def send_response(response):
+    def send_response(response: Any) -> None:
         if response is None:
             _status(rpc_event, state, None)
         else:
@@ -672,7 +672,7 @@ def _is_rpc_state_active(state: _RPCState) -> bool:
 
 def _send_message_callback_to_blocking_iterator_adapter(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        send_response_callback: Callable, response_iterator: Iterator) -> None:
+        send_response_callback: Callable[[Any], None], response_iterator: Iterator) -> None:
     while True:
         response, proceed = _take_response_from_response_iterator(
             rpc_event, state, response_iterator)
@@ -754,7 +754,7 @@ def _handle_stream_stream(
 
 def _find_method_handler(
     rpc_event: cygrpc.BaseEvent,
-    generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
+    generic_handlers: Optional[List[grpc.GenericRpcHandler]],
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
 ) -> Optional[grpc.RpcMethodHandler]:
 
@@ -822,7 +822,7 @@ def _handle_with_method_handler(
 
 def _handle_call(
     rpc_event: cygrpc.BaseEvent,
-    generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
+    generic_handlers: Optional[List[grpc.GenericRpcHandler]],
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor, concurrency_exceeded: bool
 ) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:
@@ -861,7 +861,7 @@ class _ServerState(object):
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server
-    generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]]
+    generic_handlers: Optional[List[grpc.GenericRpcHandler]]
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
     thread_pool: futures.ThreadPoolExecutor
     stage: _ServerStage
@@ -902,7 +902,7 @@ class _ServerState(object):
 
 def _add_generic_handlers(
         state: _ServerState,
-        generic_handlers: Sequence[grpc.GenericRpcHandler]) -> None:
+        generic_handlers: Iterable[grpc.GenericRpcHandler]) -> None:
     with state.lock:
         state.generic_handlers.extend(generic_handlers)
 
@@ -1048,7 +1048,7 @@ def _start(state: _ServerState) -> None:
 
 
 def _validate_generic_rpc_handlers(
-        generic_rpc_handlers: Optional[Sequence[grpc.GenericRpcHandler]]
+        generic_rpc_handlers: Optional[Iterable[grpc.GenericRpcHandler]]
 ) -> None:
     for generic_rpc_handler in generic_rpc_handlers:
         service_attribute = getattr(generic_rpc_handler, 'service', None)
@@ -1059,9 +1059,9 @@ def _validate_generic_rpc_handlers(
 
 
 def _augment_options(
-        base_options: Optional[ChannelArgumentType],
+        base_options: Optional[Sequence[ChannelArgumentType]],
         compression: Optional[grpc.Compression]
-) -> Optional[ChannelArgumentType]:
+) -> Optional[Sequence[ChannelArgumentType]]:
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
 
@@ -1073,7 +1073,7 @@ class _Server(grpc.Server):
     def __init__(self, thread_pool: futures.ThreadPoolExecutor,
                  generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
                  interceptors: Optional[Sequence[grpc.ServerInterceptor]],
-                 options: Optional[ChannelArgumentType],
+                 options: Optional[Sequence[ChannelArgumentType]],
                  maximum_concurrent_rpcs: Optional[int],
                  compression: Optional[grpc.Compression], xds: bool):
         completion_queue = cygrpc.CompletionQueue()
@@ -1085,7 +1085,7 @@ class _Server(grpc.Server):
 
     def add_generic_rpc_handlers(
             self,
-            generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]) -> None:
+            generic_rpc_handlers: Iterable[grpc.GenericRpcHandler]) -> None:
         _validate_generic_rpc_handlers(generic_rpc_handlers)
         _add_generic_handlers(self._state, generic_rpc_handlers)
 
