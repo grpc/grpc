@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_CREATE_AUTH_CONTEXT_H
-#define GRPCPP_CREATE_AUTH_CONTEXT_H
+#ifndef GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
+#define GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
 
 #include <memory>
 
@@ -26,8 +26,9 @@
 
 namespace grpc {
 
+/// TODO(ctiller): not sure we want to make this a permanent thing
 std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
 
 }  // namespace grpc
 
-#endif  // GRPCPP_CREATE_AUTH_CONTEXT_H
+#endif  // GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H

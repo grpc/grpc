@@ -22,6 +22,6 @@
 // IWYU pragma: private
 
 /// TODO(chengyuc): Remove this file after solving compatibility.
-#include <grpcpp/create_auth_context.h>
+#include <grpcpp/impl/create_auth_context.h>
 
 #endif  // GRPCPP_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H
