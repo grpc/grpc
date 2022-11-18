@@ -2917,7 +2917,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   bool is_trailers_only() const override { abort(); }
   absl::string_view GetServerAuthority() const override { abort(); }
 
-  void UpdateOnce() override { abort(); }
+  void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) override;
   Poll<ServerMetadataHandle> PollTopOfCall();
 
  private:
@@ -2954,6 +2954,21 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
   return Pending{};  // TODO
+}
+
+void ServerPromiseBasedCall::UpdateOnce() {
+  if (promise_.has_value()) {
+    auto r = promise_();
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO, "%sUpdateOnce: promise returns %s", DebugTag().c_str(),
+              PollToString(r, [](const ServerMetadataHandle& h) {
+                return h->DebugString();
+              }).c_str());
+    }
+    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+      abort();
+    }
+  }
 }
 
 }  // namespace grpc_core

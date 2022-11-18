@@ -281,6 +281,16 @@ class ConnectedChannelStream : public Orphanable {
   grpc_stream* stream() { return stream_.get(); }
   void SetStream(grpc_stream* stream) { stream_.reset(stream); }
   grpc_stream_refcount* stream_refcount() { return &stream_refcount_; }
+  Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
+
+  void SchedulePush(grpc_transport_stream_op_batch* batch)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    if (push_batches_.empty()) {
+      IncrementRefCount("push");
+      ExecCtx::Run(DEBUG_LOCATION, &push_, absl::OkStatus());
+    }
+    push_batches_.push_back(batch);
+  }
 
  private:
   class StreamDeleter {
@@ -313,6 +323,25 @@ class ConnectedChannelStream : public Orphanable {
     }
   }
 
+  // Called from outside the activity to push work down to the transport.
+  void Push() {
+    PushBatches push_batches;
+    {
+      MutexLock lock(&mu_);
+      push_batches.swap(push_batches_);
+    }
+    for (auto* batch : push_batches) {
+      if (stream() != nullptr) {
+        grpc_transport_perform_stream_op(transport(), stream(), batch);
+      } else {
+        grpc_transport_stream_op_batch_finish_with_failure_from_transport(
+            batch, absl::CancelledError());
+      }
+    }
+    Unref("push");
+  }
+
+  mutable Mutex mu_;
   grpc_transport* const transport_;
   CallContext* const call_context_{GetContext<CallContext>()};
   grpc_closure stream_destroyed_ =
@@ -321,6 +350,11 @@ class ConnectedChannelStream : public Orphanable {
           this, DEBUG_LOCATION);
   grpc_stream_refcount stream_refcount_;
   StreamPtr stream_;
+  using PushBatches = absl::InlinedVector<grpc_transport_stream_op_batch*, 3>;
+  PushBatches push_batches_ ABSL_GUARDED_BY(mu_);
+  grpc_closure push_ =
+      MakeMemberClosure<ConnectedChannelStream, &ConnectedChannelStream::Push>(
+          this, DEBUG_LOCATION);
 };
 
 class ClientStream : public ConnectedChannelStream {
@@ -341,7 +375,7 @@ class ClientStream : public ConnectedChannelStream {
   void Orphan() override {
     bool finished;
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu());
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO, "%sDropStream: %s",
                 Activity::current()->DebugTag().c_str(),
@@ -367,7 +401,7 @@ class ClientStream : public ConnectedChannelStream {
   }
 
   Poll<ServerMetadataHandle> PollOnce() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu());
     GPR_ASSERT(!finished_);
 
     if (grpc_call_trace.enabled()) {
@@ -376,7 +410,7 @@ class ClientStream : public ConnectedChannelStream {
               ActiveOpsString().c_str());
     }
 
-    auto push_recv_message = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    auto push_recv_message = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
       recv_message_state_ = PendingReceiveMessage{};
       auto& pending_recv_message =
           absl::get<PendingReceiveMessage>(recv_message_state_);
@@ -391,8 +425,7 @@ class ClientStream : public ConnectedChannelStream {
           &recv_message_batch_done_;
       IncrementRefCount("recv_message");
       recv_message_waker_ = Activity::current()->MakeOwningWaker();
-      push_recv_message_ = true;
-      SchedulePush();
+      SchedulePush(&recv_message_);
     };
 
     if (!std::exchange(requested_metadata_, true)) {
@@ -433,13 +466,12 @@ class ClientStream : public ConnectedChannelStream {
           &GetContext<CallContext>()->call_stats()->transport_stream_stats;
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
           &recv_trailing_metadata_ready_;
-      push_metadata_ = true;
       IncrementRefCount("metadata_batch_done");
       IncrementRefCount("initial_metadata_ready");
       IncrementRefCount("trailing_metadata_ready");
       initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
       trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
-      SchedulePush();
+      SchedulePush(&metadata_);
     }
     if (absl::holds_alternative<Closed>(send_message_state_)) {
       message_to_send_.reset();
@@ -480,8 +512,7 @@ class ClientStream : public ConnectedChannelStream {
         }
         IncrementRefCount("send_message");
         send_message_waker_ = Activity::current()->MakeOwningWaker();
-        push_send_message_ = true;
-        SchedulePush();
+        SchedulePush(&send_message_);
       }
     }
     if (auto* pending =
@@ -574,7 +605,7 @@ class ClientStream : public ConnectedChannelStream {
   void RecvInitialMetadataReady(grpc_error_handle error) {
     GPR_ASSERT(error == absl::OkStatus());
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu());
       server_initial_metadata_state_ =
           ServerInitialMetadataState::kReceivedButNotSet;
       initial_metadata_waker_.Wakeup();
@@ -585,7 +616,7 @@ class ClientStream : public ConnectedChannelStream {
   void RecvTrailingMetadataReady(grpc_error_handle error) {
     GPR_ASSERT(error == absl::OkStatus());
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu());
       queued_trailing_metadata_ = true;
       trailing_metadata_waker_.Wakeup();
     }
@@ -599,7 +630,7 @@ class ClientStream : public ConnectedChannelStream {
 
   void SendMessageBatchDone(grpc_error_handle error) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu());
       if (error != absl::OkStatus()) {
         // Note that we're in error here, the call will be closed by the
         // transport in a moment, and we'll return from the promise with an
@@ -617,7 +648,7 @@ class ClientStream : public ConnectedChannelStream {
 
   void RecvMessageBatchDone(grpc_error_handle error) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu());
       if (error != absl::OkStatus()) {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
@@ -645,32 +676,6 @@ class ClientStream : public ConnectedChannelStream {
     Unref("recv_message");
   }
 
-  // Called from outside the activity to push work down to the transport.
-  void Push() {
-    auto do_push = [this](grpc_transport_stream_op_batch* batch) {
-      if (stream() != nullptr) {
-        grpc_transport_perform_stream_op(transport(), stream(), batch);
-      } else {
-        grpc_transport_stream_op_batch_finish_with_failure_from_transport(
-            batch, absl::CancelledError());
-      }
-    };
-    bool push_metadata;
-    bool push_send_message;
-    bool push_recv_message;
-    {
-      MutexLock lock(&mu_);
-      push_metadata = std::exchange(push_metadata_, false);
-      push_send_message = std::exchange(push_send_message_, false);
-      push_recv_message = std::exchange(push_recv_message_, false);
-      scheduled_push_ = false;
-    }
-    if (push_metadata) do_push(&metadata_);
-    if (push_send_message) do_push(&send_message_);
-    if (push_recv_message) do_push(&recv_message_);
-    Unref("push");
-  }
-
  private:
   struct Idle {};
   struct Closed {};
@@ -687,27 +692,9 @@ class ClientStream : public ConnectedChannelStream {
     kSet,
   };
 
-  void SchedulePush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    if (std::exchange(scheduled_push_, true)) return;
-    IncrementRefCount("push");
-    ExecCtx::Run(DEBUG_LOCATION, &push_, absl::OkStatus());
-  }
-
-  std::string ActiveOpsString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  std::string ActiveOpsString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     std::vector<std::string> ops;
     if (finished_) ops.push_back("FINISHED");
-    // Pushes
-    std::vector<std::string> pushes;
-    if (push_metadata_) pushes.push_back("metadata");
-    if (push_send_message_) pushes.push_back("send_message");
-    if (push_recv_message_) pushes.push_back("recv_message");
-    if (!pushes.empty()) {
-      ops.push_back(
-          absl::StrCat(scheduled_push_ ? "push:" : "unscheduled-push:",
-                       absl::StrJoin(pushes, ",")));
-    } else if (scheduled_push_) {
-      ops.push_back("push:nothing");
-    }
     // Results from transport
     std::vector<std::string> queued;
     if (server_initial_metadata_state_ ==
@@ -731,7 +718,7 @@ class ClientStream : public ConnectedChannelStream {
     return absl::StrJoin(ops, " ");
   }
 
-  std::string SendMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  std::string SendMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     return Match(
         send_message_state_, [](Idle) -> std::string { return "IDLE"; },
         [](Closed) -> std::string { return "CLOSED"; },
@@ -741,7 +728,7 @@ class ClientStream : public ConnectedChannelStream {
         [](SendMessageToTransport) -> std::string { return "SENDING"; });
   }
 
-  std::string RecvMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  std::string RecvMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     return Match(
         recv_message_state_, [](Idle) -> std::string { return "IDLE"; },
         [](Closed) -> std::string { return "CLOSED"; },
@@ -757,27 +744,22 @@ class ClientStream : public ConnectedChannelStream {
         });
   }
 
-  Mutex mu_;
   bool requested_metadata_ = false;
-  bool push_metadata_ ABSL_GUARDED_BY(mu_) = false;
-  bool push_send_message_ ABSL_GUARDED_BY(mu_) = false;
-  bool push_recv_message_ ABSL_GUARDED_BY(mu_) = false;
-  bool scheduled_push_ ABSL_GUARDED_BY(mu_) = false;
   ServerInitialMetadataState server_initial_metadata_state_
-      ABSL_GUARDED_BY(mu_) = ServerInitialMetadataState::kNotReceived;
-  bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu_) = false;
-  bool finished_ ABSL_GUARDED_BY(mu_) = false;
-  Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu_);
-  Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu_);
-  Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
-  Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
+      ABSL_GUARDED_BY(mu()) = ServerInitialMetadataState::kNotReceived;
+  bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu()) = false;
+  bool finished_ ABSL_GUARDED_BY(mu()) = false;
+  Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu());
+  Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu());
+  Waker send_message_waker_ ABSL_GUARDED_BY(mu());
+  Waker recv_message_waker_ ABSL_GUARDED_BY(mu());
   Latch<ServerMetadata*>* server_initial_metadata_latch_;
   PipeReceiver<MessageHandle>* client_to_server_messages_;
   PipeSender<MessageHandle>* server_to_client_messages_;
-  MessageHandle message_to_send_ ABSL_GUARDED_BY(mu_);
+  MessageHandle message_to_send_ ABSL_GUARDED_BY(mu());
   absl::variant<Idle, Closed, PipeReceiver<MessageHandle>::NextType,
                 SendMessageToTransport>
-      send_message_state_ ABSL_GUARDED_BY(mu_);
+      send_message_state_ ABSL_GUARDED_BY(mu());
   struct PendingReceiveMessage {
     absl::optional<SliceBuffer> payload;
     uint32_t flags;
@@ -785,15 +767,13 @@ class ClientStream : public ConnectedChannelStream {
   };
   absl::variant<Idle, PendingReceiveMessage, Closed,
                 PipeSender<MessageHandle>::PushType>
-      recv_message_state_ ABSL_GUARDED_BY(mu_);
+      recv_message_state_ ABSL_GUARDED_BY(mu());
   grpc_closure recv_initial_metadata_ready_ =
       MakeMemberClosure<ClientStream, &ClientStream::RecvInitialMetadataReady>(
           this, DEBUG_LOCATION);
   grpc_closure recv_trailing_metadata_ready_ =
       MakeMemberClosure<ClientStream, &ClientStream::RecvTrailingMetadataReady>(
           this, DEBUG_LOCATION);
-  grpc_closure push_ = MakeMemberClosure<ClientStream, &ClientStream::Push>(
-      this, DEBUG_LOCATION);
   ClientMetadataHandle client_initial_metadata_;
   ClientMetadataHandle client_trailing_metadata_;
   ServerMetadataHandle server_initial_metadata_;
@@ -845,23 +825,97 @@ class ClientConnectedCallPromise {
 
 class ServerStream final : public ConnectedChannelStream {
  public:
-  ServerStream(grpc_transport* transport, CallArgs call_args)
-      : ConnectedChannelStream(transport) {}
+  ServerStream(grpc_transport* transport, CallArgs call_args,
+               NextPromiseFactory next_promise_factory)
+      : ConnectedChannelStream(transport) {
+    auto& gim =
+        client_initial_metadata_state_.emplace<GettingInitialMetadata>(this);
+    gim.recv_initial_metadata_ready_waker =
+        Activity::current()->MakeOwningWaker();
+    memset(&gim.recv_initial_metadata, 0, sizeof(gim.recv_initial_metadata));
+    gim.recv_initial_metadata.payload = &batch_payload_;
+    gim.recv_initial_metadata.on_complete = nullptr;
+    gim.recv_initial_metadata.recv_initial_metadata = true;
+    gim.next_promise_factory = std::move(next_promise_factory);
+    batch_payload_.recv_initial_metadata.recv_initial_metadata =
+        gim.client_initial_metadata.get();
+    batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
+        &gim.recv_initial_metadata_ready;
+    SchedulePush(&gim.recv_initial_metadata);
+  }
 
   void Orphan() override { abort(); }
 
-  absl::Status PrePoll() { return absl::OkStatus(); }
-
-  absl::Status PostPoll() { return absl::OkStatus(); }
+  Poll<ServerMetadataHandle> Poll() {
+    absl::MutexLock lock(mu());
+    if (auto* p =
+            absl::get_if<GotInitialMetadata>(&client_initial_metadata_state_)) {
+      auto promise = p->next_promise_factory(CallArgs{
+          std::move(p->client_initial_metadata), nullptr, nullptr, nullptr});
+      client_initial_metadata_state_
+          .emplace<ArenaPromise<ServerMetadataHandle>>(std::move(promise));
+    }
+    if (auto* p = absl::get_if<ArenaPromise<ServerMetadataHandle>>(
+            &client_initial_metadata_state_)) {
+      auto poll = (*p)();
+      if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
+        client_initial_metadata_state_.emplace<Uninitialized>();
+        return std::move(*r);
+      }
+    }
+    return Pending{};
+  }
 
  private:
+  void RecvInitialMetadataReady() {
+    MutexLock lock(mu());
+    auto& getting =
+        absl::get<GettingInitialMetadata>(client_initial_metadata_state_);
+    GotInitialMetadata got{std::move(getting.client_initial_metadata),
+                           std::move(getting.next_promise_factory)};
+    auto waker = std::move(getting.recv_initial_metadata_ready_waker);
+    client_initial_metadata_state_.emplace<GotInitialMetadata>(std::move(got));
+    waker.Wakeup();
+  }
+
+  struct Uninitialized {};
+
+  struct GettingInitialMetadata {
+    explicit GettingInitialMetadata(ServerStream* stream)
+        : recv_initial_metadata_ready(
+              MakeMemberClosure<ServerStream,
+                                &ServerStream::RecvInitialMetadataReady>(
+                  stream)) {}
+    grpc_transport_stream_op_batch recv_initial_metadata;
+    Waker recv_initial_metadata_ready_waker;
+    ClientMetadataHandle client_initial_metadata =
+        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+    grpc_closure recv_initial_metadata_ready;
+    NextPromiseFactory next_promise_factory;
+  };
+
+  struct GotInitialMetadata {
+    ClientMetadataHandle client_initial_metadata;
+    NextPromiseFactory next_promise_factory;
+  };
+
+  using ClientInitialMetadataState =
+      absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,
+                    ArenaPromise<ServerMetadataHandle>>;
+  ClientInitialMetadataState client_initial_metadata_state_
+      ABSL_GUARDED_BY(mu()) = Uninitialized{};
+
+  grpc_transport_stream_op_batch_payload batch_payload_{
+      GetContext<grpc_call_context_element>()};
 };
 
 class ServerConnectedCallPromise {
  public:
-  ServerConnectedCallPromise(grpc_transport* transport, CallArgs call_args)
-      : impl_(GetContext<Arena>()->New<ServerStream>(transport,
-                                                     std::move(call_args))) {}
+  ServerConnectedCallPromise(grpc_transport* transport, CallArgs call_args,
+                             NextPromiseFactory next_promise_factory)
+      : impl_(GetContext<Arena>()->New<ServerStream>(
+            transport, std::move(call_args), std::move(next_promise_factory))) {
+  }
 
   ServerConnectedCallPromise(const ServerConnectedCallPromise&) = delete;
   ServerConnectedCallPromise& operator=(const ServerConnectedCallPromise&) =
@@ -877,21 +931,14 @@ class ServerConnectedCallPromise {
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
                                                  CallArgs call_args,
                                                  NextPromiseFactory next) {
-    return ServerConnectedCallPromise(transport, std::move(call_args));
+    return ServerConnectedCallPromise(transport, std::move(call_args),
+                                      std::move(next));
   }
 
-  Poll<ServerMetadataHandle> operator()() {
-    auto status = impl_->PrePoll();
-    if (!status.ok()) return ServerMetadataFromStatus(status);
-    auto result = next_();
-    status = impl_->PostPoll();
-    if (!status.ok()) return ServerMetadataFromStatus(status);
-    return result;
-  }
+  Poll<ServerMetadataHandle> operator()() { return impl_->Poll(); }
 
  private:
   OrphanablePtr<ServerStream> impl_;
-  ArenaPromise<ServerMetadataHandle> next_;
 };
 
 template <ArenaPromise<ServerMetadataHandle> (*make_call_promise)(
