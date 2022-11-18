@@ -274,7 +274,8 @@ def main() -> None:
         '--delay_seconds',
         default=0,
         type=int,
-        help='Configure delay in seconds to perform Prometheus queries, default is 0',
+        help=
+        'Configure delay in seconds to perform Prometheus queries, default is 0',
     )
     args = argp.parse_args()
 
@@ -293,7 +294,7 @@ def main() -> None:
         )
 
     time.sleep(args.delay_seconds)
-    
+
     pod_dict = construct_pod_dict(args.node_info_file, args.pod_type)
     processed_data = p.fetch_cpu_and_memory_data(
         container_list=args.container_name, pod_dict=pod_dict)
