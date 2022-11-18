@@ -17,7 +17,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - test/core/compression/args_utils.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
@@ -27,7 +26,6 @@ libs:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/util/test_lb_policies.h
   src:
-  - test/core/compression/args_utils.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
@@ -366,8 +364,7 @@ libs:
   - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
-  - src/core/ext/filters/http/message_compress/message_compress_filter.h
-  - src/core/ext/filters/http/message_compress/message_decompress_filter.h
+  - src/core/ext/filters/http/message_compress/compression_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/rbac/rbac_filter.h
@@ -1111,8 +1108,7 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
-  - src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  - src/core/ext/filters/http/message_compress/compression_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
@@ -1938,8 +1934,7 @@ libs:
   - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
-  - src/core/ext/filters/http/message_compress/message_compress_filter.h
-  - src/core/ext/filters/http/message_compress/message_decompress_filter.h
+  - src/core/ext/filters/http/message_compress/compression_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
@@ -2324,8 +2319,7 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
-  - src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
+  - src/core/ext/filters/http/message_compress/compression_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2826,6 +2820,7 @@ libs:
   - include/grpcpp/impl/codegen/sync.h
   - include/grpcpp/impl/codegen/sync_stream.h
   - include/grpcpp/impl/codegen/time.h
+  - include/grpcpp/impl/completion_queue_tag.h
   - include/grpcpp/impl/grpc_library.h
   - include/grpcpp/impl/method_handler_impl.h
   - include/grpcpp/impl/rpc_method.h
@@ -3243,6 +3238,7 @@ libs:
   - include/grpcpp/impl/codegen/sync.h
   - include/grpcpp/impl/codegen/sync_stream.h
   - include/grpcpp/impl/codegen/time.h
+  - include/grpcpp/impl/completion_queue_tag.h
   - include/grpcpp/impl/grpc_library.h
   - include/grpcpp/impl/method_handler_impl.h
   - include/grpcpp/impl/rpc_method.h
@@ -4152,15 +4148,6 @@ targets:
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
   - grpc_test_util
-- name: minimal_stack_is_minimal_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/minimal_stack_is_minimal_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -5921,10 +5908,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/compression/args_utils.h
+  headers: []
   src:
-  - test/core/compression/args_utils.cc
   - test/core/compression/compression_test.cc
   deps:
   - grpc_test_util
@@ -9095,6 +9080,16 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: minimal_stack_is_minimal_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test

@@ -24,9 +24,9 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_hook.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
