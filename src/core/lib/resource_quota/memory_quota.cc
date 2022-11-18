@@ -253,9 +253,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
         free > kMaxQuotaBufferSize / 2) {
       ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
     }
-    if (IsPeriodicResourceQuotaReclamationEnabled()) {
-      ret = std::max(ret, free > 8192 ? free / 2 : free);
-    }
+    ret = std::max(ret, free > 8192 ? free / 2 : free);
     const size_t new_free = free - ret;
     if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,

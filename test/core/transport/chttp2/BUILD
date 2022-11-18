@@ -102,6 +102,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -116,6 +117,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -161,6 +163,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],
@@ -233,8 +236,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
+        "//:channel_stack_builder",
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",

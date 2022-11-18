@@ -113,7 +113,8 @@ grpc_error_handle grpc_channel_stack_init(
   if (grpc_trace_channel_stack.enabled()) {
     gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
     for (size_t i = 0; i < filter_count; i++) {
-      gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s", filters[i]->name);
+      gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s%s", filters[i]->name,
+              filters[i]->make_call_promise ? " [promise-capable]" : "");
     }
   }
 

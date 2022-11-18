@@ -169,7 +169,7 @@ TEST(FlowControl, RecvData) {
   int64_t prev_preferred_rx_frame_size =
       tfc.target_preferred_rx_crypto_frame_size();
   EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(1024));
-  sfc_upd.MakeAction();
+  std::ignore = sfc_upd.MakeAction();
   EXPECT_EQ(tfc.announced_window(), 65535 - 1024);
   EXPECT_EQ(sfc.announced_window_delta(), -1024);
   EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(),
@@ -183,31 +183,31 @@ TEST(FlowControl, TrackMinProgressSize) {
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     sfc_upd.SetMinProgressSize(5);
-    sfc_upd.MakeAction();
+    std::ignore = sfc_upd.MakeAction();
   }
   EXPECT_EQ(sfc.min_progress_size(), 5);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     sfc_upd.SetMinProgressSize(10);
-    sfc_upd.MakeAction();
+    std::ignore = sfc_upd.MakeAction();
   }
   EXPECT_EQ(sfc.min_progress_size(), 10);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
-    sfc_upd.MakeAction();
+    std::ignore = sfc_upd.MakeAction();
   }
   EXPECT_EQ(sfc.min_progress_size(), 5);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
-    sfc_upd.MakeAction();
+    std::ignore = sfc_upd.MakeAction();
   }
   EXPECT_EQ(sfc.min_progress_size(), 0);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
-    sfc_upd.MakeAction();
+    std::ignore = sfc_upd.MakeAction();
   }
   EXPECT_EQ(sfc.min_progress_size(), 0);
 }
