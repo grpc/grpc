@@ -433,7 +433,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
   status = WSASend(socket->socket, buffers + async_buffers_offset,
                    (DWORD)(tcp->write_slices->count - async_buffers_offset),
-                   &bytes_sent, 0, &socket->write_info.overlapped, NULL);
+                   NULL, 0, &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
 
   if (status != 0) {
