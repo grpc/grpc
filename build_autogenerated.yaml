@@ -3573,6 +3573,7 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -3588,6 +3589,7 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
@@ -7259,6 +7261,7 @@ targets:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -7274,6 +7277,8 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
