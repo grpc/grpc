@@ -351,6 +351,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/server_builder_plugin.h",
     "include/grpcpp/impl/server_initializer.h",
     "include/grpcpp/impl/service_type.h",
+    "include/grpcpp/impl/status.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
