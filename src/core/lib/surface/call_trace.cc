@@ -92,9 +92,14 @@ const grpc_channel_filter* PromiseTracingFilterFor(
               /* post_init_channel_elem: */
               [](grpc_channel_stack*, grpc_channel_element*) {},
               /* destroy_channel_elem: */ [](grpc_channel_element*) {},
-              grpc_channel_next_get_info, filter->name},
-          filter(filter) {}
+              grpc_channel_next_get_info,
+              /* name: nullptr */},
+          filter(filter),
+          name_str(absl::StrCat(filter->name, ".trace")) {
+      this->name = name_str.c_str();
+    }
     const grpc_channel_filter* const filter;
+    const std::string name_str;
   };
   struct Globals {
     Mutex mu;

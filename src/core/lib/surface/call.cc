@@ -2944,10 +2944,12 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::Run(
 
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
-    : PromiseBasedCall(arena, *args),
-      promise_(channel()->channel_stack()->MakeServerCallPromise(
-          CallArgs{nullptr, nullptr, nullptr, nullptr})) {
+    : PromiseBasedCall(arena, *args) {
   global_stats().IncrementServerCallsCreated();
+  MutexLock lock(mu());
+  ScopedContext activity_context(this);
+  promise_ = channel()->channel_stack()->MakeServerCallPromise(
+      CallArgs{nullptr, nullptr, nullptr, nullptr});
 }
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
