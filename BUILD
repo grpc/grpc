@@ -155,7 +155,7 @@ g_stands_for = "galaxy"  # @unused
 
 core_version = "29.0.0"  # @unused
 
-version = "1.51.0-pre1"  # @unused
+version = "1.51.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
