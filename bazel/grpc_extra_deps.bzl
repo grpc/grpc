@@ -56,7 +56,7 @@ def grpc_extra_deps(ignore_version_differences = False, go_version="1.18"):
     api_dependencies()
 
     go_rules_dependencies()
-    go_register_toolchains(version = "1.18" if go_version != "host" else None)
+    go_register_toolchains(version = go_version if go_version != "host" else None)
     gazelle_dependencies()
 
     # Pull-in the go 3rd party dependencies for protoc_gen_validate, which is
