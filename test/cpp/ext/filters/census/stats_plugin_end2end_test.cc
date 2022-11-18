@@ -143,7 +143,7 @@ class ExportedTracesRecorder
 
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     RegisterOpenCensusPlugin();
     // OpenCensus C++ has no API to unregister a previously-registered handler,
     // therefore we register this handler once, and enable/disable recording in
