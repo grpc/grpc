@@ -88,9 +88,11 @@ cmake \
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
-# DUMP
+# Set pkgconfig envs
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
+
+# Show pkg-config configuration
 pkg-config --cflags grpc
 pkg-config --libs --static grpc
 pkg-config --cflags grpc++
@@ -98,14 +100,10 @@ pkg-config --libs --static grpc++
 
 # Build helloworld example using Makefile and pkg-config
 pushd examples/cpp/helloworld
-export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
-export PATH=$PATH:/usr/local/grpc/bin
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd
 
 # Build route_guide example using Makefile and pkg-config
 pushd examples/cpp/route_guide
-export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
-export PATH=$PATH:/usr/local/grpc/bin
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd
