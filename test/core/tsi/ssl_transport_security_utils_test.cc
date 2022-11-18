@@ -44,7 +44,11 @@ using ::testing::TestWithParam;
 using ::testing::ValuesIn;
 
 constexpr std::size_t kMaxPlaintextBytesPerTlsRecord = 16384;
-constexpr std::size_t kTls13RecordOverhead = 22;
+#if defined(TLS1_3_VERSION)
+constexpr std::size_t kTlsRecordOverhead = 22;
+#else
+constexpr std::size_t kTlsRecordOverhead = 29;
+#endif
 constexpr std::array<std::size_t, 4> kTestPlainTextSizeArray = {
     1, 1000, kMaxPlaintextBytesPerTlsRecord,
     kMaxPlaintextBytesPerTlsRecord + 1000};
@@ -58,9 +62,9 @@ struct FrameProtectorUtilTestData {
 std::vector<FrameProtectorUtilTestData> GenerateTestData() {
   std::vector<FrameProtectorUtilTestData> data;
   for (std::size_t plaintext_size : kTestPlainTextSizeArray) {
-    std::size_t expected_size = plaintext_size + kTls13RecordOverhead;
+    std::size_t expected_size = plaintext_size + kTlsRecordOverhead;
     if (plaintext_size > kMaxPlaintextBytesPerTlsRecord) {
-      expected_size = kMaxPlaintextBytesPerTlsRecord + kTls13RecordOverhead;
+      expected_size = kMaxPlaintextBytesPerTlsRecord + kTlsRecordOverhead;
     }
     data.push_back({plaintext_size, expected_size});
   }
@@ -69,6 +73,16 @@ std::vector<FrameProtectorUtilTestData> GenerateTestData() {
 
 class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
  protected:
+  static void SetUpTestSuite() {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+    OPENSSL_init_ssl(/*opts=*/0, /*settings=*/nullptr);
+#else
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+#endif
+  }
+
   // Used for debugging.
   static int VerifySucceed(X509_STORE_CTX* /*store_ctx*/, void* /*arg*/) {
     return 1;
@@ -116,12 +130,14 @@ class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
         "-----END RSA PRIVATE KEY-----\n";
 
     // Create the context objects.
+    SSL_CTX* client_ctx = nullptr;
+    SSL_CTX* server_ctx = nullptr;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-    SSL_CTX* client_ctx(SSL_CTX_new(TLS_method()));
-    SSL_CTX* server_ctx(SSL_CTX_new(TLS_method()));
+    client_ctx = SSL_CTX_new(TLS_method());
+    server_ctx = SSL_CTX_new(TLS_method());
 #else
-    SSL_CTX* client_ctx(SSL_CTX_new(TLSv1_2_method()));
-    SSL_CTX* server_ctx(SSL_CTX_new(TLSv1_2_method()));
+    client_ctx = SSL_CTX_new(TLSv1_2_method());
+    server_ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
 
     BIO* client_cert_bio(BIO_new_mem_buf(cert_pem.c_str(), cert_pem.size()));
@@ -290,7 +306,7 @@ TEST_P(FlowTest,
   std::size_t unprotected_bytes_size = unprotected_bytes.size();
 
   std::vector<uint8_t> protected_output_frames(
-      GetParam().expected_encrypted_bytes_size);
+      2 * GetParam().expected_encrypted_bytes_size);
   std::size_t protected_output_frames_size = protected_output_frames.size();
 
   EXPECT_EQ(SslProtectorProtect(unprotected_bytes.data(), client_buffer.size(),
@@ -321,8 +337,6 @@ TEST_P(FlowTest,
     EXPECT_EQ(still_pending_size, 0);
   }
 
-  EXPECT_EQ(protected_output_frames_size,
-            GetParam().expected_encrypted_bytes_size);
   // The first three bytes are always 0x17, 0x03, 0x03.
   EXPECT_EQ(protected_output_frames[0], '\x17');
   EXPECT_EQ(protected_output_frames[1], '\x03');
@@ -331,7 +345,7 @@ TEST_P(FlowTest,
   // than the size of the whole frame.
   EXPECT_EQ(CalculateRecordSizeFromHeader(protected_output_frames[3],
                                           protected_output_frames[4]),
-            GetParam().expected_encrypted_bytes_size - 5);
+            protected_output_frames_size - 5);
 
   std::vector<uint8_t> unprotected_output_bytes(GetParam().plaintext_size);
   std::size_t unprotected_output_bytes_size = unprotected_output_bytes.size();
@@ -354,7 +368,7 @@ TEST_P(FlowTest,
   std::size_t unprotected_bytes_size = unprotected_bytes.size();
 
   std::vector<uint8_t> protected_output_frames(
-      GetParam().expected_encrypted_bytes_size);
+      2 * GetParam().expected_encrypted_bytes_size);
   std::size_t protected_output_frames_size = protected_output_frames.size();
 
   EXPECT_EQ(SslProtectorProtect(unprotected_bytes.data(), server_buffer.size(),
@@ -385,8 +399,6 @@ TEST_P(FlowTest,
     EXPECT_EQ(still_pending_size, 0);
   }
 
-  EXPECT_EQ(protected_output_frames_size,
-            GetParam().expected_encrypted_bytes_size);
   // The first three bytes are always 0x17, 0x03, 0x03.
   EXPECT_EQ(protected_output_frames[0], '\x17');
   EXPECT_EQ(protected_output_frames[1], '\x03');
@@ -395,7 +407,7 @@ TEST_P(FlowTest,
   // than the size of the whole frame.
   EXPECT_EQ(CalculateRecordSizeFromHeader(protected_output_frames[3],
                                           protected_output_frames[4]),
-            GetParam().expected_encrypted_bytes_size - 5);
+            protected_output_frames_size - 5);
 
   std::vector<uint8_t> unprotected_output_bytes(GetParam().plaintext_size);
   std::size_t unprotected_output_bytes_size = unprotected_output_bytes.size();
