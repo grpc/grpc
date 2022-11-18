@@ -24,10 +24,10 @@ import time
 from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
                     Sequence, Set, Tuple, Union)
 
-import grpc
-from grpc import _common
-from grpc import _compression
-from grpc import _interceptor
+import grpc  # pytype: disable=pyi-error
+from grpc import _common  # pytype: disable=pyi-error
+from grpc import _compression  # pytype: disable=pyi-error
+from grpc import _interceptor  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
 from grpc._typing import CallbackType
 from grpc._typing import ChannelArgumentType
