@@ -34,6 +34,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -49,7 +50,6 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -209,31 +209,26 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
       void OnResourceChanged(XdsEndpointResource update) override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            // TODO(yashykt): When we move to C++14, capture update with
-            // std::move
-            [this, update]() mutable {
-              OnResourceChangedHelper(std::move(update));
-              Unref();
+            [self = std::move(self), update = std::move(update)]() mutable {
+              self->OnResourceChangedHelper(std::move(update));
             },
             DEBUG_LOCATION);
       }
       void OnError(absl::Status status) override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this, status]() {
-              OnErrorHelper(status);
-              Unref();
+            [self = std::move(self), status = std::move(status)]() mutable {
+              self->OnErrorHelper(std::move(status));
             },
             DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this]() {
-              OnResourceDoesNotExistHelper();
-              Unref();
+            [self = std::move(self)]() {
+              self->OnResourceDoesNotExistHelper();
             },
             DEBUG_LOCATION);
       }
@@ -373,11 +368,12 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
     void RequestReresolution() override {}
     absl::string_view GetAuthority() override;
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -434,7 +430,7 @@ XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
 
 void XdsClusterResolverLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (xds_cluster_resolver_policy_->shutting_down_ ||
       xds_cluster_resolver_policy_->child_policy_ == nullptr) {
     return;
@@ -452,6 +448,12 @@ void XdsClusterResolverLb::Helper::UpdateState(
 
 absl::string_view XdsClusterResolverLb::Helper::GetAuthority() {
   return xds_cluster_resolver_policy_->channel_control_helper()->GetAuthority();
+}
+
+grpc_event_engine::experimental::EventEngine*
+XdsClusterResolverLb::Helper::GetEventEngine() {
+  return xds_cluster_resolver_policy_->channel_control_helper()
+      ->GetEventEngine();
 }
 
 void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
@@ -954,7 +956,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "config");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        std::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return nullptr;
   }
   return std::move(*config);

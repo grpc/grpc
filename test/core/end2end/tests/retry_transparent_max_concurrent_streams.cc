@@ -227,6 +227,12 @@ static void test_retry_transparent_max_concurrent_streams(
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
@@ -241,12 +247,13 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = &status_details;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server completes first call and shutdown.
   // Client completes first call.
+  cqv.Expect(tag(104), true);
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
@@ -304,6 +311,12 @@ static void test_retry_transparent_max_concurrent_streams(
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
@@ -318,11 +331,12 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = &status_details;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(203),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Second call completes.
+  cqv.Expect(tag(203), true);
   cqv.Expect(tag(202), true);
   cqv.Expect(tag(2), true);
   cqv.Verify();

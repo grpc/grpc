@@ -26,6 +26,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -112,7 +113,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
  private:
   class Picker : public SubchannelPicker {
    public:
-    Picker(std::unique_ptr<SubchannelPicker> delegate_picker,
+    Picker(RefCountedPtr<SubchannelPicker> delegate_picker,
            TestPickArgsCallback cb)
         : delegate_picker_(std::move(delegate_picker)), cb_(std::move(cb)) {}
 
@@ -127,7 +128,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
     }
 
    private:
-    std::unique_ptr<SubchannelPicker> delegate_picker_;
+    RefCountedPtr<SubchannelPicker> delegate_picker_;
     TestPickArgsCallback cb_;
   };
 
@@ -143,9 +144,9 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override {
+                     RefCountedPtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
-          state, status, std::make_unique<Picker>(std::move(picker), cb_));
+          state, status, MakeRefCounted<Picker>(std::move(picker), cb_));
     }
 
     void RequestReresolution() override {
@@ -154,6 +155,10 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
 
     absl::string_view GetAuthority() override {
       return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
     }
 
     void AddTraceEvent(TraceSeverity severity,
@@ -226,7 +231,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
  private:
   class Picker : public SubchannelPicker {
    public:
-    Picker(std::unique_ptr<SubchannelPicker> delegate_picker,
+    Picker(RefCountedPtr<SubchannelPicker> delegate_picker,
            InterceptRecvTrailingMetadataCallback cb)
         : delegate_picker_(std::move(delegate_picker)), cb_(std::move(cb)) {}
 
@@ -243,7 +248,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
    private:
-    std::unique_ptr<SubchannelPicker> delegate_picker_;
+    RefCountedPtr<SubchannelPicker> delegate_picker_;
     InterceptRecvTrailingMetadataCallback cb_;
   };
 
@@ -261,9 +266,9 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override {
+                     RefCountedPtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
-          state, status, std::make_unique<Picker>(std::move(picker), cb_));
+          state, status, MakeRefCounted<Picker>(std::move(picker), cb_));
     }
 
     void RequestReresolution() override {
@@ -272,6 +277,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
     absl::string_view GetAuthority() override {
       return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
     }
 
     void AddTraceEvent(TraceSeverity severity,
@@ -372,7 +381,7 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override {
+                     RefCountedPtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(state, status,
                                                      std::move(picker));
     }
@@ -383,6 +392,10 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
     absl::string_view GetAuthority() override {
       return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
     }
 
     void AddTraceEvent(TraceSeverity severity,
@@ -487,7 +500,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override {
+                     RefCountedPtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(state, status,
                                                      std::move(picker));
     }
@@ -498,6 +511,10 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
     absl::string_view GetAuthority() override {
       return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
     }
 
     void AddTraceEvent(TraceSeverity severity,
@@ -604,7 +621,7 @@ class OobBackendMetricTestLoadBalancingPolicy
     }
 
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override {
+                     RefCountedPtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(state, status,
                                                      std::move(picker));
     }
@@ -615,6 +632,10 @@ class OobBackendMetricTestLoadBalancingPolicy
 
     absl::string_view GetAuthority() override {
       return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      return parent_->channel_control_helper()->GetEventEngine();
     }
 
     void AddTraceEvent(TraceSeverity severity,
@@ -672,7 +693,7 @@ class FailPolicy : public LoadBalancingPolicy {
   absl::Status UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status_,
-        std::make_unique<FailPicker>(status_, pick_counter_));
+        MakeRefCounted<FailPicker>(status_, pick_counter_));
     return absl::OkStatus();
   }
 

@@ -51,38 +51,31 @@ class PickFirstTest : public LoadBalancingPolicyTest {
 
 TEST_F(PickFirstTest, Basic) {
   constexpr absl::string_view kAddressUri = "ipv4:127.0.0.1:443";
-  const grpc_resolved_address address = MakeAddress(kAddressUri);
   // Send an update containing one address.
-  LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses.emplace();
-  update_args.addresses->emplace_back(address, ChannelArgs());
-  absl::Status status = ApplyUpdate(std::move(update_args), lb_policy_.get());
+  absl::Status status =
+      ApplyUpdate(BuildUpdate({kAddressUri}), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have reported CONNECTING state.
-  auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get());
+  ExpectConnectingUpdate();
   // LB policy should have created a subchannel for the address with the
   // GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  SubchannelKey key(address,
-                    ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  auto it = subchannel_pool_.find(key);
-  ASSERT_NE(it, subchannel_pool_.end());
-  auto& subchannel_state = it->second;
-  // LB policy should have requested a connection on this subchannel.
-  EXPECT_TRUE(subchannel_state.ConnectionRequested());
-  // Tell subchannel to report CONNECTING.
-  subchannel_state.SetConnectivityState(GRPC_CHANNEL_CONNECTING,
-                                        absl::OkStatus());
-  // LB policy should again report CONNECTING.
-  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get());
-  // Tell subchannel to report READY.
-  subchannel_state.SetConnectivityState(GRPC_CHANNEL_READY, absl::OkStatus());
-  // LB policy should report READY.
-  picker = ExpectState(GRPC_CHANNEL_READY);
+  auto* subchannel = FindSubchannel(
+      kAddressUri, ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_NE(subchannel, nullptr);
+  // When the LB policy receives the subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // When the subchannel becomes connected, it reports READY.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
   // Picker should return the same subchannel repeatedly.
   for (size_t i = 0; i < 3; ++i) {
-    ExpectPickComplete(picker.get(), kAddressUri);
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddressUri);
   }
 }
 

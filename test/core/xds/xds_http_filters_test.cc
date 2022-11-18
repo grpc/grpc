@@ -37,7 +37,7 @@
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
-#include "src/core/ext/filters/fault_injection/service_config_parser.h"
+#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
@@ -72,12 +72,6 @@ using ::envoy::extensions::filters::http::router::v3::Router;
 
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
-  XdsHttpFilterTest() {
-    // Start with a clean registry for each test.
-    XdsHttpFilterRegistry::Shutdown();
-    XdsHttpFilterRegistry::Init();
-  }
-
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
     google::protobuf::Any any;
     any.PackFrom(message);
@@ -93,11 +87,12 @@ class XdsHttpFilterTest : public ::testing::Test {
     return extension;
   }
 
-  static const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
-    return XdsHttpFilterRegistry::GetFilterForType(
+  const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
+    return registry_.GetFilterForType(
         absl::StripPrefix(type, "type.googleapis.com/"));
   }
 
+  XdsHttpFilterRegistry registry_;
   ValidationErrors errors_;
   upb::Arena arena_;
   std::string type_url_storage_;
@@ -112,15 +107,14 @@ using XdsHttpFilterRegistryTest = XdsHttpFilterTest;
 
 TEST_F(XdsHttpFilterRegistryTest, Basic) {
   // Start with an empty registry.
-  XdsHttpFilterRegistry::Shutdown();
-  XdsHttpFilterRegistry::Init(/*register_builtins=*/false);
+  registry_ = XdsHttpFilterRegistry(/*register_builtins=*/false);
   // Returns null when a filter has not yet been registered.
   XdsExtension extension = MakeXdsExtension(Router());
   EXPECT_EQ(GetFilter(extension.type), nullptr);
   // Now register the filter.
   auto filter = std::make_unique<XdsHttpRouterFilter>();
   auto* filter_ptr = filter.get();
-  XdsHttpFilterRegistry::RegisterFilter(std::move(filter));
+  registry_.RegisterFilter(std::move(filter));
   // And check that it is now present.
   EXPECT_EQ(GetFilter(extension.type), filter_ptr);
 }
@@ -131,9 +125,7 @@ TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
   ASSERT_DEATH(
       // The router filter is already in the registry.
-      XdsHttpFilterRegistry::RegisterFilter(
-          std::make_unique<XdsHttpRouterFilter>()),
-      "");
+      registry_.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()), "");
 }
 
 //
@@ -701,7 +693,7 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
             "\"ignoreCase\":false,\"safeRegex\":{\"regex\":\"regex_match\"}}}},"
             // destination IP match with prefix len
             "{\"destinationIp\":{"
-            "\"addressPrefix\":\"127.0.0\",\"prefixLen\":{\"value\":24}}},"
+            "\"addressPrefix\":\"127.0.0\",\"prefixLen\":24}},"
             // destination IP match
             "{\"destinationIp\":{\"addressPrefix\":\"10.0.0\"}},"
             // destination port match

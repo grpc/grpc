@@ -35,7 +35,7 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
+#include "src/core/ext/filters/http/message_compress/compression_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -501,7 +501,9 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   FakeClientChannelFactory fake_client_channel_factory;
 
   grpc_core::ChannelArgs channel_args =
-      grpc_core::ChannelArgs()
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(nullptr)
           .SetObject(&fake_client_channel_factory)
           .Set(GRPC_ARG_SERVER_URI, "localhost");
   if (fixture.flags & REQUIRES_TRANSPORT) {
@@ -579,9 +581,10 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_core::ClientChannel::kFilterVtable, 0>
     ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
-typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, SendEmptyMetadata);
+typedef Fixture<&grpc_core::ClientCompressionFilter::kFilter, CHECKS_NOT_LAST>
+    ClientCompressFilter;
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientCompressFilter, NoOp);
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientCompressFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
     ClientDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientDeadlineFilter, NoOp);
@@ -599,9 +602,10 @@ typedef Fixture<&grpc_core::HttpServerFilter::kFilter, CHECKS_NOT_LAST>
     HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
+typedef Fixture<&grpc_core::ServerCompressionFilter::kFilter, CHECKS_NOT_LAST>
+    ServerCompressFilter;
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerCompressFilter, NoOp);
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerCompressFilter, SendEmptyMetadata);
 // This cmake target is disabled for now because it depends on OpenCensus, which
 // is Bazel-only.
 // typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
@@ -696,12 +700,12 @@ class IsolatedCallFixture {
     // the grpc_shutdown() run by grpc_channel_destroy().  So we need to
     // call grpc_init() manually here to balance things out.
     grpc_init();
-    auto args = grpc_core::CoreConfiguration::Get()
-                    .channel_args_preconditioning()
-                    .PreconditionChannelArgs(nullptr);
-    grpc_core::ChannelStackBuilderImpl builder("phony", GRPC_CLIENT_CHANNEL);
+    grpc_core::ChannelStackBuilderImpl builder(
+        "phony", GRPC_CLIENT_CHANNEL,
+        grpc_core::CoreConfiguration::Get()
+            .channel_args_preconditioning()
+            .PreconditionChannelArgs(nullptr));
     builder.SetTarget("phony_target");
-    builder.SetChannelArgs(args);
     builder.AppendFilter(&isolated_call_filter::isolated_call_filter);
     {
       grpc_core::ExecCtx exec_ctx;

@@ -518,8 +518,7 @@ struct grpc_tcp {
   grpc_core::MemoryOwner memory_owner;
   grpc_core::MemoryAllocator::Reservation self_reservation;
 
-  grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
-  gpr_mu tb_mu; /* Lock for access to list of traced buffers */
+  grpc_core::TracedBufferList tb_list; /* List of traced buffers */
 
   /* grpc_endpoint_write takes an argument which if non-null means that the
    * transport layer wants the TCP layer to collect timestamps for this write.
@@ -735,13 +734,9 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
-  /* The lock is not really necessary here, since all refs have been released */
-  gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, tcp->outgoing_buffer_arg,
-                                    GRPC_ERROR_CREATE("endpoint destroyed"));
-  gpr_mu_unlock(&tcp->tb_mu);
+  tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
+                        GRPC_ERROR_CREATE("endpoint destroyed"));
   tcp->outgoing_buffer_arg = nullptr;
-  gpr_mu_destroy(&tcp->tb_mu);
   delete tcp;
 }
 
@@ -1149,8 +1144,9 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   tcp->read_cb = cb;
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
-  tcp->min_progress_size =
-      grpc_core::IsTcpFrameSizeTuningEnabled() ? min_progress_size : 1;
+  tcp->min_progress_size = grpc_core::IsTcpFrameSizeTuningEnabled()
+                               ? std::max(min_progress_size, 1)
+                               : 1;
   grpc_slice_buffer_reset_and_unref(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
@@ -1278,11 +1274,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
-    gpr_mu_lock(&tcp->tb_mu);
-    grpc_core::TracedBuffer::AddNewEntry(
-        &tcp->tb_head, static_cast<uint32_t>(tcp->bytes_counter + length),
-        tcp->fd, tcp->outgoing_buffer_arg);
-    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->tb_list.AddNewEntry(static_cast<uint32_t>(tcp->bytes_counter + length),
+                             tcp->fd, tcp->outgoing_buffer_arg);
     tcp->outgoing_buffer_arg = nullptr;
   }
   return true;
@@ -1376,13 +1369,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     gpr_log(GPR_ERROR, "Unexpected control message");
     return cmsg;
   }
-  /* The error handling can potentially be done on another thread so we need
-   * to protect the traced buffer list. A lock free list might be better. Using
-   * a simple mutex for now. */
-  gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, opt_stats,
-                                            tss);
-  gpr_mu_unlock(&tcp->tb_mu);
+  tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
   return next_cmsg;
 }
 
@@ -1520,11 +1507,8 @@ static void tcp_handle_error(void* /*arg*/ /* grpc_tcp */,
  * release operations needed can be performed on the arg */
 void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   if (tcp->outgoing_buffer_arg) {
-    gpr_mu_lock(&tcp->tb_mu);
-    grpc_core::TracedBuffer::Shutdown(
-        &tcp->tb_head, tcp->outgoing_buffer_arg,
-        GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
-    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
+                          GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
     tcp->outgoing_buffer_arg = nullptr;
   }
 }
@@ -2004,8 +1988,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  gpr_mu_init(&tcp->tb_mu);
-  tcp->tb_head = nullptr;
   GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
                     grpc_schedule_on_exec_ctx);
   if (grpc_event_engine_run_in_background()) {
