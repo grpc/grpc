@@ -19,17 +19,19 @@
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 
 #include <inttypes.h>
+
 #include <functional>
 #include <utility>
 #include <vector>
-
-#include <grpc/support/log.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
