@@ -319,7 +319,7 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
     const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
   } else {
-    Usage("Invalid command '" + std::string(command) + "'");
+    Usage("Invalid command '" + command + "'");
   }
   return 1;
 }
