@@ -30,7 +30,7 @@ actions {
           type: EDS
           eds_cluster_config {
             eds_config {
-              ads {}
+              self {}
             }
             service_name: "endpoint1"
           }
