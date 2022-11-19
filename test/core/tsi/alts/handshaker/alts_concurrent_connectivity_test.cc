@@ -114,8 +114,7 @@ class FakeHandshakeServer {
           0 /* expected max concurrent rpcs unset */);
     }
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(address_.c_str(),
-                             grpc::InsecureServerCredentials());
+    builder.AddListeningPort(address_, grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
     // TODO(apolcyn): when removing the global concurrent handshake limiting
     // queue, set MAX_CONCURRENT_STREAMS on this server.

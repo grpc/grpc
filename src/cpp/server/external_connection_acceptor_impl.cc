@@ -92,7 +92,7 @@ void ExternalConnectionAcceptorImpl::Start() {
 }
 
 void ExternalConnectionAcceptorImpl::SetToChannelArgs(ChannelArguments* args) {
-  args->SetPointer(name_.c_str(), &handler_);
+  args->SetPointer(name_, &handler_);
 }
 
 }  // namespace internal

@@ -284,7 +284,7 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   if (driver_port >= 0) {
     std::string server_address = grpc_core::JoinHostPort("::", driver_port);
     builder->AddListeningPort(
-        server_address.c_str(),
+        server_address,
         GetCredentialsProvider()->GetServerCredentials(credential_type));
   }
   builder->RegisterService(impl_.get());

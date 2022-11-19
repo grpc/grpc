@@ -224,7 +224,7 @@ bool InteropClient::DoComputeEngineCreds(
   gpr_log(GPR_DEBUG, "Got username %s", response.username().c_str());
   gpr_log(GPR_DEBUG, "Got oauth_scope %s", response.oauth_scope().c_str());
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(response.username().c_str() == default_service_account);
+  GPR_ASSERT(response.username() == default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
   const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(absl::StrContains(oauth_scope, oauth_scope_str));
@@ -314,7 +314,7 @@ bool InteropClient::DoGoogleDefaultCredentials(
 
   gpr_log(GPR_DEBUG, "Got username %s", response.username().c_str());
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(response.username().c_str() == default_service_account);
+  GPR_ASSERT(response.username() == default_service_account);
   gpr_log(GPR_DEBUG, "Large unary rpc with GoogleDefaultCredentials done.");
   return true;
 }

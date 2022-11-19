@@ -768,7 +768,7 @@ static void cq_end_op_for_pluck(
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
-    std::string errmsg = grpc_core::StatusToString(error).c_str();
+    std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",

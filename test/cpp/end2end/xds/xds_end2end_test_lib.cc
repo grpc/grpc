@@ -793,7 +793,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
     // same thing for the response generator to use for the xDS
     // channel and the xDS resource-does-not-exist timeout value.
     args->SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-                    bootstrap_.c_str());
+                    bootstrap_);
     args->SetPointerWithVtable(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
         &xds_channel_args_, &kChannelArgsArgVtable);

@@ -256,7 +256,7 @@ static bool QpsDriver() {
     json = std::string(data, data + len);
     delete[] data;
   } else if (scjson) {
-    json = absl::GetFlag(FLAGS_scenarios_json).c_str();
+    json = absl::GetFlag(FLAGS_scenarios_json);
   } else if (absl::GetFlag(FLAGS_quit)) {
     return RunQuit(absl::GetFlag(FLAGS_credential_type),
                    per_worker_credential_types);
@@ -264,7 +264,7 @@ static bool QpsDriver() {
 
   // Parse into an array of scenarios
   Scenarios scenarios;
-  ParseJson(json.c_str(), "grpc.testing.Scenarios", &scenarios);
+  ParseJson(json, "grpc.testing.Scenarios", &scenarios);
   bool success = true;
 
   // Make sure that there is at least some valid scenario here
