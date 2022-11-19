@@ -989,6 +989,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
+        "//src/core:default_event_engine",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:slice",

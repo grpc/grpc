@@ -24,6 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
@@ -31,7 +32,12 @@
 TEST(CombinerTest, TestNoOp) {
   gpr_log(GPR_DEBUG, "test_no_op");
   grpc_core::ExecCtx exec_ctx;
-  GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
+  GRPC_COMBINER_UNREF(
+      grpc_combiner_create(
+          std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
+              grpc_event_engine::experimental::DefaultEventEngineFactory()
+                  .release())),
+      "test_no_op");
 }
 
 static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
@@ -41,7 +47,10 @@ static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
 TEST(CombinerTest, TestExecuteOne) {
   gpr_log(GPR_DEBUG, "test_execute_one");
 
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
+          grpc_event_engine::experimental::DefaultEventEngineFactory()
+              .release()));
   gpr_event done;
   gpr_event_init(&done);
   grpc_core::ExecCtx exec_ctx;
@@ -95,7 +104,10 @@ static void execute_many_loop(void* a) {
 TEST(CombinerTest, TestExecuteMany) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
+          grpc_event_engine::experimental::DefaultEventEngineFactory()
+              .release()));
   grpc_core::Thread thds[10];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
@@ -128,7 +140,10 @@ static void add_finally(void* arg, grpc_error_handle /*error*/) {
 TEST(CombinerTest, TestExecuteFinally) {
   gpr_log(GPR_DEBUG, "test_execute_finally");
 
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
+          grpc_event_engine::experimental::DefaultEventEngineFactory()
+              .release()));
   grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
   lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), absl::OkStatus());
