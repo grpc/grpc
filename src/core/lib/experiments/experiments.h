@@ -45,7 +45,7 @@ inline bool IsPromiseBasedClientCallEnabled() {
 inline bool IsPosixEventEngineEnablePollingEnabled() {
   return IsExperimentEnabled(11);
 }
-inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(13); }
+inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(12); }
 
 struct ExperimentMetadata {
   const char* name;
