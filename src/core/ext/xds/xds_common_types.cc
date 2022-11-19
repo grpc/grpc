@@ -454,7 +454,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     ValidationErrors::ScopedField field(errors, ".type_url");
     if (extension.type.empty()) {
       errors->AddError("field not present");
-      return;
+      return false;
     }
     size_t pos = extension.type.rfind('/');
     if (pos == absl::string_view::npos || pos == extension.type.size() - 1) {
@@ -462,9 +462,10 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     } else {
       extension.type = extension.type.substr(pos + 1);
     }
+    return true;
   };
   extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  strip_type_prefix();
+  if (!strip_type_prefix()) return absl::nullopt;
   extension.validation_fields.emplace_back(
       errors, absl::StrCat(".value[", extension.type, "]"));
   absl::string_view any_value = UpbStringToAbsl(google_protobuf_Any_value(any));
@@ -478,7 +479,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     }
     extension.type =
         UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-    strip_type_prefix();
+    if (!strip_type_prefix()) return absl::nullopt;
     extension.validation_fields.emplace_back(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);

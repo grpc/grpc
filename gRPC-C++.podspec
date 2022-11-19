@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.51.0-dev'
+  version = '1.52.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -121,7 +121,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
                       'include/grpcpp/impl/codegen/delegating_channel.h',
-                      'include/grpcpp/impl/codegen/grpc_library.h',
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
                       'include/grpcpp/impl/codegen/interceptor_common.h',
@@ -147,7 +146,10 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/sync.h',
                       'include/grpcpp/impl/codegen/sync_stream.h',
                       'include/grpcpp/impl/codegen/time.h',
+                      'include/grpcpp/impl/completion_queue_tag.h',
+                      'include/grpcpp/impl/delegating_channel.h',
                       'include/grpcpp/impl/grpc_library.h',
+                      'include/grpcpp/impl/intercepted_channel.h',
                       'include/grpcpp/impl/method_handler_impl.h',
                       'include/grpcpp/impl/rpc_method.h',
                       'include/grpcpp/impl/rpc_service_method.h',
@@ -156,6 +158,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/server_builder_plugin.h',
                       'include/grpcpp/impl/server_initializer.h',
                       'include/grpcpp/impl/service_type.h',
+                      'include/grpcpp/impl/status.h',
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/auth_context.h',
                       'include/grpcpp/security/auth_metadata_processor.h',
@@ -275,8 +278,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h',
                       'src/core/ext/filters/http/client/http_client_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
-                      'src/core/ext/filters/http/message_compress/message_compress_filter.h',
-                      'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
+                      'src/core/ext/filters/http/message_compress/compression_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/rbac/rbac_filter.h',
@@ -343,6 +345,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http_trace.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
                       'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -703,6 +706,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/posix_engine/timer.h',
                       'src/core/lib/event_engine/posix_engine/timer_heap.h',
@@ -1177,8 +1182,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h',
                               'src/core/ext/filters/http/client/http_client_filter.h',
                               'src/core/ext/filters/http/client_authority_filter.h',
-                              'src/core/ext/filters/http/message_compress/message_compress_filter.h',
-                              'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
+                              'src/core/ext/filters/http/message_compress/compression_filter.h',
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/rbac/rbac_filter.h',
@@ -1227,6 +1231,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -1587,6 +1592,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                               'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',

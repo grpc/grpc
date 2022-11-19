@@ -67,13 +67,13 @@
     on the peer's memory pressure which is reflected in its max http2 frame
     size.
   default: false
-  expiry: 2023/05/01
+  expiry: 2023/01/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
 - name: flow_control_fixes
   description:
     Various fixes for flow control, max frame size setting.
-  default: false
+  default: debug
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: ["flow_control_test"]
@@ -84,13 +84,6 @@
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
-- name: periodic_resource_quota_reclamation
-  description:
-    Periodically return memory to the resource quota
-  default: true
-  expiry: 2023/04/01
-  owner: ctiller@google.com
-  test_tags: [resource_quota_test, promise_test, hpack_test]
 - name: unconstrained_max_quota_buffer_size
   description:
     Discard the cap on the max free pool size for one memory allocator

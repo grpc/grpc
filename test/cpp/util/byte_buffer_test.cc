@@ -40,9 +40,9 @@ const char* kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
 
 class ByteBufferTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 TEST_F(ByteBufferTest, CopyCtor) {
@@ -70,7 +70,7 @@ TEST_F(ByteBufferTest, Clear) {
   Slice s(kContent1);
   ByteBuffer buffer(&s, 1);
   buffer.Clear();
-  EXPECT_EQ(static_cast<size_t>(0), buffer.Length());
+  EXPECT_EQ(0, buffer.Length());
 }
 
 TEST_F(ByteBufferTest, Length) {

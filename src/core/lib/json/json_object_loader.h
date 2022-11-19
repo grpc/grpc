@@ -371,7 +371,6 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
     return LoaderForType<T>();
   }
 
- private:
   ~AutoLoader() = default;
 };
 

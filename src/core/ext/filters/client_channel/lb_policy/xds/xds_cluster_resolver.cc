@@ -209,31 +209,26 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
       void OnResourceChanged(XdsEndpointResource update) override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            // TODO(yashykt): When we move to C++14, capture update with
-            // std::move
-            [this, update]() mutable {
-              OnResourceChangedHelper(std::move(update));
-              Unref();
+            [self = std::move(self), update = std::move(update)]() mutable {
+              self->OnResourceChangedHelper(std::move(update));
             },
             DEBUG_LOCATION);
       }
       void OnError(absl::Status status) override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this, status]() {
-              OnErrorHelper(status);
-              Unref();
+            [self = std::move(self), status = std::move(status)]() mutable {
+              self->OnErrorHelper(std::move(status));
             },
             DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        Ref().release();  // ref held by callback
+        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this]() {
-              OnResourceDoesNotExistHelper();
-              Unref();
+            [self = std::move(self)]() {
+              self->OnResourceDoesNotExistHelper();
             },
             DEBUG_LOCATION);
       }
@@ -373,7 +368,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
+                     RefCountedPtr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
     void RequestReresolution() override {}
@@ -435,7 +430,7 @@ XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
 
 void XdsClusterResolverLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
+    RefCountedPtr<SubchannelPicker> picker) {
   if (xds_cluster_resolver_policy_->shutting_down_ ||
       xds_cluster_resolver_policy_->child_policy_ == nullptr) {
     return;
@@ -961,7 +956,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "config");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        std::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
     return nullptr;
   }
   return std::move(*config);

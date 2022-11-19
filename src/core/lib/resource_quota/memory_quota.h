@@ -410,8 +410,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
     if ((!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
          prev_free + n > kMaxQuotaBufferSize) ||
-        (IsPeriodicResourceQuotaReclamationEnabled() &&
-         donate_back_.Tick([](Duration) {}))) {
+        donate_back_.Tick([](Duration) {})) {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }

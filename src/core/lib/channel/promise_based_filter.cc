@@ -527,6 +527,12 @@ const char* BaseCallData::ReceiveMessage::StateString(State state) {
       return "CANCELLED_WHILST_FORWARDING";
     case State::kBatchCompletedButCancelled:
       return "BATCH_COMPLETED_BUT_CANCELLED";
+    case State::kCancelledWhilstIdle:
+      return "CANCELLED_WHILST_IDLE";
+    case State::kCompletedWhilePulledFromPipe:
+      return "COMPLETED_WHILE_PULLED_FROM_PIPE";
+    case State::kCompletedWhilePushedToPipe:
+      return "COMPLETED_WHILE_PUSHED_TO_PIPE";
   }
   return "UNKNOWN";
 }
@@ -551,7 +557,10 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kBatchCompletedNoPipe:
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
+    case State::kCompletedWhilePulledFromPipe:
+    case State::kCompletedWhilePushedToPipe:
       abort();
+    case State::kCancelledWhilstIdle:
     case State::kCancelled:
       return;
   }
@@ -586,7 +595,10 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
     case State::kBatchCompleted:
     case State::kPushedToPipe:
     case State::kPulledFromPipe:
+    case State::kCompletedWhilePulledFromPipe:
+    case State::kCompletedWhilePushedToPipe:
     case State::kCancelledWhilstForwarding:
+    case State::kCancelledWhilstIdle:
     case State::kBatchCompletedButCancelled:
       abort();
     case State::kCancelled:
@@ -610,6 +622,9 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kBatchCompletedNoPipe:
     case State::kCancelled:
     case State::kBatchCompletedButCancelled:
+    case State::kCancelledWhilstIdle:
+    case State::kCompletedWhilePulledFromPipe:
+    case State::kCompletedWhilePushedToPipe:
       abort();
     case State::kForwardedBatchNoPipe:
       state_ = State::kBatchCompletedNoPipe;
@@ -636,28 +651,41 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
   }
   switch (state_) {
     case State::kInitial:
-    case State::kIdle:
       state_ = State::kCancelled;
+      break;
+    case State::kIdle:
+      state_ = State::kCancelledWhilstIdle;
       break;
     case State::kForwardedBatch:
     case State::kForwardedBatchNoPipe:
       state_ = State::kCancelledWhilstForwarding;
       break;
+    case State::kCompletedWhilePulledFromPipe:
+    case State::kCompletedWhilePushedToPipe:
     case State::kPulledFromPipe:
     case State::kPushedToPipe: {
       auto status_code =
-          metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_OK);
-      GPR_ASSERT(status_code != GRPC_STATUS_OK);
-      push_.reset();
-      next_.reset();
-      flusher->AddClosure(intercepted_on_complete_,
-                          StatusFromMetadata(metadata), "recv_message_done");
-      state_ = State::kCancelled;
+          metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+      if (status_code == GRPC_STATUS_OK) {
+        if (state_ == State::kCompletedWhilePulledFromPipe ||
+            state_ == State::kPulledFromPipe) {
+          state_ = State::kCompletedWhilePulledFromPipe;
+        } else {
+          state_ = State::kCompletedWhilePushedToPipe;
+        }
+      } else {
+        push_.reset();
+        next_.reset();
+        flusher->AddClosure(intercepted_on_complete_,
+                            StatusFromMetadata(metadata), "recv_message_done");
+        state_ = State::kCancelled;
+      }
     } break;
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
       abort();
+    case State::kCancelledWhilstIdle:
     case State::kCancelledWhilstForwarding:
     case State::kCancelled:
       break;
@@ -666,8 +694,10 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
 
 void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
   if (grpc_trace_channel.enabled()) {
-    gpr_log(GPR_DEBUG, "%s ReceiveMessage.WakeInsideCombiner st=%s",
-            base_->LogTag().c_str(), StateString(state_));
+    gpr_log(GPR_DEBUG,
+            "%s ReceiveMessage.WakeInsideCombiner st=%s push?=%s next?=%s",
+            base_->LogTag().c_str(), StateString(state_),
+            push_.has_value() ? "yes" : "no", next_.has_value() ? "yes" : "no");
   }
   switch (state_) {
     case State::kInitial:
@@ -677,6 +707,10 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
     case State::kCancelled:
     case State::kCancelledWhilstForwarding:
     case State::kBatchCompletedNoPipe:
+      break;
+    case State::kCancelledWhilstIdle:
+      sender_->Close();
+      state_ = State::kCancelled;
       break;
     case State::kBatchCompletedButCancelled:
       sender_->Close();
@@ -701,10 +735,16 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       }
       GPR_ASSERT(state_ == State::kPushedToPipe);
       ABSL_FALLTHROUGH_INTENDED;
+    case State::kCompletedWhilePushedToPipe:
     case State::kPushedToPipe: {
       GPR_ASSERT(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = absl::get_if<bool>(&r_push)) {
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "%s ReceiveMessage.WakeInsideCombiner push complete: %s",
+                  base_->LogTag().c_str(), *p ? "true" : "false");
+        }
         // We haven't pulled through yet, so this certainly shouldn't succeed.
         GPR_ASSERT(!*p);
         state_ = State::kCancelled;
@@ -713,11 +753,21 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
       GPR_ASSERT(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r_next)) {
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "%s ReceiveMessage.WakeInsideCombiner next complete: %s",
+                  base_->LogTag().c_str(),
+                  p->has_value() ? "got message" : "end of stream");
+        }
         next_.reset();
         if (p->has_value()) {
           *intercepted_slice_buffer_ = std::move(*(**p)->payload());
           *intercepted_flags_ = (**p)->flags();
-          state_ = State::kPulledFromPipe;
+          if (state_ == State::kCompletedWhilePushedToPipe) {
+            state_ = State::kCompletedWhilePulledFromPipe;
+          } else {
+            state_ = State::kPulledFromPipe;
+          }
         } else {
           *intercepted_slice_buffer_ = absl::nullopt;
           *intercepted_flags_ = 0;
@@ -725,12 +775,26 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher) {
         }
       }
     }
-      if (state_ != State::kPulledFromPipe) break;
+      if (state_ != State::kPulledFromPipe &&
+          state_ != State::kCompletedWhilePulledFromPipe) {
+        break;
+      }
       ABSL_FALLTHROUGH_INTENDED;
+    case State::kCompletedWhilePulledFromPipe:
     case State::kPulledFromPipe: {
       GPR_ASSERT(push_.has_value());
       if (!absl::holds_alternative<Pending>((*push_)())) {
-        state_ = State::kIdle;
+        if (grpc_trace_channel.enabled()) {
+          gpr_log(GPR_DEBUG,
+                  "%s ReceiveMessage.WakeInsideCombiner push complete",
+                  base_->LogTag().c_str());
+        }
+        if (state_ == State::kCompletedWhilePulledFromPipe) {
+          sender_->Close();
+          state_ = State::kCancelled;
+        } else {
+          state_ = State::kIdle;
+        }
         push_.reset();
         flusher->AddClosure(std::exchange(intercepted_on_complete_, nullptr),
                             absl::OkStatus(), "recv_message");
@@ -1512,8 +1576,10 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_DEBUG,
-            "%s ClientCallData.RecvTrailingMetadataReady error=%s md=%s",
-            LogTag().c_str(), error.ToString().c_str(),
+            "%s ClientCallData.RecvTrailingMetadataReady "
+            "recv_trailing_state=%s error=%s md=%s",
+            LogTag().c_str(), StateString(recv_trailing_state_),
+            error.ToString().c_str(),
             recv_trailing_metadata_->DebugString().c_str());
   }
   // If we were cancelled prior to receiving this callback, we should simply
@@ -1536,6 +1602,9 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   // Record that we've got the callback.
   GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kForwarded);
   recv_trailing_state_ = RecvTrailingState::kComplete;
+  if (receive_message() != nullptr) {
+    receive_message()->Done(*recv_trailing_metadata_, &flusher);
+  }
   // Repoll the promise.
   ScopedContext context(this);
   WakeInsideCombiner(&flusher);

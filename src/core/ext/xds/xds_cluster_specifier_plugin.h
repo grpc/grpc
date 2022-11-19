@@ -21,15 +21,15 @@
 
 #include <map>
 #include <memory>
-#include <string>
 #include <utility>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "upb/arena.h"
 #include "upb/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -37,21 +37,27 @@ class XdsClusterSpecifierPluginImpl {
  public:
   virtual ~XdsClusterSpecifierPluginImpl() = default;
 
+  // Returns the config proto message name.
+  virtual absl::string_view ConfigProtoName() const = 0;
+
   // Loads the proto message into the upb symtab.
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
 
   // Returns the LB policy config in JSON form.
-  virtual absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab) const = 0;
+  virtual Json GenerateLoadBalancingPolicyConfig(
+      XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab,
+      ValidationErrors* errors) const = 0;
 };
 
 class XdsRouteLookupClusterSpecifierPlugin
     : public XdsClusterSpecifierPluginImpl {
+  absl::string_view ConfigProtoName() const override;
+
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
-  absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      XdsExtension extension, upb_Arena* arena,
-      upb_DefPool* symtab) const override;
+  Json GenerateLoadBalancingPolicyConfig(
+      XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab,
+      ValidationErrors* errors) const override;
 };
 
 class XdsClusterSpecifierPluginRegistry {
@@ -74,8 +80,7 @@ class XdsClusterSpecifierPluginRegistry {
     return *this;
   }
 
-  void RegisterPlugin(std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-                      absl::string_view config_proto_type_name);
+  void RegisterPlugin(std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin);
 
   void PopulateSymtab(upb_DefPool* symtab) const;
 

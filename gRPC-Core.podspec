@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.51.0-dev'
+  version = '1.52.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -311,10 +311,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client_authority_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.h',
                       'src/core/ext/filters/http/http_filters_plugin.cc',
-                      'src/core/ext/filters/http/message_compress/message_compress_filter.cc',
-                      'src/core/ext/filters/http/message_compress/message_compress_filter.h',
-                      'src/core/ext/filters/http/message_compress/message_decompress_filter.cc',
-                      'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
+                      'src/core/ext/filters/http/message_compress/compression_filter.cc',
+                      'src/core/ext/filters/http/message_compress/compression_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.cc',
                       'src/core/ext/filters/http/server/http_server_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
@@ -369,6 +367,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http_trace.cc',
+                      'src/core/ext/transport/chttp2/transport/http_trace.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
@@ -1079,6 +1079,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/posix_engine.cc',
                       'src/core/lib/event_engine/posix_engine/posix_engine.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener.cc',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc',
+                      'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/posix_engine/timer.cc',
@@ -1835,8 +1839,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h',
                               'src/core/ext/filters/http/client/http_client_filter.h',
                               'src/core/ext/filters/http/client_authority_filter.h',
-                              'src/core/ext/filters/http/message_compress/message_compress_filter.h',
-                              'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
+                              'src/core/ext/filters/http/message_compress/compression_filter.h',
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/rbac/rbac_filter.h',
@@ -1865,6 +1868,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/stream_map.h',
@@ -2225,6 +2229,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
+                              'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
                               'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',
@@ -2632,8 +2638,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/grpc_authorization_policy_provider.h',
                       'src/core/lib/security/authorization/rbac_translator.cc',
                       'src/core/lib/security/authorization/rbac_translator.h',
-                      'test/core/compression/args_utils.cc',
-                      'test/core/compression/args_utils.h',
                       'test/core/end2end/cq_verifier.cc',
                       'test/core/end2end/cq_verifier.h',
                       'test/core/end2end/data/client_certs.cc',
