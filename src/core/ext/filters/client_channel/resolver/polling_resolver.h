@@ -22,19 +22,17 @@
 #include <memory>
 #include <string>
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 
@@ -80,8 +78,8 @@ class PollingResolver : public Resolver {
 
   void GetResultStatus(absl::Status status);
 
-  static void OnNextResolution(void* arg, grpc_error_handle error);
-  void OnNextResolutionLocked(grpc_error_handle error);
+  void OnNextResolution();
+  void OnNextResolutionLocked();
 
   /// authority
   std::string authority_;
@@ -98,10 +96,6 @@ class PollingResolver : public Resolver {
   bool shutdown_ = false;
   /// are we currently resolving?
   OrphanablePtr<Orphanable> request_;
-  /// next resolution timer
-  bool have_next_resolution_timer_ = false;
-  grpc_timer next_resolution_timer_;
-  grpc_closure on_next_resolution_;
   /// min time between DNS requests
   Duration min_time_between_resolutions_;
   /// timestamp of last DNS request
@@ -116,6 +110,11 @@ class PollingResolver : public Resolver {
     kReresolutionRequestedWhileCallbackWasPending,
   };
   ResultStatusState result_status_state_ = ResultStatusState::kNone;
+  /// next resolution timer
+  bool have_next_resolution_timer_ = false;
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      next_resolution_timer_handle_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 
 }  // namespace grpc_core

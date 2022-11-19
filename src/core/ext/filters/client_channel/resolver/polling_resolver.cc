@@ -19,31 +19,29 @@
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 
 #include <inttypes.h>
-
 #include <functional>
 #include <utility>
 #include <vector>
+
+#include <grpc/support/log.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 PollingResolver::PollingResolver(ResolverArgs args,
                                  const ChannelArgs& channel_args,
@@ -58,7 +56,8 @@ PollingResolver::PollingResolver(ResolverArgs args,
       tracer_(tracer),
       interested_parties_(args.pollset_set),
       min_time_between_resolutions_(min_time_between_resolutions),
-      backoff_(backoff_options) {
+      backoff_(backoff_options),
+      event_engine_(channel_args.GetObjectRef<EventEngine>()) {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO, "[polling resolver %p] created", this);
   }
@@ -89,7 +88,7 @@ void PollingResolver::RequestReresolutionLocked() {
 
 void PollingResolver::ResetBackoffLocked() {
   if (have_next_resolution_timer_) {
-    grpc_timer_cancel(&next_resolution_timer_);
+    event_engine_->Cancel(next_resolution_timer_handle_);
   }
   backoff_.Reset();
 }
@@ -100,26 +99,24 @@ void PollingResolver::ShutdownLocked() {
   }
   shutdown_ = true;
   if (have_next_resolution_timer_) {
-    grpc_timer_cancel(&next_resolution_timer_);
+    event_engine_->Cancel(next_resolution_timer_handle_);
   }
   request_.reset();
 }
 
-void PollingResolver::OnNextResolution(void* arg, grpc_error_handle error) {
-  auto* self = static_cast<PollingResolver*>(arg);
-  self->work_serializer_->Run(
-      [self, error]() { self->OnNextResolutionLocked(error); }, DEBUG_LOCATION);
+void PollingResolver::OnNextResolution() {
+  Ref(DEBUG_LOCATION, "OnNextResolution").release();
+  work_serializer_->Run([this]() { OnNextResolutionLocked(); }, DEBUG_LOCATION);
 }
 
-void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
+void PollingResolver::OnNextResolutionLocked() {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO,
-            "[polling resolver %p] re-resolution timer fired: error=\"%s\", "
-            "shutdown_=%d",
-            this, StatusToString(error).c_str(), shutdown_);
+            "[polling resolver %p] re-resolution timer fired: shutdown_=%d",
+            this, shutdown_);
   }
   have_next_resolution_timer_ = false;
-  if (error.ok() && !shutdown_) {
+  if (!shutdown_) {
     StartResolvingLocked();
   }
   Unref(DEBUG_LOCATION, "retry-timer");
@@ -188,8 +185,8 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    Timestamp next_try = backoff_.NextAttemptTime();
-    Duration timeout = next_try - Timestamp::Now();
+    const Timestamp next_try = backoff_.NextAttemptTime();
+    const Duration timeout = next_try - Timestamp::Now();
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
@@ -200,9 +197,11 @@ void PollingResolver::GetResultStatus(absl::Status status) {
         gpr_log(GPR_INFO, "[polling resolver %p] retrying immediately", this);
       }
     }
-    Ref(DEBUG_LOCATION, "next_resolution_timer").release();
-    GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this, nullptr);
-    grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
+    Ref(DEBUG_LOCATION, "next_resolution_timer_retry").release();
+    next_resolution_timer_handle_ = event_engine_->RunAfter(timeout, [this] {
+      OnNextResolution();
+      Unref(DEBUG_LOCATION, "next_resolution_timer_retry_fired");
+    });
     // Reset result_status_state_.  Note that even if re-resolution was
     // requested while the result-health callback was pending, we can
     // ignore it here, because we are in backoff to re-resolve anyway.
@@ -236,10 +235,11 @@ void PollingResolver::MaybeStartResolvingLocked() {
       }
       have_next_resolution_timer_ = true;
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
-      GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this, nullptr);
-      grpc_timer_init(&next_resolution_timer_,
-                      Timestamp::Now() + time_until_next_resolution,
-                      &on_next_resolution_);
+      next_resolution_timer_handle_ =
+          event_engine_->RunAfter(time_until_next_resolution, [this] {
+            OnNextResolution();
+            Unref(DEBUG_LOCATION, "next_resolution_timer_cooldown_fired");
+          });
       return;
     }
   }
