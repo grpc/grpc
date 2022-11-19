@@ -161,9 +161,6 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
     : memory_quota_(memory_quota), name_(std::move(name)) {
   memory_quota_->Take(taken_bytes_);
   memory_quota_->AddNewAllocator(this);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Adding allocator %p", this);
-  }
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
@@ -172,9 +169,6 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
              taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_);
   memory_quota_->RemoveAllocator(this);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "Removing allocator %p", this);
-  }
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
@@ -480,6 +474,10 @@ void BasicMemoryQuota::Return(size_t amount) {
 }
 
 void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Adding allocator %p", allocator);
+  }
+
   AllocatorBucket::Shard& shard = small_allocators_.SelectShard(allocator);
 
   {
