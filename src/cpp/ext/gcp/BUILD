@@ -101,6 +101,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
         "googleapis_logging_grpc_service",
     ],
