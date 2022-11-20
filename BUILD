@@ -532,7 +532,7 @@ grpc_cc_library(
         "//src/core:plugin_registry/grpc_plugin_registry_extra.cc",
     ],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        ":grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -542,7 +542,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     select_deps = [
         {
-            "grpc_no_xds": [],
+            ":grpc_no_xds": [],
             "//conditions:default": GRPC_XDS_TARGETS,
         },
     ],
@@ -786,7 +786,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = [
         {
-            "grpc_no_xds": [],
+            ":grpc_no_xds": [],
             "//conditions:default": [
                 "grpc++_xds_client",
                 "grpc++_xds_server",
@@ -2039,7 +2039,7 @@ grpc_cc_library(
     ],
     hdrs = [],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        ":grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -2050,7 +2050,7 @@ grpc_cc_library(
         "include/grpcpp/ext/admin_services.h",
     ],
     select_deps = [{
-        "grpc_no_xds": [],
+        ":grpc_no_xds": [],
         "//conditions:default": ["//:grpcpp_csds"],
     }],
     deps = [
