@@ -62,6 +62,12 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
+namespace grpc {
+namespace testing {
+namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 constexpr int kMinResolutionPeriodMs = 1000;
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
@@ -84,14 +90,12 @@ static struct iomgr_args {
   grpc_pollset_set* pollset_set;
 } g_iomgr_args;
 
-namespace {
-
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
   explicit TestDNSResolver(
       std::shared_ptr<grpc_core::DNSResolver> default_resolver)
       : default_resolver_(std::move(default_resolver)),
-        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+        engine_(GetDefaultEventEngine()) {}
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   TaskHandle LookupHostname(
@@ -168,8 +172,6 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   std::shared_ptr<grpc_core::DNSResolver> default_resolver_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
-
-}  // namespace
 
 static grpc_ares_request* test_dns_lookup_ares(
     const char* dns_server, const char* name, const char* default_port,
@@ -383,6 +385,7 @@ static void start_test_under_work_serializer(void* arg) {
       kMinResolutionPeriodMs);
   grpc_channel_args cooldown_args = {1, &cooldown_arg};
   args.args = grpc_core::ChannelArgs::FromC(&cooldown_args);
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   ASSERT_NE(res_cb_arg->resolver, nullptr);
   // First resolution, would incur in system-level resolution.
@@ -420,6 +423,10 @@ TEST(DnsResolverCooldownTest, MainTest) {
   grpc_shutdown();
   g_all_callbacks_invoked->WaitForNotification();
 }
+
+}  // namespace
+}  // namespace testing
+}  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

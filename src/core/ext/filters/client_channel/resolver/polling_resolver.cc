@@ -194,12 +194,14 @@ void PollingResolver::GetResultStatus(absl::Status status) {
         gpr_log(GPR_INFO, "[polling resolver %p] retrying immediately", this);
       }
     }
-    Ref(DEBUG_LOCATION, "next_resolution_timer_retry").release();
-    next_resolution_timer_handle_ = event_engine_->RunAfter(timeout, [this] {
-      // OnNextResolutionLocked will Unref.
-      work_serializer_->Run([this]() { OnNextResolutionLocked(); },
-                            DEBUG_LOCATION);
-    });
+    next_resolution_timer_handle_ =
+        event_engine_->RunAfter(timeout, [ref = Ref(), this] {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          Ref(DEBUG_LOCATION, "next_resolution_timer_retry_fired").release();
+          work_serializer_->Run([this]() { OnNextResolutionLocked(); },
+                                DEBUG_LOCATION);
+        });
     // Reset result_status_state_.  Note that even if re-resolution was
     // requested while the result-health callback was pending, we can
     // ignore it here, because we are in backoff to re-resolve anyway.
@@ -232,10 +234,11 @@ void PollingResolver::MaybeStartResolvingLocked() {
                 time_until_next_resolution.millis());
       }
       have_next_resolution_timer_ = true;
-      Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
-      next_resolution_timer_handle_ =
-          event_engine_->RunAfter(time_until_next_resolution, [this] {
-            // OnNextResolutionLocked will Unref.
+      next_resolution_timer_handle_ = event_engine_->RunAfter(
+          time_until_next_resolution, [ref = Ref(), this] {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown_fired").release();
             work_serializer_->Run([this]() { OnNextResolutionLocked(); },
                                   DEBUG_LOCATION);
           });

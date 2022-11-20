@@ -28,7 +28,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -40,6 +42,12 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
+
+namespace grpc {
+namespace testing {
+namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
@@ -55,12 +63,13 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    ASSERT_TRUE(uri.ok());
+    FAIL();
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = std::make_unique<TestResultHandler>();
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   ASSERT_NE(resolver, nullptr);
@@ -74,12 +83,13 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    ASSERT_TRUE(uri.ok());
+    FAIL();
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = std::make_unique<TestResultHandler>();
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   ASSERT_EQ(resolver, nullptr);
@@ -105,6 +115,10 @@ TEST(DnsResolverTest, MainTest) {
     test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
   }
 }
+
+}  // namespace
+}  // namespace testing
+}  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
