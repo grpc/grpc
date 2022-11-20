@@ -1,0 +1,31 @@
+{
+    "Files": {
+        "@protos/file.proto": {
+            "--csharp_out": [
+                "obj/Debug/netstandard2.0/@protos"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "obj/Debug/netstandard2.0/@protos"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "IGNORE:obj/Debug/netstandard2.0/fbd9d922e77c8371_file.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "@protos/file.proto"
+            ]
+        }
+    },
+    "Metadata": {
+        "timestamp": "IGNORE:"
+    }
+}

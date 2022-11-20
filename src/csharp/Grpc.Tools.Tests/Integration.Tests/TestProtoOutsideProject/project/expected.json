@@ -1,0 +1,34 @@
+{
+    "Files": {
+        "../api/greet.proto": {
+            "--csharp_out": [
+                "out"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "out"
+            ],
+            "--grpc_opt": [
+                "no_server"
+            ],
+            "--proto_path": [
+                "../../../../Grpc.Tools/build/native/include",
+                "../api"
+            ],
+            "--dependency_out": [
+                "IGNORE:obj/Debug/netstandard2.0/f935d8280597a47e_greet.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "../api/greet.proto"
+            ]
+        }
+    },
+    "Metadata": {
+        "timestamp": "IGNORE:"
+    }
+}

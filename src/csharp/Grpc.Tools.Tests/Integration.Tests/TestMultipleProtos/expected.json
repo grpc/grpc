@@ -1,0 +1,79 @@
+{
+    "Files": {
+        "file.proto": {
+            "--csharp_out": [
+                "obj/Debug/netstandard2.0"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "obj/Debug/netstandard2.0"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "IGNORE:obj/Debug/netstandard2.0/da39a3ee5e6b4b0d_file.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "file.proto"
+            ]
+        },
+        "protos/another.proto": {
+            "--csharp_out": [
+                "obj/Debug/netstandard2.0/protos"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "obj/Debug/netstandard2.0/protos"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "IGNORE:obj/Debug/netstandard2.0/12fbc7ffe642ca7e_another.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "protos/another.proto"
+            ]
+        },
+        "second.proto": {
+            "--csharp_out": [
+                "obj/Debug/netstandard2.0"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "obj/Debug/netstandard2.0"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "IGNORE:obj/Debug/netstandard2.0/da39a3ee5e6b4b0d_second.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "second.proto"
+            ]
+        }
+    },
+    "Metadata": {
+        "timestamp": "IGNORE:"
+    }
+}
