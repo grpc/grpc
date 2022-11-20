@@ -106,11 +106,6 @@ void PollingResolver::ShutdownLocked() {
   request_.reset();
 }
 
-void PollingResolver::OnNextResolution() {
-  Ref(DEBUG_LOCATION, "OnNextResolution").release();
-  work_serializer_->Run([this]() { OnNextResolutionLocked(); }, DEBUG_LOCATION);
-}
-
 void PollingResolver::OnNextResolutionLocked() {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO,
@@ -121,7 +116,7 @@ void PollingResolver::OnNextResolutionLocked() {
   if (!shutdown_) {
     StartResolvingLocked();
   }
-  Unref(DEBUG_LOCATION, "retry-timer");
+  Unref(DEBUG_LOCATION, "retry_timer");
 }
 
 void PollingResolver::OnRequestComplete(Result result) {
@@ -201,8 +196,9 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     }
     Ref(DEBUG_LOCATION, "next_resolution_timer_retry").release();
     next_resolution_timer_handle_ = event_engine_->RunAfter(timeout, [this] {
-      OnNextResolution();
-      Unref(DEBUG_LOCATION, "next_resolution_timer_retry_fired");
+      // OnNextResolutionLocked will Unref.
+      work_serializer_->Run([this]() { OnNextResolutionLocked(); },
+                            DEBUG_LOCATION);
     });
     // Reset result_status_state_.  Note that even if re-resolution was
     // requested while the result-health callback was pending, we can
@@ -239,8 +235,9 @@ void PollingResolver::MaybeStartResolvingLocked() {
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
       next_resolution_timer_handle_ =
           event_engine_->RunAfter(time_until_next_resolution, [this] {
-            OnNextResolution();
-            Unref(DEBUG_LOCATION, "next_resolution_timer_cooldown_fired");
+            // OnNextResolutionLocked will Unref.
+            work_serializer_->Run([this]() { OnNextResolutionLocked(); },
+                                  DEBUG_LOCATION);
           });
       return;
     }

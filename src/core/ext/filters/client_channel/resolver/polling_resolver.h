@@ -22,10 +22,10 @@
 #include <memory>
 #include <string>
 
-#include <grpc/event_engine/event_engine.h>
-
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -79,7 +79,6 @@ class PollingResolver : public Resolver {
 
   void GetResultStatus(absl::Status status);
 
-  void OnNextResolution();
   void OnNextResolutionLocked();
 
   /// authority
