@@ -54,6 +54,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )

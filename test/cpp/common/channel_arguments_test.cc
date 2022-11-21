@@ -86,9 +86,9 @@ class ChannelArgumentsTest : public ::testing::Test {
     channel_args.SetChannelArgs(args);
   }
 
-  static void SetUpTestCase() { grpc_init(); }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 
   std::string GetDefaultUserAgentPrefix() {
     std::ostringstream user_agent_prefix;

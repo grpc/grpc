@@ -50,5 +50,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_transport_chttp2",
         "//src/core:channel_args",
+        "//src/core:closure",
     ],
 )

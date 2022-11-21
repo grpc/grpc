@@ -39,6 +39,7 @@ grpc_proto_fuzzer(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:closure",
         "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/event_engine/fuzzing_event_engine",

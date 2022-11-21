@@ -7,9 +7,6 @@
 # - bugprone-reserved-identifier
 #   Some macros need to be defined for portability purpose; e.g. _BSD_SOURCE.
 #
-# - google-upgrade-googletest-case
-#   This requires googletest 1.10 which is higher than ones installed on many linux distributions.
-#
 # - modernize-redundant-void-arg
 #   Some source should be strictly C99 and func(void) should be used.
 #
@@ -30,7 +27,6 @@
 # - bugprone-unchecked-optional-access
 # - clang-diagnostic-deprecated-declarations
 # - clang-diagnostic-unused-function
-# - google-readability-avoid-underscore-in-googletest-name
 # - google-runtime-int
 # - google-runtime-references
 # - modernize-avoid-bind
@@ -70,10 +66,8 @@ Checks: '-*,
   -bugprone-too-small-loop-variable,
   -bugprone-unchecked-optional-access,
   google-*,
-  -google-readability-avoid-underscore-in-googletest-name,
   -google-runtime-int,
   -google-runtime-references,
-  -google-upgrade-googletest-case,
   performance-*,
   -performance-no-automatic-move,
   -performance-no-int-to-ptr,
@@ -112,6 +106,7 @@ Checks: '-*,
   modernize-use-nullptr,
   modernize-use-override,
   modernize-use-transparent-functors,
+  readability-braces-around-statements,
   readability-const-return-type,
   readability-container-size-empty,
   readability-delete-null-pointer,
@@ -121,6 +116,7 @@ Checks: '-*,
   readability-inconsistent-declaration-parameter-name,
   readability-misleading-indentation,
   readability-misplaced-array-index,
+  readability-redundant-access-specifiers,
   readability-redundant-control-flow,
   readability-redundant-function-ptr-dereference,
   readability-redundant-smartptr-get,
@@ -137,7 +133,7 @@ CheckOptions:
     value:  'absl::make_unique'
   - key:    modernize-make-unique.MakeSmartPtrFunctionHeader
     value:  'absl/memory/memory.h'
-  - key:    google-readability-braces-around-statements.ShortStatementLines
+  - key:    readability-braces-around-statements.ShortStatementLines
     value:  1
   - key:    readability-simplify-boolean-expr.SimplifyDeMorgan
     value:  false

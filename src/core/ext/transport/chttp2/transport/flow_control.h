@@ -74,7 +74,7 @@ enum class StallEdge { kNoChange, kStalled, kUnstalled };
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
 // transport how quickly the action must take place.
-class FlowControlAction {
+class GRPC_MUST_USE_RESULT FlowControlAction {
  public:
   enum class Urgency : uint8_t {
     // Nothing to be done.
@@ -261,7 +261,7 @@ class TransportFlowControl final {
   uint32_t acked_init_window() const { return acked_init_window_; }
   uint32_t sent_init_window() const { return target_initial_window_size_; }
 
-  void SetAckedInitialWindow(uint32_t value) { acked_init_window_ = value; }
+  FlowControlAction SetAckedInitialWindow(uint32_t value);
 
   // Getters
   int64_t remote_window() const { return remote_window_; }
