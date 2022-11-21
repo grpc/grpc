@@ -35,7 +35,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/time",
     ],
     language = "c++",
     visibility = [
@@ -44,5 +43,6 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr_platform",
+        "//src/core:time",
     ],
 )

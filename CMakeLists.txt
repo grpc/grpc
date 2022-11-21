@@ -3449,12 +3449,14 @@ foreach(_hdr
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
+  include/grpcpp/impl/metadata_map.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
   include/grpcpp/impl/server_builder_plugin.h
+  include/grpcpp/impl/server_callback_handlers.h
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
@@ -3472,6 +3474,7 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_interface.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
@@ -4138,12 +4141,14 @@ foreach(_hdr
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
+  include/grpcpp/impl/metadata_map.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/rpc_method.h
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
   include/grpcpp/impl/server_builder_plugin.h
+  include/grpcpp/impl/server_callback_handlers.h
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
@@ -4159,6 +4164,7 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_interface.h
   include/grpcpp/server_posix.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
