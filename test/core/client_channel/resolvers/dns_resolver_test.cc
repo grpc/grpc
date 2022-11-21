@@ -49,14 +49,13 @@ namespace {
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
+std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReportResult(grpc_core::Resolver::Result /*result*/) override {}
 };
 
-static void test_succeeds(grpc_core::ResolverFactory* factory,
-                          const char* string) {
+void test_succeeds(grpc_core::ResolverFactory* factory, const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
@@ -75,8 +74,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   ASSERT_NE(resolver, nullptr);
 }
 
-static void test_fails(grpc_core::ResolverFactory* factory,
-                       const char* string) {
+void test_fails(grpc_core::ResolverFactory* factory, const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
