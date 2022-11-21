@@ -46,7 +46,6 @@
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
-#include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -59,6 +58,7 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/server_interface.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/interceptor.h>
