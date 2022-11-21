@@ -28,7 +28,7 @@
 #include <type_traits>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>

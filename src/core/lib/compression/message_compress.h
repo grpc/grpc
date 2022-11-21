@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
 
 /* compress 'input' to 'output' using 'algorithm'.
