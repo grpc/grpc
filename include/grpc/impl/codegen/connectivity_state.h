@@ -19,7 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H
 #define GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H
 
-// IWYU pragma: private
+// IWYU pragma: private, include <grpc/grpc.h>
+// IWYU pragma: friend "src/.*"
 
 #include <grpc/support/port_platform.h>
 
