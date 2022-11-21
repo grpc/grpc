@@ -427,7 +427,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
       gpr_log(GPR_INFO, "Allocator %p returning %zu bytes to quota", this, ret);
     }
     if (ret == 0) return;
-    memory_quota_->MaybeMoveAllocator(this, /*old_free=*/ret, /*new_free=*/0);
+    memory_quota_->MaybeMoveAllocator(this, /*old_free_bytes=*/ret,
+                                      /*new_free_bytes=*/0);
     taken_bytes_.fetch_sub(ret, std::memory_order_relaxed);
     memory_quota_->Return(ret);
   }
