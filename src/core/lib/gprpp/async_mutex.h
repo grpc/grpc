@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_ASYNC_MUTEX_H
 #define GRPC_CORE_LIB_GPRPP_ASYNC_MUTEX_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <thread>
 #include <vector>
@@ -136,4 +138,4 @@ class AsyncMutex {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_ASYNC_MUTEX_H
