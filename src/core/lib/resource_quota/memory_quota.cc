@@ -312,8 +312,8 @@ void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
     // Figure out how many bytes we can return to the quota.
     size_t return_bytes = p->free_bytes_.exchange(0, std::memory_order_acq_rel);
     if (return_bytes == 0) return;
-    p->memory_quota_->MaybeMoveAllocator(p, /*old_free=*/return_bytes,
-                                         /*new_free=*/0);
+    p->memory_quota_->MaybeMoveAllocator(p, /*old_free_bytes=*/return_bytes,
+                                         /*new_free_bytes=*/0);
     // Subtract that from our outstanding balance.
     p->taken_bytes_.fetch_sub(return_bytes);
     // And return them to the quota.
