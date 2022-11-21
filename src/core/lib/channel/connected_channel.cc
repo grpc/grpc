@@ -828,6 +828,16 @@ class ServerStream final : public ConnectedChannelStream {
   ServerStream(grpc_transport* transport, CallArgs call_args,
                NextPromiseFactory next_promise_factory)
       : ConnectedChannelStream(transport) {
+    SetStream(static_cast<grpc_stream*>(
+        GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream)));
+    grpc_transport_init_stream(
+        transport, stream(), stream_refcount(),
+        static_cast<ServerCallContext*>(GetContext<CallContext>())
+            ->server_stream_data(),
+        GetContext<Arena>());
+    grpc_transport_set_pops(transport, stream(),
+                            GetContext<CallContext>()->polling_entity());
+
     auto& gim =
         client_initial_metadata_state_.emplace<GettingInitialMetadata>(this);
     gim.recv_initial_metadata_ready_waker =
@@ -850,14 +860,19 @@ class ServerStream final : public ConnectedChannelStream {
     absl::MutexLock lock(mu());
     if (auto* p =
             absl::get_if<GotInitialMetadata>(&client_initial_metadata_state_)) {
+      auto* server_to_client = GetContext<Arena>()->New<Pipe<MessageHandle>>();
+      auto* client_to_server = GetContext<Arena>()->New<Pipe<MessageHandle>>();
+      auto* server_initial_metadata =
+          GetContext<Arena>()->New<Latch<ServerMetadata*>>();
       auto promise = p->next_promise_factory(CallArgs{
-          std::move(p->client_initial_metadata), nullptr, nullptr, nullptr});
-      client_initial_metadata_state_
-          .emplace<ArenaPromise<ServerMetadataHandle>>(std::move(promise));
+          std::move(p->client_initial_metadata), server_initial_metadata,
+          &client_to_server->receiver, &server_to_client->sender});
+      client_initial_metadata_state_.emplace<Running>(
+          Running{server_initial_metadata, &client_to_server->sender,
+                  &server_to_client->receiver, std::move(promise)});
     }
-    if (auto* p = absl::get_if<ArenaPromise<ServerMetadataHandle>>(
-            &client_initial_metadata_state_)) {
-      auto poll = (*p)();
+    if (auto* p = absl::get_if<Running>(&client_initial_metadata_state_)) {
+      auto poll = p->promise();
       if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
         client_initial_metadata_state_.emplace<Uninitialized>();
         return std::move(*r);
@@ -867,10 +882,13 @@ class ServerStream final : public ConnectedChannelStream {
   }
 
  private:
-  void RecvInitialMetadataReady() {
+  void RecvInitialMetadataReady(absl::Status status) {
     MutexLock lock(mu());
     auto& getting =
         absl::get<GettingInitialMetadata>(client_initial_metadata_state_);
+    gpr_log(GPR_DEBUG, "GOT INITIAL METADATA: err=%s %s",
+            status.ToString().c_str(),
+            getting.client_initial_metadata->DebugString().c_str());
     GotInitialMetadata got{std::move(getting.client_initial_metadata),
                            std::move(getting.next_promise_factory)};
     auto waker = std::move(getting.recv_initial_metadata_ready_waker);
@@ -899,9 +917,16 @@ class ServerStream final : public ConnectedChannelStream {
     NextPromiseFactory next_promise_factory;
   };
 
+  struct Running {
+    Latch<ServerMetadata*>* server_initial_metadata;
+    PipeSender<MessageHandle>* incoming_messages;
+    PipeReceiver<MessageHandle>* outgoing_messages;
+    ArenaPromise<ServerMetadataHandle> promise;
+  };
+
   using ClientInitialMetadataState =
       absl::variant<Uninitialized, GettingInitialMetadata, GotInitialMetadata,
-                    ArenaPromise<ServerMetadataHandle>>;
+                    Running>;
   ClientInitialMetadataState client_initial_metadata_state_
       ABSL_GUARDED_BY(mu()) = Uninitialized{};
 

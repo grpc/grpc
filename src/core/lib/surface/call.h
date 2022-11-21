@@ -119,11 +119,21 @@ struct ContextType<CallContext> {};
 
 class ServerCallContext : public CallContext {
  public:
-  explicit ServerCallContext(PromiseBasedCall* call) : CallContext(call) {}
+  ServerCallContext(PromiseBasedCall* call, const void* server_stream_data)
+      : CallContext(call), server_stream_data_(server_stream_data) {}
   ArenaPromise<ServerMetadataHandle> Run(
       CallArgs call_args, grpc_completion_queue* cq,
       grpc_metadata_array* publish_initial_metadata,
       absl::FunctionRef<void(grpc_call* call)> publish);
+
+  // Server stream data as supplied by the transport (so we can link the
+  // transport stream up with the call again).
+  // TODO(ctiller): legacy API - once we move transports to promises we'll
+  // create the promise directly and not need to pass around this token.
+  const void* server_stream_data() { return server_stream_data_; }
+
+ private:
+  const void* const server_stream_data_;
 };
 }  // namespace grpc_core
 

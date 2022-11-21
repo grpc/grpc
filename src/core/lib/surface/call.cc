@@ -2920,9 +2920,13 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
   void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) override;
   Poll<ServerMetadataHandle> PollTopOfCall();
 
+  std::string DebugTag() const override {
+    return absl::StrFormat("SERVER_CALL[%p]: ", this);
+  }
+
  private:
   friend class ServerCallContext;
-  ServerCallContext call_context_{this};
+  ServerCallContext call_context_;
   ArenaPromise<ServerMetadataHandle> promise_;
   PipeSender<MessageHandle>* server_to_client_messages_ = nullptr;
   PipeReceiver<MessageHandle>* client_to_server_messages_ = nullptr;
@@ -2944,7 +2948,8 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::Run(
 
 ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
                                                grpc_call_create_args* args)
-    : PromiseBasedCall(arena, *args) {
+    : PromiseBasedCall(arena, *args),
+      call_context_(this, args->server_transport_data) {
   global_stats().IncrementServerCallsCreated();
   MutexLock lock(mu());
   ScopedContext activity_context(this);
@@ -2953,6 +2958,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
 }
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
+  abort();
   return Pending{};  // TODO
 }
 
