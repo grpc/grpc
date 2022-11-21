@@ -28,7 +28,6 @@
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/fork.h>
 #include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -42,6 +41,7 @@
 #include <grpc/impl/codegen/sync_abseil.h>
 #include <grpc/impl/codegen/sync_custom.h>
 #include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>

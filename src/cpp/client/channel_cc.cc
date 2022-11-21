@@ -24,9 +24,9 @@
 #include <vector>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

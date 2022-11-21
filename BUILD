@@ -214,6 +214,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/propagation_bits.h",
     "include/grpc/impl/codegen/status.h",
     "include/grpc/impl/codegen/slice.h",
+    "include/grpc/impl/connectivity_state.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
