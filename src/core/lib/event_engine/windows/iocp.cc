@@ -42,7 +42,7 @@ IOCP::IOCP(Executor* executor) noexcept
 IOCP::~IOCP() {}
 
 std::unique_ptr<WinSocket> IOCP::Watch(SOCKET socket) {
-  auto wrapped_socket = absl::make_unique<WinSocket>(socket, executor_);
+  auto wrapped_socket = std::make_unique<WinSocket>(socket, executor_);
   HANDLE ret = CreateIoCompletionPort(
       reinterpret_cast<HANDLE>(socket), iocp_handle_,
       reinterpret_cast<uintptr_t>(wrapped_socket.get()), 0);
