@@ -12,7 +12,7 @@ and tests run by Kokoro CI.
 
 - See [Installing Bazel](https://docs.bazel.build/versions/master/install.html) for instructions how to install bazel on your system.
 
-- Setup Application Default Credentials (ADC) for running remote builds by following the ["Set credentials" section](https://developers.google.com/remote-build-execution/docs/set-up/first-remote-build#set_credentials). (Note: make sure that quota project "grpc-testing" was added to the ADC, you can double check the credential file at `${HOME}/.config/gcloud/application_default_credentials.json`)
+- Setup Application Default Credentials (ADC) for running remote builds by following the ["Set credentials" section](https://developers.google.com/remote-build-execution/docs/set-up/first-remote-build#set_credentials). (Note: make sure that quota project "grpc-testing" was added to your ADC, you can double check the credential file at `${HOME}/.config/gcloud/application_default_credentials.json`)
 
 
 ## Running remote build manually from dev workstation
