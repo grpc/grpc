@@ -38,6 +38,7 @@ grpc_proto_fuzzer(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/event_engine/fuzzing_event_engine",

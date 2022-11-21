@@ -17,7 +17,10 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+
+#include <string>
 
 #include "absl/status/statusor.h"
 
@@ -39,6 +42,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/util/mock_endpoint.h"
 
@@ -151,13 +155,23 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      if (ev.type != GRPC_OP_COMPLETE) {
+        gpr_log(GPR_ERROR,
+                "[%d/%d requested calls] Unexpected event type (expected "
+                "COMPLETE): %s",
+                i, requested_calls, grpc_event_string(&ev).c_str());
+        abort();
+      }
     }
     grpc_completion_queue_shutdown(cq);
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+      if (ev.type != GRPC_QUEUE_SHUTDOWN) {
+        gpr_log(GPR_ERROR, "Unexpected event type (expected SHUTDOWN): %s",
+                grpc_event_string(&ev).c_str());
+        abort();
+      }
     }
     grpc_call_unref(call);
     grpc_completion_queue_destroy(cq);

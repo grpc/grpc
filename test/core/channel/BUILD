@@ -57,6 +57,7 @@ grpc_cc_test(
         "//:channel_stack_builder",
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -64,6 +65,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "minimal_stack_is_minimal_test",
     srcs = ["minimal_stack_is_minimal_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
