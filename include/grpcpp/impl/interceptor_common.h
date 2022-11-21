@@ -25,7 +25,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/intercepted_channel.h>
+#include <grpcpp/impl/intercepted_channel.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/server_interceptor.h>
 

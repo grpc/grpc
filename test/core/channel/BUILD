@@ -57,6 +57,7 @@ grpc_cc_test(
         "//:channel_stack_builder",
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )
