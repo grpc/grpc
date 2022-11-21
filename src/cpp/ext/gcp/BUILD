@@ -84,6 +84,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_args",
         "//src/core:json_object_loader",
+        "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
         "//src/core:validation_errors",
@@ -98,12 +99,20 @@ grpc_cc_library(
     hdrs = [
         "observability_logging_sink.h",
     ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "googleapis_logging_grpc_service",
+    ],
     language = "c++",
     tags = ["nofixdeps"],
     visibility = ["//test:__subpackages__"],
     deps = [
         ":observability_config",
         "//:gpr_platform",
+        "//:grpc++",
+        "//:grpc_opencensus_plugin",
+        "//src/core:env",
         "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )

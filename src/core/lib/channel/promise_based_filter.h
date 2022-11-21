@@ -393,6 +393,9 @@ class BaseCallData : public Activity, private Wakeable {
       kPulledFromPipe,
       // We're done.
       kCancelled,
+      // Call got terminated whilst we were idle: we need to close the sender
+      // pipe next poll.
+      kCancelledWhilstIdle,
       // Call got terminated whilst we had forwarded a recv_message down the
       // stack: we need to keep track of that until we get the completion so
       // that we do the right thing in OnComplete.
@@ -402,6 +405,9 @@ class BaseCallData : public Activity, private Wakeable {
       // On the next poll we'll close things out and forward on completions,
       // then transition to cancelled.
       kBatchCompletedButCancelled,
+      // Completed successfully while we're processing a recv message.
+      kCompletedWhilePushedToPipe,
+      kCompletedWhilePulledFromPipe,
     };
     static const char* StateString(State);
 

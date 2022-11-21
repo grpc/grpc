@@ -27,7 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -130,7 +130,7 @@ CallbackAlternativeCQ g_callback_alternative_cq;
 // a 'grpc_completion_queue' instance (which is being passed as the input to
 // this constructor), one must have already called grpc_init().
 CompletionQueue::CompletionQueue(grpc_completion_queue* take)
-    : GrpcLibraryCodegen(false), cq_(take) {
+    : GrpcLibrary(false), cq_(take) {
   InitialAvalanching();
 }
 

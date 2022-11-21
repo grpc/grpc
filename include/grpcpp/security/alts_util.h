@@ -22,9 +22,9 @@
 #include <memory>
 
 #include <grpc/grpc_security_constants.h>
-#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/support/status.h>
 
 struct grpc_gcp_AltsContext;
 

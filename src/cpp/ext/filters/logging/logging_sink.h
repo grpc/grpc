@@ -21,7 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <map>
+#include <string>
+
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
@@ -50,9 +56,54 @@ class LoggingSink {
     uint32_t max_message_bytes_;
   };
 
+  struct Entry {
+    enum class EventType {
+      kUnkown = 0,
+      kClientHeader,
+      kServerHeader,
+      kClientMessage,
+      kServerMessage,
+      kClientHalfClose,
+      kServerTrailer,
+      kCancel
+    };
+
+    enum class Logger { kUnkown = 0, kClient, kServer };
+
+    struct Payload {
+      std::map<std::string, std::string> metadata;
+      absl::Duration duration;
+      uint32_t status_code;
+      std::string status_message;
+      std::string status_details;
+      uint32_t message_length;
+      std::string message;
+    };
+
+    struct Address {
+      enum class Type { kUnknown = 0, kIpv4, kIpv6, kUnix };
+      Type type;
+      std::string address;
+      uint32_t ip_port;
+    };
+
+    uint64_t call_id;
+    uint64_t sequence_id;
+    EventType type;
+    Logger logger;
+    Payload payload;
+    bool payload_truncated;
+    Address peer;
+    std::string authority;
+    std::string service_name;
+    std::string method_name;
+  };
+
   virtual ~LoggingSink() = default;
 
   virtual Config FindMatch(bool is_client, absl::string_view path) = 0;
+
+  virtual void LogEntry(Entry entry) = 0;
 };
 
 }  // namespace internal

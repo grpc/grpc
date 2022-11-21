@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.51.0-dev
+PROJECT_NUMBER         = 1.52.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -830,7 +830,6 @@ include/grpc++/impl/codegen/config_protobuf.h \
 include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
-include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
 include/grpc++/impl/codegen/proto_utils.h \
@@ -983,7 +982,6 @@ include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/delegating_channel.h \
-include/grpcpp/impl/codegen/grpc_library.h \
 include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
 include/grpcpp/impl/codegen/interceptor_common.h \
@@ -1012,7 +1010,10 @@ include/grpcpp/impl/codegen/stub_options.h \
 include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
 include/grpcpp/impl/codegen/time.h \
+include/grpcpp/impl/completion_queue_tag.h \
+include/grpcpp/impl/delegating_channel.h \
 include/grpcpp/impl/grpc_library.h \
+include/grpcpp/impl/intercepted_channel.h \
 include/grpcpp/impl/method_handler_impl.h \
 include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
@@ -1021,6 +1022,7 @@ include/grpcpp/impl/server_builder_option.h \
 include/grpcpp/impl/server_builder_plugin.h \
 include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
+include/grpcpp/impl/status.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \

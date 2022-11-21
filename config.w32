@@ -71,8 +71,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\http\\client\\http_client_filter.cc " +
     "src\\core\\ext\\filters\\http\\client_authority_filter.cc " +
     "src\\core\\ext\\filters\\http\\http_filters_plugin.cc " +
-    "src\\core\\ext\\filters\\http\\message_compress\\message_compress_filter.cc " +
-    "src\\core\\ext\\filters\\http\\message_compress\\message_decompress_filter.cc " +
+    "src\\core\\ext\\filters\\http\\message_compress\\compression_filter.cc " +
     "src\\core\\ext\\filters\\http\\server\\http_server_filter.cc " +
     "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
     "src\\core\\ext\\filters\\rbac\\rbac_filter.cc " +
@@ -99,6 +98,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser_table.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\http2_settings.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\http_trace.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\huffsyms.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\parsing.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\stream_lists.cc " +

@@ -895,6 +895,10 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c++',
         'build': 'all'
     },
+    'grpc_authorization_provider': {
+        'language': 'c++',
+        'build': 'all'
+    },
     'grpc++_unsecure': {
         'language': 'c++',
         'build': 'all',

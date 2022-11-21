@@ -277,14 +277,14 @@ class WorkerServiceImpl final : public WorkerService::Service {
 QpsWorker::QpsWorker(int driver_port, int server_port,
                      const std::string& credential_type) {
   impl_ = std::make_unique<WorkerServiceImpl>(server_port, this);
-  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
+  gpr_atm_rel_store(&done_, gpr_atm{0});
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
   builder->AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
   if (driver_port >= 0) {
     std::string server_address = grpc_core::JoinHostPort("::", driver_port);
     builder->AddListeningPort(
-        server_address.c_str(),
+        server_address,
         GetCredentialsProvider()->GetServerCredentials(credential_type));
   }
   builder->RegisterService(impl_.get());
@@ -304,10 +304,8 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
 QpsWorker::~QpsWorker() {}
 
 bool QpsWorker::Done() const {
-  return (gpr_atm_acq_load(&done_) != static_cast<gpr_atm>(0));
+  return (gpr_atm_acq_load(&done_) != gpr_atm{0});
 }
-void QpsWorker::MarkDone() {
-  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(1));
-}
+void QpsWorker::MarkDone() { gpr_atm_rel_store(&done_, gpr_atm{1}); }
 }  // namespace testing
 }  // namespace grpc
