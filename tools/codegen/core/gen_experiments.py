@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Generate experiment related code artifacts. 
+Generate experiment related code artifacts.
 
 Invoke as: tools/codegen/core/gen_experiments.py
 Experiment definitions are in src/core/lib/experiments/experiments.yaml

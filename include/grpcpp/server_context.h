@@ -34,6 +34,7 @@
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/callback_common.h>
