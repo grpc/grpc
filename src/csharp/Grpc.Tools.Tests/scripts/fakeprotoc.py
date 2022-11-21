@@ -279,8 +279,13 @@ def main():
     global dbg
     global protofile
 
-    # Check environment variables for the additional arguments used in the tests
+    # Check environment variables for the additional arguments used in the tests.
+    # Note there is a bug in .NET core 3.x that lowercases the environment
+    # variable names when they are added via Process.StartInfo, so we need to
+    # check both cases here (only an issue on Linux which is case sensitive)
     FAKEPROTOC_PROJECTDIR = os.getenv('FAKEPROTOC_PROJECTDIR')
+    if FAKEPROTOC_PROJECTDIR is None:
+        FAKEPROTOC_PROJECTDIR = os.getenv('fakeprotoc_projectdir')
     if FAKEPROTOC_PROJECTDIR is None:
         print("FAKEPROTOC_PROJECTDIR not set")
         sys.exit(1)
@@ -288,10 +293,14 @@ def main():
 
     FAKEPROTOC_GENERATE_EXPECTED = os.getenv('FAKEPROTOC_GENERATE_EXPECTED')
     if FAKEPROTOC_GENERATE_EXPECTED is None:
+        FAKEPROTOC_GENERATE_EXPECTED = os.getenv('fakeprotoc_generate_expected')
+    if FAKEPROTOC_GENERATE_EXPECTED is None:
         print("FAKEPROTOC_GENERATE_EXPECTED not set")
         sys.exit(1)
 
     FAKEPROTOC_TESTID = os.getenv('FAKEPROTOC_TESTID')
+    if FAKEPROTOC_TESTID is None:
+        FAKEPROTOC_TESTID = os.getenv('fakeprotoc_testid')
     if FAKEPROTOC_TESTID is None:
         print("FAKEPROTOC_TESTID not set")
         sys.exit(1)
