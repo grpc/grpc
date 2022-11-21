@@ -43,5 +43,6 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr_platform",
+        "//src/core:time",
     ],
 )

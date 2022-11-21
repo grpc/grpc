@@ -318,8 +318,8 @@ std::string TestScenario::AsString() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),

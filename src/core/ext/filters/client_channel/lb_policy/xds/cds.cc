@@ -122,31 +122,28 @@ class CdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
     void OnResourceChanged(XdsClusterResource cluster_data) override {
-      Ref().release();  // Ref held by lambda
+      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          // TODO(roth): When we move to C++14, capture cluster_data with
-          // std::move().
-          [this, cluster_data]() mutable {
-            parent_->OnClusterChanged(name_, std::move(cluster_data));
-            Unref();
+          [self = std::move(self),
+           cluster_data = std::move(cluster_data)]() mutable {
+            self->parent_->OnClusterChanged(self->name_,
+                                            std::move(cluster_data));
           },
           DEBUG_LOCATION);
     }
     void OnError(absl::Status status) override {
-      Ref().release();  // Ref held by lambda
+      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [this, status]() {
-            parent_->OnError(name_, status);
-            Unref();
+          [self = std::move(self), status = std::move(status)]() mutable {
+            self->parent_->OnError(self->name_, std::move(status));
           },
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      Ref().release();  // Ref held by lambda
+      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [this]() {
-            parent_->OnResourceDoesNotExist(name_);
-            Unref();
+          [self = std::move(self)]() {
+            self->parent_->OnResourceDoesNotExist(self->name_);
           },
           DEBUG_LOCATION);
     }

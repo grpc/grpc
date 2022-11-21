@@ -156,33 +156,29 @@ class XdsResolver : public Resolver {
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnResourceChanged(XdsListenerResource listener) override {
-      Ref().release();  // ref held by lambda
+      RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          // TODO(yashykt): When we move to C++14, capture listener with
-          // std::move
-          [this, listener]() mutable {
-            resolver_->OnListenerUpdate(std::move(listener));
-            Unref();
+          [self = std::move(self), listener = std::move(listener)]() mutable {
+            self->resolver_->OnListenerUpdate(std::move(listener));
           },
           DEBUG_LOCATION);
     }
     void OnError(absl::Status status) override {
-      Ref().release();  // ref held by lambda
+      RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [this, status]() {
-            resolver_->OnError(resolver_->lds_resource_name_, status);
-            Unref();
+          [self = std::move(self), status = std::move(status)]() mutable {
+            self->resolver_->OnError(self->resolver_->lds_resource_name_,
+                                     std::move(status));
           },
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      Ref().release();  // ref held by lambda
+      RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [this]() {
-            resolver_->OnResourceDoesNotExist(
-                absl::StrCat(resolver_->lds_resource_name_,
+          [self = std::move(self)]() {
+            self->resolver_->OnResourceDoesNotExist(
+                absl::StrCat(self->resolver_->lds_resource_name_,
                              ": xDS listener resource does not exist"));
-            Unref();
           },
           DEBUG_LOCATION);
     }
@@ -197,33 +193,33 @@ class XdsResolver : public Resolver {
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnResourceChanged(XdsRouteConfigResource route_config) override {
-      Ref().release();  // ref held by lambda
+      RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          // TODO(yashykt): When we move to C++14, capture route_config with
-          // std::move
-          [this, route_config]() mutable {
-            resolver_->OnRouteConfigUpdate(std::move(route_config));
-            Unref();
+          [self = std::move(self),
+           route_config = std::move(route_config)]() mutable {
+            if (self != self->resolver_->route_config_watcher_) return;
+            self->resolver_->OnRouteConfigUpdate(std::move(route_config));
           },
           DEBUG_LOCATION);
     }
     void OnError(absl::Status status) override {
-      Ref().release();  // ref held by lambda
+      RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [this, status]() {
-            resolver_->OnError(resolver_->route_config_name_, status);
-            Unref();
+          [self = std::move(self), status = std::move(status)]() mutable {
+            if (self != self->resolver_->route_config_watcher_) return;
+            self->resolver_->OnError(self->resolver_->route_config_name_,
+                                     std::move(status));
           },
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      Ref().release();  // ref held by lambda
+      RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [this]() {
-            resolver_->OnResourceDoesNotExist(absl::StrCat(
-                resolver_->route_config_name_,
+          [self = std::move(self)]() {
+            if (self != self->resolver_->route_config_watcher_) return;
+            self->resolver_->OnResourceDoesNotExist(absl::StrCat(
+                self->resolver_->route_config_name_,
                 ": xDS route configuration resource does not exist"));
-            Unref();
           },
           DEBUG_LOCATION);
     }
@@ -877,32 +873,55 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
   }
   if (xds_client_ == nullptr) return;
-  current_listener_ = std::move(
-      absl::get<XdsListenerResource::HttpConnectionManager>(listener.listener));
+  auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
+      &listener.listener);
+  if (hcm == nullptr) {
+    return OnError(lds_resource_name_,
+                   absl::UnavailableError("not an API listener"));
+  }
+  current_listener_ = std::move(*hcm);
   MatchMutable(
       &current_listener_.route_config,
       // RDS resource name
       [&](std::string* rds_name) {
-        if (route_config_watcher_ != nullptr) {
-          XdsRouteConfigResourceType::CancelWatch(
-              xds_client_.get(), route_config_name_, route_config_watcher_,
-              /*delay_unsubscription=*/!rds_name->empty());
-          route_config_watcher_ = nullptr;
-        }
-        route_config_name_ = std::move(*rds_name);
-        if (!route_config_name_.empty()) {
-          current_virtual_host_.routes.clear();
+        // If the RDS name changed, update the RDS watcher.
+        // Note that this will be true on the initial update, because
+        // route_config_name_ will be empty.
+        if (route_config_name_ != *rds_name) {
+          // If we already had a watch (i.e., if the previous config had
+          // a different RDS name), stop the previous watch.
+          // There will be no previous watch if either (a) this is the
+          // initial resource update or (b) the previous Listener had an
+          // inlined RouteConfig.
+          if (route_config_watcher_ != nullptr) {
+            XdsRouteConfigResourceType::CancelWatch(
+                xds_client_.get(), route_config_name_, route_config_watcher_,
+                /*delay_unsubscription=*/true);
+            route_config_watcher_ = nullptr;
+          }
+          // Start watch for the new RDS resource name.
+          route_config_name_ = std::move(*rds_name);
           auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
           route_config_watcher_ = watcher.get();
           XdsRouteConfigResourceType::StartWatch(
               xds_client_.get(), route_config_name_, std::move(watcher));
+        } else {
+          // RDS resource name has not changed, so no watch needs to be
+          // updated, but we still need to propagate any changes in the
+          // HCM config (e.g., the list of HTTP filters).
+          GenerateResult();
         }
-        // HCM may contain newer filter config. We need to propagate the
-        // update as config selector to the channel.
-        GenerateResult();
       },
       // inlined RouteConfig
       [&](XdsRouteConfigResource* route_config) {
+        // If the previous update specified an RDS resource instead of
+        // having an inlined RouteConfig, we need to cancel the RDS watch.
+        if (route_config_watcher_ != nullptr) {
+          XdsRouteConfigResourceType::CancelWatch(
+              xds_client_.get(), route_config_name_, route_config_watcher_);
+          route_config_watcher_ = nullptr;
+          route_config_name_.clear();
+        }
         OnRouteConfigUpdate(std::move(*route_config));
       });
 }

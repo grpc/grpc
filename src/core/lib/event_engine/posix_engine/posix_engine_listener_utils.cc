@@ -19,7 +19,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include <cstring>
 #include <string>
@@ -41,6 +40,7 @@
 #include <ifaddrs.h>     // IWYU pragma: keep
 #include <netinet/in.h>  // IWYU pragma: keep
 #include <sys/socket.h>  // IWYU pragma: keep
+#include <unistd.h>      // IWYU pragma: keep
 
 #include "absl/strings/str_cat.h"
 #endif
@@ -283,6 +283,9 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
   return assigned_port;
 
 #else
+  (void)listener_sockets;
+  (void)options;
+  (void)requested_port;
   GPR_ASSERT(false && "System does not support ifaddrs");
 #endif
 }

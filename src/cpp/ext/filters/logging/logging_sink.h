@@ -23,7 +23,12 @@
 
 #include <stdint.h>
 
+#include <map>
+#include <string>
+
 #include "absl/strings/string_view.h"
+
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc {
 namespace internal {
@@ -52,9 +57,54 @@ class LoggingSink {
     uint32_t max_message_bytes_;
   };
 
+  struct Entry {
+    enum class EventType {
+      kUnkown = 0,
+      kClientHeader,
+      kServerHeader,
+      kClientMessage,
+      kServerMessage,
+      kClientHalfClose,
+      kServerTrailer,
+      kCancel
+    };
+
+    enum class Logger { kUnkown = 0, kClient, kServer };
+
+    struct Payload {
+      std::map<std::string, std::string> metadata;
+      grpc_core::Duration timeout;
+      uint32_t status_code = 0;
+      std::string status_message;
+      std::string status_details;
+      uint32_t message_length = 0;
+      std::string message;
+    };
+
+    struct Address {
+      enum class Type { kUnknown = 0, kIpv4, kIpv6, kUnix };
+      Type type;
+      std::string address;
+      uint32_t ip_port;
+    };
+
+    uint64_t call_id = 0;
+    uint64_t sequence_id = 0;
+    EventType type = LoggingSink::Entry::EventType::kUnkown;
+    Logger logger = LoggingSink::Entry::Logger::kUnkown;
+    Payload payload;
+    bool payload_truncated = false;
+    Address peer;
+    std::string authority;
+    std::string service_name;
+    std::string method_name;
+  };
+
   virtual ~LoggingSink() = default;
 
   virtual Config FindMatch(bool is_client, absl::string_view path) = 0;
+
+  virtual void LogEntry(Entry entry) = 0;
 };
 
 }  // namespace internal

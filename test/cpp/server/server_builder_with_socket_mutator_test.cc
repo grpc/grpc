@@ -91,9 +91,9 @@ class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
 
 class ServerBuilderWithSocketMutatorTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 
 TEST_F(ServerBuilderWithSocketMutatorTest, CreateServerWithSocketMutator) {
