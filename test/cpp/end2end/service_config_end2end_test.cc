@@ -120,7 +120,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);

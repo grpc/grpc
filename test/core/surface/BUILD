@@ -64,6 +64,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -93,6 +94,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:closure",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],

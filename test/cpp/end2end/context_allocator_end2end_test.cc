@@ -74,8 +74,8 @@ void TestScenario::Log() const {
 class ContextAllocatorEnd2endTestBase
     : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
   ContextAllocatorEnd2endTestBase() {}
 
   ~ContextAllocatorEnd2endTestBase() override = default;

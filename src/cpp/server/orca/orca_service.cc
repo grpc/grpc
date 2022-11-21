@@ -33,9 +33,9 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpcpp/ext/orca_service.h>
-#include <grpcpp/impl/codegen/server_callback_handlers.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
