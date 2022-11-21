@@ -11,26 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_WINDOWS_CREATE_SOCKPAIR_H
-#define GRPC_TEST_CORE_EVENT_ENGINE_WINDOWS_CREATE_SOCKPAIR_H
-
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_RESOLVED_ADDRESS_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_RESOLVED_ADDRESS_H
 #include <grpc/support/port_platform.h>
+
 #ifdef GPR_WINDOWS
 
-#include <winsock2.h>
+#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {
 
-sockaddr_in GetLoopbackAddress();
+absl::StatusOr<std::string> ResolvedAddressToURI(
+    const EventEngine::ResolvedAddress& resolved_address);
 
-// Creates a connected pair of sockets on the loopback address
-// sockpair[0] is a connected client
-// sockpair[1] is a listener running `accept`  on the socket
-void CreateSockpair(SOCKET sockpair[2], DWORD flags);
+absl::StatusOr<std::string> ResolvedAddressToString(
+    const EventEngine::ResolvedAddress& resolved_address);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GPR_WINDOWS
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_WINDOWS_CREATE_SOCKPAIR_H
+#endif
+
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_RESOLVED_ADDRESS_H

@@ -1822,6 +1822,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "windows_endpoint",
+    srcs = [
+        "lib/event_engine/windows/windows_endpoint.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/windows/windows_endpoint.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "event_engine_trace",
+        "windows_iocp",
+        "windows_resolved_address",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "windows_resolved_address",
+    srcs = [
+        "lib/event_engine/windows/resolved_address.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/windows/resolved_address.h",
+    ],
+    external_deps = [
+    ],
+    deps = [
+        "status_helper",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+        "//:uri_parser",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_trace",
     srcs = [
         "lib/event_engine/trace.cc",
