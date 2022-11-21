@@ -1097,7 +1097,6 @@ void PosixEndpointImpl::HandleWrite(absl::Status status) {
 void PosixEndpointImpl::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const EventEngine::Endpoint::WriteArgs* args) {
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: PosixEndpointImpl::%p writing", this);
   absl::Status status = absl::OkStatus();
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
@@ -1171,7 +1170,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: creating a PosixEndpointImpl!");
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);

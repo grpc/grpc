@@ -22,6 +22,7 @@ EXPERIMENTS = {
             "new_hpack_huffman_decoder",
         ],
         "event_engine_client_test": [
+            "event_engine_client",
             "posix_event_engine_enable_polling",
         ],
         "hpack_test": [
@@ -35,9 +36,6 @@ EXPERIMENTS = {
         "endpoint_test": [
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
-        ],
-        "event_engine_client_test": [
-            "event_engine_client",
         ],
         "flow_control_test": [
             "flow_control_fixes",

@@ -1378,6 +1378,7 @@ grpc_cc_library(
         "absl/time",
         "absl/types:optional",
         "absl/types:variant",
+        "absl/utility",
         "madler_zlib",
     ],
     language = "c++",

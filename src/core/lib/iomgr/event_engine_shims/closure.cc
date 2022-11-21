@@ -50,8 +50,6 @@ void RunClosure(grpc_closure* closure, grpc_error_handle error) {
 
 }  // namespace
 
-// DO NOT SUBMIT: do we need to shim pollsets and broadcast?
-
 absl::AnyInvocable<void(absl::Status)> GrpcClosureToStatusCallback(
     grpc_closure* closure) {
   return [closure](absl::Status status) {

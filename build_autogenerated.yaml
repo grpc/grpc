@@ -10286,6 +10286,7 @@ targets:
   - absl/functional:any_invocable
   - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
 - name: test_core_gpr_time_test
   gtest: true

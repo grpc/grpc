@@ -18427,6 +18427,7 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   absl::any_invocable
   absl::hash
   absl::statusor
+  absl::utility
   gpr
 )
 

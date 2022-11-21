@@ -60,6 +60,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/hash",
         "absl/strings",
+        "absl/utility",
     ],
     deps = [
         "slice",
