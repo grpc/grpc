@@ -238,7 +238,8 @@ void PollingResolver::MaybeStartResolvingLocked() {
           time_until_next_resolution, [ref = Ref(), this] {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
-            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown_fired").release();
+            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown_fired")
+                .release();
             work_serializer_->Run([this]() { OnNextResolutionLocked(); },
                                   DEBUG_LOCATION);
           });
