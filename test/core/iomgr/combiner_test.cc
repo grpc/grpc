@@ -35,8 +35,7 @@ TEST(CombinerTest, TestNoOp) {
   GRPC_COMBINER_UNREF(
       grpc_combiner_create(
           std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
-              grpc_event_engine::experimental::DefaultEventEngineFactory()
-                  .release())),
+              grpc_event_engine::experimental::CreateEventEngine())),
       "test_no_op");
 }
 
@@ -49,8 +48,7 @@ TEST(CombinerTest, TestExecuteOne) {
 
   grpc_core::Combiner* lock = grpc_combiner_create(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
-          grpc_event_engine::experimental::DefaultEventEngineFactory()
-              .release()));
+          grpc_event_engine::experimental::CreateEventEngine()));
   gpr_event done;
   gpr_event_init(&done);
   grpc_core::ExecCtx exec_ctx;
@@ -106,8 +104,7 @@ TEST(CombinerTest, TestExecuteMany) {
 
   grpc_core::Combiner* lock = grpc_combiner_create(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
-          grpc_event_engine::experimental::DefaultEventEngineFactory()
-              .release()));
+          grpc_event_engine::experimental::CreateEventEngine()));
   grpc_core::Thread thds[10];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
@@ -142,8 +139,7 @@ TEST(CombinerTest, TestExecuteFinally) {
 
   grpc_core::Combiner* lock = grpc_combiner_create(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
-          grpc_event_engine::experimental::DefaultEventEngineFactory()
-              .release()));
+          grpc_event_engine::experimental::CreateEventEngine()));
   grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
   lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), absl::OkStatus());
