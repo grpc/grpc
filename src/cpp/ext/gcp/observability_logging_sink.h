@@ -74,6 +74,10 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::string authority_;
 };
 
+// Exposed for just for testing purposes
+void EntryToJsonStructProto(LoggingSink::Entry entry,
+                            ::google::protobuf::Struct* json_payload);
+
 }  // namespace internal
 }  // namespace grpc
 
