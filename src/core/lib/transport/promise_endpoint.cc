@@ -36,7 +36,7 @@ PromiseEndpoint::PromiseEndpoint(
       read_buffer_(std::move(already_received)),
       pending_read_buffer_(),
       read_result_() {
-  GPR_ASSERT(endpoint != nullptr);
+  GPR_ASSERT(endpoint_ != nullptr);
 }
 
 PromiseEndpoint::~PromiseEndpoint() {

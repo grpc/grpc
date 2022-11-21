@@ -16,6 +16,8 @@
 
 #include "src/core/lib/transport/promise_endpoint.h"
 
+#include <memory>
+
 #include <gtest/gtest.h>
 
 #include "absl/functional/any_invocable.h"
@@ -32,6 +34,13 @@ namespace testing {
 class MockEndpoint
     : public grpc_event_engine::experimental::EventEngine::Endpoint {
  public:
+  MockEndpoint() {
+    ON_CALL(*this, GetPeerAddress)
+        .WillByDefault(std::bind(&MockEndpoint::GetPeerAddressImpl, this));
+    ON_CALL(*this, GetLocalAddress)
+        .WillByDefault(std::bind(&MockEndpoint::GetLocalAddressImpl, this));
+  }
+
   MOCK_METHOD(
       void, Read,
       (absl::AnyInvocable<void(absl::Status)> on_read,
@@ -55,8 +64,93 @@ class MockEndpoint
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
       GetLocalAddress, (), (const override));
 
+  void set_peer_address(
+      const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+          peer_address) {
+    peer_address_ = peer_address;
+  }
+
+  const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+  peer_address() const {
+    return peer_address_;
+  }
+
+  void set_local_address(
+      const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+          local_address) {
+    local_address_ = local_address;
+  }
+
+  const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+  local_address() const {
+    return local_address_;
+  }
+
  private:
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address_;
+
+  const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+  GetPeerAddressImpl() const {
+    return peer_address();
+  }
+
+  const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+  GetLocalAddressImpl() const {
+    return local_address();
+  }
 };
+
+class PromiseEndpointTest : public ::testing::Test {
+ public:
+  PromiseEndpointTest()
+      : mock_endpoint_ptr_(new ::testing::NiceMock<MockEndpoint>()),
+        mock_endpoint_(*mock_endpoint_ptr_),
+        promise_endpoint_(
+            std::unique_ptr<
+                grpc_event_engine::experimental::EventEngine::Endpoint>(
+                mock_endpoint_ptr_),
+            grpc_core::SliceBuffer()) {}
+
+ private:
+  MockEndpoint* mock_endpoint_ptr_;
+
+ protected:
+  MockEndpoint& mock_endpoint_;
+  grpc::internal::PromiseEndpoint promise_endpoint_;
+};
+
+TEST_F(PromiseEndpointTest, GetPeerAddress) {
+  /// just some random bytes
+  const char raw_peer_address[] = {0x55, 0x66, 0x01, 0x55, 0x66, 0x01};
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address(
+      reinterpret_cast<const sockaddr*>(raw_peer_address),
+      sizeof(raw_peer_address));
+  mock_endpoint_.set_peer_address(peer_address);
+
+  EXPECT_CALL(mock_endpoint_, GetPeerAddress).Times(2);
+  EXPECT_EQ(0, std::memcmp(promise_endpoint_.GetPeerAddress().address(),
+                           peer_address.address(),
+                           grpc_event_engine::experimental::EventEngine::
+                               ResolvedAddress::MAX_SIZE_BYTES));
+  EXPECT_EQ(peer_address.size(), promise_endpoint_.GetPeerAddress().size());
+}
+
+TEST_F(PromiseEndpointTest, GetLocalAddress) {
+  /// just some random bytes
+  const char raw_local_address[] = {0x52, 0x55, 0x66, 0x52, 0x55, 0x66};
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address(
+      reinterpret_cast<const sockaddr*>(raw_local_address),
+      sizeof(raw_local_address));
+  mock_endpoint_.set_local_address(local_address);
+
+  EXPECT_CALL(mock_endpoint_, GetLocalAddress).Times(2);
+  EXPECT_EQ(0, std::memcmp(promise_endpoint_.GetLocalAddress().address(),
+                           local_address.address(),
+                           grpc_event_engine::experimental::EventEngine::
+                               ResolvedAddress::MAX_SIZE_BYTES));
+  EXPECT_EQ(local_address.size(), promise_endpoint_.GetLocalAddress().size());
+}
 
 }  // namespace testing
 
