@@ -27,8 +27,13 @@
 
 #include "absl/types/optional.h"
 #include "google/logging/v2/logging.grpc.pb.h"
+#include "google/logging/v2/logging.pb.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/status.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"

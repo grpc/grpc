@@ -20,11 +20,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
