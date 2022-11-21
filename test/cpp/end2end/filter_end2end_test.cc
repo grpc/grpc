@@ -120,7 +120,7 @@ class FilterEnd2endTest : public ::testing::Test {
  protected:
   FilterEnd2endTest() : server_host_("localhost") {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Workaround for
     // https://github.com/google/google-toolbox-for-mac/issues/242
     static bool setup_done = false;

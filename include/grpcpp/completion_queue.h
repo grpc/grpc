@@ -34,7 +34,7 @@
 
 #include <list>
 
-#include <grpc/impl/codegen/atm.h>
+#include <grpc/support/atm.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/status.h>

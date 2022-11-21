@@ -581,7 +581,6 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     GPR_ASSERT(md_.DebugString() == expected_);
   }
 
- private:
   grpc_error_handle expected_error_;
   std::string expected_;
   ScopedArenaPtr arena_ = MakeScopedArena(1024, g_memory_allocator);
