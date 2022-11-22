@@ -57,7 +57,7 @@ using CondVar = absl::CondVar;
 class ABSL_LOCKABLE Mutex {
  public:
   Mutex() { gpr_mu_init(&mu_); }
-  ~Mutex() { g_core_codegen_interface->gpr_mu_destroy(&mu_); }
+  ~Mutex() { gpr_mu_destroy(&mu_); }
 
   Mutex(const Mutex&) = delete;
   Mutex& operator=(const Mutex&) = delete;
