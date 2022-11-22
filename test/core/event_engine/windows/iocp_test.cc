@@ -45,6 +45,8 @@ using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::experimental::ThreadPool;
 using ::grpc_event_engine::experimental::WinSocket;
 
+// TODO(hork): replace with logging mechanism that plays nicely with:
+//   `ASSERT_OK(...) << GetErrorMessage(error, context);`
 void LogErrorMessage(int messageid, absl::string_view context) {
   char* utf8_message = gpr_format_message(messageid);
   gpr_log(GPR_ERROR, "Error in %s: %s", context, utf8_message);
