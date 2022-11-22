@@ -13,12 +13,14 @@
 # limitations under the License.
 """Common types for gRPC Sync API"""
 
-from typing import (Any, Callable, Iterable, Iterator, Optional, Sequence,
-                    Tuple, TypeVar, Union)
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional,
+                    Sequence, Tuple, TypeVar, Union)
 
 from grpc._cython import cygrpc
-from grpc._server import _RPCState
-from grpc import ServicerContext
+
+if TYPE_CHECKING:
+    from grpc import ServicerContext
+    from grpc._server import _RPCState
 
 RequestType = TypeVar('RequestType')
 ResponseType = TypeVar('ResponseType')
@@ -31,18 +33,17 @@ NullaryCallbackType = Callable[[], None]
 RequestIterableType = Iterable[Any]
 ResponseIterableType = Iterable[Any]
 UserTag = Callable[[cygrpc.BaseEvent], bool]
-ServerTagCallbackType = Tuple[Optional[_RPCState], Sequence[NullaryCallbackType]]
+ServerTagCallbackType = Tuple[Optional['_RPCState'],
+                              Sequence[NullaryCallbackType]]
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
-ArityAgnosticMethodHandler = Union[
-  Callable[
-    [RequestType, ServicerContext, Optional[Callable[[ResponseType], None]]],
-     ResponseType],
-  Callable[
-    [RequestType, ServicerContext, Optional[Callable[[ResponseType], None]]],
-     Iterator[ResponseType]],
-  Callable[
-    [Iterator[RequestType], ServicerContext, Optional[Callable[[ResponseType], None]]],
-     ResponseType],
-  Callable[
-    [Iterator[RequestType], ServicerContext, Optional[Callable[[ResponseType], None]]],
-     Iterator[ResponseType]]]
+ArityAgnosticMethodHandler = Union[Callable[[
+    RequestType, 'ServicerContext', Optional[Callable[[ResponseType], None]]
+], ResponseType], Callable[
+    [RequestType, 'ServicerContext', Optional[Callable[[ResponseType], None]]],
+    Iterator[ResponseType]], Callable[[
+        Iterator[RequestType], 'ServicerContext', Optional[Callable[
+            [ResponseType], None]]
+    ], ResponseType], Callable[[
+        Iterator[RequestType], 'ServicerContext', Optional[Callable[
+            [ResponseType], None]]
+    ], Iterator[ResponseType]]]

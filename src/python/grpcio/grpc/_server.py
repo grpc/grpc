@@ -139,7 +139,8 @@ def _raise_rpc_error(state: _RPCState) -> None:
     raise rpc_error
 
 
-def _possibly_finish_call(state: _RPCState, token: str) -> ServerTagCallbackType:
+def _possibly_finish_call(state: _RPCState,
+                          token: str) -> ServerTagCallbackType:
     state.due.remove(token)
     if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
