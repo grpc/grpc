@@ -452,7 +452,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Name of this allocator
   absl::string_view name() const { return name_; }
 
-  size_t getFreeBytes() const {
+  size_t GetFreeBytes() const {
     return free_bytes_.load(std::memory_order_relaxed);
   }
 
