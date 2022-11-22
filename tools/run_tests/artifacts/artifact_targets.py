@@ -129,7 +129,7 @@ class PythonArtifact:
         if inner_jobs is not None:
             # set number of parallel jobs when building native extension
             # building the native extension is the most time-consuming part of the build
-            environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
+            environ['ARCHFLAGS'] = "-arch arm64 -arch xd86_64"
 
         # This is necessary due to https://github.com/pypa/wheel/issues/406.
         # distutils incorrectly generates a universal2 artifact that only contains
