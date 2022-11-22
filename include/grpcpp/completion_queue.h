@@ -116,9 +116,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
-  ~CompletionQueue() override {
-    grpc::g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
-  }
+  ~CompletionQueue() override { grpc_completion_queue_destroy(cq_); }
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
   enum NextStatus {

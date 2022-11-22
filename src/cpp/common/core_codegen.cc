@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {
-  ::grpc_completion_queue_destroy(cq);
-}
-
 grpc_event CoreCodegen::grpc_completion_queue_pluck(grpc_completion_queue* cq,
                                                     void* tag,
                                                     gpr_timespec deadline,
