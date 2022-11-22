@@ -28,11 +28,11 @@ import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _grpcio_metadata  # pytype: disable=pyi-error
-from grpc._cython import cygrpc
-from grpc._typing import CallbackType
+from grpc._cython import cygrpc as cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
+from grpc._typing import NullaryCallbackType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
@@ -111,7 +111,7 @@ class _RPCState(object):
     details: Optional[str]
     debug_error_string: Optional[str]
     cancelled: bool
-    callbacks: List[CallbackType]
+    callbacks: List[NullaryCallbackType]
     fork_epoch: Optional[int]
 
     def __init__(self, due: Sequence[cygrpc.OperationType],
@@ -160,7 +160,7 @@ def _abort(state: _RPCState, code: grpc.StatusCode, details: str) -> None:
 def _handle_event(
     event: cygrpc.BaseEvent, state: _RPCState,
     response_deserializer: Optional[DeserializingFunction]
-) -> List[CallbackType]:
+) -> List[NullaryCallbackType]:
     callbacks = []
     for batch_operation in event.batch_operations:
         operation_type = batch_operation.type()
@@ -455,7 +455,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
             else:
                 return False
 
-    def add_callback(self, callback: CallbackType) -> bool:
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
         """See grpc.RpcContext.add_callback"""
         with self._state.condition:
             if self._state.callbacks is None:

@@ -13,9 +13,12 @@
 # limitations under the License.
 """Common types for gRPC Sync API"""
 
-from typing import Any, Callable, Iterable, Sequence, Tuple, TypeVar, Union
+from typing import (Any, Callable, Iterable, Iterator, Optional, Sequence,
+                    Tuple, TypeVar, Union)
 
 from grpc._cython import cygrpc
+from grpc._server import _RPCState
+from grpc import ServicerContext
 
 RequestType = TypeVar('RequestType')
 ResponseType = TypeVar('ResponseType')
@@ -24,7 +27,22 @@ DeserializingFunction = Callable[[bytes], Any]
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 ChannelArgumentType = Tuple[str, Any]
 DoneCallbackType = Callable[[Any], None]
-CallbackType = Callable[[], None]
+NullaryCallbackType = Callable[[], None]
 RequestIterableType = Iterable[Any]
 ResponseIterableType = Iterable[Any]
 UserTag = Callable[[cygrpc.BaseEvent], bool]
+ServerTagCallbackType = Tuple[Optional[_RPCState], Sequence[NullaryCallbackType]]
+ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
+ArityAgnosticMethodHandler = Union[
+  Callable[
+    [RequestType, ServicerContext, Optional[Callable[[ResponseType], None]]],
+     ResponseType],
+  Callable[
+    [RequestType, ServicerContext, Optional[Callable[[ResponseType], None]]],
+     Iterator[ResponseType]],
+  Callable[
+    [Iterator[RequestType], ServicerContext, Optional[Callable[[ResponseType], None]]],
+     ResponseType],
+  Callable[
+    [Iterator[RequestType], ServicerContext, Optional[Callable[[ResponseType], None]]],
+     Iterator[ResponseType]]]
