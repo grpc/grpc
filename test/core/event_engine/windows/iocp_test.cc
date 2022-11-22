@@ -44,6 +44,14 @@ using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::experimental::ThreadPool;
 using ::grpc_event_engine::experimental::WinSocket;
+
+// TODO(hork): replace with logging mechanism that plays nicely with:
+//   `ASSERT_OK(...) << GetErrorMessage(error, context);`
+void LogErrorMessage(int messageid, absl::string_view context) {
+  char* utf8_message = gpr_format_message(messageid);
+  gpr_log(GPR_ERROR, "Error in %s: %s", context, utf8_message);
+  gpr_free(utf8_message);
+}
 }  // namespace
 
 class IOCPTest : public testing::Test {};
@@ -75,7 +83,10 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     // Expecting error 997, WSA_IO_PENDING
     EXPECT_EQ(status, -1);
     int last_error = WSAGetLastError();
-    ASSERT_EQ(last_error, WSA_IO_PENDING);
+    EXPECT_EQ(last_error, WSA_IO_PENDING);
+    if (last_error != WSA_IO_PENDING) {
+      LogErrorMessage(last_error, "WSARecv");
+    }
     on_read =
         new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
                                  &read_called, &read_wsabuf, &bytes_rcvd]() {
@@ -100,10 +111,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
                 0, wrapped_server_socket->write_info()->overlapped(), NULL);
     EXPECT_EQ(status, 0);
     if (status != 0) {
-      int error_num = WSAGetLastError();
-      char* utf8_message = gpr_format_message(error_num);
-      gpr_log(GPR_INFO, "Error sending data: (%d) %s", error_num, utf8_message);
-      gpr_free(utf8_message);
+      LogErrorMessage(WSAGetLastError(), "WSASend");
     }
     on_write = new AnyInvocableClosure([&write_called] {
       gpr_log(GPR_DEBUG, "Notified on write");
@@ -159,7 +167,10 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     // Expecting error 997, WSA_IO_PENDING
     EXPECT_EQ(status, -1);
     int last_error = WSAGetLastError();
-    ASSERT_EQ(last_error, WSA_IO_PENDING);
+    EXPECT_EQ(last_error, WSA_IO_PENDING);
+    if (last_error != WSA_IO_PENDING) {
+      LogErrorMessage(last_error, "WSARecv");
+    }
     on_read =
         new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
                                  &read_called, &read_wsabuf, &bytes_rcvd]() {
@@ -181,6 +192,9 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     int status = WSASend(sockpair[1], &write_wsabuf, 1, &bytes_sent, 0,
                          &write_overlapped, NULL);
     EXPECT_EQ(status, 0);
+    if (status != 0) {
+      LogErrorMessage(WSAGetLastError(), "WSASend");
+    }
   }
   // IOCP::Work without any notification callbacks should still return Ok.
   bool cb_invoked = false;
@@ -313,7 +327,10 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
           // Expecting error 997, WSA_IO_PENDING
           EXPECT_EQ(status, -1);
           int last_error = WSAGetLastError();
-          ASSERT_EQ(last_error, WSA_IO_PENDING);
+          EXPECT_EQ(last_error, WSA_IO_PENDING);
+          if (last_error != WSA_IO_PENDING) {
+            LogErrorMessage(last_error, "WSARecv");
+          }
         }
         {
           // Have the server send a message to the client.
@@ -326,6 +343,9 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
           int status = WSASend(pserver->socket(), &write_wsabuf, 1, &bytes_sent,
                                0, pserver->write_info()->overlapped(), NULL);
           EXPECT_EQ(status, 0);
+          if (status != 0) {
+            LogErrorMessage(WSAGetLastError(), "WSASend");
+          }
         }
       }
       iocp_worker.join();
