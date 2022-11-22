@@ -847,12 +847,13 @@
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
 
   # Function to generate pkg-config files.
-  function(generate_pkgconfig name description version requires
+  function(generate_pkgconfig name description version requires requires_private
                               libs libs_private output_filename)
     set(PC_NAME "<%text>${name}</%text>")
     set(PC_DESCRIPTION "<%text>${description}</%text>")
     set(PC_VERSION "<%text>${version}</%text>")
     set(PC_REQUIRES "<%text>${requires}</%text>")
+    set(PC_REQUIRES_PRIVATE "<%text>${requires_private}</%text>")
     set(PC_LIB "<%text>${libs}</%text>")
     set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
     set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
@@ -870,6 +871,7 @@
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(list_abseil_pkg_targets("gpr"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["gpr"])}"
     ""
     "gpr.pc")
@@ -879,9 +881,10 @@
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
-    ""
+    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc"))}"
+    "${" ".join(["openssl", "re2", "libcares", "zlib"])}"
+    "${" ".join(("-l" + l) for l in ["grpc",])}"
+    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
     "grpc.pc")
 
   # grpc_unsecure .pc file
@@ -890,8 +893,9 @@
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
+    "${" ".join(["re2", "libcares", "zlib"])}"
     "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
-    ""
+    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
     "grpc_unsecure.pc")
 
   # grpc++ .pc file
@@ -900,6 +904,7 @@
     "C++ wrapper for gRPC"
     "<%text>${gRPC_CPP_VERSION}</%text>"
     "${" ".join(["grpc"] + list_abseil_pkg_targets("grpc++"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["grpc++"])}"
     ""
     "grpc++.pc")
@@ -910,16 +915,7 @@
     "C++ wrapper for gRPC without SSL"
     "<%text>${gRPC_CPP_VERSION}</%text>"
     "${" ".join(["grpc_unsecure"] + list_abseil_pkg_targets("grpc++_unsecure"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
     ""
     "grpc++_unsecure.pc")
-
-  # grpc_authorization_provider.pc file
-  generate_pkgconfig(
-    "grpc_authorization_provider"
-    "A library that adds authorization"
-    "<%text>${gRPC_CPP_VERSION}</%text>"
-    "${" ".join(["grpc_authorization_provider"] + list_abseil_pkg_targets("grpc_authorization_provider"))}"
-    "${" ".join(("-l" + l) for l in ["grpc_authorization_provider", "re2"])}"
-    ""
-    "grpc_authorization_provider.pc")
