@@ -448,7 +448,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/delegating_channel.h",
     "include/grpcpp/impl/codegen/intercepted_channel.h",
     "include/grpcpp/impl/codegen/interceptor_common.h",
-    "include/grpcpp/impl/codegen/interceptor.h",
     "include/grpcpp/impl/codegen/message_allocator.h",
     "include/grpcpp/impl/codegen/metadata_map.h",
     "include/grpcpp/impl/codegen/method_handler_impl.h",
