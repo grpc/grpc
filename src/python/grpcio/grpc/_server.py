@@ -34,7 +34,6 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
-from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
@@ -756,8 +755,7 @@ def _handle_stream_stream(
 
 
 def _find_method_handler(
-    rpc_event: cygrpc.BaseEvent,
-    generic_handlers: List[grpc.GenericRpcHandler],
+    rpc_event: cygrpc.BaseEvent, generic_handlers: List[grpc.GenericRpcHandler],
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
 ) -> Optional[grpc.RpcMethodHandler]:
 
@@ -824,8 +822,7 @@ def _handle_with_method_handler(
 
 
 def _handle_call(
-    rpc_event: cygrpc.BaseEvent,
-    generic_handlers: List[grpc.GenericRpcHandler],
+    rpc_event: cygrpc.BaseEvent, generic_handlers: List[grpc.GenericRpcHandler],
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor, concurrency_exceeded: bool
 ) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:

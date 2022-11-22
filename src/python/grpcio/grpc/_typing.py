@@ -37,11 +37,17 @@ ServerTagCallbackType = Tuple[Optional['_RPCState'],
                               Sequence[NullaryCallbackType]]
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
-    Callable[[RequestType, 'ServicerContext', Callable[[ResponseType], None]], ResponseType],
-    Callable[[RequestType, 'ServicerContext', Callable[[ResponseType], None]], Iterator[ResponseType]],  #pylint: disable=line-too-long
-    Callable[[Iterator[RequestType], 'ServicerContext', Callable[[ResponseType], None]], ResponseType],  #pylint: disable=line-too-long
-    Callable[[Iterator[RequestType], 'ServicerContext', Callable[[ResponseType], None]], Iterator[ResponseType]],  #pylint: disable=line-too-long
-    Callable[[RequestType, 'ServicerContext'], ResponseType],
+    Callable[[RequestType, 'ServicerContext', Callable[[ResponseType], None]],
+             ResponseType],
+    Callable[[RequestType, 'ServicerContext', Callable[[ResponseType], None]],
+             Iterator[ResponseType]],
+    Callable[[
+        Iterator[RequestType], 'ServicerContext', Callable[[ResponseType], None]
+    ], ResponseType], Callable[[
+        Iterator[RequestType], 'ServicerContext', Callable[[ResponseType], None]
+    ], Iterator[ResponseType]], Callable[[RequestType, 'ServicerContext'],
+                                         ResponseType],
     Callable[[RequestType, 'ServicerContext'], Iterator[ResponseType]],
-    Callable[[Iterator[RequestType], 'ServicerContext'], ResponseType],
-    Callable[[Iterator[RequestType], 'ServicerContext'], Iterator[ResponseType]]]
+    Callable[[Iterator[RequestType], 'ServicerContext'],
+             ResponseType], Callable[[Iterator[RequestType], 'ServicerContext'],
+                                     Iterator[ResponseType]]]
