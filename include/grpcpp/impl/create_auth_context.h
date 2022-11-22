@@ -16,12 +16,19 @@
  *
  */
 
-#ifndef GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
-#define GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
+#ifndef GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
+#define GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
 
-// IWYU pragma: private
+#include <memory>
 
-/// TODO(chengyuc): Remove this file after solving compatibility.
-#include <grpcpp/impl/metadata_map.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/security/auth_context.h>
 
-#endif  // GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
+namespace grpc {
+
+/// TODO(ctiller): not sure we want to make this a permanent thing
+std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
+
+}  // namespace grpc
+
+#endif  // GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
