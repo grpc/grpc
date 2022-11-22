@@ -137,10 +137,20 @@ EXTERNAL_DEPS = {
         'address_sorting',
     'ares.h':
         'cares',
+    'google/devtools/cloudtrace/v2/tracing.grpc.pb.h':
+        'googleapis_trace_grpc_service',
+    'google/logging/v2/logging.grpc.pb.h':
+        'googleapis_logging_grpc_service',
+    'google/monitoring/v3/metric_service.grpc.pb.h':
+        'googleapis_monitoring_grpc_service',
     'gmock/gmock.h':
         'gtest',
     'gtest/gtest.h':
         'gtest',
+    'opencensus/exporters/stats/stackdriver/stackdriver_exporter.h':
+        'opencensus-stats-stackdriver_exporter',
+    'opencensus/exporters/trace/stackdriver/stackdriver_exporter.h':
+        'opencensus-trace-stackdriver_exporter',
     'opencensus/trace/context_util.h':
         'opencensus-trace-context_util',
     'opencensus/trace/propagation/grpc_trace_bin.h':
@@ -405,6 +415,7 @@ for dirname in [
         "",
         "src/core",
         "src/cpp/ext/gcp",
+        "src/cpp/ext/filters/logging",
         "test/core/uri",
         "test/core/util",
         "test/core/end2end",
