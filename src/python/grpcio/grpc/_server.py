@@ -34,6 +34,7 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
+from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
@@ -610,7 +611,7 @@ def _status(rpc_event: cygrpc.BaseEvent, state: _RPCState,
 
 def _unary_response_in_pool(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        behavior: ArityAgnosticMethodHandler, argument_thunk: Callable,
+        behavior: ArityAgnosticMethodHandler, argument_thunk: Callable[[], Any],
         request_deserializer: Optional[SerializingFunction],
         response_serializer: Optional[SerializingFunction]) -> None:
     cygrpc.install_context_from_request_call_event(rpc_event)
@@ -630,7 +631,7 @@ def _unary_response_in_pool(
 
 def _stream_response_in_pool(
         rpc_event: cygrpc.BaseEvent, state: _RPCState,
-        behavior: ArityAgnosticMethodHandler, argument_thunk: Callable,
+        behavior: ArityAgnosticMethodHandler, argument_thunk: Callable[[], Any],
         request_deserializer: Optional[DeserializingFunction],
         response_serializer: Optional[SerializingFunction]) -> None:
     cygrpc.install_context_from_request_call_event(rpc_event)
@@ -756,7 +757,7 @@ def _handle_stream_stream(
 
 def _find_method_handler(
     rpc_event: cygrpc.BaseEvent,
-    generic_handlers: Optional[List[grpc.GenericRpcHandler]],
+    generic_handlers: List[grpc.GenericRpcHandler],
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
 ) -> Optional[grpc.RpcMethodHandler]:
 
@@ -824,7 +825,7 @@ def _handle_with_method_handler(
 
 def _handle_call(
     rpc_event: cygrpc.BaseEvent,
-    generic_handlers: Optional[List[grpc.GenericRpcHandler]],
+    generic_handlers: List[grpc.GenericRpcHandler],
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor, concurrency_exceeded: bool
 ) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:
@@ -863,7 +864,7 @@ class _ServerState(object):
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server
-    generic_handlers: Optional[List[grpc.GenericRpcHandler]]
+    generic_handlers: List[grpc.GenericRpcHandler]
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
     thread_pool: futures.ThreadPoolExecutor
     stage: _ServerStage
@@ -878,7 +879,7 @@ class _ServerState(object):
     # pylint: disable=too-many-arguments
     def __init__(self, completion_queue: cygrpc.CompletionQueue,
                  server: cygrpc.Server,
-                 generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
+                 generic_handlers: Sequence[grpc.GenericRpcHandler],
                  interceptor_pipeline: Optional[_interceptor._ServicePipeline],
                  thread_pool: futures.ThreadPoolExecutor,
                  maximum_concurrent_rpcs: Optional[int]):
