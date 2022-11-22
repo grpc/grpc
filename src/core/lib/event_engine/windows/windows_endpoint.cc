@@ -178,9 +178,9 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
   if (grpc_event_engine_trace.enabled()) {
     for (int i = 0; i < data->Count(); i++) {
-      gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %s", this,
-              peer_address_string_.c_str(),
-              data->RefSlice(i).as_string_view().data());
+      auto str = data->RefSlice(i).as_string_view();
+      gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %.*s", this,
+              peer_address_string_.c_str(), str.length(), str.data());
     }
   }
   GPR_ASSERT(data->Count() <= UINT_MAX);
@@ -294,9 +294,10 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     GPR_ASSERT(read_info->bytes_transferred() == buffer_->Length());
     if (grpc_event_engine_trace.enabled()) {
       for (int i = 0; i < buffer_->Count(); i++) {
-        gpr_log(GPR_INFO, "WindowsEndpoint::%p READ (peer=%s): %s", this,
-                endpoint_->peer_address_string_.c_str(),
-                buffer_->RefSlice(i).as_string_view().data());
+        auto str = buffer_->RefSlice(i).as_string_view();
+        gpr_log(GPR_INFO, "WindowsEndpoint::%p READ (peer=%s): %.*s", this,
+                endpoint_->peer_address_string_.c_str(), str.length(),
+                str.data());
       }
     }
     return;
