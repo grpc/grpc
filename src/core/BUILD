@@ -1868,12 +1868,17 @@ grpc_cc_library(
     external_deps = [
         "absl/cleanup",
         "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings:str_format",
     ],
     deps = [
         "event_engine_trace",
+        "status_helper",
         "windows_iocp",
         "windows_resolved_address",
+        "//:debug_location",
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -1886,11 +1891,11 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/windows/resolved_address.h",
     ],
-    external_deps = [
-    ],
+    external_deps = ["absl/strings:str_format"],
     deps = [
         "status_helper",
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
         "//:uri_parser",
     ],

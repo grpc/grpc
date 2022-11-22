@@ -15,14 +15,13 @@
 
 #ifdef GPR_WINDOWS
 
-#include "src/core/lib/event_engine/windows/resolved_address.h"
-
 #include <errno.h>
 #include <inttypes.h>
 #include <winsock2.h>
 
 #include "absl/strings/str_format.h"
 
+#include "src/core/lib/event_engine/windows/resolved_address.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/uri/uri_parser.h"

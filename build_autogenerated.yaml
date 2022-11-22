@@ -12070,6 +12070,26 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: windows_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/windows/resolved_address.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
+  - test/core/event_engine/windows/create_sockpair.h
+  src:
+  - src/core/lib/event_engine/windows/resolved_address.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
+  - test/core/event_engine/windows/create_sockpair.cc
+  - test/core/event_engine/windows/windows_endpoint_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
+  uses_polling: false
 - name: wire_reader_test
   gtest: true
   build: test
