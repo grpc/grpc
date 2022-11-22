@@ -527,7 +527,7 @@ void BasicMemoryQuota::MaybeMoveAllocator(GrpcMemoryAllocatorImpl* allocator,
 
     // Loop to make sure move is eventually stable.
     old_free_bytes = new_free_bytes;
-    new_free_bytes = allocator->getFreeBytes();
+    new_free_bytes = allocator->GetFreeBytes();
   }
 }
 
