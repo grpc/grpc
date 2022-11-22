@@ -21,8 +21,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/slice.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -41,13 +41,15 @@ namespace experimental {
 
 namespace {
 
-constexpr int64_t kShutdownBit = (static_cast<int64_t>(1) << 32);
+constexpr int64_t kShutdownBit = 1l << 32;
 
-class EventEngineEndpointWrapper : std::enable_shared_from_this<EventEngine> {
+// A wrapper class to manage Event Engine endpoint ref counting and asynchronous
+// shutdown.
+class EventEngineEndpointWrapper {
  public:
   struct grpc_event_engine_endpoint {
     grpc_endpoint base;
-    EventEngineEndpointWrapper* endpoint_wrapper;
+    EventEngineEndpointWrapper* wrapper;
     std::string peer_address;
     std::string local_address;
     std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
@@ -66,10 +68,15 @@ class EventEngineEndpointWrapper : std::enable_shared_from_this<EventEngine> {
     }
   }
 
+  // Returns a managed grpc_endpoint object. It retains ownership of the object.
   grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
 
+  // Returns a raw pointer to the underlying EventEngine endpoint object.
   EventEngine::Endpoint* GetEEEndpoint() { return endpoint_.get(); }
 
+  // Returns true if the endpoint is not yet shutdown. In that case, it also
+  // acquires a shutdown ref. Otherwise it returns false and doesn't modify the
+  // shutdown ref.
   bool ShutdownRef() {
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {
@@ -84,6 +91,10 @@ class EventEngineEndpointWrapper : std::enable_shared_from_this<EventEngine> {
     }
   }
 
+  // Decrement the shutdwn ref. If this is the last shutdown ref, it also
+  // deletes the underlying event engine endpoint. Deletion of the event engine
+  // endpoint should trigger execution of any pending read/write callbacks with
+  // NOT-OK status.
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
@@ -93,6 +104,10 @@ class EventEngineEndpointWrapper : std::enable_shared_from_this<EventEngine> {
     }
   }
 
+  // If trigger shutdown is called the first time, it sets the shutdown bit and
+  // decrements the shutdown ref. If trigger shutdown has been called before or
+  // in parallel, only one of them would win the race. The other invocation
+  // would simply return.
   void TriggerShutdown() {
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {
@@ -120,23 +135,26 @@ class EventEngineEndpointWrapper : std::enable_shared_from_this<EventEngine> {
   std::unique_ptr<grpc_event_engine_endpoint> eeep_;
 };
 
+// Read from the endpoint and place the data in slices slice buffer. The
+// provided closure is also invoked asynchronously.
 void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
                   grpc_closure* cb, bool /* urgent */, int min_progress_size) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->endpoint_wrapper->ShutdownRef()) {
+  if (!eeep->wrapper->ShutdownRef()) {
+    // Shutdown has already been triggered on the endpoint.
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::CancelledError());
     return;
   }
 
-  eeep->endpoint_wrapper->Ref();
+  eeep->wrapper->Ref();
   EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
   SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
-  eeep->endpoint_wrapper->GetEEEndpoint()->Read(
+  eeep->wrapper->GetEEEndpoint()->Read(
       [eeep, cb, slices](absl::Status status) {
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
-        grpc_slice_buffer_swap(slices, read_buffer->c_slice_buffer());
+        grpc_slice_buffer_move_into(read_buffer->c_slice_buffer(), slices);
         read_buffer->~SliceBuffer();
         {
           grpc_core::ExecCtx exec_ctx;
@@ -144,27 +162,30 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
                                   absl_status_to_grpc_error(status));
         }
         // For the ref taken in EndpointRead
-        eeep->endpoint_wrapper->Unref();
+        eeep->wrapper->Unref();
       },
       read_buffer, &read_args);
 
-  eeep->endpoint_wrapper->ShutdownUnref();
+  eeep->wrapper->ShutdownUnref();
 }
 
+// Write the data from slices and invoke the provided closure asynchronously
+// after the write is complete.
 void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
                    grpc_closure* cb, void* arg, int max_frame_size) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->endpoint_wrapper->ShutdownRef()) {
+  if (!eeep->wrapper->ShutdownRef()) {
+    // Shutdown has already been triggered on the endpoint.
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::CancelledError());
     return;
   }
 
-  eeep->endpoint_wrapper->Ref();
+  eeep->wrapper->Ref();
   EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
   SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
-  eeep->endpoint_wrapper->GetEEEndpoint()->Write(
+  eeep->wrapper->GetEEEndpoint()->Write(
       [eeep, cb](absl::Status status) {
         auto* write_buffer =
             reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
@@ -175,11 +196,11 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
                                   absl_status_to_grpc_error(status));
         }
         // For the ref taken in EndpointWrite
-        eeep->endpoint_wrapper->Unref();
+        eeep->wrapper->Unref();
       },
       write_buffer, &write_args);
 
-  eeep->endpoint_wrapper->ShutdownUnref();
+  eeep->wrapper->ShutdownUnref();
 }
 
 void EndpointAddToPollset(grpc_endpoint* /* ep */,
@@ -198,26 +219,27 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
           ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s",
-            eeep->endpoint_wrapper->GetEEEndpoint(), why.ToString().c_str());
+            eeep->wrapper->GetEEEndpoint(), why.ToString().c_str());
   }
-  eeep->endpoint_wrapper->TriggerShutdown();
+  eeep->wrapper->TriggerShutdown();
 }
 
+// Attempts to free the underlying data structures.
 void EndpointDestroy(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  eeep->endpoint_wrapper->Unref();
+  eeep->wrapper->Unref();
 }
 
 absl::string_view EndpointGetPeerAddress(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->endpoint_wrapper->ShutdownRef()) {
+  if (!eeep->wrapper->ShutdownRef()) {
     return "";
   }
-  eeep->endpoint_wrapper->ShutdownUnref();
+  eeep->wrapper->ShutdownUnref();
   return eeep->peer_address;
 }
 
@@ -225,10 +247,10 @@ absl::string_view EndpointGetLocalAddress(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (!eeep->endpoint_wrapper->ShutdownRef()) {
+  if (!eeep->wrapper->ShutdownRef()) {
     return "";
   }
-  eeep->endpoint_wrapper->ShutdownUnref();
+  eeep->wrapper->ShutdownUnref();
   return eeep->local_address;
 }
 
@@ -254,14 +276,14 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
     : endpoint_(std::move(endpoint)),
       eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
   eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
-  eeep_->endpoint_wrapper = this;
+  eeep_->wrapper = this;
   auto local_addr = ResolvedAddressToURI(endpoint_->GetLocalAddress());
   if (local_addr.ok()) {
-    eeep_->local_address = local_addr.value();
+    eeep_->local_address = *local_addr;
   }
   auto peer_addr = ResolvedAddressToURI(endpoint_->GetPeerAddress());
   if (peer_addr.ok()) {
-    eeep_->peer_address = peer_addr.value();
+    eeep_->peer_address = *peer_addr;
   }
 }
 
@@ -270,9 +292,8 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 grpc_endpoint* grpc_event_engine_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
   GPR_DEBUG_ASSERT(ee_endpoint != nullptr);
-  auto endpoint_wrapper =
-      new EventEngineEndpointWrapper(std::move(ee_endpoint));
-  return endpoint_wrapper->GetGrpcEndpoint();
+  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
+  return wrapper->GetGrpcEndpoint();
 }
 
 }  // namespace experimental

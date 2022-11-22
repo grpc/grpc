@@ -227,10 +227,11 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
   for (iov_size = 0;
        out_offset_.slice_idx != buf_.Count() && iov_size != MAX_WRITE_IOVEC;
        iov_size++) {
-    auto slice = buf_.RefSlice(out_offset_.slice_idx);
+    auto mutable_data = buf_.MutableData(out_offset_.slice_idx);
     iov[iov_size].iov_base =
-        const_cast<uint8_t*>(slice.begin()) + out_offset_.byte_idx;
-    iov[iov_size].iov_len = slice.length() - out_offset_.byte_idx;
+        std::get<uint8_t*>(mutable_data) + out_offset_.byte_idx;
+    iov[iov_size].iov_len =
+        std::get<size_t>(mutable_data) - out_offset_.byte_idx;
     *sending_length += iov[iov_size].iov_len;
     ++(out_offset_.slice_idx);
     out_offset_.byte_idx = 0;
@@ -285,9 +286,9 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 #endif  // GRPC_LINUX_ERRQUEUE
   char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
-    Slice slice = incoming_buffer_->RefSlice(i);
-    iov[i].iov_base = const_cast<uint8_t*>(slice.begin());
-    iov[i].iov_len = slice.length();
+    auto mutable_data = incoming_buffer_->MutableData(i);
+    iov[i].iov_base = std::get<uint8_t*>(mutable_data);
+    iov[i].iov_len = std::get<size_t>(mutable_data);
   }
 
   GPR_ASSERT(incoming_buffer_->Length() != 0);
@@ -426,7 +427,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   if (total_read_bytes < incoming_buffer_->Length()) {
     incoming_buffer_->MoveLastNBytesIntoSliceBuffer(
         incoming_buffer_->Length() - total_read_bytes, last_read_buffer_);
-    // last_read_buffer_.Clear();
   }
   return true;
 }
@@ -577,7 +577,6 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
-  read_mu_.Unlock();
   if (args != nullptr && grpc_core::IsTcpFrameSizeTuningEnabled()) {
     min_progress_size_ = std::max(static_cast<int>(args->read_hint_bytes), 1);
   } else {
@@ -585,15 +584,20 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   }
   Ref().release();
   if (is_first_read_) {
+    UpdateRcvLowat();
     // Endpoint read called for the very first time. Register read callback
     // with the polling engine.
     is_first_read_ = false;
+    read_mu_.Unlock();
     handle_->NotifyOnRead(on_read_);
   } else if (inq_ == 0) {
+    UpdateRcvLowat();
+    read_mu_.Unlock();
     // Upper layer asked to read more but we know there is no pending data to
     // read from previous reads. So, wait for POLLIN.
     handle_->NotifyOnRead(on_read_);
   } else {
+    read_mu_.Unlock();
     on_read_->SetStatus(absl::OkStatus());
     engine_->Run(on_read_);
   }
@@ -981,7 +985,6 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
   size_t unwind_byte_idx;
   int saved_errno;
   status = absl::OkStatus();
-  Slice slice;
 
   // We always start at zero, because we eagerly unref and trim the slice
   // buffer as we write
@@ -994,10 +997,12 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     for (iov_size = 0; outgoing_slice_idx != outgoing_buffer_->Count() &&
                        iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
-      slice = outgoing_buffer_->RefSlice(outgoing_slice_idx);
+      auto mutable_data = outgoing_buffer_->MutableData(outgoing_slice_idx);
       iov[iov_size].iov_base =
-          const_cast<uint8_t*>(slice.begin()) + outgoing_byte_idx_;
-      iov[iov_size].iov_len = slice.length() - outgoing_byte_idx_;
+          std::get<uint8_t*>(mutable_data) + outgoing_byte_idx_;
+      iov[iov_size].iov_len =
+          std::get<size_t>(mutable_data) - outgoing_byte_idx_;
+
       sending_length += iov[iov_size].iov_len;
       outgoing_slice_idx++;
       outgoing_byte_idx_ = 0;
@@ -1191,7 +1196,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       gpr_log(
           GPR_ERROR,
           "Tx zero-copy will not be used by gRPC since RLIMIT_MEMLOCK value is "
-          "not set. Consider raising its value with setrlimit().");
+              "not set. Consider raising its value with setrlimit().");
     } else if (GetUlimitHardMemLock() == 0) {
       zerocopy_enabled = false;
       gpr_log(GPR_ERROR,

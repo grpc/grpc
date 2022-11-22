@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
@@ -102,7 +103,6 @@ int64_t event_engine_tcp_client_connect(
     grpc_closure* on_connect, grpc_endpoint** endpoint,
     const grpc_event_engine::experimental::EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
-  *endpoint = nullptr;
   auto resource_quota = reinterpret_cast<grpc_core::ResourceQuota*>(
       config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA));
   auto addr_uri = grpc_sockaddr_to_uri(addr);
@@ -110,13 +110,14 @@ int64_t event_engine_tcp_client_connect(
       [on_connect,
        endpoint](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         grpc_core::ExecCtx exec_ctx;
+        absl::Status conn_status = ep.ok() ? absl::OkStatus() : ep.status();
         if (ep.ok()) {
           *endpoint = grpc_event_engine_endpoint_create(std::move(*ep));
+        } else {
+          *endpoint = nullptr;
         }
-        grpc_core::Closure::Run(DEBUG_LOCATION, on_connect,
-                                absl_status_to_grpc_error(
-                                    ep.ok() ? absl::OkStatus() : ep.status()));
-        exec_ctx.Flush();
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
+                                absl_status_to_grpc_error(conn_status));
       },
       CreateResolvedAddress(*addr), config,
       resource_quota != nullptr
