@@ -36,12 +36,6 @@
 
 namespace grpc {
 
-grpc_completion_queue* CoreCodegen::grpc_completion_queue_create(
-    const grpc_completion_queue_factory* factory,
-    const grpc_completion_queue_attributes* attributes, void* reserved) {
-  return ::grpc_completion_queue_create(factory, attributes, reserved);
-}
-
 grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_next(
     void* reserved) {
   return ::grpc_completion_queue_create_for_next(reserved);

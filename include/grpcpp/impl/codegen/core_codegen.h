@@ -33,10 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  grpc_completion_queue* grpc_completion_queue_create(
-      const grpc_completion_queue_factory* factory,
-      const grpc_completion_queue_attributes* attributes,
-      void* reserved) override;
   grpc_completion_queue* grpc_completion_queue_create_for_next(
       void* reserved) override;
   grpc_completion_queue* grpc_completion_queue_create_for_pluck(
