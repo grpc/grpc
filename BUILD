@@ -342,6 +342,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/client_unary_call.h",
     "include/grpcpp/impl/codegen/core_codegen.h",
     "include/grpcpp/impl/completion_queue_tag.h",
+    "include/grpcpp/impl/create_auth_context.h",
     "include/grpcpp/impl/delegating_channel.h",
     "include/grpcpp/impl/grpc_library.h",
     "include/grpcpp/impl/intercepted_channel.h",
