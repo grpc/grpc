@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
-  ::grpc_completion_queue_shutdown(cq);
-}
-
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {
   ::grpc_completion_queue_destroy(cq);
 }
