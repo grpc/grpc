@@ -1328,14 +1328,15 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
             GPR_UNREACHABLE_CODE(abort());
         }
         return static_cast<ServerCallContext*>(GetContext<CallContext>())
-            ->Run(std::move(call_args), rc->cq_bound_to_call,
-                  rc->initial_metadata,
-                  [rc, cq_for_new_request](grpc_call* call) {
-                    *rc->call = call;
-                    grpc_cq_end_op(cq_for_new_request, rc->tag,
-                                   absl::OkStatus(), Server::DoneRequestEvent,
-                                   rc, &rc->completion, true);
-                  });
+            ->CompletePromise(std::move(call_args), rc->cq_bound_to_call,
+                              rc->initial_metadata,
+                              [rc, cq_for_new_request](grpc_call* call) {
+                                *rc->call = call;
+                                grpc_cq_end_op(cq_for_new_request, rc->tag,
+                                               absl::OkStatus(),
+                                               Server::DoneRequestEvent, rc,
+                                               &rc->completion, true);
+                              });
       });
 }
 

@@ -121,7 +121,7 @@ class ServerCallContext : public CallContext {
  public:
   ServerCallContext(PromiseBasedCall* call, const void* server_stream_data)
       : CallContext(call), server_stream_data_(server_stream_data) {}
-  ArenaPromise<ServerMetadataHandle> Run(
+  ArenaPromise<ServerMetadataHandle> CompletePromise(
       CallArgs call_args, grpc_completion_queue* cq,
       grpc_metadata_array* publish_initial_metadata,
       absl::FunctionRef<void(grpc_call* call)> publish);
