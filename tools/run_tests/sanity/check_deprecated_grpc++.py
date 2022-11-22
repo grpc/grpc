@@ -81,7 +81,6 @@ expected_files = [
     "include/grpc++/impl/codegen/completion_queue.h",
     "include/grpc++/impl/codegen/serialization_traits.h",
     "include/grpc++/impl/codegen/create_auth_context.h",
-    "include/grpc++/impl/codegen/time.h",
     "include/grpc++/impl/codegen/security/auth_context.h",
     "include/grpc++/ext/health_check_service_server_builder_option.h",
     "include/grpc++/ext/proto_server_reflection_plugin.h",
