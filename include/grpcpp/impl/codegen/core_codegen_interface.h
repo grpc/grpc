@@ -49,7 +49,6 @@ class CoreCodegenInterface {
   // grpc_shutdown. Calling grpc_init from the codegen interface before
   // the real grpc_init is called will cause a crash, so if you use this
   // function, ensure that it is not the first call to grpc_init.
-  virtual void grpc_init() = 0;
   virtual void grpc_shutdown() = 0;
 
   virtual void gpr_mu_init(gpr_mu* mu) = 0;
