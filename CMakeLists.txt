@@ -3446,6 +3446,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
@@ -4138,6 +4139,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
