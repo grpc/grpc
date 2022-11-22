@@ -36,6 +36,7 @@
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -45,6 +46,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -271,6 +273,19 @@ void PosixEndpointImpl::FinishEstimate() {
   bytes_read_this_round_ = 0;
 }
 
+absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) {
+  auto peer_string = SockaddrToString(&peer_address_, true);
+
+  grpc_core::StatusSetStr(&src_error,
+                          grpc_core::StatusStrProperty::kTargetAddress,
+                          peer_string.ok() ? *peer_string : "");
+  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
+                          handle_->WrappedFd());
+  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
+                          GRPC_STATUS_UNAVAILABLE);
+  return src_error;
+}
+
 // Returns true if data available to read or error other than EAGAIN.
 bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   struct msghdr msg;
@@ -339,10 +354,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
       if (read_bytes == 0) {
-        status = absl::InternalError("Socket closed");
+        status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
-        status = absl::InternalError(
-            absl::StrCat("recvmsg:", grpc_core::StrError(errno)));
+        status = TcpAnnotateError(absl::InternalError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
       }
       return true;
     }
@@ -948,8 +963,8 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        status = absl::InternalError(
-            absl::StrCat("sendmsg", std::strerror(saved_errno)));
+        status = TcpAnnotateError(absl::InternalError(
+            absl::StrCat("sendmsg", std::strerror(saved_errno))));
         TcpShutdownTracedBufferList();
         return true;
       }
@@ -1043,8 +1058,8 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
         }
         return false;
       } else {
-        status = absl::InternalError(
-            absl::StrCat("sendmsg", std::strerror(saved_errno)));
+        status = TcpAnnotateError(absl::InternalError(
+            absl::StrCat("sendmsg", std::strerror(saved_errno))));
         outgoing_buffer_->Clear();
         TcpShutdownTracedBufferList();
         return true;
@@ -1110,8 +1125,9 @@ void PosixEndpointImpl::Write(
   GPR_DEBUG_ASSERT(data != nullptr);
 
   if (data->Length() == 0) {
-    on_writable(handle_->IsHandleShutdown() ? absl::InternalError("EOF")
-                                            : status);
+    on_writable(handle_->IsHandleShutdown()
+                    ? TcpAnnotateError(absl::InternalError("EOF"))
+                    : status);
     TcpShutdownTracedBufferList();
     return;
   }
@@ -1153,6 +1169,8 @@ void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
     stop_error_notification_.store(true, std::memory_order_release);
     handle_->SetHasError();
   }
+  grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
+                          GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
   Unref();
 }
@@ -1178,11 +1196,18 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);
+  auto peer_addr_string = sock.PeerAddressString();
   memory_owner_ = options.resource_quota->memory_quota()->CreateMemoryOwner(
-      *sock.PeerAddressString());
+      peer_addr_string.ok() ? *peer_addr_string : "");
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
-  local_address_ = *sock.LocalAddress();
-  peer_address_ = *sock.PeerAddress();
+  auto local_address = sock.LocalAddress();
+  if (local_address.ok()) {
+    local_address_ = *local_address;
+  }
+  auto peer_address = sock.PeerAddress();
+  if (peer_address.ok()) {
+    peer_address_ = *peer_address;
+  }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
@@ -1196,7 +1221,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       gpr_log(
           GPR_ERROR,
           "Tx zero-copy will not be used by gRPC since RLIMIT_MEMLOCK value is "
-              "not set. Consider raising its value with setrlimit().");
+          "not set. Consider raising its value with setrlimit().");
     } else if (GetUlimitHardMemLock() == 0) {
       zerocopy_enabled = false;
       gpr_log(GPR_ERROR,
