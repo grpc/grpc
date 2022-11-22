@@ -138,7 +138,7 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   DWORD flags = 0;
   // First let's try a synchronous, non-blocking read.
   int status = WSARecv(socket_->socket(), wsa_buffers, (DWORD)buffer->Count(),
-                       &bytes_read, &flags, NULL, NULL);
+                       &bytes_read, &flags, nullptr, nullptr);
   int wsa_error = status == 0 ? 0 : WSAGetLastError();
   // Did we get data immediately ? Yay.
   if (wsa_error != WSAEWOULDBLOCK) {
@@ -155,7 +155,7 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   memset(socket_->read_info()->overlapped(), 0, sizeof(OVERLAPPED));
   status =
       WSARecv(socket_->socket(), wsa_buffers, (DWORD)buffer->Count(),
-              &bytes_read, &flags, socket_->read_info()->overlapped(), NULL);
+              &bytes_read, &flags, socket_->read_info()->overlapped(), nullptr);
   wsa_error = status == 0 ? 0 : WSAGetLastError();
   if (wsa_error != 0 && wsa_error != WSA_IO_PENDING) {
     // Async read returned immediately with an error
@@ -198,21 +198,45 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   // First, let's try a synchronous, non-blocking write.
   DWORD bytes_sent;
   int status = WSASend(socket_->socket(), buffers, (DWORD)data->Count(),
-                       &bytes_sent, 0, NULL, NULL);
-  int wsa_error = status == 0 ? 0 : WSAGetLastError();
-  // We would kind of expect to get a WSAEWOULDBLOCK here, especially on a busy
-  // connection that has its send queue filled up. But if we don't, then we can
-  // avoid doing an async write operation at all.
-  if (wsa_error != WSAEWOULDBLOCK) {
-    executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
-      cb(WSAErrorToStatusWithMessage(wsa_error, "WSASend", DEBUG_LOCATION));
-    });
-    return;
+                       &bytes_sent, 0, nullptr, nullptr);
+  size_t async_buffers_offset;
+  if (status == 0) {
+    if (bytes_sent == data->Length()) {
+      // Write completed, exiting early
+      executor_->Run(
+          [cb = std::move(on_writable)]() mutable { cb(absl::OkStatus()); });
+      if (allocated) gpr_free(allocated);
+      return;
+    }
+    // The data was not completely delivered, we should send the rest of it by
+    // doing an async write operation.
+    for (int i = 0; i < data->Count(); i++) {
+      if (buffers[i].len > bytes_sent) {
+        buffers[i].buf += bytes_sent;
+        buffers[i].len -= bytes_sent;
+        break;
+      }
+      bytes_sent -= buffers[i].len;
+      async_buffers_offset++;
+    }
+  } else {
+    // We would kind of expect to get a WSAEWOULDBLOCK here, especially on a
+    // busy connection that has its send queue filled up. But if we don't,
+    // then we can avoid doing an async write operation at all.
+    int wsa_error = WSAGetLastError();
+    if (wsa_error != WSAEWOULDBLOCK) {
+      executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
+        cb(WSAErrorToStatusWithMessage(wsa_error, "WSASend", DEBUG_LOCATION));
+      });
+      if (allocated) gpr_free(allocated);
+      return;
+    }
   }
   auto write_info = socket_->write_info();
   memset(write_info->overlapped(), 0, sizeof(OVERLAPPED));
-  status = WSASend(socket_->socket(), buffers, (DWORD)data->Count(),
-                   &bytes_sent, 0, write_info->overlapped(), NULL);
+  status = WSASend(socket_->socket(), buffers + async_buffers_offset,
+                   (DWORD)(data->Count() - async_buffers_offset), nullptr, 0,
+                   write_info->overlapped(), nullptr);
   if (allocated) gpr_free(allocated);
 
   if (status != 0) {
