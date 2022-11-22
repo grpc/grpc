@@ -24,7 +24,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/compression/compression_internal.h"
