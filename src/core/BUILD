@@ -1531,6 +1531,7 @@ grpc_cc_library(
         "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1565,6 +1566,7 @@ grpc_cc_library(
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -1660,6 +1662,7 @@ grpc_cc_library(
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
     ],
 )
