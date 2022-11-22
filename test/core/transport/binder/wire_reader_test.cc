@@ -370,5 +370,8 @@ TEST_F(WireReaderTest, ServerInitialMetadata) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }
