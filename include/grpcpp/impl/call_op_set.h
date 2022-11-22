@@ -254,7 +254,7 @@ class CallOpSendInitialMetadata {
   }
   void FinishOp(bool* /*status*/) {
     if (!send_ || hijacked_) return;
-    g_core_codegen_interface->gpr_free(initial_metadata_);
+    gpr_free(initial_metadata_);
     send_ = false;
   }
 
@@ -687,7 +687,7 @@ class CallOpServerSendStatus {
 
   void FinishOp(bool* /*status*/) {
     if (!send_status_available_ || hijacked_) return;
-    g_core_codegen_interface->gpr_free(trailing_metadata_);
+    gpr_free(trailing_metadata_);
     send_status_available_ = false;
   }
 
@@ -808,8 +808,7 @@ class CallOpClientRecvStatus {
                  metadata_map_->GetBinaryErrorDetails());
       if (debug_error_string_ != nullptr) {
         client_context_->set_debug_error_string(debug_error_string_);
-        g_core_codegen_interface->gpr_free(
-            const_cast<char*>(debug_error_string_));
+        gpr_free(const_cast<char*>(debug_error_string_));
       }
     }
     // TODO(soheil): Find callers that set debug string even for status OK,

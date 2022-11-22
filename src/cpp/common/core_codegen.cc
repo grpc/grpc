@@ -36,8 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::gpr_free(void* p) { return ::gpr_free(p); }
-
 void CoreCodegen::grpc_init() { ::grpc_init(); }
 void CoreCodegen::grpc_shutdown() { ::grpc_shutdown(); }
 

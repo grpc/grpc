@@ -45,8 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual void gpr_free(void* p) = 0;
-
   // These are only to be used to fix edge cases involving grpc_init and
   // grpc_shutdown. Calling grpc_init from the codegen interface before
   // the real grpc_init is called will cause a crash, so if you use this

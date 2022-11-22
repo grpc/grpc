@@ -33,8 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  void gpr_free(void* p) override;
-
   void grpc_init() override;
   void grpc_shutdown() override;
 
