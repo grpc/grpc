@@ -14,29 +14,9 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
-#include <algorithm>
-#include <map>
-#include <memory>
-#include <utility>
-#include <vector>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
-
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -133,9 +113,17 @@ TEST_F(XdsOverrideHostTest, ConfigRequiresChildPolicy) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  auto original_env_value =
+      grpc_core::GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
   grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
   grpc_init();
   int ret = RUN_ALL_TESTS();
+  if (original_env_value.has_value()) {
+    grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE",
+                      *original_env_value);
+  } else {
+    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+  }
   grpc_shutdown();
   return ret;
 }

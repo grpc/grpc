@@ -73,3 +73,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "xds_override_host_disabled_test",
+    srcs = ["xds_override_host_disabled_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:env",
+        "//src/core:grpc_lb_policy_xds_override_host",
+        "//test/core/util:grpc_test_util",
+    ],
+)
