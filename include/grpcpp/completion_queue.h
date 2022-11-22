@@ -34,6 +34,7 @@
 
 #include <list>
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
@@ -251,9 +252,8 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// Private constructor of CompletionQueue only visible to friend classes
   explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
     cq_ = grpc::g_core_codegen_interface->grpc_completion_queue_create(
-        grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
-            &attributes),
-        &attributes, nullptr);
+        grpc_completion_queue_factory_lookup(&attributes), &attributes,
+        nullptr);
     InitialAvalanching();  // reserve this for the future shutdown
   }
 
