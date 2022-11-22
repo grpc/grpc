@@ -1832,6 +1832,8 @@ class PromiseBasedCall : public Call,
                   void (*destroy)(void* value)) override;
   void* ContextGet(grpc_context_index elem) const override;
   void SetCompletionQueue(grpc_completion_queue* cq) override;
+  void SetCompletionQueueLocked(grpc_completion_queue* cq)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
@@ -1955,6 +1957,8 @@ class PromiseBasedCall : public Call,
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() override;
 
+  Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
+
  protected:
   class ScopedContext
       : public ScopedActivity,
@@ -2037,8 +2041,6 @@ class PromiseBasedCall : public Call,
   static constexpr uint8_t PendingOpBit(PendingOp reason) {
     return 1 << static_cast<int>(reason);
   }
-
-  Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
   // Begin work on a completion, recording the tag/closure to notify.
   // Use the op selected in \a ops to determine the index to allocate into.
@@ -2358,6 +2360,10 @@ void PromiseBasedCall::ForceImmediateRepoll() { keep_polling_ = true; }
 
 void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
   MutexLock lock(&mu_);
+  SetCompletionQueueLocked(cq);
+}
+
+void PromiseBasedCall::SetCompletionQueueLocked(grpc_completion_queue* cq) {
   cq_ = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");
   call_context_.pollent_ =
@@ -2937,7 +2943,8 @@ ArenaPromise<ServerMetadataHandle> ServerCallContext::Run(
     grpc_metadata_array* publish_initial_metadata,
     absl::FunctionRef<void(grpc_call* call)> publish) {
   auto* call = static_cast<ServerPromiseBasedCall*>(this->call());
-  call->SetCompletionQueue(cq);
+  call->mu()->AssertHeld();
+  call->SetCompletionQueueLocked(cq);
   call->server_to_client_messages_ = call_args.server_to_client_messages;
   call->client_to_server_messages_ = call_args.client_to_server_messages;
   PublishMetadataArray(publish_initial_metadata,
@@ -2958,7 +2965,6 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
 }
 
 Poll<ServerMetadataHandle> ServerPromiseBasedCall::PollTopOfCall() {
-  abort();
   return Pending{};  // TODO
 }
 
