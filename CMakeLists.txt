@@ -1135,7 +1135,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx server_test)
   add_dependencies(buildtests_cxx service_config_end2end_test)
   add_dependencies(buildtests_cxx service_config_test)
-  add_dependencies(buildtests_cxx session_affinity_test)
   add_dependencies(buildtests_cxx settings_timeout_test)
   add_dependencies(buildtests_cxx shutdown_test)
   add_dependencies(buildtests_cxx simple_request_bad_client_test)
@@ -1284,6 +1283,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_outlier_detection_end2end_test)
   endif()
+  add_dependencies(buildtests_cxx xds_override_host_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_ring_hash_end2end_test)
   endif()
@@ -1687,7 +1687,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/core/ext/filters/client_channel/lb_policy/session_affinity/session_affinity.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
@@ -1695,6 +1694,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
+  src/core/ext/filters/client_channel/lb_policy/xds_override_host/xds_override_host.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2652,8 +2652,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/core/ext/filters/client_channel/lb_policy/session_affinity/session_affinity.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
+  src/core/ext/filters/client_channel/lb_policy/xds_override_host/xds_override_host.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -18162,41 +18162,6 @@ target_link_libraries(service_config_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(session_affinity_test
-  test/core/client_channel/lb_policy/session_affinity_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(session_affinity_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(session_affinity_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(settings_timeout_test
   test/core/transport/chttp2/settings_timeout_test.cc
   test/core/util/cmdline.cc
@@ -24064,6 +24029,43 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_override_host_test
+  test/core/client_channel/lb_policy/xds_override_host_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(xds_override_host_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_override_host_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)

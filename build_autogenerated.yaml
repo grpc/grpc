@@ -1074,7 +1074,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  - src/core/ext/filters/client_channel/lb_policy/session_affinity/session_affinity.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
@@ -1082,6 +1081,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds_override_host/xds_override_host.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2295,8 +2295,8 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  - src/core/ext/filters/client_channel/lb_policy/session_affinity/session_affinity.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds_override_host/xds_override_host.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -10559,16 +10559,6 @@ targets:
   - test/core/service_config/service_config_test.cc
   deps:
   - grpc_test_util
-- name: session_affinity_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  src:
-  - test/core/client_channel/lb_policy/session_affinity_test.cc
-  deps:
-  - grpc_test_util
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -13090,6 +13080,16 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_override_host_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/xds_override_host_test.cc
+  deps:
+  - grpc_test_util
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
