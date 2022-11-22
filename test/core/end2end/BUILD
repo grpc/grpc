@@ -71,6 +71,7 @@ grpc_cc_library(
         "//:sockaddr_utils",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
