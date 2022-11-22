@@ -322,8 +322,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
     auto deadline =
         grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
-      auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-          cq_, tag, deadline, nullptr);
+      auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
@@ -344,8 +343,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   void TryPluck(grpc::internal::CompletionQueueTag* tag) {
     auto deadline =
         grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
     void* ignored = tag;
@@ -360,8 +358,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// that the tag is internal not something that is returned to the user.
   void TryPluck(grpc::internal::CompletionQueueTag* tag,
                 gpr_timespec deadline) {
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       return;
     }

@@ -36,13 +36,6 @@
 
 namespace grpc {
 
-grpc_event CoreCodegen::grpc_completion_queue_pluck(grpc_completion_queue* cq,
-                                                    void* tag,
-                                                    gpr_timespec deadline,
-                                                    void* reserved) {
-  return ::grpc_completion_queue_pluck(cq, tag, deadline, reserved);
-}
-
 void* CoreCodegen::gpr_malloc(size_t size) { return ::gpr_malloc(size); }
 
 void CoreCodegen::gpr_free(void* p) { return ::gpr_free(p); }

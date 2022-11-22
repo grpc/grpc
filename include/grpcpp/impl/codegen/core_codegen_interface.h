@@ -45,11 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
-                                                 void* tag,
-                                                 gpr_timespec deadline,
-                                                 void* reserved) = 0;
-
   virtual void* gpr_malloc(size_t size) = 0;
   virtual void gpr_free(void* p) = 0;
 

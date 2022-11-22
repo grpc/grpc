@@ -33,10 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
-                                         gpr_timespec deadline,
-                                         void* reserved) override;
-
   void* gpr_malloc(size_t size) override;
   void gpr_free(void* p) override;
 
