@@ -19,6 +19,9 @@
 #ifndef GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_H
 #define GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_H
 
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/descriptor.pb.h>
+
 #include "src/compiler/config.h"
 
 namespace grpc_objective_c_generator {
@@ -28,8 +31,8 @@ struct Parameters {
   bool no_v1_compatibility;
 };
 
-using ::grpc::protobuf::FileDescriptor;
-using ::grpc::protobuf::ServiceDescriptor;
+using ::google::protobuf::FileDescriptor;
+using ::google::protobuf::ServiceDescriptor;
 using ::std::string;
 
 // Returns forward declaration of classes in the generated header file.

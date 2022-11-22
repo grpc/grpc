@@ -78,8 +78,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
-// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
-
 // Applicable when simulating channel actions. Prevents overflows.
 static constexpr uint64_t kMaxWaitMs = grpc_core::Duration::Hours(1).millis();
 // Applicable when simulating channel actions. Prevents overflows.

@@ -60,7 +60,7 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
 }
 
 bool ProtoReflectionDescriptorDatabase::FindFileByName(
-    const string& filename, protobuf::FileDescriptorProto* output) {
+    const string& filename, ::google::protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileByName(filename, output)) {
     return true;
   }
@@ -107,7 +107,8 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
 }
 
 bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
-    const string& symbol_name, protobuf::FileDescriptorProto* output) {
+    const string& symbol_name,
+    ::google::protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingSymbol(symbol_name, output)) {
     return true;
   }
@@ -156,7 +157,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
 
 bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     const string& containing_type, int field_number,
-    protobuf::FileDescriptorProto* output) {
+    ::google::protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingExtension(containing_type, field_number,
                                              output)) {
     return true;
@@ -290,10 +291,10 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   return false;
 }
 
-protobuf::FileDescriptorProto
+::google::protobuf::FileDescriptorProto
 ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
     const std::string& byte_fd_proto) {
-  protobuf::FileDescriptorProto file_desc_proto;
+  ::google::protobuf::FileDescriptorProto file_desc_proto;
   file_desc_proto.ParseFromString(byte_fd_proto);
   return file_desc_proto;
 }
@@ -301,7 +302,7 @@ ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
 void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
     const grpc::reflection::v1alpha::FileDescriptorResponse& response) {
   for (int i = 0; i < response.file_descriptor_proto_size(); ++i) {
-    const protobuf::FileDescriptorProto file_proto =
+    const ::google::protobuf::FileDescriptorProto file_proto =
         ParseFileDescriptorProtoResponse(response.file_descriptor_proto(i));
     if (known_files_.find(file_proto.name()) == known_files_.end()) {
       known_files_.insert(file_proto.name());

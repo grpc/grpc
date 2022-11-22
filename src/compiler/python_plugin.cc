@@ -25,5 +25,5 @@
 int main(int argc, char* argv[]) {
   grpc_python_generator::GeneratorConfiguration config;
   grpc_python_generator::PythonGrpcGenerator generator(config);
-  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+  return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

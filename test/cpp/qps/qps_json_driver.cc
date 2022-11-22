@@ -24,7 +24,6 @@
 #include "absl/flags/flag.h"
 
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"

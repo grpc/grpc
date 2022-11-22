@@ -3326,7 +3326,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/completion_queue.h
   include/grpc++/impl/codegen/completion_queue_tag.h
   include/grpc++/impl/codegen/config.h
-  include/grpc++/impl/codegen/config_protobuf.h
   include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
@@ -3414,7 +3413,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
-  include/grpcpp/impl/codegen/config_protobuf.h
   include/grpcpp/impl/codegen/core_codegen.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
@@ -4022,7 +4020,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/completion_queue.h
   include/grpc++/impl/codegen/completion_queue_tag.h
   include/grpc++/impl/codegen/config.h
-  include/grpc++/impl/codegen/config_protobuf.h
   include/grpc++/impl/codegen/core_codegen.h
   include/grpc++/impl/codegen/core_codegen_interface.h
   include/grpc++/impl/codegen/create_auth_context.h
@@ -4109,7 +4106,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
-  include/grpcpp/impl/codegen/config_protobuf.h
   include/grpcpp/impl/codegen/core_codegen.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
@@ -4630,16 +4626,6 @@ target_link_libraries(grpc_plugin_support
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
-foreach(_hdr
-  include/grpc++/impl/codegen/config_protobuf.h
-  include/grpcpp/impl/codegen/config_protobuf.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
 
 
 if(gRPC_INSTALL)

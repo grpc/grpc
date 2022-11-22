@@ -27,7 +27,7 @@
 using grpc_node_generator::GenerateFile;
 using grpc_node_generator::GetJSServiceFilename;
 
-class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class NodeGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
   NodeGrpcGenerator() {}
   ~NodeGrpcGenerator() {}
@@ -36,9 +36,9 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
+  bool Generate(const google::protobuf::FileDescriptor* file,
                 const std::string& parameter,
-                grpc::protobuf::compiler::GeneratorContext* context,
+                google::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override {
     grpc_node_generator::Parameters generator_parameters;
     generator_parameters.minimum_node_version = 4;
@@ -68,9 +68,9 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     // Get output file name
     std::string file_name = GetJSServiceFilename(file->name());
 
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
-    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    google::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
     return true;
   }
@@ -78,5 +78,5 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
 int main(int argc, char* argv[]) {
   NodeGrpcGenerator generator;
-  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+  return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

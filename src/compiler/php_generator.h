@@ -19,12 +19,14 @@
 #ifndef GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
 #define GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
 
+#include <google/protobuf/service.h>
+
 #include "src/compiler/config.h"
 
 namespace grpc_php_generator {
 
-std::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
-                         const grpc::protobuf::ServiceDescriptor* service,
+std::string GenerateFile(const google::protobuf::FileDescriptor* file,
+                         const google::protobuf::ServiceDescriptor* service,
                          const std::string& class_suffix,
                          bool is_server = false);
 

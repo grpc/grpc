@@ -21,18 +21,20 @@
 
 #include <memory>
 
-#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <google/protobuf/message.h>
+
 #include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 namespace testing {
 
-bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message);
+bool ParseFromByteBuffer(ByteBuffer* buffer,
+                         google::protobuf::Message* message);
 
 std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    grpc::protobuf::Message* message);
+    google::protobuf::Message* message);
 
-bool SerializeToByteBufferInPlace(grpc::protobuf::Message* message,
+bool SerializeToByteBufferInPlace(google::protobuf::Message* message,
                                   ByteBuffer* buffer);
 
 }  // namespace testing

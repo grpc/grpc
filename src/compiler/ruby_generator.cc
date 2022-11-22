@@ -22,16 +22,19 @@
 #include <map>
 #include <vector>
 
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/descriptor.pb.h>
+
 #include "src/compiler/config.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
 #include "src/compiler/ruby_generator_map-inl.h"
 #include "src/compiler/ruby_generator_string-inl.h"
 
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::MethodDescriptor;
-using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::io::Printer;
-using grpc::protobuf::io::StringOutputStream;
+using google::protobuf::FileDescriptor;
+using google::protobuf::MethodDescriptor;
+using google::protobuf::ServiceDescriptor;
+using google::protobuf::io::Printer;
+using google::protobuf::io::StringOutputStream;
 using std::map;
 using std::vector;
 

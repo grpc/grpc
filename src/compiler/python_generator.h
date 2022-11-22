@@ -39,16 +39,16 @@ struct GeneratorConfiguration {
   std::vector<std::string> prefixes_to_filter;
 };
 
-class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class PythonGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
   PythonGrpcGenerator(const GeneratorConfiguration& config);
   ~PythonGrpcGenerator();
 
   uint64_t GetSupportedFeatures() const override;
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
+  bool Generate(const google::protobuf::FileDescriptor* file,
                 const std::string& parameter,
-                grpc::protobuf::compiler::GeneratorContext* context,
+                google::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override;
 
  private:

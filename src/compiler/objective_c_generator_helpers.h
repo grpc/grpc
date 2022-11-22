@@ -28,9 +28,9 @@
 
 namespace grpc_objective_c_generator {
 
-using ::grpc::protobuf::FileDescriptor;
-using ::grpc::protobuf::MethodDescriptor;
-using ::grpc::protobuf::ServiceDescriptor;
+using ::google::protobuf::FileDescriptor;
+using ::google::protobuf::MethodDescriptor;
+using ::google::protobuf::ServiceDescriptor;
 using ::std::string;
 
 inline string MessageHeaderName(const FileDescriptor* file) {

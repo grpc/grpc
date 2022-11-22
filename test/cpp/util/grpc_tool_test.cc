@@ -432,8 +432,8 @@ TEST_F(GrpcToolTest, TypeCommand) {
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  const grpc::protobuf::Descriptor* desc =
-      grpc::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(
+  const google::protobuf::Descriptor* desc =
+      google::protobuf::DescriptorPool::generated_pool()->FindMessageTypeByName(
           "grpc.testing.EchoRequest");
   // Expected output: the DebugString of grpc.testing.EchoRequest
   EXPECT_TRUE(0 ==

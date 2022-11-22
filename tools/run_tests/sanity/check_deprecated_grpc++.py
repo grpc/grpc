@@ -53,7 +53,6 @@ expected_files = [
     "include/grpc++/impl/serialization_traits.h",
     "include/grpc++/impl/codegen/sync_stream.h",
     "include/grpc++/impl/codegen/channel_interface.h",
-    "include/grpc++/impl/codegen/config_protobuf.h",
     "include/grpc++/impl/codegen/status.h",
     "include/grpc++/impl/codegen/core_codegen.h",
     "include/grpc++/impl/codegen/config.h",

@@ -27,11 +27,11 @@ namespace grpc {
 namespace testing {
 
 std::string DescribeServiceList(std::vector<std::string> service_list,
-                                grpc::protobuf::DescriptorPool& desc_pool) {
+                                google::protobuf::DescriptorPool& desc_pool) {
   std::stringstream result;
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     auto const& service = *it;
-    const grpc::protobuf::ServiceDescriptor* service_desc =
+    const google::protobuf::ServiceDescriptor* service_desc =
         desc_pool.FindServiceByName(service);
     if (service_desc != nullptr) {
       result << DescribeService(service_desc);
@@ -40,7 +40,8 @@ std::string DescribeServiceList(std::vector<std::string> service_list,
   return result.str();
 }
 
-std::string DescribeService(const grpc::protobuf::ServiceDescriptor* service) {
+std::string DescribeService(
+    const google::protobuf::ServiceDescriptor* service) {
   std::string result;
   if (service->options().deprecated()) {
     result.append("DEPRECATED\n");
@@ -61,7 +62,7 @@ std::string DescribeService(const grpc::protobuf::ServiceDescriptor* service) {
   return result;
 }
 
-std::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method) {
+std::string DescribeMethod(const google::protobuf::MethodDescriptor* method) {
   std::stringstream result;
   result << "  rpc " << method->name()
          << (method->client_streaming() ? "(stream " : "(")
@@ -74,7 +75,8 @@ std::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method) {
   return result.str();
 }
 
-std::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service) {
+std::string SummarizeService(
+    const google::protobuf::ServiceDescriptor* service) {
   std::string result;
   for (int i = 0; i < service->method_count(); ++i) {
     result.append(SummarizeMethod(service->method(i)));
@@ -82,7 +84,7 @@ std::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service) {
   return result;
 }
 
-std::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method) {
+std::string SummarizeMethod(const google::protobuf::MethodDescriptor* method) {
   std::string result = method->name();
   result.append("\n");
   return result;

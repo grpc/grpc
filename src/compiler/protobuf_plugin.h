@@ -36,7 +36,7 @@ inline std::string GetCommentsHelper(const DescriptorType* desc, bool leading,
 
 class ProtoBufMethod : public grpc_generator::Method {
  public:
-  ProtoBufMethod(const grpc::protobuf::MethodDescriptor* method)
+  ProtoBufMethod(const google::protobuf::MethodDescriptor* method)
       : method_(method) {}
 
   std::string name() const { return method_->name(); }
@@ -99,12 +99,12 @@ class ProtoBufMethod : public grpc_generator::Method {
   }
 
  private:
-  const grpc::protobuf::MethodDescriptor* method_;
+  const google::protobuf::MethodDescriptor* method_;
 };
 
 class ProtoBufService : public grpc_generator::Service {
  public:
-  ProtoBufService(const grpc::protobuf::ServiceDescriptor* service)
+  ProtoBufService(const google::protobuf::ServiceDescriptor* service)
       : service_(service) {}
 
   std::string name() const { return service_->name(); }
@@ -128,7 +128,7 @@ class ProtoBufService : public grpc_generator::Service {
   }
 
  private:
-  const grpc::protobuf::ServiceDescriptor* service_;
+  const google::protobuf::ServiceDescriptor* service_;
 };
 
 class ProtoBufPrinter : public grpc_generator::Printer {
@@ -147,13 +147,13 @@ class ProtoBufPrinter : public grpc_generator::Printer {
   void Outdent() { printer_.Outdent(); }
 
  private:
-  grpc::protobuf::io::StringOutputStream output_stream_;
-  grpc::protobuf::io::Printer printer_;
+  google::protobuf::io::StringOutputStream output_stream_;
+  google::protobuf::io::Printer printer_;
 };
 
 class ProtoBufFile : public grpc_generator::File {
  public:
-  ProtoBufFile(const grpc::protobuf::FileDescriptor* file) : file_(file) {}
+  ProtoBufFile(const google::protobuf::FileDescriptor* file) : file_(file) {}
 
   std::string filename() const { return file_->name(); }
   std::string filename_without_ext() const {
@@ -200,7 +200,7 @@ class ProtoBufFile : public grpc_generator::File {
   }
 
  private:
-  const grpc::protobuf::FileDescriptor* file_;
+  const google::protobuf::FileDescriptor* file_;
 };
 
 #endif  // GRPC_INTERNAL_COMPILER_PROTOBUF_PLUGIN_H

@@ -24,7 +24,7 @@
 #include "src/compiler/csharp_generator.h"
 #include "src/compiler/csharp_generator_helpers.h"
 
-class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class CSharpGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
   CSharpGrpcGenerator() {}
   ~CSharpGrpcGenerator() {}
@@ -33,12 +33,12 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
+  bool Generate(const google::protobuf::FileDescriptor* file,
                 const std::string& parameter,
-                grpc::protobuf::compiler::GeneratorContext* context,
+                google::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override {
     std::vector<std::pair<std::string, std::string> > options;
-    grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
+    google::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
 
     bool generate_client = true;
     bool generate_server = true;
@@ -73,9 +73,9 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                                                  file_name)) {
       return false;
     }
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
-    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    google::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
     return true;
   }
@@ -83,5 +83,5 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
 int main(int argc, char* argv[]) {
   CSharpGrpcGenerator generator;
-  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+  return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

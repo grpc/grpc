@@ -19,16 +19,17 @@
 #ifndef TEST_QPS_PARSE_JSON_H
 #define TEST_QPS_PARSE_JSON_H
 
-#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <google/protobuf/message.h>
+
 #include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {
 
 void ParseJson(const std::string& json, const std::string& type,
-               GRPC_CUSTOM_MESSAGE* msg);
+               ::google::protobuf::Message* msg);
 
-std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
+std::string SerializeJson(const ::google::protobuf::Message& msg,
                           const std::string& type);
 
 }  // namespace testing
