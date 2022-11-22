@@ -36,7 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::gpr_mu_init(gpr_mu* mu) { ::gpr_mu_init(mu); }
 void CoreCodegen::gpr_mu_destroy(gpr_mu* mu) { ::gpr_mu_destroy(mu); }
 void CoreCodegen::gpr_mu_lock(gpr_mu* mu) { ::gpr_mu_lock(mu); }
 void CoreCodegen::gpr_mu_unlock(gpr_mu* mu) { ::gpr_mu_unlock(mu); }
