@@ -15,17 +15,17 @@
 
 #ifdef GPR_WINDOWS
 
-#include "src/core/lib/event_engine/windows/windows_endpoint.h"
-
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/resolved_address.h"
+#include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
@@ -187,8 +187,11 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   WSABUF local_buffers[kMaxWSABUFCount];
   LPWSABUF buffers = local_buffers;
   LPWSABUF allocated = nullptr;
+  MemoryAllocator::Reservation memory_reservation;
   if (data->Count() > kMaxWSABUFCount) {
-    allocated = (WSABUF*)gpr_malloc(sizeof(WSABUF) * data->Count());
+    size_t bytes_to_allocate = sizeof(WSABUF) * data->Count();
+    memory_reservation = allocator_.MakeReservation(bytes_to_allocate);
+    allocated = (WSABUF*)gpr_malloc(bytes_to_allocate);
     buffers = allocated;
   }
   for (int i = 0; i < data->Count(); i++) {
