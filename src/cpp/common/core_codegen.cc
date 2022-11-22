@@ -36,11 +36,6 @@
 
 namespace grpc {
 
-grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_next(
-    void* reserved) {
-  return ::grpc_completion_queue_create_for_next(reserved);
-}
-
 grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_pluck(
     void* reserved) {
   return ::grpc_completion_queue_create_for_pluck(reserved);
