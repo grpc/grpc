@@ -425,7 +425,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/codegen/string_ref.h",
     "include/grpc++/impl/codegen/stub_options.h",
     "include/grpc++/impl/codegen/sync_stream.h",
-    "include/grpc++/impl/codegen/time.h",
     "include/grpcpp/impl/codegen/async_generic_service.h",
     "include/grpcpp/impl/codegen/async_stream.h",
     "include/grpcpp/impl/codegen/async_unary_call.h",
@@ -469,7 +468,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/string_ref.h",
     "include/grpcpp/impl/codegen/stub_options.h",
     "include/grpcpp/impl/codegen/sync_stream.h",
-    "include/grpcpp/impl/codegen/time.h",
     "include/grpcpp/impl/codegen/sync.h",
 ]
 
