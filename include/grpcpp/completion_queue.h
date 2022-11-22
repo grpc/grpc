@@ -42,6 +42,7 @@
 #include <grpcpp/impl/codegen/time.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/sync.h>
 
 struct grpc_completion_queue;
 
