@@ -16,14 +16,19 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H
-#define GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H
+#ifndef GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
+#define GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
 
-// IWYU pragma: private
+#include <memory>
 
-#include <grpc/support/port_platform.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/security/auth_context.h>
 
-/// TODO(chengyuc): Remove this file after solving compatibility.
-#include <grpc/byte_buffer_reader.h>
+namespace grpc {
 
-#endif /* GRPC_IMPL_CODEGEN_BYTE_BUFFER_READER_H */
+/// TODO(ctiller): not sure we want to make this a permanent thing
+std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
+
+}  // namespace grpc
+
+#endif  // GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
