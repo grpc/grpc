@@ -45,7 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual void* gpr_malloc(size_t size) = 0;
   virtual void gpr_free(void* p) = 0;
 
   // These are only to be used to fix edge cases involving grpc_init and

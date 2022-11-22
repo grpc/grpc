@@ -25,6 +25,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
@@ -58,9 +59,8 @@ inline grpc_metadata* FillMetadataArray(
   if (*metadata_count == 0) {
     return nullptr;
   }
-  grpc_metadata* metadata_array =
-      static_cast<grpc_metadata*>(g_core_codegen_interface->gpr_malloc(
-          (*metadata_count) * sizeof(grpc_metadata)));
+  grpc_metadata* metadata_array = static_cast<grpc_metadata*>(
+      gpr_malloc((*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
     metadata_array[i].key = SliceReferencingString(iter->first);
