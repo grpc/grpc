@@ -62,17 +62,13 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc {
-namespace testing {
-namespace {
-
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr int kMinResolutionPeriodMs = 1000;
 
-std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
+static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
-grpc_ares_request* (*g_default_dns_lookup_ares)(
+static grpc_ares_request* (*g_default_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
@@ -80,15 +76,17 @@ grpc_ares_request* (*g_default_dns_lookup_ares)(
 
 // Counter incremented by TestDNSResolver::LookupHostname indicating the
 // number of times a system-level resolution has happened.
-int g_resolution_count;
+static int g_resolution_count;
 
-struct iomgr_args {
+static struct iomgr_args {
   gpr_event ev;
   gpr_atm done_atm;
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
 } g_iomgr_args;
+
+namespace {
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
@@ -173,7 +171,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
-grpc_ares_request* test_dns_lookup_ares(
+}  // namespace
+
+static grpc_ares_request* test_dns_lookup_ares(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
@@ -206,13 +206,13 @@ grpc_ares_request* test_dns_lookup_ares(
   return result;
 }
 
-gpr_timespec test_deadline(void) {
+static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);
 }
 
-void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
-void iomgr_args_init(iomgr_args* args) {
+static void iomgr_args_init(iomgr_args* args) {
   gpr_event_init(&args->ev);
   args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
@@ -221,7 +221,7 @@ void iomgr_args_init(iomgr_args* args) {
   gpr_atm_rel_store(&args->done_atm, 0);
 }
 
-void iomgr_args_finish(iomgr_args* args) {
+static void iomgr_args_finish(iomgr_args* args) {
   ASSERT_TRUE(gpr_event_wait(&args->ev, test_deadline()));
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
@@ -237,12 +237,12 @@ void iomgr_args_finish(iomgr_args* args) {
   gpr_free(args->pollset);
 }
 
-grpc_core::Timestamp n_sec_deadline(int seconds) {
+static grpc_core::Timestamp n_sec_deadline(int seconds) {
   return grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-void poll_pollset_until_request_done(iomgr_args* args) {
+static void poll_pollset_until_request_done(iomgr_args* args) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Timestamp deadline = n_sec_deadline(10);
   while (true) {
@@ -301,14 +301,14 @@ struct OnResolutionCallbackArg {
 };
 
 // Set to true by the last callback in the resolution chain.
-grpc_core::NoDestruct<grpc_core::Notification> g_all_callbacks_invoked;
+static grpc_core::NoDestruct<grpc_core::Notification> g_all_callbacks_invoked;
 
 // It's interesting to run a few rounds of this test because as
 // we run more rounds, the base starting time
 // (i.e. ExecCtx g_start_time) gets further and further away
 // from "Now()". Thus the more rounds ran, the more highlighted the
 // difference is between absolute and relative times values.
-void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
+static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_log(GPR_INFO, "4th: g_resolution_count: %d", g_resolution_count);
   ASSERT_EQ(g_resolution_count, 4);
   cb_arg->resolver.reset();
@@ -321,7 +321,7 @@ void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
   g_all_callbacks_invoked->Notify();
 }
 
-void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
+static void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_log(GPR_INFO, "3rd: g_resolution_count: %d", g_resolution_count);
   ASSERT_EQ(g_resolution_count, 3);
   cb_arg->result_handler->SetCallback(on_fourth_resolution, cb_arg);
@@ -332,7 +332,7 @@ void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
-void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
+static void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_log(GPR_INFO, "2nd: g_resolution_count: %d", g_resolution_count);
   // The resolution callback was not invoked until new data was
   // available, which was delayed until after the cooldown period.
@@ -345,7 +345,7 @@ void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
-void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
+static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_log(GPR_INFO, "1st: g_resolution_count: %d", g_resolution_count);
   // There's one initial system-level resolution and one invocation of a
   // notification callback (the current function).
@@ -358,7 +358,7 @@ void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
-void start_test_under_work_serializer(void* arg) {
+static void start_test_under_work_serializer(void* arg) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
   res_cb_arg->result_handler = new ResultHandler();
@@ -393,7 +393,7 @@ void start_test_under_work_serializer(void* arg) {
   res_cb_arg->resolver->StartLocked();
 }
 
-void test_cooldown() {
+static void test_cooldown() {
   grpc_core::ExecCtx exec_ctx;
   iomgr_args_init(&g_iomgr_args);
   OnResolutionCallbackArg* res_cb_arg = new OnResolutionCallbackArg();
@@ -423,10 +423,6 @@ TEST(DnsResolverCooldownTest, MainTest) {
   grpc_shutdown();
   g_all_callbacks_invoked->WaitForNotification();
 }
-
-}  // namespace
-}  // namespace testing
-}  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

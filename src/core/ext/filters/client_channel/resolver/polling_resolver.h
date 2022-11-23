@@ -111,9 +111,8 @@ class PollingResolver : public Resolver {
   };
   ResultStatusState result_status_state_ = ResultStatusState::kNone;
   /// next resolution timer
-  bool have_next_resolution_timer_ = false;
-  grpc_event_engine::experimental::EventEngine::TaskHandle
-      next_resolution_timer_handle_;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      next_resolution_timer_handle_{absl::nullopt};
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 

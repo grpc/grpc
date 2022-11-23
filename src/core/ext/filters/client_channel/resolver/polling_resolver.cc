@@ -89,8 +89,12 @@ void PollingResolver::RequestReresolutionLocked() {
 }
 
 void PollingResolver::ResetBackoffLocked() {
-  if (have_next_resolution_timer_) {
-    event_engine_->Cancel(next_resolution_timer_handle_);
+  if (next_resolution_timer_handle_.has_value()) {
+    if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
+      gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
+              this);
+    }
+    event_engine_->Cancel(*next_resolution_timer_handle_);
   }
   backoff_.Reset();
 }
@@ -100,8 +104,12 @@ void PollingResolver::ShutdownLocked() {
     gpr_log(GPR_INFO, "[polling resolver %p] shutting down", this);
   }
   shutdown_ = true;
-  if (have_next_resolution_timer_) {
-    event_engine_->Cancel(next_resolution_timer_handle_);
+  if (next_resolution_timer_handle_.has_value()) {
+    if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
+      gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
+              this);
+    }
+    event_engine_->Cancel(*next_resolution_timer_handle_);
   }
   request_.reset();
 }
@@ -112,11 +120,10 @@ void PollingResolver::OnNextResolutionLocked() {
             "[polling resolver %p] re-resolution timer fired: shutdown_=%d",
             this, shutdown_);
   }
-  have_next_resolution_timer_ = false;
+  next_resolution_timer_handle_.reset();
   if (!shutdown_) {
     StartResolvingLocked();
   }
-  Unref(DEBUG_LOCATION, "retry_timer");
 }
 
 void PollingResolver::OnRequestComplete(Result result) {
@@ -184,8 +191,7 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     ExecCtx::Get()->InvalidateNow();
     const Timestamp next_try = backoff_.NextAttemptTime();
     const Duration timeout = next_try - Timestamp::Now();
-    GPR_ASSERT(!have_next_resolution_timer_);
-    have_next_resolution_timer_ = true;
+    GPR_ASSERT(!next_resolution_timer_handle_.has_value());
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
       if (timeout > Duration::Zero()) {
         gpr_log(GPR_INFO, "[polling resolver %p] retrying in %" PRId64 " ms",
@@ -195,12 +201,16 @@ void PollingResolver::GetResultStatus(absl::Status status) {
       }
     }
     next_resolution_timer_handle_ =
-        event_engine_->RunAfter(timeout, [ref = Ref(), this] {
+        event_engine_->RunAfter(timeout, [self = Ref()] {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
-          Ref(DEBUG_LOCATION, "next_resolution_timer_retry_fired").release();
-          work_serializer_->Run([this]() { OnNextResolutionLocked(); },
-                                DEBUG_LOCATION);
+          auto* self_ptr = static_cast<PollingResolver*>(self.get());
+          self_ptr->work_serializer_->Run(
+              [self = std::move(self)]() {
+                auto* self_ptr = static_cast<PollingResolver*>(self.get());
+                self_ptr->OnNextResolutionLocked();
+              },
+              DEBUG_LOCATION);
         });
     // Reset result_status_state_.  Note that even if re-resolution was
     // requested while the result-health callback was pending, we can
@@ -212,7 +222,7 @@ void PollingResolver::GetResultStatus(absl::Status status) {
 void PollingResolver::MaybeStartResolvingLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
-  if (have_next_resolution_timer_) return;
+  if (next_resolution_timer_handle_.has_value()) return;
   if (last_resolution_timestamp_.has_value()) {
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
@@ -233,15 +243,17 @@ void PollingResolver::MaybeStartResolvingLocked() {
                 this, last_resolution_ago.millis(),
                 time_until_next_resolution.millis());
       }
-      have_next_resolution_timer_ = true;
-      next_resolution_timer_handle_ = event_engine_->RunAfter(
-          time_until_next_resolution, [ref = Ref(), this] {
+      next_resolution_timer_handle_ =
+          event_engine_->RunAfter(time_until_next_resolution, [self = Ref()] {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
-            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown_fired")
-                .release();
-            work_serializer_->Run([this]() { OnNextResolutionLocked(); },
-                                  DEBUG_LOCATION);
+            auto* self_ptr = static_cast<PollingResolver*>(self.get());
+            self_ptr->work_serializer_->Run(
+                [self = std::move(self)]() {
+                  auto* self_ptr = static_cast<PollingResolver*>(self.get());
+                  self_ptr->OnNextResolutionLocked();
+                },
+                DEBUG_LOCATION);
           });
       return;
     }

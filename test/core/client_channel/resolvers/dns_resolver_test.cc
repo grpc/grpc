@@ -43,19 +43,16 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc {
-namespace testing {
-namespace {
-
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
+static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReportResult(grpc_core::Resolver::Result /*result*/) override {}
 };
 
-void test_succeeds(grpc_core::ResolverFactory* factory, const char* string) {
+static void test_succeeds(grpc_core::ResolverFactory* factory,
+                          const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
@@ -74,7 +71,8 @@ void test_succeeds(grpc_core::ResolverFactory* factory, const char* string) {
   ASSERT_NE(resolver, nullptr);
 }
 
-void test_fails(grpc_core::ResolverFactory* factory, const char* string) {
+static void test_fails(grpc_core::ResolverFactory* factory,
+                       const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
@@ -113,10 +111,6 @@ TEST(DnsResolverTest, MainTest) {
     test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
   }
 }
-
-}  // namespace
-}  // namespace testing
-}  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
