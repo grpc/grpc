@@ -62,15 +62,13 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
       slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  GPR_ASSERT(
-      g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {
       g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-      GPR_ASSERT(
-          g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+      GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }
@@ -95,15 +93,13 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
       slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  GPR_ASSERT(
-      g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {
       g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-      GPR_ASSERT(
-          g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+      GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }

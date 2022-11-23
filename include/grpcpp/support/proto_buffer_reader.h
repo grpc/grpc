@@ -21,6 +21,7 @@
 
 #include <type_traits>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
@@ -52,8 +53,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     /// Implemented through a grpc_byte_buffer_reader which iterates
     /// over the slices that make up a byte buffer
     if (!buffer->Valid() ||
-        !g_core_codegen_interface->grpc_byte_buffer_reader_init(
-            &reader_, buffer->c_buffer())) {
+        !grpc_byte_buffer_reader_init(&reader_, buffer->c_buffer())) {
       status_ = Status(StatusCode::INTERNAL,
                        "Couldn't initialize byte buffer reader");
     }

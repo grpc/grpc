@@ -61,11 +61,6 @@ const char* CoreCodegen::grpc_call_error_to_string(grpc_call_error error) {
   return ::grpc_call_error_to_string(error);
 }
 
-int CoreCodegen::grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                              grpc_byte_buffer* buffer) {
-  return ::grpc_byte_buffer_reader_init(reader, buffer);
-}
-
 void CoreCodegen::grpc_byte_buffer_reader_destroy(
     grpc_byte_buffer_reader* reader) {
   ::grpc_byte_buffer_reader_destroy(reader);
