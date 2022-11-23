@@ -118,7 +118,7 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
 class CondVar {
  public:
   CondVar() { gpr_cv_init(&cv_); }
-  ~CondVar() { g_core_codegen_interface->gpr_cv_destroy(&cv_); }
+  ~CondVar() { gpr_cv_destroy(&cv_); }
 
   CondVar(const CondVar&) = delete;
   CondVar& operator=(const CondVar&) = delete;
