@@ -716,9 +716,7 @@ Poller::WorkResult PollPoller::Work(
       // may crash.
       r = poll(pfds, pfd_count, timeout_ms);
     } else {
-      gpr_log(GPR_ERROR,
-              "Attempted a blocking poll when declared non-polling.");
-      GPR_ASSERT(false);
+      grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     }
 
     if (r <= 0) {

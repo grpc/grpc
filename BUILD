@@ -641,6 +641,7 @@ grpc_cc_library(
         "//src/core:lib/gprpp/thd_posix.cc",
         "//src/core:lib/gprpp/thd_windows.cc",
         "//src/core:lib/gprpp/time_util.cc",
+        "//src/core:lib/gprpp/crash.cc",
     ],
     hdrs = [
         "//src/core:lib/gpr/alloc.h",
@@ -659,6 +660,7 @@ grpc_cc_library(
         "//src/core:lib/gprpp/sync.h",
         "//src/core:lib/gprpp/thd.h",
         "//src/core:lib/gprpp/time_util.h",
+        "//src/core:lib/gprpp/crash.h",
     ],
     external_deps = [
         "absl/base",

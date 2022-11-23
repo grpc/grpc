@@ -1415,8 +1415,7 @@ int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
   if (timeout == 0) {
     return real_poll_function(fds, nfds, 0);
   } else {
-    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
-    GPR_ASSERT(false);
+    grpc_core::Crash("Attempted a blocking poll when declared non-polling.");
     return -1;
   }
 }

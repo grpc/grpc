@@ -126,10 +126,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
         StartTimer(Timestamp::FromTimespecRoundUp(deadline));
         return;
       }
-      gpr_log(GPR_ERROR,
-              "grpc_channel_watch_connectivity_state called on "
-              "something that is not a client channel");
-      GPR_ASSERT(false);
+      grpc_core::Crash("something that is not a client channel");
     }
     // Take an addition ref, so we have two (the first one is from the
     // creation of this object).  One will be held by the timer callback,

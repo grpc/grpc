@@ -449,9 +449,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
     const ServerConfig& server_config = initial_server_config;
     if (server_config.core_limit() != 0) {
-      gpr_log(GPR_ERROR,
-              "server config core limit is set but ignored by driver");
-      GPR_ASSERT(false);
+      grpc_core::Crash("server config core limit is set but ignored by driver");
     }
 
     ServerArgs args;
@@ -508,8 +506,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ClientConfig per_client_config = client_config;
 
     if (initial_client_config.core_limit() != 0) {
-      gpr_log(GPR_ERROR, "client config core limit set but ignored");
-      GPR_ASSERT(false);
+      grpc_core::Crash("client config core limit set but ignored");
     }
 
     // Reduce channel count so that total channels specified is held regardless
