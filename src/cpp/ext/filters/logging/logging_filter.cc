@@ -185,7 +185,11 @@ class ClientLoggingFilter final : public LoggingFilter {
         grpc_core::PipeMapper<grpc_core::MessageHandle>::Intercept(
             *call_args.outgoing_messages);
     return grpc_core::TryConcurrently(
-               next_promise_factory(std::move(call_args)))
+               grpc_core::Seq(
+                   next_promise_factory(std::move(call_args)),
+                   [/* calld */](
+                       grpc_core::ServerMetadataHandle metadata) mutable
+                   -> grpc_core::ServerMetadataHandle { return metadata; }))
         .NecessaryPull(grpc_core::Seq(
             server_initial_metadata->Wait(),
             // TODO(ctiller): A void return does not work
@@ -194,14 +198,29 @@ class ClientLoggingFilter final : public LoggingFilter {
               LogServerHeader(calld, *server_initial_metadata);
               return 0;
             },
-            [incoming_mapper =
+            [/*calld, */ incoming_mapper =
                  std::move(incoming_mapper)](int /* prev */) mutable
             -> grpc_core::ArenaPromise<absl::Status> {
-              return incoming_mapper.TakeAndRun(
+              return grpc_core::ImmediateOkStatus();
+              // return incoming_mapper.TakeAndRun(
+              //     [](grpc_core::MessageHandle message) {
+              //       // LogServerMessage();
+              //       return message;
+              //     });
+            }))
+        .NecessaryPush(grpc_core::Seq(
+            [/*calld, */ outgoing_mapper =
+                 std::move(outgoing_mapper)]() mutable {
+              // return grpc_core::ImmediateOkStatus();
+              return outgoing_mapper.TakeAndRun(
                   [](grpc_core::MessageHandle message) {
-                    // LogMessage();
+                    // LogClientMessage();
                     return message;
                   });
+            },
+            [/*calld*/]() mutable -> grpc_core::ArenaPromise<absl::Status> {
+              // LogClientHalfClose();
+              return grpc_core::ImmediateOkStatus();
             }));
   }
 
