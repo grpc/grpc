@@ -31,10 +31,10 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_interface.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
