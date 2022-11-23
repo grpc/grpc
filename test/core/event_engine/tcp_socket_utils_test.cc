@@ -15,7 +15,6 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
