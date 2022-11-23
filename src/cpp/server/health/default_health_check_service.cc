@@ -28,9 +28,9 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/server_callback_handlers.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/support/slice.h>
 
 #include "src/proto/grpc/health/v1/health.upb.h"

@@ -20,12 +20,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -36,6 +38,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -46,10 +49,15 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
 bool leak_check = true;
+
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
@@ -59,6 +67,13 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
+  grpc_event_engine::experimental::SetEventEngineFactory([]() {
+    return std::make_unique<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions{});
+  });
+  auto engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -95,6 +110,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_init(&trailing_metadata_recv);
     grpc_status_code status;
     grpc_slice details = grpc_empty_slice();
+
+    engine->Tick();
 
     grpc_op ops[6];
     memset(ops, 0, sizeof(ops));
@@ -136,6 +153,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     grpc_event ev;
     while (true) {
+      engine->Tick();
       grpc_core::ExecCtx::Get()->Flush();
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
@@ -151,6 +169,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
 
   done:
+    engine->FuzzingDone();
+    engine->Tick();
     if (requested_calls) {
       grpc_call_cancel(call, nullptr);
     }
@@ -183,6 +203,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_byte_buffer_destroy(response_payload_recv);
     }
   }
-  grpc_shutdown();
+  grpc_shutdown_blocking();
+  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
   return 0;
 }

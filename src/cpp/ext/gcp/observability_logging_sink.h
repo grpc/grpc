@@ -27,6 +27,8 @@
 #include <string>
 #include <vector>
 
+#include <google/protobuf/struct.pb.h>
+
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
 
@@ -73,6 +75,10 @@ class ObservabilityLoggingSink : public LoggingSink {
   std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_;
   std::string authority_;
 };
+
+// Exposed for just for testing purposes
+void EntryToJsonStructProto(LoggingSink::Entry entry,
+                            ::google::protobuf::Struct* json_payload);
 
 }  // namespace internal
 }  // namespace grpc

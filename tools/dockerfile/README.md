@@ -36,6 +36,12 @@ under the repository `us-docker.pkg.dev/grpc-testing/testing-images-public`.
 If you've made modifications to a dockerfile, you can upload the new version of the artifact
 registry as follows:
 
+If you haven't configured authentication in Docker for us-docker.pkg.dev previously, run:
+```
+gcloud auth configure-docker us-docker.pkg.dev
+gcloud auth login
+```
+
 Rebuild the docker images that have been modified locally and upload the docker images to
 artifact registry (note that this won't overwrite the "old" versions of the docker image
 that are already in artifact registry)

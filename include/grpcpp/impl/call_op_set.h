@@ -23,8 +23,8 @@
 #include <map>
 #include <memory>
 
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
@@ -33,8 +33,8 @@
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/intercepted_channel.h>
-#include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/interceptor_common.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/config.h>

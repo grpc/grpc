@@ -41,11 +41,11 @@ IOCP::IOCP(Executor* executor) noexcept
 // Shutdown must be called prior to deletion
 IOCP::~IOCP() {}
 
-WinSocket* IOCP::Watch(SOCKET socket) {
-  WinSocket* wrapped_socket = new WinSocket(socket, executor_);
-  HANDLE ret =
-      CreateIoCompletionPort(reinterpret_cast<HANDLE>(socket), iocp_handle_,
-                             reinterpret_cast<uintptr_t>(wrapped_socket), 0);
+std::unique_ptr<WinSocket> IOCP::Watch(SOCKET socket) {
+  auto wrapped_socket = std::make_unique<WinSocket>(socket, executor_);
+  HANDLE ret = CreateIoCompletionPort(
+      reinterpret_cast<HANDLE>(socket), iocp_handle_,
+      reinterpret_cast<uintptr_t>(wrapped_socket.get()), 0);
   if (!ret) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
     gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);

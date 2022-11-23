@@ -29,8 +29,8 @@
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
-#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"

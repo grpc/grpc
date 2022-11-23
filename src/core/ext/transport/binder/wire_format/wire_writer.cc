@@ -25,6 +25,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 
 #define RETURN_IF_ERROR(expr)           \
@@ -83,7 +84,9 @@ absl::Status WriteTrailingMetadata(const Transaction& tx,
 }
 
 WireWriterImpl::WireWriterImpl(std::unique_ptr<Binder> binder)
-    : binder_(std::move(binder)), combiner_(grpc_combiner_create()) {}
+    : binder_(std::move(binder)),
+      combiner_(grpc_combiner_create(
+          grpc_event_engine::experimental::GetDefaultEventEngine())) {}
 
 WireWriterImpl::~WireWriterImpl() {
   GRPC_COMBINER_UNREF(combiner_, "wire_writer_impl");
