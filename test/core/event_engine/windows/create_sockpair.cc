@@ -55,9 +55,10 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   auto result =
       WSAConnect(cli_sock, (sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL);
   if (result != 0) {
-    auto error = WSAGetLastError();
-    gpr_log(GPR_DEBUG, "Failed in WSAConnect: %d", error);
-    GPR_ASSERT(false && "WSAConnect failed");
+    gpr_log(
+        GPR_DEBUG, "%s",
+        GRPC_WSA_ERROR(WSAGetLastError(), "Failed in WSAConnect").ToString().c_str());
+    abort();
   }
   svr_sock = accept(lst_sock, (sockaddr*)&addr, &addr_len);
   GPR_ASSERT(svr_sock != INVALID_SOCKET);

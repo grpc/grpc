@@ -33,8 +33,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// DO NOT SUBMIT(hork): we should be careful about the changes to the error
-// return types, they were previously all Unavailable.
 // TODO(hork): The previous implementation required internal ref counting. Add
 // this when it becomes necessary.
 // TODO(hork): The previous implementation required a 2-phase shutdown. Add this
@@ -83,7 +81,6 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p reading", this);
   // Prepare the WSABUF struct
   WSABUF wsa_buffers[kMaxWSABUFCount];
-  // TODO(hork): use read hint instead of the default?
   int min_read_size = kDefaultTargetReadSize;
   if (args != nullptr && args->read_hint_bytes > 0) {
     min_read_size = args->read_hint_bytes;
@@ -144,16 +141,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     }
   }
   GPR_ASSERT(data->Count() <= UINT_MAX);
-  WSABUF local_buffers[kMaxWSABUFCount];
-  LPWSABUF buffers = local_buffers;
-  LPWSABUF allocated = nullptr;
-  MemoryAllocator::Reservation memory_reservation;
-  if (data->Count() > kMaxWSABUFCount) {
-    size_t bytes_to_allocate = sizeof(WSABUF) * data->Count();
-    memory_reservation = allocator_.MakeReservation(bytes_to_allocate);
-    allocated = (WSABUF*)gpr_malloc(bytes_to_allocate);
-    buffers = allocated;
-  }
+  absl::InlinedVector<WSABUF, kMaxWSABUFCount> buffers(data->Count());
   for (int i = 0; i < data->Count(); i++) {
     auto slice = data->RefSlice(i);
     GPR_ASSERT(slice.size() <= ULONG_MAX);
@@ -162,7 +150,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   }
   // First, let's try a synchronous, non-blocking write.
   DWORD bytes_sent;
-  int status = WSASend(socket_->socket(), buffers, (DWORD)data->Count(),
+  int status = WSASend(socket_->socket(), buffers.data(), (DWORD)buffers.size(),
                        &bytes_sent, 0, nullptr, nullptr);
   size_t async_buffers_offset;
   if (status == 0) {
@@ -170,7 +158,6 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       // Write completed, exiting early
       executor_->Run(
           [cb = std::move(on_writable)]() mutable { cb(absl::OkStatus()); });
-      if (allocated) gpr_free(allocated);
       return;
     }
     // The data was not completely delivered, we should send the rest of it by
@@ -193,16 +180,14 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
       executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
         cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
-      if (allocated) gpr_free(allocated);
       return;
     }
   }
   auto write_info = socket_->write_info();
   memset(write_info->overlapped(), 0, sizeof(OVERLAPPED));
-  status = WSASend(socket_->socket(), buffers + async_buffers_offset,
+  status = WSASend(socket_->socket(), &buffers[async_buffers_offset],
                    (DWORD)(data->Count() - async_buffers_offset), nullptr, 0,
                    write_info->overlapped(), nullptr);
-  if (allocated) gpr_free(allocated);
 
   if (status != 0) {
     int wsa_error = WSAGetLastError();
