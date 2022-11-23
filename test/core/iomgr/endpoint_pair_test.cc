@@ -49,7 +49,6 @@ namespace {
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
   grpc_resolved_address addr;
