@@ -275,7 +275,7 @@ class ServerInterface : public internal::CallHook {
           // the application.
           grpc_call_cancel_with_status(call_, GRPC_STATUS_INTERNAL,
                                        "Unable to parse request", nullptr);
-          g_core_codegen_interface->grpc_call_unref(call_);
+          grpc_call_unref(call_);
           new PayloadAsyncRequest(registered_method_, server_, context_,
                                   stream_, call_cq_, notification_cq_, tag_,
                                   request_);

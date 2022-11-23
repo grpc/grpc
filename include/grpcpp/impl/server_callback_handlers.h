@@ -209,7 +209,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackUnaryImpl();  // explicitly call destructor
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       call_requester();
     }
 
@@ -406,7 +406,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackReaderImpl();  // explicitly call destructor
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       call_requester();
     }
 
@@ -631,7 +631,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackWriterImpl();  // explicitly call destructor
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       call_requester();
     }
 
@@ -847,7 +847,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackReaderWriterImpl();  // explicitly call destructor
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       call_requester();
     }
 

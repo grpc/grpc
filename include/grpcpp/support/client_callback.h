@@ -650,7 +650,7 @@ class ClientCallbackReaderWriterImpl
       auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderWriterImpl();
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       if (GPR_LIKELY(from_reaction)) {
         reactor->OnDone(s);
       } else {
@@ -823,7 +823,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
       auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderImpl();
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       if (GPR_LIKELY(from_reaction)) {
         reactor->OnDone(s);
       } else {
@@ -1041,7 +1041,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
       auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackWriterImpl();
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       if (GPR_LIKELY(from_reaction)) {
         reactor->OnDone(s);
       } else {
@@ -1176,7 +1176,7 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
       auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackUnaryImpl();
-      grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
       reactor->OnDone(s);
     }
   }

@@ -126,7 +126,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
     CatchingCallback(std::move(func), std::move(status));
-    g_core_codegen_interface->grpc_call_unref(call_);
+    grpc_call_unref(call_);
   }
 };
 
@@ -176,7 +176,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
       grpc_call* call = call_;
       call_ = nullptr;
       func_ = nullptr;
-      g_core_codegen_interface->grpc_call_unref(call);
+      grpc_call_unref(call);
     }
   }
 

@@ -914,7 +914,7 @@ class CallOpSet : public CallOpSetInterface,
       // run
       *tag = return_tag_;
       *status = saved_status_;
-      g_core_codegen_interface->grpc_call_unref(call_.call());
+      grpc_call_unref(call_.call());
       return true;
     }
 
@@ -927,7 +927,7 @@ class CallOpSet : public CallOpSetInterface,
     saved_status_ = *status;
     if (RunInterceptorsPostRecv()) {
       *tag = return_tag_;
-      g_core_codegen_interface->grpc_call_unref(call_.call());
+      grpc_call_unref(call_.call());
       return true;
     }
     // Interceptors are going to be run, so we can't return the tag just yet.
