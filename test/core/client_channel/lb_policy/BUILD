@@ -44,6 +44,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":lb_policy_test_lib",
+        "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
         "//test/core/util:grpc_test_util",
     ],
@@ -56,6 +57,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":lb_policy_test_lib",
+        "//src/core:channel_args",
         "//src/core:grpc_lb_policy_outlier_detection",
         "//test/core/util:grpc_test_util",
     ],
