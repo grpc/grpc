@@ -46,7 +46,10 @@ grpc_cc_library(
     testonly = True,
     srcs = ["client_test.cc"],
     hdrs = COMMON_HEADERS,
-    deps = [":conformance_test_base_lib"],
+    deps = [
+        ":conformance_test_base_lib",
+        "//src/core:channel_args",
+    ],
     alwayslink = 1,
 )
 
@@ -55,7 +58,10 @@ grpc_cc_library(
     testonly = True,
     srcs = ["server_test.cc"],
     hdrs = COMMON_HEADERS,
-    deps = [":conformance_test_base_lib"],
+    deps = [
+        ":conformance_test_base_lib",
+        "//src/core:channel_args",
+    ],
     alwayslink = 1,
 )
 

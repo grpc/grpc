@@ -42,6 +42,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:channel_args",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
