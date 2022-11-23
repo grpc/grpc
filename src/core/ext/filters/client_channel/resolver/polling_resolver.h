@@ -76,9 +76,9 @@ class PollingResolver : public Resolver {
   void StartResolvingLocked();
 
   void OnRequestCompleteLocked(Result result);
-
   void GetResultStatus(absl::Status status);
 
+  void ScheduleNextResolutionTimer(const Duration& timeout);
   void OnNextResolutionLocked();
 
   /// authority
@@ -113,7 +113,9 @@ class PollingResolver : public Resolver {
   /// next resolution timer
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       next_resolution_timer_handle_{absl::nullopt};
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  // a raw pointer will suffice since the shared_ptr in channel_args_ will keep
+  // the EventEngine alive
+  grpc_event_engine::experimental::EventEngine* event_engine_;
 };
 
 }  // namespace grpc_core
