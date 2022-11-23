@@ -110,7 +110,7 @@ class ByteBuffer final {
     }
     if (buf.buffer_) {
       // then copy
-      buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buf.buffer_);
+      buffer_ = grpc_byte_buffer_copy(buf.buffer_);
     }
     return *this;
   }
@@ -138,9 +138,7 @@ class ByteBuffer final {
   /// bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable.
   /// This is not a deep copy; it is a referencing and its performance
   /// is size-independent.
-  void Duplicate() {
-    buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buffer_);
-  }
+  void Duplicate() { buffer_ = grpc_byte_buffer_copy(buffer_); }
 
   /// Forget underlying byte buffer without destroying
   /// Use this only for un-owned byte buffers

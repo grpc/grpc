@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-grpc_byte_buffer* CoreCodegen::grpc_byte_buffer_copy(grpc_byte_buffer* bb) {
-  return ::grpc_byte_buffer_copy(bb);
-}
-
 void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   ::grpc_byte_buffer_destroy(bb);
 }
