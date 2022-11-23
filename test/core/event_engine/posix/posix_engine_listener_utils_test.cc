@@ -38,6 +38,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "test/core/util/port.h"
 
 namespace grpc_event_engine {
@@ -46,6 +47,8 @@ namespace posix_engine {
 namespace {
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
+using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
 
 class TestListenerSocketsContainer : public ListenerSocketsContainer {
  public:
@@ -90,10 +93,10 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
     ASSERT_TRUE((*socket).addr.address()->sa_family == AF_INET6 ||
                 (*socket).addr.address()->sa_family == AF_INET);
     if ((*socket).addr.address()->sa_family == AF_INET6) {
-      EXPECT_EQ(SockaddrToString(&(*socket).addr, true).value(),
+      EXPECT_EQ(ResolvedAddressToNormalizedString(&(*socket).addr).value(),
                 absl::StrCat("[::]:", std::to_string(port)));
     } else if ((*socket).addr.address()->sa_family == AF_INET) {
-      EXPECT_EQ(SockaddrToString(&(*socket).addr, true).value(),
+      EXPECT_EQ(ResolvedAddressToNormalizedString(&(*socket).addr).value(),
                 absl::StrCat("0.0.0.0:", std::to_string(port)));
     }
     close(socket->sock.Fd());
@@ -139,7 +142,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
        ++socket) {
     ASSERT_TRUE((*socket).addr.address()->sa_family == AF_INET6 ||
                 (*socket).addr.address()->sa_family == AF_INET);
-    EXPECT_EQ(SockaddrGetPort((*socket).addr), port);
+    EXPECT_EQ(ResolvedAddressGetPort((*socket).addr), port);
     close(socket->sock.Fd());
   }
 }

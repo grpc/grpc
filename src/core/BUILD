@@ -1700,6 +1700,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_tcp_socket_utils",
         "iomgr_port",
         "resource_quota",
         "socket_mutator",
@@ -1873,10 +1874,10 @@ grpc_cc_library(
     ],
     deps = [
         "error",
+        "event_engine_tcp_socket_utils",
         "event_engine_trace",
         "status_helper",
         "windows_iocp",
-        "windows_resolved_address",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1885,14 +1886,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "windows_resolved_address",
+    name = "event_engine_tcp_socket_utils",
     srcs = [
-        "lib/event_engine/windows/resolved_address.cc",
+        "lib/event_engine/tcp_socket_utils.cc",
     ],
     hdrs = [
-        "lib/event_engine/windows/resolved_address.h",
+        "lib/event_engine/tcp_socket_utils.h",
     ],
-    external_deps = ["absl/strings:str_format"],
+    external_deps = [
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
     deps = [
         "status_helper",
         "//:event_engine_base_hdrs",

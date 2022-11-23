@@ -23,8 +23,8 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/event_engine/windows/resolved_address.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
