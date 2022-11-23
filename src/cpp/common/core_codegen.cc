@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-int CoreCodegen::gpr_cv_wait(gpr_cv* cv, gpr_mu* mu,
-                             gpr_timespec abs_deadline) {
-  return ::gpr_cv_wait(cv, mu, abs_deadline);
-}
 void CoreCodegen::gpr_cv_signal(gpr_cv* cv) { ::gpr_cv_signal(cv); }
 void CoreCodegen::gpr_cv_broadcast(gpr_cv* cv) { ::gpr_cv_broadcast(cv); }
 

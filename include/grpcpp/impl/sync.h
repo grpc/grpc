@@ -127,9 +127,8 @@ class CondVar {
   void SignalAll() { g_core_codegen_interface->gpr_cv_broadcast(&cv_); }
 
   void Wait(Mutex* mu) {
-    g_core_codegen_interface->gpr_cv_wait(
-        &cv_, &mu->mu_,
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&cv_, &mu->mu_,
+                g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
   }
 
  private:

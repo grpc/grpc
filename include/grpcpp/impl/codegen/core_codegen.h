@@ -33,7 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) override;
   void gpr_cv_signal(gpr_cv* cv) override;
   void gpr_cv_broadcast(gpr_cv* cv) override;
 
