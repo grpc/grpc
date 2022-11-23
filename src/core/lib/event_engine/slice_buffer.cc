@@ -47,8 +47,9 @@ Slice SliceBuffer::RefSlice(size_t index) {
 }
 
 SliceBuffer::SliceView SliceBuffer::PeekSlice(size_t index) {
-  return SliceBuffer::SliceView(GRPC_SLICE_START_PTR(slice_buffer_.slices[index]),
-                   GRPC_SLICE_LENGTH(slice_buffer_.slices[index]));
+  return SliceBuffer::SliceView(
+      GRPC_SLICE_START_PTR(slice_buffer_.slices[index]),
+      GRPC_SLICE_LENGTH(slice_buffer_.slices[index]));
 }
 
 }  // namespace experimental
