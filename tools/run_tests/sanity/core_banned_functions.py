@@ -57,7 +57,7 @@ BANNED_EXCEPT = {
         'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
     ],
     # use 'grpc_core::Crash' instead
-    'GPR_ASSERT(false' : [],
+    'GPR_ASSERT(false': [],
 
     # Use `std::exchange()` instead.
     'absl::exchange': [],
