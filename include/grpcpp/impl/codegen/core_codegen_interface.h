@@ -45,9 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
-                                           grpc_slice** slice) = 0;
-
   virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                         size_t nslices) = 0;
   virtual grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,

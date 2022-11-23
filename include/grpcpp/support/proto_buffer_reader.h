@@ -81,8 +81,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
       return true;
     }
     /// Otherwise get the next slice from the byte buffer reader
-    if (!g_core_codegen_interface->grpc_byte_buffer_reader_peek(&reader_,
-                                                                &slice_)) {
+    if (!grpc_byte_buffer_reader_peek(&reader_, &slice_)) {
       return false;
     }
     *data = GRPC_SLICE_START_PTR(*slice_);

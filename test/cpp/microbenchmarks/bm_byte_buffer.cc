@@ -65,8 +65,7 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
-    if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
-            &reader, &slice))) {
+    if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
       grpc_byte_buffer_reader_destroy(&reader);
       GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
@@ -96,8 +95,7 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
-    if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
-            &reader, &slice))) {
+    if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
       grpc_byte_buffer_reader_destroy(&reader);
       GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
