@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -33,8 +34,8 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -109,9 +110,9 @@ class ParseTest : public ::testing::TestWithParam<Test> {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
       if (!err.ok()) {
-        gpr_log(GPR_ERROR, "Unexpected parse error: %s",
-                grpc_core::StatusToString(err).c_str());
-        abort();
+        grpc_core::Crash(
+            absl::StrFormat("Unexpected parse error: %s",
+                            grpc_core::StatusToString(err).c_str()));
       }
     }
 

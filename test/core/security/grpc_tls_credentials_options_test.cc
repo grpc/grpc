@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"

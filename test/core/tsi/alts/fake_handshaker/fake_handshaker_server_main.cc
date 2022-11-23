@@ -23,6 +23,7 @@
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"

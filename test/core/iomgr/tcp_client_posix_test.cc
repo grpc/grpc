@@ -38,6 +38,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"

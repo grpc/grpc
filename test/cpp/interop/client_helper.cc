@@ -33,6 +33,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"

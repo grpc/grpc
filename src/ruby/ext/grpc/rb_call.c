@@ -31,6 +31,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 /* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
 static VALUE grpc_rb_cCall;
 

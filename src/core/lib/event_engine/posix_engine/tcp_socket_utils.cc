@@ -19,7 +19,6 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <stdlib.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/statusor.h"
@@ -54,6 +53,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
@@ -394,9 +394,8 @@ int SockaddrGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
       return 1;
 #endif
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in SockaddrGetPort",
-              addr->sa_family);
-      abort();
+      grpc_core::Crash(absl::StrFormat(
+          "Unknown socket family %d in SockaddrGetPort", addr->sa_family));
   }
 }
 
@@ -414,9 +413,9 @@ void SockaddrSetPort(EventEngine::ResolvedAddress& resolved_addr, int port) {
           htons(static_cast<uint16_t>(port));
       return;
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
-              addr->sa_family);
-      abort();
+      grpc_core::Crash(
+          absl::StrFormat("Unknown socket family %d in grpc_sockaddr_set_port",
+                          addr->sa_family));
   }
 }
 
@@ -968,45 +967,45 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* /*resolved_addr*/,
                         EventEngine::ResolvedAddress* /*resolved_addr4_out*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* /*resolved_addr*/,
                         EventEngine::ResolvedAddress* /*resolved_addr6_out*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::StatusOr<std::string> SockaddrToString(
     const EventEngine::ResolvedAddress* /*resolved_addr*/, bool /*normalize*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketZeroCopy() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketNonBlocking(int /*non_blocking*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketCloexec(int /*close_on_exec*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketReuseAddr(int /*reuse*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketLowLatency(int /*low_latency*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketReusePort(int /*reuse*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 void PosixSocketWrapper::ConfigureDefaultTcpUserTimeout(bool /*enable*/,
@@ -1015,49 +1014,49 @@ void PosixSocketWrapper::ConfigureDefaultTcpUserTimeout(bool /*enable*/,
 
 void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     const PosixTcpOptions& /*options*/, bool /*is_client*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketNoSigpipeIfPossible() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketIpPktInfoIfPossible() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketIpv6RecvPktInfoIfPossible() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketSndBuf(int /*buffer_size_bytes*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketRcvBuf(int /*buffer_size_bytes*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::SetSocketMutator(
     grpc_fd_usage /*usage*/, grpc_socket_mutator* /*mutator*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::Status PosixSocketWrapper::ApplySocketMutatorInOptions(
     grpc_fd_usage /*usage*/, const PosixTcpOptions& /*options*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool PosixSocketWrapper::SetSocketDualStack() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool PosixSocketWrapper::IsSocketReusePortSupported() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
@@ -1065,14 +1064,14 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     /* socket_factory */,
     const experimental::EventEngine::ResolvedAddress& /*addr*/, int /*type*/,
     int /*protocol*/, DSMode& /*dsmode*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */

@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"

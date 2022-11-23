@@ -321,7 +321,7 @@ namespace posix_engine {
 
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> /*fn*/) {
-  GPR_ASSERT(false && "Timestamps callback is not enabled for this platform");
+  grpc_core::Crash("Timestamps callback is not enabled for this platform");
 }
 
 }  // namespace posix_engine

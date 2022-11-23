@@ -1071,6 +1071,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/chunked_vector.h )
   s.files += %w( src/core/lib/gprpp/construct_destruct.h )
   s.files += %w( src/core/lib/gprpp/cpp_impl_of.h )
+  s.files += %w( src/core/lib/gprpp/crash.cc )
+  s.files += %w( src/core/lib/gprpp/crash.h )
   s.files += %w( src/core/lib/gprpp/debug_location.h )
   s.files += %w( src/core/lib/gprpp/dual_ref_counted.h )
   s.files += %w( src/core/lib/gprpp/env.h )

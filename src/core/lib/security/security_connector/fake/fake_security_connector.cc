@@ -28,6 +28,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -41,6 +42,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -124,16 +126,13 @@ class grpc_fake_channel_security_connector final
           &fake_security_target_name_override_hostname,
           &fake_security_target_name_override_ignored_port);
       if (authority_hostname != fake_security_target_name_override_hostname) {
-        gpr_log(GPR_ERROR,
-                "Authority (host) '%s' != Fake Security Target override '%s'",
-                host.data(),
-                fake_security_target_name_override_hostname.data());
-        abort();
+        grpc_core::Crash(absl::StrFormat(
+            "Authority (host) '%s' != Fake Security Target override '%s'",
+            host.data(), fake_security_target_name_override_hostname.data()));
       }
     } else if (authority_hostname != target_hostname) {
-      gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host.data(),
-              target_);
-      abort();
+      grpc_core::Crash(absl::StrFormat("Authority (host) '%s' != Target '%s'",
+                                       host.data(), target_));
     }
     return grpc_core::ImmediateOkStatus();
   }

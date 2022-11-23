@@ -38,6 +38,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 /* id_channel is the name of the hidden ivar that preserves a reference to the
  * channel on a call, so that calls are not GCed before their channel.  */
 static ID id_channel;

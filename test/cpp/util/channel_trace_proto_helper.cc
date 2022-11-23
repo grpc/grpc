@@ -27,6 +27,7 @@
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"

@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/compression.h>
@@ -55,6 +56,7 @@
 #include <grpcpp/support/server_interceptor.h>
 #include <grpcpp/support/string_ref.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -372,9 +374,8 @@ void ServerContextBase::set_compression_algorithm(
   compression_algorithm_ = algorithm;
   const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
-    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
-            algorithm);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "Name for compression algorithm '%d' unknown.", algorithm));
   }
   GPR_ASSERT(algorithm_name != nullptr);
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);

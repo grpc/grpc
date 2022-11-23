@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"

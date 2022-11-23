@@ -47,6 +47,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
@@ -319,8 +320,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
     gpr_log(GPR_DEBUG,
             "done performing concurrent expected-to-succeed connects");
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), test_deadline) > 0) {
-      gpr_log(GPR_DEBUG, "Test took longer than expected.");
-      abort();
+      grpc_core::Crash("Test took longer than expected.");
     }
   }
 }
@@ -363,10 +363,9 @@ TEST(AltsConcurrentConnectivityTest,
     connect_loop_runners.clear();
     gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), test_deadline) > 0) {
-      gpr_log(GPR_ERROR,
-              "Exceeded test deadline. ALTS handshakes might not be failing "
-              "fast when the peer endpoint closes the connection abruptly");
-      abort();
+      grpc_core::Crash(
+          "Exceeded test deadline. ALTS handshakes might not be failing "
+          "fast when the peer endpoint closes the connection abruptly");
     }
   }
 }
@@ -402,10 +401,9 @@ TEST(AltsConcurrentConnectivityTest,
     connect_loop_runners.clear();
     gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), test_deadline) > 0) {
-      gpr_log(GPR_ERROR,
-              "Exceeded test deadline. ALTS handshakes might not be failing "
-              "fast when the handshake server closes new connections");
-      abort();
+      grpc_core::Crash(
+          "Exceeded test deadline. ALTS handshakes might not be failing "
+          "fast when the handshake server closes new connections");
     }
   }
 }
@@ -441,10 +439,9 @@ TEST(AltsConcurrentConnectivityTest,
     connect_loop_runners.clear();
     gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), test_deadline) > 0) {
-      gpr_log(GPR_ERROR,
-              "Exceeded test deadline. ALTS handshakes might not be failing "
-              "fast when the handshake server is non-response timeout occurs");
-      abort();
+      grpc_core::Crash(
+          "Exceeded test deadline. ALTS handshakes might not be failing "
+          "fast when the handshake server is non-response timeout occurs");
     }
   }
 }

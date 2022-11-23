@@ -248,6 +248,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_set_log_verbosity);
   printf("%lx", (unsigned long) gpr_log_verbosity_init);
   printf("%lx", (unsigned long) gpr_set_log_function);
+  printf("%lx", (unsigned long) gpr_assertion_failed);
   printf("%lx", (unsigned long) grpc_slice_ref);
   printf("%lx", (unsigned long) grpc_slice_unref);
   printf("%lx", (unsigned long) grpc_slice_copy);

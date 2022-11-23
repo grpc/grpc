@@ -24,8 +24,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 
 static bool g_pre_init_called = false;
 
@@ -791,7 +794,6 @@ void grpc_end2end_tests(int argc, char **argv,
       write_buffering_at_end(config);
       continue;
     }
-    gpr_log(GPR_DEBUG, "not a test: '%s'", argv[i]);
-    abort();
+    grpc_core::Crash(absl::StrFormat( "not a test: '%s'", argv[i]));
   }
 }

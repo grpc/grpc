@@ -1419,7 +1419,10 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/posix_engine/lockfree_event.h",
     ],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+    ],
     deps = [
         "gpr_atm",
         "posix_event_engine_closure",
@@ -1516,6 +1519,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "event_engine_poller",
@@ -1549,6 +1553,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "common_event_engine_closures",
@@ -2475,6 +2480,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:optional",
     ],
     language = "c++",
@@ -3896,7 +3902,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "ref_counted",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -4180,7 +4185,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "ref_counted",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -4221,7 +4225,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "ref_counted",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -4776,6 +4779,7 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_public_hdrs",
         "//:hpack_encoder",
         "//:hpack_parser",
     ],

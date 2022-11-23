@@ -25,6 +25,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 #define RETURN_IF_ERROR(expr)           \
   do {                                  \
     const absl::Status status = (expr); \

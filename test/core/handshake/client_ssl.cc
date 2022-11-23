@@ -54,6 +54,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -240,16 +241,14 @@ static void server_thread(void* arg) {
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
-    abort();
+    grpc_core::Crash("Couldn't set server cipher list.");
   }
 
   // Enable automatic curve selection. This is a NO-OP when using OpenSSL
   // versions > 1.0.2.
   if (!SSL_CTX_set_ecdh_auto(ctx, /*onoff=*/1)) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Couldn't set automatic curve selection.");
-    abort();
+    grpc_core::Crash("Couldn't set automatic curve selection.");
   }
 
   // Register the ALPN selection callback.

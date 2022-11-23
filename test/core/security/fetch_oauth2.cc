@@ -27,6 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"

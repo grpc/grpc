@@ -20,6 +20,7 @@
 #include <benchmark/benchmark.h>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/str_format.h"
 
 #include <grpcpp/impl/grpc_library.h>
 
@@ -184,8 +185,8 @@ void ClosureFanOutCallback(EventEngine::Closure* child_closure,
     return;
   }
   if (local_cnt > params.limit) {
-    gpr_log(GPR_ERROR, "Ran too many closures: %d/%d", local_cnt, params.limit);
-    abort();
+    grpc_core::Crash(absl::StrFormat("Ran too many closures: %d/%d", local_cnt,
+                                     params.limit));
   }
   if (child_closure == nullptr) return;
   for (int i = 0; i < params.fanout; i++) {

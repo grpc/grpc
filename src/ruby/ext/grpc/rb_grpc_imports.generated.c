@@ -204,6 +204,7 @@ gpr_log_message_type gpr_log_message_import;
 gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
 gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 gpr_set_log_function_type gpr_set_log_function_import;
+gpr_assertion_failed_type gpr_assertion_failed_import;
 grpc_slice_ref_type grpc_slice_ref_import;
 grpc_slice_unref_type grpc_slice_unref_import;
 grpc_slice_copy_type grpc_slice_copy_import;
@@ -489,6 +490,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_set_log_verbosity_import = (gpr_set_log_verbosity_type) GetProcAddress(library, "gpr_set_log_verbosity");
   gpr_log_verbosity_init_import = (gpr_log_verbosity_init_type) GetProcAddress(library, "gpr_log_verbosity_init");
   gpr_set_log_function_import = (gpr_set_log_function_type) GetProcAddress(library, "gpr_set_log_function");
+  gpr_assertion_failed_import = (gpr_assertion_failed_type) GetProcAddress(library, "gpr_assertion_failed");
   grpc_slice_ref_import = (grpc_slice_ref_type) GetProcAddress(library, "grpc_slice_ref");
   grpc_slice_unref_import = (grpc_slice_unref_type) GetProcAddress(library, "grpc_slice_unref");
   grpc_slice_copy_import = (grpc_slice_copy_type) GetProcAddress(library, "grpc_slice_copy");

@@ -23,6 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "test/core/util/cmdline.h"

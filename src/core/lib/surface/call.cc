@@ -70,6 +70,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -727,8 +728,7 @@ void FilterStackCall::SetCompletionQueue(grpc_completion_queue* cq) {
   GPR_ASSERT(cq);
 
   if (grpc_polling_entity_pollset_set(&pollent_) != nullptr) {
-    gpr_log(GPR_ERROR, "A pollset_set is already registered for this call.");
-    abort();
+    Crash("A pollset_set is already registered for this call.");
   }
   cq_ = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");

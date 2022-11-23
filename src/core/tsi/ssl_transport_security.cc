@@ -56,6 +56,7 @@
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_types.h"

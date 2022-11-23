@@ -26,6 +26,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 /* Number of mutexes to allocate for events, to avoid lock contention.
    Should be a prime. */
 enum { event_sync_partitions = 31 };

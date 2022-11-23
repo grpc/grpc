@@ -181,6 +181,7 @@ EXPORTS
     gpr_set_log_verbosity
     gpr_log_verbosity_init
     gpr_set_log_function
+    gpr_assertion_failed
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy

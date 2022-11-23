@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -126,7 +127,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
         StartTimer(Timestamp::FromTimespecRoundUp(deadline));
         return;
       }
-      grpc_core::Crash("something that is not a client channel");
+      Crash("something that is not a client channel");
     }
     // Take an addition ref, so we have two (the first one is from the
     // creation of this object).  One will be held by the timer callback,

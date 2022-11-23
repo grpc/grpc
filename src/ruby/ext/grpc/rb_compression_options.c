@@ -34,6 +34,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 static VALUE grpc_rb_cCompressionOptions = Qnil;
 
 /* Ruby Ids for the names of valid compression levels. */

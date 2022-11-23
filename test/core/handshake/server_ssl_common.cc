@@ -43,6 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
@@ -221,8 +222,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
-    abort();
+    grpc_core::Crash("Couldn't set server cipher list.");
   }
 
   // Configure ALPN list the client will send to the server. This must match the

@@ -30,6 +30,7 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 

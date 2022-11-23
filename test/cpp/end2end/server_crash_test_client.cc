@@ -28,6 +28,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/test_config.h"
 

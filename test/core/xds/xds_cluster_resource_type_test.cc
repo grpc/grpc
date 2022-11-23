@@ -24,6 +24,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -31,7 +32,6 @@
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -41,6 +41,7 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -105,9 +106,8 @@ class XdsClusterTest : public ::testing::Test {
         "  }\n"
         "}");
     if (!bootstrap.ok()) {
-      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              bootstrap.status().ToString().c_str());
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr);

@@ -25,6 +25,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
@@ -63,6 +64,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -360,8 +362,8 @@ void ClientStart(client* cl, int port) {
         abort();
       }
     } else {
-      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-      abort();
+      grpc_core::Crash(
+          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
     }
   }
 

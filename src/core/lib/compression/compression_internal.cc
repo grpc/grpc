@@ -26,6 +26,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "absl/types/variant.h"
 
@@ -33,6 +34,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
@@ -112,9 +114,8 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
   GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown message compression level %d.",
-            static_cast<int>(level));
-    abort();
+    Crash(absl::StrFormat("Unknown message compression level %d.",
+                          static_cast<int>(level)));
   }
 
   if (level == GRPC_COMPRESS_LEVEL_NONE) {

@@ -19,6 +19,7 @@
 #import "GRPCChannel.h"
 
 #include <grpc/support/log.h>
+#include "src/core/lib/gprpp/crash.h"
 
 #import "../../internal/GRPCCallOptions+Internal.h"
 #import "../GRPCTransport+Private.h"

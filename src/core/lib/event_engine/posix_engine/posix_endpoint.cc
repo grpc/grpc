@@ -829,7 +829,7 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
 }
 
 void PosixEndpointImpl::HandleError(absl::Status /*status*/) {
-  GPR_ASSERT(false && "Error handling not supported on this platform");
+  grpc_core::Crash("Error handling not supported on this platform");
 }
 
 void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {}
@@ -839,7 +839,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
                                             ssize_t* /*sent_length*/,
                                             int* /*saved_errno*/,
                                             int /*additional_flags*/) {
-  GPR_ASSERT(false && "Write with timestamps not supported for this platform");
+  grpc_core::Crash("Write with timestamps not supported for this platform");
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
@@ -1261,7 +1261,7 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
     std::shared_ptr<EventEngine> /*engine*/,
     const PosixTcpOptions& /*options*/) {
-  GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
+  grpc_core::Crash("Cannot create PosixEndpoint on this platform");
 }
 
 }  // namespace posix_engine

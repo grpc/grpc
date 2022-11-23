@@ -29,6 +29,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
   grpc_completion_queue* cq;

@@ -581,7 +581,7 @@ XdsResolver::XdsConfigSelector::CreateMethodConfig(
     retry_parts.push_back(
         absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
                         absl::StrJoin(code_parts, ",\n")));
-    retry_parts.push_back(absl::StrFormat("    }"));
+    retry_parts.push_back("    }");
     fields.emplace_back(absl::StrJoin(retry_parts, ""));
   }
   // Set timeout.

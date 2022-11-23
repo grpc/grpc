@@ -19,7 +19,6 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 
 #include <string.h>
-
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this
  */

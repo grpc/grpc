@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -32,6 +33,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_averaged_stats.h"
@@ -130,12 +132,11 @@ static void add_to_ht(grpc_timer* t) {
 
   if (p == t) {
     grpc_closure* c = t->closure;
-    gpr_log(GPR_ERROR,
-            "** Duplicate timer (%p) being added. Closure: (%p), created at: "
-            "(%s:%d), scheduled at: (%s:%d) **",
-            t, c, c->file_created, c->line_created, c->file_initiated,
-            c->line_initiated);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "** Duplicate timer (%p) being added. Closure: (%p), created at: "
+        "(%s:%d), scheduled at: (%s:%d) **",
+        t, c, c->file_created, c->line_created, c->file_initiated,
+        c->line_initiated));
   }
 
   /* Timer not present in the bucket. Insert at head of the list */
@@ -167,12 +168,11 @@ static void remove_from_ht(grpc_timer* t) {
 
   if (!removed) {
     grpc_closure* c = t->closure;
-    gpr_log(GPR_ERROR,
-            "** Removing timer (%p) that is not added to hash table. Closure "
-            "(%p), created at: (%s:%d), scheduled at: (%s:%d) **",
-            t, c, c->file_created, c->line_created, c->file_initiated,
-            c->line_initiated);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "** Removing timer (%p) that is not added to hash table. Closure "
+        "(%p), created at: (%s:%d), scheduled at: (%s:%d) **",
+        t, c, c->file_created, c->line_created, c->file_initiated,
+        c->line_initiated));
   }
 
   t->hash_table_next = nullptr;
@@ -185,13 +185,12 @@ static void remove_from_ht(grpc_timer* t) {
 static void validate_non_pending_timer(grpc_timer* t) {
   if (!t->pending && is_in_ht(t)) {
     grpc_closure* c = t->closure;
-    gpr_log(GPR_ERROR,
-            "** gpr_timer_cancel() called on a non-pending timer (%p) which "
-            "is in the hash table. Closure: (%p), created at: (%s:%d), "
-            "scheduled at: (%s:%d) **",
-            t, c, c->file_created, c->line_created, c->file_initiated,
-            c->line_initiated);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "** gpr_timer_cancel() called on a non-pending timer (%p) which "
+        "is in the hash table. Closure: (%p), created at: (%s:%d), "
+        "scheduled at: (%s:%d) **",
+        t, c, c->file_created, c->line_created, c->file_initiated,
+        c->line_initiated));
   }
 }
 

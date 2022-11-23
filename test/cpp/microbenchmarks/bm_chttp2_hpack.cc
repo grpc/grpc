@@ -31,6 +31,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"

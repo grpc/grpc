@@ -34,6 +34,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

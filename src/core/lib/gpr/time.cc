@@ -27,6 +27,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
   GPR_ASSERT(a.clock_type == b.clock_type);

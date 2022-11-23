@@ -18,23 +18,27 @@
 
 #include "php_grpc.h"
 
+#include <ext/spl/spl_exceptions.h>
+#include <inttypes.h>
+#include <zend_exceptions.h>
+
 #include "call.h"
+#include "call_credentials.h"
 #include "channel.h"
+#include "channel_credentials.h"
+#include "completion_queue.h"
 #include "server.h"
+#include "server_credentials.h"
 #include "timeval.h"
 #include "version.h"
-#include "channel_credentials.h"
-#include "call_credentials.h"
-#include "server_credentials.h"
-#include "completion_queue.h"
-#include <inttypes.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <ext/spl/spl_exceptions.h>
-#include <zend_exceptions.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 #include <pthread.h>
@@ -57,21 +61,20 @@ ZEND_DECLARE_MODULE_GLOBALS(grpc);
 
 /* {{{ grpc_module_entry
  */
-zend_module_entry grpc_module_entry = {
-  STANDARD_MODULE_HEADER,
-  "grpc",
-  grpc_functions,
-  PHP_MINIT(grpc),
-  PHP_MSHUTDOWN(grpc),
-  PHP_RINIT(grpc),
-  NULL,
-  PHP_MINFO(grpc),
-  PHP_GRPC_VERSION,
-  PHP_MODULE_GLOBALS(grpc),
-  PHP_GINIT(grpc),
-  NULL,
-  NULL,
-  STANDARD_MODULE_PROPERTIES_EX};
+zend_module_entry grpc_module_entry = {STANDARD_MODULE_HEADER,
+                                       "grpc",
+                                       grpc_functions,
+                                       PHP_MINIT(grpc),
+                                       PHP_MSHUTDOWN(grpc),
+                                       PHP_RINIT(grpc),
+                                       NULL,
+                                       PHP_MINFO(grpc),
+                                       PHP_GRPC_VERSION,
+                                       PHP_MODULE_GLOBALS(grpc),
+                                       PHP_GINIT(grpc),
+                                       NULL,
+                                       NULL,
+                                       STANDARD_MODULE_PROPERTIES_EX};
 /* }}} */
 
 #ifdef COMPILE_DL_GRPC
@@ -80,18 +83,18 @@ ZEND_GET_MODULE(grpc)
 
 /* {{{ PHP_INI
  */
-   PHP_INI_BEGIN()
-   STD_PHP_INI_ENTRY("grpc.enable_fork_support", "0", PHP_INI_SYSTEM, OnUpdateBool,
-                     enable_fork_support, zend_grpc_globals, grpc_globals)
-   STD_PHP_INI_ENTRY("grpc.poll_strategy", NULL, PHP_INI_SYSTEM, OnUpdateString,
-                     poll_strategy, zend_grpc_globals, grpc_globals)
-   STD_PHP_INI_ENTRY("grpc.grpc_verbosity", NULL, PHP_INI_SYSTEM, OnUpdateString,
-                     grpc_verbosity, zend_grpc_globals, grpc_globals)
-   STD_PHP_INI_ENTRY("grpc.grpc_trace", NULL, PHP_INI_SYSTEM, OnUpdateString,
-                     grpc_trace, zend_grpc_globals, grpc_globals)
-   STD_PHP_INI_ENTRY("grpc.log_filename", NULL, PHP_INI_SYSTEM, OnUpdateString,
-                     log_filename, zend_grpc_globals, grpc_globals)
-   PHP_INI_END()
+PHP_INI_BEGIN()
+STD_PHP_INI_ENTRY("grpc.enable_fork_support", "0", PHP_INI_SYSTEM, OnUpdateBool,
+                  enable_fork_support, zend_grpc_globals, grpc_globals)
+STD_PHP_INI_ENTRY("grpc.poll_strategy", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                  poll_strategy, zend_grpc_globals, grpc_globals)
+STD_PHP_INI_ENTRY("grpc.grpc_verbosity", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                  grpc_verbosity, zend_grpc_globals, grpc_globals)
+STD_PHP_INI_ENTRY("grpc.grpc_trace", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                  grpc_trace, zend_grpc_globals, grpc_globals)
+STD_PHP_INI_ENTRY("grpc.log_filename", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                  log_filename, zend_grpc_globals, grpc_globals)
+PHP_INI_END()
 /* }}} */
 
 /* {{{ php_grpc_init_globals
@@ -105,14 +108,14 @@ ZEND_GET_MODULE(grpc)
 */
 /* }}} */
 
-void create_new_channel(
-    wrapped_grpc_channel *channel,
-    char *target,
-    grpc_channel_args args,
-    wrapped_grpc_channel_credentials *creds) {
+void create_new_channel(wrapped_grpc_channel* channel, char* target,
+                        grpc_channel_args args,
+                        wrapped_grpc_channel_credentials* creds) {
   if (creds == NULL) {
-    grpc_channel_credentials *insecure_creds = grpc_insecure_credentials_create();
-    channel->wrapper->wrapped = grpc_channel_create(target, insecure_creds, &args);
+    grpc_channel_credentials* insecure_creds =
+        grpc_insecure_credentials_create();
+    channel->wrapper->wrapped =
+        grpc_channel_create(target, insecure_creds, &args);
     grpc_channel_credentials_release(insecure_creds);
   } else {
     channel->wrapper->wrapped =
@@ -121,60 +124,58 @@ void create_new_channel(
 }
 
 void acquire_persistent_locks() {
-  zval *data;
+  zval* data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
-    php_grpc_zend_resource *rsrc  =
-                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
-    if (rsrc == NULL) {
-      break;
-    }
-    channel_persistent_le_t* le = rsrc->ptr;
+  php_grpc_zend_resource* rsrc =
+      (php_grpc_zend_resource*)PHP_GRPC_HASH_VALPTR_TO_VAL(data) if (rsrc ==
+                                                                     NULL) {
+    break;
+  }
+  channel_persistent_le_t* le = rsrc->ptr;
 
-    gpr_mu_lock(&le->channel->mu);
+  gpr_mu_lock(&le->channel->mu);
   PHP_GRPC_HASH_FOREACH_END()
 }
 
 void release_persistent_locks() {
-  zval *data;
+  zval* data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
-    php_grpc_zend_resource *rsrc  =
-                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
-    if (rsrc == NULL) {
-      break;
-    }
-    channel_persistent_le_t* le = rsrc->ptr;
+  php_grpc_zend_resource* rsrc =
+      (php_grpc_zend_resource*)PHP_GRPC_HASH_VALPTR_TO_VAL(data) if (rsrc ==
+                                                                     NULL) {
+    break;
+  }
+  channel_persistent_le_t* le = rsrc->ptr;
 
-    gpr_mu_unlock(&le->channel->mu);
+  gpr_mu_unlock(&le->channel->mu);
   PHP_GRPC_HASH_FOREACH_END()
 }
 
 void destroy_grpc_channels() {
-  zval *data;
+  zval* data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
-    php_grpc_zend_resource *rsrc  =
-                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
-    if (rsrc == NULL) {
-      break;
-    }
-    channel_persistent_le_t* le = rsrc->ptr;
+  php_grpc_zend_resource* rsrc =
+      (php_grpc_zend_resource*)PHP_GRPC_HASH_VALPTR_TO_VAL(data) if (rsrc ==
+                                                                     NULL) {
+    break;
+  }
+  channel_persistent_le_t* le = rsrc->ptr;
 
-    wrapped_grpc_channel wrapped_channel;
-    wrapped_channel.wrapper = le->channel;
-    grpc_channel_wrapper *channel = wrapped_channel.wrapper;
-    grpc_channel_destroy(channel->wrapped);
-    channel->wrapped = NULL;
+  wrapped_grpc_channel wrapped_channel;
+  wrapped_channel.wrapper = le->channel;
+  grpc_channel_wrapper* channel = wrapped_channel.wrapper;
+  grpc_channel_destroy(channel->wrapped);
+  channel->wrapped = NULL;
   PHP_GRPC_HASH_FOREACH_END()
 }
 
-void prefork() {
-  acquire_persistent_locks();
-}
+void prefork() { acquire_persistent_locks(); }
 
 // Clean all channels in the persistent list
 // Called at post fork
 void php_grpc_clean_persistent_list(TSRMLS_D) {
-    zend_hash_clean(&grpc_persistent_list);
-    zend_hash_clean(&grpc_target_upper_bound_map);
+  zend_hash_clean(&grpc_persistent_list);
+  zend_hash_clean(&grpc_target_upper_bound_map);
 }
 
 void postfork_child() {
@@ -184,7 +185,7 @@ void postfork_child() {
   destroy_grpc_channels();
 
   release_persistent_locks();
-  
+
   // clean all channels in the persistent list
   php_grpc_clean_persistent_list(TSRMLS_C);
 
@@ -204,9 +205,7 @@ void postfork_child() {
   grpc_php_init_completion_queue(TSRMLS_C);
 }
 
-void postfork_parent() {
-  release_persistent_locks();
-}
+void postfork_parent() { release_persistent_locks(); }
 
 void register_fork_handlers() {
   if (getenv("GRPC_ENABLE_FORK_SUPPORT")) {
@@ -218,30 +217,30 @@ void register_fork_handlers() {
 
 void apply_ini_settings(TSRMLS_D) {
   if (GRPC_G(enable_fork_support)) {
-    char *enable_str = malloc(sizeof("GRPC_ENABLE_FORK_SUPPORT=1"));
+    char* enable_str = malloc(sizeof("GRPC_ENABLE_FORK_SUPPORT=1"));
     strcpy(enable_str, "GRPC_ENABLE_FORK_SUPPORT=1");
     putenv(enable_str);
   }
 
   if (GRPC_G(poll_strategy)) {
-    char *poll_str = malloc(sizeof("GRPC_POLL_STRATEGY=") +
-                            strlen(GRPC_G(poll_strategy)));
+    char* poll_str =
+        malloc(sizeof("GRPC_POLL_STRATEGY=") + strlen(GRPC_G(poll_strategy)));
     strcpy(poll_str, "GRPC_POLL_STRATEGY=");
     strcat(poll_str, GRPC_G(poll_strategy));
     putenv(poll_str);
   }
 
   if (GRPC_G(grpc_verbosity)) {
-    char *verbosity_str = malloc(sizeof("GRPC_VERBOSITY=") +
-                                 strlen(GRPC_G(grpc_verbosity)));
+    char* verbosity_str =
+        malloc(sizeof("GRPC_VERBOSITY=") + strlen(GRPC_G(grpc_verbosity)));
     strcpy(verbosity_str, "GRPC_VERBOSITY=");
     strcat(verbosity_str, GRPC_G(grpc_verbosity));
     putenv(verbosity_str);
   }
 
   if (GRPC_G(grpc_trace)) {
-    char *trace_str = malloc(sizeof("GRPC_TRACE=") +
-                             strlen(GRPC_G(grpc_trace)));
+    char* trace_str =
+        malloc(sizeof("GRPC_TRACE=") + strlen(GRPC_G(grpc_trace)));
     strcpy(trace_str, "GRPC_TRACE=");
     strcat(trace_str, GRPC_G(grpc_trace));
     putenv(trace_str);
@@ -264,14 +263,14 @@ static void custom_logger(gpr_log_func_args* args) {
     display_file = args->file;
   }
 
-  FILE *fp = fopen(GRPC_G(log_filename), "ab");
+  FILE* fp = fopen(GRPC_G(log_filename), "ab");
   if (!fp) {
     return;
   }
 
   gpr_asprintf(&prefix, "%s%" PRId64 ".%09" PRId32 " %s:%d]",
-               gpr_log_severity_string(args->severity), now.tv_sec,
-               now.tv_nsec, display_file, args->line);
+               gpr_log_severity_string(args->severity), now.tv_sec, now.tv_nsec,
+               display_file, args->line);
 
   gpr_asprintf(&final, "%-60s %s\n", prefix, args->message);
 
@@ -325,8 +324,9 @@ PHP_MINIT_FUNCTION(grpc) {
 
   /* Register flag constants */
   /** Hint that the write may be buffered and need not go out on the wire
-      immediately. GRPC is free to buffer the message until the next non-buffered
-      write, or until writes_done, but it need not buffer completely or at all. */
+      immediately. GRPC is free to buffer the message until the next
+     non-buffered write, or until writes_done, but it need not buffer completely
+     or at all. */
   REGISTER_LONG_CONSTANT("Grpc\\WRITE_BUFFER_HINT", GRPC_WRITE_BUFFER_HINT,
                          CONST_CS | CONST_PERSISTENT);
   /** Force compression to be disabled for a particular write
@@ -434,8 +434,7 @@ PHP_MINIT_FUNCTION(grpc) {
       error) when it applies so that callers who are iterating through
       a space can easily look for an OUT_OF_RANGE error to detect when
       they are done. */
-  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OUT_OF_RANGE",
-                         GRPC_STATUS_OUT_OF_RANGE,
+  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OUT_OF_RANGE", GRPC_STATUS_OUT_OF_RANGE,
                          CONST_CS | CONST_PERSISTENT);
   /** Operation is not implemented or not supported/enabled in this service. */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNIMPLEMENTED",
@@ -475,8 +474,7 @@ PHP_MINIT_FUNCTION(grpc) {
   /** Send a message: 0 or more of these operations can occur for each call.
       This op completes after all bytes for the message have been accepted by
       outgoing flow control. */
-  REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_MESSAGE",
-                         GRPC_OP_SEND_MESSAGE,
+  REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_MESSAGE", GRPC_OP_SEND_MESSAGE,
                          CONST_CS | CONST_PERSISTENT);
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
@@ -502,8 +500,7 @@ PHP_MINIT_FUNCTION(grpc) {
   /** Receive a message: 0 or more of these operations can occur for each call.
       This op completes after all bytes of the received message have been
       read, or after a half-close has been received on this call. */
-  REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_MESSAGE",
-                         GRPC_OP_RECV_MESSAGE,
+  REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_MESSAGE", GRPC_OP_RECV_MESSAGE,
                          CONST_CS | CONST_PERSISTENT);
   /** Receive status on the client: one and only one must be made on the client.
       This operation always succeeds, meaning ops paired with this operation
@@ -524,30 +521,26 @@ PHP_MINIT_FUNCTION(grpc) {
 
   /* Register connectivity state constants */
   /** channel is idle */
-  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_IDLE",
-                         GRPC_CHANNEL_IDLE,
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_IDLE", GRPC_CHANNEL_IDLE,
                          CONST_CS | CONST_PERSISTENT);
   /** channel is connecting */
-  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_CONNECTING",
-                         GRPC_CHANNEL_CONNECTING,
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_CONNECTING", GRPC_CHANNEL_CONNECTING,
                          CONST_CS | CONST_PERSISTENT);
   /** channel is ready for work */
-  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_READY",
-                         GRPC_CHANNEL_READY,
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_READY", GRPC_CHANNEL_READY,
                          CONST_CS | CONST_PERSISTENT);
   /** channel has seen a failure but expects to recover */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_TRANSIENT_FAILURE",
                          GRPC_CHANNEL_TRANSIENT_FAILURE,
                          CONST_CS | CONST_PERSISTENT);
   /** channel has seen a failure that it cannot recover from */
-  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_FATAL_FAILURE",
-                         GRPC_CHANNEL_SHUTDOWN,
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_FATAL_FAILURE", GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);
 
   /** grpc version string */
   REGISTER_STRING_CONSTANT("Grpc\\VERSION", PHP_GRPC_VERSION,
                            CONST_CS | CONST_PERSISTENT);
-  
+
   grpc_init_call(TSRMLS_C);
   GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);

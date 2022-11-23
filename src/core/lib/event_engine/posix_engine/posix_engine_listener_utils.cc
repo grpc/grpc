@@ -286,7 +286,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
   (void)listener_sockets;
   (void)options;
   (void)requested_port;
-  GPR_ASSERT(false && "System does not support ifaddrs");
+  grpc_core::Crash("System does not support ifaddrs");
 #endif
 }
 
@@ -359,17 +359,17 @@ CreateAndPrepareListenerSocket(const PosixTcpOptions& /*options*/,
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     ListenerSocketsContainer& /*listener_sockets*/,
     const PosixTcpOptions& /*options*/, int /*requested_port*/) {
-  GPR_ASSERT(false &&
-             "ListenerContainerAddWildcardAddresses is not supported on this "
-             "platform");
+  grpc_core::Crash(
+      "ListenerContainerAddWildcardAddresses is not supported on this "
+      "platform");
 }
 
 absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     ListenerSocketsContainer& /*listener_sockets*/,
     const PosixTcpOptions& /*options*/, int /*requested_port*/) {
-  GPR_ASSERT(false &&
-             "ListenerContainerAddAllLocalAddresses is not supported on this "
-             "platform");
+  grpc_core::Crash(
+      "ListenerContainerAddAllLocalAddresses is not supported on this "
+      "platform");
 }
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON

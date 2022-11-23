@@ -94,8 +94,8 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
     if (completion_key == (ULONG_PTR)&kick_token_) {
       return Poller::WorkResult::kKicked;
     }
-    gpr_log(GPR_ERROR, "Unknown custom completion key: %p", completion_key);
-    abort();
+    grpc_core::Crash(
+        absl::StrFormat("Unknown custom completion key: %p", completion_key));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     gpr_log(GPR_DEBUG, "IOCP::%p got event on OVERLAPPED::%p", this,

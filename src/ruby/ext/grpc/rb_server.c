@@ -34,6 +34,8 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
 static VALUE grpc_rb_cServer = Qnil;
 

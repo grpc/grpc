@@ -30,6 +30,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/crash.h"
 
 static LARGE_INTEGER g_start_time = []() {
   LARGE_INTEGER x;

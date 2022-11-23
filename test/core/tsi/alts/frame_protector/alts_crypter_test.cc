@@ -27,6 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 static void alts_crypter_test_random_seal_unseal(alts_crypter* server_seal,

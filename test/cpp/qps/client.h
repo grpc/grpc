@@ -31,6 +31,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -39,6 +40,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
@@ -72,10 +74,10 @@ class ClientRequestCreator<SimpleRequest> {
   ClientRequestCreator(SimpleRequest* req,
                        const PayloadConfig& payload_config) {
     if (payload_config.has_bytebuf_params()) {
-      gpr_log(GPR_ERROR,
-              "Invalid PayloadConfig, config cannot have bytebuf_params: %s",
-              payload_config.DebugString().c_str());
-      GPR_ASSERT(false);  // not appropriate for this specialization
+      grpc_core::Crash(absl::StrFormat(
+          "Invalid PayloadConfig, config cannot have bytebuf_params: %s",
+          payload_config.DebugString()
+              .c_str()));  // not appropriate for this specialization
     } else if (payload_config.has_simple_params()) {
       req->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
       req->set_response_size(payload_config.simple_params().resp_size());
@@ -85,10 +87,10 @@ class ClientRequestCreator<SimpleRequest> {
       std::unique_ptr<char[]> body(new char[size]);
       req->mutable_payload()->set_body(body.get(), size);
     } else if (payload_config.has_complex_params()) {
-      gpr_log(GPR_ERROR,
-              "Invalid PayloadConfig, cannot have complex_params: %s",
-              payload_config.DebugString().c_str());
-      GPR_ASSERT(false);  // not appropriate for this specialization
+      grpc_core::Crash(absl::StrFormat(
+          "Invalid PayloadConfig, cannot have complex_params: %s",
+          payload_config.DebugString()
+              .c_str()));  // not appropriate for this specialization
     } else {
       // default should be simple proto without payloads
       req->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
@@ -111,9 +113,10 @@ class ClientRequestCreator<ByteBuffer> {
       Slice slice(buf.get(), req_sz);
       *req = ByteBuffer(&slice, 1);
     } else {
-      gpr_log(GPR_ERROR, "Invalid PayloadConfig, missing bytebug_params: %s",
-              payload_config.DebugString().c_str());
-      GPR_ASSERT(false);  // not appropriate for this specialization
+      grpc_core::Crash(absl::StrFormat(
+          "Invalid PayloadConfig, missing bytebug_params: %s",
+          payload_config.DebugString()
+              .c_str()));  // not appropriate for this specialization
     }
   }
 };
@@ -487,9 +490,8 @@ class ClientImpl : public Client {
       cq.Next(&tag, &ok);
       Channel* channel = static_cast<Channel*>(tag);
       if (!ok) {
-        gpr_log(GPR_ERROR, "Channel %p failed to connect within the deadline",
-                channel);
-        abort();
+        grpc_core::Crash(absl::StrFormat(
+            "Channel %p failed to connect within the deadline", channel));
       } else {
         grpc_connectivity_state last_observed = channel->GetState(true);
         if (last_observed == GRPC_CHANNEL_READY) {

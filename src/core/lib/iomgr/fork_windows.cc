@@ -25,6 +25,8 @@
 #include <grpc/fork.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
  *       AROUND VERY SPECIFIC USE CASES.
