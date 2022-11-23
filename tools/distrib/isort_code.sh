@@ -37,7 +37,7 @@ DIRS=(
 VIRTUALENV=isort_virtual_environment
 
 python3 -m virtualenv $VIRTUALENV
-PYTHON=${VIRTUALENV}/local/bin/python
+PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install isort==5.9.2
 
 $PYTHON -m isort $ACTION \
