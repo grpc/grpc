@@ -26,6 +26,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <cinttypes>
 #include <string>
 #include <utility>
 
@@ -1190,16 +1191,15 @@ class HPackParser::Parser {
 
   GPR_ATTRIBUTE_NOINLINE
   bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento&) {
-    gpr_log(GPR_DEBUG,
-            "received initial metadata size exceeds limit (%" PRIu32
-            " vs. %" PRIu32
-            "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
-            *frame_length_, metadata_size_limit_);
     if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
+    // TODO(alishananda): add debug log with metadata details
     return input_->MaybeSetErrorAndReturn(
-        [] {
+        [this] {
           return grpc_error_set_int(
-              GRPC_ERROR_CREATE("received initial metadata size exceeds limit"),
+              GRPC_ERROR_CREATE(absl::StrFormat(
+                  "received initial metadata size exceeds limit (%" PRIu32
+                  " vs. %" PRIu32 ")",
+                  *frame_length_, metadata_size_limit_)),
               StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
         },
         false);
