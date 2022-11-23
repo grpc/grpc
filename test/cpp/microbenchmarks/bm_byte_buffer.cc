@@ -59,8 +59,7 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
     slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
         buf.get(), kSliceSize));
   }
-  grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
-      slices.data(), num_slices);
+  grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
@@ -89,8 +88,7 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
     slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
         buf.get(), kSliceSize));
   }
-  grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
-      slices.data(), num_slices);
+  grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {

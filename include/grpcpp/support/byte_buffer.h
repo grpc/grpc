@@ -85,7 +85,7 @@ class ByteBuffer final {
     // than its advertised side effect of increasing the reference count of the
     // slices it processes, and such an increase does not affect the semantics
     // seen by the caller of this constructor.
-    buffer_ = g_core_codegen_interface->grpc_raw_byte_buffer_create(
+    buffer_ = grpc_raw_byte_buffer_create(
         reinterpret_cast<grpc_slice*>(const_cast<Slice*>(slices)), nslices);
   }
 
