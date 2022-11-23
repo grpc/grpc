@@ -33,6 +33,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -356,7 +357,7 @@ std::string grpc_sockaddr_get_packed_host(
     const char* addr_bytes = reinterpret_cast<const char*>(&addr6->sin6_addr);
     return std::string(addr_bytes, 16);
   } else {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unknown socket family");
   }
 }
 

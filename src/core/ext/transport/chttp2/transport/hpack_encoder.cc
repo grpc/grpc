@@ -362,7 +362,7 @@ void HPackCompressor::Encoder::Encode(HttpSchemeMetadata,
       EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      GPR_ASSERT(false);
+      Crash("invalid http scheme encoding");
       break;
   }
 }
@@ -430,7 +430,7 @@ void HPackCompressor::Encoder::Encode(HttpMethodMetadata,
                                              Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      GPR_ASSERT(false);
+      Crash("invalid http method encoding");
       break;
   }
 }

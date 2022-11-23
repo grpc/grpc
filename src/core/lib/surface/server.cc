@@ -341,7 +341,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t /*request_queue_index*/,
                                       RequestedCall* /*call*/) final {
-    GPR_ASSERT(false);
+    Crash("unreachable");
   }
 
   Server* server() const override { return server_; }

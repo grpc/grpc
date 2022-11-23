@@ -1109,7 +1109,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         }
       } else {
         /* Should never reach here */
-        GPR_ASSERT(false);
+        grpc_core::Crash("unreachable");
       }
     }
     stream_state->state_op_done[OP_SEND_MESSAGE] = true;
