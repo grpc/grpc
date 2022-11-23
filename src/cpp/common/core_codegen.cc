@@ -36,12 +36,6 @@
 
 namespace grpc {
 
-grpc_call_error CoreCodegen::grpc_call_cancel_with_status(
-    grpc_call* call, grpc_status_code status, const char* description,
-    void* reserved) {
-  return ::grpc_call_cancel_with_status(call, status, description, reserved);
-}
-
 int CoreCodegen::grpc_call_failed_before_recv_message(const grpc_call* c) {
   return ::grpc_call_failed_before_recv_message(c);
 }
