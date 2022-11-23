@@ -384,6 +384,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_like",
         "promise_status",
+        "try_seq",
         "//:gpr",
     ],
 )

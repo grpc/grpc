@@ -173,7 +173,6 @@ class ClientLoggingFilter final : public LoggingFilter {
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
-    gpr_log(GPR_ERROR, "here");
     CallData* calld = grpc_core::GetContext<grpc_core::Arena>()->New<CallData>(
         true, call_args);
     LogClientHeader(calld, call_args.client_initial_metadata);
@@ -194,24 +193,23 @@ class ClientLoggingFilter final : public LoggingFilter {
             server_initial_metadata->Wait(),
             // TODO(ctiller): A void return does not work
             [calld](grpc_core::ServerMetadata** server_initial_metadata) mutable
-            -> int {
+            -> grpc_core::ArenaPromise<absl::Status> {
               LogServerHeader(calld, *server_initial_metadata);
-              return 0;
-            },
-            [/*calld, */ incoming_mapper =
-                 std::move(incoming_mapper)](int /* prev */) mutable
+              return grpc_core::ImmediateOkStatus();
+            }))
+        .NecessaryPull(
+            [/*calld, */ incoming_mapper = std::move(incoming_mapper)]() mutable
             -> grpc_core::ArenaPromise<absl::Status> {
               return grpc_core::ImmediateOkStatus();
-              // return incoming_mapper.TakeAndRun(
-              //     [](grpc_core::MessageHandle message) {
-              //       // LogServerMessage();
-              //       return message;
-              //     });
-            }))
+              return incoming_mapper.TakeAndRun(
+                  [](grpc_core::MessageHandle message) {
+                    // LogServerMessage();
+                    return message;
+                  });
+            })
         .NecessaryPush(grpc_core::Seq(
             [/*calld, */ outgoing_mapper =
                  std::move(outgoing_mapper)]() mutable {
-              // return grpc_core::ImmediateOkStatus();
               return outgoing_mapper.TakeAndRun(
                   [](grpc_core::MessageHandle message) {
                     // LogClientMessage();
