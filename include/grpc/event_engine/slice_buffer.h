@@ -64,9 +64,7 @@ class SliceBuffer {
     size_t size_;
   };
 
-  explicit SliceBuffer() {
-    grpc_slice_buffer_init(&slice_buffer_);
-  }
+  explicit SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
