@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include <string>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -34,7 +31,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
-#include <errno.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <string.h>
@@ -43,7 +39,6 @@
 #endif
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"

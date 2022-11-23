@@ -41,7 +41,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -158,7 +157,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   auto resolved_addr = URIToResolvedAddress(target_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
-      ResolvedAddressToNormalizedString(&resolved_addr).value();
+      ResolvedAddressToNormalizedString(resolved_addr).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
   grpc_core::Notification signal;
   grpc_core::ChannelArgs args;
@@ -186,7 +185,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   auto resolved_addr = URIToResolvedAddress(target_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
-      ResolvedAddressToNormalizedString(&resolved_addr).value();
+      ResolvedAddressToNormalizedString(resolved_addr).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();

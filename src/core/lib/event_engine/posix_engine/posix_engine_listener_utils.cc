@@ -215,7 +215,7 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
   }
   socket.sock = *result;
   if (socket.dsmode == PosixSocketWrapper::DSMODE_IPV4 &&
-      ResolvedAddressIsV4Mapped(&addr, &addr4_copy)) {
+      ResolvedAddressIsV4Mapped(addr, &addr4_copy)) {
     socket.addr = addr4_copy;
   } else {
     socket.addr = addr;
@@ -260,7 +260,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     }
     memcpy(const_cast<sockaddr*>(addr.address()), ifa_it->ifa_addr, len);
     ResolvedAddressSetPort(addr, requested_port);
-    std::string addr_str = *ResolvedAddressToString(&addr);
+    std::string addr_str = *ResolvedAddressToString(addr);
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",
             ifa_name, ifa_it->ifa_flags, addr_str.c_str());

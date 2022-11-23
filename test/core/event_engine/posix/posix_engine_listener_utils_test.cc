@@ -93,10 +93,10 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
     ASSERT_TRUE((*socket).addr.address()->sa_family == AF_INET6 ||
                 (*socket).addr.address()->sa_family == AF_INET);
     if ((*socket).addr.address()->sa_family == AF_INET6) {
-      EXPECT_EQ(ResolvedAddressToNormalizedString(&(*socket).addr).value(),
+      EXPECT_EQ(ResolvedAddressToNormalizedString((*socket).addr).value(),
                 absl::StrCat("[::]:", std::to_string(port)));
     } else if ((*socket).addr.address()->sa_family == AF_INET) {
-      EXPECT_EQ(ResolvedAddressToNormalizedString(&(*socket).addr).value(),
+      EXPECT_EQ(ResolvedAddressToNormalizedString((*socket).addr).value(),
                 absl::StrCat("0.0.0.0:", std::to_string(port)));
     }
     close(socket->sock.Fd());

@@ -15,14 +15,23 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
+#include <arpa/inet.h>
+#include <errno.h>
 #include <inttypes.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_event_engine {

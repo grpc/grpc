@@ -84,7 +84,7 @@ class PosixEngineListenerImpl
           handle_(listener_->poller_->CreateHandle(
               socket_.sock.Fd(),
               *grpc_event_engine::experimental::
-                  ResolvedAddressToNormalizedString(&socket_.addr),
+                  ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
           notify_on_accept_(PosixEngineClosure::ToPermanentClosure(
               [this](absl::Status status) { NotifyOnAccept(status); })){};

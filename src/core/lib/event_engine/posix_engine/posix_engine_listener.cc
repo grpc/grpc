@@ -102,7 +102,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     return ListenerContainerAddWildcardAddresses(acceptors_, options_,
                                                  requested_port);
   }
-  if (ResolvedAddressToV4Mapped(&res_addr, &addr6_v4mapped)) {
+  if (ResolvedAddressToV4Mapped(res_addr, &addr6_v4mapped)) {
     res_addr = addr6_v4mapped;
   }
 
@@ -179,7 +179,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
 
     // Create an Endpoint here.
-    std::string peer_name = *ResolvedAddressToNormalizedString(&addr);
+    std::string peer_name = *ResolvedAddressToNormalizedString(addr);
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
             fd, peer_name, listener_->poller_->CanTrackErrors()),

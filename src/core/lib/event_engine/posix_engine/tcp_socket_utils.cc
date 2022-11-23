@@ -19,7 +19,6 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <stdlib.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/statusor.h"
@@ -49,13 +48,11 @@
 #include <cstring>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 
@@ -659,7 +656,7 @@ absl::StatusOr<std::string> PosixSocketWrapper::LocalAddressString() {
   if (!status.ok()) {
     return status.status();
   }
-  return ResolvedAddressToNormalizedString(&(*status));
+  return ResolvedAddressToNormalizedString((*status));
 }
 
 absl::StatusOr<std::string> PosixSocketWrapper::PeerAddressString() {
@@ -667,7 +664,7 @@ absl::StatusOr<std::string> PosixSocketWrapper::PeerAddressString() {
   if (!status.ok()) {
     return status.status();
   }
-  return ResolvedAddressToNormalizedString(&(*status));
+  return ResolvedAddressToNormalizedString((*status));
 }
 
 absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
@@ -694,7 +691,7 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
       return sock;
     }
     // If this isn't an IPv4 address, then return whatever we've got.
-    if (!ResolvedAddressIsV4Mapped(&addr, nullptr)) {
+    if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
       dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;
       return sock;
     }
@@ -722,7 +719,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
   // v6.
-  if (!ResolvedAddressToV4Mapped(&target_addr, &mapped_target_addr)) {
+  if (!ResolvedAddressToV4Mapped(target_addr, &mapped_target_addr)) {
     // addr is v4 mapped to v6 or just v6.
     mapped_target_addr = target_addr;
   }
@@ -735,7 +732,7 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
     // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
-    if (!ResolvedAddressIsV4Mapped(&target_addr, &mapped_target_addr)) {
+    if (!ResolvedAddressIsV4Mapped(target_addr, &mapped_target_addr)) {
       mapped_target_addr = target_addr;
     }
   }

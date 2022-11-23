@@ -37,6 +37,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -226,7 +227,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   } while (err < 0 && errno == EINTR);
   saved_errno = errno;
 
-  auto addr_uri = ResolvedAddressToNormalizedString(&addr);
+  auto addr_uri = ResolvedAddressToNormalizedString(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(

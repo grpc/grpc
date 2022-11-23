@@ -15,9 +15,21 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/iomgr/sockaddr.h"
 
 namespace grpc_event_engine {
 namespace experimental {
