@@ -21,6 +21,7 @@
 
 #include <functional>
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
@@ -83,7 +84,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
   CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops)
       : call_(call), func_(std::move(f)), ops_(ops) {
-    g_core_codegen_interface->grpc_call_ref(call);
+    grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
     // A client-side callback should never be run inline since they will always
     // have work to do from the user application. So, set the parent's
@@ -162,7 +163,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   void Set(grpc_call* call, std::function<void(bool)> f,
            CompletionQueueTag* ops, bool can_inline) {
     GPR_CODEGEN_ASSERT(call_ == nullptr);
-    g_core_codegen_interface->grpc_call_ref(call);
+    grpc_call_ref(call);
     call_ = call;
     func_ = std::move(f);
     ops_ = ops;

@@ -22,6 +22,7 @@
 #include <atomic>
 #include <functional>
 
+#include <grpc/grpc.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -712,7 +713,7 @@ class ClientCallbackReaderWriterFactory {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
-    grpc::g_core_codegen_interface->grpc_call_ref(call.call());
+    grpc_call_ref(call.call());
     new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackReaderWriterImpl<Request, Response>)))
         ClientCallbackReaderWriterImpl<Request, Response>(call, context,
@@ -872,7 +873,7 @@ class ClientCallbackReaderFactory {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
-    grpc::g_core_codegen_interface->grpc_call_ref(call.call());
+    grpc_call_ref(call.call());
     new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackReaderImpl<Response>)))
         ClientCallbackReaderImpl<Response>(call, context, request, reactor);
@@ -1101,7 +1102,7 @@ class ClientCallbackWriterFactory {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
-    grpc::g_core_codegen_interface->grpc_call_ref(call.call());
+    grpc_call_ref(call.call());
     new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackWriterImpl<Request>)))
         ClientCallbackWriterImpl<Request>(call, context, response, reactor);
@@ -1212,7 +1213,7 @@ class ClientCallbackUnaryFactory {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
-    grpc::g_core_codegen_interface->grpc_call_ref(call.call());
+    grpc_call_ref(call.call());
 
     new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackUnaryImpl)))

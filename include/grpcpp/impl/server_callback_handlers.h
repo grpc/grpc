@@ -18,6 +18,7 @@
 #ifndef GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 #define GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 
+#include <grpc/grpc.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/message_allocator.h>
@@ -43,7 +44,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
-    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc_call_ref(param.call->call());
     auto* allocator_state =
         static_cast<MessageHolder<RequestType, ResponseType>*>(
             param.internal_data);
@@ -256,7 +257,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a reader structure (that includes response)
-    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc_call_ref(param.call->call());
 
     auto* reader = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderImpl)))
@@ -447,7 +448,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a writer structure
-    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc_call_ref(param.call->call());
 
     auto* writer = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackWriterImpl)))
@@ -672,7 +673,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
-    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc_call_ref(param.call->call());
 
     auto* stream = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderWriterImpl)))

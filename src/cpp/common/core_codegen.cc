@@ -36,7 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::grpc_call_ref(grpc_call* call) { ::grpc_call_ref(call); }
 void CoreCodegen::grpc_call_unref(grpc_call* call) { ::grpc_call_unref(call); }
 void* CoreCodegen::grpc_call_arena_alloc(grpc_call* call, size_t length) {
   return ::grpc_call_arena_alloc(call, length);
