@@ -45,9 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual grpc_call_error grpc_call_start_batch(grpc_call* call,
-                                                const grpc_op* ops, size_t nops,
-                                                void* tag, void* reserved) = 0;
   virtual grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                        grpc_status_code status,
                                                        const char* description,

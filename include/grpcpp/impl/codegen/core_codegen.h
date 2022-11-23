@@ -33,9 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
-                                        size_t nops, void* tag,
-                                        void* reserved) override;
   grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                grpc_status_code status,
                                                const char* description,

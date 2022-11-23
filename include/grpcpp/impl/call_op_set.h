@@ -23,6 +23,7 @@
 #include <map>
 #include <memory>
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/alloc.h>
@@ -967,8 +968,8 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
 
-    grpc_call_error err = g_core_codegen_interface->grpc_call_start_batch(
-        call_.call(), ops, nops, core_cq_tag(), nullptr);
+    grpc_call_error err =
+        grpc_call_start_batch(call_.call(), ops, nops, core_cq_tag(), nullptr);
 
     if (err != GRPC_CALL_OK) {
       // A failure here indicates an API misuse; for example, doing a Write
@@ -986,9 +987,9 @@ class CallOpSet : public CallOpSetInterface,
     done_intercepting_ = true;
     // The following call_start_batch is internally-generated so no need for an
     // explanatory log on failure.
-    GPR_CODEGEN_ASSERT(g_core_codegen_interface->grpc_call_start_batch(
-                           call_.call(), nullptr, 0, core_cq_tag(), nullptr) ==
-                       GRPC_CALL_OK);
+    GPR_CODEGEN_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0,
+                                             core_cq_tag(),
+                                             nullptr) == GRPC_CALL_OK);
   }
 
  private:
