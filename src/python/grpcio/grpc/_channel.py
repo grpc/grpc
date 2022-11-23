@@ -31,6 +31,7 @@ from grpc import _grpcio_metadata  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
+from grpc._typing import ManagedCallType
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
 from grpc._typing import ResponseType
@@ -896,7 +897,7 @@ def _start_unary_request(
 
 
 def _end_unary_response_blocking(
-    state: _RPCState, call: grpc.Call, with_call: bool,
+    state: _RPCState, call: cygrpc.SegregatedCall, with_call: bool,
     deadline: Optional[float]
 ) -> Union[ResponseType, Tuple[ResponseType, grpc.Call]]:
     if state.code is grpc.StatusCode.OK:
@@ -947,15 +948,15 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: cygrpc.IntegratedCall
+    _managed_call: ManagedCallType
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel,
-                 managed_call: cygrpc.IntegratedCall, method: bytes,
+    def __init__(self, channel: cygrpc.Channel, managed_call: ManagedCallType,
+                 method: bytes,
                  request_serializer: Optional[SerializingFunction],
                  response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
@@ -1000,7 +1001,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None
-    ) -> Tuple[_RPCState, grpc.Call]:
+    ) -> Tuple[_RPCState, cygrpc.SegregatedCall]:
         state, operations, deadline, rendezvous = self._prepare(
             request, timeout, metadata, wait_for_ready, compression)
         if state is None:
@@ -1125,16 +1126,15 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
 class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: cygrpc.IntegratedCall
+    _managed_call: ManagedCallType
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel,
-                 managed_call: cygrpc.IntegratedCall, method: bytes,
-                 request_serializer: SerializingFunction,
+    def __init__(self, channel: cygrpc.Channel, managed_call: ManagedCallType,
+                 method: bytes, request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction):
         self._channel = channel
         self._managed_call = managed_call
@@ -1186,15 +1186,15 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
 class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: cygrpc.IntegratedCall
+    _managed_call: ManagedCallType
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel,
-                 managed_call: cygrpc.IntegratedCall, method: bytes,
+    def __init__(self, channel: cygrpc.Channel, managed_call: ManagedCallType,
+                 method: bytes,
                  request_serializer: Optional[SerializingFunction],
                  response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
@@ -1205,12 +1205,11 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         self._context = cygrpc.build_census_context()
 
     def _blocking(
-            self, request_iterator: Iterator, timeout: Optional[float],
-            metadata: Optional[MetadataType],
-            credentials: Optional[grpc.CallCredentials],
-            wait_for_ready: Optional[bool],
-            compression: Optional[grpc.Compression]
-    ) -> Tuple[_RPCState, grpc.Call]:
+        self, request_iterator: Iterator, timeout: Optional[float],
+        metadata: Optional[MetadataType],
+        credentials: Optional[grpc.CallCredentials],
+        wait_for_ready: Optional[bool], compression: Optional[grpc.Compression]
+    ) -> Tuple[_RPCState, cygrpc.SegregatedCall]:
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
@@ -1289,7 +1288,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
 class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: cygrpc.IntegratedCall
+    _managed_call: ManagedCallType
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
@@ -1298,7 +1297,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
     # pylint: disable=too-many-arguments
     def __init__(self,
                  channel: cygrpc.Channel,
-                 managed_call: cygrpc.IntegratedCall,
+                 managed_call: ManagedCallType,
                  method: bytes,
                  request_serializer: Optional[SerializingFunction] = None,
                  response_deserializer: Optional[DeserializingFunction] = None):
@@ -1407,8 +1406,8 @@ def _run_channel_spin_thread(state: _ChannelCallState) -> None:
 def _channel_managed_call_management(state: _ChannelCallState):
 
     # pylint: disable=too-many-arguments
-    def create(flags: int, method: str, host: str, deadline: float,
-               metadata: Optional[MetadataType],
+    def create(flags: int, method: bytes, host: Optional[str],
+               deadline: Optional[float], metadata: Optional[MetadataType],
                credentials: Optional[cygrpc.CallCredentials],
                operations: Sequence[Sequence[cygrpc.Operation]],
                event_handler: UserTag, context) -> cygrpc.IntegratedCall:
