@@ -1872,6 +1872,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "error",
         "event_engine_trace",
         "status_helper",
         "windows_iocp",
