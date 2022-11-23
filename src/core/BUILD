@@ -1903,8 +1903,8 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
-        "iomgr_port",
         "grpc_sockaddr",
+        "iomgr_port",
         "status_helper",
         "//:event_engine_base_hdrs",
         "//:gpr",
