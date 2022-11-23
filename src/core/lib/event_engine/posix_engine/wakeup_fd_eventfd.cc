@@ -104,6 +104,8 @@ EventFdWakeupFd::CreateEventFdWakeupFd() {
 
 #else  //  GRPC_LINUX_EVENTFD
 
+#include "src/core/lib/grpcpp/crash.h"
+
 absl::Status EventFdWakeupFd::Init() { grpc_core::Crash("unimplemented"); }
 
 absl::Status EventFdWakeupFd::ConsumeWakeup() {

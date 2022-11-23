@@ -965,6 +965,8 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
+#include "src/core/lib/grpcpp/crash.h"
+
 bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* /*resolved_addr*/,
                         EventEngine::ResolvedAddress* /*resolved_addr4_out*/) {
   grpc_core::Crash("unimplemented");

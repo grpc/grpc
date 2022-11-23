@@ -316,6 +316,8 @@ void TcpSetWriteTimestampsCallback(
 
 #else /* GRPC_LINUX_ERRQUEUE */
 
+#include "src/core/lib/grpcpp/crash.h"
+
 namespace grpc_event_engine {
 namespace posix_engine {
 

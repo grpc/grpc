@@ -200,6 +200,8 @@ class PosixEngineListener
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
+#include "src/core/lib/grpcpp/crash.h"
+
 class PosixEngineListener
     : public grpc_event_engine::experimental::EventEngine::Listener {
  public:

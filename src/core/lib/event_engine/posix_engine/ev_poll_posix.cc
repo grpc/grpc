@@ -849,6 +849,8 @@ PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
 namespace grpc_event_engine {
 namespace posix_engine {
 
+#include "src/core/lib/grpcpp/crash.h"
+
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 
