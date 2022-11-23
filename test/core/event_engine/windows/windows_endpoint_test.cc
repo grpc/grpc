@@ -48,7 +48,7 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
   auto wrapped_server_socket = iocp.Watch(sockpair[1]);
-  sockaddr_in loopback_addr = GetLoopbackAddress();
+  sockaddr_in loopback_addr = GetSomeIpv4LoopbackAddress();
   EventEngine::ResolvedAddress addr((sockaddr*)&loopback_addr,
                                     sizeof(loopback_addr));
   WindowsEndpoint client(addr, std::move(wrapped_client_socket),
@@ -88,7 +88,7 @@ TEST_F(WindowsEndpointTest, Conversation) {
   grpc_core::MemoryQuota quota("endpoint_test");
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
-  sockaddr_in loopback_addr = GetLoopbackAddress();
+  sockaddr_in loopback_addr = GetSomeIpv4LoopbackAddress();
   EventEngine::ResolvedAddress addr((sockaddr*)&loopback_addr,
                                     sizeof(loopback_addr));
   // Test

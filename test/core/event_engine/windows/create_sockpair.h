@@ -22,7 +22,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-sockaddr_in GetLoopbackAddress();
+sockaddr_in GetSomeIpv4LoopbackAddress();
 
 // Creates a connected pair of sockets on the loopback address
 // sockpair[0] is a connected client

@@ -43,11 +43,15 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   class BaseEventClosure : public EventEngine::Closure {
    public:
     explicit BaseEventClosure(WindowsEndpoint* endpoint);
+    // Calls the bound application callback, inline.
+    // If called through IOCP, this will be run from within an Executor.
     virtual void Run() = 0;
-    void SetCallback(absl::AnyInvocable<void(absl::Status)> cb) {
+
+    // Prepare the closure by setting the application callback and SliceBuffer
+    void Prime(SliceBuffer* buffer, absl::AnyInvocable<void(absl::Status)> cb) {
       cb_ = std::move(cb);
-    };
-    void SetSliceBuffer(SliceBuffer* buffer) { buffer_ = buffer; };
+      buffer_ = buffer;
+    }
 
    protected:
     absl::AnyInvocable<void(absl::Status)> cb_;

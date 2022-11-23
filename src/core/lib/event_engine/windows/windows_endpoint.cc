@@ -28,6 +28,7 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -40,56 +41,13 @@ namespace experimental {
 // when it becomes necessary.
 
 namespace {
-constexpr int kDefaultTargetReadSize = 8192;
+constexpr int64_t kDefaultTargetReadSize = 8192;
 constexpr int kMaxWSABUFCount = 16;
 
 void AbortOnEvent(absl::Status) {
   GPR_ASSERT(false &&
              "INTERNAL ERROR: Asked to handle read/write event with an invalid "
              "callback");
-}
-
-absl::Status WSAErrorToStatusWithMessage(
-    int wsa_error, absl::string_view custom_message,
-    const grpc_core::DebugLocation& location) {
-  // See
-  // https://learn.microsoft.com/en-us/windows/win32/api/Winsock2/nf-winsock2-wsasend
-  // https://learn.microsoft.com/en-us/windows/win32/api/Winsock2/nf-winsock2-wsarecv
-  char* wsa_message = gpr_format_message(wsa_error);
-  std::string message;
-  if (!custom_message.empty()) {
-    std::string message = absl::StrCat(wsa_message, ": ", custom_message);
-  } else {
-    std::string message = wsa_message;
-  }
-  gpr_free(wsa_message);
-  switch (wsa_error) {
-    case 0:
-      return absl::OkStatus();
-    case WSAECONNRESET:
-    case WSAECONNABORTED:
-    case WSA_OPERATION_ABORTED:
-      return StatusCreate(absl::StatusCode::kAborted, message, location, {});
-    case WSAETIMEDOUT:
-      return StatusCreate(absl::StatusCode::kDeadlineExceeded, message,
-                          location, {});
-    case WSAEFAULT:
-    case WSAEINVAL:
-      return StatusCreate(absl::StatusCode::kInvalidArgument, message, location,
-                          {});
-    case WSAENETDOWN:
-    case WSAENOTCONN:
-    case WSAESHUTDOWN:
-      return StatusCreate(absl::StatusCode::kUnavailable, message, location,
-                          {});
-    default:
-      return StatusCreate(absl::StatusCode::kUnknown, message, location, {});
-  }
-}
-
-absl::Status WSAErrorToStatus(int wsa_error,
-                              const grpc_core::DebugLocation& location) {
-  return WSAErrorToStatusWithMessage(wsa_error, "", location);
 }
 
 }  // namespace
@@ -107,8 +65,8 @@ WindowsEndpoint::WindowsEndpoint(
   sockaddr addr;
   int addr_len = sizeof(addr);
   if (getsockname(socket_->socket(), &addr, &addr_len) < 0) {
-    GPR_ASSERT(false &&
-               "Unrecoverable error: Failed to get local socket name.");
+    gpr_log(GPR_ERROR, "Unrecoverable error: Failed to get local socket name.");
+    abort();
   }
   local_address_ = EventEngine::ResolvedAddress(&addr, addr_len);
   local_address_string_ = *ResolvedAddressToURI(local_address_);
@@ -120,15 +78,18 @@ WindowsEndpoint::~WindowsEndpoint() {
 }
 
 void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                           SliceBuffer* buffer, const ReadArgs* /* args */) {
+                           SliceBuffer* buffer, const ReadArgs* args) {
   // TODO(hork): last_read_buffer from iomgr: Is it only garbage, or optimized?
   GRPC_EVENT_ENGINE_TRACE("WindowsEndpoint::%p reading", this);
   // Prepare the WSABUF struct
   WSABUF wsa_buffers[kMaxWSABUFCount];
   // TODO(hork): use read hint instead of the default?
-  if (buffer->Length() < kDefaultTargetReadSize &&
-      buffer->Count() < kMaxWSABUFCount) {
-    buffer->AppendIndexed(Slice(allocator_.MakeSlice(kDefaultTargetReadSize)));
+  int min_read_size = kDefaultTargetReadSize;
+  if (args != nullptr && args->read_hint_bytes > 0) {
+    min_read_size = args->read_hint_bytes;
+  }
+  if (buffer->Length() < min_read_size && buffer->Count() < kMaxWSABUFCount) {
+    buffer->AppendIndexed(Slice(allocator_.MakeSlice(min_read_size)));
   }
   GPR_ASSERT(buffer->Count() <= kMaxWSABUFCount);
   for (int i = 0; i < buffer->Count(); i++) {
@@ -162,15 +123,14 @@ void WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   if (wsa_error != 0 && wsa_error != WSA_IO_PENDING) {
     // Async read returned immediately with an error
     executor_->Run([this, on_read = std::move(on_read), wsa_error]() mutable {
-      on_read(WSAErrorToStatusWithMessage(
-          wsa_error, absl::StrFormat("WindowsEndpont::%p Read failed", this),
-          DEBUG_LOCATION));
+      on_read(GRPC_WSA_ERROR(
+          wsa_error,
+          absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str()));
     });
     return;
   }
 
-  handle_read_event_.SetCallback(std::move(on_read));
-  handle_read_event_.SetSliceBuffer(buffer);
+  handle_read_event_.Prime(buffer, std::move(on_read));
   socket_->NotifyOnRead(&handle_read_event_);
 }
 
@@ -231,7 +191,7 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSAEWOULDBLOCK) {
       executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
-        cb(WSAErrorToStatusWithMessage(wsa_error, "WSASend", DEBUG_LOCATION));
+        cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
       if (allocated) gpr_free(allocated);
       return;
@@ -248,15 +208,14 @@ void WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       executor_->Run([cb = std::move(on_writable), wsa_error]() mutable {
-        cb(WSAErrorToStatusWithMessage(wsa_error, "WSASend", DEBUG_LOCATION));
+        cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
       });
       return;
     }
   }
   // As all is now setup, we can now ask for the IOCP notification. It may
   // trigger the callback immediately however, but no matter.
-  handle_write_event_.SetCallback(std::move(on_writable));
-  handle_write_event_.SetSliceBuffer(data);
+  handle_write_event_.Prime(data, std::move(on_writable));
   socket_->NotifyOnWrite(&handle_write_event_);
 }
 const EventEngine::ResolvedAddress& WindowsEndpoint::GetPeerAddress() const {
@@ -281,7 +240,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     cb(status);
   });
   if (read_info->wsa_error() != 0) {
-    status = WSAErrorToStatus(read_info->wsa_error(), DEBUG_LOCATION);
+    status = GRPC_WSA_ERROR(read_info->wsa_error(), "Async Read Error");
     buffer_->Clear();
     return;
   }
@@ -316,15 +275,11 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   cb_ = &AbortOnEvent;
   absl::Status status;
   if (write_info->wsa_error() != 0) {
-    status = WSAErrorToStatusWithMessage(write_info->wsa_error(),
-                                         "Error in WSASend", DEBUG_LOCATION);
+    status = GRPC_WSA_ERROR(write_info->wsa_error(), "WSASend");
   } else {
     GPR_ASSERT(write_info->bytes_transferred() == buffer_->Length());
   }
-  endpoint_->executor_->Run(
-      [cb = std::move(cb), status = std::move(status)]() mutable {
-        cb(status);
-      });
+  cb(status);
 }
 
 }  // namespace experimental
