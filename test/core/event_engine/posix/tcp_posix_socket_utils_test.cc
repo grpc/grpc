@@ -113,52 +113,6 @@ const grpc_socket_mutator_vtable mutator_vtable = {MutateFd, CompareTestMutator,
 const grpc_socket_mutator_vtable mutator_vtable2 = {
     nullptr, CompareTestMutator, DestroyTestMutator, MutateFd2};
 
-#ifdef GRPC_HAVE_UNIX_SOCKET
-absl::StatusOr<EventEngine::ResolvedAddress> UnixSockaddrPopulate(
-    absl::string_view path) {
-  EventEngine::ResolvedAddress resolved_addr;
-  memset(const_cast<sockaddr*>(resolved_addr.address()), 0,
-         resolved_addr.size());
-  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
-      const_cast<sockaddr*>(resolved_addr.address()));
-  const size_t maxlen = sizeof(un->sun_path) - 1;
-  if (path.size() > maxlen) {
-    return absl::InternalError(absl::StrCat(
-        "Path name should not have more than ", maxlen, " characters"));
-  }
-  un->sun_family = AF_UNIX;
-  path.copy(un->sun_path, path.size());
-  un->sun_path[path.size()] = '\0';
-  return EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(un),
-                                      static_cast<socklen_t>(sizeof(*un)));
-}
-
-absl::StatusOr<EventEngine::ResolvedAddress> UnixAbstractSockaddrPopulate(
-    absl::string_view path) {
-  EventEngine::ResolvedAddress resolved_addr;
-  memset(const_cast<sockaddr*>(resolved_addr.address()), 0,
-         resolved_addr.size());
-  struct sockaddr* addr = const_cast<sockaddr*>(resolved_addr.address());
-  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(addr);
-  const size_t maxlen = sizeof(un->sun_path) - 1;
-  if (path.size() > maxlen) {
-    return absl::InternalError(absl::StrCat(
-        "Path name should not have more than ", maxlen, " characters"));
-  }
-  un->sun_family = AF_UNIX;
-  un->sun_path[0] = '\0';
-  path.copy(un->sun_path + 1, path.size());
-#ifdef GPR_APPLE
-  return EventEngine::ResolvedAddress(
-      addr, static_cast<socklen_t>(sizeof(un->sun_len) +
-                                   sizeof(un->sun_family) + path.size() + 1));
-#else
-  return EventEngine::ResolvedAddress(
-      addr, static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1));
-#endif
-}
-#endif
-
 }  // namespace
 
 TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {

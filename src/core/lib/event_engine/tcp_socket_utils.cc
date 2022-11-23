@@ -17,9 +17,9 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
 
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #ifdef GRPC_LINUX_TCP_H
 #include <linux/tcp.h>
 #else
