@@ -1192,13 +1192,14 @@ class HPackParser::Parser {
   GPR_ATTRIBUTE_NOINLINE
   bool HandleMetadataSizeLimitExceeded(const HPackTable::Memento&) {
     if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
+    // TODO(alishananda): add debug log with metadata details
     return input_->MaybeSetErrorAndReturn(
         [this] {
           return grpc_error_set_int(
-              GRPC_ERROR_CREATE(
-                  absl::StrFormat("received initial metadata size (%" PRIu32
-                                  ") exceeds limit (%" PRIu32 ")",
-                                  *frame_length_, metadata_size_limit_)),
+              GRPC_ERROR_CREATE(absl::StrFormat(
+                  "received initial metadata size exceeds limit (%" PRIu32
+                  " vs. %" PRIu32 ")",
+                  *frame_length_, metadata_size_limit_)),
               StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
         },
         false);
