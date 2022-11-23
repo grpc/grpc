@@ -90,8 +90,7 @@ class Slice final {
   /// different (e.g., if data is part of a larger structure that must be
   /// destroyed when the data is no longer needed)
   Slice(void* buf, size_t len, void (*destroy)(void*), void* user_data)
-      : slice_(g_core_codegen_interface->grpc_slice_new_with_user_data(
-            buf, len, destroy, user_data)) {}
+      : slice_(grpc_slice_new_with_user_data(buf, len, destroy, user_data)) {}
 
   /// Specialization of above for common case where buf == user_data
   Slice(void* buf, size_t len, void (*destroy)(void*))
