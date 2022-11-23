@@ -15,7 +15,27 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
-#include <arpa/inet.h>
+#include "src/core/lib/iomgr/port.h"
+
+#include <arpa/inet.h>  // IWYU pragma: keep
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#ifdef GRPC_LINUX_TCP_H
+#include <linux/tcp.h>
+#else
+#include <netinet/in.h>  // IWYU pragma: keep
+#include <netinet/tcp.h>
+#endif
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/stat.h>  // IWYU pragma: keep
+#include <sys/un.h>
+#endif
+
 #include <errno.h>
 #include <inttypes.h>
 #include <stdlib.h>
