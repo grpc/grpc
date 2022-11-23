@@ -61,7 +61,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
 
   ~ProtoBufferReader() override {
     if (status_.ok()) {
-      g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader_);
+      grpc_byte_buffer_reader_destroy(&reader_);
     }
   }
 
