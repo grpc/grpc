@@ -51,7 +51,22 @@ namespace experimental {
 /// an experimental API.
 class SliceBuffer {
  public:
-  explicit SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
+  class SliceView {
+   public:
+    SliceView(uint8_t* data, size_t size) : data_(data), size_(size) {}
+    // As other things... borrowed references.
+    absl::string_view as_string_view() const {
+      return absl::string_view(reinterpret_cast<const char*>(data_), size_);
+    }
+
+   private:
+    void* data_;
+    size_t size_;
+  };
+
+  explicit SliceBuffer() {
+    grpc_slice_buffer_init(&slice_buffer_);
+  }
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
@@ -117,6 +132,9 @@ class SliceBuffer {
   /// Increased the ref-count of slice at the specified index and returns the
   /// associated slice.
   Slice RefSlice(size_t index);
+
+  /// Return a SliceView that has no Ref on the underlying type.
+  SliceView PeekSlice(size_t index);
 
   /// The total number of bytes held by the SliceBuffer
   size_t Length() { return slice_buffer_.length; }

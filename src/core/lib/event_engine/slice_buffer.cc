@@ -46,5 +46,10 @@ Slice SliceBuffer::RefSlice(size_t index) {
   return Slice(grpc_core::CSliceRef(slice_buffer_.slices[index]));
 }
 
+SliceBuffer::SliceView SliceBuffer::PeekSlice(size_t index) {
+  return SliceBuffer::SliceView(GRPC_SLICE_START_PTR(slice_buffer_.slices[index]),
+                   GRPC_SLICE_LENGTH(slice_buffer_.slices[index]));
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine

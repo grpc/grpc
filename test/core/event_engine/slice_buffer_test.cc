@@ -76,6 +76,17 @@ TEST(SliceBufferTest, SliceRefTest) {
   sb.Clear();
 }
 
+TEST(SliceBufferTest, SliceView) {
+  SliceBuffer sb;
+  std::string msg0 = "testing one two three";
+  std::string msg1 = "is this thing on?";
+  sb.AppendIndexed(Slice::FromCopiedString(msg0));
+  sb.AppendIndexed(Slice::FromCopiedString(msg1));
+  EXPECT_EQ(sb.PeekSlice(0).as_string_view(), msg0);
+  EXPECT_EQ(sb.PeekSlice(1).as_string_view(), msg1);
+  sb.Clear();
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
