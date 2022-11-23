@@ -71,16 +71,7 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
 }
 
 LoggingSink::Config ObservabilityLoggingSink::FindMatch(
-    bool is_client, absl::string_view path) {
-  size_t pos = path.find('/');
-  if (pos == absl::string_view::npos) {
-    // bad path - did not find '/'
-    return LoggingSink::Config(0, 0);
-  }
-  absl::string_view service =
-      path.substr(0, pos);  // service name is before the '/'
-  absl::string_view method =
-      path.substr(pos + 1);  // method name starts after the '/'
+    bool is_client, absl::string_view service, absl::string_view method) {
   const auto& configs = is_client ? client_configs_ : server_configs_;
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
@@ -190,9 +181,11 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
                            ::google::protobuf::Struct* peer_json) {
   (*peer_json->mutable_fields())["type"].set_string_value(
       AddressTypeToString(peer.type));
-  (*peer_json->mutable_fields())["address"].set_string_value(
-      std::move(peer.address));
-  (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  if (peer.type != LoggingSink::Entry::Address::Type::kUnknown) {
+    (*peer_json->mutable_fields())["address"].set_string_value(
+        std::move(peer.address));
+    (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  }
 }
 
 }  // namespace

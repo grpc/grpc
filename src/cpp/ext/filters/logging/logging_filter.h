@@ -19,11 +19,15 @@
 #ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 #define GRPC_INTERNAL_CPP_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 
+#include <grpc/support/port_platform.h>
+
+#include "src/cpp/ext/filters/logging/logging_sink.h"
+
 namespace grpc {
 namespace internal {
 
 // TODO(yashykt): Add logging sink registration
-void RegisterLoggingFilter();
+void RegisterLoggingFilter(LoggingSink* sink);
 
 }  // namespace internal
 }  // namespace grpc
