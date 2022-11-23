@@ -45,7 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual void gpr_cv_signal(gpr_cv* cv) = 0;
   virtual void gpr_cv_broadcast(gpr_cv* cv) = 0;
 
   virtual grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) = 0;

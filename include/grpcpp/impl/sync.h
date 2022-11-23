@@ -123,7 +123,7 @@ class CondVar {
   CondVar(const CondVar&) = delete;
   CondVar& operator=(const CondVar&) = delete;
 
-  void Signal() { g_core_codegen_interface->gpr_cv_signal(&cv_); }
+  void Signal() { gpr_cv_signal(&cv_); }
   void SignalAll() { g_core_codegen_interface->gpr_cv_broadcast(&cv_); }
 
   void Wait(Mutex* mu) {
