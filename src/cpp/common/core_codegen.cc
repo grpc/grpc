@@ -61,12 +61,6 @@ const char* CoreCodegen::grpc_call_error_to_string(grpc_call_error error) {
   return ::grpc_call_error_to_string(error);
 }
 
-grpc_slice CoreCodegen::grpc_slice_new_with_len(void* p, size_t len,
-                                                void (*destroy)(void*,
-                                                                size_t)) {
-  return ::grpc_slice_new_with_len(p, len, destroy);
-}
-
 grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
 
 grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {

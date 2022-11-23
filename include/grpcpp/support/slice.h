@@ -98,8 +98,7 @@ class Slice final {
 
   /// Similar to the above but has a destroy that also takes slice length
   Slice(void* buf, size_t len, void (*destroy)(void*, size_t))
-      : slice_(g_core_codegen_interface->grpc_slice_new_with_len(buf, len,
-                                                                 destroy)) {}
+      : slice_(grpc_slice_new_with_len(buf, len, destroy)) {}
 
   /// Byte size.
   size_t size() const { return GRPC_SLICE_LENGTH(slice_); }
