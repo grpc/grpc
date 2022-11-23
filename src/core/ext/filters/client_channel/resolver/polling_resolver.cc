@@ -201,7 +201,7 @@ void PollingResolver::GetResultStatus(absl::Status status) {
       }
     }
     next_resolution_timer_handle_ =
-        event_engine_->RunAfter(timeout, [self = Ref()] {
+        event_engine_->RunAfter(timeout, [self = Ref()] mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           auto* self_ptr = static_cast<PollingResolver*>(self.get());
@@ -243,8 +243,8 @@ void PollingResolver::MaybeStartResolvingLocked() {
                 this, last_resolution_ago.millis(),
                 time_until_next_resolution.millis());
       }
-      next_resolution_timer_handle_ =
-          event_engine_->RunAfter(time_until_next_resolution, [self = Ref()] {
+      next_resolution_timer_handle_ = event_engine_->RunAfter(
+          time_until_next_resolution, [self = Ref()] mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = static_cast<PollingResolver*>(self.get());
