@@ -130,7 +130,8 @@ int64_t event_engine_tcp_client_connect(
 }
 
 bool event_engine_tcp_client_cancel_connect(int64_t connection_handle) {
-  return GetDefaultEventEngine()->CancelConnect({connection_handle, 0});
+  return GetDefaultEventEngine()->CancelConnect(
+      {static_cast<intptr_t>(connection_handle), 0});
 }
 
 }  // namespace

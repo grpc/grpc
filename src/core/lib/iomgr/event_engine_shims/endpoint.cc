@@ -41,7 +41,7 @@ namespace experimental {
 
 namespace {
 
-constexpr int64_t kShutdownBit = 1l << 32;
+constexpr int64_t kShutdownBit = static_cast<int64_t>(1) << 32;
 
 // A wrapper class to manage Event Engine endpoint ref counting and asynchronous
 // shutdown.
@@ -158,8 +158,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
         read_buffer->~SliceBuffer();
         {
           grpc_core::ExecCtx exec_ctx;
-          grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
-                                  absl_status_to_grpc_error(status));
+          grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
         }
         // For the ref taken in EndpointRead
         eeep->wrapper->Unref();
@@ -192,8 +191,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
         write_buffer->~SliceBuffer();
         {
           grpc_core::ExecCtx exec_ctx;
-          grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
-                                  absl_status_to_grpc_error(status));
+          grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
         }
         // For the ref taken in EndpointWrite
         eeep->wrapper->Unref();

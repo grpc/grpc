@@ -212,6 +212,16 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
+absl::Status PosixOSError(int error_no, const char* call_name) {
+  absl::Status s = absl::UnknownError(grpc_core::StrError(error_no));
+  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, error_no);
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
+                          grpc_core::StrError(error_no));
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
+                          call_name);
+  return s;
+}
+
 }  // namespace
 
 #if defined(IOV_MAX) && IOV_MAX < 260
@@ -963,8 +973,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        status = TcpAnnotateError(absl::InternalError(
-            absl::StrCat("sendmsg", std::strerror(saved_errno))));
+        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
         TcpShutdownTracedBufferList();
         return true;
       }
@@ -1058,8 +1067,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
         }
         return false;
       } else {
-        status = TcpAnnotateError(absl::InternalError(
-            absl::StrCat("sendmsg", std::strerror(saved_errno))));
+        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
         outgoing_buffer_->Clear();
         TcpShutdownTracedBufferList();
         return true;
