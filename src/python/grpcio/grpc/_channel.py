@@ -955,8 +955,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     _context: Any
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel, managed_call: IntegratedCallFactory,
-                 method: bytes,
+    def __init__(self, channel: cygrpc.Channel,
+                 managed_call: IntegratedCallFactory, method: bytes,
                  request_serializer: Optional[SerializingFunction],
                  response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
@@ -1133,8 +1133,9 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     _context: Any
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel, managed_call: IntegratedCallFactory,
-                 method: bytes, request_serializer: SerializingFunction,
+    def __init__(self, channel: cygrpc.Channel,
+                 managed_call: IntegratedCallFactory, method: bytes,
+                 request_serializer: SerializingFunction,
                  response_deserializer: DeserializingFunction):
         self._channel = channel
         self._managed_call = managed_call
@@ -1193,8 +1194,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
     _context: Any
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel, managed_call: IntegratedCallFactory,
-                 method: bytes,
+    def __init__(self, channel: cygrpc.Channel,
+                 managed_call: IntegratedCallFactory, method: bytes,
                  request_serializer: Optional[SerializingFunction],
                  response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel

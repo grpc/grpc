@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+#! /bin/bash
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,24 +15,5 @@
 
 set -ex
 
-ACTION=${1:---in-place}
-[[ $ACTION == '--in-place' ]] || [[ $ACTION == '--diff' ]]
+python3 -m pip install typechecked
 
-# change to root directory
-cd "$(dirname "${0}")/../.."
-
-DIRS=(
-    'examples'
-    'src'
-    'test'
-    'tools'
-    'setup.py'
-)
-
-VIRTUALENV=yapf_virtual_environment
-
-python3 -m virtualenv $VIRTUALENV -p $(which python3)
-PYTHON=${VIRTUALENV}/local/bin/python
-"$PYTHON" -m pip install yapf==0.30.0
-
-$PYTHON -m yapf $ACTION --parallel --recursive --style=setup.cfg "${DIRS[@]}" -e "**/site-packages/**/*"
