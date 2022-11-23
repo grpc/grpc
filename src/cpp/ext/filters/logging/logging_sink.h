@@ -27,7 +27,8 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
+
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc {
 namespace internal {
@@ -72,11 +73,11 @@ class LoggingSink {
 
     struct Payload {
       std::map<std::string, std::string> metadata;
-      absl::Duration duration;
-      uint32_t status_code;
+      grpc_core::Duration timeout;
+      uint32_t status_code = 0;
       std::string status_message;
       std::string status_details;
-      uint32_t message_length;
+      uint32_t message_length = 0;
       std::string message;
     };
 
@@ -87,12 +88,12 @@ class LoggingSink {
       uint32_t ip_port;
     };
 
-    uint64_t call_id;
-    uint64_t sequence_id;
-    EventType type;
-    Logger logger;
+    uint64_t call_id = 0;
+    uint64_t sequence_id = 0;
+    EventType type = LoggingSink::Entry::EventType::kUnkown;
+    Logger logger = LoggingSink::Entry::Logger::kUnkown;
     Payload payload;
-    bool payload_truncated;
+    bool payload_truncated = false;
     Address peer;
     std::string authority;
     std::string service_name;

@@ -39,6 +39,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice_buffer.h>
@@ -475,7 +476,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                            grpc_endpoint_get_peer(ep), ":client_transport"))),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
-      combiner(grpc_combiner_create()),
+      combiner(grpc_combiner_create(
+          channel_args
+              .GetObjectRef<grpc_event_engine::experimental::EventEngine>())),
       state_tracker(is_client ? "client_transport" : "server_transport",
                     GRPC_CHANNEL_READY),
       is_client(is_client),
