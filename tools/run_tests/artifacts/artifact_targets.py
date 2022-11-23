@@ -129,13 +129,10 @@ class PythonArtifact:
         if inner_jobs is not None:
             # set number of parallel jobs when building native extension
             # building the native extension is the most time-consuming part of the build
-            environ['ARCHFLAGS'] = "-arch arm64 -arch xd86_64"
+            environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
 
-        # This is necessary due to https://github.com/pypa/wheel/issues/406.
-        # distutils incorrectly generates a universal2 artifact that only contains
-        # x86_64 libraries.
-        if self.platform == "macos" and self.arch == "x64":
-            environ["GRPC_UNIVERSAL2_REPAIR"] = "true"
+        if self.platform == "macos":
+            environ['ARCHFLAGS'] = "-arch arm64 -arch x86_64"
 
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
