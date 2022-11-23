@@ -46,8 +46,6 @@ class CoreCodegen final : public CoreCodegenInterface {
   void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
   const char* grpc_call_error_to_string(grpc_call_error error) override;
 
-  size_t grpc_byte_buffer_length(grpc_byte_buffer* bb) override;
-
   int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                    grpc_byte_buffer* buffer) override;
   void grpc_byte_buffer_reader_destroy(

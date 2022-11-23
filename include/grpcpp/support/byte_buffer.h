@@ -146,9 +146,7 @@ class ByteBuffer final {
 
   /// Buffer size in bytes.
   size_t Length() const {
-    return buffer_ == nullptr
-               ? 0
-               : g_core_codegen_interface->grpc_byte_buffer_length(buffer_);
+    return buffer_ == nullptr ? 0 : grpc_byte_buffer_length(buffer_);
   }
 
   /// Swap the state of *this and *other.

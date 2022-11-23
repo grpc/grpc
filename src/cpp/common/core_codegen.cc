@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-size_t CoreCodegen::grpc_byte_buffer_length(grpc_byte_buffer* bb) {
-  return ::grpc_byte_buffer_length(bb);
-}
-
 grpc_call_error CoreCodegen::grpc_call_start_batch(grpc_call* call,
                                                    const grpc_op* ops,
                                                    size_t nops, void* tag,
