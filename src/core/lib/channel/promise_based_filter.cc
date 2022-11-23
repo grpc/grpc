@@ -316,6 +316,7 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
     case State::kForwardedBatch:
     case State::kBatchCompleted:
     case State::kPushedToPipe:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kCancelled:
       return;
@@ -344,6 +345,7 @@ void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
     case State::kForwardedBatch:
     case State::kBatchCompleted:
     case State::kPushedToPipe:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kCancelled:
       return;
@@ -381,6 +383,7 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
     case State::kPushedToPipe:
     case State::kGotBatch:
     case State::kBatchCompleted:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
       break;
     case State::kCancelled:
@@ -412,6 +415,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
     case State::kGotBatchNoPipe:
     case State::kGotBatch:
     case State::kBatchCompleted:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
       break;
     case State::kPushedToPipe:
@@ -559,6 +563,7 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kPulledFromPipe:
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kCancelledWhilstIdle:
     case State::kCancelled:
@@ -600,6 +605,7 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
     case State::kCancelledWhilstForwarding:
     case State::kCancelledWhilstIdle:
     case State::kBatchCompletedButCancelled:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kCancelled:
       return;
@@ -625,6 +631,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kCancelledWhilstIdle:
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kForwardedBatchNoPipe:
       state_ = State::kBatchCompletedNoPipe;
@@ -684,6 +691,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s", StateString(state_));
       abort();
     case State::kCancelledWhilstIdle:
     case State::kCancelledWhilstForwarding:
@@ -975,6 +983,9 @@ class ClientCallData::PollContext {
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
                 case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+                  gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
+                          RecvInitialMetadata::StateString(
+                              self_->recv_initial_metadata_->state));
                   abort();  // not reachable
                   break;
                 case RecvInitialMetadata::kHookedWaitingForLatch:
@@ -1011,6 +1022,9 @@ class ClientCallData::PollContext {
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
                 case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+                  gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
+                          RecvInitialMetadata::StateString(
+                              self_->recv_initial_metadata_->state));
                   abort();  // not reachable
                   break;
                 case RecvInitialMetadata::kCompleteWaitingForLatch:
@@ -1238,6 +1252,9 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       case RecvInitialMetadata::kCompleteAndSetLatch:
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        gpr_log(
+            GPR_ERROR, "ILLEGAL STATE: %s",
+            RecvInitialMetadata::StateString(recv_initial_metadata_->state));
         abort();  // unreachable
     }
     if (hook) {
@@ -1355,6 +1372,9 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
       case RecvInitialMetadata::kResponded:
         break;
       case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        gpr_log(
+            GPR_ERROR, "ILLEGAL STATE: %s",
+            RecvInitialMetadata::StateString(recv_initial_metadata_->state));
         abort();
         break;
     }
@@ -1410,6 +1430,9 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
       case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        gpr_log(
+            GPR_ERROR, "ILLEGAL STATE: %s",
+            RecvInitialMetadata::StateString(recv_initial_metadata_->state));
         abort();  // unreachable
     }
     flusher.AddClosure(
@@ -1439,6 +1462,9 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
       case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        gpr_log(
+            GPR_ERROR, "ILLEGAL STATE: %s",
+            RecvInitialMetadata::StateString(recv_initial_metadata_->state));
         abort();  // unreachable
     }
   }
@@ -1500,6 +1526,9 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
       case RecvInitialMetadata::kResponded:
       case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
       case RecvInitialMetadata::kRespondedButNeedToSetLatch:
+        gpr_log(
+            GPR_ERROR, "ILLEGAL STATE: %s",
+            RecvInitialMetadata::StateString(recv_initial_metadata_->state));
         abort();  // unreachable
     }
   } else {
@@ -1562,6 +1591,8 @@ Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
     case RecvTrailingState::kResponded:
       // We've already responded to the caller: we can't do anything and we
       // should never reach here.
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
+              StateString(recv_trailing_state_));
       abort();
   }
   GPR_UNREACHABLE_CODE(return Pending{});
@@ -1858,6 +1889,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       case SendInitialMetadata::kQueuedWaitingForLatch:
       case SendInitialMetadata::kQueuedAndSetLatch:
       case SendInitialMetadata::kForwarded:
+        gpr_log(
+            GPR_ERROR, "ILLEGAL STATE: %s",
+            SendInitialMetadata::StateString(send_initial_metadata_->state));
         abort();  // not reachable
     }
     send_initial_metadata_->batch = batch;
@@ -1888,6 +1922,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       case SendTrailingState::kQueued:
       case SendTrailingState::kQueuedBehindSendMessage:
       case SendTrailingState::kForwarded:
+        gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
+                StateString(send_trailing_state_));
         abort();  // unreachable
         break;
       case SendTrailingState::kCancelled:
@@ -1966,6 +2002,9 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
       case SendInitialMetadata::kQueuedAndGotLatch:
       case SendInitialMetadata::kQueuedAndSetLatch:
       case SendInitialMetadata::kForwarded:
+        gpr_log(
+            GPR_ERROR, "ILLEGAL STATE: %s",
+            SendInitialMetadata::StateString(send_initial_metadata_->state));
         abort();  // not reachable
         break;
       case SendInitialMetadata::kQueuedWaitingForLatch:
@@ -2003,6 +2042,8 @@ Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
       return WrapMetadata(send_trailing_metadata_batch_->payload
                               ->send_trailing_metadata.send_trailing_metadata);
     case SendTrailingState::kForwarded:
+      gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
+              StateString(send_trailing_state_));
       abort();  // unreachable
     case SendTrailingState::kCancelled:
       // We could translate cancelled_error to metadata and return it... BUT
@@ -2172,6 +2213,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           send_trailing_state_ = SendTrailingState::kForwarded;
         } break;
         case SendTrailingState::kForwarded:
+          gpr_log(GPR_ERROR, "ILLEGAL STATE: %s",
+                  StateString(send_trailing_state_));
           abort();  // unreachable
           break;
         case SendTrailingState::kInitial: {
