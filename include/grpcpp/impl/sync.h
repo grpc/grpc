@@ -63,9 +63,7 @@ class ABSL_LOCKABLE Mutex {
   Mutex& operator=(const Mutex&) = delete;
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() { gpr_mu_lock(&mu_); }
-  void Unlock() ABSL_UNLOCK_FUNCTION() {
-    g_core_codegen_interface->gpr_mu_unlock(&mu_);
-  }
+  void Unlock() ABSL_UNLOCK_FUNCTION() { gpr_mu_unlock(&mu_); }
 
  private:
   union {
