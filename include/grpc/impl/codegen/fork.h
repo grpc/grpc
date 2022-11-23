@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_FORK_H
 #define GRPC_IMPL_CODEGEN_FORK_H
 
-// IWYU pragma: private, include <grpc/fork.h>
+// IWYU pragma: private
 
 #include <grpc/support/port_platform.h>
 
