@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CRASH_H
-#define GRPC_CRASH_H
+#ifndef GRPC_CORE_LIB_GPRPP_CRASH_H
+#define GRPC_CORE_LIB_GPRPP_CRASH_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
 
@@ -28,4 +28,4 @@ void Crash(absl::string_view message,
 
 }
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_CRASH_H
