@@ -44,11 +44,7 @@ using ::testing::TestWithParam;
 using ::testing::ValuesIn;
 
 constexpr std::size_t kMaxPlaintextBytesPerTlsRecord = 16384;
-#if defined(TLS1_3_VERSION)
-constexpr std::size_t kTlsRecordOverhead = 22;
-#else
-constexpr std::size_t kTlsRecordOverhead = 29;
-#endif
+constexpr std::size_t kTlsRecordOverhead = 100;
 constexpr std::array<std::size_t, 4> kTestPlainTextSizeArray = {
     1, 1000, kMaxPlaintextBytesPerTlsRecord,
     kMaxPlaintextBytesPerTlsRecord + 1000};
@@ -306,7 +302,7 @@ TEST_P(FlowTest,
   std::size_t unprotected_bytes_size = unprotected_bytes.size();
 
   std::vector<uint8_t> protected_output_frames(
-      2 * GetParam().expected_encrypted_bytes_size);
+      GetParam().expected_encrypted_bytes_size);
   std::size_t protected_output_frames_size = protected_output_frames.size();
 
   EXPECT_EQ(SslProtectorProtect(unprotected_bytes.data(), client_buffer.size(),
@@ -368,7 +364,7 @@ TEST_P(FlowTest,
   std::size_t unprotected_bytes_size = unprotected_bytes.size();
 
   std::vector<uint8_t> protected_output_frames(
-      2 * GetParam().expected_encrypted_bytes_size);
+      GetParam().expected_encrypted_bytes_size);
   std::size_t protected_output_frames_size = protected_output_frames.size();
 
   EXPECT_EQ(SslProtectorProtect(unprotected_bytes.data(), server_buffer.size(),
