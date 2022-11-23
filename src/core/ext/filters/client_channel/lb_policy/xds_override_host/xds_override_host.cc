@@ -393,10 +393,8 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 }  // namespace
 
 void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
-  auto enabled =
-      GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE").value_or("false");
-  std::transform(enabled.begin(), enabled.end(), enabled.begin(),
-                 [](char c) { return std::tolower(c); });
+  auto enabled = absl::AsciiStrToLower(
+      GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE").value_or("false"));
   if (enabled == "true") {
     builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
         std::make_unique<XdsOverrideHostLbFactory>());
