@@ -184,5 +184,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:iomgr_port",
     ],
 )

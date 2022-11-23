@@ -22,9 +22,9 @@
 
 // IWYU pragma: no_include <arpa/inet.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <string>
+
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
