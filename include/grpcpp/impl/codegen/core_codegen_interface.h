@@ -45,7 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual int grpc_call_failed_before_recv_message(const grpc_call* c) = 0;
   virtual void grpc_call_ref(grpc_call* call) = 0;
   virtual void grpc_call_unref(grpc_call* call) = 0;
   virtual void* grpc_call_arena_alloc(grpc_call* call, size_t length) = 0;

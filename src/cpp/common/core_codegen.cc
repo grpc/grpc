@@ -36,9 +36,6 @@
 
 namespace grpc {
 
-int CoreCodegen::grpc_call_failed_before_recv_message(const grpc_call* c) {
-  return ::grpc_call_failed_before_recv_message(c);
-}
 void CoreCodegen::grpc_call_ref(grpc_call* call) { ::grpc_call_ref(call); }
 void CoreCodegen::grpc_call_unref(grpc_call* call) { ::grpc_call_unref(call); }
 void* CoreCodegen::grpc_call_arena_alloc(grpc_call* call, size_t length) {

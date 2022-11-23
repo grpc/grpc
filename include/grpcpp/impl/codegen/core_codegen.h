@@ -33,7 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  int grpc_call_failed_before_recv_message(const grpc_call* c) override;
   void grpc_call_ref(grpc_call* call) override;
   void grpc_call_unref(grpc_call* call) override;
   void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
