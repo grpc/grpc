@@ -33,7 +33,7 @@ NullaryCallbackType = Callable[[], None]
 RequestIterableType = Iterable[Any]
 ResponseIterableType = Iterable[Any]
 UserTag = Callable[[cygrpc.BaseEvent], bool]
-ManagedCallType = Callable[[
+IntegratedCallFactory = Callable[[
     int, bytes, None, Optional[float], Optional[MetadataType], Optional[
         cygrpc.CallCredentials], Sequence[Sequence[cygrpc.
                                                    Operation]], UserTag, Any
