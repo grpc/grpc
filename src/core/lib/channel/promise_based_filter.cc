@@ -317,8 +317,7 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
     case State::kForwardedBatch:
     case State::kBatchCompleted:
     case State::kPushedToPipe:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelled:
       return;
   }
@@ -346,8 +345,7 @@ void BaseCallData::SendMessage::GotPipe(PipeReceiver<MessageHandle>* receiver) {
     case State::kForwardedBatch:
     case State::kBatchCompleted:
     case State::kPushedToPipe:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelled:
       return;
   }
@@ -384,8 +382,7 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
     case State::kPushedToPipe:
     case State::kGotBatch:
     case State::kBatchCompleted:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
       break;
     case State::kCancelled:
       flusher.AddClosure(intercepted_on_complete_, status,
@@ -416,8 +413,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata) {
     case State::kGotBatchNoPipe:
     case State::kGotBatch:
     case State::kBatchCompleted:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
       break;
     case State::kPushedToPipe:
       push_.reset();
@@ -564,8 +560,7 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
     case State::kPulledFromPipe:
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelledWhilstIdle:
     case State::kCancelled:
       return;
@@ -606,8 +601,7 @@ void BaseCallData::ReceiveMessage::GotPipe(PipeSender<MessageHandle>* sender) {
     case State::kCancelledWhilstForwarding:
     case State::kCancelledWhilstIdle:
     case State::kBatchCompletedButCancelled:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelled:
       return;
   }
@@ -632,8 +626,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
     case State::kCancelledWhilstIdle:
     case State::kCompletedWhilePulledFromPipe:
     case State::kCompletedWhilePushedToPipe:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kForwardedBatchNoPipe:
       state_ = State::kBatchCompletedNoPipe;
       return;
@@ -692,8 +685,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
     case State::kBatchCompleted:
     case State::kBatchCompletedNoPipe:
     case State::kBatchCompletedButCancelled:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
+      Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelledWhilstIdle:
     case State::kCancelledWhilstForwarding:
     case State::kCancelled:
@@ -984,11 +976,10 @@ class ClientCallData::PollContext {
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
                 case RecvInitialMetadata::kRespondedButNeedToSetLatch:
-                  Crash(
-                      absl::StrFormat("ILLEGAL STATE: %s",
-                                      RecvInitialMetadata::StateString(
-                                          self_->recv_initial_metadata_
-                                              ->state)));  // not reachable
+                  Crash(absl::StrFormat("ILLEGAL STATE: %s",
+                                        RecvInitialMetadata::StateString(
+                                            self_->recv_initial_metadata_
+                                                ->state)));  // not reachable
                   break;
                 case RecvInitialMetadata::kHookedWaitingForLatch:
                 case RecvInitialMetadata::kHookedAndGotLatch:
@@ -1024,11 +1015,10 @@ class ClientCallData::PollContext {
                 case RecvInitialMetadata::
                     kRespondedToTrailingMetadataPriorToHook:
                 case RecvInitialMetadata::kRespondedButNeedToSetLatch:
-                  Crash(
-                      absl::StrFormat("ILLEGAL STATE: %s",
-                                      RecvInitialMetadata::StateString(
-                                          self_->recv_initial_metadata_
-                                              ->state)));  // not reachable
+                  Crash(absl::StrFormat("ILLEGAL STATE: %s",
+                                        RecvInitialMetadata::StateString(
+                                            self_->recv_initial_metadata_
+                                                ->state)));  // not reachable
                   break;
                 case RecvInitialMetadata::kCompleteWaitingForLatch:
                 case RecvInitialMetadata::kCompleteAndGotLatch:
@@ -1594,7 +1584,7 @@ Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
       // We've already responded to the caller: we can't do anything and we
       // should never reach here.
       Crash(absl::StrFormat("ILLEGAL STATE: %s",
-                                       StateString(recv_trailing_state_)));
+                            StateString(recv_trailing_state_)));
   }
   GPR_UNREACHABLE_CODE(return Pending{});
 }
@@ -2043,9 +2033,8 @@ Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
       return WrapMetadata(send_trailing_metadata_batch_->payload
                               ->send_trailing_metadata.send_trailing_metadata);
     case SendTrailingState::kForwarded:
-      Crash(
-          absl::StrFormat("ILLEGAL STATE: %s",
-                          StateString(send_trailing_state_)));  // unreachable
+      Crash(absl::StrFormat("ILLEGAL STATE: %s",
+                            StateString(send_trailing_state_)));  // unreachable
     case SendTrailingState::kCancelled:
       // We could translate cancelled_error to metadata and return it... BUT
       // we're not gonna be running much longer and the results going to be
