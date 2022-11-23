@@ -89,7 +89,7 @@ class ByteBuffer final {
         reinterpret_cast<grpc_slice*>(const_cast<Slice*>(slices)), nslices);
   }
 
-  /// Constuct a byte buffer by referencing elements of existing buffer
+  /// Construct a byte buffer by referencing elements of existing buffer
   /// \a buf. Wrapper of core function grpc_byte_buffer_copy . This is not
   /// a deep copy; it is just a referencing. As a result, its performance is
   /// size-independent.
@@ -97,7 +97,7 @@ class ByteBuffer final {
 
   ~ByteBuffer() {
     if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+      grpc_byte_buffer_destroy(buffer_);
     }
   }
 
@@ -128,7 +128,7 @@ class ByteBuffer final {
   /// Remove all data.
   void Clear() {
     if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+      grpc_byte_buffer_destroy(buffer_);
       buffer_ = nullptr;
     }
   }

@@ -19,6 +19,7 @@
 #ifndef GRPCPP_SUPPORT_METHOD_HANDLER_H
 #define GRPCPP_SUPPORT_METHOD_HANDLER_H
 
+#include <grpc/byte_buffer.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/support/byte_buffer.h>
@@ -384,7 +385,7 @@ class ErrorMethodHandler : public grpc::internal::MethodHandler {
                     grpc::Status* /*status*/, void** /*handler_data*/) final {
     // We have to destroy any request payload
     if (req != nullptr) {
-      grpc::g_core_codegen_interface->grpc_byte_buffer_destroy(req);
+      grpc_byte_buffer_destroy(req);
     }
     return nullptr;
   }

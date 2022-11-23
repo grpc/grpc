@@ -22,6 +22,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/byte_buffer.h>
 
@@ -75,7 +76,7 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   }
 
   g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-  g_core_codegen_interface->grpc_byte_buffer_destroy(bb);
+  grpc_byte_buffer_destroy(bb);
   for (auto& slice : slices) {
     g_core_codegen_interface->grpc_slice_unref(slice);
   }
@@ -108,7 +109,7 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   }
 
   g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-  g_core_codegen_interface->grpc_byte_buffer_destroy(bb);
+  grpc_byte_buffer_destroy(bb);
   for (auto& slice : slices) {
     g_core_codegen_interface->grpc_slice_unref(slice);
   }
