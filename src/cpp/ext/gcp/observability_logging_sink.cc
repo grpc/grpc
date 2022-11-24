@@ -73,6 +73,9 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
 LoggingSink::Config ObservabilityLoggingSink::FindMatch(
     bool is_client, absl::string_view service, absl::string_view method) {
   const auto& configs = is_client ? client_configs_ : server_configs_;
+  if (service.empty() || method.empty()) {
+    return LoggingSink::Config(0, 0);
+  }
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
       if ((config_method.service == "*") ||
