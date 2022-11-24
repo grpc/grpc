@@ -53,7 +53,10 @@ grpc_cc_library(
     hdrs = [
         "logging_filter.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "c++",
     visibility = [
         "//src/cpp/ext/gcp:__subpackages__",

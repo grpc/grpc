@@ -401,6 +401,7 @@ grpc_cc_library(
         "map",
         "pipe",
         "promise_factory",
+        "try_seq",
         "//:gpr_platform",
     ],
 )

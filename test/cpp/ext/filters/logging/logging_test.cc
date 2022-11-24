@@ -28,6 +28,7 @@
 #include "src/cpp/ext/filters/logging/logging_filter.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -36,6 +37,16 @@ namespace grpc {
 namespace testing {
 
 namespace {
+
+class MyTestServiceImpl : public TestServiceImpl {
+ public:
+  Status Echo(ServerContext* context, const EchoRequest* request,
+              EchoResponse* response) override {
+    EchoRequest new_request;
+    new_request.set_message("hello");
+    return TestServiceImpl::Echo(context, &new_request, response);
+  }
+};
 
 class TestLoggingSink : public grpc::internal::LoggingSink {
  public:
@@ -93,7 +104,7 @@ class LoggingTest : public ::testing::Test {
   void RunServerLoop() { server_->Wait(); }
 
   std::string server_address_;
-  TestServiceImpl service_;
+  MyTestServiceImpl service_;
   std::unique_ptr<grpc::Server> server_;
   std::thread server_thread_;
 
