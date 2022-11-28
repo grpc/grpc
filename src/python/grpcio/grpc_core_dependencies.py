@@ -470,6 +470,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/resolved_address.cc',
     'src/core/lib/event_engine/slice.cc',
     'src/core/lib/event_engine/slice_buffer.cc',
+    'src/core/lib/event_engine/tcp_socket_utils.cc',
     'src/core/lib/event_engine/thread_pool.cc',
     'src/core/lib/event_engine/time_util.cc',
     'src/core/lib/event_engine/trace.cc',

@@ -206,6 +206,7 @@ grpc_cc_test(
     uses_event_engine = False,
     deps = [
         "//src/core:event_engine_common",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:posix_event_engine_listener_utils",
         "//src/core:posix_event_engine_tcp_socket_utils",
         "//src/core:socket_mutator",

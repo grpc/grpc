@@ -1184,6 +1184,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx tcp_server_posix_test)
   endif()
+  add_dependencies(buildtests_cxx tcp_socket_utils_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
@@ -1240,6 +1241,9 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx win_socket_test)
   endif()
   add_dependencies(buildtests_cxx window_overflow_bad_client_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+    add_dependencies(buildtests_cxx windows_endpoint_test)
+  endif()
   add_dependencies(buildtests_cxx wire_reader_test)
   add_dependencies(buildtests_cxx wire_writer_test)
   add_dependencies(buildtests_cxx work_queue_test)
@@ -2111,6 +2115,7 @@ add_library(grpc
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
@@ -2774,6 +2779,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
@@ -4269,6 +4275,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
@@ -11161,6 +11168,7 @@ add_executable(frame_test
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool.cc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
@@ -19569,6 +19577,43 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(tcp_socket_utils_test
+  test/core/event_engine/tcp_socket_utils_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(tcp_socket_utils_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(tcp_socket_utils_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/lib/event_engine/posix_engine/timer.cc
   src/core/lib/event_engine/posix_engine/timer_heap.cc
@@ -21531,6 +21576,47 @@ target_link_libraries(window_overflow_bad_client_test
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
+
+  add_executable(windows_endpoint_test
+    src/core/lib/event_engine/windows/windows_endpoint.cc
+    test/core/event_engine/windows/create_sockpair.cc
+    test/core/event_engine/windows/windows_endpoint_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+
+  target_include_directories(windows_endpoint_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(windows_endpoint_test
+    ${_gRPC_BASELIB_LIBRARIES}
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 

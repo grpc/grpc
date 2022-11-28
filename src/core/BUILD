@@ -1696,10 +1696,10 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_tcp_socket_utils",
         "iomgr_port",
         "resource_quota",
         "socket_mutator",
@@ -1727,6 +1727,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "event_engine_tcp_socket_utils",
         "iomgr_port",
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
@@ -1754,6 +1755,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_tcp_socket_utils",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
@@ -1785,6 +1787,7 @@ grpc_cc_library(
     deps = [
         "event_engine_common",
         "event_engine_poller",
+        "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
@@ -1854,6 +1857,59 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "windows_endpoint",
+    srcs = [
+        "lib/event_engine/windows/windows_endpoint.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/windows/windows_endpoint.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "error",
+        "event_engine_tcp_socket_utils",
+        "event_engine_trace",
+        "status_helper",
+        "windows_iocp",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_tcp_socket_utils",
+    srcs = [
+        "lib/event_engine/tcp_socket_utils.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/tcp_socket_utils.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    deps = [
+        "grpc_sockaddr",
+        "iomgr_port",
+        "status_helper",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:uri_parser",
     ],
 )
 
