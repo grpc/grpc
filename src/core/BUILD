@@ -2327,9 +2327,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_server_config_selector",
-    srcs = [
-        "ext/filters/server_config_selector/server_config_selector.cc",
-    ],
     hdrs = [
         "ext/filters/server_config_selector/server_config_selector.h",
     ],
@@ -2339,7 +2336,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "channel_args",
         "dual_ref_counted",
         "error",
         "grpc_service_config",
