@@ -2465,6 +2465,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/compression_types.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3070,6 +3071,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/compression_types.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3452,9 +3454,11 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
+  include/grpcpp/impl/interceptor_common.h
   include/grpcpp/impl/metadata_map.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/rpc_method.h
@@ -3466,6 +3470,7 @@ foreach(_hdr
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
+  include/grpcpp/impl/sync.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
@@ -4144,9 +4149,11 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/completion_queue_tag.h
+  include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
+  include/grpcpp/impl/interceptor_common.h
   include/grpcpp/impl/metadata_map.h
   include/grpcpp/impl/method_handler_impl.h
   include/grpcpp/impl/rpc_method.h
@@ -4158,6 +4165,7 @@ foreach(_hdr
   include/grpcpp/impl/server_initializer.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
+  include/grpcpp/impl/sync.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
@@ -4539,6 +4547,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/compression_types.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -24771,12 +24780,13 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
   DESTINATION ${gRPC_INSTALL_SHAREDIR})
 
 # Function to generate pkg-config files.
-function(generate_pkgconfig name description version requires
+function(generate_pkgconfig name description version requires requires_private
                             libs libs_private output_filename)
   set(PC_NAME "${name}")
   set(PC_DESCRIPTION "${description}")
   set(PC_VERSION "${version}")
   set(PC_REQUIRES "${requires}")
+  set(PC_REQUIRES_PRIVATE "${requires_private}")
   set(PC_LIB "${libs}")
   set(PC_LIBS_PRIVATE "${libs_private}")
   set(output_filepath "${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}")
@@ -24794,6 +24804,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   "absl_base absl_cord absl_core_headers absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  ""
   "-lgpr"
   ""
   "gpr.pc")
@@ -24803,9 +24814,10 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
-  ""
+  "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "openssl re2 libcares zlib"
+  "-lgrpc"
+  "-laddress_sorting -lupb"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -24814,8 +24826,9 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "re2 libcares zlib"
   "-lgrpc_unsecure"
-  ""
+  "-laddress_sorting -lupb"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -24824,6 +24837,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
   "grpc absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  ""
   "-lgrpc++"
   ""
   "grpc++.pc")
@@ -24834,16 +24848,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
   "grpc_unsecure absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  ""
   "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")
-
-# grpc_authorization_provider.pc file
-generate_pkgconfig(
-  "grpc_authorization_provider"
-  "A library that adds authorization"
-  "${gRPC_CPP_VERSION}"
-  "grpc_authorization_provider absl_any_invocable absl_base absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
-  "-lgrpc_authorization_provider -lre2"
-  ""
-  "grpc_authorization_provider.pc")

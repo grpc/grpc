@@ -305,6 +305,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:uri_parser",
+        "//src/core:channel_args",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
         "//src/core:json",

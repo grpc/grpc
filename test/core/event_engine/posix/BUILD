@@ -225,6 +225,7 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//src/core:channel_args",
         "//src/core:event_engine_poller",
         "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_closure",
