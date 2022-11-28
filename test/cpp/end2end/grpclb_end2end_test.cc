@@ -36,7 +36,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -371,7 +371,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
@@ -382,7 +382,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_init();
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
     bool localhost_resolves_to_ipv4 = false;
@@ -1252,7 +1252,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
 }
 
 TEST_F(SingleBalancerTest,
-       FallbackAfterStartup_LoseContactWithBalancerThenBackends) {
+       FallbackAfterStartupLoseContactWithBalancerThenBackends) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumFallbackBackends = 2;
   const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
@@ -1305,7 +1305,7 @@ TEST_F(SingleBalancerTest,
 }
 
 TEST_F(SingleBalancerTest,
-       FallbackAfterStartup_LoseContactWithBackendsThenBalancer) {
+       FallbackAfterStartupLoseContactWithBackendsThenBalancer) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumFallbackBackends = 2;
   const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
@@ -1388,7 +1388,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancer_BeforeFirstServerlist) {
+TEST_F(SingleBalancerTest, FallbackControlledByBalancerBeforeFirstServerlist) {
   const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
   // Return one balancer and one fallback backend.
@@ -1407,7 +1407,7 @@ TEST_F(SingleBalancerTest, FallbackControlledByBalancer_BeforeFirstServerlist) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancer_AfterFirstServerlist) {
+TEST_F(SingleBalancerTest, FallbackControlledByBalancerAfterFirstServerlist) {
   // Return one balancer and one fallback backend (backend 0).
   std::vector<AddressData> balancer_addresses;
   balancer_addresses.emplace_back(AddressData{balancers_[0]->port_, ""});

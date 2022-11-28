@@ -143,6 +143,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "//:include/grpc/support/atm.h",
+        "//:include/grpc/support/atm_gcc_atomic.h",
+        "//:include/grpc/support/atm_gcc_sync.h",
+        "//:include/grpc/support/atm_windows.h",
         "//:include/grpc/impl/codegen/atm.h",
         "//:include/grpc/impl/codegen/atm_gcc_atomic.h",
         "//:include/grpc/impl/codegen/atm_gcc_sync.h",
@@ -1142,6 +1145,7 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/closure.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "error",
         "gpr_manual_constructor",
@@ -2182,6 +2186,9 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "avl",
         "channel_stack_type",
@@ -2472,6 +2479,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
+        "closure",
         "error",
         "iomgr_fwd",
         "slice",
@@ -2507,6 +2516,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
+        "closure",
         "error",
         "iomgr_fwd",
         "tsi_local_credentials",
@@ -2559,6 +2570,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
+        "closure",
         "error",
         "grpc_sockaddr",
         "iomgr_fwd",
@@ -2600,6 +2613,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
+        "closure",
         "error",
         "iomgr_fwd",
         "unique_type_name",
@@ -2637,6 +2652,8 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
+        "channel_args",
+        "closure",
         "env",
         "error",
         "grpc_external_account_credentials",
@@ -2711,6 +2728,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
+        "closure",
         "error",
         "iomgr_fwd",
         "ref_counted",
@@ -2785,6 +2804,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena_promise",
+        "closure",
         "context",
         "error",
         "httpcli_ssl_credentials",
@@ -2838,6 +2858,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "closure",
         "env",
         "error",
         "grpc_oauth2_credentials",
@@ -2874,6 +2895,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
+        "closure",
         "error",
         "iomgr_fwd",
         "unique_type_name",
@@ -3209,6 +3232,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
         "channel_fwd",
         "context",
         "grpc_service_config",
@@ -3298,9 +3322,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "channel_fwd",
         "channel_init",
         "channel_stack_type",
+        "closure",
         "error",
         "gpr_atm",
         "grpc_sockaddr",
@@ -3374,6 +3400,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
+        "closure",
         "dual_ref_counted",
         "error",
         "grpc_fake_credentials",
@@ -3489,8 +3517,10 @@ grpc_cc_library(
     deps = [
         "certificate_provider_factory",
         "certificate_provider_registry",
+        "channel_args",
         "channel_creds_registry",
         "channel_fwd",
+        "closure",
         "default_event_engine",
         "env",
         "envoy_admin_upb",
@@ -3714,6 +3744,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "error",
         "grpc_matchers",
         "grpc_outlier_detection_header",
@@ -3876,7 +3907,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "ref_counted",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -3960,6 +3990,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "dual_ref_counted",
         "gpr_manual_constructor",
         "iomgr_fwd",
@@ -4022,6 +4053,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "closure",
         "error",
         "grpc_lb_subchannel_list",
@@ -4061,6 +4093,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "grpc_lb_subchannel_list",
         "json",
         "lb_policy",
@@ -4160,7 +4193,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "ref_counted",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -4201,7 +4233,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
-        "ref_counted",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -4242,6 +4273,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "channel_args",
         "channel_fwd",
         "channel_stack_type",
         "context",
@@ -4325,6 +4357,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "grpc_resolver_dns_selection",
         "polling_resolver",
         "resolved_address",
@@ -4354,6 +4387,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "iomgr_port",
         "resolved_address",
         "//:config",
@@ -4424,6 +4458,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "channel_args",
         "channel_fwd",
         "dual_ref_counted",
         "error",
@@ -4468,6 +4503,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
+        "closure",
         "env",
         "error",
         "grpc_xds_client",
@@ -4612,8 +4649,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "channel_args_preconditioning",
         "channel_stack_type",
+        "closure",
         "error",
         "grpc_insecure_credentials",
         "handshaker_registry",
@@ -4659,6 +4698,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
+        "closure",
         "error",
         "grpc_insecure_credentials",
         "handshaker_registry",
@@ -4707,8 +4748,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "channel_args",
         "channel_args_preconditioning",
         "channel_stack_type",
+        "closure",
         "error",
         "iomgr_fwd",
         "slice",
@@ -4752,6 +4795,7 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_public_hdrs",
         "//:hpack_encoder",
         "//:hpack_parser",
     ],

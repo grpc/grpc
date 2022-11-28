@@ -34,7 +34,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 

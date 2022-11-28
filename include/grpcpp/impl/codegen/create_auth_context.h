@@ -21,15 +21,7 @@
 
 // IWYU pragma: private
 
-#include <memory>
-
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/impl/codegen/security/auth_context.h>
-
-namespace grpc {
-
-std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
-
-}  // namespace grpc
+/// TODO(chengyuc): Remove this file after solving compatibility.
+#include <grpcpp/impl/create_auth_context.h>
 
 #endif  // GRPCPP_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H

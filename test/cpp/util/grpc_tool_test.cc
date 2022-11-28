@@ -1381,7 +1381,7 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeUnlimited) {
   ShutdownServer();
 }
 
-TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
+TEST_F(GrpcToolTest, ListCommandOverrideSslHostName) {
   const std::string server_address = SetUpServer(true);
 
   // Test input "grpc_cli ls localhost:<port> --channel_creds_type=ssl

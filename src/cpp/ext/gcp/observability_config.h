@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -97,6 +98,7 @@ struct GcpObservabilityConfig {
   absl::optional<CloudMonitoring> cloud_monitoring;
   absl::optional<CloudTrace> cloud_trace;
   std::string project_id;
+  std::map<std::string, std::string> labels;
 
   static const grpc_core::JsonLoaderInterface* JsonLoader(
       const grpc_core::JsonArgs&) {
@@ -108,6 +110,7 @@ struct GcpObservabilityConfig {
                            &GcpObservabilityConfig::cloud_monitoring)
             .OptionalField("cloud_trace", &GcpObservabilityConfig::cloud_trace)
             .OptionalField("project_id", &GcpObservabilityConfig::project_id)
+            .OptionalField("labels", &GcpObservabilityConfig::labels)
             .Finish();
     return loader;
   }

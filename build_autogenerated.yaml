@@ -294,6 +294,7 @@ libs:
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/impl/compression_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1037,7 +1038,6 @@ libs:
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
-  - src/core/tsi/ssl_transport_security_utils.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
@@ -1744,7 +1744,6 @@ libs:
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   - src/core/tsi/ssl_transport_security.cc
-  - src/core/tsi/ssl_transport_security_utils.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
@@ -1868,6 +1867,7 @@ libs:
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/impl/compression_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -2821,15 +2821,24 @@ libs:
   - include/grpcpp/impl/codegen/sync.h
   - include/grpcpp/impl/codegen/sync_stream.h
   - include/grpcpp/impl/codegen/time.h
+  - include/grpcpp/impl/completion_queue_tag.h
+  - include/grpcpp/impl/create_auth_context.h
+  - include/grpcpp/impl/delegating_channel.h
   - include/grpcpp/impl/grpc_library.h
+  - include/grpcpp/impl/intercepted_channel.h
+  - include/grpcpp/impl/interceptor_common.h
+  - include/grpcpp/impl/metadata_map.h
   - include/grpcpp/impl/method_handler_impl.h
   - include/grpcpp/impl/rpc_method.h
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
   - include/grpcpp/impl/server_builder_plugin.h
+  - include/grpcpp/impl/server_callback_handlers.h
   - include/grpcpp/impl/server_initializer.h
   - include/grpcpp/impl/service_type.h
+  - include/grpcpp/impl/status.h
+  - include/grpcpp/impl/sync.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
@@ -2844,6 +2853,7 @@ libs:
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
+  - include/grpcpp/server_interface.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
   - include/grpcpp/support/async_unary_call.h
@@ -3237,15 +3247,24 @@ libs:
   - include/grpcpp/impl/codegen/sync.h
   - include/grpcpp/impl/codegen/sync_stream.h
   - include/grpcpp/impl/codegen/time.h
+  - include/grpcpp/impl/completion_queue_tag.h
+  - include/grpcpp/impl/create_auth_context.h
+  - include/grpcpp/impl/delegating_channel.h
   - include/grpcpp/impl/grpc_library.h
+  - include/grpcpp/impl/intercepted_channel.h
+  - include/grpcpp/impl/interceptor_common.h
+  - include/grpcpp/impl/metadata_map.h
   - include/grpcpp/impl/method_handler_impl.h
   - include/grpcpp/impl/rpc_method.h
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
   - include/grpcpp/impl/server_builder_plugin.h
+  - include/grpcpp/impl/server_callback_handlers.h
   - include/grpcpp/impl/server_initializer.h
   - include/grpcpp/impl/service_type.h
+  - include/grpcpp/impl/status.h
+  - include/grpcpp/impl/sync.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
@@ -3258,6 +3277,7 @@ libs:
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
+  - include/grpcpp/server_interface.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
   - include/grpcpp/support/async_unary_call.h
@@ -3378,6 +3398,7 @@ libs:
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/impl/compression_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -10766,19 +10787,6 @@ targets:
   src:
   - test/core/tsi/ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: ssl_transport_security_utils_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/tsi/ssl_transport_security_utils_test.cc
   deps:
   - grpc_test_util
   platforms:

@@ -131,7 +131,7 @@ class TimeChangeTest : public ::testing::Test {
  protected:
   TimeChangeTest() {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
@@ -149,7 +149,7 @@ class TimeChangeTest : public ::testing::Test {
         grpc_timeout_milliseconds_to_deadline(30000)));
   }
 
-  static void TearDownTestCase() { server_.reset(); }
+  static void TearDownTestSuite() { server_.reset(); }
 
   void SetUp() override {
     channel_ =
