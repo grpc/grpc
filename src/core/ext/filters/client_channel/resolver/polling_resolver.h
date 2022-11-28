@@ -80,6 +80,7 @@ class PollingResolver : public Resolver {
 
   void ScheduleNextResolutionTimer(const Duration& timeout);
   void OnNextResolutionLocked();
+  void MaybeCancelNextResolutionTimer();
 
   /// authority
   std::string authority_;
@@ -112,10 +113,7 @@ class PollingResolver : public Resolver {
   ResultStatusState result_status_state_ = ResultStatusState::kNone;
   /// next resolution timer
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      next_resolution_timer_handle_{absl::nullopt};
-  // a raw pointer will suffice since the shared_ptr in channel_args_ will keep
-  // the EventEngine alive
-  grpc_event_engine::experimental::EventEngine* event_engine_;
+      next_resolution_timer_handle_;
 };
 
 }  // namespace grpc_core

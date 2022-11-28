@@ -58,8 +58,7 @@ PollingResolver::PollingResolver(ResolverArgs args,
       tracer_(tracer),
       interested_parties_(args.pollset_set),
       min_time_between_resolutions_(min_time_between_resolutions),
-      backoff_(backoff_options),
-      event_engine_(channel_args_.GetObject<EventEngine>()) {
+      backoff_(backoff_options) {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO, "[polling resolver %p] created", this);
   }
@@ -89,13 +88,7 @@ void PollingResolver::RequestReresolutionLocked() {
 }
 
 void PollingResolver::ResetBackoffLocked() {
-  if (next_resolution_timer_handle_.has_value()) {
-    if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-      gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
-              this);
-    }
-    event_engine_->Cancel(*next_resolution_timer_handle_);
-  }
+  MaybeCancelNextResolutionTimer();
   backoff_.Reset();
 }
 
@@ -104,29 +97,24 @@ void PollingResolver::ShutdownLocked() {
     gpr_log(GPR_INFO, "[polling resolver %p] shutting down", this);
   }
   shutdown_ = true;
-  if (next_resolution_timer_handle_.has_value()) {
-    if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-      gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
-              this);
-    }
-    event_engine_->Cancel(*next_resolution_timer_handle_);
-  }
+  MaybeCancelNextResolutionTimer();
   request_.reset();
 }
 
 void PollingResolver::ScheduleNextResolutionTimer(const Duration& timeout) {
   next_resolution_timer_handle_ =
-      event_engine_->RunAfter(timeout, [self = Ref()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        auto* self_ptr = static_cast<PollingResolver*>(self.get());
-        self_ptr->work_serializer_->Run(
-            [self = std::move(self)]() {
-              auto* self_ptr = static_cast<PollingResolver*>(self.get());
-              self_ptr->OnNextResolutionLocked();
-            },
-            DEBUG_LOCATION);
-      });
+      channel_args_.GetObject<EventEngine>()->RunAfter(
+          timeout, [self = Ref()]() mutable {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            auto* self_ptr = static_cast<PollingResolver*>(self.get());
+            self_ptr->work_serializer_->Run(
+                [self = std::move(self)]() {
+                  auto* self_ptr = static_cast<PollingResolver*>(self.get());
+                  self_ptr->OnNextResolutionLocked();
+                },
+                DEBUG_LOCATION);
+          });
 }
 
 void PollingResolver::OnNextResolutionLocked() {
@@ -138,6 +126,17 @@ void PollingResolver::OnNextResolutionLocked() {
   next_resolution_timer_handle_.reset();
   if (!shutdown_) {
     StartResolvingLocked();
+  }
+}
+
+void PollingResolver::MaybeCancelNextResolutionTimer() {
+  if (next_resolution_timer_handle_.has_value()) {
+    if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
+      gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
+              this);
+    }
+    channel_args_.GetObject<EventEngine>()->Cancel(
+        *next_resolution_timer_handle_);
   }
 }
 
