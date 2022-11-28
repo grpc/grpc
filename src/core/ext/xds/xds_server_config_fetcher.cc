@@ -319,7 +319,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           http_filters);
   ~XdsServerConfigSelector() override = default;
 
-  CallConfig GetCallConfig(grpc_metadata_batch* metadata) override;
+  absl::StatusOr<CallConfig> GetCallConfig(
+      grpc_metadata_batch* metadata) override;
 
  private:
   struct VirtualHost {
@@ -1188,30 +1189,26 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   return config_selector;
 }
 
-ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
-    FilterChainMatchManager::XdsServerConfigSelector::GetCallConfig(
-        grpc_metadata_batch* metadata) {
+absl::StatusOr<ServerConfigSelector::CallConfig>
+XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    XdsServerConfigSelector::GetCallConfig(grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
-    call_config.error = GRPC_ERROR_CREATE("No path found");
-    return call_config;
+    return absl::InternalError("no path found");
   }
   absl::string_view path =
       metadata->get_pointer(HttpPathMetadata())->as_string_view();
   if (metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    call_config.error = GRPC_ERROR_CREATE("No authority found");
-    return call_config;
+    return absl::InternalError("no authority found");
   }
   absl::string_view authority =
       metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
       VirtualHostListIterator(&virtual_hosts_), authority);
   if (!vhost_index.has_value()) {
-    call_config.error = grpc_error_set_int(
-        GRPC_ERROR_CREATE(absl::StrCat("could not find VirtualHost for ",
-                                       authority, " in RouteConfiguration")),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
-    return call_config;
+    return absl::UnavailableError(
+        absl::StrCat("could not find VirtualHost for ", authority,
+                     " in RouteConfiguration"));
   }
   auto& virtual_host = virtual_hosts_[vhost_index.value()];
   auto route_index = XdsRouting::GetRouteForRequest(
@@ -1220,10 +1217,7 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     auto& route = virtual_host.routes[route_index.value()];
     // Found the matching route
     if (route.unsupported_action) {
-      call_config.error = grpc_error_set_int(
-          GRPC_ERROR_CREATE("Matching route has unsupported action"),
-          StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
-      return call_config;
+      return absl::UnavailableError("matching route has unsupported action");
     }
     if (route.method_config != nullptr) {
       call_config.method_configs =
@@ -1232,10 +1226,7 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     }
     return call_config;
   }
-  call_config.error = grpc_error_set_int(GRPC_ERROR_CREATE("No route matched"),
-                                         StatusIntProperty::kRpcStatus,
-                                         GRPC_STATUS_UNAVAILABLE);
-  return call_config;
+  return absl::UnavailableError("no route matched");
 }
 
 //

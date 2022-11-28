@@ -322,7 +322,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/rbac/rbac_filter.h',
                       'src/core/ext/filters/rbac/rbac_service_config_parser.cc',
                       'src/core/ext/filters/rbac/rbac_service_config_parser.h',
-                      'src/core/ext/filters/server_config_selector/server_config_selector.cc',
                       'src/core/ext/filters/server_config_selector/server_config_selector.h',
                       'src/core/ext/filters/server_config_selector/server_config_selector_filter.cc',
                       'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',

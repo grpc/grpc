@@ -43,14 +43,15 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
   // Configuration to apply to an incoming call
   struct CallConfig {
-    grpc_error_handle error;
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
     RefCountedPtr<ServiceConfig> service_config;
   };
 
   ~ServerConfigSelector() override = default;
+
   // Returns the CallConfig to apply to a call based on the incoming \a metadata
-  virtual CallConfig GetCallConfig(grpc_metadata_batch* metadata) = 0;
+  virtual absl::StatusOr<CallConfig> GetCallConfig(
+      grpc_metadata_batch* metadata) = 0;
 };
 
 // ServerConfigSelectorProvider allows for subscribers to watch for updates on
@@ -71,13 +72,13 @@ class ServerConfigSelectorProvider
       std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
   virtual void CancelWatch() = 0;
 
-  static absl::string_view ChannelArgName();
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.server_config_selector_provider";
+  }
   static int ChannelArgsCompare(const ServerConfigSelectorProvider* a,
                                 const ServerConfigSelectorProvider* b) {
     return QsortCompare(a, b);
   }
-
-  grpc_arg MakeChannelArg() const;
 };
 
 }  // namespace grpc_core
