@@ -107,7 +107,6 @@ bool ResolvedAddressIsV4Mapped(
   return false;
 }
 
-// DO NOT SUBMIT(hork): remove consts, they are a lie
 bool ResolvedAddressToV4Mapped(
     const EventEngine::ResolvedAddress& resolved_addr,
     EventEngine::ResolvedAddress* resolved_addr6_out) {
