@@ -14,7 +14,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+
+#include <errno.h>       // IWYU pragma: keep
+#include <sys/socket.h>  // IWYU pragma: keep
+#include <unistd.h>      // IWYU pragma: keep
 
 #include <string>
 #include <utility>
@@ -28,22 +34,25 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
-#ifdef GRPC_POSIX_SOCKET_TCP
-#include <errno.h>       // IWYU pragma: keep
-#include <sys/socket.h>  // IWYU pragma: keep
-#include <unistd.h>      // IWYU pragma: keep
-
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
-#endif
 
 namespace grpc_event_engine {
 namespace posix_engine {
 
-#ifdef GRPC_POSIX_SOCKET_TCP
+namespace {
+using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
+using ::grpc_event_engine::experimental::ResolvedAddressIsWildcard;
+using ::grpc_event_engine::experimental::ResolvedAddressSetPort;
+using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
+using ::grpc_event_engine::experimental::ResolvedAddressToV4Mapped;
+}  // namespace
+
 PosixEngineListenerImpl::PosixEngineListenerImpl(
     EventEngine::Listener::AcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
@@ -63,7 +72,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr) {
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
-  int requested_port = SockaddrGetPort(res_addr);
+  int requested_port = ResolvedAddressGetPort(res_addr);
   absl::MutexLock lock(&this->mu_);
   GPR_ASSERT(!this->started_);
   GPR_ASSERT(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
@@ -78,22 +87,22 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     if (0 == getsockname((*it)->Socket().sock.Fd(),
                          const_cast<sockaddr*>(sockname_temp.address()),
                          &len)) {
-      int used_port = SockaddrGetPort(sockname_temp);
+      int used_port = ResolvedAddressGetPort(sockname_temp);
       if (used_port > 0) {
         requested_port = used_port;
-        SockaddrSetPort(res_addr, requested_port);
+        ResolvedAddressSetPort(res_addr, requested_port);
         break;
       }
     }
   }
 
-  auto used_port = SockaddrIsWildcard(res_addr);
+  auto used_port = ResolvedAddressIsWildcard(res_addr);
   if (used_port.has_value()) {
     requested_port = *used_port;
     return ListenerContainerAddWildcardAddresses(acceptors_, options_,
                                                  requested_port);
   }
-  if (SockaddrToV4Mapped(&res_addr, &addr6_v4mapped)) {
+  if (ResolvedAddressToV4Mapped(res_addr, &addr6_v4mapped)) {
     res_addr = addr6_v4mapped;
   }
 
@@ -170,7 +179,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
 
     // Create an Endpoint here.
-    std::string peer_name = *SockaddrToString(&addr, true);
+    std::string peer_name = *ResolvedAddressToNormalizedString(addr);
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
             fd, peer_name, listener_->poller_->CanTrackErrors()),
@@ -229,7 +238,7 @@ PosixEngineListenerImpl::~PosixEngineListenerImpl() {
   }
 }
 
-#endif  // GRPC_POSIX_SOCKET_TCP
-
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_POSIX_SOCKET_TCP

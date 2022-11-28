@@ -767,6 +767,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -1499,6 +1500,7 @@ libs:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -2040,6 +2042,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -2418,6 +2421,7 @@ libs:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -3483,6 +3487,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -3741,6 +3746,7 @@ libs:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -7170,6 +7176,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -7410,6 +7417,7 @@ targets:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -11191,6 +11199,16 @@ targets:
   - linux
   - posix
   - mac
+- name: tcp_socket_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/tcp_socket_utils_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
@@ -12078,6 +12096,24 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: windows_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/windows/windows_endpoint.h
+  - test/core/event_engine/windows/create_sockpair.h
+  src:
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
+  - test/core/event_engine/windows/create_sockpair.cc
+  - test/core/event_engine/windows/windows_endpoint_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
+  uses_polling: false
 - name: wire_reader_test
   gtest: true
   build: test

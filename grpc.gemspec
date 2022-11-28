@@ -1015,6 +1015,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/slice.cc )
   s.files += %w( src/core/lib/event_engine/slice_buffer.cc )
   s.files += %w( src/core/lib/event_engine/socket_notifier.h )
+  s.files += %w( src/core/lib/event_engine/tcp_socket_utils.cc )
+  s.files += %w( src/core/lib/event_engine/tcp_socket_utils.h )
   s.files += %w( src/core/lib/event_engine/thread_pool.cc )
   s.files += %w( src/core/lib/event_engine/thread_pool.h )
   s.files += %w( src/core/lib/event_engine/time_util.cc )
