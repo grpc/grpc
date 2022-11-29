@@ -47,11 +47,6 @@ grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
                                          length);
 }
 
-void CoreCodegen::grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb,
-                                                grpc_slice slice) {
-  ::grpc_slice_buffer_add_indexed(sb, slice);
-}
-
 void CoreCodegen::grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
   ::grpc_slice_buffer_pop(sb);
 }
