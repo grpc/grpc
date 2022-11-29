@@ -75,7 +75,7 @@ class MethodHandler {
      retained by the handler. Returns nullptr if deserialization failed. */
   virtual void* Deserialize(grpc_call* /*call*/, grpc_byte_buffer* req,
                             Status* /*status*/, void** /*handler_data*/) {
-    GPR_CODEGEN_ASSERT(req == nullptr);
+    GPR_ASSERT(req == nullptr);
     return nullptr;
   }
 };

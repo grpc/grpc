@@ -35,9 +35,6 @@ class CoreCodegen final : public CoreCodegenInterface {
  private:
   const Status& ok() override;
   const Status& cancelled() override;
-
-  void assert_fail(const char* failed_assertion, const char* file,
-                   int line) override;
 };
 
 }  // namespace grpc
