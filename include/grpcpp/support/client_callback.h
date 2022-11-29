@@ -1214,8 +1214,7 @@ class ClientCallbackUnaryFactory {
 
     grpc_call_ref(call.call());
 
-    new (grpc_call_arena_alloc(
-        call.call(), sizeof(ClientCallbackUnaryImpl)))
+    new (grpc_call_arena_alloc(call.call(), sizeof(ClientCallbackUnaryImpl)))
         ClientCallbackUnaryImpl(call, context,
                                 static_cast<const BaseRequest*>(request),
                                 static_cast<BaseResponse*>(response), reactor);

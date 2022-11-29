@@ -449,8 +449,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     // Arena allocate a writer structure
     grpc_call_ref(param.call->call());
 
-    auto* writer = new (grpc_call_arena_alloc(
-        param.call->call(), sizeof(ServerCallbackWriterImpl)))
+    auto* writer = new (grpc_call_arena_alloc(param.call->call(),
+                                              sizeof(ServerCallbackWriterImpl)))
         ServerCallbackWriterImpl(
             static_cast<grpc::CallbackServerContext*>(param.server_context),
             param.call, static_cast<RequestType*>(param.request),
@@ -486,8 +486,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
                     grpc::Status* status, void** /*handler_data*/) final {
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
-    auto* request = new (grpc_call_arena_alloc(
-        call, sizeof(RequestType))) RequestType();
+    auto* request =
+        new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
     *status =
         grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
