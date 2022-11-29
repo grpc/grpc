@@ -45,44 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual const grpc_completion_queue_factory*
-  grpc_completion_queue_factory_lookup(
-      const grpc_completion_queue_attributes* attributes) = 0;
-  virtual grpc_completion_queue* grpc_completion_queue_create(
-      const grpc_completion_queue_factory* factory,
-      const grpc_completion_queue_attributes* attributes, void* reserved) = 0;
-  virtual grpc_completion_queue* grpc_completion_queue_create_for_next(
-      void* reserved) = 0;
-  virtual grpc_completion_queue* grpc_completion_queue_create_for_pluck(
-      void* reserved) = 0;
-  virtual void grpc_completion_queue_shutdown(grpc_completion_queue* cq) = 0;
-  virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
-  virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
-                                                 void* tag,
-                                                 gpr_timespec deadline,
-                                                 void* reserved) = 0;
-
-  virtual void* gpr_malloc(size_t size) = 0;
-  virtual void gpr_free(void* p) = 0;
-
-  // These are only to be used to fix edge cases involving grpc_init and
-  // grpc_shutdown. Calling grpc_init from the codegen interface before
-  // the real grpc_init is called will cause a crash, so if you use this
-  // function, ensure that it is not the first call to grpc_init.
-  virtual void grpc_init() = 0;
-  virtual void grpc_shutdown() = 0;
-
-  virtual void gpr_mu_init(gpr_mu* mu) = 0;
-  virtual void gpr_mu_destroy(gpr_mu* mu) = 0;
-  virtual void gpr_mu_lock(gpr_mu* mu) = 0;
-  virtual void gpr_mu_unlock(gpr_mu* mu) = 0;
-  virtual void gpr_cv_init(gpr_cv* cv) = 0;
-  virtual void gpr_cv_destroy(gpr_cv* cv) = 0;
-  virtual int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu,
-                          gpr_timespec abs_deadline) = 0;
-  virtual void gpr_cv_signal(gpr_cv* cv) = 0;
-  virtual void gpr_cv_broadcast(gpr_cv* cv) = 0;
-
   virtual grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) = 0;
   virtual void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) = 0;
   virtual size_t grpc_byte_buffer_length(grpc_byte_buffer* bb)

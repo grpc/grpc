@@ -33,38 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
-      const grpc_completion_queue_attributes* attributes) override;
-  grpc_completion_queue* grpc_completion_queue_create(
-      const grpc_completion_queue_factory* factory,
-      const grpc_completion_queue_attributes* attributes,
-      void* reserved) override;
-  grpc_completion_queue* grpc_completion_queue_create_for_next(
-      void* reserved) override;
-  grpc_completion_queue* grpc_completion_queue_create_for_pluck(
-      void* reserved) override;
-  void grpc_completion_queue_shutdown(grpc_completion_queue* cq) override;
-  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
-  grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
-                                         gpr_timespec deadline,
-                                         void* reserved) override;
-
-  void* gpr_malloc(size_t size) override;
-  void gpr_free(void* p) override;
-
-  void grpc_init() override;
-  void grpc_shutdown() override;
-
-  void gpr_mu_init(gpr_mu* mu) override;
-  void gpr_mu_destroy(gpr_mu* mu) override;
-  void gpr_mu_lock(gpr_mu* mu) override;
-  void gpr_mu_unlock(gpr_mu* mu) override;
-  void gpr_cv_init(gpr_cv* cv) override;
-  void gpr_cv_destroy(gpr_cv* cv) override;
-  int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) override;
-  void gpr_cv_signal(gpr_cv* cv) override;
-  void gpr_cv_broadcast(gpr_cv* cv) override;
-
   grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
                                         size_t nops, void* tag,
                                         void* reserved) override;
