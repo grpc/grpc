@@ -51,14 +51,13 @@ class Slice final {
 
   /// Construct a slice from a copied buffer
   Slice(const void* buf, size_t len)
-      : slice_(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-            reinterpret_cast<const char*>(buf), len)) {}
+      : slice_(grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(buf),
+                                             len)) {}
 
   /// Construct a slice from a copied string
   /* NOLINTNEXTLINE(google-explicit-constructor) */
   Slice(const std::string& str)
-      : slice_(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-            str.c_str(), str.length())) {}
+      : slice_(grpc_slice_from_copied_buffer(str.c_str(), str.length())) {}
 
   enum StaticSlice { STATIC_SLICE };
 
@@ -136,8 +135,7 @@ inline grpc_slice SliceReferencingString(const std::string& str) {
 }
 
 inline grpc_slice SliceFromCopiedString(const std::string& str) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(str.data(),
-                                                                 str.length());
+  return grpc_slice_from_copied_buffer(str.data(), str.length());
 }
 
 }  // namespace grpc

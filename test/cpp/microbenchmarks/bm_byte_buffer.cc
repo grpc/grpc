@@ -57,8 +57,7 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   std::vector<grpc_slice> slices;
   for (int i = 0; i < num_slices; ++i) {
     std::unique_ptr<char[]> buf(new char[kSliceSize]);
-    slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-        buf.get(), kSliceSize));
+    slices.emplace_back(grpc_slice_from_copied_buffer(buf.get(), kSliceSize));
   }
   grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
@@ -86,8 +85,7 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   std::vector<grpc_slice> slices;
   for (int i = 0; i < num_slices; ++i) {
     std::unique_ptr<char[]> buf(new char[kSliceSize]);
-    slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-        buf.get(), kSliceSize));
+    slices.emplace_back(grpc_slice_from_copied_buffer(buf.get(), kSliceSize));
   }
   grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;

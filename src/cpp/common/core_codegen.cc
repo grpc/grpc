@@ -36,12 +36,6 @@
 
 namespace grpc {
 
-grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
-                                                      size_t length) {
-  return ::grpc_slice_from_copied_buffer(static_cast<const char*>(buffer),
-                                         length);
-}
-
 void CoreCodegen::grpc_metadata_array_init(grpc_metadata_array* array) {
   ::grpc_metadata_array_init(array);
 }
