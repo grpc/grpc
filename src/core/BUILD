@@ -4239,7 +4239,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_xds_override_host",
     srcs = [
-        "ext/filters/client_channel/lb_policy/xds_override_host/xds_override_host.cc",
+        "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
     external_deps = [
         "absl/status",

@@ -61,8 +61,6 @@ extern void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
-extern void RegisterXdsOverrideHostLbPolicy(
-    CoreConfiguration::Builder* builder);
 extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
@@ -85,7 +83,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterPickFirstLbPolicy(builder);
   RegisterRoundRobinLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
-  RegisterXdsOverrideHostLbPolicy(builder);
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
