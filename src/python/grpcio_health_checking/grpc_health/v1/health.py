@@ -88,7 +88,7 @@ def _watcher_to_send_response_callback_adapter(
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
     _lock: threading.RLock
-    _server_status: Mapping[str, _health_pb2.HealthCheckResponse.ServingStatus]
+    _server_status: Mapping[str, Any]
     _send_response_callbacks: Mapping[str, Callable[[Any], None]]
     _gracefully_shutting_down: bool
 
