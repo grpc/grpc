@@ -45,7 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual void grpc_metadata_array_init(grpc_metadata_array* array) = 0;
   virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;
 
   virtual const Status& ok() = 0;

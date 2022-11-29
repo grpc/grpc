@@ -33,7 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  void grpc_metadata_array_init(grpc_metadata_array* array) override;
   void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
 
   gpr_timespec gpr_inf_future(gpr_clock_type type) override;

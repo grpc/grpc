@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::grpc_metadata_array_init(grpc_metadata_array* array) {
-  ::grpc_metadata_array_init(array);
-}
-
 void CoreCodegen::grpc_metadata_array_destroy(grpc_metadata_array* array) {
   ::grpc_metadata_array_destroy(array);
 }
