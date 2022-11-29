@@ -40,8 +40,7 @@ class Slice final {
 
   enum AddRef { ADD_REF };
   /// Construct a slice from \a slice, adding a reference.
-  Slice(grpc_slice slice, AddRef)
-      : slice_(g_core_codegen_interface->grpc_slice_ref(slice)) {}
+  Slice(grpc_slice slice, AddRef) : slice_(grpc_slice_ref(slice)) {}
 
   enum StealRef { STEAL_REF };
   /// Construct a slice from \a slice, stealing a reference.
@@ -69,8 +68,7 @@ class Slice final {
             reinterpret_cast<const char*>(buf), len)) {}
 
   /// Copy constructor, adds a reference.
-  Slice(const Slice& other)
-      : slice_(g_core_codegen_interface->grpc_slice_ref(other.slice_)) {}
+  Slice(const Slice& other) : slice_(grpc_slice_ref(other.slice_)) {}
 
   /// Move constructor, steals a reference.
   Slice(Slice&& other) noexcept : slice_(other.slice_) {
@@ -115,9 +113,7 @@ class Slice final {
   }
 
   /// Raw C slice. Caller needs to call grpc_slice_unref when done.
-  grpc_slice c_slice() const {
-    return g_core_codegen_interface->grpc_slice_ref(slice_);
-  }
+  grpc_slice c_slice() const { return grpc_slice_ref(slice_); }
 
  private:
   friend class ByteBuffer;
