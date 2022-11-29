@@ -26,6 +26,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
@@ -778,7 +779,7 @@ class CallOpClientRecvStatus {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
-    error_message_ = g_core_codegen_interface->grpc_empty_slice();
+    error_message_ = grpc_empty_slice();
   }
 
  protected:

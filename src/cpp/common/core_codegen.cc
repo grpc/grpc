@@ -36,8 +36,6 @@
 
 namespace grpc {
 
-grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
-
 grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
   return ::grpc_slice_malloc(length);
 }

@@ -34,7 +34,7 @@ namespace grpc {
 class Slice final {
  public:
   /// Construct an empty slice.
-  Slice() : slice_(g_core_codegen_interface->grpc_empty_slice()) {}
+  Slice() : slice_(grpc_empty_slice()) {}
   /// Destructor - drops one reference.
   ~Slice() { g_core_codegen_interface->grpc_slice_unref(slice_); }
 
@@ -75,7 +75,7 @@ class Slice final {
 
   /// Move constructor, steals a reference.
   Slice(Slice&& other) noexcept : slice_(other.slice_) {
-    other.slice_ = g_core_codegen_interface->grpc_empty_slice();
+    other.slice_ = grpc_empty_slice();
   }
 
   /// Assignment, reference count is unchanged.
