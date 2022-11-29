@@ -45,8 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual void grpc_slice_buffer_add(grpc_slice_buffer* sb,
-                                     grpc_slice slice) = 0;
   virtual void grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb,
                                              grpc_slice slice) = 0;
   virtual void grpc_slice_buffer_pop(grpc_slice_buffer* sb) = 0;

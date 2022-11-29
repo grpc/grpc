@@ -24,6 +24,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
@@ -111,8 +112,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     // previous slice. Therefore, use grpc_slice_buffer_add_indexed method to
     // ensure the slice gets added at a separate index. It can then be kept
     // around and popped later in the BackUp function.
-    g_core_codegen_interface->grpc_slice_buffer_add_indexed(slice_buffer_,
-                                                            slice_);
+    grpc_slice_buffer_add_indexed(slice_buffer_, slice_);
     return true;
   }
 
@@ -138,7 +138,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     } else {
       backup_slice_ =
           grpc_slice_split_tail(&slice_, GRPC_SLICE_LENGTH(slice_) - count);
-      g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
+      grpc_slice_buffer_add(slice_buffer_, slice_);
     }
     // It's dangerous to keep an inlined grpc_slice as the backup slice, since
     // on a following Next() call, a reference will be returned to this slice
