@@ -1417,6 +1417,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:error",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_log",
         "//src/core:experiments",
         "//src/core:gpr_atm",
