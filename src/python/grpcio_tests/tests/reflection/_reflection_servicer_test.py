@@ -16,6 +16,10 @@
 import sys
 import unittest
 
+from typeguard.importhook import install_import_hook
+
+install_import_hook('grpc_reflection')
+
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 import grpc

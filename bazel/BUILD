@@ -24,3 +24,8 @@ filegroup(
     name = "_gevent_test_main",
     srcs = ["_gevent_test_main.py"],
 )
+
+filegroup(
+    name = "_run_time_type_check_main",
+    srcs = ["_run_time_type_check_main.py"],
+)

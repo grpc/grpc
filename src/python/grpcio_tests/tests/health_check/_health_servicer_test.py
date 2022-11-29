@@ -20,6 +20,10 @@ import threading
 import time
 import unittest
 
+from typeguard.importhook import install_import_hook
+
+install_import_hook('grpc_health')
+
 import grpc
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2

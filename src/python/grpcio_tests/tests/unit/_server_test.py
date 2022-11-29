@@ -20,18 +20,6 @@ import grpc
 
 from tests.unit import resources
 from tests.unit import test_common
-from tests.unit.framework.common import test_constants
-
-_REQUEST = b""
-_RESPONSE = b"response"
-_REGISTERED_RESPONSE = b"registered_response"
-
-_SERVICE_NAME = "test"
-_UNARY_UNARY = "UnaryUnary"
-_UNARY_UNARY_REGISTERED = "UnaryUnaryRegistered"
-_UNARY_STREAM = "UnaryStream"
-_STREAM_UNARY = "StreamUnary"
-_STREAM_STREAM = "StreamStream"
 
 
 class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
@@ -42,84 +30,8 @@ class _ActualGenericRpcHandler(grpc.GenericRpcHandler):
 def handle_unary_unary(request, servicer_context):
     return _RESPONSE
 
-
-def handle_registered_unary_unary(request, servicer_context):
-    return _REGISTERED_RESPONSE
-
-
-def handle_unary_stream(request, servicer_context):
-    for _ in range(test_constants.STREAM_LENGTH):
-        yield _RESPONSE
-
-
-def handle_stream_unary(request_iterator, servicer_context):
-    for request in request_iterator:
-        pass
-    return _RESPONSE
-
-
-def handle_stream_stream(request_iterator, servicer_context):
-    for request in request_iterator:
-        yield _RESPONSE
-
-
-class _MethodHandler(grpc.RpcMethodHandler):
-    def __init__(self, request_streaming, response_streaming, registered=False):
-        self.request_streaming = request_streaming
-        self.response_streaming = response_streaming
-        self.request_deserializer = None
-        self.response_serializer = None
-        self.unary_unary = None
-        self.unary_stream = None
-        self.stream_unary = None
-        self.stream_stream = None
-        if self.request_streaming and self.response_streaming:
-            self.stream_stream = handle_stream_stream
-        elif self.request_streaming:
-            self.stream_unary = handle_stream_unary
-        elif self.response_streaming:
-            self.unary_stream = handle_unary_stream
-        else:
-            if registered:
-                self.unary_unary = handle_registered_unary_unary
-            else:
-                self.unary_unary = handle_unary_unary
-
-
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(True, True)
-        elif handler_call_details.method == grpc._common.fully_qualified_method(
-            _SERVICE_NAME, _UNARY_UNARY_REGISTERED
-        ):
-            return _MethodHandler(False, False)
-        else:
-            return None
-
-
-class _GenericHandlerWithRegisteredName(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == grpc._common.fully_qualified_method(
-            _SERVICE_NAME, _UNARY_UNARY_REGISTERED
-        ):
-            return _MethodHandler(False, False)
-        else:
-            return None
-
-
-_REGISTERED_METHOD_HANDLERS = {
-    _UNARY_UNARY_REGISTERED: _MethodHandler(False, False, True),
-}
-
-
-class ServerTest(unittest.TestCase):
+    @unittest.skipIf(test_common.running_under_run_time_type_check(),
+                     "This test case used unsupported types")
     def test_not_a_generic_rpc_handler_at_construction(self):
         with self.assertRaises(AttributeError) as exception_context:
             grpc.server(

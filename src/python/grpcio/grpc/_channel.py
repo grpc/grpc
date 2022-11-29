@@ -120,7 +120,9 @@ def _unknown_code_details(
 
 class _RPCState(object):
     condition: threading.Condition
-    due: Set[cygrpc.OperationType]
+    #TODO(xuanwn) Change it to use correct cython type.
+    #Issue: https://github.com/grpc/grpc/issues/32033
+    due: Set[Union[cygrpc.OperationType, int]]
     initial_metadata: Optional[MetadataType]
     response: Any
     trailing_metadata: Optional[MetadataType]
@@ -135,14 +137,10 @@ class _RPCState(object):
     method: Optional[str]
     target: Optional[str]
 
-    def __init__(
-        self,
-        due: Sequence[cygrpc.OperationType],
-        initial_metadata: Optional[MetadataType],
-        trailing_metadata: Optional[MetadataType],
-        code: Optional[grpc.StatusCode],
-        details: Optional[str],
-    ):
+    def __init__(self, due: Sequence[Union[cygrpc.OperationType, int]],
+                 initial_metadata: Optional[MetadataType],
+                 trailing_metadata: Optional[MetadataType],
+                 code: Optional[grpc.StatusCode], details: Optional[str]):
         # `condition` guards all members of _RPCState. `notify_all` is called on
         # `condition` when the state of the RPC has changed.
         self.condition = threading.Condition()
@@ -255,14 +253,12 @@ def _event_handler(
 
 
 # TODO(xuanwn): Create a base class for IntegratedCall and SegregatedCall.
-# pylint: disable=too-many-statements
-def _consume_request_iterator(
-    request_iterator: Iterator,
-    state: _RPCState,
-    call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
-    request_serializer: SerializingFunction,
-    event_handler: Optional[UserTag],
-) -> None:
+#pylint: disable=too-many-statements
+def _consume_request_iterator(request_iterator: Iterator, state: _RPCState,
+                              call: Union[cygrpc.IntegratedCall,
+                                          cygrpc.SegregatedCall],
+                              request_serializer: Optional[SerializingFunction],
+                              event_handler: Optional[UserTag]) -> None:
     """Consume a request supplied by the user."""
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
@@ -970,21 +966,15 @@ class _MultiThreadedRendezvous(
 
 
 def _start_unary_request(
-    request: Any,
-    timeout: Optional[float],
-    request_serializer: SerializingFunction,
+    request: Any, timeout: Optional[float],
+    request_serializer: Optional[SerializingFunction]
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
     if serialized_request is None:
-        state = _RPCState(
-            (),
-            (),
-            (),
-            grpc.StatusCode.INTERNAL,
-            "Exception serializing request!",
-        )
-        error = _InactiveRpcError(state)
+        state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
+                          'Exception serializing request!')
+        error = _InactiveRpcError(state)  # pytype: disable=not-instantiable
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -1252,15 +1242,9 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     ]
 
     # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        channel: cygrpc.Channel,
-        method: bytes,
-        target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-        _registered_call_handle: Optional[int],
-    ):
+    def __init__(self, channel: cygrpc.Channel, method: bytes,
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
         self._method = method
         self._target = target
@@ -1283,14 +1267,9 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             request, self._request_serializer
         )
         if serialized_request is None:
-            state = _RPCState(
-                (),
-                (),
-                (),
-                grpc.StatusCode.INTERNAL,
-                "Exception serializing request!",
-            )
-            raise _InactiveRpcError(state)
+            state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
+                              'Exception serializing request!')
+            raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = (
@@ -1354,16 +1333,10 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     ]
 
     # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        channel: cygrpc.Channel,
-        managed_call: IntegratedCallFactory,
-        method: bytes,
-        target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
-        _registered_call_handle: Optional[int],
-    ):
+    def __init__(self, channel: cygrpc.Channel,
+                 managed_call: IntegratedCallFactory, method: bytes,
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1828,7 +1801,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
 
 class _ChannelConnectivityState(object):
     lock: threading.RLock
-    channel: grpc.Channel
+    channel: cygrpc.Channel
     polling: bool
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
@@ -1843,7 +1816,7 @@ class _ChannelConnectivityState(object):
     ]
     delivering: bool
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: cygrpc.Channel):
         self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
@@ -1918,11 +1891,9 @@ def _spawn_delivery(
 
 
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
-def _poll_connectivity(
-    state: _ChannelConnectivityState,
-    channel: grpc.Channel,
-    initial_try_to_connect: bool,
-) -> None:
+def _poll_connectivity(state: _ChannelConnectivityState,
+                       channel: cygrpc.Channel,
+                       initial_try_to_connect: bool) -> None:
     try_to_connect = initial_try_to_connect
     connectivity = channel.check_connectivity_state(try_to_connect)
     with state.lock:
@@ -1967,11 +1938,9 @@ def _poll_connectivity(
                         _spawn_delivery(state, callbacks)
 
 
-def _subscribe(
-    state: _ChannelConnectivityState,
-    callback: Callable[[grpc.ChannelConnectivity], None],
-    try_to_connect: bool,
-) -> None:
+def _subscribe(state: _ChannelConnectivityState,
+               callback: Callable[[grpc.ChannelConnectivity], None],
+               try_to_connect: Optional[bool]) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
             polling_thread = cygrpc.ForkManagedThread(
@@ -2050,13 +2019,9 @@ class Channel(grpc.Channel):
     _target: str
     _registered_call_handles: Dict[str, int]
 
-    def __init__(
-        self,
-        target: str,
-        options: Sequence[ChannelArgumentType],
-        credentials: Optional[grpc.ChannelCredentials],
-        compression: Optional[grpc.Compression],
-    ):
+    def __init__(self, target: str, options: Sequence[ChannelArgumentType],
+                 credentials: Optional[cygrpc.ChannelCredentials],
+                 compression: Optional[grpc.Compression]):
         """Constructor.
 
         Args:

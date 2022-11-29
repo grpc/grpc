@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from grpc_testing._channel import _channel
-from grpc_testing._channel import _channel_state
+from typing import Iterator
+
+from google.protobuf import descriptor  # pytype: disable=pyi-error
+from grpc_testing import Channel
+from grpc_testing._channel import _channel  # pytype: disable=pyi-error
+from grpc_testing._channel import _channel_state  # pytype: disable=pyi-error
 
 
 # descriptors is reserved for later use.
 # pylint: disable=unused-argument
-def testing_channel(descriptors, time):
+def testing_channel(descriptors: Iterator[descriptor.ServiceDescriptor],
+                    time: float) -> Channel:
     return _channel.TestingChannel(time, _channel_state.State())
 
 
