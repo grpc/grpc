@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-grpc_slice CoreCodegen::grpc_slice_sub(grpc_slice s, size_t begin, size_t end) {
-  return ::grpc_slice_sub(s, begin, end);
-}
-
 grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,
                                                       size_t length) {
   return ::grpc_slice_from_static_buffer(buffer, length);

@@ -108,8 +108,7 @@ class Slice final {
 
   /// Returns a substring of the `slice` as another slice.
   Slice sub(size_t begin, size_t end) const {
-    return Slice(g_core_codegen_interface->grpc_slice_sub(slice_, begin, end),
-                 STEAL_REF);
+    return Slice(grpc_slice_sub(slice_, begin, end), STEAL_REF);
   }
 
   /// Raw C slice. Caller needs to call grpc_slice_unref when done.
