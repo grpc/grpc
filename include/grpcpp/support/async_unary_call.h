@@ -79,7 +79,7 @@ class ClientAsyncResponseReaderHelper {
  public:
   /// Start a call and write the request out if \a start is set.
   /// \a tag will be notified on \a cq when the call has been started (i.e.
-  /// intitial metadata sent) and \a request has been written out.
+  /// initial metadata sent) and \a request has been written out.
   /// If \a start is not set, the actual call must be initiated by StartCall
   /// Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
@@ -152,7 +152,7 @@ class ClientAsyncResponseReaderHelper {
     // will be static-cast'ed back to the class specified here by hiding that
     // class information inside the function definition. Note that this feature
     // expects the class being specified here for R to be a base-class of the
-    // "real" R without any multiple-inheritance (as applies in protbuf wrt
+    // "real" R without any multiple-inheritance (as applies in protobuf wrt
     // MessageLite)
     *finish = [](ClientContext* context, internal::Call* call,
                  bool initial_metadata_read,

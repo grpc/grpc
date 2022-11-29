@@ -318,7 +318,7 @@ class ClientAsyncWriterFactory {
   /// Create a stream object.
   /// Start the RPC if \a start is set
   /// \a tag will be notified on \a cq when the call has been started (i.e.
-  /// intitial metadata sent) and \a request has been written out.
+  /// initial metadata sent) and \a request has been written out.
   /// If \a start is not set, \a tag must be nullptr and the actual call
   /// must be initiated by StartCall
   /// Note that \a context will be used to fill in custom initial metadata
@@ -488,7 +488,7 @@ class ClientAsyncReaderWriterFactory {
   /// Create a stream object.
   /// Start the RPC request if \a start is set.
   /// \a tag will be notified on \a cq when the call has been started (i.e.
-  /// intitial metadata sent). If \a start is not set, \a tag must be
+  /// initial metadata sent). If \a start is not set, \a tag must be
   /// nullptr and the actual call must be initiated by StartCall
   /// Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
@@ -651,7 +651,7 @@ class ServerAsyncReaderInterface
   ///
   /// It is appropriate to call this method when:
   ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous
+  ///     implicitly, or explicitly because a previous
   ///     \a AsyncReaderInterface::Read operation with a non-ok result,
   ///     e.g., cq->Next(&read_tag, &ok) filled in 'ok' with 'false').
   ///
@@ -727,7 +727,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   /// See the \a ServerAsyncReaderInterface.Read method for semantics
   ///
   /// Side effect:
-  ///   - also sends initial metadata if not alreay sent.
+  ///   - also sends initial metadata if not already sent.
   ///   - uses the \a ServerContext associated with this call to send possible
   ///     initial and trailing metadata.
   ///
@@ -758,7 +758,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   /// See the \a ServerAsyncReaderInterface.Read method for semantics
   ///
   /// Side effect:
-  ///   - also sends initial metadata if not alreay sent.
+  ///   - also sends initial metadata if not already sent.
   ///   - uses the \a ServerContext associated with this call to send possible
   ///     initial and trailing metadata.
   ///
@@ -805,7 +805,7 @@ class ServerAsyncWriterInterface
   ///
   /// It is appropriate to call this method when either:
   ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous \a
+  ///     implicitly, or explicitly because a previous \a
   ///     AsyncReaderInterface::Read operation with a non-ok
   ///     result (e.g., cq->Next(&read_tag, &ok) filled in 'ok' with 'false'.
   ///   * it is desired to end the call early with some non-OK status code.
@@ -967,7 +967,7 @@ class ServerAsyncReaderWriterInterface
   ///
   /// It is appropriate to call this method when either:
   ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous \a
+  ///     implicitly, or explicitly because a previous \a
   ///     AsyncReaderInterface::Read operation
   ///     with a non-ok result (e.g., cq->Next(&read_tag, &ok) filled in 'ok'
   ///     with 'false'.
