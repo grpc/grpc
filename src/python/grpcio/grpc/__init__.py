@@ -23,8 +23,7 @@ import logging
 import sys
 import threading
 import types
-from typing import (Any, Callable, Iterable, Mapping, Optional, Sequence,
-                    Tuple, Type)
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -41,6 +40,8 @@ from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestIterableType
 from grpc._typing import RequestType
 from grpc._typing import SerializingFunction
+
+from typing import Type  # isort:skip
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
