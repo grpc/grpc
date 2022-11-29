@@ -36,13 +36,6 @@
 
 namespace grpc {
 
-void* CoreCodegen::grpc_call_arena_alloc(grpc_call* call, size_t length) {
-  return ::grpc_call_arena_alloc(call, length);
-}
-const char* CoreCodegen::grpc_call_error_to_string(grpc_call_error error) {
-  return ::grpc_call_error_to_string(error);
-}
-
 grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
 
 grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {

@@ -976,7 +976,7 @@ class CallOpSet : public CallOpSetInterface,
       // while another Write is already pending on the same RPC or invoking
       // WritesDone multiple times
       gpr_log(GPR_ERROR, "API misuse of type %s observed",
-              g_core_codegen_interface->grpc_call_error_to_string(err));
+              grpc_call_error_to_string(err));
       GPR_CODEGEN_ASSERT(false);
     }
   }

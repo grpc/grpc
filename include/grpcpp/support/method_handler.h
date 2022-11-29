@@ -121,8 +121,8 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     grpc::Status* status, void** /*handler_data*/) final {
-    auto* request = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call, sizeof(RequestType))) RequestType;
+    auto* request =
+        new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType;
     return UnaryDeserializeHelper(req, status,
                                   static_cast<BaseRequestType*>(request));
   }
@@ -230,8 +230,8 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
                     grpc::Status* status, void** /*handler_data*/) final {
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
-    auto* request = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call, sizeof(RequestType))) RequestType();
+    auto* request =
+        new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
     *status =
         grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();

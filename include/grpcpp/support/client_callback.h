@@ -85,9 +85,8 @@ class CallbackUnaryCallImpl {
       grpc::internal::CallbackWithStatusTag tag;
     };
     const size_t alloc_sz = sizeof(OpSetAndTag);
-    auto* const alloced = static_cast<OpSetAndTag*>(
-        grpc::g_core_codegen_interface->grpc_call_arena_alloc(call.call(),
-                                                              alloc_sz));
+    auto* const alloced =
+        static_cast<OpSetAndTag*>(grpc_call_arena_alloc(call.call(), alloc_sz));
     auto* ops = new (&alloced->opset) FullCallOpSet;
     auto* tag = new (&alloced->tag)
         grpc::internal::CallbackWithStatusTag(call.call(), on_completion, ops);
@@ -714,7 +713,7 @@ class ClientCallbackReaderWriterFactory {
         channel->CreateCall(method, context, channel->CallbackCQ());
 
     grpc_call_ref(call.call());
-    new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+    new (grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackReaderWriterImpl<Request, Response>)))
         ClientCallbackReaderWriterImpl<Request, Response>(call, context,
                                                           reactor);
@@ -874,8 +873,8 @@ class ClientCallbackReaderFactory {
         channel->CreateCall(method, context, channel->CallbackCQ());
 
     grpc_call_ref(call.call());
-    new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(ClientCallbackReaderImpl<Response>)))
+    new (grpc_call_arena_alloc(call.call(),
+                               sizeof(ClientCallbackReaderImpl<Response>)))
         ClientCallbackReaderImpl<Response>(call, context, request, reactor);
   }
 };
@@ -1103,8 +1102,8 @@ class ClientCallbackWriterFactory {
         channel->CreateCall(method, context, channel->CallbackCQ());
 
     grpc_call_ref(call.call());
-    new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(ClientCallbackWriterImpl<Request>)))
+    new (grpc_call_arena_alloc(call.call(),
+                               sizeof(ClientCallbackWriterImpl<Request>)))
         ClientCallbackWriterImpl<Request>(call, context, response, reactor);
   }
 };
@@ -1215,7 +1214,7 @@ class ClientCallbackUnaryFactory {
 
     grpc_call_ref(call.call());
 
-    new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+    new (grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackUnaryImpl)))
         ClientCallbackUnaryImpl(call, context,
                                 static_cast<const BaseRequest*>(request),

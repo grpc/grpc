@@ -95,10 +95,9 @@ class ClientAsyncResponseReaderHelper {
       const grpc::internal::RpcMethod& method, grpc::ClientContext* context,
       const W& request) /* __attribute__((noinline)) */ {
     grpc::internal::Call call = channel->CreateCall(method, context, cq);
-    ClientAsyncResponseReader<R>* result =
-        new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-            call.call(), sizeof(ClientAsyncResponseReader<R>)))
-            ClientAsyncResponseReader<R>(call, context);
+    ClientAsyncResponseReader<R>* result = new (grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncResponseReader<R>)))
+        ClientAsyncResponseReader<R>(call, context);
     SetupRequest<BaseR, BaseW>(
         call.call(), &result->single_buf_, &result->read_initial_metadata_,
         &result->finish_, static_cast<const BaseW&>(request));
@@ -128,8 +127,7 @@ class ClientAsyncResponseReaderHelper {
                                   grpc::internal::CallOpRecvMessage<R>,
                                   grpc::internal::CallOpClientRecvStatus>;
     SingleBufType* single_buf =
-        new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-            call, sizeof(SingleBufType))) SingleBufType;
+        new (grpc_call_arena_alloc(call, sizeof(SingleBufType))) SingleBufType;
     *single_buf_ptr = single_buf;
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(single_buf->SendMessage(request).ok());
@@ -166,8 +164,8 @@ class ClientAsyncResponseReaderHelper {
             grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<R>,
                                       grpc::internal::CallOpClientRecvStatus>;
         FinishBufType* finish_buf =
-            new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-                call->call(), sizeof(FinishBufType))) FinishBufType;
+            new (grpc_call_arena_alloc(call->call(), sizeof(FinishBufType)))
+                FinishBufType;
         *finish_buf_ptr = finish_buf;
         finish_buf->set_output_tag(tag);
         finish_buf->RecvMessage(static_cast<R*>(msg));
