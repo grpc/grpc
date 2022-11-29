@@ -576,6 +576,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
   if (status.ok()) {
     MaybeMakeReadSlices();
     if (!TcpDoRead(status)) {
+      UpdateRcvLowat();
       // We've consumed the edge, request a new one.
       read_mu_.Unlock();
       handle_->NotifyOnRead(on_read_);

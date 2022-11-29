@@ -211,20 +211,34 @@ void test_fails(void) {
 
 void test_connect_cancellation_succeeds(void) {
   gpr_log(GPR_ERROR, "---- starting test_connect_cancellation_succeeds() ----");
-  auto target_addr_uri = *grpc_core::URI::Parse(absl::StrCat(
+  auto target_ipv6_addr_uri = *grpc_core::URI::Parse(absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
+  auto target_ipv4_addr_uri = *grpc_core::URI::Parse(absl::StrCat(
+      "ipv4:127.0.0.1:", std::to_string(grpc_pick_unused_port_or_die())));
   grpc_resolved_address resolved_addr;
-  ASSERT_TRUE(grpc_parse_uri(target_addr_uri, &resolved_addr));
+  ASSERT_TRUE(grpc_parse_uri(target_ipv6_addr_uri, &resolved_addr));
   int svr_fd;
   grpc_closure done;
   grpc_core::ExecCtx exec_ctx;
   int one = 1;
+  bool tried_ipv4 = false;
   /* create a phony server */
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  ASSERT_GE(svr_fd, 0);
-  ASSERT_EQ(bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
-                 (socklen_t)resolved_addr.len),
-            0);
+  while (svr_fd < 0 ||
+         bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
+              (socklen_t)resolved_addr.len) != 0) {
+    if (tried_ipv4) {
+      gpr_log(GPR_ERROR,
+              "Skipping test. Failed to create a phony server bound to ipv6 or "
+              "ipv4 address");
+      return;
+    }
+    // Try ipv4
+    ASSERT_TRUE(grpc_parse_uri(target_ipv4_addr_uri, &resolved_addr));
+    svr_fd = socket(AF_INET, SOCK_STREAM, 0);
+    tried_ipv4 = true;
+  }
+
   ASSERT_EQ(listen(svr_fd, 1), 0);
 
   std::vector<int> client_sockets;
@@ -235,7 +249,7 @@ void test_connect_cancellation_succeeds(void) {
   // be allowed by the kernel before any subsequent connection attempts
   // become pending indefinitely.
   while (true) {
-    int client_socket = socket(AF_INET6, SOCK_STREAM, 0);
+    int client_socket = socket(tried_ipv4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
     setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     // Make fd non-blocking.
     int flags = fcntl(client_socket, F_GETFL, 0);

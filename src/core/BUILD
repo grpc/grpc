@@ -1890,7 +1890,10 @@ grpc_cc_library(
         "//:windows": ["windows_event_engine"],
         "//:windows_msvc": ["windows_event_engine"],
         "//:windows_other": ["windows_event_engine"],
-        "//conditions:default": ["posix_event_engine"],
+        "//conditions:default": [
+            "posix_event_engine",
+            "posix_event_engine_endpoint",
+        ],
     }],
     deps = [
         "//:event_engine_base_hdrs",

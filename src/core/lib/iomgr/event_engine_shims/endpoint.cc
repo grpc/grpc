@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -43,8 +44,8 @@ namespace {
 
 constexpr int64_t kShutdownBit = static_cast<int64_t>(1) << 32;
 
-// A wrapper class to manage Event Engine endpoint ref counting and asynchronous
-// shutdown.
+// A wrapper class to manage Event Engine endpoint ref counting and
+// asynchronous shutdown.
 class EventEngineEndpointWrapper {
  public:
   struct grpc_event_engine_endpoint {
@@ -61,6 +62,8 @@ class EventEngineEndpointWrapper {
   explicit EventEngineEndpointWrapper(
       std::unique_ptr<EventEngine::Endpoint> endpoint);
 
+  int Fd() { return fd_; }
+
   void Ref() { refs_.fetch_add(1, std::memory_order_acq_rel); }
   void Unref() {
     if (refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
@@ -68,15 +71,16 @@ class EventEngineEndpointWrapper {
     }
   }
 
-  // Returns a managed grpc_endpoint object. It retains ownership of the object.
+  // Returns a managed grpc_endpoint object. It retains ownership of the
+  // object.
   grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
 
   // Returns a raw pointer to the underlying EventEngine endpoint object.
   EventEngine::Endpoint* GetEEEndpoint() { return endpoint_.get(); }
 
   // Returns true if the endpoint is not yet shutdown. In that case, it also
-  // acquires a shutdown ref. Otherwise it returns false and doesn't modify the
-  // shutdown ref.
+  // acquires a shutdown ref. Otherwise it returns false and doesn't modify
+  // the shutdown ref.
   bool ShutdownRef() {
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {
@@ -92,9 +96,9 @@ class EventEngineEndpointWrapper {
   }
 
   // Decrement the shutdwn ref. If this is the last shutdown ref, it also
-  // deletes the underlying event engine endpoint. Deletion of the event engine
-  // endpoint should trigger execution of any pending read/write callbacks with
-  // NOT-OK status.
+  // deletes the underlying event engine endpoint. Deletion of the event
+  // engine endpoint should trigger execution of any pending read/write
+  // callbacks with NOT-OK status.
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
@@ -104,10 +108,10 @@ class EventEngineEndpointWrapper {
     }
   }
 
-  // If trigger shutdown is called the first time, it sets the shutdown bit and
-  // decrements the shutdown ref. If trigger shutdown has been called before or
-  // in parallel, only one of them would win the race. The other invocation
-  // would simply return.
+  // If trigger shutdown is called the first time, it sets the shutdown bit
+  // and decrements the shutdown ref. If trigger shutdown has been called
+  // before or in parallel, only one of them would win the race. The other
+  // invocation would simply return.
   void TriggerShutdown() {
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {
@@ -131,6 +135,7 @@ class EventEngineEndpointWrapper {
  private:
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
+  int fd_{-1};
   std::unique_ptr<EventEngine::Endpoint> endpoint_;
   std::unique_ptr<grpc_event_engine_endpoint> eeep_;
 };
@@ -208,9 +213,9 @@ void EndpointAddToPollsetSet(grpc_endpoint* /* ep */,
 void EndpointDeleteFromPollsetSet(grpc_endpoint* /* ep */,
                                   grpc_pollset_set* /* pollset */) {}
 /// After shutdown, all endpoint operations except destroy are no-op,
-/// and will return some kind of sane default (empty strings, nullptrs, etc). It
-/// is the caller's responsibility to ensure that calls to EndpointShutdown are
-/// synchronized.
+/// and will return some kind of sane default (empty strings, nullptrs, etc).
+/// It is the caller's responsibility to ensure that calls to EndpointShutdown
+/// are synchronized.
 void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
@@ -252,7 +257,17 @@ absl::string_view EndpointGetLocalAddress(grpc_endpoint* ep) {
   return eeep->local_address;
 }
 
-int EndpointGetFd(grpc_endpoint* /* ep */) { return -1; }
+int EndpointGetFd(grpc_endpoint* ep) {
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  if (!eeep->wrapper->ShutdownRef()) {
+    return -1;
+  }
+  int fd = eeep->wrapper->Fd();
+  eeep->wrapper->ShutdownUnref();
+  return fd;
+}
 
 bool EndpointCanTrackErr(grpc_endpoint* /* ep */) { return false; }
 
@@ -283,6 +298,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   if (peer_addr.ok()) {
     eeep_->peer_address = *peer_addr;
   }
+  fd_ = DefaultEventEngineEndpointWrappedFd(endpoint_.get());
 }
 
 }  // namespace

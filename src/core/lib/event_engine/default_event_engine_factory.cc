@@ -30,9 +30,14 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<WindowsEventEngine>();
 }
 
+int DefaultEventEngineEndpointWrappedFd(EventEngine::Endpoint* /*endpoint*/) {
+  return -1;
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 #else  // not GPR_WINDOWS
+#include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 namespace grpc_event_engine {
@@ -40,6 +45,10 @@ namespace experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
   return std::make_unique<PosixEventEngine>();
+}
+
+int DefaultEventEngineEndpointWrappedFd(EventEngine::Endpoint* endpoint) {
+  return reinterpret_cast<posix_engine::PosixEndpoint*>(endpoint)->Fd();
 }
 
 }  // namespace experimental
