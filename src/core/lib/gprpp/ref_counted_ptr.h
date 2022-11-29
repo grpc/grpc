@@ -49,6 +49,8 @@ class RefCountedPtr {
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(RefCountedPtr<Y>&& other) noexcept {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
     value_ = static_cast<T*>(other.value_);
     other.value_ = nullptr;
   }

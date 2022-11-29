@@ -102,17 +102,14 @@ void PollingResolver::ShutdownLocked() {
 }
 
 void PollingResolver::ScheduleNextResolutionTimer(const Duration& timeout) {
+  RefCountedPtr<PollingResolver> self = Ref();
   next_resolution_timer_handle_ =
       channel_args_.GetObject<EventEngine>()->RunAfter(
-          timeout, [self = Ref()]() mutable {
+          timeout, [self = std::move(self)]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
-            auto* self_ptr = static_cast<PollingResolver*>(self.get());
-            self_ptr->work_serializer_->Run(
-                [self = std::move(self)]() {
-                  auto* self_ptr = static_cast<PollingResolver*>(self.get());
-                  self_ptr->OnNextResolutionLocked();
-                },
+            self->work_serializer_->Run(
+                [self = std::move(self)]() { self->OnNextResolutionLocked(); },
                 DEBUG_LOCATION);
           });
 }
