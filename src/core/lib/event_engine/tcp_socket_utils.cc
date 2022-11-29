@@ -15,6 +15,8 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
+#include "grpc/event_engine/event_engine.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -83,13 +85,18 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
     return absl::InvalidArgumentError(
         absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
   }
-  const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
+  const struct sockaddr_un* unix_addr =
+      reinterpret_cast<const struct sockaddr_un*>(addr);
   std::string scheme, path;
   if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
     scheme = "unix-abstract";
-    path =
-        std::string(unix_addr->sun_path + 1,
-                    resolved_addr.size() - sizeof(unix_addr->sun_family) - 1);
+    if (resolved_addr.size() < sizeof(unix_addr->sun_family) + 1) {
+      path = "";
+    } else {
+      path =
+          std::string(unix_addr->sun_path + 1,
+                      resolved_addr.size() - sizeof(unix_addr->sun_family) - 1);
+    }
   } else {
     scheme = "unix";
     path = unix_addr->sun_path;
@@ -125,7 +132,7 @@ bool ResolvedAddressIsV4Mapped(
                sizeof(kV4MappedPrefix)) == 0) {
       if (resolved_addr4_out != nullptr) {
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
-        memset(addr4_out, 0, sizeof(sockaddr_in));
+        memset(addr4_out, 0, EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
         addr4_out->sin_family = AF_INET;
         // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
@@ -344,8 +351,7 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
     resolved_addr = &addr_normalized;
   }
   auto scheme = GetScheme(*resolved_addr);
-  GRPC_RETURN_IF_ERROR(scheme.status());
-  if (*scheme == "unix") {
+  if (!scheme.ok() || *scheme == "unix") {
     return ResolvedAddrToUriUnixIfPossible(*resolved_addr);
   }
   auto path = ResolvedAddressToString(*resolved_addr);

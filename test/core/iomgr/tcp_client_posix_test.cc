@@ -226,7 +226,7 @@ void test_connect_cancellation_succeeds(void) {
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
   while (svr_fd < 0 ||
          bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
-              (socklen_t)resolved_addr.len) != 0) {
+              resolved_addr.len) != 0) {
     if (tried_ipv4) {
       gpr_log(GPR_ERROR,
               "Skipping test. Failed to create a phony server bound to ipv6 or "
