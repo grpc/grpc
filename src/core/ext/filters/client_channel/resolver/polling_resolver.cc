@@ -108,7 +108,8 @@ void PollingResolver::ScheduleNextResolutionTimer(const Duration& timeout) {
           timeout, [self = std::move(self)]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
-            self->work_serializer_->Run(
+            auto* self_ptr = self.get();
+            self_ptr->work_serializer_->Run(
                 [self = std::move(self)]() { self->OnNextResolutionLocked(); },
                 DEBUG_LOCATION);
           });
