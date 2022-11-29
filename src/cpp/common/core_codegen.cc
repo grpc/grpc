@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::grpc_slice_unref(grpc_slice slice) {
-  ::grpc_slice_unref(slice);
-}
-
 grpc_slice CoreCodegen::grpc_slice_ref(grpc_slice slice) {
   return ::grpc_slice_ref(slice);
 }

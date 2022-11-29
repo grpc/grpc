@@ -36,7 +36,7 @@ class Slice final {
   /// Construct an empty slice.
   Slice() : slice_(grpc_empty_slice()) {}
   /// Destructor - drops one reference.
-  ~Slice() { g_core_codegen_interface->grpc_slice_unref(slice_); }
+  ~Slice() { grpc_slice_unref(slice_); }
 
   enum AddRef { ADD_REF };
   /// Construct a slice from \a slice, adding a reference.

@@ -815,7 +815,7 @@ class CallOpClientRecvStatus {
     }
     // TODO(soheil): Find callers that set debug string even for status OK,
     //               and fix them.
-    g_core_codegen_interface->grpc_slice_unref(error_message_);
+    grpc_slice_unref(error_message_);
   }
 
   void SetInterceptionHookPoint(

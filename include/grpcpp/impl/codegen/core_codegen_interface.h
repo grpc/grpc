@@ -45,7 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual void grpc_slice_unref(grpc_slice slice) = 0;
   virtual grpc_slice grpc_slice_ref(grpc_slice slice) = 0;
   virtual grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) = 0;
   virtual grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split) = 0;

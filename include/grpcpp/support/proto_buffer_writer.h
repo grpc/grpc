@@ -72,7 +72,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
 
   ~ProtoBufferWriter() override {
     if (have_backup_) {
-      g_core_codegen_interface->grpc_slice_unref(backup_slice_);
+      grpc_slice_unref(backup_slice_);
     }
   }
 
