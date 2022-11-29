@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-void CoreCodegen::grpc_metadata_array_destroy(grpc_metadata_array* array) {
-  ::grpc_metadata_array_destroy(array);
-}
-
 const Status& CoreCodegen::ok() { return grpc::Status::OK; }
 
 const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
