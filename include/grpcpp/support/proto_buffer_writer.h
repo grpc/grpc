@@ -136,8 +136,8 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     if (static_cast<size_t>(count) == GRPC_SLICE_LENGTH(slice_)) {
       backup_slice_ = slice_;
     } else {
-      backup_slice_ = g_core_codegen_interface->grpc_slice_split_tail(
-          &slice_, GRPC_SLICE_LENGTH(slice_) - count);
+      backup_slice_ =
+          grpc_slice_split_tail(&slice_, GRPC_SLICE_LENGTH(slice_) - count);
       g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
     }
     // It's dangerous to keep an inlined grpc_slice as the backup slice, since

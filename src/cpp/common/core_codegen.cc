@@ -36,10 +36,6 @@
 
 namespace grpc {
 
-grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
-  return ::grpc_slice_split_tail(s, split);
-}
-
 grpc_slice CoreCodegen::grpc_slice_split_head(grpc_slice* s, size_t split) {
   return ::grpc_slice_split_head(s, split);
 }
