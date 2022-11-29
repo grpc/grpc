@@ -34,7 +34,7 @@ def _wrap(behavior):
     return _wrapping
 
 
-class _LoggingPool(object):
+class _LoggingPool(futures.ThreadPoolExecutor):
     """An exception-logging futures.ThreadPoolExecutor-compatible thread pool."""
 
     def __init__(self, backing_pool):

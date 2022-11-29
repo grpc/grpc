@@ -104,7 +104,9 @@ def _unknown_code_details(unknown_cygrpc_code: Optional[grpc.StatusCode],
 
 class _RPCState(object):
     condition: threading.Condition
-    due: Set[cygrpc.OperationType]
+    #TODO(xuanwn) Change it to use correct cython type.
+    #Issue: https://github.com/grpc/grpc/issues/32033
+    due: Set[Union[cygrpc.OperationType, int]]
     initial_metadata: Optional[MetadataType]
     response: Any
     trailing_metadata: Optional[MetadataType]
@@ -115,7 +117,7 @@ class _RPCState(object):
     callbacks: List[NullaryCallbackType]
     fork_epoch: Optional[int]
 
-    def __init__(self, due: Sequence[cygrpc.OperationType],
+    def __init__(self, due: Sequence[Union[cygrpc.OperationType, int]],
                  initial_metadata: Optional[MetadataType],
                  trailing_metadata: Optional[MetadataType],
                  code: Optional[grpc.StatusCode], details: Optional[str]):
@@ -223,7 +225,7 @@ def _event_handler(
 def _consume_request_iterator(request_iterator: Iterator, state: _RPCState,
                               call: Union[cygrpc.IntegratedCall,
                                           cygrpc.SegregatedCall],
-                              request_serializer: SerializingFunction,
+                              request_serializer: Optional[SerializingFunction],
                               event_handler: Optional[UserTag]) -> None:
     """Consume a request supplied by the user."""
 
@@ -883,14 +885,14 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
 
 def _start_unary_request(
     request: Any, timeout: Optional[float],
-    request_serializer: SerializingFunction
+    request_serializer: Optional[SerializingFunction]
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
     if serialized_request is None:
         state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
-        error = _InactiveRpcError(state)
+        error = _InactiveRpcError(state)  # pytype: disable=not-instantiable
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -1076,8 +1078,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
     # pylint: disable=too-many-arguments
     def __init__(self, channel: cygrpc.Channel, method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction):
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
@@ -1099,7 +1101,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                               'Exception serializing request!')
-            raise _InactiveRpcError(state)
+            raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = None if credentials is None else credentials._credentials
@@ -1135,8 +1137,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     # pylint: disable=too-many-arguments
     def __init__(self, channel: cygrpc.Channel,
                  managed_call: IntegratedCallFactory, method: bytes,
-                 request_serializer: SerializingFunction,
-                 response_deserializer: DeserializingFunction):
+                 request_serializer: Optional[SerializingFunction],
+                 response_deserializer: Optional[DeserializingFunction]):
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1450,7 +1452,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
 
 class _ChannelConnectivityState(object):
     lock: threading.RLock
-    channel: grpc.Channel
+    channel: cygrpc.Channel
     polling: bool
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
@@ -1459,7 +1461,7 @@ class _ChannelConnectivityState(object):
         [grpc.ChannelConnectivity], None], Optional[grpc.ChannelConnectivity]]]]
     delivering: bool
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: cygrpc.Channel):
         self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
@@ -1528,7 +1530,8 @@ def _spawn_delivery(
 
 
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
-def _poll_connectivity(state: _ChannelConnectivityState, channel: grpc.Channel,
+def _poll_connectivity(state: _ChannelConnectivityState,
+                       channel: cygrpc.Channel,
                        initial_try_to_connect: bool) -> None:
     try_to_connect = initial_try_to_connect
     connectivity = channel.check_connectivity_state(try_to_connect)
@@ -1567,8 +1570,8 @@ def _poll_connectivity(state: _ChannelConnectivityState, channel: grpc.Channel,
 
 
 def _subscribe(state: _ChannelConnectivityState,
-               callback: Callable[[grpc.ChannelConnectivity],
-                                  None], try_to_connect: bool) -> None:
+               callback: Callable[[grpc.ChannelConnectivity], None],
+               try_to_connect: Optional[bool]) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
             polling_thread = cygrpc.ForkManagedThread(
@@ -1631,7 +1634,7 @@ class Channel(grpc.Channel):
     _connectivity_state: _ChannelConnectivityState
 
     def __init__(self, target: str, options: Sequence[ChannelArgumentType],
-                 credentials: Optional[grpc.ChannelCredentials],
+                 credentials: Optional[cygrpc.ChannelCredentials],
                  compression: Optional[grpc.Compression]):
         """Constructor.
 

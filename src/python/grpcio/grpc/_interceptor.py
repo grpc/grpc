@@ -37,8 +37,8 @@ class _ServicePipeline(object):
         return lambda context: self._intercept_at(thunk, index, context)
 
     def _intercept_at(
-            self, thunk: Callable, index: int,
-            context: grpc.HandlerCallDetails) -> grpc.RpcMethodHandler:
+            self, thunk: Callable, index: int, context: grpc.HandlerCallDetails
+    ) -> Optional[grpc.RpcMethodHandler]:
         if index < len(self.interceptors):
             interceptor = self.interceptors[index]
             thunk = self._continuation(thunk, index + 1)
@@ -46,8 +46,9 @@ class _ServicePipeline(object):
         else:
             return thunk(context)
 
-    def execute(self, thunk: Callable,
-                context: grpc.HandlerCallDetails) -> grpc.RpcMethodHandler:
+    def execute(
+            self, thunk: Callable, context: grpc.HandlerCallDetails
+    ) -> Optional[grpc.RpcMethodHandler]:
         return self._intercept_at(thunk, 0, context)
 
 
@@ -68,8 +69,9 @@ class _ClientCallDetails(
 def _unwrap_client_call_details(
     call_details: grpc.ClientCallDetails,
     default_details: grpc.ClientCallDetails
-) -> Tuple[str, float, MetadataType, grpc.CallCredentials, bool,
-           grpc.Compression]:
+) -> Tuple[str, Optional[float], Optional[MetadataType],
+           Optional[grpc.CallCredentials], Optional[bool],
+           Optional[grpc.Compression]]:
     try:
         method = call_details.method  # pytype: disable=attribute-error
     except AttributeError:
@@ -265,7 +267,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request: Any) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -316,7 +319,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request: Any) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -347,18 +351,21 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._method = method
         self._interceptor = interceptor
 
+    #TODO(xuanwn) Change `Any` to structural typing.
+    #Issue: https://github.com/grpc/grpc/issues/31990)
     def __call__(self,
                  request: Any,
                  timeout: Optional[float] = None,
                  metadata: Optional[MetadataType] = None,
                  credentials: Optional[grpc.CallCredentials] = None,
                  wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None):
+                 compression: Optional[grpc.Compression] = None) -> Any:
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request: Any) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -416,7 +423,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request_iterator: RequestIterableType) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -467,7 +475,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request_iterator: RequestIterableType) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -509,7 +518,8 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                                                  metadata, credentials,
                                                  wait_for_ready, compression)
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details: grpc.ClientCallDetails,
+                         request_iterator: RequestIterableType) -> Any:
             (new_method, new_timeout, new_metadata, new_credentials,
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
@@ -619,10 +629,10 @@ class _Channel(grpc.Channel):
 
 def intercept_channel(
     channel: grpc.Channel,
-    *interceptors: Optional[Sequence[Union[grpc.UnaryUnaryClientInterceptor,
-                                           grpc.UnaryStreamClientInterceptor,
-                                           grpc.StreamStreamClientInterceptor,
-                                           grpc.StreamUnaryClientInterceptor]]]
+    *interceptors: Optional[Union[grpc.UnaryUnaryClientInterceptor,
+                                  grpc.UnaryStreamClientInterceptor,
+                                  grpc.StreamUnaryClientInterceptor,
+                                  grpc.StreamStreamClientInterceptor]]
 ) -> grpc.Channel:
     for interceptor in reversed(list(interceptors)):
         if not isinstance(interceptor, grpc.UnaryUnaryClientInterceptor) and \

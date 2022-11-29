@@ -74,7 +74,7 @@ def encode(s: AnyStr) -> bytes:
         return s.encode('utf8')
 
 
-def decode(b: AnyStr) -> str:
+def decode(b: Optional[AnyStr]) -> Optional[str]:
     if isinstance(b, bytes):
         return b.decode('utf-8', 'replace')
     return b
@@ -93,7 +93,8 @@ def _transform(message: Any, transformer: Union[SerializingFunction,
             return None
 
 
-def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
+def serialize(message: Any,
+              serializer: Optional[SerializingFunction]) -> Optional[bytes]:
     return _transform(message, serializer, 'Exception serializing message!')
 
 
