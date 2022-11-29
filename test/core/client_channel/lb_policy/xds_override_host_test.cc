@@ -32,7 +32,6 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
       std::string child_policy = "pick_first") {
     Json::Object child_policy_config = {{child_policy, Json::Object()}};
-
     return MakeConfig(Json::Array{Json::Object{
         {"xds_override_host_experimental",
          Json::Object{{"childPolicy", Json::Array{{child_policy_config}}}}}}});
@@ -43,19 +42,44 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
 
 TEST_F(XdsOverrideHostTest, DelegatesToChild) {
   ASSERT_NE(policy_, nullptr);
-  std::array<absl::string_view, 2> addresses = {"ipv4:127.0.0.1:441",
-                                                "ipv4:127.0.0.1:442"};
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
   EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
   // 1. We use pick_first as a child
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig()),
                         policy_.get()),
             absl::OkStatus());
   ExpectConnectingUpdate();
-  for (absl::string_view address : addresses) {
+  for (absl::string_view address : kAddresses) {
     auto subchannel = FindSubchannel(
         {address}, ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
     ASSERT_TRUE(subchannel);
-    subchannel->ConnectionRequested();
+    ASSERT_TRUE(subchannel->ConnectionRequested());
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  }
+  auto picker = WaitForConnected();
+  // Pick first policy will always pick first!
+  EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
+  EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
+  ExpectQueueEmpty();
+}
+
+TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
+  ASSERT_NE(policy_, nullptr);
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
+  // 1. We use pick_first as a child
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig()),
+                        policy_.get()),
+            absl::OkStatus());
+  ExpectConnectingUpdate();
+  for (absl::string_view address : kAddresses) {
+    auto subchannel = FindSubchannel(
+        {address}, ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+    ASSERT_TRUE(subchannel);
+    ASSERT_TRUE(subchannel->ConnectionRequested());
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   }
@@ -65,27 +89,28 @@ TEST_F(XdsOverrideHostTest, DelegatesToChild) {
   EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
   ExpectQueueEmpty();
   // 2. Now we switch to a round-robin
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses,
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
                                     MakeXdsOverrideHostConfig("round_robin")),
                         policy_.get()),
             absl::OkStatus());
-  for (absl::string_view address : addresses) {
+  for (absl::string_view address : kAddresses) {
     auto subchannel = FindSubchannel({address});
     ASSERT_TRUE(subchannel);
-    subchannel->ConnectionRequested();
+    ASSERT_TRUE(subchannel->ConnectionRequested());
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    EXPECT_NE(ExpectState(GRPC_CHANNEL_READY), nullptr);
   }
-  WaitForConnected();
-  WaitForConnected();
-  picker = WaitForConnected();
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  EXPECT_NE(picker, nullptr);
+  ExpectPickComplete(picker.get());
   std::unordered_set<std::string> picked;
-  for (size_t i = 0; i < addresses.size(); i++) {
+  for (size_t i = 0; i < kAddresses.size(); i++) {
     auto pick = ExpectPickComplete(picker.get());
     EXPECT_TRUE(pick.has_value());
     picked.insert(*pick);
   }
-  EXPECT_THAT(picked, ::testing::UnorderedElementsAreArray(addresses));
+  EXPECT_THAT(picked, ::testing::UnorderedElementsAreArray(kAddresses));
 }
 
 TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
@@ -113,17 +138,9 @@ TEST_F(XdsOverrideHostTest, ConfigRequiresChildPolicy) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  auto original_env_value =
-      grpc_core::GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
   grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
   grpc_init();
   int ret = RUN_ALL_TESTS();
-  if (original_env_value.has_value()) {
-    grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE",
-                      *original_env_value);
-  } else {
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
-  }
   grpc_shutdown();
   return ret;
 }

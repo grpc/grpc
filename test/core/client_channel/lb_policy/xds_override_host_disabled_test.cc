@@ -37,17 +37,9 @@ TEST_F(XdsOverrideHostDisabledTest, NoPolicyAvailable) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  auto original_env_value =
-      grpc_core::GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
   grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
   grpc_init();
   int ret = RUN_ALL_TESTS();
-  if (original_env_value.has_value()) {
-    grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE",
-                      *original_env_value);
-  } else {
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
-  }
   grpc_shutdown();
   return ret;
 }
