@@ -57,7 +57,7 @@ async def guide_get_feature(stub: route_guide_pb2_grpc.RouteGuideStub) -> None:
             stub, route_guide_pb2.Point(latitude=0, longitude=0)
         )
     )
-    # Wait unitl the Future is resolved
+    # Wait until the Future is resolved
     await task_group
 
 
