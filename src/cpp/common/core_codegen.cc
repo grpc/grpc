@@ -40,10 +40,6 @@ const Status& CoreCodegen::ok() { return grpc::Status::OK; }
 
 const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
 
-gpr_timespec CoreCodegen::gpr_inf_future(gpr_clock_type type) {
-  return ::gpr_inf_future(type);
-}
-
 gpr_timespec CoreCodegen::gpr_time_0(gpr_clock_type type) {
   return ::gpr_time_0(type);
 }

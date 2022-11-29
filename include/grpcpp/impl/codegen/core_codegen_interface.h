@@ -48,7 +48,6 @@ class CoreCodegenInterface {
   virtual const Status& ok() = 0;
   virtual const Status& cancelled() = 0;
 
-  virtual gpr_timespec gpr_inf_future(gpr_clock_type type) = 0;
   virtual gpr_timespec gpr_time_0(gpr_clock_type type) = 0;
 };
 
