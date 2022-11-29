@@ -14,11 +14,10 @@
 """Reference implementation for health checking in gRPC Python."""
 
 import collections
-from collections.abc import Mapping
 from concurrent import futures
 import sys
 import threading
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Mapping, Optional
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
