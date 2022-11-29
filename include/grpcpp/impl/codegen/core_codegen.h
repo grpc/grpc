@@ -33,8 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  gpr_timespec gpr_time_0(gpr_clock_type type) override;
-
   const Status& ok() override;
   const Status& cancelled() override;
 

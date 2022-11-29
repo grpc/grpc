@@ -340,8 +340,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
+    auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;

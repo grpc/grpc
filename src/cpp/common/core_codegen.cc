@@ -40,10 +40,6 @@ const Status& CoreCodegen::ok() { return grpc::Status::OK; }
 
 const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
 
-gpr_timespec CoreCodegen::gpr_time_0(gpr_clock_type type) {
-  return ::gpr_time_0(type);
-}
-
 void CoreCodegen::assert_fail(const char* failed_assertion, const char* file,
                               int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "assertion failed: %s",
