@@ -13,8 +13,11 @@
 # limitations under the License.
 """Base implementation of reflection servicer."""
 
+from typing import Iterable, Optional, Sequence
+
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
+from google.protobuf.descriptor_pb2 import FileDescriptorProto
 import grpc
 from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
@@ -22,7 +25,7 @@ from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
 _POOL = descriptor_pool.Default()
 
 
-def _not_found_error():
+def _not_found_error() -> _reflection_pb2.ServerReflectionResponse:
     return _reflection_pb2.ServerReflectionResponse(
         error_response=_reflection_pb2.ErrorResponse(
             error_code=grpc.StatusCode.NOT_FOUND.value[0],
@@ -30,7 +33,9 @@ def _not_found_error():
         ))
 
 
-def _file_descriptor_response(descriptor):
+def _file_descriptor_response(
+    descriptor: FileDescriptorProto
+) -> _reflection_pb2.ServerReflectionResponse:
     proto = descriptor_pb2.FileDescriptorProto()
     descriptor.CopyToProto(proto)
     serialized_proto = proto.SerializeToString()
@@ -41,8 +46,12 @@ def _file_descriptor_response(descriptor):
 
 class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     """Base class for reflection servicer."""
+    _service_names: Sequence[str]
+    _pool: descriptor_pool.DescriptorPool
 
-    def __init__(self, service_names, pool=None):
+    def __init__(self,
+                 service_names: Iterable[str],
+                 pool: Optional[descriptor_pool.DescriptorPool] = None):
         """Constructor.
 
         Args:
@@ -52,7 +61,8 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         self._service_names = tuple(sorted(service_names))
         self._pool = _POOL if pool is None else pool
 
-    def _file_by_filename(self, filename):
+    def _file_by_filename(
+            self, filename: str) -> _reflection_pb2.ServerReflectionResponse:
         try:
             descriptor = self._pool.FindFileByName(filename)
         except KeyError:
@@ -60,7 +70,9 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor)
 
-    def _file_containing_symbol(self, fully_qualified_name):
+    def _file_containing_symbol(
+            self, fully_qualified_name: str
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             descriptor = self._pool.FindFileContainingSymbol(
                 fully_qualified_name)
@@ -69,7 +81,9 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor)
 
-    def _file_containing_extension(self, containing_type, extension_number):
+    def _file_containing_extension(
+            self, containing_type: str,
+            extension_number: int) -> _reflection_pb2.ServerReflectionResponse:
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type)
@@ -82,7 +96,9 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor)
 
-    def _all_extension_numbers_of_type(self, containing_type):
+    def _all_extension_numbers_of_type(
+            self,
+            containing_type: str) -> _reflection_pb2.ServerReflectionResponse:
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type)
@@ -98,7 +114,7 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
                     base_type_name=message_descriptor.full_name,
                     extension_number=extension_numbers))
 
-    def _list_services(self):
+    def _list_services(self) -> _reflection_pb2.ServerReflectionResponse:
         return _reflection_pb2.ServerReflectionResponse(
             list_services_response=_reflection_pb2.ListServiceResponse(service=[
                 _reflection_pb2.ServiceResponse(name=service_name)

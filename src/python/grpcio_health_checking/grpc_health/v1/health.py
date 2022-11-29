@@ -14,8 +14,11 @@
 """Reference implementation for health checking in gRPC Python."""
 
 import collections
+from collections.abc import Mapping
+from concurrent import futures
 import sys
 import threading
+from typing import Any, Callable, Optional
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -32,6 +35,9 @@ OVERALL_HEALTH = ''
 
 
 class _Watcher():
+    _condition: threading.Condition
+    _responses: collections.deque
+    _open: bool
 
     def __init__(self):
         self._condition = threading.Condition()
@@ -56,18 +62,19 @@ class _Watcher():
     def __next__(self):
         return self._next()
 
-    def add(self, response):
+    def add(self, response: Any) -> None:
         with self._condition:
             self._responses.append(response)
             self._condition.notify()
 
-    def close(self):
+    def close(self) -> None:
         with self._condition:
             self._open = False
             self._condition.notify()
 
 
-def _watcher_to_send_response_callback_adapter(watcher):
+def _watcher_to_send_response_callback_adapter(
+        watcher: _Watcher) -> Callable[[Any], None]:
 
     def send_response_callback(response):
         if response is None:
@@ -80,10 +87,15 @@ def _watcher_to_send_response_callback_adapter(watcher):
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
+    _lock: threading.RLock
+    _server_status: Mapping[str, _health_pb2.HealthCheckResponse.ServingStatus]
+    _send_response_callbacks: Mapping[str, Callable[[Any], None]]
+    _gracefully_shutting_down: bool
 
     def __init__(self,
-                 experimental_non_blocking=True,
-                 experimental_thread_pool=None):
+                 experimental_non_blocking: Optional[bool] = True,
+                 experimental_thread_pool: Optional[
+                     futures.ThreadPoolExecutor] = None):
         self._lock = threading.RLock()
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
@@ -91,7 +103,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self.Watch.__func__.experimental_thread_pool = experimental_thread_pool
         self._gracefully_shutting_down = False
 
-    def _on_close_callback(self, send_response_callback, service):
+    def _on_close_callback(self, send_response_callback: Callable[[Any], None],
+                           service: str) -> Callable[[], None]:
 
         def callback():
             with self._lock:
@@ -101,7 +114,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
         return callback
 
-    def Check(self, request, context):
+    def Check(self, request: _health_pb2.HealthCheckRequest,
+              context: Any) -> _health_pb2.HealthCheckResponse:
         with self._lock:
             status = self._server_status.get(request.service)
             if status is None:
@@ -111,7 +125,12 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 return _health_pb2.HealthCheckResponse(status=status)
 
     # pylint: disable=arguments-differ
-    def Watch(self, request, context, send_response_callback=None):
+    def Watch(
+        self,
+        request: _health_pb2.HealthCheckRequest,
+        context: Any,
+        send_response_callback: Optional[Callable[[Any], None]] = None
+    ) -> Optional[_Watcher]:
         blocking_watcher = None
         if send_response_callback is None:
             # The server does not support the experimental_non_blocking
@@ -134,7 +153,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 self._on_close_callback(send_response_callback, service))
         return blocking_watcher
 
-    def set(self, service, status):
+    def set(self, service: str,
+            status: _health_pb2.HealthCheckResponse.ServingStatus) -> None:
         """Sets the status of a service.
 
         Args:
@@ -153,7 +173,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                         send_response_callback(
                             _health_pb2.HealthCheckResponse(status=status))
 
-    def enter_graceful_shutdown(self):
+    def enter_graceful_shutdown(self) -> None:
         """Permanently sets the status of all services to NOT_SERVING.
 
         This should be invoked when the server is entering a graceful shutdown

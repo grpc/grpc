@@ -13,13 +13,17 @@
 # limitations under the License.
 """Common types for gRPC Sync API"""
 
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional,
-                    Sequence, Tuple, TypeVar, Union)
+from typing import (TYPE_CHECKING, Any, AsyncIterable, Callable, Iterable,
+                    Iterator, Optional, Sequence, Tuple, TypeVar, Union)
 
 from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
     from grpc import ServicerContext
+    from grpc import StreamStreamClientInterceptor
+    from grpc import StreamUnaryClientInterceptor
+    from grpc import UnaryStreamClientInterceptor
+    from grpc import UnaryUnaryClientInterceptor
     from grpc._server import _RPCState
 
 RequestType = TypeVar('RequestType')
@@ -32,6 +36,7 @@ DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
 RequestIterableType = Iterable[Any]
 ResponseIterableType = Iterable[Any]
+GeneralIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 UserTag = Callable[[cygrpc.BaseEvent], bool]
 IntegratedCallFactory = Callable[[
     int, bytes, None, Optional[float], Optional[MetadataType], Optional[
@@ -56,3 +61,7 @@ ArityAgnosticMethodHandler = Union[
     Callable[[Iterator[RequestType], 'ServicerContext'],
              ResponseType], Callable[[Iterator[RequestType], 'ServicerContext'],
                                      Iterator[ResponseType]]]
+InterceptorsType = Union['UnaryUnaryClientInterceptor',
+                         'UnaryStreamClientInterceptor',
+                         'StreamUnaryClientInterceptor',
+                         'StreamStreamClientInterceptor']

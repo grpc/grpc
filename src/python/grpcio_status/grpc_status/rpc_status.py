@@ -15,6 +15,7 @@
 
 import collections
 import sys
+from typing import Optional
 
 from google.rpc import status_pb2
 import grpc
@@ -30,7 +31,7 @@ class _Status(
     pass
 
 
-def from_call(call):
+def from_call(call: grpc.Call) -> Optional[status_pb2.Status]:
     """Returns a google.rpc.status.Status message corresponding to a given grpc.Call.
 
     This is an EXPERIMENTAL API.
@@ -62,7 +63,7 @@ def from_call(call):
     return None
 
 
-def to_status(status):
+def to_status(status: status_pb2.Status) -> _Status:
     """Convert a google.rpc.status.Status message to grpc.Status.
 
     This is an EXPERIMENTAL API.
