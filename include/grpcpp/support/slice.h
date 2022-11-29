@@ -48,8 +48,7 @@ class Slice final {
   Slice(grpc_slice slice, StealRef) : slice_(slice) {}
 
   /// Allocate a slice of specified size
-  explicit Slice(size_t len)
-      : slice_(g_core_codegen_interface->grpc_slice_malloc(len)) {}
+  explicit Slice(size_t len) : slice_(grpc_slice_malloc(len)) {}
 
   /// Construct a slice from a copied buffer
   Slice(const void* buf, size_t len)
