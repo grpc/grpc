@@ -33,7 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  void grpc_slice_buffer_pop(grpc_slice_buffer* sb) override;
   grpc_slice grpc_slice_from_static_buffer(const void* buffer,
                                            size_t length) override;
   grpc_slice grpc_slice_from_copied_buffer(const void* buffer,

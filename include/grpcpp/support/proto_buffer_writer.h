@@ -132,7 +132,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     /// 3. Add the needed part back to the slice buffer
     /// 4. Mark that we still have the remaining part (for later use/unref)
     GPR_CODEGEN_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(slice_)));
-    g_core_codegen_interface->grpc_slice_buffer_pop(slice_buffer_);
+    grpc_slice_buffer_pop(slice_buffer_);
     if (static_cast<size_t>(count) == GRPC_SLICE_LENGTH(slice_)) {
       backup_slice_ = slice_;
     } else {
