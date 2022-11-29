@@ -632,7 +632,7 @@ class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
     def __call__(self, metadata: MetadataType,
-                 error: Optional[Type[BaseException]]):
+                 error: Optional[Type[BaseException]]) -> Any:
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -646,7 +646,7 @@ class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
     def __call__(self, contex: AuthMetadataContext,
-                 callback: AuthMetadataPluginCallback):
+                 callback: AuthMetadataPluginCallback) -> Any:
         """Implements authentication by passing metadata to a callback.
 
         This method will be invoked asynchronously in a separate thread.

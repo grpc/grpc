@@ -15,7 +15,6 @@
 
 import asyncio
 import logging
-from typing import Iterable
 import unittest
 
 from grpc.experimental import aio
