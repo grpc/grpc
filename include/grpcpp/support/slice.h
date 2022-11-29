@@ -64,8 +64,8 @@ class Slice final {
 
   /// Construct a slice from a static buffer
   Slice(const void* buf, size_t len, StaticSlice)
-      : slice_(g_core_codegen_interface->grpc_slice_from_static_buffer(
-            reinterpret_cast<const char*>(buf), len)) {}
+      : slice_(grpc_slice_from_static_buffer(reinterpret_cast<const char*>(buf),
+                                             len)) {}
 
   /// Copy constructor, adds a reference.
   Slice(const Slice& other) : slice_(grpc_slice_ref(other.slice_)) {}
@@ -132,8 +132,7 @@ inline std::string StringFromCopiedSlice(grpc_slice slice) {
 }
 
 inline grpc_slice SliceReferencingString(const std::string& str) {
-  return g_core_codegen_interface->grpc_slice_from_static_buffer(str.data(),
-                                                                 str.length());
+  return grpc_slice_from_static_buffer(str.data(), str.length());
 }
 
 inline grpc_slice SliceFromCopiedString(const std::string& str) {

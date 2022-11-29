@@ -69,9 +69,8 @@ inline grpc_metadata* FillMetadataArray(
     metadata_array[i].value = SliceReferencingString(iter->second);
   }
   if (!optional_error_details.empty()) {
-    metadata_array[i].key =
-        g_core_codegen_interface->grpc_slice_from_static_buffer(
-            kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
+    metadata_array[i].key = grpc_slice_from_static_buffer(
+        kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
     metadata_array[i].value = SliceReferencingString(optional_error_details);
   }
   return metadata_array;

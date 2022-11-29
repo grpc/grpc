@@ -36,11 +36,6 @@
 
 namespace grpc {
 
-grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,
-                                                      size_t length) {
-  return ::grpc_slice_from_static_buffer(buffer, length);
-}
-
 grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
                                                       size_t length) {
   return ::grpc_slice_from_copied_buffer(static_cast<const char*>(buffer),
