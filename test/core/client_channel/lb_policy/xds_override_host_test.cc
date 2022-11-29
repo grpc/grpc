@@ -50,19 +50,22 @@ TEST_F(XdsOverrideHostTest, DelegatesToChild) {
                         policy_.get()),
             absl::OkStatus());
   ExpectConnectingUpdate();
-  for (absl::string_view address : kAddresses) {
-    auto subchannel = FindSubchannel(
-        {address}, ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-    ASSERT_TRUE(subchannel);
-    ASSERT_TRUE(subchannel->ConnectionRequested());
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  }
+  auto subchannel =
+      FindSubchannel({kAddresses[0]},
+                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_TRUE(subchannel);
+  ASSERT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  subchannel =
+      FindSubchannel({kAddresses[1]},
+                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_TRUE(subchannel);
+  ASSERT_FALSE(subchannel->ConnectionRequested());
   auto picker = WaitForConnected();
   // Pick first policy will always pick first!
   EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
   EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
-  ExpectQueueEmpty();
 }
 
 TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
@@ -74,19 +77,18 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeXdsOverrideHostConfig()),
                         policy_.get()),
             absl::OkStatus());
+  // Pick first will only request connection on a first child
   ExpectConnectingUpdate();
-  for (absl::string_view address : kAddresses) {
-    auto subchannel = FindSubchannel(
-        {address}, ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-    ASSERT_TRUE(subchannel);
-    ASSERT_TRUE(subchannel->ConnectionRequested());
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  }
-  auto picker = WaitForConnected();
-  // Pick first policy will always pick first!
-  EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
-  EXPECT_EQ(ExpectPickComplete(picker.get()), "ipv4:127.0.0.1:441");
+  auto subchannel =
+      FindSubchannel({kAddresses[0]},
+                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_TRUE(subchannel);
+  ASSERT_TRUE(subchannel->ConnectionRequested());
+  subchannel =
+      FindSubchannel({kAddresses[1]},
+                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_TRUE(subchannel);
+  ASSERT_FALSE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   // 2. Now we switch to a round-robin
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
@@ -101,7 +103,7 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     EXPECT_NE(ExpectState(GRPC_CHANNEL_READY), nullptr);
   }
-  picker = ExpectState(GRPC_CHANNEL_READY);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_NE(picker, nullptr);
   ExpectPickComplete(picker.get());
   std::unordered_set<std::string> picked;
