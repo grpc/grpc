@@ -26,19 +26,24 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+sockaddr_in GetSomeIpv4LoopbackAddress() {
+  sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_family = AF_INET;
+  return addr;
+}
+
 void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   SOCKET svr_sock = INVALID_SOCKET;
   SOCKET lst_sock = INVALID_SOCKET;
   SOCKET cli_sock = INVALID_SOCKET;
-  SOCKADDR_IN addr;
+  auto addr = GetSomeIpv4LoopbackAddress();
   int addr_len = sizeof(addr);
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, flags);
   GPR_ASSERT(lst_sock != INVALID_SOCKET);
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  addr.sin_family = AF_INET;
   GPR_ASSERT(bind(lst_sock, (sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
   GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
   GPR_ASSERT(getsockname(lst_sock, (sockaddr*)&addr, &addr_len) !=
@@ -47,11 +52,17 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, flags);
   GPR_ASSERT(cli_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(WSAConnect(cli_sock, (sockaddr*)&addr, addr_len, NULL, NULL, NULL,
-                        NULL) == 0);
+  auto result =
+      WSAConnect(cli_sock, (sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL);
+  if (result != 0) {
+    gpr_log(GPR_DEBUG, "%s",
+            GRPC_WSA_ERROR(WSAGetLastError(), "Failed in WSAConnect")
+                .ToString()
+                .c_str());
+    abort();
+  }
   svr_sock = accept(lst_sock, (sockaddr*)&addr, &addr_len);
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
-
   closesocket(lst_sock);
   // TODO(hork): see if we can migrate this to IPv6, or break up the socket prep
   // stages.

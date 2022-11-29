@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/load_file.h"
@@ -96,6 +97,7 @@ namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::MemoryAllocator;
+using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
@@ -284,7 +286,7 @@ void PosixEndpointImpl::FinishEstimate() {
 }
 
 absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) {
-  auto peer_string = SockaddrToString(&peer_address_, true);
+  auto peer_string = ResolvedAddressToNormalizedString(peer_address_);
 
   grpc_core::StatusSetStr(&src_error,
                           grpc_core::StatusStrProperty::kTargetAddress,

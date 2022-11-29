@@ -206,7 +206,6 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
   read_called.WaitForNotification();
-
   delete on_read;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
   executor.Quiesce();
