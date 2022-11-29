@@ -24,16 +24,10 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class XdsOverrideHostDisabledTest : public LoadBalancingPolicyTest {
- protected:
-  XdsOverrideHostDisabledTest()
-      : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
-
-  OrphanablePtr<LoadBalancingPolicy> policy_;
-};
+class XdsOverrideHostDisabledTest : public LoadBalancingPolicyTest {};
 
 TEST_F(XdsOverrideHostDisabledTest, NoPolicyAvailable) {
-  ASSERT_EQ(policy_, nullptr);
+  ASSERT_EQ(MakeLbPolicy("xds_override_host_experimental"), nullptr);
 }
 
 }  // namespace
