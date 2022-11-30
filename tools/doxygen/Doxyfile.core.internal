@@ -847,6 +847,7 @@ include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
+include/grpc/impl/compression_types.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
@@ -989,10 +990,8 @@ src/core/ext/filters/http/client/http_client_filter.h \
 src/core/ext/filters/http/client_authority_filter.cc \
 src/core/ext/filters/http/client_authority_filter.h \
 src/core/ext/filters/http/http_filters_plugin.cc \
-src/core/ext/filters/http/message_compress/message_compress_filter.cc \
-src/core/ext/filters/http/message_compress/message_compress_filter.h \
-src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
-src/core/ext/filters/http/message_compress/message_decompress_filter.h \
+src/core/ext/filters/http/message_compress/compression_filter.cc \
+src/core/ext/filters/http/message_compress/compression_filter.h \
 src/core/ext/filters/http/server/http_server_filter.cc \
 src/core/ext/filters/http/server/http_server_filter.h \
 src/core/ext/filters/message_size/message_size_filter.cc \
@@ -1001,7 +1000,6 @@ src/core/ext/filters/rbac/rbac_filter.cc \
 src/core/ext/filters/rbac/rbac_filter.h \
 src/core/ext/filters/rbac/rbac_service_config_parser.cc \
 src/core/ext/filters/rbac/rbac_service_config_parser.h \
-src/core/ext/filters/server_config_selector/server_config_selector.cc \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
@@ -1765,6 +1763,10 @@ src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
 src/core/lib/event_engine/posix_engine/posix_engine_closure.h \
+src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
+src/core/lib/event_engine/posix_engine/posix_engine_listener.h \
+src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/posix_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/posix_engine/timer.cc \
@@ -1786,6 +1788,8 @@ src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
+src/core/lib/event_engine/tcp_socket_utils.cc \
+src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_pool.cc \
 src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/time_util.cc \

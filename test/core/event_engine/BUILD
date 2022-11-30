@@ -73,6 +73,7 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//:grpc",
+        "//src/core:channel_args",
     ],
 )
 
@@ -167,4 +168,23 @@ grpc_cc_library(
         "gtest",
     ],
     deps = ["//:event_engine_base_hdrs"],
+)
+
+grpc_cc_test(
+    name = "tcp_socket_utils_test",
+    srcs = ["tcp_socket_utils_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:iomgr_port",
+    ],
 )

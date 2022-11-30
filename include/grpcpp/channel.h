@@ -25,8 +25,8 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/channel_interface.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
 
@@ -54,7 +54,7 @@ void ChannelResetConnectionBackoff(Channel* channel);
 class Channel final : public grpc::ChannelInterface,
                       public grpc::internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
-                      private grpc::GrpcLibraryCodegen {
+                      private grpc::internal::GrpcLibrary {
  public:
   ~Channel() override;
 

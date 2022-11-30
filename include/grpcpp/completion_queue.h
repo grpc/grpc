@@ -34,14 +34,16 @@
 
 #include <list>
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/codegen/rpc_service_method.h>
+#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/rpc_service_method.h>
-#include <grpcpp/support/status.h>
-#include <grpcpp/support/time.h>
+#include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/sync.h>
 
 struct grpc_completion_queue;
 
@@ -99,7 +101,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
 /// performance servers.
-class CompletionQueue : private grpc::GrpcLibraryCodegen {
+class CompletionQueue : private grpc::internal::GrpcLibrary {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
@@ -114,9 +116,7 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
-  ~CompletionQueue() override {
-    grpc::g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
-  }
+  ~CompletionQueue() override { grpc_completion_queue_destroy(cq_); }
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
   enum NextStatus {
@@ -249,10 +249,9 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
   explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
-    cq_ = grpc::g_core_codegen_interface->grpc_completion_queue_create(
-        grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
-            &attributes),
-        &attributes, nullptr);
+    cq_ = grpc_completion_queue_create(
+        grpc_completion_queue_factory_lookup(&attributes), &attributes,
+        nullptr);
     InitialAvalanching();  // reserve this for the future shutdown
   }
 
@@ -323,8 +322,7 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
     auto deadline =
         grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
-      auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-          cq_, tag, deadline, nullptr);
+      auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
@@ -345,8 +343,7 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   void TryPluck(grpc::internal::CompletionQueueTag* tag) {
     auto deadline =
         grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
     void* ignored = tag;
@@ -361,8 +358,7 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   /// that the tag is internal not something that is returned to the user.
   void TryPluck(grpc::internal::CompletionQueueTag* tag,
                 gpr_timespec deadline) {
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       return;
     }
@@ -387,7 +383,7 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   void CompleteAvalanching() {
     if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, gpr_atm{-1}) ==
         1) {
-      grpc::g_core_codegen_interface->grpc_completion_queue_shutdown(cq_);
+      grpc_completion_queue_shutdown(cq_);
     }
   }
 

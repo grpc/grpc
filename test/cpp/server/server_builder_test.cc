@@ -46,9 +46,9 @@ const std::string& GetPort() {
 
 class ServerBuilderTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 TEST_F(ServerBuilderTest, NoOp) { ServerBuilder b; }
 

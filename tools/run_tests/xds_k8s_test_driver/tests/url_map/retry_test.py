@@ -71,7 +71,7 @@ def _is_supported(config: skips.TestConfig) -> bool:
     elif config.client_lang == _Lang.GO:
         return config.version_gte('v1.41.x')
     elif config.client_lang == _Lang.NODE:
-        return False
+        return config.version_gte('v1.8.x')
     return True
 
 

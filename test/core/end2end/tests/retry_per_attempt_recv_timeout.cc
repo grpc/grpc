@@ -151,7 +151,7 @@ static void test_retry_per_attempt_recv_timeout(
 
   grpc_core::CqVerifier cqv(f.cq);
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = n_seconds_from_now(10);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);

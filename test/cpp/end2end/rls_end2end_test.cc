@@ -158,7 +158,6 @@ class FakeResolverResponseGeneratorWrapper {
 class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    grpc_core::SetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
     grpc_core::CoreConfiguration::RegisterBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
@@ -167,7 +166,6 @@ class RlsEnd2endTest : public ::testing::Test {
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
     grpc_core::CoreConfiguration::Reset();
   }
 
@@ -201,8 +199,8 @@ class RlsEnd2endTest : public ::testing::Test {
                                                   nullptr));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = grpc::CreateCustomChannel(
-        absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
+    channel_ = grpc::CreateCustomChannel(absl::StrCat("fake:///", kServerName),
+                                         std::move(creds), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

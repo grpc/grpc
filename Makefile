@@ -1023,13 +1023,11 @@ LIBGRPC_SRC = \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
-    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
-    src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
+    src/core/ext/filters/http/message_compress/compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
-    src/core/ext/filters/server_config_selector/server_config_selector.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -1402,6 +1400,8 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
@@ -1413,6 +1413,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
+    src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
@@ -1702,6 +1703,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/compression_types.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -1836,8 +1838,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
-    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
-    src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
+    src/core/ext/filters/http/message_compress/compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -1922,6 +1923,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
@@ -1933,6 +1936,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
+    src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
@@ -2165,6 +2169,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/compression_types.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -2903,7 +2908,6 @@ src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: 
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
-src/core/ext/filters/server_config_selector/server_config_selector.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/alpn/alpn.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c: $(OPENSSL_DEP)

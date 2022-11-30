@@ -37,6 +37,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -50,6 +51,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
 
 // IWYU pragma: no_include <ratio>
@@ -60,12 +62,13 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
 using ::grpc_event_engine::posix_engine::EventHandle;
 using ::grpc_event_engine::posix_engine::PosixEngineClosure;
+using ::grpc_event_engine::posix_engine::PosixEngineListener;
 using ::grpc_event_engine::posix_engine::PosixEventPoller;
 using ::grpc_event_engine::posix_engine::PosixSocketWrapper;
 using ::grpc_event_engine::posix_engine::PosixTcpOptions;
-using ::grpc_event_engine::posix_engine::SockaddrToString;
 using ::grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig;
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
@@ -224,7 +227,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   } while (err < 0 && errno == EINTR);
   saved_errno = errno;
 
-  auto addr_uri = SockaddrToString(&addr, true);
+  auto addr_uri = ResolvedAddressToNormalizedString(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
@@ -566,11 +569,19 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 PosixEventEngine::CreateListener(
-    Listener::AcceptCallback /*on_accept*/,
-    absl::AnyInvocable<void(absl::Status)> /*on_shutdown*/,
-    const EndpointConfig& /*config*/,
-    std::unique_ptr<MemoryAllocatorFactory> /*memory_allocator_factory*/) {
-  GPR_ASSERT(false && "unimplemented");
+    Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
+    const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+#ifdef GRPC_POSIX_SOCKET_TCP
+  return std::make_unique<PosixEngineListener>(
+      std::move(on_accept), std::move(on_shutdown), config,
+      std::move(memory_allocator_factory), poller_manager_->Poller(),
+      shared_from_this());
+#else   // GRPC_POSIX_SOCKET_TCP
+  GPR_ASSERT(false &&
+             "EventEngine::CreateListener is not supported on this platform");
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 }  // namespace experimental

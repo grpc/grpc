@@ -100,6 +100,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -142,6 +143,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -171,6 +173,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/iomgr:endpoint_tests",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -185,6 +188,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -206,6 +210,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -334,6 +339,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -382,6 +388,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -404,6 +411,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -417,6 +425,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

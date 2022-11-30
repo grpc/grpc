@@ -26,7 +26,7 @@
 #include <grpc/support/sync.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/gprpp/time.h"
