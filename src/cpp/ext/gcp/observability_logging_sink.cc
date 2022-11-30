@@ -23,28 +23,15 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <map>
 #include <utility>
 
-#include <google/protobuf/timestamp.pb.h>
-
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "google/logging/v2/log_entry.pb.h"
 #include "google/logging/v2/logging.grpc.pb.h"
-#include "google/logging/v2/logging.pb.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/status.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
 namespace grpc {
