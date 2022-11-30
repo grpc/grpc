@@ -43,7 +43,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -88,10 +87,9 @@ class XdsEndpointTest : public ::testing::Test {
               bootstrap.status().ToString().c_str());
       GPR_ASSERT(false);
     }
-    return MakeRefCounted<XdsClient>(
-        std::move(*bootstrap),
-        /*transport_factory=*/nullptr,
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
+                                     /*transport_factory=*/nullptr,
+                                     /*event_engine=*/nullptr);
   }
 
   RefCountedPtr<XdsClient> xds_client_;
