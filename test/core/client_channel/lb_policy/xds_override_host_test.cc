@@ -34,13 +34,22 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
          Json::Object{{"childPolicy", Json::Array{{child_policy_config}}}}}}});
   }
 
-  void SetUp() {
+  void SetUp() override {
     grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
     grpc_init();
     policy_ = MakeLbPolicy("xds_override_host_experimental");
   }
 
-  void TearDown() {
+  void TearDown() override {
+    // Note: Can't safely trigger this from inside the FakeHelper dtor,
+    // because if there is a picker in the queue that is holding a ref
+    // to the LB policy, that will prevent the LB policy from being
+    // destroyed, and therefore the FakeHelper will not be destroyed.
+    // (This will cause an ASAN failure, but it will not display the
+    // queued events, so the failure will be harder to diagnose.)
+    if (policy_ != nullptr) {
+      helper_->ExpectQueueEmpty();
+    }
     policy_.reset();
     grpc_shutdown_blocking();
     grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
