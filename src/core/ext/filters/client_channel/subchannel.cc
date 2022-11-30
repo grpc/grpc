@@ -716,17 +716,22 @@ void Subchannel::WatchConnectivityState(
 void Subchannel::CancelConnectivityStateWatch(
     const absl::optional<std::string>& health_check_service_name,
     ConnectivityStateWatcherInterface* watcher) {
-  MutexLock lock(&mu_);
-  grpc_pollset_set* interested_parties = watcher->interested_parties();
-  if (interested_parties != nullptr) {
-    grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties);
+  {
+    MutexLock lock(&mu_);
+    grpc_pollset_set* interested_parties = watcher->interested_parties();
+    if (interested_parties != nullptr) {
+      grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties);
+    }
+    if (!health_check_service_name.has_value()) {
+      watcher_list_.RemoveWatcherLocked(watcher);
+    } else {
+      health_watcher_map_.RemoveWatcherLocked(*health_check_service_name,
+                                              watcher);
+    }
   }
-  if (!health_check_service_name.has_value()) {
-    watcher_list_.RemoveWatcherLocked(watcher);
-  } else {
-    health_watcher_map_.RemoveWatcherLocked(*health_check_service_name,
-                                            watcher);
-  }
+  // Drain any connectivity state notifications after releasing the mutex.
+  // (Shouldn't actually be necessary in this case, but better safe than sorry.)
+  work_serializer_.DrainQueue();
 }
 
 void Subchannel::RequestConnection() {
