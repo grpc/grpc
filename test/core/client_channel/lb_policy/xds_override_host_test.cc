@@ -26,15 +26,25 @@ namespace {
 
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
-  XdsOverrideHostTest()
-      : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
-
   RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
       std::string child_policy = "pick_first") {
     Json::Object child_policy_config = {{child_policy, Json::Object()}};
     return MakeConfig(Json::Array{Json::Object{
         {"xds_override_host_experimental",
          Json::Object{{"childPolicy", Json::Array{{child_policy_config}}}}}}});
+  }
+
+  void SetUp() {
+    grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
+    grpc_init();
+    policy_ = MakeLbPolicy("xds_override_host_experimental");
+  }
+
+  void TearDown() {
+    policy_.reset();
+    grpc_shutdown_blocking();
+    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+    grpc_core::CoreConfiguration::Reset();
   }
 
   OrphanablePtr<LoadBalancingPolicy> policy_;
@@ -179,6 +189,16 @@ TEST_F(XdsOverrideHostTest, ValidateChildPolicyConfig) {
                 "[field:childPolicy error:No known policies in list: ]"));
 }
 
+TEST_F(XdsOverrideHostTest, XdsOverrideHostLbPolicyDisabled) {
+  policy_.reset();
+  grpc_shutdown_blocking();
+  grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+  grpc_core::CoreConfiguration::Reset();
+  grpc_init();
+  auto policy = MakeLbPolicy("xds_override_host_experimental");
+  ASSERT_EQ(policy, nullptr);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
@@ -186,9 +206,6 @@ TEST_F(XdsOverrideHostTest, ValidateChildPolicyConfig) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
-  grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

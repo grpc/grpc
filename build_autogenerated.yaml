@@ -13079,16 +13079,6 @@ targets:
   - linux
   - posix
   - mac
-- name: xds_override_host_disabled_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  src:
-  - test/core/client_channel/lb_policy/xds_override_host_disabled_test.cc
-  deps:
-  - grpc_test_util
 - name: xds_override_host_test
   gtest: true
   build: test
