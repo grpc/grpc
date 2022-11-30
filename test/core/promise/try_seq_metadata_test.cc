@@ -35,10 +35,8 @@ struct TestMap : public MetadataMap<TestMap, GrpcStatusMetadata> {
 };
 
 TEST(PromiseTest, SucceedAndThenFail) {
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   auto arena = MakeScopedArena(1024, &memory_allocator);
   Poll<TestMap> r = TrySeq(
       [&arena] {

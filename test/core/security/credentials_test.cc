@@ -580,10 +580,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   grpc_error_handle expected_error_;
   std::string expected_;
-  grpc_core::MemoryAllocator memory_allocator_ =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
   grpc_metadata_batch md_{arena_.get()};
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;

@@ -47,8 +47,7 @@ using ::testing::Return;
 class BinderTransportTest : public ::testing::Test {
  public:
   BinderTransportTest()
-      : 
-        transport_(grpc_create_binder_transport_client(
+      : transport_(grpc_create_binder_transport_client(
             std::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
@@ -96,7 +95,7 @@ class BinderTransportTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 
  protected:
-    grpc_core::MemoryAllocator memory_allocator_ =
+  grpc_core::MemoryAllocator memory_allocator_ =
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
@@ -294,7 +293,7 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
-    grpc_core::MemoryAllocator memory_allocator =
+  grpc_core::MemoryAllocator memory_allocator =
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
@@ -342,7 +341,7 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
-    grpc_core::MemoryAllocator memory_allocator =
+  grpc_core::MemoryAllocator memory_allocator =
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));

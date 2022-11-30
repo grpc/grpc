@@ -83,9 +83,8 @@ class TransportTargetWindowEstimatesMocker
 
 class FlowControlTest : public ::testing::Test {
  protected:
-  grpc_core::MemoryOwner memory_owner_ = grpc_core::MemoryOwner(
-      grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryOwner(
-          "test"));
+  MemoryOwner memory_owner_ = MemoryOwner(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryOwner("test"));
 };
 
 TEST_F(FlowControlTest, NoOp) {

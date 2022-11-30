@@ -33,10 +33,8 @@ namespace grpc_core {
 
 class ArenaPromiseTest : public ::testing::Test {
  protected:
-  grpc_core::MemoryAllocator memory_allocator_ =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 };
 
 TEST_F(ArenaPromiseTest, DefaultInitializationYieldsNoValue) {
