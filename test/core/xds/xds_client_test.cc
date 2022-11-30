@@ -45,6 +45,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -568,6 +569,7 @@ class XdsClientTest : public ::testing::Test {
     transport_factory_ = transport_factory->Ref();
     xds_client_ = MakeRefCounted<XdsClient>(
         bootstrap_builder.Build(), std::move(transport_factory),
+        grpc_event_engine::experimental::GetDefaultEventEngine(),
         resource_request_timeout * grpc_test_slowdown_factor());
   }
 
