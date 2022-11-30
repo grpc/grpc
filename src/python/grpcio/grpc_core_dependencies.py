@@ -758,6 +758,7 @@ CORE_SOURCE_FILES = [
     'src/core/tsi/ssl/session_cache/ssl_session_cache.cc',
     'src/core/tsi/ssl/session_cache/ssl_session_openssl.cc',
     'src/core/tsi/ssl_transport_security.cc',
+    'src/core/tsi/ssl_transport_security_utils.cc',
     'src/core/tsi/transport_security.cc',
     'src/core/tsi/transport_security_grpc.cc',
     'third_party/abseil-cpp/absl/base/internal/cycleclock.cc',
