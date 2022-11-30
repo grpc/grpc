@@ -228,10 +228,11 @@ class Stream {
   }
 
   void Op(grpc_transport_stream_op_batch* op) {
-    grpc_core::MemoryAllocator memory_allocator_ =
-        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                       ->memory_quota()
-                                       ->CreateMemoryAllocator("test"));
+    grpc_transport_perform_stream_op(f_->transport(),
+                                     static_cast<grpc_stream*>(stream_), op);
+  }
+
+  grpc_chttp2_stream* chttp2_stream() {
     return static_cast<grpc_chttp2_stream*>(stream_);
   }
 
