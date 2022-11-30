@@ -40,12 +40,15 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
@@ -58,6 +61,15 @@ TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host");
 
 namespace {
 
+// TODO (eostroukhov): Remove once this policy is no longer experimental
+bool XdsOverrideHostLbEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // xds_override_host LB policy
 //
@@ -67,18 +79,26 @@ constexpr absl::string_view kXdsOverrideHost = "xds_override_host_experimental";
 // Config for stateful session LB policy.
 class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
  public:
-  XdsOverrideHostLbConfig(
-      RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
-      : child_policy_(std::move(child_policy)) {}
+  XdsOverrideHostLbConfig() = default;
+
+  XdsOverrideHostLbConfig(const XdsOverrideHostLbConfig&) = delete;
+  XdsOverrideHostLbConfig& operator=(const XdsOverrideHostLbConfig&) = delete;
+
+  XdsOverrideHostLbConfig(XdsOverrideHostLbConfig&& other) = delete;
+  XdsOverrideHostLbConfig& operator=(XdsOverrideHostLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kXdsOverrideHost; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
-    return child_policy_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_config() const {
+    return child_config_;
   }
 
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
+
  private:
-  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_config_;
 };
 
 // xDS Cluster Impl LB policy.
@@ -240,7 +260,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
   update_args.resolution_note = std::move(args.resolution_note);
-  update_args.config = config_->child_policy();
+  update_args.config = config_->child_config();
   // Update the policy.
   update_args.args = std::move(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
@@ -342,6 +362,40 @@ void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
 //
 // factory
 //
+const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
+    const JsonArgs&) {
+  return JsonObjectLoader<XdsOverrideHostLbConfig>()
+      // Child policy config is parsed in JsonPostLoad
+      .Finish();
+}
+
+void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                                           ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".childPolicy");
+  auto it = json.object_value().find("childPolicy");
+  if (it == json.object_value().end()) {
+    errors->AddError("field not present");
+    return;
+  }
+  auto& child_config = it->second;
+
+  // Note that if type is not an array than framework will provide a more
+  // precise error message
+  if (child_config.type() == Json::Type::ARRAY &&
+      child_config.array_value().size() > 1) {
+    errors->AddError("exactly one child config should be specified");
+    return;
+  }
+  auto child_policy_config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          child_config);
+  if (!child_policy_config.ok()) {
+    errors->AddError(child_policy_config.status().message());
+  } else {
+    child_config_ = std::move(*child_policy_config);
+  }
+}
+
 class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
@@ -361,41 +415,42 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    ValidationErrors errors;
-    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    {
-      // Parse childPolicy manually.
-      {
-        ValidationErrors::ScopedField field(&errors, ".childPolicy");
-        auto it = json.object_value().find("childPolicy");
-        if (it == json.object_value().end()) {
-          errors.AddError("field not present");
-        } else {
-          auto child_policy_config = CoreConfiguration::Get()
-                                         .lb_policy_registry()
-                                         .ParseLoadBalancingConfig(it->second);
-          if (!child_policy_config.ok()) {
-            errors.AddError(child_policy_config.status().message());
-          } else {
-            child_policy = std::move(*child_policy_config);
-          }
-        }
-      }
-    }
-    if (!errors.ok()) {
-      return errors.status(
-          "errors validating xds_override_host LB policy config");
-    }
-    return MakeRefCounted<XdsOverrideHostLbConfig>(std::move(child_policy));
+    return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
+        json, JsonArgs(),
+        "errors validating xds_override_host LB policy config");
+    // ValidationErrors errors;
+    // RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
+    // {
+    //   // Parse childPolicy manually.
+    //   {
+    //     ValidationErrors::ScopedField field(&errors, ".childPolicy");
+    //     auto it = json.object_value().find("childPolicy");
+    //     if (it == json.object_value().end()) {
+    //       errors.AddError("field not present");
+    //     } else {
+    //       auto child_policy_config = CoreConfiguration::Get()
+    //                                      .lb_policy_registry()
+    //                                      .ParseLoadBalancingConfig(it->second);
+    //       if (!child_policy_config.ok()) {
+    //         errors.AddError(child_policy_config.status().message());
+    //       } else {
+    //         child_policy = std::move(*child_policy_config);
+    //       }
+    //     }
+    //   }
+    // }
+    // if (!errors.ok()) {
+    //   return errors.status(
+    //       "errors validating xds_override_host LB policy config");
+    // }
+    // return MakeRefCounted<XdsOverrideHostLbConfig>(std::move(child_policy));
   }
 };
 
 }  // namespace
 
 void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
-  auto enabled = absl::AsciiStrToLower(
-      GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE").value_or("false"));
-  if (enabled == "true") {
+  if (XdsOverrideHostLbEnabled()) {
     builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
         std::make_unique<XdsOverrideHostLbFactory>());
   }

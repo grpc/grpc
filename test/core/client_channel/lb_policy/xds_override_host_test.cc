@@ -53,14 +53,14 @@ TEST_F(XdsOverrideHostTest, DelegatesToChild) {
   auto subchannel =
       FindSubchannel({kAddresses[0]},
                      ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  ASSERT_TRUE(subchannel);
+  ASSERT_NE(subchannel, nullptr);
   ASSERT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   subchannel =
       FindSubchannel({kAddresses[1]},
                      ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  ASSERT_TRUE(subchannel);
+  ASSERT_NE(subchannel, nullptr);
   ASSERT_FALSE(subchannel->ConnectionRequested());
   auto picker = WaitForConnected();
   // Pick first policy will always pick first!
@@ -82,12 +82,15 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
   auto subchannel =
       FindSubchannel({kAddresses[0]},
                      ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  ASSERT_TRUE(subchannel);
+  ASSERT_NE(subchannel, nullptr);
   ASSERT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  ASSERT_NE(WaitForConnected(), nullptr);
   subchannel =
       FindSubchannel({kAddresses[1]},
                      ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  ASSERT_TRUE(subchannel);
+  ASSERT_NE(subchannel, nullptr);
   ASSERT_FALSE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   // 2. Now we switch to a round-robin
@@ -97,14 +100,14 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
             absl::OkStatus());
   for (absl::string_view address : kAddresses) {
     auto subchannel = FindSubchannel({address});
-    ASSERT_TRUE(subchannel);
+    ASSERT_NE(subchannel, nullptr);
     ASSERT_TRUE(subchannel->ConnectionRequested());
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     EXPECT_NE(ExpectState(GRPC_CHANNEL_READY), nullptr);
   }
   auto picker = ExpectState(GRPC_CHANNEL_READY);
-  EXPECT_NE(picker, nullptr);
+  ASSERT_NE(picker, nullptr);
   ExpectPickComplete(picker.get());
   std::unordered_set<std::string> picked;
   for (size_t i = 0; i < kAddresses.size(); i++) {
@@ -122,7 +125,7 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
       absl::InvalidArgumentError("Missing policy config"));
 }
 
-TEST_F(XdsOverrideHostTest, ConfigRequiresChildPolicy) {
+TEST_F(XdsOverrideHostTest, ValidateChildPolicyConfig) {
   auto result =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::Array{Json::Object{
@@ -131,6 +134,49 @@ TEST_F(XdsOverrideHostTest, ConfigRequiresChildPolicy) {
             absl::InvalidArgumentError(
                 "errors validating xds_override_host LB policy config: "
                 "[field:childPolicy error:field not present]"));
+
+  result =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::Array{Json::Object{
+              {"xds_override_host_experimental",
+               Json::Object{
+                   {"childPolicy",
+                    Json::Array{
+                        {Json::Object{{"pick_first", Json::Object{}}}},
+                        {Json::Object{{"round_robin", Json::Object{}}}}}}}
+
+              }}});
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError(
+                "errors validating xds_override_host LB policy config: "
+                "[field:childPolicy error:exactly one child config should be "
+                "specified]"));
+
+  result =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::Array{
+              Json::Object{{"xds_override_host_experimental",
+                            Json::Object{{
+                                "childPolicy",
+                                {Json::Object{{"pick_first", Json::Object{}}}},
+                            }}}
+
+              }});
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError(
+                "errors validating xds_override_host LB policy config: "
+                "[field:childPolicy error:type should be array]"));
+
+  result =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::Array{Json::Object{{"xds_override_host_experimental",
+                                    Json::Object{{"childPolicy", Json::Array{}}}
+
+          }}});
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError(
+                "errors validating xds_override_host LB policy config: "
+                "[field:childPolicy error:No known policies in list: ]"));
 }
 
 }  // namespace

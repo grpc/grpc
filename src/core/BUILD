@@ -4253,6 +4253,8 @@ grpc_cc_library(
         "env",
         "grpc_lb_subchannel_list",
         "json",
+        "json_args",
+        "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
         "pollset_set",
