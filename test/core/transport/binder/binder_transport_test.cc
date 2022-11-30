@@ -37,10 +37,6 @@
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 namespace grpc_binder {
 namespace {
 
@@ -51,8 +47,7 @@ using ::testing::Return;
 class BinderTransportTest : public ::testing::Test {
  public:
   BinderTransportTest()
-      : arena_(grpc_core::Arena::Create(/* initial_size = */ 1,
-                                        g_memory_allocator)),
+      : 
         transport_(grpc_create_binder_transport_client(
             std::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
@@ -101,7 +96,12 @@ class BinderTransportTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 
  protected:
-  grpc_core::Arena* arena_;
+    grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  grpc_core::Arena* arena_ =
+      grpc_core::Arena::Create(/* initial_size = */ 1, &memory_allocator_);
   grpc_transport* transport_;
   grpc_stream_refcount ref_;
   std::vector<grpc_binder_stream*> stream_buffer_;
@@ -235,8 +235,12 @@ struct MakeSendInitialMetadata {
   }
   ~MakeSendInitialMetadata() {}
 
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
 };
 
@@ -262,8 +266,12 @@ struct MakeSendTrailingMetadata {
         &grpc_trailing_metadata;
   }
 
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
 };
 
@@ -286,8 +294,12 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
+    grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
   grpc_core::Notification notification;
 };
@@ -330,8 +342,12 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
+    grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
   grpc_core::Notification notification;
 };

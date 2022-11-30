@@ -34,10 +34,6 @@
 bool squelch = true;
 bool leak_check = true;
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 static constexpr size_t kChunkSize = 17;
 using IntHdl = std::shared_ptr<int>;
 
@@ -169,7 +165,11 @@ class Fuzzer {
     return &vectors_.emplace(index, Comparison(arena_.get())).first->second;
   }
 
-  ScopedArenaPtr arena_ = MakeScopedArena(128, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  ScopedArenaPtr arena_ = MakeScopedArena(128, &memory_allocator_);
   std::map<int, Comparison> vectors_;
 };
 }  // namespace grpc_core

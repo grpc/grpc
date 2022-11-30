@@ -41,25 +41,6 @@
 
 namespace grpc_core {
 
-namespace {
-auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-}
-
-TEST(ArenaTest, NoOp) {
-  ExecCtx exec_ctx;
-  Arena::Create(1, g_memory_allocator)->Destroy();
-}
-
-TEST(ArenaTest, ManagedNew) {
-  ExecCtx exec_ctx;
-  Arena* arena = Arena::Create(1, g_memory_allocator);
-  for (int i = 0; i < 100; i++) {
-    arena->ManagedNew<std::unique_ptr<int>>(std::make_unique<int>(i));
-  }
-  arena->Destroy();
-}
-
 struct AllocShape {
   size_t initial_size;
   std::vector<size_t> allocs;
@@ -75,7 +56,11 @@ class AllocTest : public ::testing::TestWithParam<AllocShape> {};
 
 TEST_P(AllocTest, Works) {
   ExecCtx exec_ctx;
-  Arena* a = Arena::Create(GetParam().initial_size, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  Arena* a = Arena::Create(GetParam().initial_size, &memory_allocator);
   std::vector<void*> allocated;
   for (auto alloc : GetParam().allocs) {
     void* p = a->Alloc(alloc);
@@ -111,10 +96,32 @@ typedef struct {
   Arena* arena;
 } concurrent_test_args;
 
-TEST(ArenaTest, ConcurrentAlloc) {
+class ArenaTest : public ::testing::Test {
+ protected:
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+};
+
+TEST_F(ArenaTest, NoOp) {
+  ExecCtx exec_ctx;
+  Arena::Create(1, &memory_allocator_)->Destroy();
+}
+
+TEST_F(ArenaTest, ManagedNew) {
+  ExecCtx exec_ctx;
+  Arena* arena = Arena::Create(1, &memory_allocator_);
+  for (int i = 0; i < 100; i++) {
+    arena->ManagedNew<std::unique_ptr<int>>(std::make_unique<int>(i));
+  }
+  arena->Destroy();
+}
+
+TEST_F(ArenaTest, ConcurrentAlloc) {
   concurrent_test_args args;
   gpr_event_init(&args.ev_start);
-  args.arena = Arena::Create(1024, g_memory_allocator);
+  args.arena = Arena::Create(1024, &memory_allocator_);
 
   Thread thds[CONCURRENT_TEST_THREADS];
 
@@ -141,10 +148,10 @@ TEST(ArenaTest, ConcurrentAlloc) {
   args.arena->Destroy();
 }
 
-TEST(ArenaTest, ConcurrentManagedNew) {
+TEST_F(ArenaTest, ConcurrentManagedNew) {
   concurrent_test_args args;
   gpr_event_init(&args.ev_start);
-  args.arena = Arena::Create(1024, g_memory_allocator);
+  args.arena = Arena::Create(1024, &memory_allocator_);
 
   Thread thds[CONCURRENT_TEST_THREADS];
 
@@ -172,12 +179,12 @@ TEST(ArenaTest, ConcurrentManagedNew) {
   args.arena->Destroy();
 }
 
-TEST(ArenaTest, PooledObjectsArePooled) {
+TEST_F(ArenaTest, PooledObjectsArePooled) {
   struct TestObj {
     char a[100];
   };
 
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   auto obj = arena->MakePooled<TestObj>();
   void* p = obj.get();
   obj.reset();
@@ -185,11 +192,11 @@ TEST(ArenaTest, PooledObjectsArePooled) {
   EXPECT_EQ(p, obj.get());
 }
 
-TEST(ArenaTest, CreateManyObjects) {
+TEST_F(ArenaTest, CreateManyObjects) {
   struct TestObj {
     char a[100];
   };
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   std::vector<Arena::PoolPtr<TestObj>> objs;
   objs.reserve(1000);
   for (int i = 0; i < 1000; i++) {

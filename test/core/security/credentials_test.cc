@@ -78,9 +78,6 @@ using internal::set_gce_tenancy_checker_for_testing;
 
 namespace {
 
-auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-
 /* -- Constants. -- */
 
 const char test_google_iam_authorization_token[] = "blahblahblhahb";
@@ -583,7 +580,11 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   grpc_error_handle expected_error_;
   std::string expected_;
-  ScopedArenaPtr arena_ = MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
   grpc_metadata_batch md_{arena_.get()};
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
   grpc_polling_entity pollent_;

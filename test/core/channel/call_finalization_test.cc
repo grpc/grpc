@@ -29,11 +29,12 @@
 
 namespace grpc_core {
 
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-
 TEST(CallFinalizationTest, Works) {
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  auto memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   std::string evidence;
   TestContext<Arena> context(arena.get());
   CallFinalization finalization;

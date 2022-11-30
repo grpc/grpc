@@ -35,9 +35,6 @@
 namespace grpc_core {
 namespace {
 
-auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-
 ChannelArgs TestChannelArgs(absl::string_view default_authority) {
   return ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
 }
@@ -64,7 +61,11 @@ TEST(ClientAuthorityFilterTest, NonStringArgFails) {
 TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
       TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   bool seen = false;
@@ -95,7 +96,11 @@ TEST(ClientAuthorityFilterTest,
      PromiseCompletesImmediatelyAndDoesNotClobberAlreadySetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
       TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   initial_metadata_batch.Set(HttpAuthorityMetadata(),

@@ -40,10 +40,15 @@ using testing::StrictMock;
 
 namespace grpc_core {
 
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+class PipeTest : public ::testing::Test {
+ protected:
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+};
 
-TEST(PipeTest, CanSendAndReceive) {
+TEST_F(PipeTest, CanSendAndReceive) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -64,10 +69,10 @@ TEST(PipeTest, CanSendAndReceive) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      MakeScopedArena(1024, &memory_allocator_));
 }
 
-TEST(PipeTest, CanReceiveAndSend) {
+TEST_F(PipeTest, CanReceiveAndSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -88,10 +93,10 @@ TEST(PipeTest, CanReceiveAndSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      MakeScopedArena(1024, &memory_allocator_));
 }
 
-TEST(PipeTest, CanSeeClosedOnSend) {
+TEST_F(PipeTest, CanSeeClosedOnSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -118,10 +123,10 @@ TEST(PipeTest, CanSeeClosedOnSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      MakeScopedArena(1024, &memory_allocator_));
 }
 
-TEST(PipeTest, CanSeeClosedOnReceive) {
+TEST_F(PipeTest, CanSeeClosedOnReceive) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -150,10 +155,10 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      MakeScopedArena(1024, &memory_allocator_));
 }
 
-TEST(PipeTest, CanFlowControlThroughManyStages) {
+TEST_F(PipeTest, CanFlowControlThroughManyStages) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   auto done = std::make_shared<bool>(false);
@@ -199,7 +204,7 @@ TEST(PipeTest, CanFlowControlThroughManyStages) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      MakeScopedArena(1024, &memory_allocator_));
   ASSERT_TRUE(*done);
 }
 

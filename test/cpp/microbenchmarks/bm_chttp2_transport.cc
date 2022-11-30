@@ -40,10 +40,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
 //
@@ -199,7 +195,7 @@ class Stream {
   explicit Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
-    arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
+    arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
   }
 
   ~Stream() {
@@ -215,7 +211,7 @@ class Stream {
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
       arena_->Destroy();
-      arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
+      arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
@@ -232,11 +228,10 @@ class Stream {
   }
 
   void Op(grpc_transport_stream_op_batch* op) {
-    grpc_transport_perform_stream_op(f_->transport(),
-                                     static_cast<grpc_stream*>(stream_), op);
-  }
-
-  grpc_chttp2_stream* chttp2_stream() {
+    grpc_core::MemoryAllocator memory_allocator_ =
+        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                       ->memory_quota()
+                                       ->CreateMemoryAllocator("test"));
     return static_cast<grpc_chttp2_stream*>(stream_);
   }
 
@@ -251,6 +246,10 @@ class Stream {
 
   Fixture* f_;
   grpc_stream_refcount refcount_;
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::Arena* arena_;
   size_t stream_size_;
   void* stream_;
@@ -329,7 +328,11 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
   Metadata::Prepare(&b);
 
