@@ -56,10 +56,8 @@ class AllocTest : public ::testing::TestWithParam<AllocShape> {};
 
 TEST_P(AllocTest, Works) {
   ExecCtx exec_ctx;
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   Arena* a = Arena::Create(GetParam().initial_size, &memory_allocator);
   std::vector<void*> allocated;
   for (auto alloc : GetParam().allocs) {
@@ -98,10 +96,8 @@ typedef struct {
 
 class ArenaTest : public ::testing::Test {
  protected:
-  grpc_core::MemoryAllocator memory_allocator_ =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 };
 
 TEST_F(ArenaTest, NoOp) {

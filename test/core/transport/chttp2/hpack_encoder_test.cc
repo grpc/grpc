@@ -154,7 +154,7 @@ grpc_slice EncodeHeaderIntoBytes(
   std::unique_ptr<grpc_core::HPackCompressor> compressor =
       std::make_unique<grpc_core::HPackCompressor>();
 
-    grpc_core::MemoryAllocator memory_allocator =
+  grpc_core::MemoryAllocator memory_allocator =
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
@@ -303,7 +303,7 @@ TEST(HpackEncoderTest, UserAgentMetadataNoIndexing) {
 
 static void verify_continuation_headers(const char* key, const char* value,
                                         bool is_eof) {
-    grpc_core::MemoryAllocator memory_allocator =
+  grpc_core::MemoryAllocator memory_allocator =
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));

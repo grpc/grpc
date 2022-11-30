@@ -165,10 +165,8 @@ class Fuzzer {
     return &vectors_.emplace(index, Comparison(arena_.get())).first->second;
   }
 
-  grpc_core::MemoryAllocator memory_allocator_ =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   ScopedArenaPtr arena_ = MakeScopedArena(128, &memory_allocator_);
   std::map<int, Comparison> vectors_;
 };

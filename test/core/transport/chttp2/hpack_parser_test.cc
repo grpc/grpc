@@ -83,7 +83,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   void TestVector(grpc_slice_split_mode mode, const char* hexstring,
                   std::string expect) {
-       grpc_core::MemoryAllocator memory_allocator =
+    grpc_core::MemoryAllocator memory_allocator =
         grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                        ->memory_quota()
                                        ->CreateMemoryAllocator("test"));

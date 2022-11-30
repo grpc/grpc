@@ -79,10 +79,8 @@ int Run(const uint8_t* data, size_t size) {
   if (!r.ok()) return 0;
   size -= 64;
   data += 64;
-    grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   auto arena = MakeScopedArena(1024, &memory_allocator);
   TestContext<Arena> ctx(arena.get());
   switch (r->type) {
