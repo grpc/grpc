@@ -41,6 +41,7 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -109,8 +110,10 @@ class XdsClusterTest : public ::testing::Test {
               bootstrap.status().ToString().c_str());
       GPR_ASSERT(false);
     }
-    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr);
+    return MakeRefCounted<XdsClient>(
+        std::move(*bootstrap),
+        /*transport_factory=*/nullptr,
+        grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 
   RefCountedPtr<XdsClient> xds_client_;
