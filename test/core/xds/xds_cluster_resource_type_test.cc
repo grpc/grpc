@@ -109,10 +109,9 @@ class XdsClusterTest : public ::testing::Test {
               bootstrap.status().ToString().c_str());
       GPR_ASSERT(false);
     }
-    return MakeRefCounted<XdsClient>(
-        std::move(*bootstrap),
-        /*transport_factory=*/nullptr,
-        /*event_engine=*/nullptr);
+    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
+                                     /*transport_factory=*/nullptr,
+                                     /*event_engine=*/nullptr);
   }
 
   RefCountedPtr<XdsClient> xds_client_;
