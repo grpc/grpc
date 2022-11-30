@@ -25,6 +25,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
@@ -58,9 +59,8 @@ inline grpc_metadata* FillMetadataArray(
   if (*metadata_count == 0) {
     return nullptr;
   }
-  grpc_metadata* metadata_array =
-      static_cast<grpc_metadata*>(g_core_codegen_interface->gpr_malloc(
-          (*metadata_count) * sizeof(grpc_metadata)));
+  grpc_metadata* metadata_array = static_cast<grpc_metadata*>(
+      gpr_malloc((*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
     metadata_array[i].key = SliceReferencingString(iter->first);
@@ -254,7 +254,7 @@ class CallOpSendInitialMetadata {
   }
   void FinishOp(bool* /*status*/) {
     if (!send_ || hijacked_) return;
-    g_core_codegen_interface->gpr_free(initial_metadata_);
+    gpr_free(initial_metadata_);
     send_ = false;
   }
 
@@ -687,7 +687,7 @@ class CallOpServerSendStatus {
 
   void FinishOp(bool* /*status*/) {
     if (!send_status_available_ || hijacked_) return;
-    g_core_codegen_interface->gpr_free(trailing_metadata_);
+    gpr_free(trailing_metadata_);
     send_status_available_ = false;
   }
 
@@ -808,8 +808,7 @@ class CallOpClientRecvStatus {
                  metadata_map_->GetBinaryErrorDetails());
       if (debug_error_string_ != nullptr) {
         client_context_->set_debug_error_string(debug_error_string_);
-        g_core_codegen_interface->gpr_free(
-            const_cast<char*>(debug_error_string_));
+        gpr_free(const_cast<char*>(debug_error_string_));
       }
     }
     // TODO(soheil): Find callers that set debug string even for status OK,
