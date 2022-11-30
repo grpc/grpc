@@ -566,27 +566,6 @@ extern grpc_authorization_policy_provider_release_type grpc_authorization_policy
 typedef void(*grpc_tls_credentials_options_set_tls_session_key_log_file_path_type)(grpc_tls_credentials_options* options, const char* path);
 extern grpc_tls_credentials_options_set_tls_session_key_log_file_path_type grpc_tls_credentials_options_set_tls_session_key_log_file_path_import;
 #define grpc_tls_credentials_options_set_tls_session_key_log_file_path grpc_tls_credentials_options_set_tls_session_key_log_file_path_import
-typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
-extern gpr_log_severity_string_type gpr_log_severity_string_import;
-#define gpr_log_severity_string gpr_log_severity_string_import
-typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-extern gpr_log_type gpr_log_import;
-#define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
-typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
-extern gpr_log_message_type gpr_log_message_import;
-#define gpr_log_message gpr_log_message_import
-typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
-extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
-#define gpr_set_log_verbosity gpr_set_log_verbosity_import
-typedef void(*gpr_log_verbosity_init_type)(void);
-extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
-#define gpr_log_verbosity_init gpr_log_verbosity_init_import
-typedef void(*gpr_set_log_function_type)(gpr_log_func func);
-extern gpr_set_log_function_type gpr_set_log_function_import;
-#define gpr_set_log_function gpr_set_log_function_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
@@ -743,6 +722,27 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
+typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
+typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
+extern gpr_log_type gpr_log_import;
+#define gpr_log gpr_log_import
+typedef int(*gpr_should_log_type)(gpr_log_severity severity);
+extern gpr_should_log_type gpr_should_log_import;
+#define gpr_should_log gpr_should_log_import
+typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
+extern gpr_log_message_type gpr_log_message_import;
+#define gpr_log_message gpr_log_message_import
+typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
+extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+#define gpr_set_log_verbosity gpr_set_log_verbosity_import
+typedef void(*gpr_log_verbosity_init_type)(void);
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
+typedef void(*gpr_set_log_function_type)(gpr_log_func func);
+extern gpr_set_log_function_type gpr_set_log_function_import;
+#define gpr_set_log_function gpr_set_log_function_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import
