@@ -17,7 +17,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_event_engine {
 namespace experimental {

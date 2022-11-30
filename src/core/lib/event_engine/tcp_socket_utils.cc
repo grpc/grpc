@@ -79,23 +79,26 @@ absl::StatusOr<std::string> GetScheme(
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    const EventEngine::ResolvedAddress& resolved_addr) {
-  const sockaddr* addr = resolved_addr.address();
+    EventEngine::ResolvedAddress* resolved_addr) {
+  const sockaddr* addr = resolved_addr->address();
   if (addr->sa_family != AF_UNIX) {
     return absl::InvalidArgumentError(
         absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
   }
-  const struct sockaddr_un* unix_addr =
-      reinterpret_cast<const struct sockaddr_un*>(addr);
-  std::string scheme, path;
-  if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
+  const sockaddr_un* unix_addr = reinterpret_cast<const sockaddr_un*>(addr);
+  bool abstract =
+      resolved_addr->size() < sizeof(unix_addr->sun_family) + 1 ||
+      (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0');
+  std::string scheme;
+  std::string path;
+  if (abstract) {
     scheme = "unix-abstract";
-    if (resolved_addr.size() < sizeof(unix_addr->sun_family) + 1) {
+    if (resolved_addr->size() < sizeof(unix_addr->sun_family) + 1) {
       path = "";
     } else {
-      path =
-          std::string(unix_addr->sun_path + 1,
-                      resolved_addr.size() - sizeof(unix_addr->sun_family) - 1);
+      path = std::string(
+          unix_addr->sun_path + 1,
+          resolved_addr->size() - sizeof(unix_addr->sun_family) - 1);
     }
   } else {
     scheme = "unix";
@@ -109,7 +112,7 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
 }
 #else
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
-    const EventEngine::ResolvedAddress& /*resolved_addr*/) {
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
   return absl::InvalidArgumentError("Unix socket is not supported.");
 }
 #endif
@@ -342,19 +345,20 @@ absl::StatusOr<std::string> ResolvedAddressToString(
 
 absl::StatusOr<std::string> ResolvedAddressToURI(
     const EventEngine::ResolvedAddress& resolved_address) {
-  const EventEngine::ResolvedAddress* resolved_addr = &resolved_address;
   if (resolved_address.size() == 0) {
     return absl::InvalidArgumentError("Empty address");
   }
+  EventEngine::ResolvedAddress resolved_addr = resolved_address;
   EventEngine::ResolvedAddress addr_normalized;
-  if (ResolvedAddressIsV4Mapped(resolved_address, &addr_normalized)) {
-    resolved_addr = &addr_normalized;
+  if (ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
+    resolved_addr = addr_normalized;
   }
-  auto scheme = GetScheme(*resolved_addr);
-  if (!scheme.ok() || *scheme == "unix") {
-    return ResolvedAddrToUriUnixIfPossible(*resolved_addr);
+  auto scheme = GetScheme(resolved_addr);
+  GRPC_RETURN_IF_ERROR(scheme.status());
+  if (*scheme == "unix") {
+    return ResolvedAddrToUriUnixIfPossible(&resolved_addr);
   }
-  auto path = ResolvedAddressToString(*resolved_addr);
+  auto path = ResolvedAddressToString(resolved_addr);
   GRPC_RETURN_IF_ERROR(path.status());
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Create(*scheme, /*authority=*/"", std::move(path.value()),
