@@ -27,7 +27,6 @@
 #include <cmath>
 #include <ostream>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "absl/strings/str_cat.h"

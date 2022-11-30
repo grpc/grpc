@@ -27,8 +27,6 @@
 #include <string>
 #include <vector>
 
-#include <google/protobuf/struct.pb.h>
-
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
 
