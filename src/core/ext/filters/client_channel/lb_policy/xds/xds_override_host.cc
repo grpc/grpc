@@ -57,7 +57,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host");
+TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host_lb");
 
 namespace {
 
@@ -123,7 +123,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    class SubchannelCallTracker;
     RefCountedPtr<SubchannelPicker> picker_;
   };
 
@@ -151,8 +150,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   };
 
   ~XdsOverrideHostLb() override;
-
-  static std::string MakeKeyForAddress(const ServerAddress& address);
 
   void ShutdownLocked() override;
 
@@ -225,8 +222,8 @@ void XdsOverrideHostLb::ShutdownLocked() {
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   if (child_policy_ != nullptr) {
-    // grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-    //                                  interested_parties());
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
     child_policy_.reset();
   }
   // Drop our ref to the child's picker, in case it's holding a ref to
@@ -261,7 +258,6 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   update_args.addresses = std::move(args.addresses);
   update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = config_->child_config();
-  // Update the policy.
   update_args.args = std::move(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO,
