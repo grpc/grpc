@@ -625,15 +625,18 @@ cdef extern from "grpc/grpc_security.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
+
+cdef extern from "grpc/channel_credentials/alts.h":
+  grpc_alts_credentials_options* grpc_alts_credentials_client_options_create()
+  grpc_alts_credentials_options* grpc_alts_credentials_server_options_create()
+  void grpc_alts_credentials_options_destroy(grpc_alts_credentials_options *options)
+
+  void grpc_alts_credentials_client_options_add_target_service_account(grpc_alts_credentials_options *options, const char *service_account)
+
   grpc_channel_credentials *grpc_alts_credentials_create(
     const grpc_alts_credentials_options *options)
   grpc_server_credentials *grpc_alts_server_credentials_create(
     const grpc_alts_credentials_options *options)
-
-  grpc_alts_credentials_options* grpc_alts_credentials_client_options_create()
-  grpc_alts_credentials_options* grpc_alts_credentials_server_options_create()
-  void grpc_alts_credentials_options_destroy(grpc_alts_credentials_options *options)
-  void grpc_alts_credentials_client_options_add_target_service_account(grpc_alts_credentials_options *options, const char *service_account)
 
 
 cdef extern from "grpc/channel_credentials/google_default.h":

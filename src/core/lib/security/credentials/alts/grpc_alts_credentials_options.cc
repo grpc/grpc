@@ -20,6 +20,7 @@
 
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

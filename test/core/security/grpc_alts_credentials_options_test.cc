@@ -24,6 +24,7 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 

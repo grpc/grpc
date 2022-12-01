@@ -29,6 +29,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/channel_credentials/google_default.h>
 #include <grpc/channel_credentials/ssl.h>
 #include <grpc/event_engine/event_engine.h>

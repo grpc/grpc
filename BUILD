@@ -1673,6 +1673,7 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/transport_security_common_api.cc",
     ],
     hdrs = [
+        "include/grpc/channel_credentials/alts.h",
         "include/grpc/grpc_security.h",
         "//src/core:lib/security/credentials/alts/check_gcp_environment.h",
         "//src/core:lib/security/credentials/alts/grpc_alts_credentials_options.h",

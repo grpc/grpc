@@ -19,6 +19,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/census.h>
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/channel_credentials/google_default.h>
 #include <grpc/channel_credentials/ssl.h>
 #include <grpc/compression.h>
@@ -82,6 +83,12 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_peek);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_readall);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_from_reader);
+  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_create);
+  printf("%lx", (unsigned long) grpc_alts_credentials_server_options_create);
+  printf("%lx", (unsigned long) grpc_alts_credentials_options_destroy);
+  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_add_target_service_account);
+  printf("%lx", (unsigned long) grpc_alts_credentials_create);
+  printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
   printf("%lx", (unsigned long) grpc_google_default_credentials_create);
   printf("%lx", (unsigned long) grpc_ssl_credentials_create);
   printf("%lx", (unsigned long) grpc_ssl_credentials_create_ex);
@@ -212,12 +219,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_metadata_credentials_create_from_plugin);
   printf("%lx", (unsigned long) grpc_call_set_credentials);
   printf("%lx", (unsigned long) grpc_server_credentials_set_auth_metadata_processor);
-  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_create);
-  printf("%lx", (unsigned long) grpc_alts_credentials_server_options_create);
-  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_add_target_service_account);
-  printf("%lx", (unsigned long) grpc_alts_credentials_options_destroy);
-  printf("%lx", (unsigned long) grpc_alts_credentials_create);
-  printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
   printf("%lx", (unsigned long) grpc_local_credentials_create);
   printf("%lx", (unsigned long) grpc_local_server_credentials_create);
   printf("%lx", (unsigned long) grpc_tls_identity_pairs_create);

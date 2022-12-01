@@ -24,6 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>

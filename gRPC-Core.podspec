@@ -107,6 +107,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'include/grpc/byte_buffer.h',
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
+                      'include/grpc/channel_credentials/alts.h',
                       'include/grpc/channel_credentials/google_default.h',
                       'include/grpc/channel_credentials/ssl.h',
                       'include/grpc/compression.h',

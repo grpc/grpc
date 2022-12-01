@@ -25,6 +25,7 @@
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
