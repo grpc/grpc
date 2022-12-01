@@ -493,41 +493,6 @@ cdef extern from "grpc/grpc_security.h":
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
 
-  ctypedef struct grpc_ssl_server_certificate_config:
-    # We don't care about the internals
-    pass
-
-  ctypedef struct grpc_ssl_server_credentials_options:
-    # We don't care about the internals
-    pass
-
-  grpc_ssl_server_certificate_config * grpc_ssl_server_certificate_config_create(
-    const char *pem_root_certs,
-    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs)
-
-  void grpc_ssl_server_certificate_config_destroy(grpc_ssl_server_certificate_config *config)
-
-  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
-    void *user_data,
-    grpc_ssl_server_certificate_config **config)
-
-  grpc_ssl_server_credentials_options *grpc_ssl_server_credentials_create_options_using_config(
-    grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config *certificate_config)
-
-  grpc_ssl_server_credentials_options* grpc_ssl_server_credentials_create_options_using_config_fetcher(
-    grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config_callback cb,
-    void *user_data)
-
-  grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
-      grpc_ssl_server_credentials_options *options)
-
-  ctypedef struct grpc_ssl_pem_key_cert_pair:
-    const char *private_key
-    const char *certificate_chain "cert_chain"
-
   ctypedef struct grpc_channel_credentials:
     # We don't care about the internals (and in fact don't know them)
     pass
@@ -540,10 +505,6 @@ cdef extern from "grpc/grpc_security.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  ctypedef struct verify_peer_options:
-    # We don't care about the internals (and in fact don't know them)
-    pass
-
   ctypedef void (*grpc_ssl_roots_override_callback)(char **pem_root_certs)
 
   grpc_ssl_session_cache *grpc_ssl_session_cache_create_lru(size_t capacity)
@@ -552,9 +513,6 @@ cdef extern from "grpc/grpc_security.h":
   void grpc_set_ssl_roots_override_callback(
       grpc_ssl_roots_override_callback cb) nogil
 
-  grpc_channel_credentials *grpc_ssl_credentials_create(
-      const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
-      verify_peer_options *verify_options, void *reserved) nogil
   grpc_channel_credentials *grpc_composite_channel_credentials_create(
       grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved) nogil
@@ -680,6 +638,53 @@ cdef extern from "grpc/grpc_security.h":
 
 cdef extern from "grpc/channel_credentials/google_default.h":
   grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
+
+
+cdef extern from "grpc/channel_credentials/ssl.h":
+  ctypedef struct grpc_ssl_pem_key_cert_pair:
+    const char *private_key
+    const char *certificate_chain "cert_chain"
+
+  ctypedef struct verify_peer_options:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
+
+  grpc_channel_credentials *grpc_ssl_credentials_create(
+      const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
+      verify_peer_options *verify_options, void *reserved) nogil
+
+  ctypedef struct grpc_ssl_server_certificate_config:
+    # We don't care about the internals
+    pass
+
+  grpc_ssl_server_certificate_config * grpc_ssl_server_certificate_config_create(
+    const char *pem_root_certs,
+    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs)
+
+  void grpc_ssl_server_certificate_config_destroy(grpc_ssl_server_certificate_config *config)
+
+  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
+    void *user_data,
+    grpc_ssl_server_certificate_config **config)
+
+  grpc_ssl_server_credentials_options *grpc_ssl_server_credentials_create_options_using_config(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config *certificate_config)
+
+  ctypedef struct grpc_ssl_server_credentials_options:
+    # We don't care about the internals
+    pass
+
+  grpc_ssl_server_credentials_options* grpc_ssl_server_credentials_create_options_using_config_fetcher(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config_callback cb,
+    void *user_data)
+
+  grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
+      grpc_ssl_server_credentials_options *options)
 
 
 cdef extern from "grpc/compression.h":

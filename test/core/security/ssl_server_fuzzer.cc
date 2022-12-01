@@ -16,6 +16,7 @@
  *
  */
 
+#include <grpc/channel_credentials/ssl.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

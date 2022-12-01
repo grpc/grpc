@@ -26,6 +26,7 @@
 #include "absl/base/thread_annotations.h"
 #include "gtest/gtest.h"
 
+#include <grpc/channel_credentials/ssl.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/error.h"

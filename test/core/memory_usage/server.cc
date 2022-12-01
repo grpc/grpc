@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/channel_credentials/ssl.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
