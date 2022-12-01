@@ -55,8 +55,7 @@ class StatefulSessionAffinityMethodParsedConfig
     Duration ttl;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs&,
-                      ValidationErrors* errors);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
 
   // Returns the config at the specified index.  There might be multiple

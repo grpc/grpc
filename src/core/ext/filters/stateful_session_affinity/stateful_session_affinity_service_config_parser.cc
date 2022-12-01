@@ -39,7 +39,7 @@ StatefulSessionAffinityMethodParsedConfig::CookieConfig::JsonLoader(
 }
 
 void StatefulSessionAffinityMethodParsedConfig::CookieConfig::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+    const Json&, const JsonArgs&, ValidationErrors* errors) {
   // Validate that cookie_name is non-empty.
   if (name.has_value() && name->empty()) {
     ValidationErrors::ScopedField field(errors, ".name");
