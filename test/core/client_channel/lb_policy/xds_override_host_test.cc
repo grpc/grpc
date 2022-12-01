@@ -128,7 +128,7 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
   auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   ExpectPickComplete(picker.get());
-  std::unordered_set<std::string> picked;
+  std::set<std::string> picked;
   for (size_t i = 0; i < kAddresses.size(); i++) {
     auto pick = ExpectPickComplete(picker.get());
     EXPECT_TRUE(pick.has_value());
@@ -142,60 +142,6 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
       ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
                   policy_.get()),
       absl::InvalidArgumentError("Missing policy config"));
-}
-
-TEST_F(XdsOverrideHostTest, ValidateChildPolicyConfig) {
-  auto result =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          Json::Array{Json::Object{
-              {"xds_override_host_experimental", Json::Object{}}}});
-  EXPECT_EQ(result.status(),
-            absl::InvalidArgumentError(
-                "errors validating xds_override_host LB policy config: "
-                "[field:childPolicy error:field not present]"));
-
-  result =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          Json::Array{Json::Object{
-              {"xds_override_host_experimental",
-               Json::Object{
-                   {"childPolicy",
-                    Json::Array{
-                        {Json::Object{{"pick_first", Json::Object{}}}},
-                        {Json::Object{{"round_robin", Json::Object{}}}}}}}
-
-              }}});
-  EXPECT_EQ(result.status(),
-            absl::InvalidArgumentError(
-                "errors validating xds_override_host LB policy config: "
-                "[field:childPolicy error:exactly one child config should be "
-                "specified]"));
-
-  result =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          Json::Array{
-              Json::Object{{"xds_override_host_experimental",
-                            Json::Object{{
-                                "childPolicy",
-                                {Json::Object{{"pick_first", Json::Object{}}}},
-                            }}}
-
-              }});
-  EXPECT_EQ(result.status(),
-            absl::InvalidArgumentError(
-                "errors validating xds_override_host LB policy config: "
-                "[field:childPolicy error:type should be array]"));
-
-  result =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          Json::Array{Json::Object{{"xds_override_host_experimental",
-                                    Json::Object{{"childPolicy", Json::Array{}}}
-
-          }}});
-  EXPECT_EQ(result.status(),
-            absl::InvalidArgumentError(
-                "errors validating xds_override_host LB policy config: "
-                "[field:childPolicy error:No known policies in list: ]"));
 }
 
 TEST_F(XdsOverrideHostTest, XdsOverrideHostLbPolicyDisabled) {

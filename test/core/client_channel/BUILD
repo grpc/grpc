@@ -115,3 +115,18 @@ grpc_cc_test(
         "//test/core/util:scoped_env_var",
     ],
 )
+
+grpc_cc_test(
+    name = "xds_override_host_lb_config_parser_test",
+    srcs = ["xds_override_host_lb_config_parser_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_test_ios"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
+    ],
+)
