@@ -366,32 +366,6 @@ typedef struct {
 GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor);
 
-/** --- Local channel/server credentials --- **/
-
-/**
- * This method creates a local channel credential object. The security level
- * of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY for UDS and
- * GRPC_SECURITY_NONE for LOCAL_TCP. It is used for experimental purpose
- * for now and subject to change.
- *
- * - type: local connection type
- *
- * It returns the created local channel credential object.
- */
-GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
-    grpc_local_connect_type type);
-
-/**
- * This method creates a local server credential object. It is used for
- * experimental purpose for now and subject to change.
- *
- * - type: local connection type
- *
- * It returns the created local server credential object.
- */
-GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
-    grpc_local_connect_type type);
-
 /** --- TLS channel/server credentials ---
  * It is used for experimental purpose for now and subject to change. */
 

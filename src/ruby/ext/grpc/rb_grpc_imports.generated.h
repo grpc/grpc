@@ -28,6 +28,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/channel_credentials/alts.h>
 #include <grpc/channel_credentials/google_default.h>
+#include <grpc/channel_credentials/local.h>
 #include <grpc/channel_credentials/ssl.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -98,6 +99,12 @@ extern grpc_alts_server_credentials_create_type grpc_alts_server_credentials_cre
 typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(grpc_call_credentials* call_credentials);
 extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
 #define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
+typedef grpc_channel_credentials*(*grpc_local_credentials_create_type)(grpc_local_connect_type type);
+extern grpc_local_credentials_create_type grpc_local_credentials_create_import;
+#define grpc_local_credentials_create grpc_local_credentials_create_import
+typedef grpc_server_credentials*(*grpc_local_server_credentials_create_type)(grpc_local_connect_type type);
+extern grpc_local_server_credentials_create_type grpc_local_server_credentials_create_import;
+#define grpc_local_server_credentials_create grpc_local_server_credentials_create_import
 typedef grpc_channel_credentials*(*grpc_ssl_credentials_create_type)(const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair, const verify_peer_options* verify_options, void* reserved);
 extern grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 #define grpc_ssl_credentials_create grpc_ssl_credentials_create_import
@@ -491,12 +498,6 @@ extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
 typedef void(*grpc_server_credentials_set_auth_metadata_processor_type)(grpc_server_credentials* creds, grpc_auth_metadata_processor processor);
 extern grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
 #define grpc_server_credentials_set_auth_metadata_processor grpc_server_credentials_set_auth_metadata_processor_import
-typedef grpc_channel_credentials*(*grpc_local_credentials_create_type)(grpc_local_connect_type type);
-extern grpc_local_credentials_create_type grpc_local_credentials_create_import;
-#define grpc_local_credentials_create grpc_local_credentials_create_import
-typedef grpc_server_credentials*(*grpc_local_server_credentials_create_type)(grpc_local_connect_type type);
-extern grpc_local_server_credentials_create_type grpc_local_server_credentials_create_import;
-#define grpc_local_server_credentials_create grpc_local_server_credentials_create_import
 typedef grpc_tls_identity_pairs*(*grpc_tls_identity_pairs_create_type)();
 extern grpc_tls_identity_pairs_create_type grpc_tls_identity_pairs_create_import;
 #define grpc_tls_identity_pairs_create grpc_tls_identity_pairs_create_import

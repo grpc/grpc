@@ -52,6 +52,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/census.h )
   s.files += %w( include/grpc/channel_credentials/alts.h )
   s.files += %w( include/grpc/channel_credentials/google_default.h )
+  s.files += %w( include/grpc/channel_credentials/local.h )
   s.files += %w( include/grpc/channel_credentials/ssl.h )
   s.files += %w( include/grpc/compression.h )
   s.files += %w( include/grpc/event_engine/endpoint_config.h )

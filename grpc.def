@@ -17,6 +17,8 @@ EXPORTS
     grpc_alts_credentials_create
     grpc_alts_server_credentials_create
     grpc_google_default_credentials_create
+    grpc_local_credentials_create
+    grpc_local_server_credentials_create
     grpc_ssl_credentials_create
     grpc_ssl_credentials_create_ex
     grpc_ssl_server_certificate_config_create
@@ -148,8 +150,6 @@ EXPORTS
     grpc_metadata_credentials_create_from_plugin
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
-    grpc_local_credentials_create
-    grpc_local_server_credentials_create
     grpc_tls_identity_pairs_create
     grpc_tls_identity_pairs_add_pair
     grpc_tls_identity_pairs_destroy

@@ -195,7 +195,9 @@ GPR_PUBLIC_HDRS = [
 GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
+    "include/grpc/channel_credentials/alts.h",
     "include/grpc/channel_credentials/google_default.h",
+    "include/grpc/channel_credentials/local.h",
     "include/grpc/channel_credentials/ssl.h",
     "include/grpc/compression.h",
     "include/grpc/fork.h",

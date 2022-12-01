@@ -25,6 +25,7 @@
 #include <vector>
 
 #include <grpc/channel_credentials/alts.h>
+#include <grpc/channel_credentials/local.h>
 #include <grpc/channel_credentials/ssl.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>

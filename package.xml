@@ -34,6 +34,7 @@
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/channel_credentials/alts.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/channel_credentials/google_default.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/channel_credentials/local.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/channel_credentials/ssl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />

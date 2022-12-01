@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/channel_credentials/alts.h>
 #include <grpc/grpc_security.h>
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"

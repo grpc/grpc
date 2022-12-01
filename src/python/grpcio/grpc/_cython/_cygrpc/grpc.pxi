@@ -616,11 +616,6 @@ cdef extern from "grpc/grpc_security.h":
 
   void grpc_auth_context_release(grpc_auth_context *context)
 
-  grpc_channel_credentials *grpc_local_credentials_create(
-    grpc_local_connect_type type)
-  grpc_server_credentials *grpc_local_server_credentials_create(
-    grpc_local_connect_type type)
-
   ctypedef struct grpc_alts_credentials_options:
     # We don't care about the internals (and in fact don't know them)
     pass
@@ -641,6 +636,13 @@ cdef extern from "grpc/channel_credentials/alts.h":
 
 cdef extern from "grpc/channel_credentials/google_default.h":
   grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
+
+
+cdef extern from "grpc/channel_credentials/local.h":
+  grpc_channel_credentials *grpc_local_credentials_create(
+    grpc_local_connect_type type)
+  grpc_server_credentials *grpc_local_server_credentials_create(
+    grpc_local_connect_type type)
 
 
 cdef extern from "grpc/channel_credentials/ssl.h":
