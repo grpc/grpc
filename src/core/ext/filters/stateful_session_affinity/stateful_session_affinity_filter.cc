@@ -101,12 +101,9 @@ void MaybeUpdateServerInitialMetadata(
       parts.emplace_back(absl::StrCat("Path=", *cookie_config->path));
     }
     if (cookie_config->ttl > Duration::Zero()) {
-      // FIXME: use max-age or expires?
-      // FIXME: if max-age, is this the right rounding behavior?
       parts.emplace_back(
           absl::StrCat("Max-Age=", cookie_config->ttl.as_timespec().tv_sec));
     }
-    // FIXME: need to not overwrite any pre-existing set-cookie header!
     server_initial_metadata->Append(
         "set-cookie", Slice::FromCopiedString(absl::StrJoin(parts, "; ")),
         [](absl::string_view error, const Slice&) {
