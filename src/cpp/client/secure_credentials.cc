@@ -33,6 +33,7 @@
 #include <grpc/channel_credentials/google_default.h>
 #include <grpc/channel_credentials/local.h>
 #include <grpc/channel_credentials/ssl.h>
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/codegen/gpr_types.h>

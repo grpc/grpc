@@ -199,6 +199,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/channel_credentials/google_default.h",
     "include/grpc/channel_credentials/local.h",
     "include/grpc/channel_credentials/ssl.h",
+    "include/grpc/channel_credentials/tls.h",
     "include/grpc/compression.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
@@ -1676,6 +1677,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpc/channel_credentials/alts.h",
+        "include/grpc/channel_credentials/tls.h",
         "include/grpc/grpc_security.h",
         "//src/core:lib/security/credentials/alts/check_gcp_environment.h",
         "//src/core:lib/security/credentials/alts/grpc_alts_credentials_options.h",

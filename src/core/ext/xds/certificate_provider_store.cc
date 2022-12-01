@@ -22,6 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"

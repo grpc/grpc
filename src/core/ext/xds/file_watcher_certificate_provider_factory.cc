@@ -27,6 +27,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

@@ -22,6 +22,7 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 

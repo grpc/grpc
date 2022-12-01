@@ -33,6 +33,7 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>

@@ -25,6 +25,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>

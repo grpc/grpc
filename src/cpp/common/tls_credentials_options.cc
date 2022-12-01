@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>

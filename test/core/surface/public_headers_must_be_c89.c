@@ -23,6 +23,7 @@
 #include <grpc/channel_credentials/google_default.h>
 #include <grpc/channel_credentials/local.h>
 #include <grpc/channel_credentials/ssl.h>
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/compression.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
@@ -103,6 +104,23 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_options_using_config_fetcher);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_options_destroy);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_with_options);
+  printf("%lx", (unsigned long) grpc_tls_identity_pairs_create);
+  printf("%lx", (unsigned long) grpc_tls_identity_pairs_add_pair);
+  printf("%lx", (unsigned long) grpc_tls_identity_pairs_destroy);
+  printf("%lx", (unsigned long) grpc_tls_certificate_provider_static_data_create);
+  printf("%lx", (unsigned long) grpc_tls_certificate_provider_file_watcher_create);
+  printf("%lx", (unsigned long) grpc_tls_certificate_provider_release);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_certificate_provider);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_watch_root_certs);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_root_cert_name);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_watch_identity_key_cert_pairs);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_identity_cert_name);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_crl_directory);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_verify_server_cert);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_check_call_host);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_tls_session_key_log_file_path);
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_message);
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_stream);
   printf("%lx", (unsigned long) grpc_compression_algorithm_parse);
@@ -222,22 +240,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_metadata_credentials_create_from_plugin);
   printf("%lx", (unsigned long) grpc_call_set_credentials);
   printf("%lx", (unsigned long) grpc_server_credentials_set_auth_metadata_processor);
-  printf("%lx", (unsigned long) grpc_tls_identity_pairs_create);
-  printf("%lx", (unsigned long) grpc_tls_identity_pairs_add_pair);
-  printf("%lx", (unsigned long) grpc_tls_identity_pairs_destroy);
-  printf("%lx", (unsigned long) grpc_tls_certificate_provider_static_data_create);
-  printf("%lx", (unsigned long) grpc_tls_certificate_provider_file_watcher_create);
-  printf("%lx", (unsigned long) grpc_tls_certificate_provider_release);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_certificate_provider);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_watch_root_certs);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_root_cert_name);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_watch_identity_key_cert_pairs);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_identity_cert_name);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_crl_directory);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_verify_server_cert);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_check_call_host);
   printf("%lx", (unsigned long) grpc_insecure_credentials_create);
   printf("%lx", (unsigned long) grpc_insecure_server_credentials_create);
   printf("%lx", (unsigned long) grpc_xds_credentials_create);
@@ -245,7 +247,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_static_data_create);
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_file_watcher_create);
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_release);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_tls_session_key_log_file_path);
   printf("%lx", (unsigned long) gpr_log_severity_string);
   printf("%lx", (unsigned long) gpr_log);
   printf("%lx", (unsigned long) gpr_should_log);

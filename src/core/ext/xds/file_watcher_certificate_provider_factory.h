@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

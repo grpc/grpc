@@ -29,6 +29,23 @@ EXPORTS
     grpc_ssl_server_credentials_create_options_using_config_fetcher
     grpc_ssl_server_credentials_options_destroy
     grpc_ssl_server_credentials_create_with_options
+    grpc_tls_identity_pairs_create
+    grpc_tls_identity_pairs_add_pair
+    grpc_tls_identity_pairs_destroy
+    grpc_tls_certificate_provider_static_data_create
+    grpc_tls_certificate_provider_file_watcher_create
+    grpc_tls_certificate_provider_release
+    grpc_tls_credentials_options_create
+    grpc_tls_credentials_options_set_certificate_provider
+    grpc_tls_credentials_options_watch_root_certs
+    grpc_tls_credentials_options_set_root_cert_name
+    grpc_tls_credentials_options_watch_identity_key_cert_pairs
+    grpc_tls_credentials_options_set_identity_cert_name
+    grpc_tls_credentials_options_set_cert_request_type
+    grpc_tls_credentials_options_set_crl_directory
+    grpc_tls_credentials_options_set_verify_server_cert
+    grpc_tls_credentials_options_set_check_call_host
+    grpc_tls_credentials_options_set_tls_session_key_log_file_path
     grpc_compression_algorithm_is_message
     grpc_compression_algorithm_is_stream
     grpc_compression_algorithm_parse
@@ -150,22 +167,6 @@ EXPORTS
     grpc_metadata_credentials_create_from_plugin
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
-    grpc_tls_identity_pairs_create
-    grpc_tls_identity_pairs_add_pair
-    grpc_tls_identity_pairs_destroy
-    grpc_tls_certificate_provider_static_data_create
-    grpc_tls_certificate_provider_file_watcher_create
-    grpc_tls_certificate_provider_release
-    grpc_tls_credentials_options_create
-    grpc_tls_credentials_options_set_certificate_provider
-    grpc_tls_credentials_options_watch_root_certs
-    grpc_tls_credentials_options_set_root_cert_name
-    grpc_tls_credentials_options_watch_identity_key_cert_pairs
-    grpc_tls_credentials_options_set_identity_cert_name
-    grpc_tls_credentials_options_set_cert_request_type
-    grpc_tls_credentials_options_set_crl_directory
-    grpc_tls_credentials_options_set_verify_server_cert
-    grpc_tls_credentials_options_set_check_call_host
     grpc_insecure_credentials_create
     grpc_insecure_server_credentials_create
     grpc_xds_credentials_create
@@ -173,7 +174,6 @@ EXPORTS
     grpc_authorization_policy_provider_static_data_create
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
-    grpc_tls_credentials_options_set_tls_session_key_log_file_path
     gpr_log_severity_string
     gpr_log
     gpr_should_log

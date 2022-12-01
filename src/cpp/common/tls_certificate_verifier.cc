@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>

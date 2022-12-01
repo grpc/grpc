@@ -25,6 +25,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/types/optional.h"
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

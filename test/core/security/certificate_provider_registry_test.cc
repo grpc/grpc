@@ -22,6 +22,8 @@
 
 #include <gmock/gmock.h>
 
+#include <grpc/channel_credentials/tls.h>
+
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "test/core/util/test_config.h"
 

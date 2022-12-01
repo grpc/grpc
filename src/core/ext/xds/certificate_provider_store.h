@@ -28,6 +28,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/gpr/useful.h"

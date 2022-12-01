@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
