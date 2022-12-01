@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 #include <openssl/crypto.h>
 
+#include <grpc/channel_credentials/ssl.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/support/string_ref.h>

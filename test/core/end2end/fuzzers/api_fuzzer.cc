@@ -35,6 +35,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/channel_credentials/ssl.h>
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>

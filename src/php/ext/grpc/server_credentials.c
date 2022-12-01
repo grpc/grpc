@@ -23,6 +23,7 @@
 
 #include "server_credentials.h"
 
+#include <grpc/channel_credentials/ssl.h>
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
 

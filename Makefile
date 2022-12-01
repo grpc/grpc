@@ -1668,6 +1668,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/channel_credentials/google_default.h \
+    include/grpc/channel_credentials/ssl.h \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
@@ -2135,6 +2136,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/channel_credentials/google_default.h \
+    include/grpc/channel_credentials/ssl.h \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
