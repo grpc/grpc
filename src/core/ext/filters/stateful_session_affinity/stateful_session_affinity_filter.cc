@@ -202,7 +202,7 @@ StatefulSessionAffinityFilter::GetHostOverrideFromCookie(
   std::vector<absl::string_view> values;
   for (absl::string_view cookie : absl::StrSplit(*header_value, "; ")) {
     std::pair<absl::string_view, absl::string_view> kv =
-        absl::StrSplit(cookie, absl::MaxSplits("=", 1));
+        absl::StrSplit(cookie, absl::MaxSplits('=', 1));
     if (kv.first == cookie_name) values.push_back(kv.second);
   }
   if (values.empty()) return absl::nullopt;
