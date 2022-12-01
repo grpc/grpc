@@ -20,6 +20,7 @@
 
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 
+#include <grpc/channel_credentials/insecure.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

@@ -369,20 +369,6 @@ GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * This method creates an insecure channel credentials object.
- */
-GRPCAPI grpc_channel_credentials* grpc_insecure_credentials_create();
-
-/**
- * EXPERIMENTAL API - Subject to change
- *
- * This method creates an insecure server credentials object.
- */
-GRPCAPI grpc_server_credentials* grpc_insecure_server_credentials_create();
-
-/**
- * EXPERIMENTAL API - Subject to change
- *
  * This method creates an xDS channel credentials object.
  *
  * Creating a channel with credentials of this type indicates that the channel

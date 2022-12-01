@@ -25,6 +25,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include <grpc/channel_credentials/insecure.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>

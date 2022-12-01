@@ -34,6 +34,7 @@
 #include "absl/strings/str_replace.h"
 
 #include <grpc/channel_credentials/google_default.h>
+#include <grpc/channel_credentials/insecure.h>
 #include <grpc/channel_credentials/tls.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>

@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include <grpc/channel_credentials/insecure.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>

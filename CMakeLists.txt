@@ -2433,6 +2433,7 @@ foreach(_hdr
   include/grpc/census.h
   include/grpc/channel_credentials/alts.h
   include/grpc/channel_credentials/google_default.h
+  include/grpc/channel_credentials/insecure.h
   include/grpc/channel_credentials/local.h
   include/grpc/channel_credentials/ssl.h
   include/grpc/channel_credentials/tls.h
@@ -3044,6 +3045,7 @@ foreach(_hdr
   include/grpc/census.h
   include/grpc/channel_credentials/alts.h
   include/grpc/channel_credentials/google_default.h
+  include/grpc/channel_credentials/insecure.h
   include/grpc/channel_credentials/local.h
   include/grpc/channel_credentials/ssl.h
   include/grpc/channel_credentials/tls.h
@@ -4527,6 +4529,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/channel_credentials/alts.h
   include/grpc/channel_credentials/google_default.h
+  include/grpc/channel_credentials/insecure.h
   include/grpc/channel_credentials/local.h
   include/grpc/channel_credentials/ssl.h
   include/grpc/channel_credentials/tls.h

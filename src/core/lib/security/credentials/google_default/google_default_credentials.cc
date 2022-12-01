@@ -34,6 +34,7 @@
 
 #include <grpc/channel_credentials/alts.h>
 #include <grpc/channel_credentials/google_default.h>
+#include <grpc/channel_credentials/insecure.h>
 #include <grpc/channel_credentials/ssl.h>
 #include <grpc/grpc_security.h>  // IWYU pragma: keep
 #include <grpc/grpc_security_constants.h>
