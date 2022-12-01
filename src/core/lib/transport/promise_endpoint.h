@@ -96,7 +96,7 @@ class PromiseEndpoint {
     /// Should not have pending reads
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
 
-    if (read_buffer_.Count() < num_bytes) {
+    if (read_buffer_.Length() < num_bytes) {
       const std::function<void(absl::Status)> read_callback =
           [this, num_bytes, &read_callback](absl::Status status) {
             if (!status.ok()) {
@@ -164,7 +164,7 @@ class PromiseEndpoint {
     /// Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
 
-    if (read_buffer_.Count() < num_bytes) {
+    if (read_buffer_.Length() < num_bytes) {
       /// TODO: handle potential integer overflow
       /// TODO: evaluate the lifespan of `read_args`
       const struct grpc_event_engine::experimental::EventEngine::Endpoint::
@@ -184,7 +184,7 @@ class PromiseEndpoint {
                 pending_read_buffer_.Append(temporary_read_buffer_.TakeFirst());
               }
 
-              if (read_buffer_.Count() + pending_read_buffer_.Count() <
+              if (read_buffer_.Length() + pending_read_buffer_.Length() <
                   num_bytes) {
                 /// A further read is needed.
                 endpoint_->Read(read_callback, &temporary_read_buffer_,
@@ -238,7 +238,7 @@ class PromiseEndpoint {
     /// Previous read result has not been polled.
     GPR_ASSERT(!read_result_.has_value());
 
-    if (read_buffer_.Count() == 0u) {
+    if (read_buffer_.Length() == 0u) {
       const std::function<void(absl::Status)> read_callback =
           [this](absl::Status status) {
             grpc_core::MutexLock lock(&read_mutex_);
