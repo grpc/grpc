@@ -26,6 +26,9 @@ namespace {
 
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
+  XdsOverrideHostTest()
+      : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
+
   RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
       std::string child_policy = "pick_first") {
     Json::Object child_policy_config = {{child_policy, Json::Object()}};
@@ -34,25 +37,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
          Json::Object{{"childPolicy", Json::Array{{child_policy_config}}}}}}});
   }
 
-  void SetUp() override {
+  static void SetUpTestSuite() {
     grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
-    grpc_init();
-    policy_ = MakeLbPolicy("xds_override_host_experimental");
-  }
-
-  void TearDown() override {
-    // Note: Can't safely trigger this from inside the FakeHelper dtor,
-    // because if there is a picker in the queue that is holding a ref
-    // to the LB policy, that will prevent the LB policy from being
-    // destroyed, and therefore the FakeHelper will not be destroyed.
-    // (This will cause an ASAN failure, but it will not display the
-    // queued events, so the failure will be harder to diagnose.)
-    if (policy_ != nullptr) {
-      helper_->ExpectQueueEmpty();
-    }
-    policy_.reset();
-    grpc_shutdown_blocking();
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
     grpc_core::CoreConfiguration::Reset();
   }
 
@@ -105,7 +91,10 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
   ASSERT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  ASSERT_NE(WaitForConnected(), nullptr);
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  ExpectPickComplete(picker.get());
+
   subchannel =
       FindSubchannel({kAddresses[1]},
                      ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
@@ -123,15 +112,16 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
     ASSERT_TRUE(subchannel->ConnectionRequested());
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-    EXPECT_NE(ExpectState(GRPC_CHANNEL_READY), nullptr);
+    picker = ExpectState(GRPC_CHANNEL_READY);
+    EXPECT_NE(picker, nullptr);
+    ExpectPickComplete(picker.get());
   }
-  auto picker = ExpectState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
-  ExpectPickComplete(picker.get());
   std::set<std::string> picked;
   for (size_t i = 0; i < kAddresses.size(); i++) {
     auto pick = ExpectPickComplete(picker.get());
-    EXPECT_TRUE(pick.has_value());
+    ASSERT_TRUE(pick.has_value());
     picked.insert(*pick);
   }
   EXPECT_THAT(picked, ::testing::UnorderedElementsAreArray(kAddresses));
@@ -144,14 +134,16 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
       absl::InvalidArgumentError("Missing policy config"));
 }
 
-TEST_F(XdsOverrideHostTest, XdsOverrideHostLbPolicyDisabled) {
-  policy_.reset();
-  grpc_shutdown_blocking();
-  grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
-  grpc_core::CoreConfiguration::Reset();
-  grpc_init();
-  auto policy = MakeLbPolicy("xds_override_host_experimental");
-  ASSERT_EQ(policy, nullptr);
+class XdsOverrideHostDisabledTest : public LoadBalancingPolicyTest {
+ protected:
+  static void SetUpTestSuite() {
+    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+    grpc_core::CoreConfiguration::Reset();
+  }
+};
+
+TEST_F(XdsOverrideHostDisabledTest, PolicyIsNotCreated) {
+  ASSERT_EQ(MakeLbPolicy("xds_override_host_experimental"), nullptr);
 }
 
 }  // namespace
@@ -161,6 +153,8 @@ TEST_F(XdsOverrideHostTest, XdsOverrideHostLbPolicyDisabled) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
   int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
   return ret;
 }
