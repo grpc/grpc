@@ -488,6 +488,8 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
+  int Fd() { return handle_->WrappedFd(); }
+
   void MaybeShutdown(absl::Status why);
 
  private:
@@ -513,6 +515,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
                            ssize_t* sent_length, int* saved_errno,
                            int additional_flags);
+  absl::Status TcpAnnotateError(absl::Status src_error);
 #ifdef GRPC_LINUX_ERRQUEUE
   bool ProcessErrors();
   // Reads a cmsg to process zerocopy control messages.
@@ -621,6 +624,8 @@ class PosixEndpoint
     return impl_->GetLocalAddress();
   }
 
+  int Fd() { return impl_->Fd(); }
+
   ~PosixEndpoint() override {
     impl_->MaybeShutdown(absl::InternalError("Endpoint closing"));
   }
@@ -659,6 +664,10 @@ class PosixEndpoint
   GetLocalAddress() const override {
     GPR_ASSERT(false &&
                "PosixEndpoint::GetLocalAddress not supported on this platform");
+  }
+
+  int Fd() {
+    GPR_ASSERT(false && "PosixEndpoint::Fd not supported on this platform");
   }
 
   ~PosixEndpoint() override = default;

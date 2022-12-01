@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <string>
+#include <tuple>
 
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"
@@ -51,7 +52,13 @@ namespace experimental {
 /// an experimental API.
 class SliceBuffer {
  public:
-  explicit SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
+  SliceBuffer() { grpc_slice_buffer_init(&slice_buffer_); }
+  // Transfers slices into this new SliceBuffer, leaving the parameter empty.
+  // Does not take ownership of the slice_buffer argument.
+  explicit SliceBuffer(grpc_slice_buffer* slice_buffer) {
+    grpc_slice_buffer_init(&slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, slice_buffer);
+  }
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
@@ -118,11 +125,25 @@ class SliceBuffer {
   /// associated slice.
   Slice RefSlice(size_t index);
 
+  /// Returns pointer to the buffer contained in the slice at the specified
+  /// index. The returned buffer is mutable.
+  std::tuple<uint8_t*, size_t> MutableData(size_t index) {
+    return std::make_tuple<uint8_t*, size_t>(
+        GPR_SLICE_START_PTR(slice_buffer_.slices[index]),
+        GPR_SLICE_LENGTH(slice_buffer_.slices[index]));
+  }
+
   /// The total number of bytes held by the SliceBuffer
   size_t Length() { return slice_buffer_.length; }
 
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
+
+  // Returns a SliceBuffer that transfers slices into this new SliceBuffer,
+  // leaving the input parameter empty.
+  static SliceBuffer TakeCSliceBuffer(grpc_slice_buffer& slice_buffer) {
+    return SliceBuffer(&slice_buffer);
+  }
 
  private:
   /// The backing raw slice buffer.
