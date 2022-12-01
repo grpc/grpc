@@ -1196,6 +1196,10 @@ src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
+src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.cc \
+src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h \
+src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.cc \
+src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h \
 src/core/ext/transport/binder/client/binder_connector.cc \
 src/core/ext/transport/binder/client/binder_connector.h \
 src/core/ext/transport/binder/client/channel_create.cc \

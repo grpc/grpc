@@ -1734,6 +1734,8 @@ add_library(grpc
   src/core/ext/filters/rbac/rbac_filter.cc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
+  src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.cc
+  src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc

@@ -3351,6 +3351,48 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_stateful_session_affinity_filter",
+    srcs = [
+        "ext/filters/stateful_session_affinity/stateful_session_affinity_filter.cc",
+        "ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.cc",
+    ],
+    hdrs = [
+        "ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h",
+        "ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/random",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "arena_promise",
+        "channel_args",
+        "channel_fwd",
+        "context",
+        "grpc_service_config",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "seq",
+        "service_config_parser",
+        "time",
+        "try_concurrently",
+        "unique_type_name",
+        "validation_errors",
+        "//:config",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
         "ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",

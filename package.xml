@@ -218,6 +218,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
