@@ -15,7 +15,7 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
-#include "grpc/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/port.h"
 
