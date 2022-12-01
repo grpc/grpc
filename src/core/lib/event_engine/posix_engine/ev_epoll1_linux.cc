@@ -58,8 +58,8 @@ namespace grpc_event_engine {
 namespace experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::LockfreeEvent;
+using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::WakeupFd;
 
 class Epoll1EventHandle : public EventHandle {

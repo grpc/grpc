@@ -92,8 +92,8 @@ namespace grpc_event_engine {
 namespace experimental {
 
 using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::experimental::PosixEventPoller;
+using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using namespace std::chrono_literals;
 
 namespace {
