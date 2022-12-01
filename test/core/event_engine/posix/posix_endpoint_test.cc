@@ -54,7 +54,7 @@
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 
@@ -203,7 +203,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   void SetUp() override {
     oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
     scheduler_ =
-        std::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
+        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
     poller_ = MakeDefaultPoller(scheduler_.get());
@@ -336,7 +336,7 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
 INSTANTIATE_TEST_SUITE_P(PosixEndpoint, PosixEndpointTest,
                          ::testing::ValuesIn({false, true}), &TestScenarioName);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

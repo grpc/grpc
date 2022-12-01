@@ -48,7 +48,7 @@
 #endif /* ifdef GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -312,7 +312,7 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
   EventEngine::ResolvedAddress mapped_target_addr;
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

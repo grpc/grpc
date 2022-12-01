@@ -62,7 +62,7 @@
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 
@@ -844,5 +844,5 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

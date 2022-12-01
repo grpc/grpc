@@ -51,7 +51,7 @@
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
@@ -208,7 +208,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   WaitForSingleOwner(std::move(posix_ee));
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
