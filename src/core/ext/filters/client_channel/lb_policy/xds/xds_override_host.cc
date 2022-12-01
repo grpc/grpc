@@ -371,24 +371,15 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   auto it = json.object_value().find("childPolicy");
   if (it == json.object_value().end()) {
     errors->AddError("field not present");
-    return;
-  }
-  auto& child_config = it->second;
-
-  // Note that if type is not an array than framework will provide a more
-  // precise error message
-  if (child_config.type() == Json::Type::ARRAY &&
-      child_config.array_value().size() > 1) {
-    errors->AddError("exactly one child config should be specified");
-    return;
-  }
-  auto child_policy_config =
-      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-          child_config);
-  if (!child_policy_config.ok()) {
-    errors->AddError(child_policy_config.status().message());
   } else {
-    child_config_ = std::move(*child_policy_config);
+    auto child_policy_config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            it->second);
+    if (!child_policy_config.ok()) {
+      errors->AddError(child_policy_config.status().message());
+    } else {
+      child_config_ = std::move(*child_policy_config);
+    }
   }
 }
 
@@ -414,32 +405,6 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
     return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
         json, JsonArgs(),
         "errors validating xds_override_host LB policy config");
-    // ValidationErrors errors;
-    // RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    // {
-    //   // Parse childPolicy manually.
-    //   {
-    //     ValidationErrors::ScopedField field(&errors, ".childPolicy");
-    //     auto it = json.object_value().find("childPolicy");
-    //     if (it == json.object_value().end()) {
-    //       errors.AddError("field not present");
-    //     } else {
-    //       auto child_policy_config = CoreConfiguration::Get()
-    //                                      .lb_policy_registry()
-    //                                      .ParseLoadBalancingConfig(it->second);
-    //       if (!child_policy_config.ok()) {
-    //         errors.AddError(child_policy_config.status().message());
-    //       } else {
-    //         child_policy = std::move(*child_policy_config);
-    //       }
-    //     }
-    //   }
-    // }
-    // if (!errors.ok()) {
-    //   return errors.status(
-    //       "errors validating xds_override_host LB policy config");
-    // }
-    // return MakeRefCounted<XdsOverrideHostLbConfig>(std::move(child_policy));
   }
 };
 

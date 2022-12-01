@@ -82,29 +82,6 @@ TEST_F(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
                 "[field:childPolicy error:field not present]]"));
 }
 
-TEST_F(XdsOverrideHostConfigParsingTest, ReportsMultipleChildPolicies) {
-  const char* service_config_json =
-      "{\n"
-      "  \"loadBalancingConfig\":[{\n"
-      "    \"xds_override_host_experimental\":{\n"
-      "      \"childPolicy\":[\n"
-      "        {\"grpclb\":{}},\n"
-      "        {\"pick_first\":{}}\n"
-      "      ]\n"
-      "    }\n"
-      "  }]\n"
-      "}\n";
-  auto service_config =
-      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
-  ASSERT_FALSE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config.status(),
-            absl::InvalidArgumentError(
-                "errors validating service config: [field:loadBalancingConfig "
-                "error:errors validating xds_override_host LB policy config: "
-                "[field:childPolicy error:exactly one child config should be "
-                "specified]]"));
-}
-
 TEST_F(XdsOverrideHostConfigParsingTest, ReportsChildPolicyShouldBeArray) {
   const char* service_config_json =
       "{\n"
