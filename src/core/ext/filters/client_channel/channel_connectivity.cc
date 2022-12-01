@@ -15,17 +15,15 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
-
-#include "absl/status/status.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
+#include <grpc/event_engine/event_engine.h>
 
+#include "absl/status/status.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -37,7 +35,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -112,7 +109,6 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
         state_(last_observed_state) {
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
-    GRPC_CLOSURE_INIT(&on_timeout_, TimeoutComplete, this, nullptr);
     ClientChannel* client_channel =
         ClientChannel::GetFromChannel(channel_.get());
     if (client_channel == nullptr) {
@@ -132,8 +128,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       GPR_ASSERT(false);
     }
     // Take an addition ref, so we have two (the first one is from the
-    // creation of this object).  One will be held by the timer callback,
-    // the other by the watcher callback.
+    // creation of this object).  This one will be held by the watcher callback.
     Ref().release();
     auto* watcher_timer_init_state = new WatcherTimerInitState(
         this, Timestamp::FromTimespecRoundUp(deadline));
@@ -167,7 +162,9 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   };
 
   void StartTimer(Timestamp deadline) {
-    grpc_timer_init(&timer_, deadline, &on_timeout_);
+    const Duration timeout = deadline - Timestamp::Now();
+    timer_handle_ = channel_->channel_stack()->EventEngine()->RunAfter(
+        timeout, [self = Ref()] { self->TimeoutComplete(); });
   }
 
   static void WatchComplete(void* arg, grpc_error_handle error) {
@@ -175,20 +172,18 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
-    grpc_timer_cancel(&self->timer_);
+    self->channel_->channel_stack()->EventEngine()->Cancel(self->timer_handle_);
     self->Unref();
   }
 
-  static void TimeoutComplete(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<StateWatcher*>(arg);
-    self->timer_fired_ = error.ok();
+  void TimeoutComplete() {
+    timer_fired_ = true;
     // If this is a client channel (not a lame channel), cancel the watch.
     ClientChannel* client_channel =
-        ClientChannel::GetFromChannel(self->channel_.get());
+        ClientChannel::GetFromChannel(channel_.get());
     if (client_channel != nullptr) {
-      client_channel->CancelExternalConnectivityWatcher(&self->on_complete_);
+      client_channel->CancelExternalConnectivityWatcher(&on_complete_);
     }
-    self->Unref();
   }
 
   // Invoked when both strong refs are released.
@@ -217,9 +212,8 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   grpc_cq_completion completion_storage_;
 
   grpc_closure on_complete_;
-  grpc_timer timer_;
-  grpc_closure on_timeout_;
 
+  grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle_;
   bool timer_fired_ = false;
 };
 
