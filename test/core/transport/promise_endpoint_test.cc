@@ -16,11 +16,15 @@
 
 #include "src/core/lib/transport/promise_endpoint.h"
 
+#include <functional>
 #include <memory>
+#include <queue>
 
 #include <gtest/gtest.h>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -35,6 +39,10 @@ class MockEndpoint
     : public grpc_event_engine::experimental::EventEngine::Endpoint {
  public:
   MockEndpoint() {
+    ON_CALL(*this, Write)
+        .WillByDefault(std::bind(&MockEndpoint::WriteImpl, this,
+                                 std::placeholders::_1, std::placeholders::_2,
+                                 std::placeholders::_3));
     ON_CALL(*this, GetPeerAddress)
         .WillByDefault(std::bind(&MockEndpoint::GetPeerAddressImpl, this));
     ON_CALL(*this, GetLocalAddress)
@@ -70,34 +78,62 @@ class MockEndpoint
     peer_address_ = peer_address;
   }
 
-  const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-  peer_address() const {
-    return peer_address_;
-  }
-
   void set_local_address(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
           local_address) {
     local_address_ = local_address;
   }
 
-  const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-  local_address() const {
-    return local_address_;
+  void ScheduleWriteTask(bool ready, const absl::Status& status) {
+    write_task_queue_.push({ready, status, {}});
+  }
+
+  void MarkNextWriteReady() {
+    ASSERT_FALSE(write_task_queue_.empty());
+    ASSERT_FALSE(write_task_queue_.front().ready);
+
+    write_task_queue_.front().ready = true;
+    if (write_task_queue_.front().callback.has_value()) {
+      (*write_task_queue_.front().callback)(write_task_queue_.front().status);
+      write_task_queue_.pop();
+    }
   }
 
  private:
+  struct WriteTask {
+    bool ready;
+    const absl::Status status;
+    absl::optional<absl::AnyInvocable<void(absl::Status)>> callback;
+  };
+  std::queue<WriteTask> write_task_queue_;
+
+  void WriteImpl(
+      absl::AnyInvocable<void(absl::Status)> on_writable,
+      grpc_event_engine::experimental::SliceBuffer* /* data */,
+      const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
+      /* args */) {
+    gpr_log(GPR_ERROR, "h\n");
+    ASSERT_FALSE(write_task_queue_.empty());
+
+    if (write_task_queue_.front().ready) {
+      on_writable(write_task_queue_.front().status);
+      write_task_queue_.pop();
+    } else {
+      write_task_queue_.front().callback = std::move(on_writable);
+    }
+  }
+
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
   grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address_;
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddressImpl() const {
-    return peer_address();
+    return peer_address_;
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetLocalAddressImpl() const {
-    return local_address();
+    return local_address_;
   }
 };
 
@@ -119,6 +155,33 @@ class PromiseEndpointTest : public ::testing::Test {
   MockEndpoint& mock_endpoint_;
   grpc::internal::PromiseEndpoint promise_endpoint_;
 };
+
+TEST_F(PromiseEndpointTest, WriteOneSuccessful) {
+  const absl::Status kStatus = absl::OkStatus();
+  mock_endpoint_.ScheduleWriteTask(true, kStatus);
+
+  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+}
+
+TEST_F(PromiseEndpointTest, WriteOneFailed) {
+  const absl::Status kStatus = absl::ErrnoToStatus(5566, "just an error");
+  mock_endpoint_.ScheduleWriteTask(true, kStatus);
+
+  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+}
+
+TEST_F(PromiseEndpointTest, WriteAndWaitSuccessful) {
+  const absl::Status kStatus = absl::OkStatus();
+  mock_endpoint_.ScheduleWriteTask(false, kStatus);
+
+  auto ret = promise_endpoint_.Write(grpc_core::SliceBuffer());
+  EXPECT_EQ(grpc_core::Pending(), absl::get<grpc_core::Pending>(ret()));
+
+  mock_endpoint_.MarkNextWriteReady();
+  EXPECT_EQ(kStatus, absl::get<absl::Status>(ret()));
+}
 
 TEST_F(PromiseEndpointTest, GetPeerAddress) {
   /// just some random bytes

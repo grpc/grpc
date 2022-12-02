@@ -56,14 +56,16 @@ class PromiseEndpoint {
   ~PromiseEndpoint();
 
   auto Write(grpc_core::SliceBuffer data) {
-    grpc_core::MutexLock lock(&write_mutex_);
+    {
+      grpc_core::MutexLock lock(&write_mutex_);
 
-    /// Previous write result has not been polled.
-    GPR_ASSERT(!write_result_.has_value());
+      /// Previous write result has not been polled.
+      GPR_ASSERT(!write_result_.has_value());
 
-    /// TODO: Is there a better way to convert?
-    grpc_slice_buffer_swap(data.c_slice_buffer(),
-                           write_buffer_.c_slice_buffer());
+      /// TODO: Is there a better way to convert?
+      grpc_slice_buffer_swap(data.c_slice_buffer(),
+                             write_buffer_.c_slice_buffer());
+    }
 
     const std::function<void(absl::Status)> write_callback =
         [this](absl::Status status) {
