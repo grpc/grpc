@@ -13079,6 +13079,15 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_override_host_lb_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/xds_override_host_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
 - name: xds_override_host_test
   gtest: true
   build: test

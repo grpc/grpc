@@ -22,9 +22,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "test/core/util/test_config.h"

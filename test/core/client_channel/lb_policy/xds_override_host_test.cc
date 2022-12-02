@@ -16,7 +16,6 @@
 
 #include "gmock/gmock.h"
 
-#include "src/core/lib/gprpp/env.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 

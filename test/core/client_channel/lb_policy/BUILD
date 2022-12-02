@@ -68,7 +68,6 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":lb_policy_test_lib",
-        "//src/core:env",
         "//src/core:grpc_lb_policy_xds_override_host",
         "//test/core/util:grpc_test_util",
     ],
