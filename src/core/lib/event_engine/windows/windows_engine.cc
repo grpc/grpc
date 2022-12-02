@@ -52,7 +52,7 @@ struct WindowsEventEngine::Closure final : public EventEngine::Closure {
     GRPC_EVENT_ENGINE_TRACE("WindowsEventEngine:%p executing callback:%s",
                             engine, HandleToString(handle).c_str());
     {
-      grpc_core::MutexLock lock(&engine->mu_);
+      grpc_core::MutexLock lock(&engine->task_mu_);
       engine->known_handles_.erase(handle);
     }
     cb();
@@ -71,7 +71,7 @@ WindowsEventEngine::WindowsEventEngine()
 
 WindowsEventEngine::~WindowsEventEngine() {
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&task_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
@@ -87,7 +87,7 @@ WindowsEventEngine::~WindowsEventEngine() {
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<Closure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
@@ -122,7 +122,7 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
   GRPC_EVENT_ENGINE_TRACE("WindowsEventEngine:%p scheduling callback:%s", this,
