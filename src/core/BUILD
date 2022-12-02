@@ -3564,6 +3564,7 @@ grpc_cc_library(
         "ext/xds/xds_http_fault_filter.cc",
         "ext/xds/xds_http_filters.cc",
         "ext/xds/xds_http_rbac_filter.cc",
+        "ext/xds/xds_http_stateful_session_affinity_filter.cc",
         "ext/xds/xds_lb_policy_registry.cc",
         "ext/xds/xds_listener.cc",
         "ext/xds/xds_route_config.cc",
@@ -3584,6 +3585,7 @@ grpc_cc_library(
         "ext/xds/xds_http_fault_filter.h",
         "ext/xds/xds_http_filters.h",
         "ext/xds/xds_http_rbac_filter.h",
+        "ext/xds/xds_http_stateful_session_affinity_filter.h",
         "ext/xds/xds_lb_policy_registry.h",
         "ext/xds/xds_listener.h",
         "ext/xds/xds_route_config.h",
@@ -3639,6 +3641,10 @@ grpc_cc_library(
         "envoy_extensions_filters_http_rbac_upbdefs",
         "envoy_extensions_filters_http_router_upb",
         "envoy_extensions_filters_http_router_upbdefs",
+        "envoy_extensions_filters_http_stateful_session_upb",
+        "envoy_extensions_filters_http_stateful_session_upbdefs",
+        "envoy_extensions_http_stateful_session_cookie_upb",
+        "envoy_extensions_http_stateful_session_cookie_upbdefs",
         "envoy_extensions_filters_network_http_connection_manager_upb",
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
@@ -3651,12 +3657,14 @@ grpc_cc_library(
         "envoy_service_load_stats_upbdefs",
         "envoy_service_status_upb",
         "envoy_service_status_upbdefs",
+        "envoy_type_http_upb",
         "envoy_type_matcher_upb",
         "envoy_type_upb",
         "error",
         "google_rpc_status_upb",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
+        "grpc_stateful_session_affinity_filter",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_outlier_detection_header",
@@ -5013,6 +5021,31 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_stateful_session_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_stateful_session_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upb",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_type_http_upb",
+    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(

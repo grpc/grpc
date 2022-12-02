@@ -1,5 +1,5 @@
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_AFFINITY_FILTER_H
+#define GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_AFFINITY_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,26 +33,26 @@
 
 namespace grpc_core {
 
-class XdsHttpRbacFilter : public XdsHttpFilterImpl {
+class XdsHttpStatefulSessionAffinityFilter : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
-      const XdsResourceType::DecodeContext& context,
-      XdsExtension extension, ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context, XdsExtension extension, 
+      ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      const XdsResourceType::DecodeContext& context,
-      XdsExtension extension, ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const override;
-  bool IsSupportedOnClients() const override { return false; }
-  bool IsSupportedOnServers() const override { return true; }
+  bool IsSupportedOnClients() const override { return true; }
+  bool IsSupportedOnServers() const override { return false; }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_AFFINITY_FILTER_H
