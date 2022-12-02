@@ -60,9 +60,6 @@
 
 #include <gtest/gtest.h>
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -321,8 +318,8 @@ std::string TestScenario::AsString() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
@@ -370,7 +367,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       // Add 20 phony server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+        creators.push_back(std::make_unique<PhonyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -440,7 +437,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
           interceptor_creators = {}) {
     ResetChannel(std::move(interceptor_creators));
     if (GetParam().use_proxy()) {
-      proxy_service_ = absl::make_unique<Proxy>(channel_);
+      proxy_service_ = std::make_unique<Proxy>(channel_);
       int port = grpc_pick_unused_port_or_die();
       std::ostringstream proxyaddr;
       proxyaddr << "localhost:" << port;
@@ -1512,7 +1509,7 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
 #ifndef NDEBUG
-    // GRPC_ERROR_INT_FILE_LINE is for debug only
+    // grpc_core::StatusIntProperty::kFileLine is for debug only
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
 #endif
@@ -1873,7 +1870,7 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
   interceptor_creators.push_back(
-      absl::make_unique<CredentialsInterceptorFactory>());
+      std::make_unique<CredentialsInterceptorFactory>());
   ResetStub(std::move(interceptor_creators));
   EchoRequest request;
   EchoResponse response;
@@ -1902,7 +1899,7 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
   interceptor_creators.push_back(
-      absl::make_unique<CredentialsInterceptorFactory>());
+      std::make_unique<CredentialsInterceptorFactory>());
   ResetStub(std::move(interceptor_creators));
   EchoRequest request;
   EchoResponse response;

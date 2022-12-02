@@ -84,7 +84,10 @@ GRPC_PYTHON_INCLUDE = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root', 'include')
 BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools', 'distrib', 'python',
                           'bazel_deps.sh')
 BAZEL_DEPS_PROTOC_LIB_QUERY = '//:protoc_lib'
-BAZEL_DEPS_COMMON_PROTOS_QUERY = '//:well_known_type_protos'
+BAZEL_DEPS_COMMON_PROTOS_QUERIES = [
+    '//:well_known_type_protos',
+    '//:built_in_runtime_protos',
+]
 
 
 def protobuf_submodule_commit_hash():
@@ -112,10 +115,12 @@ def get_deps():
         for name in cc_files_output
         if name.endswith('.cc') and name.startswith(PROTOBUF_CC_PREFIX)
     ]
-    proto_files_output = bazel_query(BAZEL_DEPS_COMMON_PROTOS_QUERY)
+    raw_proto_files = []
+    for target in BAZEL_DEPS_COMMON_PROTOS_QUERIES:
+        raw_proto_files += bazel_query(target)
     proto_files = [
         name[len(PROTOBUF_PROTO_PREFIX):]
-        for name in proto_files_output
+        for name in raw_proto_files
         if name.endswith('.proto') and name.startswith(PROTOBUF_PROTO_PREFIX)
     ]
     commit_hash = protobuf_submodule_commit_hash()

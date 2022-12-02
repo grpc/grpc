@@ -54,11 +54,11 @@ class BinderTransportTest : public ::testing::Test {
       : arena_(grpc_core::Arena::Create(/* initial_size = */ 1,
                                         g_memory_allocator)),
         transport_(grpc_create_binder_transport_client(
-            absl::make_unique<NiceMock<MockBinder>>(),
+            std::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
     auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-    gbt->wire_writer = absl::make_unique<MockWireWriter>();
+    gbt->wire_writer = std::make_unique<MockWireWriter>();
     GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
   }
 
@@ -178,7 +178,7 @@ MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
 
 // Matches with grpc_error having error message containing |msg|.
 MATCHER_P(GrpcErrorMessageContains, msg, "") {
-  return absl::StrContains(grpc_error_std_string(arg), msg);
+  return absl::StrContains(grpc_core::StatusToString(arg), msg);
 }
 
 namespace {
@@ -193,6 +193,7 @@ class MetadataEncoder {
   void Encode(Which, const typename Which::ValueType& value) {
     metadata_.emplace_back(
         std::string(Which::key()),
+        // NOLINTNEXTLINE(google-readability-casting)
         std::string(grpc_core::Slice(Which::Encode(value)).as_string_view()));
   }
 
@@ -701,7 +702,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   EXPECT_CALL(GetWireWriter(), RpcCall)
       .WillOnce(Return(absl::OkStatus()))
       .WillOnce(Return(absl::InternalError("WireWriter::RpcCall failed")));
-  EXPECT_CALL(mock_on_complete1, Callback(GRPC_ERROR_NONE));
+  EXPECT_CALL(mock_on_complete1, Callback(absl::OkStatus()));
   EXPECT_CALL(mock_on_complete2,
               Callback(GrpcErrorMessageContains("WireWriter::RpcCall failed")));
 

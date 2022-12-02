@@ -23,28 +23,42 @@ cd "$(dirname "$0")"
 
 XCODEBUILD_FILTER_OUTPUT_SCRIPT="../../../../../src/objective-c/tests/xcodebuild_filter_output.sh"
 
+XCODEBUILD_FLAGS="
+  IPHONEOS_DEPLOYMENT_TARGET=10
+"
+
+XCODEBUILD_DESTINATION="platform=iOS Simulator,name=iPhone 11"
+
 time ./build_tests.sh
 
 time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests \
-    -destination name="iPhone 8" \
-    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+    -destination "${XCODEBUILD_DESTINATION}" \
+    test \
+    "${XCODEBUILD_FLAGS}" \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 
 time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests_Asan \
-    -destination name="iPhone 8" \
-    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+    -destination "${XCODEBUILD_DESTINATION}" \
+    test \
+    "${XCODEBUILD_FLAGS}" \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 
 time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests_Tsan \
-    -destination name="iPhone 8" \
-    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+    -destination "${XCODEBUILD_DESTINATION}" \
+    test \
+    "${XCODEBUILD_FLAGS}" \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 
 time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests_Msan \
-    -destination name="iPhone 8" \
-    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+    -destination "${XCODEBUILD_DESTINATION}" \
+    test \
+    "${XCODEBUILD_FLAGS}" \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"

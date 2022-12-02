@@ -18,18 +18,18 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -51,11 +51,14 @@ TEST(PipeTest, CanSendAndReceive) {
         Pipe<int> pipe;
         return Seq(
             // Concurrently: send 42 into the pipe, and receive from the pipe.
-            Join(pipe.sender.Push(42), pipe.receiver.Next()),
+            Join(pipe.sender.Push(42),
+                 Map(pipe.receiver.Next(),
+                     [](NextResult<int> r) { return r.value(); })),
             // Once complete, verify successful sending and the received value
             // is 42.
-            [](std::tuple<bool, absl::optional<int>> result) {
-              EXPECT_EQ(result, std::make_tuple(true, absl::optional<int>(42)));
+            [](std::tuple<bool, int> result) {
+              EXPECT_TRUE(std::get<0>(result));
+              EXPECT_EQ(42, std::get<1>(result));
               return absl::OkStatus();
             });
       },
@@ -72,11 +75,14 @@ TEST(PipeTest, CanReceiveAndSend) {
         Pipe<int> pipe;
         return Seq(
             // Concurrently: receive from the pipe, and send 42 into the pipe.
-            Join(pipe.receiver.Next(), pipe.sender.Push(42)),
+            Join(Map(pipe.receiver.Next(),
+                     [](NextResult<int> r) { return r.value(); }),
+                 pipe.sender.Push(42)),
             // Once complete, verify the received value is 42 and successful
             // sending.
-            [](std::tuple<absl::optional<int>, bool> result) {
-              EXPECT_EQ(result, std::make_tuple(absl::optional<int>(42), true));
+            [](std::tuple<int, bool> result) {
+              EXPECT_EQ(std::get<0>(result), 42);
+              EXPECT_TRUE(std::get<1>(result));
               return absl::OkStatus();
             });
       },
@@ -92,14 +98,12 @@ TEST(PipeTest, CanSeeClosedOnSend) {
       [] {
         Pipe<int> pipe;
         auto sender = std::move(pipe.sender);
-        // Push 42 onto the pipe - this will the pipe's one-deep send buffer.
-        EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
         auto receiver = std::make_shared<std::unique_ptr<PipeReceiver<int>>>(
-            absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver)));
+            std::make_unique<PipeReceiver<int>>(std::move(pipe.receiver)));
         return Seq(
             // Concurrently:
-            // - push 43 into the sender, which will stall because the buffer is
-            //   full
+            // - push 43 into the sender, which will stall because there is no
+            //   reader
             // - and close the receiver, which will fail the pending send.
             Join(sender.Push(43),
                  [receiver] {
@@ -107,7 +111,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
                    return absl::OkStatus();
                  }),
             // Verify both that the send failed and that we executed the close.
-            [](std::tuple<bool, absl::Status> result) {
+            [](const std::tuple<bool, absl::Status>& result) {
               EXPECT_EQ(result, std::make_tuple(false, absl::OkStatus()));
               return absl::OkStatus();
             });
@@ -124,7 +128,7 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
       [] {
         Pipe<int> pipe;
         auto sender = std::make_shared<std::unique_ptr<PipeSender<int>>>(
-            absl::make_unique<PipeSender<int>>(std::move(pipe.sender)));
+            std::make_unique<PipeSender<int>>(std::move(pipe.sender)));
         auto receiver = std::move(pipe.receiver);
         return Seq(
             // Concurrently:
@@ -138,9 +142,9 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
                    return absl::OkStatus();
                  }),
             // Verify we received end-of-stream and closed the sender.
-            [](std::tuple<absl::optional<int>, absl::Status> result) {
-              EXPECT_EQ(result, std::make_tuple(absl::optional<int>(),
-                                                absl::OkStatus()));
+            [](std::tuple<NextResult<int>, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result).has_value());
+              EXPECT_EQ(std::get<1>(result), absl::OkStatus());
               return absl::OkStatus();
             });
       },
@@ -149,9 +153,60 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
       MakeScopedArena(1024, g_memory_allocator));
 }
 
+TEST(PipeTest, CanFlowControlThroughManyStages) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  auto done = std::make_shared<bool>(false);
+  // Push a value through multiple pipes.
+  // Ensure that it's possible to do so and get flow control throughout the
+  // entire pipe: ie that the push down does not complete until the last pipe
+  // completes.
+  MakeActivity(
+      [done] {
+        Pipe<int> pipe1;
+        Pipe<int> pipe2;
+        Pipe<int> pipe3;
+        auto sender1 = std::move(pipe1.sender);
+        auto receiver1 = std::move(pipe1.receiver);
+        auto sender2 = std::move(pipe2.sender);
+        auto receiver2 = std::move(pipe2.receiver);
+        auto sender3 = std::move(pipe3.sender);
+        auto receiver3 = std::move(pipe3.receiver);
+        return Seq(
+            Join(Seq(sender1.Push(1),
+                     [done] {
+                       *done = true;
+                       return 1;
+                     }),
+                 Seq(receiver1.Next(),
+                     [sender2 = std::move(sender2)](NextResult<int> r) mutable {
+                       return sender2.Push(r.value());
+                     }),
+                 Seq(receiver2.Next(),
+                     [sender3 = std::move(sender3)](NextResult<int> r) mutable {
+                       return sender3.Push(r.value());
+                     }),
+                 Seq(receiver3.Next(),
+                     [done](NextResult<int> r) {
+                       EXPECT_EQ(r.value(), 1);
+                       EXPECT_FALSE(*done);
+                       return 2;
+                     })),
+            [](std::tuple<int, bool, bool, int> result) {
+              EXPECT_EQ(result, std::make_tuple(1, true, true, 2));
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, g_memory_allocator));
+  ASSERT_TRUE(*done);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  gpr_log_verbosity_init();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -17,10 +17,17 @@
 #ifndef GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_CONFIG_H
 #define GRPC_INTERNAL_CPP_EXT_GCP_OBSERVABILITY_GCP_OBSERVABILITY_CONFIG_H
 
+#include <stdint.h>
+
 #include <string>
+#include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 
@@ -29,50 +36,68 @@ namespace internal {
 
 struct GcpObservabilityConfig {
   struct CloudLogging {
-    bool disabled = false;
+    struct RpcEventConfiguration {
+      struct ParsedMethod {
+        absl::string_view service;  // backed by methods
+        absl::string_view method;   // backed by methods
+      };
+      std::vector<std::string> qualified_methods;
+      std::vector<ParsedMethod> parsed_methods;
+      bool exclude = false;
+      uint32_t max_metadata_bytes = 0;
+      uint32_t max_message_bytes = 0;
+
+      static const grpc_core::JsonLoaderInterface* JsonLoader(
+          const grpc_core::JsonArgs&);
+
+      void JsonPostLoad(const grpc_core::Json& json,
+                        const grpc_core::JsonArgs& args,
+                        grpc_core::ValidationErrors* errors);
+    };
+
+    std::vector<RpcEventConfiguration> client_rpc_events;
+    std::vector<RpcEventConfiguration> server_rpc_events;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudLogging>()
-              .OptionalField("disabled", &CloudLogging::disabled)
+              .OptionalField("client_rpc_events",
+                             &CloudLogging::client_rpc_events)
+              .OptionalField("server_rpc_events",
+                             &CloudLogging::server_rpc_events)
               .Finish();
       return loader;
     }
   };
 
   struct CloudMonitoring {
-    bool disabled = false;
-
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
-          grpc_core::JsonObjectLoader<CloudMonitoring>()
-              .OptionalField("disabled", &CloudMonitoring::disabled)
-              .Finish();
+          grpc_core::JsonObjectLoader<CloudMonitoring>().Finish();
       return loader;
     }
   };
 
   struct CloudTrace {
-    bool disabled = false;
     float sampling_rate = 0;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudTrace>()
-              .OptionalField("disabled", &CloudTrace::disabled)
               .OptionalField("sampling_rate", &CloudTrace::sampling_rate)
               .Finish();
       return loader;
     }
   };
 
-  CloudLogging cloud_logging;
-  CloudMonitoring cloud_monitoring;
-  CloudTrace cloud_trace;
+  absl::optional<CloudLogging> cloud_logging;
+  absl::optional<CloudMonitoring> cloud_monitoring;
+  absl::optional<CloudTrace> cloud_trace;
   std::string project_id;
+  std::map<std::string, std::string> labels;
 
   static const grpc_core::JsonLoaderInterface* JsonLoader(
       const grpc_core::JsonArgs&) {
@@ -84,6 +109,7 @@ struct GcpObservabilityConfig {
                            &GcpObservabilityConfig::cloud_monitoring)
             .OptionalField("cloud_trace", &GcpObservabilityConfig::cloud_trace)
             .OptionalField("project_id", &GcpObservabilityConfig::project_id)
+            .OptionalField("labels", &GcpObservabilityConfig::labels)
             .Finish();
     return loader;
   }

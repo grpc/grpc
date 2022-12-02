@@ -31,6 +31,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
@@ -45,7 +47,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -291,7 +292,7 @@ static grpc_error_handle init_call_elem(grpc_call_element* elem,
                                         const grpc_call_element_args* args) {
   final_status_data* data = static_cast<final_status_data*>(elem->call_data);
   data->call = args->call_stack;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void client_destroy_call_elem(grpc_call_element* elem,
@@ -326,7 +327,7 @@ static void server_destroy_call_elem(grpc_call_element* elem,
 
 static grpc_error_handle init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}

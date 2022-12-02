@@ -29,7 +29,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -54,7 +53,7 @@
 namespace grpc_core {
 namespace {
 
-GPR_THREAD_LOCAL(ThreadState*) g_this_thread_state;
+thread_local ThreadState* g_this_thread_state;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 

@@ -122,7 +122,7 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
       announced_window_ != target_announced_window) {
     const uint32_t announce =
         static_cast<uint32_t>(Clamp(target_announced_window - announced_window_,
-                                    int64_t(0), kMaxWindowUpdateSize));
+                                    int64_t{0}, kMaxWindowUpdateSize));
     announced_window_ += announce;
     return announce;
   }
@@ -255,7 +255,7 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   //                                                                pressure
   const double kAnythingGoesPressure = 0.2;
   const double kAdjustedToBdpPressure = 0.5;
-  const double kAnythingGoesWindow = std::max(double(1 << 24), bdp);
+  const double kAnythingGoesWindow = std::max(double{1 << 24}, bdp);
   if (memory_pressure < kAnythingGoesPressure) {
     return kAnythingGoesWindow;
   } else if (memory_pressure < kAdjustedToBdpPressure) {
@@ -278,8 +278,22 @@ void TransportFlowControl::UpdateSetting(
         Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
               grpc_chttp2_settings_parameters[id].max_value);
     if (new_desired_value != *desired_value) {
+      if (grpc_flowctl_trace.enabled()) {
+        gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
+                grpc_chttp2_settings_parameters[id].name, *desired_value,
+                new_desired_value);
+      }
+      // Reaching zero can only happen for initial window size, and if it occurs
+      // we really want to wake up writes and ensure all the queued stream
+      // window updates are flushed, since stream flow control operates
+      // differently at zero window size.
+      FlowControlAction::Urgency urgency =
+          FlowControlAction::Urgency::QUEUE_UPDATE;
+      if (*desired_value == 0 || new_desired_value == 0) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      }
       *desired_value = new_desired_value;
-      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+      (action->*set)(urgency, *desired_value);
     }
   } else {
     int64_t delta = new_desired_value - *desired_value;
@@ -287,9 +301,25 @@ void TransportFlowControl::UpdateSetting(
     if (delta != 0 &&
         (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
       *desired_value = new_desired_value;
-      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
+      (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE,
+                     static_cast<uint32_t>(*desired_value));
     }
   }
+}
+
+FlowControlAction TransportFlowControl::SetAckedInitialWindow(uint32_t value) {
+  acked_init_window_ = value;
+  FlowControlAction action;
+  if (IsFlowControlFixesEnabled() &&
+      acked_init_window_ != target_initial_window_size_) {
+    FlowControlAction::Urgency urgency =
+        FlowControlAction::Urgency::QUEUE_UPDATE;
+    if (acked_init_window_ == 0 || target_initial_window_size_ == 0) {
+      urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+    }
+    action.set_send_initial_window_update(urgency, target_initial_window_size_);
+  }
+  return action;
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
@@ -337,24 +367,41 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       }
       // Though initial window 'could' drop to 0, we keep the floor at
       // kMinInitialWindowSize
-      UpdateSetting(
-          GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-          &target_initial_window_size_,
-          static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
-                                     double(kMaxInitialWindowSize))),
-          &action, &FlowControlAction::set_send_initial_window_update);
+      UpdateSetting(GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+                    &target_initial_window_size_,
+                    static_cast<int32_t>(Clamp(
+                        target, static_cast<double>(kMinInitialWindowSize),
+                        static_cast<double>(kMaxInitialWindowSize))),
+                    &action,
+                    &FlowControlAction::set_send_initial_window_update);
       // get bandwidth estimate and update max_frame accordingly.
       double bw_dbl = bdp_estimator_.EstimateBandwidth();
       // we target the max of BDP or bandwidth in microseconds.
       UpdateSetting(
           GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
-          static_cast<int32_t>(Clamp(
-              std::max(
-                  static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) /
-                      1000,
-                  static_cast<int32_t>(target_initial_window_size_)),
-              16384, 16777215)),
+          static_cast<int32_t>(
+              Clamp(std::max(static_cast<int32_t>(Clamp(
+                                 bw_dbl, 0.0, static_cast<double>(INT_MAX))) /
+                                 1000,
+                             static_cast<int32_t>(target_initial_window_size_)),
+                    16384, 16777215)),
           &action, &FlowControlAction::set_send_max_frame_size_update);
+    }
+
+    if (IsTcpFrameSizeTuningEnabled()) {
+      // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
+      // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
+      // peer that we have tcp frame size tuning enabled and we inform it of our
+      // prefered rx frame sizes. The prefered rx frame size is determined as:
+      // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
+      // maybe updated to a different function of the memory pressure.
+      UpdateSetting(
+          GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+          &target_preferred_rx_crypto_frame_size_,
+          Clamp(static_cast<unsigned int>(target_frame_size_ * 2), 16384u,
+                0x7ffffffu),
+          &action,
+          &FlowControlAction::set_preferred_rx_crypto_frame_size_update);
     }
   }
   return UpdateAction(action);
@@ -362,15 +409,15 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
-  const uint32_t announce = DesiredAnnounceSize();
+  const int64_t announce = DesiredAnnounceSize();
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
-  tfc_upd.MakeAction();
-  return announce;
+  std::ignore = tfc_upd.MakeAction();
+  return static_cast<uint32_t>(announce);
 }
 
-uint32_t StreamFlowControl::DesiredAnnounceSize() const {
+int64_t StreamFlowControl::DesiredAnnounceSize() const {
   int64_t desired_window_delta = [this]() {
     if (min_progress_size_ == 0) {
       if (pending_size_.has_value() &&
@@ -383,20 +430,40 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
       return std::min(min_progress_size_, kMaxWindowDelta);
     }
   }();
-  return Clamp(desired_window_delta - announced_window_delta_, int64_t(0),
+  return Clamp(desired_window_delta - announced_window_delta_, int64_t{0},
                kMaxWindowUpdateSize);
 }
 
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   const int64_t desired_announce_size = DesiredAnnounceSize();
   if (desired_announce_size > 0) {
-    if ((min_progress_size_ > 0 && announced_window_delta_ <= 0) ||
-        desired_announce_size >= 8192) {
-      action.set_send_stream_update(
-          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-    } else {
-      action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
+    FlowControlAction::Urgency urgency =
+        FlowControlAction::Urgency::QUEUE_UPDATE;
+    // Size at which we probably want to wake up and write regardless of whether
+    // we *have* to.
+    // Currently set at half the initial window size or 8kb (whichever is
+    // greater). 8kb means we don't send rapidly unnecessarily when the initial
+    // window size is small.
+    const int64_t hurry_up_size = std::max(
+        static_cast<int64_t>(tfc_->sent_init_window()) / 2, int64_t{8192});
+    if (desired_announce_size > hurry_up_size) {
+      urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
     }
+    // min_progress_size_ > 0 means we have a reader ready to read.
+    if (min_progress_size_ > 0) {
+      // If we're into initial window to receive that data we should wake up and
+      // send an update.
+      if (announced_window_delta_ < 0) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      } else if (announced_window_delta_ == 0 &&
+                 tfc_->sent_init_window() == 0) {
+        // Special case when initial window size is zero, meaning that
+        // announced_window_delta cannot become negative (it may already be so
+        // however).
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      }
+    }
+    action.set_send_stream_update(urgency);
   }
   return action;
 }

@@ -23,14 +23,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -67,7 +65,7 @@ Interceptor* OrcaServerInterceptorFactory::CreateServerInterceptor(
 
 void OrcaServerInterceptorFactory::Register(grpc::ServerBuilder* builder) {
   builder->internal_interceptor_creators_.push_back(
-      absl::make_unique<OrcaServerInterceptorFactory>());
+      std::make_unique<OrcaServerInterceptorFactory>());
 }
 
 void EnableCallMetricRecording(grpc::ServerBuilder* builder) {

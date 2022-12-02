@@ -29,8 +29,7 @@ namespace grpc_core {
 // A DNS resolver which uses the native platform's getaddrinfo API.
 class NativeDNSResolver : public DNSResolver {
  public:
-  // Gets the singleton instance, creating it first if it doesn't exist
-  static NativeDNSResolver* GetOrCreate();
+  NativeDNSResolver();
 
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>

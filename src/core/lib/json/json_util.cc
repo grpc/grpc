@@ -21,13 +21,14 @@
 #include "src/core/lib/json/json_util.h"
 
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
 bool ParseDurationFromJson(const Json& field, Duration* duration) {
-  ErrorList errors;
+  ValidationErrors errors;
   static_cast<json_detail::LoaderInterface*>(
       NoDestructSingleton<json_detail::AutoLoader<Duration>>::Get())
       ->LoadInto(field, JsonArgs(), duration, &errors);
@@ -44,7 +45,7 @@ bool ExtractJsonBool(const Json& json, absl::string_view field_name,
       *output = false;
       return true;
     default:
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE(
           absl::StrCat("field:", field_name, " error:type should be BOOLEAN")));
       return false;
   }
@@ -55,7 +56,7 @@ bool ExtractJsonArray(const Json& json, absl::string_view field_name,
                       std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::ARRAY) {
     *output = nullptr;
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name, " error:type should be ARRAY")));
     return false;
   }
@@ -68,7 +69,7 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
                        std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::OBJECT) {
     *output = nullptr;
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name, " error:type should be OBJECT")));
     return false;
   }
@@ -86,14 +87,14 @@ bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
   auto it = object.find(std::string(field_name));
   if (it == object.end()) {
     if (required) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE(
           absl::StrCat("field:", field_name, " error:does not exist.")));
     }
     return false;
   }
   if (!ParseDurationFromJson(it->second, output)) {
     *output = Duration::NegativeInfinity();
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error_list->push_back(GRPC_ERROR_CREATE(
         absl::StrCat("field:", field_name,
                      " error:type should be STRING of the form given by "
                      "google.proto.Duration.")));

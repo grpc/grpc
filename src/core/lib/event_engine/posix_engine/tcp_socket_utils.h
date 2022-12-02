@@ -17,15 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <sys/socket.h>
-
 #include <functional>
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -36,6 +33,10 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#include <sys/socket.h>
+#endif
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #ifndef SO_ZEROCOPY
@@ -74,7 +75,7 @@ struct PosixTcpOptions {
   PosixTcpOptions() = default;
   // Move ctor
   PosixTcpOptions(PosixTcpOptions&& other) noexcept {
-    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
     CopyIntegerOptions(other);
   }
@@ -83,7 +84,7 @@ struct PosixTcpOptions {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
     }
-    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
     CopyIntegerOptions(other);
     return *this;
@@ -144,32 +145,15 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec);
 
-// Returns true if resolved_addr is an IPv4-mapped IPv6 address within the
-//  ::ffff:0.0.0.0/96 range, or false otherwise.
-
-//  If resolved_addr4_out is non-NULL, the inner IPv4 address will be copied
-//  here when returning true.
-bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
-                        EventEngine::ResolvedAddress* resolved_addr4_out);
-
-// If resolved_addr is an AF_INET address, writes the corresponding
-// ::ffff:0.0.0.0/96 address to resolved_addr6_out and returns true.  Otherwise
-// returns false.
-bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
-                        EventEngine::ResolvedAddress* resolved_addr6_out);
-
-// Converts a EventEngine::ResolvedAddress into a newly-allocated human-readable
-// string.
-//
-// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
-// If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
-// displayed as plain IPv4.
-absl::StatusOr<std::string> SockaddrToString(
-    const EventEngine::ResolvedAddress* resolved_addr, bool normalize);
+// Unlink the path pointed to by the given address if it refers to UDS path.
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr);
 
 class PosixSocketWrapper {
  public:
   explicit PosixSocketWrapper(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
+
+  PosixSocketWrapper() : fd_(-1){};
 
   ~PosixSocketWrapper() = default;
 
@@ -301,8 +285,31 @@ class PosixSocketWrapper {
       const experimental::EventEngine::ResolvedAddress& addr, int type,
       int protocol, DSMode& dsmode);
 
+  struct PosixSocketCreateResult;
+  // Return a PosixSocketCreateResult which manages a configured, unbound,
+  // unconnected TCP client fd.
+  //  options: may contain custom tcp settings for the fd.
+  //  target_addr: the destination address.
+  //
+  // Returns: Not-OK status on error. Otherwise it returns a
+  // PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
+  // of type PosixSocketWrapper and a mapped_target_addr which is
+  // target_addr mapped to an address appropriate to the type of socket FD
+  // created. For example, if target_addr is IPv4 and dual stack sockets are
+  // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
+  //
+  static absl::StatusOr<PosixSocketCreateResult>
+  CreateAndPrepareTcpClientSocket(
+      const PosixTcpOptions& options,
+      const EventEngine::ResolvedAddress& target_addr);
+
  private:
   int fd_;
+};
+
+struct PosixSocketWrapper::PosixSocketCreateResult {
+  PosixSocketWrapper sock;
+  EventEngine::ResolvedAddress mapped_target_addr;
 };
 
 }  // namespace posix_engine

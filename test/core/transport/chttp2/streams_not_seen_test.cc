@@ -32,7 +32,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -70,7 +70,6 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -117,7 +116,7 @@ class TrailingMetadataRecordingFilter {
     static grpc_error_handle Init(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
 
     static void Destroy(grpc_call_element* elem,
@@ -162,7 +161,7 @@ class TrailingMetadataRecordingFilter {
       TrailingMetadataRecordingFilter::trailing_metadata_available_ =
           *calld->trailing_metadata_available_;
       Closure::Run(DEBUG_LOCATION, calld->original_recv_initial_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   error);
     }
 
     static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
@@ -170,8 +169,7 @@ class TrailingMetadataRecordingFilter {
       stream_network_state_ =
           calld->recv_trailing_metadata_->get(GrpcStreamNetworkState());
       Closure::Run(DEBUG_LOCATION,
-                   calld->original_recv_trailing_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   calld->original_recv_trailing_metadata_ready_, error);
     }
 
     bool* trailing_metadata_available_ = nullptr;
@@ -185,7 +183,7 @@ class TrailingMetadataRecordingFilter {
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
     new (elem->channel_data) TrailingMetadataRecordingFilter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* elem) {
@@ -231,14 +229,14 @@ class StreamsNotSeenTest : public ::testing::Test {
     test_tcp_server_init(&server_, OnConnect, this);
     test_tcp_server_start(&server_, port_);
     // Start polling on the test tcp server
-    server_poll_thread_ = absl::make_unique<std::thread>([this]() {
+    server_poll_thread_ = std::make_unique<std::thread>([this]() {
       while (!shutdown_) {
         test_tcp_server_poll(&server_, 10);
       }
     });
     // Create the channel
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<CqVerifier>(cq_);
+    cqv_ = std::make_unique<CqVerifier>(cq_);
     grpc_arg client_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
@@ -277,8 +275,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     } while (ev.type != GRPC_QUEUE_SHUTDOWN);
     grpc_completion_queue_destroy(cq_);
     grpc_channel_destroy(channel_);
-    grpc_endpoint_shutdown(
-        tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+    grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Test Shutdown"));
     ExecCtx::Get()->Flush();
     GPR_ASSERT(read_end_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -361,14 +358,14 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+    GPR_ASSERT(error.ok());
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
   static void OnReadDone(void* arg, grpc_error_handle error) {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
@@ -539,8 +536,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Shutdown the server endpoint
-  grpc_endpoint_shutdown(
-      tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -765,8 +761,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  grpc_endpoint_shutdown(
-      tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();

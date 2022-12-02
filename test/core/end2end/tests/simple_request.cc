@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <string>
 
 #include <grpc/grpc.h>
@@ -26,10 +28,10 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -41,6 +43,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
+  gpr_log(GPR_INFO, "%s", std::string(100, '*').c_str());
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
@@ -115,12 +118,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
   char* peer;
-  grpc_stats_data* before =
-      static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
-  grpc_stats_data* after =
-      static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
 
-  grpc_stats_collect(before);
+  auto before = grpc_core::global_stats().Collect();
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -235,24 +234,19 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_call_unref(c);
   grpc_call_unref(s);
 
-  int expected_calls = 1;
+  uint64_t expected_calls = 1;
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
 
-  grpc_stats_collect(after);
+  auto after = grpc_core::global_stats().Collect();
 
-  gpr_log(GPR_DEBUG, "%s", grpc_stats_data_as_json(after).c_str());
+  gpr_log(GPR_DEBUG, "%s", grpc_core::StatsAsJson(after.get()).c_str());
 
-  GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] -
-                 before->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] ==
+  GPR_ASSERT(after->client_calls_created - before->client_calls_created ==
              expected_calls);
-  GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] -
-                 before->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] ==
+  GPR_ASSERT(after->server_calls_created - before->server_calls_created ==
              expected_calls);
-
-  gpr_free(before);
-  gpr_free(after);
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config) {

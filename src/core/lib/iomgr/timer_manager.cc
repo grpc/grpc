@@ -332,9 +332,6 @@ static void stop_threads(void) {
   }
   g_wakeups = 0;
   gpr_mu_unlock(&g_mu);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-    gpr_log(GPR_INFO, "stop timer threads: complete");
-  }
 }
 
 void grpc_timer_manager_shutdown(void) {

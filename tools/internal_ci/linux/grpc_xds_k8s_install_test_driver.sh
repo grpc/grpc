@@ -16,7 +16,7 @@
 set -eo pipefail
 
 # Constants
-readonly PYTHON_VERSION="${PYTHON_VERSION:-3.6}"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.7}"
 # Test driver
 readonly TEST_DRIVER_REPO_NAME="grpc"
 readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"

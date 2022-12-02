@@ -23,6 +23,7 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -30,6 +31,8 @@ namespace testing {
 namespace {
 
 using ClientStats = LrsServiceImpl::ClientStats;
+
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 //
 // XdsClientTest - basic tests of XdsClient functionality
@@ -188,12 +191,12 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
                    "INVALID_ARGUMENT: Can't parse Cluster resource.; "
                    "resource index 3: ",
                    kClusterName2,
-                   ": INVALID_ARGUMENT: errors parsing CDS resource: "
-                   "[DiscoveryType is not valid.]; "
+                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
+                   "field:type error:unknown discovery type]; "
                    "resource index 4: ",
                    kClusterName3,
-                   ": INVALID_ARGUMENT: errors parsing CDS resource: "
-                   "[DiscoveryType is not valid.]]"));
+                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
+                   "field:type error:unknown discovery type]]"));
   // RPCs for default cluster should succeed.
   std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
       {"cluster", kDefaultClusterName},
@@ -207,8 +210,9 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   };
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "cluster_name_2: UNAVAILABLE: invalid resource: INVALID_ARGUMENT:.*"
-      "errors parsing CDS resource.*DiscoveryType is not valid.*",
+      "cluster_name_2: UNAVAILABLE: invalid resource: "
+      "INVALID_ARGUMENT: errors validating Cluster resource: \\["
+      "field:type error:unknown discovery type\\] .*",
       RpcOptions().set_metadata(std::move(metadata_cluster_2)));
 }
 
@@ -710,7 +714,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   // Eds for the new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -760,7 +764,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -831,7 +835,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -1075,6 +1079,9 @@ TEST_P(XdsFederationTest, FederationServer) {
   const char* kNewRouteConfigName =
       "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
+  const char* kNewServerRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_server_route_config_name";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "new_edsservice_name";
@@ -1103,7 +1110,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   new_cluster.mutable_eds_cluster_config()->set_service_name(
       kNewEdsServiceName);
   authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
+  // New RouteConfig
   RouteConfiguration new_route_config = default_route_config_;
   new_route_config.set_name(kNewRouteConfigName);
   new_route_config.mutable_virtual_hosts(0)
@@ -1115,6 +1122,9 @@ TEST_P(XdsFederationTest, FederationServer) {
   listener.set_name(kNewListenerName);
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
+  // New Server RouteConfig
+  RouteConfiguration new_server_route_config = default_server_route_config_;
+  new_server_route_config.set_name(kNewServerRouteConfigName);
   // New Server Listeners
   for (int port : GetBackendPorts()) {
     Listener server_listener = default_server_listener_;
@@ -1124,7 +1134,9 @@ TEST_P(XdsFederationTest, FederationServer) {
         "?psm_project_id=1234"));
     server_listener.mutable_address()->mutable_socket_address()->set_port_value(
         port);
-    authority_balancer_->ads_service()->SetLdsResource(server_listener);
+    SetListenerAndRouteConfiguration(authority_balancer_.get(), server_listener,
+                                     new_server_route_config,
+                                     ServerHcmAccessor());
   }
   WaitForAllBackends(DEBUG_LOCATION);
 }

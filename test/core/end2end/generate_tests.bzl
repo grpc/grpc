@@ -33,6 +33,7 @@ def _fixture_options(
         is_inproc = False,
         is_1byte = False,
         is_http2 = True,
+        is_minstack = False,
         supports_proxy_auth = False,
         supports_write_buffering = True,
         client_channel = True,
@@ -51,6 +52,7 @@ def _fixture_options(
         is_inproc = is_inproc,
         is_1byte = is_1byte,
         is_http2 = is_http2,
+        is_minstack = is_minstack,
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
@@ -94,6 +96,12 @@ END2END_FIXTURES = {
         fullstack = False,
         dns_resolver = False,
         client_channel = False,
+    ),
+    "h2_sockpair_with_minstack": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+        is_minstack = True,
     ),
     "h2_sockpair+trace": _fixture_options(
         fullstack = False,
@@ -165,6 +173,7 @@ def _test_options(
         traceable = False,
         exclude_inproc = False,
         exclude_1byte = False,
+        exclude_minstack = False,
         needs_http2 = False,
         needs_proxy_auth = False,
         needs_write_buffering = False,
@@ -182,6 +191,7 @@ def _test_options(
         traceable = traceable,
         exclude_inproc = exclude_inproc,
         exclude_1byte = exclude_1byte,
+        exclude_minstack = exclude_minstack,
         needs_http2 = needs_http2,
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
@@ -217,7 +227,7 @@ END2END_TESTS = {
     "cancel_in_a_vacuum": _test_options(),
     "cancel_with_status": _test_options(),
     "client_streaming": _test_options(),
-    "compressed_payload": _test_options(proxyable = False, exclude_inproc = True),
+    "compressed_payload": _test_options(proxyable = False, exclude_inproc = True, exclude_minstack = True),
     "connectivity": _test_options(
         needs_fullstack = True,
         needs_names = True,
@@ -249,12 +259,12 @@ END2END_TESTS = {
     "max_concurrent_streams": _test_options(
         proxyable = False,
         exclude_inproc = True,
+        exclude_minstack = True,
     ),
     "max_connection_age": _test_options(exclude_inproc = True),
     "max_connection_idle": _test_options(needs_fullstack = True, proxyable = False),
-    "max_message_length": _test_options(),
-    "negative_deadline": _test_options(),
-    "no_error_on_hotpath": _test_options(proxyable = False),
+    "max_message_length": _test_options(exclude_minstack = True),
+    "negative_deadline": _test_options(exclude_minstack = True),
     "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
     "payload": _test_options(exclude_1byte = True),
@@ -389,6 +399,9 @@ def _compatible(fopt, topt):
     if topt.exclude_1byte:
         if fopt.is_1byte:
             return False
+    if topt.exclude_minstack:
+        if fopt.is_minstack:
+            return False
     if topt.needs_http2:
         if not fopt.is_http2:
             return False
@@ -437,8 +450,11 @@ def grpc_end2end_tests():
             ":local_util",
             "//test/core/util:test_lb_policies",
             "//:grpc_authorization_provider",
-            "//test/core/compression:args_utils",
             "//:grpc_http_filters",
+            "//src/core:event_log",
+        ],
+        visibility = [
+            "//src/objective-c/tests:__subpackages__",
         ],
     )
     for f, fopt in END2END_FIXTURES.items():
@@ -458,7 +474,6 @@ def grpc_end2end_tests():
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
                 "//:gpr",
-                "//test/core/compression:args_utils",
                 "//:grpc_http_filters",
             ],
             tags = _platform_support_tags(fopt) + fopt.tags,

@@ -22,6 +22,15 @@ namespace grpc_core {
 // Avoids a build dependency cycle between grpc and grpc_base (and friends).
 extern void (*InitInternally)();
 extern void (*ShutdownInternally)();
+extern bool (*IsInitializedInternally)();
+
+class KeepsGrpcInitialized {
+ public:
+  KeepsGrpcInitialized() { InitInternally(); }
+  ~KeepsGrpcInitialized() { ShutdownInternally(); }
+  KeepsGrpcInitialized(const KeepsGrpcInitialized&) = delete;
+  KeepsGrpcInitialized& operator=(const KeepsGrpcInitialized&) = delete;
+};
 
 }  // namespace grpc_core
 

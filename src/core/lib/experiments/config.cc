@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <memory>
 #include <string>
 
 #include "absl/strings/ascii.h"
@@ -32,6 +31,7 @@
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
@@ -117,7 +117,7 @@ void PrintExperimentsList() {
                                 strlen(g_experiment_metadata[i].name) + 1,
                             ' '),
                 IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
-                g_experiment_metadata->default_value ? "ON" : "OFF",
+                g_experiment_metadata[i].default_value ? "ON" : "OFF",
                 g_forced_experiments[i].forced
                     ? absl::StrCat(" force:",
                                    g_forced_experiments[i].value ? "ON" : "OFF")

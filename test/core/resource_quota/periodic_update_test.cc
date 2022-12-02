@@ -21,7 +21,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
@@ -39,7 +38,7 @@ TEST(PeriodicUpdateTest, SimpleTest) {
   // Create a periodic update that updates every second.
   {
     ExecCtx exec_ctx;
-    upd = absl::make_unique<PeriodicUpdate>(Duration::Seconds(1));
+    upd = std::make_unique<PeriodicUpdate>(Duration::Seconds(1));
     start = Timestamp::Now();
   }
   // Wait until the first period has elapsed.
@@ -87,7 +86,7 @@ TEST(PeriodicUpdate, ThreadTest) {
   // Create a periodic update that updates every second.
   {
     ExecCtx exec_ctx;
-    upd = absl::make_unique<PeriodicUpdate>(Duration::Seconds(1));
+    upd = std::make_unique<PeriodicUpdate>(Duration::Seconds(1));
     start = Timestamp::Now();
   }
   // Run ten threads all updating the counter continuously, for a total of ten

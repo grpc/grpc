@@ -22,7 +22,7 @@ readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TES
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 readonly SERVER_LANG="cpp go java"
 readonly CLIENT_LANG="cpp go java"
-readonly VERSION_TAG="v1.41.x"
+readonly VERSION_TAG="master v1.50.x"
 
 #######################################
 # Executes the test case

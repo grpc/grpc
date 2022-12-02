@@ -33,14 +33,18 @@ inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(4); }
 inline bool IsMemoryPressureControllerEnabled() {
   return IsExperimentEnabled(5);
 }
-inline bool IsPeriodicResourceQuotaReclamationEnabled() {
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled(6);
 }
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
-  return IsExperimentEnabled(7);
+inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(7); }
+inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(8); }
+inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(9); }
+inline bool IsPromiseBasedClientCallEnabled() {
+  return IsExperimentEnabled(10);
 }
-inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(8); }
-inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(9); }
+inline bool IsPosixEventEngineEnablePollingEnabled() {
+  return IsExperimentEnabled(11);
+}
 
 struct ExperimentMetadata {
   const char* name;
@@ -48,7 +52,7 @@ struct ExperimentMetadata {
   bool default_value;
 };
 
-constexpr const size_t kNumExperiments = 10;
+constexpr const size_t kNumExperiments = 12;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core

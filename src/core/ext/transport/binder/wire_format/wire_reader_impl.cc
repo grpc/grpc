@@ -32,12 +32,7 @@
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
-
-#define RETURN_IF_ERROR(expr)           \
-  do {                                  \
-    const absl::Status status = (expr); \
-    if (!status.ok()) return status;    \
-  } while (0)
+#include "src/core/lib/gprpp/status_helper.h"
 
 namespace grpc_binder {
 namespace {
@@ -47,19 +42,19 @@ const char kAuthorityMetadataKey[] = ":authority";
 
 absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
   int num_header;
-  RETURN_IF_ERROR(reader->ReadInt32(&num_header));
+  GRPC_RETURN_IF_ERROR(reader->ReadInt32(&num_header));
   if (num_header < 0) {
     return absl::InvalidArgumentError("num_header cannot be negative");
   }
   std::vector<std::pair<std::string, std::string>> ret;
   for (int i = 0; i < num_header; i++) {
     int count;
-    RETURN_IF_ERROR(reader->ReadInt32(&count));
+    GRPC_RETURN_IF_ERROR(reader->ReadInt32(&count));
     std::string key{};
-    if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&key));
-    RETURN_IF_ERROR(reader->ReadInt32(&count));
+    if (count > 0) GRPC_RETURN_IF_ERROR(reader->ReadByteArray(&key));
+    GRPC_RETURN_IF_ERROR(reader->ReadInt32(&count));
     std::string value{};
-    if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&value));
+    if (count > 0) GRPC_RETURN_IF_ERROR(reader->ReadByteArray(&value));
     ret.emplace_back(key, value);
   }
   return ret;
@@ -86,12 +81,13 @@ WireReaderImpl::~WireReaderImpl() {
 std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
     std::unique_ptr<Binder> binder) {
   if (!is_client_) {
+    connected_ = true;
     SendSetupTransport(binder.get());
     {
       grpc_core::MutexLock lock(&mu_);
-      connected_ = true;
       wire_writer_ = std::make_shared<WireWriterImpl>(std::move(binder));
     }
+    wire_writer_ready_notification_.Notify();
     return wire_writer_;
   } else {
     SendSetupTransport(binder.get());
@@ -102,6 +98,7 @@ std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
       wire_writer_ =
           std::make_shared<WireWriterImpl>(std::move(other_end_binder));
     }
+    wire_writer_ready_notification_.Notify();
     return wire_writer_;
   }
 }
@@ -161,7 +158,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
 
   {
     grpc_core::MutexLock lock(&mu_);
-    if (BinderTransportTxCode(code) != BinderTransportTxCode::SETUP_TRANSPORT &&
+    if (static_cast<BinderTransportTxCode>(code) !=
+            BinderTransportTxCode::SETUP_TRANSPORT &&
         !connected_) {
       return absl::InvalidArgumentError("Transports not connected yet");
     }
@@ -170,7 +168,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
   // TODO(mingcl): See if we want to check the security policy for every RPC
   // call or just during transport setup.
 
-  switch (BinderTransportTxCode(code)) {
+  switch (static_cast<BinderTransportTxCode>(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
       grpc_core::MutexLock lock(&mu_);
       if (recvd_setup_transport_) {
@@ -188,7 +186,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
       }
 
       int version;
-      RETURN_IF_ERROR(parcel->ReadInt32(&version));
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&version));
       gpr_log(GPR_DEBUG, "The other end respond with version = %d", version);
       // We only support this single lowest possible version, so server must
       // respond that version too.
@@ -199,7 +197,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
                 version, kWireFormatVersion);
       }
       std::unique_ptr<Binder> binder{};
-      RETURN_IF_ERROR(parcel->ReadBinder(&binder));
+      GRPC_RETURN_IF_ERROR(parcel->ReadBinder(&binder));
       if (!binder) {
         return absl::InternalError("Read NULL binder from the parcel");
       }
@@ -215,8 +213,13 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     }
     case BinderTransportTxCode::ACKNOWLEDGE_BYTES: {
       int64_t num_bytes = -1;
-      RETURN_IF_ERROR(parcel->ReadInt64(&num_bytes));
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt64(&num_bytes));
       gpr_log(GPR_DEBUG, "received acknowledge bytes = %" PRId64, num_bytes);
+      if (!wire_writer_ready_notification_.WaitForNotificationWithTimeout(
+              absl::Seconds(5))) {
+        return absl::DeadlineExceededError(
+            "wire_writer_ is not ready in time!");
+      }
       wire_writer_->OnAckReceived(num_bytes);
       break;
     }
@@ -225,14 +228,14 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
         return absl::FailedPreconditionError("Receive PING request in client");
       }
       int ping_id = -1;
-      RETURN_IF_ERROR(parcel->ReadInt32(&ping_id));
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&ping_id));
       gpr_log(GPR_DEBUG, "received ping id = %d", ping_id);
       // TODO(waynetu): Ping back.
       break;
     }
     case BinderTransportTxCode::PING_RESPONSE: {
       int value = -1;
-      RETURN_IF_ERROR(parcel->ReadInt32(&value));
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&value));
       gpr_log(GPR_DEBUG, "received ping response = %d", value);
       break;
     }
@@ -286,6 +289,10 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
     }
   }
   if (need_to_send_ack) {
+    if (!wire_writer_ready_notification_.WaitForNotificationWithTimeout(
+            absl::Seconds(5))) {
+      return absl::DeadlineExceededError("wire_writer_ is not ready in time!");
+    }
     GPR_ASSERT(wire_writer_);
     // wire_writer_ should not be accessed while holding mu_!
     // Otherwise, it is possible that
@@ -308,7 +315,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   gpr_log(GPR_INFO, "Total incoming bytes: %" PRId64, num_incoming_bytes_);
 
   int flags;
-  RETURN_IF_ERROR(parcel->ReadInt32(&flags));
+  GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&flags));
   *cancellation_flags = flags;
 
   // Ignore in-coming transaction with flag = 0 to match with Java
@@ -327,7 +334,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   gpr_log(GPR_DEBUG, "FLAG_MESSAGE_DATA = %d", (flags & kFlagMessageData));
   gpr_log(GPR_DEBUG, "FLAG_SUFFIX = %d", (flags & kFlagSuffix));
   int seq_num;
-  RETURN_IF_ERROR(parcel->ReadInt32(&seq_num));
+  GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&seq_num));
   // TODO(waynetu): For now we'll just assume that the transactions commit in
   // the same order they're issued. The following assertion detects
   // out-of-order or missing transactions. WireReaderImpl should be fixed if
@@ -347,7 +354,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   if (flags & kFlagPrefix) {
     std::string method_ref;
     if (!is_client_) {
-      RETURN_IF_ERROR(parcel->ReadString(&method_ref));
+      GRPC_RETURN_IF_ERROR(parcel->ReadString(&method_ref));
     }
     absl::StatusOr<Metadata> initial_metadata_or_error = parse_metadata(parcel);
     if (!initial_metadata_or_error.ok()) {
@@ -378,11 +385,11 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   }
   if (flags & kFlagMessageData) {
     int count;
-    RETURN_IF_ERROR(parcel->ReadInt32(&count));
+    GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&count));
     gpr_log(GPR_DEBUG, "count = %d", count);
     std::string msg_data{};
     if (count > 0) {
-      RETURN_IF_ERROR(parcel->ReadByteArray(&msg_data));
+      GRPC_RETURN_IF_ERROR(parcel->ReadByteArray(&msg_data));
     }
     message_buffer_[code] += msg_data;
     if ((flags & kFlagMessageDataIsPartial) == 0) {
@@ -396,7 +403,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     if (flags & kFlagStatusDescription) {
       // FLAG_STATUS_DESCRIPTION set
       std::string desc;
-      RETURN_IF_ERROR(parcel->ReadString(&desc));
+      GRPC_RETURN_IF_ERROR(parcel->ReadString(&desc));
       gpr_log(GPR_DEBUG, "description = %s", desc.c_str());
     }
     Metadata trailing_metadata;

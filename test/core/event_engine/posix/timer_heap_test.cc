@@ -18,14 +18,18 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <utility>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/timer.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 
 using testing::Contains;

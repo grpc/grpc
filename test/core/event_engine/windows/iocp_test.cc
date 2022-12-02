@@ -27,11 +27,11 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
@@ -41,25 +41,30 @@ using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
-using ::grpc_event_engine::experimental::ThreadedExecutor;
+using ::grpc_event_engine::experimental::ThreadPool;
 using ::grpc_event_engine::experimental::WinSocket;
+
+// TODO(hork): replace with logging mechanism that plays nicely with:
+//   `ASSERT_OK(...) << GetErrorMessage(error, context);`
+void LogErrorMessage(int messageid, absl::string_view context) {
+  char* utf8_message = gpr_format_message(messageid);
+  gpr_log(GPR_ERROR, "Error in %s: %s", context, utf8_message);
+  gpr_free(utf8_message);
+}
 }  // namespace
 
 class IOCPTest : public testing::Test {};
 
 TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
-  WinSocket* wrapped_client_socket =
-      static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
-  WinSocket* wrapped_server_socket =
-      static_cast<WinSocket*>(iocp.Watch(sockpair[1]));
-  Promise<bool> read_called{false};
-  Promise<bool> write_called{false};
+  auto wrapped_client_socket = iocp.Watch(sockpair[0]);
+  auto wrapped_server_socket = iocp.Watch(sockpair[1]);
+  grpc_core::Notification read_called;
+  grpc_core::Notification write_called;
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   AnyInvocableClosure* on_write;
@@ -78,14 +83,18 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     // Expecting error 997, WSA_IO_PENDING
     EXPECT_EQ(status, -1);
     int last_error = WSAGetLastError();
-    ASSERT_EQ(last_error, WSA_IO_PENDING);
-    on_read = new AnyInvocableClosure([wrapped_client_socket, &read_called,
-                                       &read_wsabuf, &bytes_rcvd]() {
-      gpr_log(GPR_DEBUG, "Notified on read");
-      EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
-      EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Set(true);
-    });
+    EXPECT_EQ(last_error, WSA_IO_PENDING);
+    if (last_error != WSA_IO_PENDING) {
+      LogErrorMessage(last_error, "WSARecv");
+    }
+    on_read =
+        new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
+                                 &read_called, &read_wsabuf, &bytes_rcvd]() {
+          gpr_log(GPR_DEBUG, "Notified on read");
+          EXPECT_GE(win_socket->read_info()->bytes_transferred(), 10);
+          EXPECT_STREQ(read_wsabuf.buf, "hello!");
+          read_called.Notify();
+        });
     wrapped_client_socket->NotifyOnRead(on_read);
   }
   {
@@ -102,14 +111,11 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
                 0, wrapped_server_socket->write_info()->overlapped(), NULL);
     EXPECT_EQ(status, 0);
     if (status != 0) {
-      int error_num = WSAGetLastError();
-      char* utf8_message = gpr_format_message(error_num);
-      gpr_log(GPR_INFO, "Error sending data: (%d) %s", error_num, utf8_message);
-      gpr_free(utf8_message);
+      LogErrorMessage(WSAGetLastError(), "WSASend");
     }
     on_write = new AnyInvocableClosure([&write_called] {
       gpr_log(GPR_DEBUG, "Notified on write");
-      write_called.Set(true);
+      write_called.Notify();
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
@@ -126,25 +132,23 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
   ASSERT_TRUE(cb_invoked);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.Get());
-  ASSERT_TRUE(write_called.Get());
+  read_called.WaitForNotification();
+  write_called.WaitForNotification();
 
   delete on_read;
   delete on_write;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
   wrapped_server_socket->MaybeShutdown(absl::OkStatus());
-  delete wrapped_client_socket;
-  delete wrapped_server_socket;
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
-  WinSocket* wrapped_client_socket =
-      static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
-  Promise<bool> read_called{false};
+  auto wrapped_client_socket = iocp.Watch(sockpair[0]);
+  grpc_core::Notification read_called;
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   {
@@ -163,14 +167,18 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     // Expecting error 997, WSA_IO_PENDING
     EXPECT_EQ(status, -1);
     int last_error = WSAGetLastError();
-    ASSERT_EQ(last_error, WSA_IO_PENDING);
-    on_read = new AnyInvocableClosure([wrapped_client_socket, &read_called,
-                                       &read_wsabuf, &bytes_rcvd]() {
-      gpr_log(GPR_DEBUG, "Notified on read");
-      EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
-      EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Set(true);
-    });
+    EXPECT_EQ(last_error, WSA_IO_PENDING);
+    if (last_error != WSA_IO_PENDING) {
+      LogErrorMessage(last_error, "WSARecv");
+    }
+    on_read =
+        new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
+                                 &read_called, &read_wsabuf, &bytes_rcvd]() {
+          gpr_log(GPR_DEBUG, "Notified on read");
+          EXPECT_GE(win_socket->read_info()->bytes_transferred(), 10);
+          EXPECT_STREQ(read_wsabuf.buf, "hello!");
+          read_called.Notify();
+        });
   }
   {
     // Have the server send a message to the client. No need to track via IOCP
@@ -184,6 +192,9 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     int status = WSASend(sockpair[1], &write_wsabuf, 1, &bytes_sent, 0,
                          &write_overlapped, NULL);
     EXPECT_EQ(status, 0);
+    if (status != 0) {
+      LogErrorMessage(WSAGetLastError(), "WSASend");
+    }
   }
   // IOCP::Work without any notification callbacks should still return Ok.
   bool cb_invoked = false;
@@ -194,24 +205,23 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   // register the closure, which should trigger it immediately.
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.Get());
-
+  read_called.WaitForNotification();
   delete on_read;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
-  delete wrapped_client_socket;
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, KickWorks) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
-  Promise<bool> kicked{false};
+  grpc_core::Notification kicked;
   executor.Run([&iocp, &kicked] {
     bool cb_invoked = false;
     Poller::WorkResult result = iocp.Work(
         std::chrono::seconds(30), [&cb_invoked]() { cb_invoked = true; });
     ASSERT_TRUE(result == Poller::WorkResult::kKicked);
     ASSERT_FALSE(cb_invoked);
-    kicked.Set(true);
+    kicked.Notify();
   });
   executor.Run([&iocp] {
     // give the worker thread a chance to start
@@ -219,14 +229,15 @@ TEST_F(IOCPTest, KickWorks) {
     iocp.Kick();
   });
   // wait for the callbacks to run
-  ASSERT_TRUE(kicked.Get());
+  kicked.WaitForNotification();
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // TODO(hork): evaluate if a kick count is going to be useful.
   // This documents the existing poller's behavior of maintaining a kick count,
   // but it's unclear if it's going to be needed.
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   // kick twice
   iocp.Kick();
@@ -246,20 +257,17 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
                      [&cb_invoked]() { cb_invoked = true; });
   ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
   ASSERT_FALSE(cb_invoked);
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  ThreadedExecutor executor{2};
+  ThreadPool executor;
   IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   closesocket(sockpair[0]);
-  ASSERT_DEATH(
-      {
-        WinSocket* wrapped_client_socket =
-            static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
-      },
-      "");
+  ASSERT_DEATH({ auto wrapped_client_socket = iocp.Watch(sockpair[0]); }, "");
+  executor.Quiesce();
 }
 
 TEST_F(IOCPTest, StressTestThousandsOfSockets) {
@@ -275,7 +283,7 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
   for (int thread_n = 0; thread_n < thread_count; thread_n++) {
     threads.emplace_back([thread_n, sockets_per_thread, &read_count,
                           &write_count] {
-      ThreadedExecutor executor{2};
+      ThreadPool executor;
       IOCP iocp(&executor);
       // Start a looping worker thread with a moderate timeout
       std::thread iocp_worker([&iocp, &executor] {
@@ -287,19 +295,21 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
       for (int i = 0; i < sockets_per_thread; i++) {
         SOCKET sockpair[2];
         CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
-        WinSocket* wrapped_client_socket =
-            static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
-        WinSocket* wrapped_server_socket =
-            static_cast<WinSocket*>(iocp.Watch(sockpair[1]));
-        wrapped_client_socket->NotifyOnRead(
-            SelfDeletingClosure::Create([&read_count, wrapped_client_socket] {
+        auto wrapped_client_socket = iocp.Watch(sockpair[0]);
+        auto wrapped_server_socket = iocp.Watch(sockpair[1]);
+        auto* pclient = wrapped_client_socket.get();
+        pclient->NotifyOnRead(SelfDeletingClosure::Create(
+            [&read_count,
+             win_socket = std::move(wrapped_client_socket)]() mutable {
               read_count.fetch_add(1);
-              wrapped_client_socket->MaybeShutdown(absl::OkStatus());
+              win_socket->MaybeShutdown(absl::OkStatus());
             }));
-        wrapped_server_socket->NotifyOnWrite(
-            SelfDeletingClosure::Create([&write_count, wrapped_server_socket] {
+        auto* pserver = wrapped_server_socket.get();
+        pserver->NotifyOnWrite(SelfDeletingClosure::Create(
+            [&write_count,
+             win_socket = std::move(wrapped_server_socket)]() mutable {
               write_count.fetch_add(1);
-              wrapped_server_socket->MaybeShutdown(absl::OkStatus());
+              win_socket->MaybeShutdown(absl::OkStatus());
             }));
         {
           // Set the client to receive
@@ -309,15 +319,17 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
           read_wsabuf.buf = read_char_buffer;
           DWORD bytes_rcvd;
           DWORD flags = 0;
-          memset(wrapped_client_socket->read_info()->overlapped(), 0,
-                 sizeof(OVERLAPPED));
-          int status = WSARecv(
-              wrapped_client_socket->socket(), &read_wsabuf, 1, &bytes_rcvd,
-              &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
+          memset(pclient->read_info()->overlapped(), 0, sizeof(OVERLAPPED));
+          int status =
+              WSARecv(pclient->socket(), &read_wsabuf, 1, &bytes_rcvd, &flags,
+                      pclient->read_info()->overlapped(), NULL);
           // Expecting error 997, WSA_IO_PENDING
           EXPECT_EQ(status, -1);
           int last_error = WSAGetLastError();
-          ASSERT_EQ(last_error, WSA_IO_PENDING);
+          EXPECT_EQ(last_error, WSA_IO_PENDING);
+          if (last_error != WSA_IO_PENDING) {
+            LogErrorMessage(last_error, "WSARecv");
+          }
         }
         {
           // Have the server send a message to the client.
@@ -326,15 +338,17 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
           write_wsabuf.len = 20;
           write_wsabuf.buf = write_char_buffer;
           DWORD bytes_sent;
-          memset(wrapped_server_socket->write_info()->overlapped(), 0,
-                 sizeof(OVERLAPPED));
-          int status = WSASend(
-              wrapped_server_socket->socket(), &write_wsabuf, 1, &bytes_sent, 0,
-              wrapped_server_socket->write_info()->overlapped(), NULL);
+          memset(pserver->write_info()->overlapped(), 0, sizeof(OVERLAPPED));
+          int status = WSASend(pserver->socket(), &write_wsabuf, 1, &bytes_sent,
+                               0, pserver->write_info()->overlapped(), NULL);
           EXPECT_EQ(status, 0);
+          if (status != 0) {
+            LogErrorMessage(WSAGetLastError(), "WSASend");
+          }
         }
       }
       iocp_worker.join();
+      executor.Quiesce();
     });
   }
   for (auto& t : threads) {

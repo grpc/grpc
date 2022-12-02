@@ -20,12 +20,10 @@
 
 #include <string.h>
 
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "gtest/gtest.h"
 
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 TEST(FormatRequestTest, FormatGetRequest) {

@@ -24,12 +24,12 @@ CPU_COUNT=`nproc`
 
 rm -rf iwyu || true
 git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
-# latest commit on the clang 13 branch
+# latest commit on the clang 15 branch
 cd ${IWYU_ROOT}/iwyu
-git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
+git checkout 7f0b6c304acf69c42bb7f6e03c63f836924cb7e0
 mkdir -p ${IWYU_ROOT}/iwyu_build
 cd ${IWYU_ROOT}/iwyu_build
-cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-13 ${IWYU_ROOT}/iwyu 
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-15 ${IWYU_ROOT}/iwyu 
 make -j $CPU_COUNT
 cd ${IWYU_ROOT}
 
@@ -46,19 +46,17 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
-  test/core/end2end
-  test/core/memory_usage
-  test/core/promise
-  test/core/resource_quota
-  test/core/transport
-  test/core/uri
-  test/core/util
+  test/core
 '
 
 export DISABLED_MODULES='
   src/core/lib/gpr
   src/core/lib/iomgr
   src/core/ext/transport/binder
+  test/core/alts
+  test/core/iomgr
+  test/core/security
+  test/core/tsi
   test/core/transport/binder
 '
 
@@ -72,6 +70,7 @@ cat compile_commands.json | jq -r '.[].file'                                    
   | grep -v -E $EXCLUSION_REGEX                                                  \
   | grep -v src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
   | grep -v test/core/end2end/end2end_tests.cc                                   \
+  | grep -v test/core/surface/public_headers_must_be_c89.c                       \
   | sort                                                                         \
   > iwyu_files0.txt
 

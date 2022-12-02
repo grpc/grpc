@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -33,12 +32,10 @@
 #include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -54,7 +51,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -67,7 +63,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -82,49 +77,35 @@ UniqueTypeName RequestHashAttributeName() {
 }
 
 // Helper Parser method
-absl::StatusOr<RingHashConfig> ParseRingHashLbConfig(const Json& json) {
-  if (json.type() != Json::Type::OBJECT) {
-    return absl::InvalidArgumentError(
-        "ring_hash_experimental should be of type object");
-  }
-  RingHashConfig config;
-  std::vector<std::string> errors;
-  const Json::Object& ring_hash = json.object_value();
-  auto ring_hash_it = ring_hash.find("min_ring_size");
-  if (ring_hash_it != ring_hash.end()) {
-    if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      errors.emplace_back(
-          "field:min_ring_size error: should be of type number");
-    } else {
-      config.min_ring_size = gpr_parse_nonnegative_int(
-          ring_hash_it->second.string_value().c_str());
+
+const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<RingHashConfig>()
+          .OptionalField("minRingSize", &RingHashConfig::min_ring_size)
+          .OptionalField("maxRingSize", &RingHashConfig::max_ring_size)
+          .Finish();
+  return loader;
+}
+
+void RingHashConfig::JsonPostLoad(const Json&, const JsonArgs&,
+                                  ValidationErrors* errors) {
+  {
+    ValidationErrors::ScopedField field(errors, ".minRingSize");
+    if (!errors->FieldHasErrors() &&
+        (min_ring_size == 0 || min_ring_size > 8388608)) {
+      errors->AddError("must be in the range [1, 8388608]");
     }
   }
-  ring_hash_it = ring_hash.find("max_ring_size");
-  if (ring_hash_it != ring_hash.end()) {
-    if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      errors.emplace_back(
-          "field:max_ring_size error: should be of type number");
-    } else {
-      config.max_ring_size = gpr_parse_nonnegative_int(
-          ring_hash_it->second.string_value().c_str());
+  {
+    ValidationErrors::ScopedField field(errors, ".maxRingSize");
+    if (!errors->FieldHasErrors() &&
+        (max_ring_size == 0 || max_ring_size > 8388608)) {
+      errors->AddError("must be in the range [1, 8388608]");
     }
   }
-  if (config.min_ring_size == 0 || config.min_ring_size > 8388608 ||
-      config.max_ring_size == 0 || config.max_ring_size > 8388608 ||
-      config.min_ring_size > config.max_ring_size) {
-    errors.emplace_back(
-        "field:max_ring_size and or min_ring_size error: "
-        "values need to be in the range of 1 to 8388608 "
-        "and max_ring_size cannot be smaller than "
-        "min_ring_size");
+  if (min_ring_size > max_ring_size) {
+    errors->AddError("max_ring_size cannot be smaller than min_ring_size");
   }
-  if (!errors.empty()) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("errors parsing ring hash LB config: [",
-                     absl::StrJoin(errors, "; "), "]"));
-  }
-  return config;
 }
 
 namespace {
@@ -297,7 +278,7 @@ class RingHash : public LoadBalancingPolicy {
       void Orphan() override {
         // Hop into ExecCtx, so that we're not holding the data plane mutex
         // while we run control-plane code.
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
       }
 
       // Will be invoked inside of the WorkSerializer.
@@ -678,7 +659,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
       state, status,
-      absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
+      MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
@@ -865,7 +846,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
               : args.addresses.status();
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-          absl::make_unique<TransientFailurePicker>(status));
+          MakeRefCounted<TransientFailurePicker>(status));
       return status;
     }
     // Otherwise, report IDLE.
@@ -890,7 +871,8 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = ParseRingHashLbConfig(json);
+    auto config = LoadFromJson<RingHashConfig>(
+        json, JsonArgs(), "errors validating ring_hash LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<RingHashLbConfig>(config->min_ring_size,
                                             config->max_ring_size);
@@ -901,7 +883,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
 void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<RingHashFactory>());
+      std::make_unique<RingHashFactory>());
 }
 
 }  // namespace grpc_core
