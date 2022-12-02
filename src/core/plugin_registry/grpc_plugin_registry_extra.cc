@@ -35,6 +35,8 @@ extern void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterXdsClusterResolverLbPolicy(
     CoreConfiguration::Builder* builder);
+extern void RegisterXdsOverrideHostLbPolicy(
+    CoreConfiguration::Builder* builder);
 extern void RegisterXdsWrrLocalityLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterFileWatcherCertificateProvider(
     CoreConfiguration::Builder* builder);
@@ -54,6 +56,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterXdsClusterImplLbPolicy(builder);
   RegisterCdsLbPolicy(builder);
   RegisterXdsClusterResolverLbPolicy(builder);
+  RegisterXdsOverrideHostLbPolicy(builder);
   RegisterXdsWrrLocalityLbPolicy(builder);
   RegisterFileWatcherCertificateProvider(builder);
 #endif
