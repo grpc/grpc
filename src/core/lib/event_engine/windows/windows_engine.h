@@ -104,7 +104,7 @@ class WindowsEventEngine : public EventEngine,
   bool Cancel(TaskHandle handle) override;
 
  private:
-  struct Closure;
+  class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;

@@ -42,7 +42,7 @@ namespace experimental {
 // be separated out from the posix_engine and instantiated as components. It is
 // effectively copied below.
 
-struct WindowsEventEngine::Closure final : public EventEngine::Closure {
+struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   posix_engine::Timer timer;
   WindowsEventEngine* engine;
@@ -89,7 +89,7 @@ WindowsEventEngine::~WindowsEventEngine() {
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&task_mu_);
   if (!known_handles_.contains(handle)) return false;
-  auto* cd = reinterpret_cast<Closure*>(handle.keys[0]);
+  auto* cd = reinterpret_cast<TimerClosure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
   known_handles_.erase(handle);
   if (r) delete cd;
@@ -117,7 +117,7 @@ void WindowsEventEngine::Run(EventEngine::Closure* closure) {
 EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
     Duration when, absl::AnyInvocable<void()> cb) {
   auto when_ts = ToTimestamp(timer_manager_.Now(), when);
-  auto* cd = new Closure;
+  auto* cd = new TimerClosure;
   cd->cb = std::move(cb);
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
