@@ -377,7 +377,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   LoadBalancingPolicyTest()
       : work_serializer_(std::make_shared<WorkSerializer>()) {}
 
-  void TearDown() {
+  void TearDown() override {
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
