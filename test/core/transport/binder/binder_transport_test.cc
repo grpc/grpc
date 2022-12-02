@@ -44,94 +44,6 @@ using ::testing::Expectation;
 using ::testing::NiceMock;
 using ::testing::Return;
 
-class BinderTransportTest : public ::testing::Test {
- public:
-  BinderTransportTest()
-      : transport_(grpc_create_binder_transport_client(
-            std::make_unique<NiceMock<MockBinder>>(),
-            std::make_shared<
-                grpc::experimental::binder::UntrustedSecurityPolicy>())) {
-    auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-    gbt->wire_writer = std::make_unique<MockWireWriter>();
-    GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
-  }
-
-  ~BinderTransportTest() override {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_transport_destroy(transport_);
-    grpc_core::ExecCtx::Get()->Flush();
-    for (grpc_binder_stream* gbs : stream_buffer_) {
-      gbs->~grpc_binder_stream();
-      gpr_free(gbs);
-    }
-    arena_->Destroy();
-  }
-
-  void PerformStreamOp(grpc_binder_stream* gbs,
-                       grpc_transport_stream_op_batch* op) {
-    grpc_transport_perform_stream_op(transport_,
-                                     reinterpret_cast<grpc_stream*>(gbs), op);
-  }
-
-  grpc_binder_transport* GetBinderTransport() {
-    return reinterpret_cast<grpc_binder_transport*>(transport_);
-  }
-
-  grpc_binder_stream* InitNewBinderStream() {
-    grpc_binder_stream* gbs = static_cast<grpc_binder_stream*>(
-        gpr_malloc(grpc_transport_stream_size(transport_)));
-    grpc_transport_init_stream(transport_, reinterpret_cast<grpc_stream*>(gbs),
-                               &ref_, nullptr, arena_);
-    stream_buffer_.push_back(gbs);
-    return gbs;
-  }
-
-  MockWireWriter& GetWireWriter() {
-    return *reinterpret_cast<MockWireWriter*>(
-        GetBinderTransport()->wire_writer.get());
-  }
-
-  static void SetUpTestSuite() { grpc_init(); }
-  static void TearDownTestSuite() { grpc_shutdown(); }
-
- protected:
-  grpc_core::MemoryAllocator memory_allocator_ =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  grpc_core::Arena* arena_ =
-      grpc_core::Arena::Create(/* initial_size = */ 1, &memory_allocator_);
-  grpc_transport* transport_;
-  grpc_stream_refcount ref_;
-  std::vector<grpc_binder_stream*> stream_buffer_;
-};
-
-void MockCallback(void* arg, grpc_error_handle error);
-
-class MockGrpcClosure {
- public:
-  explicit MockGrpcClosure(grpc_core::Notification* notification = nullptr)
-      : notification_(notification) {
-    GRPC_CLOSURE_INIT(&closure_, MockCallback, this, nullptr);
-  }
-
-  grpc_closure* GetGrpcClosure() { return &closure_; }
-  MOCK_METHOD(void, Callback, (grpc_error_handle), ());
-
-  grpc_core::Notification* notification_;
-
- private:
-  grpc_closure closure_;
-};
-
-void MockCallback(void* arg, grpc_error_handle error) {
-  MockGrpcClosure* mock_closure = static_cast<MockGrpcClosure*>(arg);
-  mock_closure->Callback(error);
-  if (mock_closure->notification_) {
-    mock_closure->notification_->Notify();
-  }
-}
-
 std::string MetadataString(const Metadata& a) {
   return absl::StrCat(
       "{",
@@ -180,7 +92,102 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
   return absl::StrContains(grpc_core::StatusToString(arg), msg);
 }
 
-namespace {
+class BinderTransportTest : public ::testing::Test {
+ public:
+  BinderTransportTest()
+      : transport_(grpc_create_binder_transport_client(
+            std::make_unique<NiceMock<MockBinder>>(),
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>())) {
+    auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+    gbt->wire_writer = std::make_unique<MockWireWriter>();
+    GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
+  }
+
+  ~BinderTransportTest() override {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_transport_destroy(transport_);
+    grpc_core::ExecCtx::Get()->Flush();
+    for (grpc_binder_stream* gbs : stream_buffer_) {
+      gbs->~grpc_binder_stream();
+      gpr_free(gbs);
+    }
+    arena_->Destroy();
+  }
+
+  void PerformStreamOp(grpc_binder_stream* gbs,
+                       grpc_transport_stream_op_batch* op) {
+    grpc_transport_perform_stream_op(transport_,
+                                     reinterpret_cast<grpc_stream*>(gbs), op);
+  }
+
+  grpc_binder_transport* GetBinderTransport() {
+    return reinterpret_cast<grpc_binder_transport*>(transport_);
+  }
+
+  grpc_binder_stream* InitNewBinderStream() {
+    grpc_binder_stream* gbs = static_cast<grpc_binder_stream*>(
+        gpr_malloc(grpc_transport_stream_size(transport_)));
+    grpc_transport_init_stream(transport_, reinterpret_cast<grpc_stream*>(gbs),
+                               &ref_, nullptr, arena_);
+    stream_buffer_.push_back(gbs);
+    return gbs;
+  }
+
+  MockWireWriter& GetWireWriter() {
+    return *reinterpret_cast<MockWireWriter*>(
+        GetBinderTransport()->wire_writer.get());
+  }
+
+  void ExpectOutOfBandCloseCalled() {
+    EXPECT_CALL(
+        GetWireWriter(),
+        RpcCall(TransactionMatches(
+            kFlagOutOfBandClose | (GRPC_STATUS_CANCELLED << kStatusCodeShift),
+            "", Metadata{}, "")));
+  }
+
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
+
+ protected:
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  grpc_core::Arena* arena_ =
+      grpc_core::Arena::Create(/* initial_size = */ 1, &memory_allocator_);
+  grpc_transport* transport_;
+  grpc_stream_refcount ref_;
+  std::vector<grpc_binder_stream*> stream_buffer_;
+};
+
+void MockCallback(void* arg, grpc_error_handle error);
+
+class MockGrpcClosure {
+ public:
+  explicit MockGrpcClosure(grpc_core::Notification* notification = nullptr)
+      : notification_(notification) {
+    GRPC_CLOSURE_INIT(&closure_, MockCallback, this, nullptr);
+  }
+
+  grpc_closure* GetGrpcClosure() { return &closure_; }
+  MOCK_METHOD(void, Callback, (grpc_error_handle), ());
+
+  grpc_core::Notification* notification_;
+
+ private:
+  grpc_closure closure_;
+};
+
+void MockCallback(void* arg, grpc_error_handle error) {
+  MockGrpcClosure* mock_closure = static_cast<MockGrpcClosure*>(arg);
+  mock_closure->Callback(error);
+  if (mock_closure->notification_) {
+    mock_closure->notification_->Notify();
+  }
+}
+
 class MetadataEncoder {
  public:
   void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
@@ -201,7 +208,6 @@ class MetadataEncoder {
  private:
   Metadata metadata_;
 };
-}  // namespace
 
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
@@ -407,6 +413,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
   EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
                                    kFlagPrefix, "", kInitialMetadata, "")));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -430,6 +437,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
               RpcCall(TransactionMatches(kFlagPrefix, kMethodRef.substr(1),
                                          kInitialMetadata, "")));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -452,6 +460,7 @@ TEST_F(BinderTransportTest, PerformSendMessage) {
       GetWireWriter(),
       RpcCall(TransactionMatches(kFlagMessageData, "", Metadata{}, kMessage)));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -475,6 +484,7 @@ TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
   EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
                                    kFlagSuffix, "", kTrailingMetadata, "")));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -510,6 +520,7 @@ TEST_F(BinderTransportTest, PerformSendAll) {
                   kFlagPrefix | kFlagMessageData | kFlagSuffix,
                   kMethodRef.substr(1), kInitialMetadata, kMessage)));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -667,6 +678,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
               RpcCall(TransactionMatches(
                   kFlagPrefix | kFlagMessageData | kFlagSuffix,
                   kMethodRef.substr(1), kSendInitialMetadata, kSendMessage)));
+  ExpectOutOfBandCloseCalled();
   Expectation on_complete = EXPECT_CALL(mock_on_complete, Callback);
 
   // Recv callbacks can happen after the on_complete callback.
@@ -720,6 +732,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   EXPECT_CALL(mock_on_complete1, Callback(absl::OkStatus()));
   EXPECT_CALL(mock_on_complete2,
               Callback(GrpcErrorMessageContains("WireWriter::RpcCall failed")));
+  ExpectOutOfBandCloseCalled();
 
   const Metadata kInitialMetadata = {};
   grpc_transport_stream_op_batch op1{};
