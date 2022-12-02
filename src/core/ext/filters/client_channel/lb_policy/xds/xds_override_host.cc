@@ -355,14 +355,17 @@ void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
                                                                      message);
 }
 
+static const auto kJsonLoader =
+    JsonObjectLoader<XdsOverrideHostLbConfig>()
+        // Child policy config is parsed in JsonPostLoad
+        .Finish();
+
 //
 // factory
 //
 const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
     const JsonArgs&) {
-  return JsonObjectLoader<XdsOverrideHostLbConfig>()
-      // Child policy config is parsed in JsonPostLoad
-      .Finish();
+  return kJsonLoader;
 }
 
 void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
