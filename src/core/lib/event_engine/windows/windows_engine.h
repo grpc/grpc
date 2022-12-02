@@ -32,6 +32,7 @@
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
+#include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -44,16 +45,10 @@ namespace experimental {
 class WindowsEventEngine : public EventEngine,
                            public grpc_core::KeepsGrpcInitialized {
  public:
-  class WindowsEndpoint : public EventEngine::Endpoint {
-   public:
-    ~WindowsEndpoint() override;
-    void Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs* args) override;
-    void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* args) override;
-    const ResolvedAddress& GetPeerAddress() const override;
-    const ResolvedAddress& GetLocalAddress() const override;
-  };
+  constexpr static TaskHandle invalid_handle{-1, -1};
+  constexpr static EventEngine::ConnectionHandle invalid_connection_handle{-1,
+                                                                           -1};
+
   class WindowsListener : public EventEngine::Listener {
    public:
     ~WindowsListener() override;
@@ -104,11 +99,34 @@ class WindowsEventEngine : public EventEngine,
   bool Cancel(TaskHandle handle) override;
 
  private:
+  // State of an active connection.
+  // Managed by a shared_ptr, owned exclusively by the timeout callback and the
+  // ConnectedClosure callback herein.
+  struct ConnectionState {
+    ~ConnectionState() { delete on_connected; }
+
+    // everything is guarded by mu;
+    grpc_core::Mutex mu;
+    EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
+    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu);
+    EventEngine::OnConnectCallback on_connected_user_callback
+        ABSL_GUARDED_BY(mu);
+    std::unique_ptr<WindowsEndpoint> endpoint ABSL_GUARDED_BY(mu);
+    EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);
+    std::unique_ptr<WinSocket> socket ABSL_GUARDED_BY(mu);
+    EventEngine::ResolvedAddress address ABSL_GUARDED_BY(mu);
+    MemoryAllocator allocator ABSL_GUARDED_BY(mu);
+  };
+
+  void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
+
   class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
+  grpc_core::Mutex connection_mu_;
+  ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
   std::atomic<intptr_t> aba_token_{0};
 
   std::shared_ptr<ThreadPool> executor_;

@@ -1818,6 +1818,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "channel_args_endpoint_config",
+        "common_event_engine_closures",
         "event_engine_common",
         "event_engine_thread_pool",
         "event_engine_trace",
@@ -1825,6 +1827,7 @@ grpc_cc_library(
         "init_internally",
         "posix_event_engine_timer_manager",
         "time",
+        "windows_endpoint",
         "windows_iocp",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1944,6 +1947,20 @@ grpc_cc_library(
     }],
     deps = [
         "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_args_endpoint_config",
+    srcs = [
+        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
+    ],
+    deps = [
+        "channel_args",
         "//:gpr_platform",
     ],
 )

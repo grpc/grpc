@@ -26,14 +26,19 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
+#include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -140,15 +145,153 @@ bool WindowsEventEngine::IsWorkerThread() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
-  GPR_ASSERT(false && "unimplemented");
+void WindowsEventEngine::OnConnectCompleted(
+    std::shared_ptr<ConnectionState> state) {
+  // Connection attempt complete!
+  grpc_core::MutexLock lock(&state->mu);
+  state->on_connected = nullptr;
+  {
+    grpc_core::MutexLock handle_lock(&connection_mu_);
+    known_connection_handles_.erase(state->connection_handle);
+  }
+  // if we cannot cancel the timer, its callback will be called.
+  if (!Cancel(state->timer_handle)) return;
+  auto write_info = state->socket->write_info();
+  if (write_info->wsa_error() != 0) {
+    auto error = GRPC_WSA_ERROR(write_info->wsa_error(), "ConnectEx");
+    state->socket->MaybeShutdown(error);
+    state->on_connected_user_callback(error);
+    return;
+  }
+  // This should already be called from an executor thread, so the callback
+  // can be run inline here.
+  ChannelArgsEndpointConfig cfg;
+  state->on_connected_user_callback(std::make_unique<WindowsEndpoint>(
+      state->address, std::move(state->socket), std::move(state->allocator),
+      cfg, executor_.get()));
 }
 
 EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
-    Duration deadline) {
-  GPR_ASSERT(false && "unimplemented");
+    Duration timeout) {
+  // DO NOT SUBMIT(hork): manage endpoint config
+  absl::Status status;
+  int istatus;
+  auto uri = ResolvedAddressToURI(addr);
+  if (!uri.ok()) {
+    Run([on_connect = std::move(on_connect), status = uri.status()]() mutable {
+      on_connect(status);
+    });
+    return invalid_connection_handle;
+  }
+  // Use dualstack sockets where available.
+  ResolvedAddress address = addr;
+  ResolvedAddress addr6_v4mapped;
+  if (ResolvedAddressToV4Mapped(addr, &addr6_v4mapped)) {
+    address = addr6_v4mapped;
+  }
+  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
+                          IOCP::GetDefaultSocketFlags());
+  if (sock == INVALID_SOCKET) {
+    Run([on_connect = std::move(on_connect),
+         status = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket")]() mutable {
+      on_connect(status);
+    });
+    return invalid_connection_handle;
+  }
+  status = PrepareSocket(sock);
+  if (!status.ok()) {
+    Run([on_connect = std::move(on_connect), status]() mutable {
+      on_connect(status);
+    });
+    return invalid_connection_handle;
+  }
+  // Grab the function pointer for ConnectEx for that specific socket It may
+  // change depending on the interface.
+  LPFN_CONNECTEX ConnectEx;
+  GUID guid = WSAID_CONNECTEX;
+  DWORD ioctl_num_bytes;
+  istatus = WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid,
+                     sizeof(guid), &ConnectEx, sizeof(ConnectEx),
+                     &ioctl_num_bytes, nullptr, nullptr);
+  if (istatus != 0) {
+    Run([on_connect = std::move(on_connect),
+         status = GRPC_WSA_ERROR(
+             WSAGetLastError(),
+             "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)")]() mutable {
+      on_connect(status);
+    });
+    return invalid_connection_handle;
+  }
+  // bind the local address
+  auto local_address = ResolvedAddressMakeWild6(0);
+  istatus = bind(sock, local_address.address(), local_address.size());
+  if (istatus != 0) {
+    Run([on_connect = std::move(on_connect),
+         status = GRPC_WSA_ERROR(WSAGetLastError(), "bind")]() mutable {
+      on_connect(status);
+    });
+    return invalid_connection_handle;
+  }
+  // Connect
+  auto watched_socket = iocp_.Watch(sock);
+  auto info = watched_socket->write_info();
+  bool success = ConnectEx(sock, address.address(), address.size(), nullptr, 0,
+                           nullptr, info->overlapped());
+  // It wouldn't be unusual to get a success immediately. But we'll still get an
+  // IOCP notification, so let's ignore it.
+  if (!success) {
+    int last_error = WSAGetLastError();
+    if (last_error != ERROR_IO_PENDING) {
+      Run([on_connect = std::move(on_connect),
+           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
+        on_connect(status);
+      });
+      return invalid_connection_handle;
+    }
+  }
+  auto connection_state = std::make_shared<ConnectionState>();
+  grpc_core::MutexLock lock(&connection_state->mu);
+  connection_state->on_connected = SelfDeletingClosure::Create(
+      [this, connection_state]() { OnConnectCompleted(connection_state); });
+  connection_state->socket = std::move(watched_socket);
+  connection_state->on_connected_user_callback = std::move(on_connect);
+  {
+    grpc_core::MutexLock conn_lock(&connection_mu_);
+    connection_state->connection_handle =
+        ConnectionHandle{reinterpret_cast<intptr_t>(connection_state.get()),
+                         aba_token_.fetch_add(1)};
+    known_connection_handles_.insert(connection_state->connection_handle);
+  }
+  connection_state->timer_handle =
+      RunAfter(timeout, [this, connection_state]() {
+        if (CancelConnect(connection_state->connection_handle)) {
+          // delete the other ref to the connection state
+          delete connection_state->on_connected;
+          connection_state->on_connected_user_callback(
+              absl::DeadlineExceededError("Connection timed out"));
+        }
+        // else: The connection attempt could not be canceled. We can assume the
+        // connection callback will be called.
+      });
+  connection_state->socket->NotifyOnWrite(connection_state->on_connected);
+  return connection_state->connection_handle;
+}
+
+bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
+  if (TaskHandleComparator<ConnectionHandle>::Eq()(handle,
+                                                   invalid_connection_handle)) {
+    return false;
+  }
+  grpc_core::MutexLock lock(&connection_mu_);
+  if (!known_connection_handles_.contains(handle)) return false;
+  auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
+  // DO NOT SUBMIT(hork): confirm that this is sufficient
+  connection_state->socket->MaybeShutdown(
+      absl::CancelledError("CancelConnect"));
+  known_connection_handles_.erase(handle);
+  return true;
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
