@@ -108,7 +108,7 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
     subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
     subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     picker = ExpectState(GRPC_CHANNEL_READY);
-    EXPECT_NE(picker, nullptr);
+    ASSERT_NE(picker, nullptr);
     ExpectPickComplete(picker.get());
   }
   picker = ExpectState(GRPC_CHANNEL_READY);
