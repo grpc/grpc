@@ -33,39 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
-                                        size_t nops, void* tag,
-                                        void* reserved) override;
-  grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
-                                               grpc_status_code status,
-                                               const char* description,
-                                               void* reserved) override;
-  int grpc_call_failed_before_recv_message(const grpc_call* c) override;
-  void grpc_call_ref(grpc_call* call) override;
-  void grpc_call_unref(grpc_call* call) override;
-  void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
-  const char* grpc_call_error_to_string(grpc_call_error error) override;
-
-  grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) override;
-  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
-  size_t grpc_byte_buffer_length(grpc_byte_buffer* bb) override;
-
-  int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                   grpc_byte_buffer* buffer) override;
-  void grpc_byte_buffer_reader_destroy(
-      grpc_byte_buffer_reader* reader) override;
-  int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                   grpc_slice* slice) override;
-  int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
-                                   grpc_slice** slice) override;
-
-  grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
-                                                size_t nslices) override;
-  grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
-                                           void (*destroy)(void*),
-                                           void* user_data) override;
-  grpc_slice grpc_slice_new_with_len(void* p, size_t len,
-                                     void (*destroy)(void*, size_t)) override;
   grpc_slice grpc_empty_slice() override;
   grpc_slice grpc_slice_malloc(size_t length) override;
   void grpc_slice_unref(grpc_slice slice) override;

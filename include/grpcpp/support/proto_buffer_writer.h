@@ -21,6 +21,7 @@
 
 #include <type_traits>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
@@ -64,8 +65,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
         have_backup_(false) {
     GPR_CODEGEN_ASSERT(!byte_buffer->Valid());
     /// Create an empty raw byte buffer and look at its underlying slice buffer
-    grpc_byte_buffer* bp =
-        g_core_codegen_interface->grpc_raw_byte_buffer_create(nullptr, 0);
+    grpc_byte_buffer* bp = grpc_raw_byte_buffer_create(nullptr, 0);
     byte_buffer->set_buffer(bp);
     slice_buffer_ = &bp->data.raw.slice_buffer;
   }
