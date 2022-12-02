@@ -49,18 +49,10 @@
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 
-using ::grpc_event_engine::experimental::LockfreeEvent;
-using ::grpc_event_engine::experimental::WakeupFd;
-
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
 namespace grpc_event_engine {
 namespace experimental {
-
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::LockfreeEvent;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::WakeupFd;
 
 class Epoll1EventHandle : public EventHandle {
  public:

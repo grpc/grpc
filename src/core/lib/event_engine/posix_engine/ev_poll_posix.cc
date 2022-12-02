@@ -71,10 +71,6 @@ static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 namespace grpc_event_engine {
 namespace experimental {
 
-using ::grpc_event_engine::experimental::AnyInvocableClosure;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::WakeupFd;
 using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
 class PollEventHandle : public EventHandle {
@@ -851,9 +847,6 @@ PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
 
 namespace grpc_event_engine {
 namespace experimental {
-
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
 
 PollPoller::PollPoller(Scheduler* /* engine */) {
   GPR_ASSERT(false && "unimplemented");

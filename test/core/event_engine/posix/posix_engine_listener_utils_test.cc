@@ -46,10 +46,6 @@ namespace experimental {
 
 namespace {
 
-using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
-
 class TestListenerSocketsContainer : public ListenerSocketsContainer {
  public:
   void Append(ListenerSocket socket) override { sockets_.push_back(socket); }

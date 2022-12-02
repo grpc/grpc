@@ -62,14 +62,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-using ::grpc_event_engine::experimental::EventHandle;
-using ::grpc_event_engine::experimental::PosixEngineClosure;
-using ::grpc_event_engine::experimental::PosixEngineListener;
-using ::grpc_event_engine::experimental::PosixEventPoller;
-using ::grpc_event_engine::experimental::PosixSocketWrapper;
-using ::grpc_event_engine::experimental::PosixTcpOptions;
-using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
-using ::grpc_event_engine::experimental::TcpOptionsFromEndpointConfig;
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(

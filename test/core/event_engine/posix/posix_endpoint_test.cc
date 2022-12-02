@@ -58,14 +58,6 @@ namespace experimental {
 
 namespace {
 
-using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetNextSendMessage;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::PosixEventEngine;
-using ::grpc_event_engine::experimental::PosixOracleEventEngine;
-using ::grpc_event_engine::experimental::URIToResolvedAddress;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using namespace std::chrono_literals;

@@ -45,14 +45,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
-using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressIsWildcard;
-using ::grpc_event_engine::experimental::ResolvedAddressSetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
-using ::grpc_event_engine::experimental::ResolvedAddressToV4Mapped;
-}  // namespace
-
 PosixEngineListenerImpl::PosixEngineListenerImpl(
     EventEngine::Listener::AcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,

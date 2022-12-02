@@ -92,11 +92,6 @@ namespace experimental {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::MemoryAllocator;
-using ::grpc_event_engine::experimental::Slice;
-using ::grpc_event_engine::experimental::SliceBuffer;
-
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
 ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
@@ -1253,9 +1248,6 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
 
 namespace grpc_event_engine {
 namespace experimental {
-
-using ::grpc_event_engine::experimental::EndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,

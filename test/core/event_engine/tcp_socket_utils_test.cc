@@ -42,8 +42,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-using ::grpc_event_engine::experimental::EventEngine;
-
 const uint8_t kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
                            0, 0, 0xff, 0xff, 192, 0, 2, 1};
 const uint8_t kNotQuiteMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,

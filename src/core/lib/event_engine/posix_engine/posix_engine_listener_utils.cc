@@ -56,12 +56,6 @@ namespace {
 using ResolvedAddress =
     grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
-using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressIsV4Mapped;
-using ::grpc_event_engine::experimental::ResolvedAddressMakeWild4;
-using ::grpc_event_engine::experimental::ResolvedAddressMakeWild6;
-using ::grpc_event_engine::experimental::ResolvedAddressSetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressToString;
 
 #ifdef GRPC_HAVE_IFADDRS
 
