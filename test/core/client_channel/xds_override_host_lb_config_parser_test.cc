@@ -33,9 +33,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class XdsOverrideHostConfigParsingTest : public ::testing::Test {};
-
-TEST_F(XdsOverrideHostConfigParsingTest, ValidConfig) {
+TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -52,7 +50,7 @@ TEST_F(XdsOverrideHostConfigParsingTest, ValidConfig) {
   EXPECT_NE(*service_config, nullptr);
 }
 
-TEST_F(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
+TEST(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -70,7 +68,7 @@ TEST_F(XdsOverrideHostConfigParsingTest, ReportsMissingChildPolicyField) {
                 "[field:childPolicy error:field not present]]"));
 }
 
-TEST_F(XdsOverrideHostConfigParsingTest, ReportsChildPolicyShouldBeArray) {
+TEST(XdsOverrideHostConfigParsingTest, ReportsChildPolicyShouldBeArray) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
@@ -91,7 +89,7 @@ TEST_F(XdsOverrideHostConfigParsingTest, ReportsChildPolicyShouldBeArray) {
                 "[field:childPolicy error:type should be array]]"));
 }
 
-TEST_F(XdsOverrideHostConfigParsingTest, ReportsEmptyChildPolicyArray) {
+TEST(XdsOverrideHostConfigParsingTest, ReportsEmptyChildPolicyArray) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"

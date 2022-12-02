@@ -345,16 +345,15 @@ void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
                                                                      message);
 }
 
-static const auto kJsonLoader =
-    JsonObjectLoader<XdsOverrideHostLbConfig>()
-        // Child policy config is parsed in JsonPostLoad
-        .Finish();
-
 //
 // factory
 //
 const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
     const JsonArgs&) {
+  static const auto kJsonLoader =
+      JsonObjectLoader<XdsOverrideHostLbConfig>()
+          // Child policy config is parsed in JsonPostLoad
+          .Finish();
   return kJsonLoader;
 }
 
