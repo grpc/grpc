@@ -27,9 +27,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/support/status.h>

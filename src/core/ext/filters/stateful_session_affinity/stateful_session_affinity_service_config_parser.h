@@ -20,16 +20,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-#include <stdint.h>
 
-#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/status.h>
+#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

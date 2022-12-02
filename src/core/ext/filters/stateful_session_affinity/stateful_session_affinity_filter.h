@@ -21,11 +21,9 @@
 
 #include <stddef.h>
 
-#include <memory>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/random/random.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
