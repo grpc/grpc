@@ -121,8 +121,11 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       // will always be TRANSIENT_FAILURE), so we don't actually start a
       // watch, but we are hiding that fact from the application.
       if (IsLameChannel(channel_.get())) {
-        // Ref from object creation is held by timer callback.
+        // A ref is held by timer callback.
         StartTimer(Timestamp::FromTimespecRoundUp(deadline));
+        // Ref from object creation needs to be freed here since lame channel
+        // does not have a watcher.
+        Unref();
         return;
       }
       gpr_log(GPR_ERROR,
@@ -186,7 +189,8 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     }
     gpr_log(GPR_DEBUG, "WatchComplete");
     // Watcher fired when either notified or cancelled, either way the state of
-    // this external watcher has been cleared from the client channel.
+    // this watcher has been cleared from the client channel. Thus there is no
+    // need to cancel the watch again.
     self->Unref();
   }
 
