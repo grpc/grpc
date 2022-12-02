@@ -15,15 +15,18 @@
 //
 
 #include <grpc/support/port_platform.h>
+
 #include <inttypes.h>
+
+#include "absl/status/status.h"
+
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
-#include <grpc/event_engine/event_engine.h>
 
-#include "absl/status/status.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -173,6 +176,8 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
     self->channel_->channel_stack()->EventEngine()->Cancel(self->timer_handle_);
+    // Watcher fired when either notified or cancelled, either way the state of
+    // this external watcher has been cleared from the client channel.
     self->Unref();
   }
 
