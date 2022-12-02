@@ -42,7 +42,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -60,15 +59,6 @@ namespace grpc_core {
 TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host_lb");
 
 namespace {
-
-// TODO (eostroukhov): Remove once this policy is no longer experimental
-bool XdsOverrideHostLbEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 //
 // xds_override_host LB policy
@@ -414,10 +404,8 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 }  // namespace
 
 void RegisterXdsOverrideHostLbPolicy(CoreConfiguration::Builder* builder) {
-  if (XdsOverrideHostLbEnabled()) {
-    builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-        std::make_unique<XdsOverrideHostLbFactory>());
-  }
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<XdsOverrideHostLbFactory>());
 }
 
 }  // namespace grpc_core

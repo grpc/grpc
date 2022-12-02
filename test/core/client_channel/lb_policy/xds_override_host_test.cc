@@ -37,11 +37,6 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
          Json::Object{{"childPolicy", Json::Array{{child_policy_config}}}}}}});
   }
 
-  static void SetUpTestSuite() {
-    grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
-    grpc_core::CoreConfiguration::Reset();
-  }
-
   OrphanablePtr<LoadBalancingPolicy> policy_;
 };
 
@@ -132,18 +127,6 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
       ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
                   policy_.get()),
       absl::InvalidArgumentError("Missing policy config"));
-}
-
-class XdsOverrideHostDisabledTest : public LoadBalancingPolicyTest {
- protected:
-  static void SetUpTestSuite() {
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
-    grpc_core::CoreConfiguration::Reset();
-  }
-};
-
-TEST_F(XdsOverrideHostDisabledTest, PolicyIsNotCreated) {
-  ASSERT_EQ(MakeLbPolicy("xds_override_host_experimental"), nullptr);
 }
 
 }  // namespace

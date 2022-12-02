@@ -33,19 +33,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class XdsOverrideHostConfigParsingTest : public ::testing::Test {
- public:
-  static void SetUpTestSuite() {
-    grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE", "TRUE");
-    grpc_init();
-  }
-
-  static void TearDownTestSuite() {
-    grpc_shutdown_blocking();
-    grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
-    grpc_core::CoreConfiguration::Reset();
-  }
-};
+class XdsOverrideHostConfigParsingTest : public ::testing::Test {};
 
 TEST_F(XdsOverrideHostConfigParsingTest, ValidConfig) {
   const char* service_config_json =
@@ -122,39 +110,6 @@ TEST_F(XdsOverrideHostConfigParsingTest, ReportsEmptyChildPolicyArray) {
                 "error:errors validating xds_override_host LB policy config: "
                 "[field:childPolicy error:No known policies in list: ]]"));
 }
-
-class XdsOverrideHostDisabledConfigParsingTest : public ::testing::Test {
- public:
-  static void SetUpTestSuite() { grpc_init(); }
-
-  static void TearDownTestSuite() {
-    grpc_shutdown_blocking();
-    grpc_core::CoreConfiguration::Reset();
-  }
-};
-
-TEST_F(XdsOverrideHostDisabledConfigParsingTest,
-       ReportsNoXdsOverrideHostLbPolicy) {
-  const char* service_config_json =
-      "{\n"
-      "  \"loadBalancingConfig\":[{\n"
-      "    \"xds_override_host_experimental\":{\n"
-      "      \"childPolicy\":[\n"
-      "        {\"grpclb\":{}}\n"
-      "      ]\n"
-      "    }\n"
-      "  }]\n"
-      "}\n";
-  auto service_config =
-      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
-  ASSERT_FALSE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(
-      service_config.status(),
-      absl::InvalidArgumentError(
-          "errors validating service config: [field:loadBalancingConfig "
-          "error:No known policies in list: xds_override_host_experimental]"));
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
@@ -162,5 +117,8 @@ TEST_F(XdsOverrideHostDisabledConfigParsingTest,
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
 }
