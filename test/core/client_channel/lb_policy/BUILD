@@ -51,6 +51,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "non_existing_policy_test",
+    srcs = ["non_existing_policy_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "outlier_detection_test",
     srcs = ["outlier_detection_test.cc"],
     external_deps = ["gtest"],

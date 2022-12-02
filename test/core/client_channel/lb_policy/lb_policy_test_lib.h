@@ -218,6 +218,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                std::shared_ptr<WorkSerializer> work_serializer)
         : test_(test), work_serializer_(std::move(work_serializer)) {}
 
+    ~FakeHelper() override {
+      // Note: Can't safely trigger this from inside the FakeHelper dtor,
+      // because if there is a picker in the queue that is holding a ref
+      // to the LB policy, that will prevent the LB policy from being
+      // destroyed, and therefore the FakeHelper will not be destroyed.
+      // (This will cause an ASAN failure, but it will not display the
+      // queued events, so the failure will be harder to diagnose.)
+      ExpectQueueEmpty();
+    }
+
     // Called at test tear-down time to ensure that we have not left any
     // unexpected events in the queue.
     void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -374,16 +384,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   LoadBalancingPolicyTest()
       : work_serializer_(std::make_shared<WorkSerializer>()) {}
-
-  void TearDown() override {
-    // Note: Can't safely trigger this from inside the FakeHelper dtor,
-    // because if there is a picker in the queue that is holding a ref
-    // to the LB policy, that will prevent the LB policy from being
-    // destroyed, and therefore the FakeHelper will not be destroyed.
-    // (This will cause an ASAN failure, but it will not display the
-    // queued events, so the failure will be harder to diagnose.)
-    helper_->ExpectQueueEmpty();
-  }
 
   // Creates an LB policy of the specified name.
   // Creates a new FakeHelper for the new LB policy, and sets helper_ to
