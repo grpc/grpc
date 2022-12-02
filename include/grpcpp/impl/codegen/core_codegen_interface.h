@@ -21,12 +21,12 @@
 
 // IWYU pragma: private
 
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/sync.h>
-#include <grpcpp/impl/codegen/config.h>
-#include <grpcpp/impl/codegen/status.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
 
 namespace grpc {
 
