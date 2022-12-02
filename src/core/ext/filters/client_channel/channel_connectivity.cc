@@ -121,7 +121,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       // will always be TRANSIENT_FAILURE), so we don't actually start a
       // watch, but we are hiding that fact from the application.
       if (IsLameChannel(channel_.get())) {
-        // A ref is held by timer callback.
+        // A ref is held by the timer callback.
         StartTimer(Timestamp::FromTimespecRoundUp(deadline));
         // Ref from object creation needs to be freed here since lame channel
         // does not have a watcher.
@@ -133,8 +133,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
               "something that is not a client channel");
       GPR_ASSERT(false);
     }
-    // We have already taken a ref of this object which will be unreffed by the
-    // watcher callback.
+    // Ref from object creation is held by the watcher callback.
     auto* watcher_timer_init_state = new WatcherTimerInitState(
         this, Timestamp::FromTimespecRoundUp(deadline));
     client_channel->AddExternalConnectivityWatcher(
@@ -183,11 +182,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
-    if (self->channel_->channel_stack()->EventEngine()->Cancel(
-            self->timer_handle_)) {
-      gpr_log(GPR_DEBUG, "Timer cancelled");
-    }
-    gpr_log(GPR_DEBUG, "WatchComplete");
+    self->channel_->channel_stack()->EventEngine()->Cancel(self->timer_handle_);
     // Watcher fired when either notified or cancelled, either way the state of
     // this watcher has been cleared from the client channel. Thus there is no
     // need to cancel the watch again.
@@ -195,7 +190,6 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   }
 
   void TimeoutComplete() {
-    gpr_log(GPR_DEBUG, "TimeoutComplete");
     timer_fired_ = true;
     // If this is a client channel (not a lame channel), cancel the watch.
     ClientChannel* client_channel =
@@ -207,7 +201,6 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
 
   // Invoked when both strong refs are released.
   void Orphan() override {
-    gpr_log(GPR_DEBUG, "Orphan");
     WeakRef().release();  // Take a weak ref until completion is finished.
     grpc_error_handle error =
         timer_fired_
