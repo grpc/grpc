@@ -88,7 +88,6 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
   auto picker = WaitForConnected();
   ASSERT_NE(picker, nullptr);
   ExpectPickComplete(picker.get());
-
   subchannel =
       FindSubchannel({kAddresses[1]},
                      ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
@@ -100,24 +99,26 @@ TEST_F(XdsOverrideHostTest, SwapChildPolicy) {
                                     MakeXdsOverrideHostConfig("round_robin")),
                         policy_.get()),
             absl::OkStatus());
-  for (absl::string_view address : kAddresses) {
-    auto subchannel = FindSubchannel({address});
-    ASSERT_NE(subchannel, nullptr);
-    ASSERT_TRUE(subchannel->ConnectionRequested());
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-    picker = ExpectState(GRPC_CHANNEL_READY);
-    ASSERT_NE(picker, nullptr);
-    ExpectPickComplete(picker.get());
-  }
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // The round_robin policy should have requested a connection on the second
+  // subchannel.
+  subchannel = FindSubchannel({kAddresses[1]});
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // The subchannel reports CONNECTING.  We'll get a new READY picker, but it
+  // will continue to hand out only the first subchannel.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   std::set<std::string> picked;
   for (size_t i = 0; i < kAddresses.size(); i++) {
     auto pick = ExpectPickComplete(picker.get());
-    ASSERT_TRUE(pick.has_value());
-    picked.insert(*pick);
+    picked.insert(pick);
   }
+
+  // Only one channel is reported!
+
   EXPECT_THAT(picked, ::testing::UnorderedElementsAreArray(kAddresses));
 }
 

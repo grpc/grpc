@@ -574,15 +574,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Requests a pick on picker and expects a Complete result.
   // The address of the resulting subchannel is returned, or nullopt if
   // the result was something other than Complete.
-  absl::optional<std::string> ExpectPickComplete(
-      LoadBalancingPolicy::SubchannelPicker* picker,
-      SourceLocation location = SourceLocation()) {
+  std::string ExpectPickComplete(LoadBalancingPolicy::SubchannelPicker* picker,
+                                 SourceLocation location = SourceLocation()) {
+    if (picker == nullptr) {
+      return "<picker is null>";
+    }
     auto pick_result = DoPick(picker);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "
                                  << location.file() << ":" << location.line();
-    if (complete == nullptr) return absl::nullopt;
+    if (complete == nullptr) return "<pick not complete>";
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
     return subchannel->state()->address();
