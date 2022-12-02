@@ -166,7 +166,11 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   void StartTimer(Timestamp deadline) {
     const Duration timeout = deadline - Timestamp::Now();
     timer_handle_ = channel_->channel_stack()->EventEngine()->RunAfter(
-        timeout, [self = Ref()] { self->TimeoutComplete(); });
+        timeout, [self = Ref()] {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          self->TimeoutComplete();
+        });
   }
 
   static void WatchComplete(void* arg, grpc_error_handle error) {
