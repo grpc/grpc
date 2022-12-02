@@ -1214,14 +1214,10 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   auto local_address = sock.LocalAddress();
   if (local_address.ok()) {
     local_address_ = *local_address;
-  } else {
-    local_address_ = EventEngine::ResolvedAddress{};
   }
   auto peer_address = sock.PeerAddress();
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
-  } else {
-    peer_address_ = EventEngine::ResolvedAddress{};
   }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;
