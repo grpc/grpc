@@ -166,10 +166,12 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   void StartTimer(Timestamp deadline) {
     const Duration timeout = deadline - Timestamp::Now();
     timer_handle_ = channel_->channel_stack()->EventEngine()->RunAfter(
-        timeout, [self = Ref()] {
+        timeout, [self = Ref()] mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->TimeoutComplete();
+          // StateWatcher deletion might require an active ExecCtx.
+          self.reset();
         });
   }
 
