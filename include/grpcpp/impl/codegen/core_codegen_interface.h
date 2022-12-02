@@ -45,41 +45,6 @@ class CoreCodegenInterface {
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;
 
-  virtual grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) = 0;
-  virtual void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) = 0;
-  virtual size_t grpc_byte_buffer_length(grpc_byte_buffer* bb)
-      GRPC_MUST_USE_RESULT = 0;
-
-  virtual int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                           grpc_byte_buffer* buffer)
-      GRPC_MUST_USE_RESULT = 0;
-  virtual void grpc_byte_buffer_reader_destroy(
-      grpc_byte_buffer_reader* reader) = 0;
-  virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                           grpc_slice* slice) = 0;
-  virtual int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
-                                           grpc_slice** slice) = 0;
-
-  virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
-                                                        size_t nslices) = 0;
-  virtual grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
-                                                   void (*destroy)(void*),
-                                                   void* user_data) = 0;
-  virtual grpc_slice grpc_slice_new_with_len(void* p, size_t len,
-                                             void (*destroy)(void*,
-                                                             size_t)) = 0;
-  virtual grpc_call_error grpc_call_start_batch(grpc_call* call,
-                                                const grpc_op* ops, size_t nops,
-                                                void* tag, void* reserved) = 0;
-  virtual grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
-                                                       grpc_status_code status,
-                                                       const char* description,
-                                                       void* reserved) = 0;
-  virtual int grpc_call_failed_before_recv_message(const grpc_call* c) = 0;
-  virtual void grpc_call_ref(grpc_call* call) = 0;
-  virtual void grpc_call_unref(grpc_call* call) = 0;
-  virtual void* grpc_call_arena_alloc(grpc_call* call, size_t length) = 0;
-  virtual const char* grpc_call_error_to_string(grpc_call_error error) = 0;
   virtual grpc_slice grpc_empty_slice() = 0;
   virtual grpc_slice grpc_slice_malloc(size_t length) = 0;
   virtual void grpc_slice_unref(grpc_slice slice) = 0;
