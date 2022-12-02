@@ -39,7 +39,7 @@ class XdsHttpStatefulSessionAffinityFilter : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
-      const XdsResourceType::DecodeContext& context, XdsExtension extension, 
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
       const XdsResourceType::DecodeContext& context, XdsExtension extension,

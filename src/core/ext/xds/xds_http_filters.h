@@ -86,14 +86,14 @@ class XdsHttpFilterImpl {
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::optional<FilterConfig> GenerateFilterConfig(
-      const XdsResourceType::DecodeContext& context,
-      XdsExtension extension, ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      const XdsResourceType::DecodeContext& context,
-      XdsExtension extension, ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const = 0;
 
   // C-core channel filter implementation.
   virtual const grpc_channel_filter* channel_filter() const = 0;
@@ -130,11 +130,11 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
-      const XdsResourceType::DecodeContext& context,
-      XdsExtension extension, ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      const XdsResourceType::DecodeContext& context,
-      XdsExtension extension, ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,

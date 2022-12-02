@@ -54,8 +54,8 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfig(
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const {
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
