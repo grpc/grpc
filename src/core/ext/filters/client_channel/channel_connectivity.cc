@@ -18,7 +18,10 @@
 
 #include <inttypes.h>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
+#include "absl/synchronization/mutex.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -167,6 +170,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
 
   void StartTimer(Timestamp deadline) {
     const Duration timeout = deadline - Timestamp::Now();
+    absl::MutexLock lock(&mu_);
     timer_handle_ = channel_->channel_stack()->EventEngine()->RunAfter(
         timeout, [self = Ref()]() mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
@@ -182,7 +186,13 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
-    self->channel_->channel_stack()->EventEngine()->Cancel(self->timer_handle_);
+    {
+      absl::MutexLock lock(&self->mu_);
+      if (self->timer_handle_.has_value()) {
+        self->channel_->channel_stack()->EventEngine()->Cancel(
+            *self->timer_handle_);
+      }
+    }
     // Watcher fired when either notified or cancelled, either way the state of
     // this watcher has been cleared from the client channel. Thus there is no
     // need to cancel the watch again.
@@ -226,7 +236,12 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
 
   grpc_closure on_complete_;
 
-  grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle_;
+  // timer_handle_ might be accessed in parallel from multiple threads, e.g.
+  // timer callback fired immediately on an event engine thread before
+  // RunAfter() returns.
+  absl::Mutex mu_;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      timer_handle_ ABSL_GUARDED_BY(mu_);
   bool timer_fired_ = false;
 };
 
