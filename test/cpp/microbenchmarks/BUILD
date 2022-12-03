@@ -216,7 +216,10 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//src/core:channel_args",
+    ],
 )
 
 grpc_cc_test(

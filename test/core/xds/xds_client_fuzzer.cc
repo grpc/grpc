@@ -22,6 +22,7 @@
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/xds/xds_client_fuzzer.pb.h"
@@ -42,8 +43,9 @@ class Fuzzer {
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
     transport_factory->SetAutoCompleteMessagesFromClient(false);
     transport_factory_ = transport_factory.get();
-    xds_client_ = MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                            std::move(transport_factory));
+    xds_client_ = MakeRefCounted<XdsClient>(
+        std::move(*bootstrap), std::move(transport_factory),
+        grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 
   void Act(const xds_client_fuzzer::Action& action) {

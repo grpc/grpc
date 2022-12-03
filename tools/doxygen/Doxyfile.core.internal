@@ -847,6 +847,7 @@ include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
+include/grpc/impl/compression_types.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
@@ -937,6 +938,7 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
@@ -999,7 +1001,6 @@ src/core/ext/filters/rbac/rbac_filter.cc \
 src/core/ext/filters/rbac/rbac_filter.h \
 src/core/ext/filters/rbac/rbac_service_config_parser.cc \
 src/core/ext/filters/rbac/rbac_service_config_parser.h \
-src/core/ext/filters/server_config_selector/server_config_selector.cc \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
@@ -1788,6 +1789,8 @@ src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
+src/core/lib/event_engine/tcp_socket_utils.cc \
+src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_pool.cc \
 src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/time_util.cc \
@@ -2375,6 +2378,8 @@ src/core/tsi/ssl/session_cache/ssl_session_cache.h \
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
+src/core/tsi/ssl_transport_security_utils.cc \
+src/core/tsi/ssl_transport_security_utils.h \
 src/core/tsi/ssl_types.h \
 src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \

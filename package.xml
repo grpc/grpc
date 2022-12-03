@@ -69,6 +69,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
@@ -156,6 +157,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.h" role="src" />
@@ -214,7 +216,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.h" role="src" />
@@ -997,6 +998,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
@@ -1578,6 +1581,8 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />

@@ -294,6 +294,7 @@ libs:
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/impl/compression_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -766,6 +767,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -1037,6 +1039,7 @@ libs:
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_transport_security_utils.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
@@ -1079,6 +1082,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -1113,7 +1117,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
   - src/core/ext/filters/rbac/rbac_service_config_parser.cc
-  - src/core/ext/filters/server_config_selector/server_config_selector.cc
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -1499,6 +1502,7 @@ libs:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -1744,6 +1748,7 @@ libs:
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/ssl_transport_security_utils.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
@@ -1867,6 +1872,7 @@ libs:
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/impl/compression_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -2039,6 +2045,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -2417,6 +2424,7 @@ libs:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -2821,18 +2829,24 @@ libs:
   - include/grpcpp/impl/codegen/sync_stream.h
   - include/grpcpp/impl/codegen/time.h
   - include/grpcpp/impl/completion_queue_tag.h
+  - include/grpcpp/impl/create_auth_context.h
   - include/grpcpp/impl/delegating_channel.h
   - include/grpcpp/impl/grpc_library.h
   - include/grpcpp/impl/intercepted_channel.h
+  - include/grpcpp/impl/interceptor_common.h
+  - include/grpcpp/impl/metadata_map.h
   - include/grpcpp/impl/method_handler_impl.h
+  - include/grpcpp/impl/proto_utils.h
   - include/grpcpp/impl/rpc_method.h
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
   - include/grpcpp/impl/server_builder_plugin.h
+  - include/grpcpp/impl/server_callback_handlers.h
   - include/grpcpp/impl/server_initializer.h
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
+  - include/grpcpp/impl/sync.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
@@ -2847,6 +2861,7 @@ libs:
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
+  - include/grpcpp/server_interface.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
   - include/grpcpp/support/async_unary_call.h
@@ -3241,18 +3256,24 @@ libs:
   - include/grpcpp/impl/codegen/sync_stream.h
   - include/grpcpp/impl/codegen/time.h
   - include/grpcpp/impl/completion_queue_tag.h
+  - include/grpcpp/impl/create_auth_context.h
   - include/grpcpp/impl/delegating_channel.h
   - include/grpcpp/impl/grpc_library.h
   - include/grpcpp/impl/intercepted_channel.h
+  - include/grpcpp/impl/interceptor_common.h
+  - include/grpcpp/impl/metadata_map.h
   - include/grpcpp/impl/method_handler_impl.h
+  - include/grpcpp/impl/proto_utils.h
   - include/grpcpp/impl/rpc_method.h
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
   - include/grpcpp/impl/server_builder_plugin.h
+  - include/grpcpp/impl/server_callback_handlers.h
   - include/grpcpp/impl/server_initializer.h
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
+  - include/grpcpp/impl/sync.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
@@ -3265,6 +3286,7 @@ libs:
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
+  - include/grpcpp/server_interface.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/support/async_stream.h
   - include/grpcpp/support/async_unary_call.h
@@ -3385,6 +3407,7 @@ libs:
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/impl/compression_types.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -3469,6 +3492,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -3727,6 +3751,7 @@ libs:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -7156,6 +7181,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
@@ -7396,6 +7422,7 @@ targets:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
@@ -10779,6 +10806,19 @@ targets:
   - linux
   - posix
   - mac
+- name: ssl_transport_security_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/tsi/ssl_transport_security_utils_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: stack_tracer_test
   gtest: true
   build: test
@@ -11177,6 +11217,16 @@ targets:
   - linux
   - posix
   - mac
+- name: tcp_socket_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/tcp_socket_utils_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
@@ -12064,6 +12114,24 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: windows_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/windows/windows_endpoint.h
+  - test/core/event_engine/windows/create_sockpair.h
+  src:
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
+  - test/core/event_engine/windows/create_sockpair.cc
+  - test/core/event_engine/windows/windows_endpoint_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
+  uses_polling: false
 - name: wire_reader_test
   gtest: true
   build: test
@@ -13063,6 +13131,25 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_override_host_lb_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/xds_override_host_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
+- name: xds_override_host_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/xds_override_host_test.cc
+  deps:
+  - grpc_test_util
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test

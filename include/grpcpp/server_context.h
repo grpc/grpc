@@ -28,12 +28,14 @@
 #include <type_traits>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/compression_types.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/completion_queue_tag.h>
+#include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/callback_common.h>
@@ -440,8 +442,7 @@ class ServerContextBase {
   }
 
   void MaybeMarkCancelledOnRead() {
-    if (g_core_codegen_interface->grpc_call_failed_before_recv_message(
-            call_.call)) {
+    if (grpc_call_failed_before_recv_message(call_.call)) {
       marked_cancelled_.store(true, std::memory_order_release);
     }
   }
