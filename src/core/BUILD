@@ -1241,6 +1241,7 @@ grpc_cc_library(
         "no_destruct",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 

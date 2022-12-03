@@ -22,8 +22,6 @@
 
 #include <string.h>
 
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
@@ -116,9 +114,8 @@ size_t Executor::RunClosures(const char* executor_name,
   while (c != nullptr) {
     grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
-    auto closure_name = absl::StrFormat("%p [created by %s:%d]", c,
-                                        c->file_created, c->line_created);
-    EXECUTOR_TRACE("(%s) run %s", executor_name, closure_name.c_str());
+    EXECUTOR_TRACE("(%s) run %p [created by %s:%d]", executor_name, c,
+                   c->file_created, c->line_created);
     c->scheduled = false;
 #else
     EXECUTOR_TRACE("(%s) run %p", executor_name, c);
@@ -127,14 +124,12 @@ size_t Executor::RunClosures(const char* executor_name,
         internal::StatusMoveFromHeapPtr(c->error_data.error);
     c->error_data.error = 0;
     c->cb(c->cb_arg, std::move(error));
-    ExecCtx::Get()->Flush();
-#ifndef NDEBUG
-    EXECUTOR_TRACE("(%s) finished %s", executor_name, closure_name.c_str());
-#else
-    EXECUTOR_TRACE("(%s) finished %p", executor_name, c);
-#endif
     c = next;
     n++;
+    ExecCtx::Get()->Flush();
+#ifndef NDEBUG
+    EXECUTOR_TRACE("(%s) finished %p", executor_name, c);
+#endif
   }
 
   return n;
@@ -452,6 +447,7 @@ void Executor::SetThreadingAll(bool enable) {
        i++) {
     executors[i]->SetThreading(enable);
   }
+  EXECUTOR_TRACE("Executor::SetThreadingAll(%d) done", enable);
 }
 
 void Executor::SetThreadingDefault(bool enable) {

@@ -60,17 +60,13 @@ class ServiceImpl final : public EchoTestService::Service {
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       response.set_message(request.message());
       stream->Write(response);
+      gpr_log(GPR_INFO, "wrote msg %s", response.message().c_str());
     }
     return Status::OK;
   }
 };
 
-// These unfortunately need to live outside of the test body, because
-// they're referenced in functions passed by pointer to pthread_atfork.
-std::string addr;
-std::unique_ptr<EchoTestService::Stub> stub;
-
-std::unique_ptr<EchoTestService::Stub> MakeStub() {
+std::unique_ptr<EchoTestService::Stub> MakeStub(const std::string& addr) {
   return EchoTestService::NewStub(
       grpc::CreateChannel(addr, InsecureChannelCredentials()));
 }
@@ -79,7 +75,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   grpc_core::Fork::Enable(true);
 
   int port = grpc_pick_unused_port_or_die();
-  addr = absl::StrCat("localhost:", port);
+  std::string addr = absl::StrCat("localhost:", port);
 
   pid_t server_pid = fork();
   switch (server_pid) {
@@ -99,10 +95,9 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       break;
   }
 
-  stub = MakeStub();
-
   // Do a round trip before we fork.
   {
+    std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
@@ -111,15 +106,15 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     auto stream = stub->BidiStream(&context);
 
     request.set_message("Hello");
-    EXPECT_TRUE(stream->Write(request));
-    EXPECT_TRUE(stream->Read(&response));
-    EXPECT_EQ(response.message(), request.message());
+    ASSERT_TRUE(stream->Write(request));
+    ASSERT_TRUE(stream->Read(&response));
+    ASSERT_EQ(response.message(), request.message());
   }
   // Fork and do round trips in the post-fork parent and child.
   pid_t child_client_pid = fork();
   switch (child_client_pid) {
     case -1:  // fork failed
-      GTEST_FAIL() << "fork failed";
+      FAIL() << "fork failed";
     case 0:  // post-fork child
     {
       gpr_log(GPR_DEBUG, "In post-fork child");
@@ -128,10 +123,10 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       ClientContext context;
       context.set_wait_for_ready(true);
 
-      stub = MakeStub();
+      std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
       auto stream = stub->BidiStream(&context);
 
-      request.set_message("Hello");
+      request.set_message("Hello again from child");
       ASSERT_TRUE(stream->Write(request));
       ASSERT_TRUE(stream->Read(&response));
       ASSERT_EQ(response.message(), request.message());
@@ -145,23 +140,22 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       ClientContext context;
       context.set_wait_for_ready(true);
 
+      std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
       auto stream = stub->BidiStream(&context);
 
-      request.set_message("Hello");
-      ASSERT_TRUE(stream->Write(request));
-      ASSERT_TRUE(stream->Read(&response));
-      ASSERT_EQ(response.message(), request.message());
+      request.set_message("Hello again from parent");
+      EXPECT_TRUE(stream->Write(request));
+      EXPECT_TRUE(stream->Read(&response));
+      EXPECT_EQ(response.message(), request.message());
 
       // Wait for the post-fork child to exit; ensure it exited cleanly.
       int child_status;
       ASSERT_EQ(waitpid(child_client_pid, &child_status, 0), child_client_pid)
           << "failed to get status of child client";
       ASSERT_EQ(WEXITSTATUS(child_status), 0) << "child did not exit cleanly";
-      break;
     }
   }
 
-  stub.reset();
   kill(server_pid, SIGINT);
 }
 

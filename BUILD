@@ -1402,6 +1402,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:event_log",
         "//src/core:experiments",
+        "//src/core:forkable",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
