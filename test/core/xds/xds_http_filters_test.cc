@@ -37,13 +37,13 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h"
 #include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.pb.h"
@@ -69,15 +69,15 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-using ::envoy::extensions::http::stateful_session::cookie::v3
-          ::CookieBasedSessionState;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
 using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::filters::http::router::v3::Router;
 using ::envoy::extensions::filters::http::stateful_session::v3::StatefulSession;
-using ::envoy::extensions::filters::http::stateful_session::v3
-          ::StatefulSessionPerRoute;
+using ::envoy::extensions::filters::http::stateful_session::v3 ::
+    StatefulSessionPerRoute;
+using ::envoy::extensions::http::stateful_session::cookie::v3 ::
+    CookieBasedSessionState;
 
 //
 // base class for filter tests
@@ -86,8 +86,8 @@ using ::envoy::extensions::filters::http::stateful_session::v3
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest()
-      : decode_context_{nullptr, xds_server_, nullptr,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+      : decode_context_{nullptr, xds_server_, nullptr, upb_def_pool_.ptr(),
+                        upb_arena_.ptr()} {}
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
     google::protobuf::Any any;
@@ -989,8 +989,8 @@ TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigNoOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
-      filter_->ConfigProtoName(), Json::Object{{"name", "foo"}}};
+  XdsHttpFilterImpl::FilterConfig hcm_config = {filter_->ConfigProtoName(),
+                                                Json::Object{{"name", "foo"}}};
   auto config = filter_->GenerateServiceConfig(hcm_config, nullptr);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
@@ -998,8 +998,8 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigNoOverride) {
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigWithOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
-      filter_->ConfigProtoName(), Json::Object{{"name", "foo"}}};
+  XdsHttpFilterImpl::FilterConfig hcm_config = {filter_->ConfigProtoName(),
+                                                Json::Object{{"name", "foo"}}};
   XdsHttpFilterImpl::FilterConfig override_config = {
       filter_->OverrideConfigProtoName(), Json::Object{{"name", "bar"}}};
   auto config = filter_->GenerateServiceConfig(hcm_config, &override_config);
@@ -1137,12 +1137,11 @@ TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config,
-            Json(Json::Object{
-                {"name", "foo"},
-                {"path", "/service/method"},
-                {"ttl", "3.000000000s"},
-            }))
+  EXPECT_EQ(config->config, Json(Json::Object{
+                                {"name", "foo"},
+                                {"path", "/service/method"},
+                                {"ttl", "3.000000000s"},
+                            }))
       << config->config.Dump();
 }
 
@@ -1150,11 +1149,10 @@ TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {
   auto config = GenerateConfig(StatefulSession());
   absl::Status status = errors_.status("errors validating filter config");
   ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: [field:",
-                FieldPrefix(),
-                ".session_state error:field not present]"))
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".session_state error:field not present]"))
       << status;
 }
 
@@ -1165,14 +1163,13 @@ TEST_P(XdsStatefulSessionFilterConfigTest, CookieNotPresent) {
   auto config = GenerateConfig(stateful_session);
   absl::Status status = errors_.status("errors validating filter config");
   ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: [field:",
-                FieldPrefix(),
-                ".session_state.typed_config.value["
-                "envoy.extensions.http.stateful_session.cookie.v3"
-                ".CookieBasedSessionState].cookie "
-                "error:field not present]"))
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".session_state.typed_config.value["
+                   "envoy.extensions.http.stateful_session.cookie.v3"
+                   ".CookieBasedSessionState].cookie "
+                   "error:field not present]"))
       << status;
 }
 
@@ -1185,14 +1182,13 @@ TEST_P(XdsStatefulSessionFilterConfigTest, CookieNameNotPresent) {
   auto config = GenerateConfig(stateful_session);
   absl::Status status = errors_.status("errors validating filter config");
   ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: [field:",
-                FieldPrefix(),
-                ".session_state.typed_config.value["
-                "envoy.extensions.http.stateful_session.cookie.v3"
-                ".CookieBasedSessionState].cookie.name "
-                "error:field not present]"))
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".session_state.typed_config.value["
+                   "envoy.extensions.http.stateful_session.cookie.v3"
+                   ".CookieBasedSessionState].cookie.name "
+                   "error:field not present]"))
       << status;
 }
 
@@ -1207,14 +1203,13 @@ TEST_P(XdsStatefulSessionFilterConfigTest, InvalidTtl) {
   auto config = GenerateConfig(stateful_session);
   absl::Status status = errors_.status("errors validating filter config");
   ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: [field:",
-                FieldPrefix(),
-                ".session_state.typed_config.value["
-                "envoy.extensions.http.stateful_session.cookie.v3"
-                ".CookieBasedSessionState].cookie.ttl.seconds "
-                "error:value must be in the range [0, 315576000000]]"))
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".session_state.typed_config.value["
+                   "envoy.extensions.http.stateful_session.cookie.v3"
+                   ".CookieBasedSessionState].cookie.ttl.seconds "
+                   "error:value must be in the range [0, 315576000000]]"))
       << status;
 }
 
@@ -1225,13 +1220,12 @@ TEST_P(XdsStatefulSessionFilterConfigTest, UnknownSessionStateType) {
   auto config = GenerateConfig(stateful_session);
   absl::Status status = errors_.status("errors validating filter config");
   ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: [field:",
-                FieldPrefix(),
-                ".session_state.typed_config.value["
-                "envoy.extensions.filters.http.router.v3.Router] "
-                "error:unsupported session state type]"))
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".session_state.typed_config.value["
+                   "envoy.extensions.filters.http.router.v3.Router] "
+                   "error:unsupported session state type]"))
       << status;
 }
 
@@ -1246,15 +1240,14 @@ TEST_P(XdsStatefulSessionFilterConfigTest, TypedStructSessionState) {
   auto config = GenerateConfig(stateful_session);
   absl::Status status = errors_.status("errors validating filter config");
   ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: [field:",
-                FieldPrefix(),
-                ".session_state.typed_config.value["
-                "xds.type.v3.TypedStruct].value["
-                "envoy.extensions.http.stateful_session.cookie.v3"
-                ".CookieBasedSessionState] "
-                "error:could not parse session state config]"))
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".session_state.typed_config.value["
+                   "xds.type.v3.TypedStruct].value["
+                   "envoy.extensions.http.stateful_session.cookie.v3"
+                   ".CookieBasedSessionState] "
+                   "error:could not parse session state config]"))
       << status;
 }
 
@@ -1267,14 +1260,13 @@ TEST_P(XdsStatefulSessionFilterConfigTest, UnparseableSessionState) {
   auto config = GenerateConfig(stateful_session);
   absl::Status status = errors_.status("errors validating filter config");
   ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(status.message(),
-            absl::StrCat(
-                "errors validating filter config: [field:",
-                FieldPrefix(),
-                ".session_state.typed_config.value["
-                "envoy.extensions.http.stateful_session.cookie.v3"
-                ".CookieBasedSessionState] "
-                "error:could not parse session state config]"))
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".session_state.typed_config.value["
+                   "envoy.extensions.http.stateful_session.cookie.v3"
+                   ".CookieBasedSessionState] "
+                   "error:could not parse session state config]"))
       << status;
 }
 
