@@ -43,9 +43,9 @@ bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
 
 grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
                                                        upb_Arena* arena) {
-  size_t buf_size = GRPC_SLICE_LENGTH(slice);
+  size_t buf_size = GPR_SLICE_LENGTH(slice);
   void* buf = upb_Arena_Malloc(arena, buf_size);
-  memcpy(buf, reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+  memcpy(buf, reinterpret_cast<const char*>(GPR_SLICE_START_PTR(slice)),
          buf_size);
   grpc_gcp_HandshakerReq* resp = grpc_gcp_HandshakerReq_parse(
       reinterpret_cast<char*>(buf), buf_size, arena);

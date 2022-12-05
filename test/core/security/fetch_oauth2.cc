@@ -50,7 +50,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
     auto status = grpc::experimental::StsCredentialsOptionsFromJson(
         reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(sts_options_slice)),
         &options);
-    grpc_slice_unref(sts_options_slice);
+    gpr_slice_unref(sts_options_slice);
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
       return nullptr;
@@ -71,7 +71,7 @@ static grpc_call_credentials* create_refresh_token_creds(
   grpc_call_credentials* result = grpc_google_refresh_token_credentials_create(
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(refresh_token),
       nullptr);
-  grpc_slice_unref(refresh_token);
+  gpr_slice_unref(refresh_token);
   return result;
 }
 
