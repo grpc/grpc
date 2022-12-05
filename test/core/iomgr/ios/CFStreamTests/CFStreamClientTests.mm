@@ -25,7 +25,6 @@
 #include <netinet/in.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
