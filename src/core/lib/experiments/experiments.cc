@@ -68,7 +68,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"flow_control_fixes", description_flow_control_fixes,
      kDefaultForDebugOnly},
     {"memory_pressure_controller", description_memory_pressure_controller,
-     false},
+     true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
