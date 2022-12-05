@@ -39,7 +39,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
-#include "hpack_constants.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -1196,17 +1195,16 @@ class HPackParser::Parser {
         : summary_(summary) {}
 
     void Encode(const Slice& key, const Slice& value) {
-      absl::StrAppend(
-          &summary_, " ", key.as_string_view(), ":",
-          grpc_core::hpack_constants::SizeForEntry(key.size(), value.size()),
-          "B");
+      absl::StrAppend(&summary_, " ", key.as_string_view(), ":",
+                      hpack_constants::SizeForEntry(key.size(), value.size()),
+                      "B");
     }
 
     template <typename Key, typename Value>
     void Encode(Key key, const Value& value) {
       absl::StrAppend(&summary_, " ", Key::key(), ":",
-                      grpc_core::hpack_constants::SizeForEntry(
-                          Key::key().size(), Key::Encode(value).size()),
+                      hpack_constants::SizeForEntry(Key::key().size(),
+                                                    Key::Encode(value).size()),
                       "B");
     }
 
