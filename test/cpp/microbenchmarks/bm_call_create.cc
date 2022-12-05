@@ -53,10 +53,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 void BM_Zalloc(benchmark::State& state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
   // sizes
@@ -540,6 +536,10 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   TestOp test_op_data;
   const int kArenaSize = 32 * 1024 * 1024;
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_call_element_args call_args{
       call_stack,
       nullptr,
@@ -547,7 +547,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       method,
       start_time,
       deadline,
-      grpc_core::Arena::Create(kArenaSize, g_memory_allocator),
+      grpc_core::Arena::Create(kArenaSize, &memory_allocator),
       nullptr};
   while (state.KeepRunning()) {
     (void)grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr,
@@ -559,8 +559,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     // recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
       call_args.arena->Destroy();
-      call_args.arena =
-          grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
+      call_args.arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
     }
   }
   call_args.arena->Destroy();

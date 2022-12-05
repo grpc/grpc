@@ -41,10 +41,6 @@
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 grpc_core::HPackCompressor* g_compressor;
 
 typedef struct {
@@ -158,7 +154,11 @@ grpc_slice EncodeHeaderIntoBytes(
   std::unique_ptr<grpc_core::HPackCompressor> compressor =
       std::make_unique<grpc_core::HPackCompressor>();
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
 
   for (const auto& field : header_fields) {
@@ -303,7 +303,11 @@ TEST(HpackEncoderTest, UserAgentMetadataNoIndexing) {
 
 static void verify_continuation_headers(const char* key, const char* value,
                                         bool is_eof) {
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_slice_buffer output;
   grpc_metadata_batch b(arena.get());
   b.Append(key, grpc_core::Slice::FromStaticString(value), CrashOnAppendError);

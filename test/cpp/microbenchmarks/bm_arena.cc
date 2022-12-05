@@ -28,19 +28,23 @@
 
 using grpc_core::Arena;
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 static void BM_Arena_NoOp(benchmark::State& state) {
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   for (auto _ : state) {
-    Arena::Create(state.range(0), g_memory_allocator)->Destroy();
+    Arena::Create(state.range(0), &memory_allocator)->Destroy();
   }
 }
 BENCHMARK(BM_Arena_NoOp)->Range(1, 1024 * 1024);
 
 static void BM_Arena_ManyAlloc(benchmark::State& state) {
-  Arena* a = Arena::Create(state.range(0), g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  Arena* a = Arena::Create(state.range(0), &memory_allocator);
   const size_t realloc_after =
       1024 * 1024 * 1024 / ((state.range(1) + 15) & 0xffffff0u);
   while (state.KeepRunning()) {
@@ -48,7 +52,7 @@ static void BM_Arena_ManyAlloc(benchmark::State& state) {
     // periodically recreate arena to avoid OOM
     if (state.iterations() % realloc_after == 0) {
       a->Destroy();
-      a = Arena::Create(state.range(0), g_memory_allocator);
+      a = Arena::Create(state.range(0), &memory_allocator);
     }
   }
   a->Destroy();
@@ -56,8 +60,12 @@ static void BM_Arena_ManyAlloc(benchmark::State& state) {
 BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
 static void BM_Arena_Batch(benchmark::State& state) {
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   for (auto _ : state) {
-    Arena* a = Arena::Create(state.range(0), g_memory_allocator);
+    Arena* a = Arena::Create(state.range(0), &memory_allocator);
     for (int i = 0; i < state.range(1); i++) {
       a->Alloc(state.range(2));
     }
