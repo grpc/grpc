@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_AFFINITY_STATEFUL_SESSION_AFFINITY_SERVICE_CONFIG_PARSER_H
-#define GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_AFFINITY_STATEFUL_SESSION_AFFINITY_SERVICE_CONFIG_PARSER_H
+#ifndef GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_SERVICE_CONFIG_PARSER_H
+#define GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -38,12 +38,12 @@
 #include "src/core/lib/service_config/service_config_parser.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_STATEFUL_SESSION_AFFINITY_METHOD_CONFIG \
-  "grpc.internal.parse_stateful_session_affinity_method_config"
+#define GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG \
+  "grpc.internal.parse_stateful_session_method_config"
 
 namespace grpc_core {
 
-class StatefulSessionAffinityMethodParsedConfig
+class StatefulSessionMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
   struct CookieConfig {
@@ -56,10 +56,10 @@ class StatefulSessionAffinityMethodParsedConfig
   };
 
   // Returns the config at the specified index.  There might be multiple
-  // stateful session affinity filters in the list of HTTP filters at the
-  // same time.  The order of the list is stable, and an index is used to
-  // keep track of their relative positions.  Each filter instance uses this
-  // method to access the appropriate parsed config for that instance.
+  // stateful session filters in the list of HTTP filters at the same time.
+  // The order of the list is stable, and an index is used to keep track of
+  // their relative positions.  Each filter instance uses this method to
+  // access the appropriate parsed config for that instance.
   const CookieConfig* GetConfig(size_t index) const {
     if (index >= configs_.size()) return nullptr;
     return &configs_[index];
@@ -71,7 +71,7 @@ class StatefulSessionAffinityMethodParsedConfig
   std::vector<CookieConfig> configs_;
 };
 
-class StatefulSessionAffinityServiceConfigParser final
+class StatefulSessionServiceConfigParser final
     : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
@@ -85,9 +85,9 @@ class StatefulSessionAffinityServiceConfigParser final
   static void Register(CoreConfiguration::Builder* builder);
 
  private:
-  static absl::string_view parser_name() { return "stateful_session_affinity"; }
+  static absl::string_view parser_name() { return "stateful_session"; }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_AFFINITY_STATEFUL_SESSION_AFFINITY_SERVICE_CONFIG_PARSER_H
+#endif  // GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_SERVICE_CONFIG_PARSER_H
