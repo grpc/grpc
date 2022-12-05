@@ -58,8 +58,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    FAIL();
+    FAIL() << "Error: " << uri.status().ToString();
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
@@ -78,8 +77,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    FAIL();
+    FAIL() << "Error: " << uri.status().ToString();
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);

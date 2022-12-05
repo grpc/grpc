@@ -135,6 +135,7 @@ void PollingResolver::MaybeCancelNextResolutionTimer() {
     }
     channel_args_.GetObject<EventEngine>()->Cancel(
         *next_resolution_timer_handle_);
+    next_resolution_timer_handle_.reset();
   }
 }
 
