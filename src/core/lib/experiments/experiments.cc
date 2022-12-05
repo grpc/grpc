@@ -63,7 +63,6 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-<<<<<<< HEAD
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
     {"tcp_read_chunks", description_tcp_read_chunks, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
@@ -82,26 +81,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"posix_event_engine_enable_polling",
      description_posix_event_engine_enable_polling, true},
     {"free_large_allocator", description_free_large_allocator, false},
-=======
-    {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_read_chunks", description_tcp_read_chunks, true},
-    {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
-    {"peer_state_based_framing", description_peer_state_based_framing, false},
-    {"flow_control_fixes", description_flow_control_fixes,
-     kDefaultForDebugOnly},
-    {"memory_pressure_controller", description_memory_pressure_controller,
-     false},
-    {"unconstrained_max_quota_buffer_size",
-     description_unconstrained_max_quota_buffer_size, false},
-    {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
-     kDefaultForDebugOnly},
-    {"event_engine_client", description_event_engine_client, false},
-    {"monitoring_experiment", description_monitoring_experiment, true},
-    {"promise_based_client_call", description_promise_based_client_call, false},
-    {"posix_event_engine_enable_polling",
-     description_posix_event_engine_enable_polling, kDefaultForDebugOnly},
-    {"free_large_allocator", description_free_large_allocator, false},
->>>>>>> d271e4f9ab1fecb5c1968fa3ab6cfaf471bce364
 };
 
 }  // namespace grpc_core
