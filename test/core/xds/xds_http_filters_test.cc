@@ -41,8 +41,8 @@
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
-#include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h"
-#include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
@@ -962,7 +962,7 @@ TEST_F(XdsStatefulSessionFilterTest, Accessors) {
   EXPECT_EQ(filter_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.stateful_session.v3"
             ".StatefulSessionPerRoute");
-  EXPECT_EQ(filter_->channel_filter(), &StatefulSessionAffinityFilter::kFilter);
+  EXPECT_EQ(filter_->channel_filter(), &StatefulSessionFilter::kFilter);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
@@ -970,8 +970,7 @@ TEST_F(XdsStatefulSessionFilterTest, Accessors) {
 
 TEST_F(XdsStatefulSessionFilterTest, ModifyChannelArgs) {
   ChannelArgs args = filter_->ModifyChannelArgs(ChannelArgs());
-  auto value =
-      args.GetInt(GRPC_ARG_PARSE_STATEFUL_SESSION_AFFINITY_METHOD_CONFIG);
+  auto value = args.GetInt(GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(*value, 1);
 }

@@ -1029,8 +1029,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
-    src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.cc \
-    src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.cc \
+    src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -1365,7 +1365,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_http_rbac_filter.cc \
-    src/core/ext/xds/xds_http_stateful_session_affinity_filter.cc \
+    src/core/ext/xds/xds_http_stateful_session_filter.cc \
     src/core/ext/xds/xds_lb_policy_registry.cc \
     src/core/ext/xds/xds_listener.cc \
     src/core/ext/xds/xds_route_config.cc \
@@ -2917,8 +2917,8 @@ src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
-src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.cc: $(OPENSSL_DEP)
-src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_filter.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/alpn/alpn.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c: $(OPENSSL_DEP)
@@ -3205,7 +3205,7 @@ src/core/ext/xds/xds_endpoint.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_fault_filter.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_rbac_filter.cc: $(OPENSSL_DEP)
-src/core/ext/xds/xds_http_stateful_session_affinity_filter.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_http_stateful_session_filter.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_lb_policy_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_listener.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_route_config.cc: $(OPENSSL_DEP)

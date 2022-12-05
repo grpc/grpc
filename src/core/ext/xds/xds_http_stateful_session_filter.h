@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_AFFINITY_FILTER_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_AFFINITY_FILTER_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H
+#define GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,7 +33,7 @@
 
 namespace grpc_core {
 
-class XdsHttpStatefulSessionAffinityFilter : public XdsHttpFilterImpl {
+class XdsHttpStatefulSessionFilter : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
@@ -55,4 +55,4 @@ class XdsHttpStatefulSessionAffinityFilter : public XdsHttpFilterImpl {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_AFFINITY_FILTER_H
+#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H

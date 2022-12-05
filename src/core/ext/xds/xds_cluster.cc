@@ -75,7 +75,7 @@ bool XdsCustomLbPolicyEnabled() {
 }
 
 // TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool XdsOverrideHostEnabled() {
+bool XdsHostOverrideEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
   if (!value.has_value()) return false;
   bool parsed_value;

@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_http_stateful_session_affinity_filter.h"
+#include "src/core/ext/xds/xds_http_stateful_session_filter.h"
 
 #include <stdint.h>
 
@@ -39,8 +39,8 @@
 
 #include <grpc/status.h>
 
-#include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h"
-#include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -53,19 +53,17 @@
 
 namespace grpc_core {
 
-absl::string_view XdsHttpStatefulSessionAffinityFilter::ConfigProtoName()
-    const {
+absl::string_view XdsHttpStatefulSessionFilter::ConfigProtoName() const {
   return "envoy.extensions.filters.http.stateful_session.v3.StatefulSession";
 }
 
-absl::string_view
-XdsHttpStatefulSessionAffinityFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpStatefulSessionFilter::OverrideConfigProtoName()
+    const {
   return "envoy.extensions.filters.http.stateful_session.v3"
          ".StatefulSessionPerRoute";
 }
 
-void XdsHttpStatefulSessionAffinityFilter::PopulateSymtab(
-    upb_DefPool* symtab) const {
+void XdsHttpStatefulSessionFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_stateful_session_v3_StatefulSession_getmsgdef(
       symtab);
   envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_getmsgdef(
@@ -150,7 +148,7 @@ Json::Object ValidateStatefulSession(
 }  // namespace
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpStatefulSessionAffinityFilter::GenerateFilterConfig(
+XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -173,7 +171,7 @@ XdsHttpStatefulSessionAffinityFilter::GenerateFilterConfig(
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpStatefulSessionAffinityFilter::GenerateFilterConfigOverride(
+XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -206,18 +204,18 @@ XdsHttpStatefulSessionAffinityFilter::GenerateFilterConfigOverride(
   return FilterConfig{OverrideConfigProtoName(), Json(std::move(config))};
 }
 
-const grpc_channel_filter*
-XdsHttpStatefulSessionAffinityFilter::channel_filter() const {
-  return &StatefulSessionAffinityFilter::kFilter;
+const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
+    const {
+  return &StatefulSessionFilter::kFilter;
 }
 
-ChannelArgs XdsHttpStatefulSessionAffinityFilter::ModifyChannelArgs(
+ChannelArgs XdsHttpStatefulSessionFilter::ModifyChannelArgs(
     const ChannelArgs& args) const {
-  return args.Set(GRPC_ARG_PARSE_STATEFUL_SESSION_AFFINITY_METHOD_CONFIG, 1);
+  return args.Set(GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG, 1);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpStatefulSessionAffinityFilter::GenerateServiceConfig(
+XdsHttpStatefulSessionFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   Json config = filter_config_override != nullptr

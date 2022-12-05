@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_AFFINITY_STATEFUL_SESSION_AFFINITY_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_AFFINITY_STATEFUL_SESSION_AFFINITY_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -37,11 +37,11 @@ namespace grpc_core {
 UniqueTypeName XdsHostOverrideTypeName();
 
 // A filter to provide cookie-based stateful session affinity.
-class StatefulSessionAffinityFilter : public ChannelFilter {
+class StatefulSessionFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<StatefulSessionAffinityFilter> Create(
+  static absl::StatusOr<StatefulSessionFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
@@ -49,7 +49,7 @@ class StatefulSessionAffinityFilter : public ChannelFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  explicit StatefulSessionAffinityFilter(ChannelFilter::Args filter_args);
+  explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
 
   absl::optional<absl::string_view> GetHostOverrideFromCookie(
       const ClientMetadataHandle& initial_metadata,
@@ -63,4 +63,4 @@ class StatefulSessionAffinityFilter : public ChannelFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_AFFINITY_STATEFUL_SESSION_AFFINITY_FILTER_H
+#endif  // GRPC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H

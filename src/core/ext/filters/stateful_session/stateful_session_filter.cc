@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 
 #include <string.h>
 
@@ -39,7 +39,7 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -58,39 +58,34 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_stateful_session_affinity_filter_trace(
-    false, "stateful_session_affinity_filter");
+TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 
 UniqueTypeName XdsHostOverrideTypeName() {
   static UniqueTypeName::Factory kFactory("xds_host_override");
   return kFactory.Create();
 }
 
-const grpc_channel_filter StatefulSessionAffinityFilter::kFilter =
-    MakePromiseBasedFilter<StatefulSessionAffinityFilter,
-                           FilterEndpoint::kClient>(
-        "stateful_session_affinity_filter");
+const grpc_channel_filter StatefulSessionFilter::kFilter =
+    MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient>(
+        "stateful_session_filter");
 
-absl::StatusOr<StatefulSessionAffinityFilter>
-StatefulSessionAffinityFilter::Create(const ChannelArgs&,
-                                      ChannelFilter::Args filter_args) {
-  return StatefulSessionAffinityFilter(filter_args);
+absl::StatusOr<StatefulSessionFilter> StatefulSessionFilter::Create(
+    const ChannelArgs&, ChannelFilter::Args filter_args) {
+  return StatefulSessionFilter(filter_args);
 }
 
-StatefulSessionAffinityFilter::StatefulSessionAffinityFilter(
-    ChannelFilter::Args filter_args)
+StatefulSessionFilter::StatefulSessionFilter(ChannelFilter::Args filter_args)
     : index_(grpc_channel_stack_filter_instance_number(
           filter_args.channel_stack(),
           filter_args.uninitialized_channel_element())),
       service_config_parser_index_(
-          StatefulSessionAffinityServiceConfigParser::ParserIndex()) {}
+          StatefulSessionServiceConfigParser::ParserIndex()) {}
 
 namespace {
 
 // Adds the set-cookie header to the server initial metadata if needed.
 void MaybeUpdateServerInitialMetadata(
-    const StatefulSessionAffinityMethodParsedConfig::CookieConfig*
-        cookie_config,
+    const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config,
     absl::optional<absl::string_view> cookie_value,
     ServerMetadata* server_initial_metadata) {
   // Get peer string.
@@ -101,8 +96,8 @@ void MaybeUpdateServerInitialMetadata(
     std::vector<std::string> parts = {
         absl::StrCat(*cookie_config->name, "=",
                      absl::Base64Escape(*peer_string), "; HttpOnly")};
-    if (cookie_config->path.has_value()) {
-      parts.emplace_back(absl::StrCat("Path=", *cookie_config->path));
+    if (!cookie_config->path.empty()) {
+      parts.emplace_back(absl::StrCat("Path=", cookie_config->path));
     }
     if (cookie_config->ttl > Duration::Zero()) {
       parts.emplace_back(
@@ -121,8 +116,7 @@ void MaybeUpdateServerInitialMetadata(
 }  // namespace
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle>
-StatefulSessionAffinityFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   // Get config.
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
@@ -130,7 +124,7 @@ StatefulSessionAffinityFilter::MakeCallPromise(
           grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
           .value);
   GPR_ASSERT(service_config_call_data != nullptr);
-  auto* method_params = static_cast<StatefulSessionAffinityMethodParsedConfig*>(
+  auto* method_params = static_cast<StatefulSessionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           service_config_parser_index_));
   GPR_ASSERT(method_params != nullptr);
@@ -141,17 +135,17 @@ StatefulSessionAffinityFilter::MakeCallPromise(
   }
   // We have a config.
   // If the config has a path, check to see if it matches the request path.
-  if (cookie_config->path.has_value()) {
+  if (!cookie_config->path.empty()) {
     Slice* path_slice =
         call_args.client_initial_metadata->get_pointer(HttpPathMetadata());
     GPR_ASSERT(path_slice != nullptr);
     absl::string_view path = path_slice->as_string_view();
     // Matching criteria from
     // https://www.rfc-editor.org/rfc/rfc6265#section-5.1.4.
-    if (!absl::StartsWith(path, *cookie_config->path) ||
-        (path.size() != cookie_config->path->size() &&
-         cookie_config->path->back() != '/' &&
-         path[cookie_config->path->size() + 1] != '/')) {
+    if (!absl::StartsWith(path, cookie_config->path) ||
+        (path.size() != cookie_config->path.size() &&
+         cookie_config->path.back() != '/' &&
+         path[cookie_config->path.size() + 1] != '/')) {
       return next_promise_factory(std::move(call_args));
     }
   }
@@ -159,9 +153,9 @@ StatefulSessionAffinityFilter::MakeCallPromise(
   auto cookie_value = GetHostOverrideFromCookie(
       call_args.client_initial_metadata, *cookie_config->name);
   if (cookie_value.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_stateful_session_affinity_filter_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_stateful_session_filter_trace)) {
       gpr_log(GPR_INFO,
-              "chand=%p: stateful session affinity found cookie %s value %s",
+              "chand=%p: stateful session filter found cookie %s value %s",
               this, cookie_config->name->c_str(),
               std::string(*cookie_value).c_str());
     }
@@ -194,7 +188,7 @@ StatefulSessionAffinityFilter::MakeCallPromise(
 }
 
 absl::optional<absl::string_view>
-StatefulSessionAffinityFilter::GetHostOverrideFromCookie(
+StatefulSessionFilter::GetHostOverrideFromCookie(
     const ClientMetadataHandle& client_initial_metadata,
     absl::string_view cookie_name) {
   // Check to see if the cookie header is present.
@@ -223,9 +217,8 @@ StatefulSessionAffinityFilter::GetHostOverrideFromCookie(
   return absl::string_view(arena_value, decoded_value.size());
 }
 
-void StatefulSessionAffinityFilterRegister(
-    CoreConfiguration::Builder* builder) {
-  StatefulSessionAffinityServiceConfigParser::Register(builder);
+void StatefulSessionFilterRegister(CoreConfiguration::Builder* builder) {
+  StatefulSessionServiceConfigParser::Register(builder);
 }
 
 }  // namespace grpc_core

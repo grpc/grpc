@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 
 #include <vector>
 
@@ -27,8 +27,7 @@
 namespace grpc_core {
 
 const JsonLoaderInterface*
-StatefulSessionAffinityMethodParsedConfig::CookieConfig::JsonLoader(
-    const JsonArgs&) {
+StatefulSessionMethodParsedConfig::CookieConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader = JsonObjectLoader<CookieConfig>()
                                   .OptionalField("name", &CookieConfig::name)
                                   .OptionalField("path", &CookieConfig::path)
@@ -37,7 +36,7 @@ StatefulSessionAffinityMethodParsedConfig::CookieConfig::JsonLoader(
   return loader;
 }
 
-void StatefulSessionAffinityMethodParsedConfig::CookieConfig::JsonPostLoad(
+void StatefulSessionMethodParsedConfig::CookieConfig::JsonPostLoad(
     const Json&, const JsonArgs&, ValidationErrors* errors) {
   // Validate that cookie_name is non-empty.
   if (name.has_value() && name->empty()) {
@@ -46,37 +45,36 @@ void StatefulSessionAffinityMethodParsedConfig::CookieConfig::JsonPostLoad(
   }
 }
 
-const JsonLoaderInterface*
-StatefulSessionAffinityMethodParsedConfig::JsonLoader(const JsonArgs&) {
+const JsonLoaderInterface* StatefulSessionMethodParsedConfig::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
-      JsonObjectLoader<StatefulSessionAffinityMethodParsedConfig>()
+      JsonObjectLoader<StatefulSessionMethodParsedConfig>()
           .OptionalField("stateful_session",
-                         &StatefulSessionAffinityMethodParsedConfig::configs_)
+                         &StatefulSessionMethodParsedConfig::configs_)
           .Finish();
   return loader;
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-StatefulSessionAffinityServiceConfigParser::ParsePerMethodParams(
+StatefulSessionServiceConfigParser::ParsePerMethodParams(
     const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
   // Only parse config if the following channel arg is present.
-  if (!args.GetBool(GRPC_ARG_PARSE_STATEFUL_SESSION_AFFINITY_METHOD_CONFIG)
+  if (!args.GetBool(GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG)
            .value_or(false)) {
     return nullptr;
   }
   // Parse config from json.
-  return LoadFromJson<
-      std::unique_ptr<StatefulSessionAffinityMethodParsedConfig>>(
+  return LoadFromJson<std::unique_ptr<StatefulSessionMethodParsedConfig>>(
       json, JsonArgs(), errors);
 }
 
-void StatefulSessionAffinityServiceConfigParser::Register(
+void StatefulSessionServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      std::make_unique<StatefulSessionAffinityServiceConfigParser>());
+      std::make_unique<StatefulSessionServiceConfigParser>());
 }
 
-size_t StatefulSessionAffinityServiceConfigParser::ParserIndex() {
+size_t StatefulSessionServiceConfigParser::ParserIndex() {
   return CoreConfiguration::Get().service_config_parser().GetParserIndex(
       parser_name());
 }

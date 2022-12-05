@@ -3348,14 +3348,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_stateful_session_affinity_filter",
+    name = "grpc_stateful_session_filter",
     srcs = [
-        "ext/filters/stateful_session_affinity/stateful_session_affinity_filter.cc",
-        "ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.cc",
+        "ext/filters/stateful_session/stateful_session_filter.cc",
+        "ext/filters/stateful_session/stateful_session_service_config_parser.cc",
     ],
     hdrs = [
-        "ext/filters/stateful_session_affinity/stateful_session_affinity_filter.h",
-        "ext/filters/stateful_session_affinity/stateful_session_affinity_service_config_parser.h",
+        "ext/filters/stateful_session/stateful_session_filter.h",
+        "ext/filters/stateful_session/stateful_session_service_config_parser.h",
     ],
     external_deps = [
         "absl/status",
@@ -3564,7 +3564,7 @@ grpc_cc_library(
         "ext/xds/xds_http_fault_filter.cc",
         "ext/xds/xds_http_filters.cc",
         "ext/xds/xds_http_rbac_filter.cc",
-        "ext/xds/xds_http_stateful_session_affinity_filter.cc",
+        "ext/xds/xds_http_stateful_session_filter.cc",
         "ext/xds/xds_lb_policy_registry.cc",
         "ext/xds/xds_listener.cc",
         "ext/xds/xds_route_config.cc",
@@ -3585,7 +3585,7 @@ grpc_cc_library(
         "ext/xds/xds_http_fault_filter.h",
         "ext/xds/xds_http_filters.h",
         "ext/xds/xds_http_rbac_filter.h",
-        "ext/xds/xds_http_stateful_session_affinity_filter.h",
+        "ext/xds/xds_http_stateful_session_filter.h",
         "ext/xds/xds_lb_policy_registry.h",
         "ext/xds/xds_listener.h",
         "ext/xds/xds_route_config.h",
@@ -3669,7 +3669,7 @@ grpc_cc_library(
         "grpc_outlier_detection_header",
         "grpc_rbac_filter",
         "grpc_sockaddr",
-        "grpc_stateful_session_affinity_filter",
+        "grpc_stateful_session_filter",
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",

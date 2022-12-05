@@ -527,7 +527,7 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_resolver_xds",
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
-    "//src/core:grpc_stateful_session_affinity_filter",
+    "//src/core:grpc_stateful_session_filter",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
