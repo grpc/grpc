@@ -77,7 +77,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
     {"posix_event_engine_enable_polling",
-     description_posix_event_engine_enable_polling, kDefaultForDebugOnly},
+     description_posix_event_engine_enable_polling, true},
 };
 
 }  // namespace grpc_core
