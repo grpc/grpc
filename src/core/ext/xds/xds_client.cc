@@ -1477,7 +1477,8 @@ XdsClient::XdsClient(
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
   GPR_ASSERT(bootstrap_ != nullptr);
-  gpr_log(GPR_INFO, "[xds_client %p] creating xds client with node ID: %s", this, bootstrap_->node()->id().c_str());
+  gpr_log(GPR_INFO, "[xds_client %p] creating xds client with node ID: %s",
+          this, bootstrap_->node()->id().c_str());
 }
 
 XdsClient::~XdsClient() {
