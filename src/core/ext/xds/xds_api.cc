@@ -58,36 +58,15 @@
 
 namespace grpc_core {
 
-// If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
-// will be appended to the user agent name reported to the xDS server.
-#ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
-#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING \
-  " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
-#else
-#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING ""
-#endif
-
-// If gRPC is built with -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="...", that string
-// will be appended to the user agent version reported to the xDS server.
-#ifdef GRPC_XDS_USER_AGENT_VERSION_SUFFIX
-#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING \
-  " " GRPC_XDS_USER_AGENT_VERSION_SUFFIX
-#else
-#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING ""
-#endif
-
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node, upb::SymbolTable* symtab)
+               const XdsBootstrap::Node* node, upb::SymbolTable* symtab,
+               std::string user_agent_name, std::string user_agent_version)
     : client_(client),
       tracer_(tracer),
       node_(node),
       symtab_(symtab),
-      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
-                                    GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING)),
-      user_agent_version_(
-          absl::StrCat("C-core ", grpc_version_string(),
-                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
-                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {}
+      user_agent_name_(user_agent_name),
+      user_agent_version_(user_agent_version) {}
 
 namespace {
 

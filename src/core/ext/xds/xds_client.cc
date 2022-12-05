@@ -1463,6 +1463,7 @@ XdsClient::XdsClient(
     std::unique_ptr<XdsBootstrap> bootstrap,
     OrphanablePtr<XdsTransportFactory> transport_factory,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+    std::string user_agent_name, std::string user_agent_version,
     Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
@@ -1471,7 +1472,8 @@ XdsClient::XdsClient(
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_),
+      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_,
+           user_agent_name, user_agent_version),
       engine_(std::move(engine)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
