@@ -171,14 +171,20 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
   return TryConcurrently(
              Seq(next_promise_factory(std::move(call_args)),
                  [cookie_config, cookie_value](ServerMetadataHandle md) {
-                   MaybeUpdateServerInitialMetadata(cookie_config, cookie_value,
-                                                    md.get());
+                   // If we got a Trailers-Only response, then add the
+                   // cookie to the trailing metadata instead of the
+                   // initial metadata.
+                   if (md->get(GrpcTrailersOnly()).value_or(false)) {
+                     MaybeUpdateServerInitialMetadata(cookie_config,
+                                                      cookie_value, md.get());
+                   }
                    return md;
                  }))
       .NecessaryPull(Seq(read_latch->Wait(),
                          [write_latch, cookie_config,
                           cookie_value](ServerMetadata** md) -> absl::Status {
                            if (*md != nullptr) {
+                             // Add cookie to server initial metadata if needed.
                              MaybeUpdateServerInitialMetadata(
                                  cookie_config, cookie_value, *md);
                            }
