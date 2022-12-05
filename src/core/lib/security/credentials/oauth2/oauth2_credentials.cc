@@ -37,6 +37,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -528,7 +529,7 @@ void MaybeAddToBody(const char* field_name, const char* field,
   body->push_back(absl::StrFormat("&%s=%s", field_name, field));
 }
 
-grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
+grpc_error_handle LoadTokenFile(const char* path, gpr_slice* token) {
   grpc_error_handle err = grpc_load_file(path, 1, token);
   if (!err.ok()) return err;
   if (GRPC_SLICE_LENGTH(*token) == 0) {

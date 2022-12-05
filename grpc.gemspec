@@ -73,6 +73,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/compression_types.h )
   s.files += %w( include/grpc/impl/codegen/connectivity_state.h )
   s.files += %w( include/grpc/impl/codegen/fork.h )
+  s.files += %w( include/grpc/impl/codegen/gpr_slice.h )
   s.files += %w( include/grpc/impl/codegen/gpr_types.h )
   s.files += %w( include/grpc/impl/codegen/grpc_types.h )
   s.files += %w( include/grpc/impl/codegen/log.h )
