@@ -207,7 +207,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
       other->on_read != nullptr ? other->on_read_out : &other->read_buffer;
   while (max_writable > 0) {
     grpc_slice slice = grpc_slice_buffer_take_first(slices);
-    uint64_t slice_length = GRPC_SLICE_LENGTH(slice);
+    uint64_t slice_length = GPR_SLICE_LENGTH(slice);
     GPR_ASSERT(slice_length > 0);
     grpc_slice split1, split2;
     uint64_t split_length = 0;
@@ -230,7 +230,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     // Write a copy of the slice to the destination to be read
     grpc_slice_buffer_add_indexed(dest, split1);
     // Re-insert split2 into source for next iteration.
-    if (GRPC_SLICE_LENGTH(split2) > 0) {
+    if (GPR_SLICE_LENGTH(split2) > 0) {
       grpc_slice_buffer_undo_take_first(slices, split2);
     } else {
       grpc_slice_unref(split2);
@@ -277,7 +277,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     m->pending_write_op.slices = &m->write_buffer;
     GPR_ASSERT(m->pending_write_op.slices->count == 0);
     for (int i = 0; i < static_cast<int>(slices->count); i++) {
-      if (GRPC_SLICE_LENGTH(slices->slices[i]) > 0) {
+      if (GPR_SLICE_LENGTH(slices->slices[i]) > 0) {
         grpc_slice_buffer_add_indexed(m->pending_write_op.slices,
                                       grpc_slice_copy(slices->slices[i]));
       }
