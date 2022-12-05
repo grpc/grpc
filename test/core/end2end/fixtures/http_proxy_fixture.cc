@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
@@ -41,6 +42,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -67,7 +69,8 @@ struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
       : server(nullptr), channel_args(nullptr), mu(nullptr), combiner(nullptr) {
     gpr_ref_init(&users, 1);
-    combiner = grpc_combiner_create();
+    combiner = grpc_combiner_create(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
   }
   std::string proxy_name;
   grpc_core::Thread thd;
@@ -221,8 +224,16 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   conn->client_is_writing = false;
   if (!error.ok()) {
+    conn->client_write_failed = true;
     proxy_connection_failed(conn, CLIENT_WRITE_FAILED,
                             "HTTP proxy client write", error);
+    return;
+  }
+  if (conn->server_read_failed) {
+    grpc_endpoint_shutdown(conn->client_endpoint,
+                           absl::UnknownError("Client shutdown"));
+    // No more writes.  Unref the connection.
+    proxy_connection_unref(conn, "client_write");
     return;
   }
   // Clear write buffer (the data we just wrote).
@@ -256,8 +267,17 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   conn->server_is_writing = false;
   if (!error.ok()) {
+    conn->server_write_failed = true;
     proxy_connection_failed(conn, SERVER_WRITE_FAILED,
                             "HTTP proxy server write", error);
+    return;
+  }
+
+  if (conn->client_read_failed) {
+    grpc_endpoint_shutdown(conn->server_endpoint,
+                           absl::UnknownError("Server shutdown"));
+    // No more writes.  Unref the connection.
+    proxy_connection_unref(conn, "server_write");
     return;
   }
   // Clear write buffer (the data we just wrote).
@@ -291,6 +311,7 @@ static void on_server_write_done(void* arg, grpc_error_handle error) {
 static void on_client_read_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   if (!error.ok()) {
+    conn->client_read_failed = true;
     proxy_connection_failed(conn, CLIENT_READ_FAILED, "HTTP proxy client read",
                             error);
     return;
@@ -335,6 +356,7 @@ static void on_client_read_done(void* arg, grpc_error_handle error) {
 static void on_server_read_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   if (!error.ok()) {
+    conn->server_read_failed = true;
     proxy_connection_failed(conn, SERVER_READ_FAILED, "HTTP proxy server read",
                             error);
     return;
