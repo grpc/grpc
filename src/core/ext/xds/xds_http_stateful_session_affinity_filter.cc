@@ -97,7 +97,6 @@ Json::Object ValidateStatefulSession(
   if (extension->type !=
       "envoy.extensions.http.stateful_session.cookie.v3"
       ".CookieBasedSessionState") {
-    ValidationErrors::ScopedField field(errors, ".type_url");
     errors->AddError("unsupported session state type");
     return {};
   }
@@ -224,7 +223,7 @@ XdsHttpStatefulSessionAffinityFilter::GenerateServiceConfig(
   Json config = filter_config_override != nullptr
                     ? filter_config_override->config
                     : hcm_filter_config.config;
-  return ServiceConfigJsonEntry{"faultInjectionPolicy", config.Dump()};
+  return ServiceConfigJsonEntry{"stateful_session", config.Dump()};
 }
 
 }  // namespace grpc_core

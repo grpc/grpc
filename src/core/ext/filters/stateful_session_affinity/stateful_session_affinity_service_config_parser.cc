@@ -50,7 +50,7 @@ const JsonLoaderInterface*
 StatefulSessionAffinityMethodParsedConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<StatefulSessionAffinityMethodParsedConfig>()
-          .OptionalField("statefulSessionAffinity",
+          .OptionalField("stateful_session",
                          &StatefulSessionAffinityMethodParsedConfig::configs_)
           .Finish();
   return loader;
