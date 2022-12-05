@@ -96,8 +96,8 @@ void MaybeUpdateServerInitialMetadata(
     std::vector<std::string> parts = {
         absl::StrCat(*cookie_config->name, "=",
                      absl::Base64Escape(*peer_string), "; HttpOnly")};
-    if (cookie_config->path.has_value()) {
-      parts.emplace_back(absl::StrCat("Path=", *cookie_config->path));
+    if (!cookie_config->path.empty()) {
+      parts.emplace_back(absl::StrCat("Path=", cookie_config->path));
     }
     if (cookie_config->ttl > Duration::Zero()) {
       parts.emplace_back(
@@ -135,17 +135,17 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
   }
   // We have a config.
   // If the config has a path, check to see if it matches the request path.
-  if (cookie_config->path.has_value()) {
+  if (!cookie_config->path.empty()) {
     Slice* path_slice =
         call_args.client_initial_metadata->get_pointer(HttpPathMetadata());
     GPR_ASSERT(path_slice != nullptr);
     absl::string_view path = path_slice->as_string_view();
     // Matching criteria from
     // https://www.rfc-editor.org/rfc/rfc6265#section-5.1.4.
-    if (!absl::StartsWith(path, *cookie_config->path) ||
-        (path.size() != cookie_config->path->size() &&
-         cookie_config->path->back() != '/' &&
-         path[cookie_config->path->size() + 1] != '/')) {
+    if (!absl::StartsWith(path, cookie_config->path) ||
+        (path.size() != cookie_config->path.size() &&
+         cookie_config->path.back() != '/' &&
+         path[cookie_config->path.size() + 1] != '/')) {
       return next_promise_factory(std::move(call_args));
     }
   }

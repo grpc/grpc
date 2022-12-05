@@ -48,7 +48,7 @@ class StatefulSessionMethodParsedConfig
  public:
   struct CookieConfig {
     absl::optional<std::string> name;  // Will be unset if disabled.
-    absl::optional<std::string> path;
+    std::string path;
     Duration ttl;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
