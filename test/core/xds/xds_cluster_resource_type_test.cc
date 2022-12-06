@@ -153,8 +153,9 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "");
+  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  ASSERT_NE(eds, nullptr);
+  EXPECT_EQ(eds->eds_service_name, "");
   // Check defaults.
   EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
             "[{\"xds_wrr_locality_experimental\":{\"childPolicy\":"
@@ -184,8 +185,9 @@ TEST_F(ClusterTypeTest, EdsConfigSourceAds) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "");
+  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  ASSERT_NE(eds, nullptr);
+  EXPECT_EQ(eds->eds_service_name, "");
 }
 
 TEST_F(ClusterTypeTest, EdsServiceName) {
@@ -204,8 +206,9 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.EDS);
-  EXPECT_EQ(resource.eds_service_name, "bar");
+  auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
+  ASSERT_NE(eds, nullptr);
+  EXPECT_EQ(eds->eds_service_name, "bar");
 }
 
 TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
@@ -307,8 +310,10 @@ TEST_F(ClusterTypeTest, LogicalDnsValid) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.LOGICAL_DNS);
-  EXPECT_EQ(resource.dns_hostname, "server.example.com:443");
+  auto* logical_dns =
+      absl::get_if<XdsClusterResource::LogicalDns>(&resource.type);
+  ASSERT_NE(logical_dns, nullptr);
+  EXPECT_EQ(logical_dns->hostname, "server.example.com:443");
 }
 
 TEST_F(ClusterTypeTest, LogicalDnsMissingLoadAssignment) {
@@ -539,8 +544,9 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.cluster_type, resource.AGGREGATE);
-  EXPECT_THAT(resource.prioritized_cluster_names,
+  auto* aggregate = absl::get_if<XdsClusterResource::Aggregate>(&resource.type);
+  ASSERT_NE(aggregate, nullptr);
+  EXPECT_THAT(aggregate->prioritized_cluster_names,
               ::testing::ElementsAre("bar", "baz", "quux"));
 }
 
