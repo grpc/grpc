@@ -39,9 +39,6 @@ bool squelch = false;
 namespace grpc_core {
 namespace chaotic_good {
 
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
@@ -82,7 +79,9 @@ int Run(const uint8_t* data, size_t size) {
   if (!r.ok()) return 0;
   size -= 64;
   data += 64;
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   TestContext<Arena> ctx(arena.get());
   switch (r->type) {
     default:

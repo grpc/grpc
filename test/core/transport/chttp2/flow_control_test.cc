@@ -39,9 +39,6 @@ namespace {
 
 constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
 
-auto* g_memory_owner = new MemoryOwner(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryOwner("test"));
-
 gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
@@ -84,9 +81,15 @@ class TransportTargetWindowEstimatesMocker
 
 }  // namespace
 
-TEST(FlowControl, NoOp) {
+class FlowControlTest : public ::testing::Test {
+ protected:
+  MemoryOwner memory_owner_ = MemoryOwner(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryOwner("test"));
+};
+
+TEST_F(FlowControlTest, NoOp) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   // Check initial values are per http2 spec
   EXPECT_EQ(tfc.acked_init_window(), 65535);
@@ -98,9 +101,9 @@ TEST(FlowControl, NoOp) {
   EXPECT_EQ(sfc.announced_window_delta(), 0);
 }
 
-TEST(FlowControl, SendData) {
+TEST_F(FlowControlTest, SendData) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   int64_t prev_preferred_rx_frame_size =
       tfc.target_preferred_rx_crypto_frame_size();
@@ -114,24 +117,24 @@ TEST(FlowControl, SendData) {
             prev_preferred_rx_frame_size);
 }
 
-TEST(FlowControl, InitialTransportUpdate) {
+TEST_F(FlowControlTest, InitialTransportUpdate) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   EXPECT_EQ(TransportFlowControl::IncomingUpdateContext(&tfc).MakeAction(),
             FlowControlAction());
 }
 
-TEST(FlowControl, InitialStreamUpdate) {
+TEST_F(FlowControlTest, InitialStreamUpdate) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   EXPECT_EQ(StreamFlowControl::IncomingUpdateContext(&sfc).MakeAction(),
             FlowControlAction());
 }
 
-TEST(FlowControl, PeriodicUpdate) {
+TEST_F(FlowControlTest, PeriodicUpdate) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   constexpr int kNumPeriodicUpdates = 100;
   Timestamp next_ping = Timestamp::Now() + Duration::Milliseconds(1000);
   uint32_t prev_max_frame_size = tfc.target_frame_size();
@@ -162,9 +165,9 @@ TEST(FlowControl, PeriodicUpdate) {
   }
 }
 
-TEST(FlowControl, RecvData) {
+TEST_F(FlowControlTest, RecvData) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
   int64_t prev_preferred_rx_frame_size =
@@ -177,9 +180,9 @@ TEST(FlowControl, RecvData) {
             prev_preferred_rx_frame_size);
 }
 
-TEST(FlowControl, TrackMinProgressSize) {
+TEST_F(FlowControlTest, TrackMinProgressSize) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
@@ -213,9 +216,9 @@ TEST(FlowControl, TrackMinProgressSize) {
   EXPECT_EQ(sfc.min_progress_size(), 0);
 }
 
-TEST(FlowControl, NoUpdateWithoutReader) {
+TEST_F(FlowControlTest, NoUpdateWithoutReader) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   for (int i = 0; i < 65535; i++) {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
@@ -235,9 +238,9 @@ TEST(FlowControl, NoUpdateWithoutReader) {
   EXPECT_GT(sfc.MaybeSendUpdate(), 0);
 }
 
-TEST(FlowControl, GradualReadsUpdate) {
+TEST_F(FlowControlTest, GradualReadsUpdate) {
   ExecCtx exec_ctx;
-  TransportFlowControl tfc("test", true, g_memory_owner);
+  TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   int immediate_updates = 0;
   int queued_updates = 0;
