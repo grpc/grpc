@@ -568,9 +568,8 @@ class XdsClientTest : public ::testing::Test {
     transport_factory_ = transport_factory->Ref();
     xds_client_ = MakeRefCounted<XdsClient>(
         bootstrap_builder.Build(), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine(),
-        "foo agent", "foo version",
-        resource_request_timeout * grpc_test_slowdown_factor());
+        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
+        "foo version", resource_request_timeout * grpc_test_slowdown_factor());
   }
 
   // Starts and cancels a watch for a Foo resource.
