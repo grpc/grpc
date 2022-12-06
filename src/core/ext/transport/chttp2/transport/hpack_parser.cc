@@ -38,6 +38,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
+#include "hpack_constants.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -1194,20 +1195,21 @@ class HPackParser::Parser {
         : summary_(summary) {}
 
     void Encode(const Slice& key, const Slice& value) {
-      absl::StrAppend(&summary_, " ", key.as_string_view(), ":",
-                      hpack_constants::SizeForEntry(key.size(), value.size()),
-                      "B");
+      AddToSummary(key.as_string_view(), value.size());
     }
 
     template <typename Key, typename Value>
     void Encode(Key, const Value& value) {
-      absl::StrAppend(&summary_, " ", Key::key(), ":",
-                      hpack_constants::SizeForEntry(Key::key().size(),
-                                                    Key::Encode(value).size()),
-                      "B");
+      AddToSummary(Key::key(), Key::Encode(value).size());
     }
 
    private:
+    void AddToSummary(absl::string_view key,
+                      size_t value_length) GPR_ATTRIBUTE_NOINLINE {
+      absl::StrAppend(&summary_, " ", key, ":",
+                      hpack_constants::SizeForEntry(key.size(), value_length),
+                      "B");
+    }
     std::string& summary_;
   };
 
