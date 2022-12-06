@@ -78,41 +78,7 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
       absl::InvalidArgumentError("Missing policy config"));
 }
 
-TEST_F(XdsOverrideHostTest, UseHostCookie) {
-  std::array<absl::string_view, 2> addresses = {"ipv4:127.0.0.1:441",
-                                                "ipv4:127.0.0.1:442"};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses,
-                                    MakeXdsOverrideHostConfig("round_robin")),
-                        policy_.get()),
-            absl::OkStatus());
-  for (absl::string_view address : addresses) {
-    auto subchannel = FindSubchannel({address});
-    ASSERT_TRUE(subchannel);
-    subchannel->ConnectionRequested();
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  }
-  WaitForConnected();
-  WaitForConnected();
-  auto picker = WaitForConnected();
-  std::unordered_set<std::string> picked;
-  for (size_t i = 0; i < addresses.size(); i++) {
-    auto pick = ExpectPickComplete(
-        picker.get(),
-        {{"Cookie",
-          "cookie1=1;global-session-cookie=<anaddress>; another-cookie=boop"}});
-    EXPECT_TRUE(pick.has_value());
-    picked.insert(*pick);
-  }
-  EXPECT_THAT(picked, ::testing::UnorderedElementsAreArray(addresses));
-}
-
-// Disabled tests act as TODOs to outline missing features
-TEST_F(XdsOverrideHostTest, DISABLED_CustomCookieName) {}
-
-TEST_F(XdsOverrideHostTest, DISABLED_CustomTTL) {}
-
-TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
+TEST_F(XdsOverrideHostTest, OverrideHost) {
   const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
                                                        "ipv4:127.0.0.1:442"};
   EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
