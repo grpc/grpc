@@ -76,13 +76,16 @@ class PosixEventEngine : public EventEngine {
     /// connection.
     /// \a endpoint - The EventEngine endpoint to handle data exchange over the
     /// new client connection.
+    /// \a is_external - A boolean indicating whether the new client connection
+    /// is accepted by an external listener_fd or by a listener_fd that is
+    /// managed by the event engine listener.
     /// \a memory_allocation - The callback may use the provided memory
     /// allocator to handle memory allocation operations.
     /// \a pending_data - If specified, it holds any pending data that may have
     /// already been read over the new client connection. Otherwise, it is
     /// assumed that no data has been read over the new client connection.
     using PosixAcceptCallback = absl::AnyInvocable<void(
-        int listener_fd, std::unique_ptr<Endpoint> endpoint,
+        int listener_fd, std::unique_ptr<Endpoint> endpoint, bool is_external,
         MemoryAllocator memory_allocator, SliceBuffer* pending_data)>;
 
     /// Called when a posix listener bind operation completes. A single bind
@@ -108,7 +111,8 @@ class PosixEventEngine : public EventEngine {
         const ResolvedAddress& addr,
         OnPosixBindNewFdCallback on_bind_new_fd) = 0;
 
-    /// Handle an externally accepted client connection.
+    /// Handle an externally accepted client connection. It must return an
+    /// appropriate error status in case of failure.
     ///
     /// This may be invoked to process a new client connection accepted by an
     /// external listening fd.
