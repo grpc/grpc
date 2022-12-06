@@ -3526,7 +3526,6 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:rls_upb",
