@@ -24,7 +24,7 @@
 
 namespace grpc_core {
 
-uint32_t VarintLength(uint32_t tail_value) {
+size_t VarintLength(size_t tail_value) {
   if (tail_value < (1 << 7)) {
     return 2;
   } else if (tail_value < (1 << 14)) {
@@ -38,8 +38,7 @@ uint32_t VarintLength(uint32_t tail_value) {
   }
 }
 
-void VarintWriteTail(uint32_t tail_value, uint8_t* target,
-                     uint32_t tail_length) {
+void VarintWriteTail(size_t tail_value, uint8_t* target, size_t tail_length) {
   switch (tail_length) {
     case 5:
       target[4] = static_cast<uint8_t>((tail_value >> 28) | 0x80);

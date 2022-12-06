@@ -116,6 +116,8 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
+  mkdir -pv "${out_dir}"
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
@@ -123,9 +125,12 @@ run_test() {
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --testing_version="${TESTING_VERSION}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    --nocheck_local_certs \
     --force_cleanup \
-    --nocheck_local_certs
+    --collect_app_logs \
+    --log_dir="${out_dir}" \
+    --xml_output_file="${out_dir}/sponge_log.xml" \
+    |& tee "${out_dir}/sponge_log.log"
   set +x
 }
 
@@ -168,9 +173,15 @@ main() {
   build_docker_images_if_needed
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
-  run_test baseline_test
-  run_test security_test
-  run_test authz_test
+  local failed_tests=0
+  test_suites=("baseline_test" "security_test" "authz_test")
+  for test in "${test_suites[@]}"; do
+    run_test $test || (( failed_tests++ ))
+  done
+  echo "Failed test suites: ${failed_tests}"
+  if (( failed_tests > 0 )); then
+    exit 1
+  fi
 }
 
 main "$@"

@@ -18,11 +18,11 @@
 
 #include "test/core/util/fuzzer_util.h"
 
+#include <stddef.h>
+
 #include <algorithm>
 
 #include <grpc/support/alloc.h>
-
-#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 namespace testing {

@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM silkeh/clang:13
+  FROM silkeh/clang:15-bullseye
   
   # Install prerequisites for the clang-tidy script
   RUN apt-get update && apt-get install -y python3 jq git && apt-get clean

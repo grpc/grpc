@@ -28,7 +28,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -44,7 +43,16 @@ ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(
       ->Ref();
 }
 
-ChannelArgs EnsureResourceQuotaInChannelArgs(ChannelArgs args) {
+ResourceQuotaRefPtr ResourceQuotaFromEndpointConfig(
+    const grpc_event_engine::experimental::EndpointConfig& config) {
+  void* value = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
+  if (value != nullptr) {
+    return reinterpret_cast<ResourceQuota*>(value)->Ref();
+  }
+  return nullptr;
+}
+
+ChannelArgs EnsureResourceQuotaInChannelArgs(const ChannelArgs& args) {
   if (args.GetObject<ResourceQuota>() != nullptr) return args;
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not

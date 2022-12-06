@@ -18,6 +18,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/time.h>
 
 #include "test/core/util/test_config.h"
 

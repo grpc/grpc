@@ -18,25 +18,31 @@
 
 #include "test/core/bad_client/bad_client.h"
 
+#include <inttypes.h>
 #include <limits.h>
-#include <stdio.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 #define MIN_HTTP2_FRAME_SIZE 9
 
@@ -84,8 +90,7 @@ static void set_read_done(void* arg, grpc_error_handle /*error*/) {
 /* shutdown client */
 static void shutdown_client(grpc_endpoint** client_fd) {
   if (*client_fd != nullptr) {
-    grpc_endpoint_shutdown(
-        *client_fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
+    grpc_endpoint_shutdown(*client_fd, GRPC_ERROR_CREATE("Forced Disconnect"));
     grpc_endpoint_destroy(*client_fd);
     grpc_core::ExecCtx::Get()->Flush();
     *client_fd = nullptr;
@@ -167,7 +172,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                 "client validator failed; trying additional read "
                 "in case we didn't get all the data");
       }
-      grpc_slice_buffer_destroy_internal(&incoming);
+      grpc_slice_buffer_destroy(&incoming);
     }
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -186,7 +191,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
             .type == GRPC_QUEUE_TIMEOUT);
   }
 
-  grpc_slice_buffer_destroy_internal(&outgoing);
+  grpc_slice_buffer_destroy(&outgoing);
   grpc_core::ExecCtx::Get()->Flush();
 }
 
@@ -214,12 +219,11 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
-                                              .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr)
-                                              .ToC();
-  transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
-  grpc_channel_args_destroy(channel_args);
+  transport =
+      grpc_create_chttp2_transport(grpc_core::CoreConfiguration::Get()
+                                       .channel_args_preconditioning()
+                                       .PreconditionChannelArgs(nullptr),
+                                   sfd.server, false);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -323,7 +327,7 @@ void server_verifier_request_call(grpc_server* server,
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);
@@ -332,8 +336,8 @@ void server_verifier_request_call(grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
@@ -341,5 +345,4 @@ void server_verifier_request_call(grpc_server* server,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
 }

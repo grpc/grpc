@@ -23,9 +23,10 @@
 
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
@@ -100,56 +101,77 @@ struct Timestamps {
 #endif           /* GRPC_LINUX_ERRQUEUE */
 };
 
-/** TracedBuffer is a class to keep track of timestamps for a specific buffer in
- * the TCP layer. We are only tracking timestamps for Linux kernels and hence
- * this class would only be used by Linux platforms. For all other platforms,
- * TracedBuffer would be an empty class.
- *
- * The timestamps collected are according to Timestamps declared
- * above.
- *
- * A TracedBuffer list is kept track of using the head element of the list. If
- * the head element of the list is nullptr, then the list is empty.
- */
+// TracedBuffer is a class to keep track of timestamps for a specific buffer in
+// the TCP layer. We are only tracking timestamps for Linux kernels and hence
+// this class would only be used by Linux platforms. For all other platforms,
+// TracedBuffer would be an empty class.
+// The timestamps collected are according to Timestamps declared above A
+// TracedBuffer list is kept track of using the head element of the list. If
+// *the head element of the list is nullptr, then the list is empty.
 #ifdef GRPC_LINUX_ERRQUEUE
-class TracedBuffer {
+
+class TracedBufferList {
  public:
-  /** Use AddNewEntry function instead of using this directly. */
-  TracedBuffer(uint32_t seq_no, void* arg)
-      : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
-
-  /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
-   * sendmsg_time with the current timestamp. */
-  static void AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
-                          void* arg);
-
-  /** Processes a received timestamp based on sock_extended_err and
-   * scm_timestamping structures. It will invoke the timestamps callback if the
-   * timestamp type is SCM_TSTAMP_ACK. */
-  static void ProcessTimestamp(TracedBuffer** head,
-                               struct sock_extended_err* serr,
-                               struct cmsghdr* opt_stats,
-                               struct scm_timestamping* tss);
-
-  /** Cleans the list by calling the callback for each traced buffer in the list
-   * with timestamps that it has. */
-  static void Shutdown(TracedBuffer** head, void* remaining,
-                       grpc_error_handle shutdown_err);
+  TracedBufferList() = default;
+  ~TracedBufferList() = default;
+  // Add a new entry in the TracedBuffer list pointed to by head. Also saves
+  // sendmsg_time with the current timestamp.
+  void AddNewEntry(int32_t seq_no, int fd, void* arg);
+  // Processes a received timestamp based on sock_extended_err and
+  // scm_timestamping structures. It will invoke the timestamps callback if the
+  // timestamp type is SCM_TSTAMP_ACK.
+  void ProcessTimestamp(struct sock_extended_err* serr,
+                        struct cmsghdr* opt_stats,
+                        struct scm_timestamping* tss);
+  // The Size() operation is slow and is used only in tests.
+  int Size() {
+    MutexLock lock(&mu_);
+    int size = 0;
+    TracedBuffer* curr = head_;
+    while (curr) {
+      ++size;
+      curr = curr->next_;
+    }
+    return size;
+  }
+  // Cleans the list by calling the callback for each traced buffer in the list
+  // with timestamps that it has.
+  void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/);
 
  private:
-  uint32_t seq_no_;    /* The sequence number for the last byte in the buffer */
-  void* arg_;          /* The arg to pass to timestamps_callback */
-  Timestamps ts_;      /* The timestamps corresponding to this buffer */
-  TracedBuffer* next_; /* The next TracedBuffer in the list */
+  class TracedBuffer {
+   public:
+    TracedBuffer(uint32_t seq_no, void* arg) : seq_no_(seq_no), arg_(arg) {}
+
+    bool Finished(gpr_timespec ts);
+
+   private:
+    friend class TracedBufferList;
+    gpr_timespec last_timestamp_;
+    TracedBuffer* next_ = nullptr;
+    uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
+    void* arg_;       /* The arg to pass to timestamps_callback */
+    Timestamps ts_;   /* The timestamps corresponding to this buffer */
+  };
+  Mutex mu_;
+  // TracedBuffers are ordered by sequence number and would need to be processed
+  // in a FIFO order starting with the smallest sequence number. To enable this,
+  // they are stored in a singly linked with head and tail pointers which allows
+  // easy appends and forward iteration operations.
+  TracedBuffer* head_ = nullptr;
+  TracedBuffer* tail_ = nullptr;
 };
+
 #else  /* GRPC_LINUX_ERRQUEUE */
-class TracedBuffer {
+// TracedBufferList implementation is a no-op for this platform.
+class TracedBufferList {
  public:
-  /* Phony shutdown function */
-  static void Shutdown(TracedBuffer** /*head*/, void* /*remaining*/,
-                       grpc_error_handle shutdown_err) {
-    GRPC_ERROR_UNREF(shutdown_err);
-  }
+  void AddNewEntry(int32_t /*seq_no*/, int /*fd*/, void* /*arg*/) {}
+  void ProcessTimestamp(struct sock_extended_err* /*serr*/,
+                        struct cmsghdr* /*opt_stats*/,
+                        struct scm_timestamping* /*tss*/) {}
+  int Size() { return 0; }
+  void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/) {}
 };
 #endif /* GRPC_LINUX_ERRQUEUE */
 

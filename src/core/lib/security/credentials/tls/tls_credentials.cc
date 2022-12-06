@@ -20,13 +20,15 @@
 
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
-#include <cstring>
+#include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -34,7 +36,7 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 
 namespace {
 
@@ -80,34 +82,20 @@ TlsCredentials::~TlsCredentials() {}
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target_name, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  const char* overridden_target_name = nullptr;
-  tsi_ssl_session_cache* ssl_session_cache = nullptr;
-  for (size_t i = 0; args != nullptr && i < args->num_args; i++) {
-    grpc_arg* arg = &args->args[i];
-    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
-        arg->type == GRPC_ARG_STRING) {
-      overridden_target_name = arg->value.string;
-    }
-    if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
-        arg->type == GRPC_ARG_POINTER) {
-      ssl_session_cache =
-          static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
-    }
-  }
+    const char* target_name, grpc_core::ChannelArgs* args) {
+  absl::optional<std::string> overridden_target_name =
+      args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
           this->Ref(), options_, std::move(call_creds), target_name,
-          overridden_target_name, ssl_session_cache);
+          overridden_target_name.has_value() ? overridden_target_name->c_str()
+                                             : nullptr,
+          ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr());
   if (sc == nullptr) {
     return nullptr;
   }
-  if (args != nullptr) {
-    grpc_arg new_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
-    *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
-  }
+  *args = args->Set(GRPC_ARG_HTTP2_SCHEME, "https");
   return sc;
 }
 
@@ -131,7 +119,7 @@ TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 TlsServerCredentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    const grpc_core::ChannelArgs& /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
 }

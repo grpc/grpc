@@ -27,7 +27,6 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -39,7 +38,6 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -72,12 +70,14 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "percent_encoding_test",
     srcs = ["percent_encoding_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -94,35 +94,21 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:slice",
+        "//src/core:slice",
         "//test/core/util:build",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
 grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//:slice",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "slice_split_test",
-    srcs = ["slice_split_test.cc"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//src/core:slice",
     ],
 )
 
@@ -141,12 +127,14 @@ grpc_cc_test(
 grpc_cc_test(
     name = "c_slice_buffer_test",
     srcs = ["c_slice_buffer_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -154,12 +142,14 @@ grpc_cc_test(
 grpc_cc_test(
     name = "b64_test",
     srcs = ["b64_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
     ],
 )

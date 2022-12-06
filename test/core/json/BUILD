@@ -47,3 +47,17 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "json_object_loader_test",
+    srcs = ["json_object_loader_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//src/core:json_object_loader",
+        "//test/core/util:grpc_test_util",
+    ],
+)

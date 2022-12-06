@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -43,23 +45,23 @@ static void alts_crypter_test_random_seal_unseal(alts_crypter* server_seal,
   size_t size = data_size;
   grpc_status_code status = alts_crypter_process_in_place(
       client_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
   status = alts_crypter_process_in_place(
       server_unseal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(data_buffer, duplicate_buffer, data_size) == 0);
-  GPR_ASSERT(size == data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(data_buffer, duplicate_buffer, data_size), 0);
+  ASSERT_EQ(size, data_size);
   /* Server seal and client unseal */
   status = alts_crypter_process_in_place(
       server_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
   status = alts_crypter_process_in_place(
       client_unseal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(data_buffer, duplicate_buffer, data_size) == 0);
-  GPR_ASSERT(size == data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(data_buffer, duplicate_buffer, data_size), 0);
+  ASSERT_EQ(size, data_size);
   gpr_free(data_buffer);
   gpr_free(duplicate_buffer);
 }
@@ -86,42 +88,42 @@ static void alts_crypter_test_multiple_random_seal_unseal(
   size_t size1 = data_size, size2 = data_size;
   grpc_status_code status = alts_crypter_process_in_place(
       client_seal, data_buffer1, protected_data_size, size1, &size1, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size1 == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size1, protected_data_size);
   status = alts_crypter_process_in_place(
       client_seal, data_buffer2, protected_data_size, size2, &size2, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size2 == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size2, protected_data_size);
   status = alts_crypter_process_in_place(
       server_unseal, data_buffer1, protected_data_size, size1, &size1, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(data_buffer1, duplicate_buffer1, data_size) == 0);
-  GPR_ASSERT(size1 == data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(data_buffer1, duplicate_buffer1, data_size), 0);
+  ASSERT_EQ(size1, data_size);
   status = alts_crypter_process_in_place(
       server_unseal, data_buffer2, protected_data_size, size2, &size2, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(data_buffer2, duplicate_buffer2, data_size) == 0);
-  GPR_ASSERT(size2 == data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(data_buffer2, duplicate_buffer2, data_size), 0);
+  ASSERT_EQ(size2, data_size);
 
   /* Server seal and client unseal */
   status = alts_crypter_process_in_place(
       server_seal, data_buffer1, protected_data_size, size1, &size1, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size1 == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size1, protected_data_size);
   status = alts_crypter_process_in_place(
       server_seal, data_buffer2, protected_data_size, size2, &size2, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size2 == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size2, protected_data_size);
   status = alts_crypter_process_in_place(
       client_unseal, data_buffer1, protected_data_size, size1, &size1, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(data_buffer1, duplicate_buffer1, data_size) == 0);
-  GPR_ASSERT(size1 == data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(data_buffer1, duplicate_buffer1, data_size), 0);
+  ASSERT_EQ(size1, data_size);
   status = alts_crypter_process_in_place(
       client_unseal, data_buffer2, protected_data_size, size2, &size2, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(memcmp(data_buffer2, duplicate_buffer2, data_size) == 0);
-  GPR_ASSERT(size2 == data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(memcmp(data_buffer2, duplicate_buffer2, data_size), 0);
+  ASSERT_EQ(size2, data_size);
 
   gpr_free(data_buffer1);
   gpr_free(data_buffer2);
@@ -143,8 +145,8 @@ static void alts_crypter_test_corrupted_unseal(
   gsec_test_random_bytes(data_buffer, data_size);
   grpc_status_code status = alts_crypter_process_in_place(
       client_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
   uint8_t* corrupted_data_buffer;
   char* error_message = nullptr;
   gsec_test_copy_and_alter_random_byte(data_buffer, &corrupted_data_buffer,
@@ -152,10 +154,10 @@ static void alts_crypter_test_corrupted_unseal(
   status = alts_crypter_process_in_place(server_unseal, corrupted_data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Checking tag failed"));
-  GPR_ASSERT(memcmp(corrupted_data_buffer, zero_buffer, data_size) == 0);
+  ASSERT_EQ(memcmp(corrupted_data_buffer, zero_buffer, data_size), 0);
   gpr_free(corrupted_data_buffer);
   gpr_free(error_message);
 
@@ -164,17 +166,17 @@ static void alts_crypter_test_corrupted_unseal(
   gsec_test_random_bytes(data_buffer, data_size);
   status = alts_crypter_process_in_place(
       client_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
   gsec_test_copy(data_buffer, &corrupted_data_buffer, protected_data_size);
   (*corrupted_data_buffer)++;
   status = alts_crypter_process_in_place(server_unseal, corrupted_data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Checking tag failed"));
-  GPR_ASSERT(memcmp(corrupted_data_buffer, zero_buffer, data_size) == 0);
+  ASSERT_EQ(memcmp(corrupted_data_buffer, zero_buffer, data_size), 0);
   gpr_free(corrupted_data_buffer);
   gpr_free(error_message);
 
@@ -183,17 +185,17 @@ static void alts_crypter_test_corrupted_unseal(
   gsec_test_random_bytes(data_buffer, data_size);
   status = alts_crypter_process_in_place(
       client_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
   gsec_test_copy(data_buffer, &corrupted_data_buffer, protected_data_size);
   (*(corrupted_data_buffer + protected_data_size - 1))++;
   status = alts_crypter_process_in_place(server_unseal, corrupted_data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Checking tag failed"));
-  GPR_ASSERT(memcmp(corrupted_data_buffer, zero_buffer, data_size) == 0);
+  ASSERT_EQ(memcmp(corrupted_data_buffer, zero_buffer, data_size), 0);
   gpr_free(corrupted_data_buffer);
   gpr_free(error_message);
 
@@ -216,24 +218,24 @@ static void alts_crypter_test_unsync_seal_unseal(alts_crypter* server_seal,
   gsec_test_random_bytes(data_buffer, data_size);
   grpc_status_code status = alts_crypter_process_in_place(
       client_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
 
   size = data_size;
   gsec_test_random_bytes(data_buffer, data_size);
   status = alts_crypter_process_in_place(
       client_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
 
   char* error_message = nullptr;
   status = alts_crypter_process_in_place(server_unseal, data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Checking tag failed"));
-  GPR_ASSERT(memcmp(data_buffer, zero_buffer, data_size) == 0);
+  ASSERT_EQ(memcmp(data_buffer, zero_buffer, data_size), 0);
   gpr_free(error_message);
 
   /* Perform two seals at server, one unseal at client. */
@@ -241,23 +243,23 @@ static void alts_crypter_test_unsync_seal_unseal(alts_crypter* server_seal,
   gsec_test_random_bytes(data_buffer, data_size);
   status = alts_crypter_process_in_place(
       server_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
 
   size = data_size;
   gsec_test_random_bytes(data_buffer, data_size);
   status = alts_crypter_process_in_place(
       server_seal, data_buffer, protected_data_size, size, &size, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(size == protected_data_size);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(size, protected_data_size);
 
   status = alts_crypter_process_in_place(client_unseal, data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
       "Checking tag failed"));
-  GPR_ASSERT(memcmp(data_buffer, zero_buffer, data_size) == 0);
+  ASSERT_EQ(memcmp(data_buffer, zero_buffer, data_size), 0);
   gpr_free(error_message);
   gpr_free(data_buffer);
   gpr_free(zero_buffer);
@@ -276,7 +278,7 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
   /* Crypter is nullptr. */
   grpc_status_code status = alts_crypter_process_in_place(
       nullptr, data_buffer, protected_data_size, size, &size, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "crypter or crypter->vtable has not been initialized properly."));
   gpr_free(error_message);
@@ -285,7 +287,7 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
   size = data_size;
   status = alts_crypter_process_in_place(
       crypter_seal, nullptr, protected_data_size, size, &size, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message, "data is nullptr."));
   gpr_free(error_message);
 
@@ -294,7 +296,7 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
   status = alts_crypter_process_in_place(crypter_seal, data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "data_size is zero."));
   gpr_free(error_message);
@@ -304,7 +306,7 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
   status = alts_crypter_process_in_place(crypter_seal, data_buffer,
                                          protected_data_size - 1, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "data_allocated_size is smaller than sum of data_size and "
       "num_overhead_bytes."));
@@ -315,7 +317,7 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
   status = alts_crypter_process_in_place(crypter_unseal, nullptr,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message, "data is nullptr."));
   gpr_free(error_message);
 
@@ -324,7 +326,7 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
   status = alts_crypter_process_in_place(crypter_unseal, data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "data_size is smaller than num_overhead_bytes."));
   gpr_free(error_message);
@@ -334,7 +336,7 @@ static void alts_crypter_test_input_sanity_check(alts_crypter* crypter_seal,
   status = alts_crypter_process_in_place(crypter_unseal, data_buffer,
                                          protected_data_size, size, &size,
                                          &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "data_size is smaller than num_overhead_bytes."));
   gpr_free(error_message);
@@ -386,7 +388,7 @@ static void destroy_random_alts_seal_crypter(alts_crypter* server_seal,
   alts_crypter_destroy(client_unseal);
 }
 
-static void alts_crypter_do_generic_tests() {
+TEST(AltsCrypterTest, AltsCrypterDoGenericTests) {
   alts_crypter *server_seal = nullptr, *server_unseal = nullptr,
                *client_seal = nullptr, *client_unseal = nullptr;
   gsec_aead_crypter *server_crypter_seal = nullptr,
@@ -487,7 +489,7 @@ static void alts_crypter_do_generic_tests() {
                                    client_unseal);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
-  alts_crypter_do_generic_tests();
-  return 0;
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

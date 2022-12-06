@@ -39,7 +39,7 @@ std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
   std::string buf;
   message->SerializeToString(&buf);
   Slice slice(buf);
-  return absl::make_unique<ByteBuffer>(&slice, 1);
+  return std::make_unique<ByteBuffer>(&slice, 1);
 }
 
 bool SerializeToByteBufferInPlace(grpc::protobuf::Message* message,

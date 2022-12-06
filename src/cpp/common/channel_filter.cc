@@ -18,6 +18,8 @@
 
 #include "src/cpp/common/channel_filter.h"
 
+#include <memory>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -28,7 +30,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/channel_init.h"
 
 namespace grpc {
 
@@ -77,12 +78,9 @@ void RegisterChannelFilter(
   auto maybe_add_filter = [include_filter,
                            filter](grpc_core::ChannelStackBuilder* builder) {
     if (include_filter != nullptr) {
-      const grpc_channel_args* args = builder->channel_args().ToC();
-      if (!include_filter(*args)) {
-        grpc_channel_args_destroy(args);
+      if (!include_filter(*builder->channel_args().ToC())) {
         return true;
       }
-      grpc_channel_args_destroy(args);
     }
     builder->PrependFilter(filter);
     return true;

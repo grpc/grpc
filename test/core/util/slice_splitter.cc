@@ -18,13 +18,13 @@
 
 #include "test/core/util/slice_splitter.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-
-#include "src/core/lib/gpr/useful.h"
 
 const char* grpc_slice_split_mode_name(grpc_slice_split_mode mode) {
   switch (mode) {

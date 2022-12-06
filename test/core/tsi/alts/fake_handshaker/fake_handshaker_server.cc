@@ -23,12 +23,12 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/async_stream.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/async_stream.h>
 
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"

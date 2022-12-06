@@ -80,7 +80,7 @@ class CallCombiner {
   /// once; this allows the closure to hold references that will be freed
   /// regardless of whether or not the call was cancelled.  If a cancellation
   /// does occur, the closure will be scheduled with the cancellation error;
-  /// otherwise, it will be scheduled with GRPC_ERROR_NONE.
+  /// otherwise, it will be scheduled with absl::OkStatus().
   ///
   /// The closure will be scheduled in the following cases:
   /// - If Cancel() was called prior to registering the closure, it will be
@@ -89,7 +89,7 @@ class CallCombiner {
   ///   be scheduled with the cancellation error.
   /// - If SetNotifyOnCancel() is called again to register a new cancellation
   ///   closure, the previous cancellation closure will be scheduled with
-  ///   GRPC_ERROR_NONE.
+  ///   absl::OkStatus().
   ///
   /// If \a closure is NULL, then no closure will be invoked on
   /// cancellation; this effectively unregisters the previously set closure.
@@ -173,8 +173,7 @@ class CallCombinerClosureList {
               "CallCombinerClosureList executing closure while already "
               "holding call_combiner %p: closure=%p error=%s reason=%s",
               call_combiner, closures_[0].closure,
-              grpc_error_std_string(closures_[0].error).c_str(),
-              closures_[0].reason);
+              StatusToString(closures_[0].error).c_str(), closures_[0].reason);
     }
     // This will release the call combiner.
     ExecCtx::Run(DEBUG_LOCATION, closures_[0].closure, closures_[0].error);

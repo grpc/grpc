@@ -35,7 +35,7 @@
 #include <sys/wait.h>
 #endif
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
@@ -60,8 +60,6 @@ ABSL_FLAG(std::string, grpc_test_directory_relative_to_test_srcdir,
 ABSL_FLAG(std::string, extra_args, "",
           "Comma-separated list of opaque command args to plumb through to "
           "the binary pointed at by --test_bin_name");
-
-using grpc::SubProcess;
 
 namespace grpc {
 
@@ -129,9 +127,9 @@ int main(int argc, char** argv) {
                     .empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
-    char* test_srcdir = gpr_getenv("TEST_SRCDIR");
+    auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
     std::string const bin_dir =
-        test_srcdir +
+        test_srcdir.value() +
         absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir) +
         std::string("/test/cpp/naming");
     // Invoke bazel's executeable links to the .sh and .py scripts (don't use
@@ -143,7 +141,6 @@ int main(int argc, char** argv) {
         bin_dir + "/utils/dns_server",
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
-    gpr_free(test_srcdir);
   } else {
     // Get the current binary's directory relative to repo root to invoke the
     // correct build config (asan/tsan/dbg, etc.).

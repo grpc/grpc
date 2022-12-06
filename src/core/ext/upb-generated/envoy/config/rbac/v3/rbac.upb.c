@@ -38,7 +38,7 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_RBAC__fields[2] = {
 const upb_MiniTable envoy_config_rbac_v3_RBAC_msginit = {
   &envoy_config_rbac_v3_RBAC_submsgs[0],
   &envoy_config_rbac_v3_RBAC__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_RBAC_PoliciesEntry_submsgs[1] = {
@@ -73,7 +73,7 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_Policy__fields[4] = {
 const upb_MiniTable envoy_config_rbac_v3_Policy_msginit = {
   &envoy_config_rbac_v3_Policy_submsgs[0],
   &envoy_config_rbac_v3_Policy__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_Permission_submsgs[10] = {
@@ -107,7 +107,7 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_Permission__fields[12] = {
 const upb_MiniTable envoy_config_rbac_v3_Permission_msginit = {
   &envoy_config_rbac_v3_Permission_submsgs[0],
   &envoy_config_rbac_v3_Permission__fields[0],
-  UPB_SIZE(8, 24), 12, kUpb_ExtMode_NonExtendable, 12, 255, 0,
+  UPB_SIZE(8, 16), 12, kUpb_ExtMode_NonExtendable, 12, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_Permission_Set_submsgs[1] = {
@@ -121,7 +121,7 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_Permission_Set__fields[1] 
 const upb_MiniTable envoy_config_rbac_v3_Permission_Set_msginit = {
   &envoy_config_rbac_v3_Permission_Set_submsgs[0],
   &envoy_config_rbac_v3_Permission_Set__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_Principal_submsgs[10] = {
@@ -154,7 +154,7 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_Principal__fields[11] = {
 const upb_MiniTable envoy_config_rbac_v3_Principal_msginit = {
   &envoy_config_rbac_v3_Principal_submsgs[0],
   &envoy_config_rbac_v3_Principal__fields[0],
-  UPB_SIZE(8, 24), 11, kUpb_ExtMode_NonExtendable, 11, 255, 0,
+  UPB_SIZE(8, 16), 11, kUpb_ExtMode_NonExtendable, 11, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_Principal_Set_submsgs[1] = {
@@ -168,7 +168,7 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_Principal_Set__fields[1] =
 const upb_MiniTable envoy_config_rbac_v3_Principal_Set_msginit = {
   &envoy_config_rbac_v3_Principal_Set_submsgs[0],
   &envoy_config_rbac_v3_Principal_Set__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_rbac_v3_Principal_Authenticated_submsgs[1] = {
@@ -182,10 +182,21 @@ static const upb_MiniTable_Field envoy_config_rbac_v3_Principal_Authenticated__f
 const upb_MiniTable envoy_config_rbac_v3_Principal_Authenticated_msginit = {
   &envoy_config_rbac_v3_Principal_Authenticated_submsgs[0],
   &envoy_config_rbac_v3_Principal_Authenticated__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[8] = {
+static const upb_MiniTable_Field envoy_config_rbac_v3_Action__fields[2] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_config_rbac_v3_Action_msginit = {
+  NULL,
+  &envoy_config_rbac_v3_Action__fields[0],
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[9] = {
   &envoy_config_rbac_v3_RBAC_msginit,
   &envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit,
   &envoy_config_rbac_v3_Policy_msginit,
@@ -194,13 +205,14 @@ static const upb_MiniTable *messages_layout[8] = {
   &envoy_config_rbac_v3_Principal_msginit,
   &envoy_config_rbac_v3_Principal_Set_msginit,
   &envoy_config_rbac_v3_Principal_Authenticated_msginit,
+  &envoy_config_rbac_v3_Action_msginit,
 };
 
 const upb_MiniTable_File envoy_config_rbac_v3_rbac_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  8,
+  9,
   0,
   0,
 };

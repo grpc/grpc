@@ -55,11 +55,15 @@ UPB_INLINE xds_core_v3_Resource* xds_core_v3_Resource_parse_ex(const char* buf, 
   return ret;
 }
 UPB_INLINE char* xds_core_v3_Resource_serialize(const xds_core_v3_Resource* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_Resource_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_Resource_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_Resource_serialize_ex(const xds_core_v3_Resource* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_Resource_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_Resource_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool xds_core_v3_Resource_has_name(const xds_core_v3_Resource* msg) {
   return _upb_hasbit(msg, 1);

@@ -23,6 +23,8 @@
 
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
 // test_tcp_server should be stack-allocated or new'ed, never gpr_malloc'ed

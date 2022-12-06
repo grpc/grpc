@@ -55,11 +55,15 @@ UPB_INLINE envoy_type_matcher_v3_NodeMatcher* envoy_type_matcher_v3_NodeMatcher_
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_NodeMatcher_serialize(const envoy_type_matcher_v3_NodeMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_NodeMatcher_serialize_ex(const envoy_type_matcher_v3_NodeMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_type_matcher_v3_NodeMatcher_has_node_id(const envoy_type_matcher_v3_NodeMatcher* msg) {
   return _upb_hasbit(msg, 1);

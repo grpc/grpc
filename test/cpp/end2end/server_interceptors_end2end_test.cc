@@ -28,7 +28,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
-#include <grpcpp/impl/codegen/proto_utils.h>
+#include <grpcpp/impl/proto_utils.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
@@ -79,7 +79,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      EXPECT_EQ(map->size(), 0);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
@@ -249,8 +249,8 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
             new LoggingInterceptorFactory()));
     // Add 20 phony interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
-      creators.push_back(absl::make_unique<NullInterceptorFactory>());
+      creators.push_back(std::make_unique<PhonyInterceptorFactory>());
+      creators.push_back(std::make_unique<NullInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -293,7 +293,7 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+      creators.push_back(std::make_unique<PhonyInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -349,7 +349,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -421,7 +421,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -501,7 +501,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto srv_cq = builder.AddCompletionQueue();
@@ -606,7 +606,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -659,7 +659,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto server = builder.BuildAndStart();

@@ -164,7 +164,7 @@ class BinderServerListener : public Server::ListenerInterface {
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
     if (on_destroy_done_) {
-      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
       ExecCtx::Get()->Flush();
     }
     grpc_remove_endpoint_binder(addr_);
@@ -174,7 +174,7 @@ class BinderServerListener : public Server::ListenerInterface {
   absl::Status OnSetupTransport(transaction_code_t code,
                                 grpc_binder::ReadableParcel* parcel, int uid) {
     ExecCtx exec_ctx;
-    if (grpc_binder::BinderTransportTxCode(code) !=
+    if (static_cast<grpc_binder::BinderTransportTxCode>(code) !=
         grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }
@@ -213,10 +213,8 @@ class BinderServerListener : public Server::ListenerInterface {
     grpc_transport* server_transport = grpc_create_binder_transport_server(
         std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
-    grpc_channel_args* args = grpc_channel_args_copy(server_->channel_args());
-    grpc_error_handle error =
-        server_->SetupTransport(server_transport, nullptr, args, nullptr);
-    grpc_channel_args_destroy(args);
+    grpc_error_handle error = server_->SetupTransport(
+        server_transport, nullptr, server_->channel_args(), nullptr);
     return grpc_error_to_absl_status(error);
   }
 

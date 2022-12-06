@@ -29,19 +29,28 @@
 
 namespace grpc {
 
-// A CallData class will be created for every grpc call within a channel. It is
-// used to store data and methods specific to that call. CensusClientCallData is
-// thread-compatible, however typically only 1 thread should be interacting with
-// a call at a time.
-class CensusClientCallData : public CallData {
+class CensusClientChannelData : public ChannelData {
  public:
-  grpc_error_handle Init(grpc_call_element* /* elem */,
-                         const grpc_call_element_args* args) override;
-  void StartTransportStreamOpBatch(grpc_call_element* elem,
-                                   TransportStreamOpBatch* op) override;
+  // A CallData class will be created for every grpc call within a channel. It
+  // is used to store data and methods specific to that call.
+  // CensusClientCallData is thread-compatible, however typically only 1 thread
+  // should be interacting with a call at a time.
+  class CensusClientCallData : public CallData {
+   public:
+    grpc_error_handle Init(grpc_call_element* /* elem */,
+                           const grpc_call_element_args* args) override;
+    void StartTransportStreamOpBatch(grpc_call_element* elem,
+                                     TransportStreamOpBatch* op) override;
+
+   private:
+    OpenCensusCallTracer* tracer_ = nullptr;
+  };
+
+  grpc_error_handle Init(grpc_channel_element* elem,
+                         grpc_channel_element_args* args) override;
 
  private:
-  OpenCensusCallTracer* tracer_ = nullptr;
+  bool tracing_enabled_ = true;
 };
 
 }  // namespace grpc

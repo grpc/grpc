@@ -81,11 +81,15 @@ UPB_INLINE envoy_admin_v3_ServerInfo* envoy_admin_v3_ServerInfo_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_ServerInfo_serialize(const envoy_admin_v3_ServerInfo* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_ServerInfo_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_ServerInfo_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_ServerInfo_serialize_ex(const envoy_admin_v3_ServerInfo* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_ServerInfo_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_ServerInfo_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_clear_version(const envoy_admin_v3_ServerInfo* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -229,11 +233,15 @@ UPB_INLINE envoy_admin_v3_CommandLineOptions* envoy_admin_v3_CommandLineOptions_
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_CommandLineOptions_serialize(const envoy_admin_v3_CommandLineOptions* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_CommandLineOptions_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_CommandLineOptions_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_CommandLineOptions_serialize_ex(const envoy_admin_v3_CommandLineOptions* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_CommandLineOptions_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_CommandLineOptions_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_clear_base_id(const envoy_admin_v3_CommandLineOptions* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(168, 288), uint64_t) = 0;

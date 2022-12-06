@@ -17,18 +17,24 @@
  */
 
 #include <signal.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
+#include <algorithm>
 #include <string>
+#include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 
 #include "test/core/memory_usage/memstats.h"
 #ifndef _WIN32
@@ -43,7 +49,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
-#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -54,7 +59,6 @@ static grpc_op snapshot_ops[5];
 static grpc_op status_op;
 static int got_sigint = 0;
 static grpc_byte_buffer* payload_buffer = nullptr;
-static grpc_byte_buffer* terminal_buffer = nullptr;
 static int was_cancelled = 2;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -125,9 +129,6 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
   op = snapshot_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &terminal_buffer;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == nullptr) {
@@ -301,12 +302,10 @@ int main(int argc, char** argv) {
           // FLING_SERVER_SEND_STATUS_SNAPSHOT to destroy the snapshot call
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
             grpc_byte_buffer_destroy(payload_buffer);
-            grpc_byte_buffer_destroy(terminal_buffer);
             grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);
-            terminal_buffer = nullptr;
             payload_buffer = nullptr;
             break;
         }

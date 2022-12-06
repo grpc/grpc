@@ -20,7 +20,7 @@ static const upb_MiniTable_Field envoy_annotations_ResourceAnnotation__fields[1]
 const upb_MiniTable envoy_annotations_ResourceAnnotation_msginit = {
   NULL,
   &envoy_annotations_ResourceAnnotation__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

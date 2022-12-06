@@ -37,7 +37,7 @@
 }
 
 - (void)grpc_initMetadata:(grpc_metadata *)metadata {
-  metadata->value = grpc_slice_from_copied_buffer(self.bytes, self.length);
+  metadata->value = grpc_slice_from_copied_buffer((const char *)self.bytes, self.length);
 }
 @end
 
@@ -94,7 +94,7 @@
 // Preconditions: All keys are ASCII strings. Keys ending in -bin have NSData values; the others
 // have NSString values.
 - (grpc_metadata *)grpc_metadataArray {
-  grpc_metadata *metadata = gpr_malloc([self count] * sizeof(grpc_metadata));
+  grpc_metadata *metadata = (grpc_metadata *)gpr_malloc([self count] * sizeof(grpc_metadata));
   grpc_metadata *current = metadata;
   for (NSString *key in self) {
     id value = self[key];

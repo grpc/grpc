@@ -21,13 +21,15 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 
 #include <algorithm>
-#include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_core {
 
-ChannelStackBuilder::~ChannelStackBuilder() = default;
+ChannelStackBuilder::ChannelStackBuilder(const char* name,
+                                         grpc_channel_stack_type type,
+                                         const ChannelArgs& channel_args)
+    : name_(name), type_(type), args_(channel_args) {}
 
 ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   if (target == nullptr) {
@@ -35,11 +37,6 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   } else {
     target_ = target;
   }
-  return *this;
-}
-
-ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(ChannelArgs args) {
-  args_ = std::move(args);
   return *this;
 }
 

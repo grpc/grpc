@@ -34,14 +34,6 @@
 grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
 
-grpc_server_security_connector::grpc_server_security_connector(
-    absl::string_view url_scheme,
-    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-    : grpc_security_connector(url_scheme),
-      server_creds_(std::move(server_creds)) {}
-
-grpc_server_security_connector::~grpc_server_security_connector() = default;
-
 grpc_channel_security_connector::grpc_channel_security_connector(
     absl::string_view url_scheme,
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
@@ -49,8 +41,6 @@ grpc_channel_security_connector::grpc_channel_security_connector(
     : grpc_security_connector(url_scheme),
       channel_creds_(std::move(channel_creds)),
       request_metadata_creds_(std::move(request_metadata_creds)) {}
-
-grpc_channel_security_connector::~grpc_channel_security_connector() {}
 
 int grpc_channel_security_connector::channel_security_connector_cmp(
     const grpc_channel_security_connector* other) const {
@@ -64,6 +54,16 @@ int grpc_channel_security_connector::channel_security_connector_cmp(
                                  other_sc->request_metadata_creds());
 }
 
+grpc_core::UniqueTypeName grpc_channel_security_connector::type() const {
+  return channel_creds_->type();
+}
+
+grpc_server_security_connector::grpc_server_security_connector(
+    absl::string_view url_scheme,
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+    : grpc_security_connector(url_scheme),
+      server_creds_(std::move(server_creds)) {}
+
 int grpc_server_security_connector::server_security_connector_cmp(
     const grpc_server_security_connector* other) const {
   const grpc_server_security_connector* other_sc =
@@ -71,6 +71,10 @@ int grpc_server_security_connector::server_security_connector_cmp(
   GPR_ASSERT(server_creds() != nullptr);
   GPR_ASSERT(other_sc->server_creds() != nullptr);
   return grpc_core::QsortCompare(server_creds(), other_sc->server_creds());
+}
+
+grpc_core::UniqueTypeName grpc_server_security_connector::type() const {
+  return server_creds_->type();
 }
 
 static void connector_arg_destroy(void* p) {

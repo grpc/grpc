@@ -39,7 +39,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/validate_service_config.h>
@@ -64,9 +64,6 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
@@ -123,7 +120,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
@@ -184,7 +181,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */);
+                                     grpc_core::ChannelArgs());
     }
     return result;
   }
@@ -198,10 +195,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config =
-        grpc_core::ServiceConfigImpl::Create(nullptr, "{}", &error);
-    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
+    ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
     response_generator_->SetResponse(result);
   }
 
@@ -217,13 +213,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config =
-        grpc_core::ServiceConfigImpl::Create(nullptr, svc_cfg, &error);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      result.service_config = grpc_error_to_absl_status(error);
-      GRPC_ERROR_UNREF(error);
-    }
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), svc_cfg);
     response_generator_->SetResponse(result);
   }
 
@@ -326,7 +317,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       grpc::internal::MutexLock lock(&mu_);
       started_ = true;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host));
       while (!server_ready_) {
         cond_.Wait(&mu_);

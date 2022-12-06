@@ -34,11 +34,14 @@
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/periodic_update.h"
 
 namespace grpc_core {
 
@@ -80,7 +83,6 @@ enum class ReclamationPass {
   kDestructive = 3,
 };
 static constexpr size_t kNumReclamationPasses = 4;
-static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
 // For each reclamation function run we construct a ReclamationSweep.
 // When this object is finally destroyed (it may be moved several times first),
@@ -220,9 +222,72 @@ class ReclaimerQueue {
   std::shared_ptr<State> state_;
 };
 
+namespace memory_quota_detail {
+// Controller: tries to adjust a control variable up or down to get memory
+// pressure to some target. We use the control variable to size buffers
+// throughout the stack.
+class PressureController {
+ public:
+  PressureController(uint8_t max_ticks_same, uint8_t max_reduction_per_tick)
+      : max_ticks_same_(max_ticks_same),
+        max_reduction_per_tick_(max_reduction_per_tick) {}
+  // Update the controller, returns the new control value.
+  double Update(double error);
+  // Textual representation of the controller.
+  std::string DebugString() const;
+
+ private:
+  // How many update periods have we reached the same decision in a row?
+  // Too many and we should start expanding the search space since we're not
+  // being agressive enough.
+  uint8_t ticks_same_ = 0;
+  // Maximum number of ticks with the same value until we start expanding the
+  // control space.
+  const uint8_t max_ticks_same_;
+  // Maximum amount to reduce the reporting value per iteration (in tenths of a
+  // percentile).
+  const uint8_t max_reduction_per_tick_;
+  // Was the last error indicating a too low pressure (or if false,
+  // a too high pressure).
+  bool last_was_low_ = true;
+  // Current minimum value to report.
+  double min_ = 0.0;
+  // Current maximum value to report.
+  // Set so that the first change over will choose 1.0 for max.
+  double max_ = 2.0;
+  // Last control value reported.
+  double last_control_ = 0.0;
+};
+
+// Utility to track memory pressure.
+// Tries to be conservative (returns a higher pressure than there may actually
+// be) but to be eventually accurate.
+class PressureTracker {
+ public:
+  double AddSampleAndGetControlValue(double sample);
+
+ private:
+  std::atomic<double> max_this_round_{0.0};
+  std::atomic<double> report_{0.0};
+  PeriodicUpdate update_{Duration::Seconds(1)};
+  PressureController controller_{100, 3};
+};
+}  // namespace memory_quota_detail
+
 class BasicMemoryQuota final
     : public std::enable_shared_from_this<BasicMemoryQuota> {
  public:
+  // Data about current memory pressure.
+  struct PressureInfo {
+    // The current instantaneously measured memory pressure.
+    double instantaneous_pressure = 0.0;
+    // A control value that can be used to scale buffer sizes up or down to
+    // adjust memory pressure to our target set point.
+    double pressure_control_value = 0.0;
+    // Maximum recommended individual allocation size.
+    size_t max_recommended_allocation_size = 0;
+  };
+
   explicit BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
 
   // Start the reclamation activity.
@@ -243,8 +308,7 @@ class BasicMemoryQuota final
   // Return some memory to the quota.
   void Return(size_t amount);
   // Instantaneous memory pressure approximation.
-  std::pair<double, size_t>
-  InstantaneousPressureAndMaxRecommendedAllocationSize() const;
+  PressureInfo GetPressureInfo();
   // Get a reclamation queue
   ReclaimerQueue* reclaimer_queue(size_t i) { return &reclaimers_[i]; }
 
@@ -276,6 +340,8 @@ class BasicMemoryQuota final
   // We also increment this counter on completion of a sweep, as an indicator
   // that the wait has ended.
   std::atomic<uint64_t> reclamation_counter_{0};
+  // Memory pressure smoothing
+  memory_quota_detail::PressureTracker pressure_tracker_;
   // The name of this quota - used for debugging/tracing/etc..
   std::string name_;
 };
@@ -299,7 +365,9 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
-    if (prev_free + n > kMaxQuotaBufferSize) {
+    if ((!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
+         prev_free + n > kMaxQuotaBufferSize) ||
+        donate_back_.Tick([](Duration) {})) {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }
@@ -319,22 +387,19 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   void Shutdown() override;
 
   // Read the instantaneous memory pressure
-  double InstantaneousPressure() const {
-    return memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize()
-        .first;
+  BasicMemoryQuota::PressureInfo GetPressureInfo() const {
+    return memory_quota_->GetPressureInfo();
   }
 
   // Name of this allocator
   absl::string_view name() const { return name_; }
 
  private:
+  static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
-  // This function may be invoked during a memory release operation. If the
-  // total free_bytes in this allocator/local cache exceeds
-  // kMaxQuotaBufferSize / 2, donate the excess free_bytes in this cache back
-  // to the total quota immediately. This helps prevent free bytes in any
-  // particular allocator from growing too large.
+  // This function may be invoked during a memory release operation.
+  // It will try to return half of our free pool to the quota.
   void MaybeDonateBack();
   // Replenish bytes from the quota, without blocking, possibly entering
   // overcommit.
@@ -359,6 +424,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Amount of memory taken from the quota by this allocator.
   std::atomic<size_t> taken_bytes_{sizeof(GrpcMemoryAllocatorImpl)};
   std::atomic<bool> registered_reclaimer_{false};
+  // We try to donate back some memory periodically to the central quota.
+  PeriodicUpdate donate_back_{Duration::Seconds(10)};
   Mutex reclaimer_mu_;
   bool shutdown_ ABSL_GUARDED_BY(reclaimer_mu_) = false;
   // Indices into the various reclaimer queues, used so that we can cancel
@@ -392,8 +459,9 @@ class MemoryOwner final : public MemoryAllocator {
   }
 
   // Instantaneous memory pressure in the underlying quota.
-  double InstantaneousPressure() const {
-    return impl()->InstantaneousPressure();
+  BasicMemoryQuota::PressureInfo GetPressureInfo() const {
+    if (!is_valid()) return BasicMemoryQuota::PressureInfo{};
+    return impl()->GetPressureInfo();
   }
 
   template <typename T, typename... Args>
@@ -442,9 +510,9 @@ class MemoryQuota final
 
   // Return true if the instantaneous memory pressure is high.
   bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 0.9;
-    return memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize()
-               .first > kMemoryPressureHighThreshold;
+    static constexpr double kMemoryPressureHighThreshold = 1.0;
+    return memory_quota_->GetPressureInfo().instantaneous_pressure >
+           kMemoryPressureHighThreshold;
   }
 
  private:

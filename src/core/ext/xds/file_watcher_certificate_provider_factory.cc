@@ -24,14 +24,13 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
@@ -76,8 +75,7 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
                                                      grpc_error_handle* error) {
   auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "error:config type should be OBJECT.");
+    *error = GRPC_ERROR_CREATE("error:config type should be OBJECT.");
     return nullptr;
   }
   std::vector<grpc_error_handle> error_list;
@@ -87,14 +85,14 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
                        &config->private_key_file_, &error_list, false);
   if (config->identity_cert_file_.empty() !=
       config->private_key_file_.empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    error_list.push_back(GRPC_ERROR_CREATE(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
         "or both unset."));
   }
   ParseJsonObjectField(config_json.object_value(), "ca_certificate_file",
                        &config->root_cert_file_, &error_list, false);
   if (config->identity_cert_file_.empty() && config->root_cert_file_.empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    error_list.push_back(GRPC_ERROR_CREATE(
         "At least one of \"certificate_file\" and \"ca_certificate_file\" must "
         "be specified."));
   }
@@ -143,11 +141,10 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
       file_watcher_config->refresh_interval().millis() / GPR_MS_PER_SEC);
 }
 
-void FileWatcherCertificateProviderInit() {
-  CertificateProviderRegistry::RegisterCertificateProviderFactory(
-      absl::make_unique<FileWatcherCertificateProviderFactory>());
+void RegisterFileWatcherCertificateProvider(
+    CoreConfiguration::Builder* builder) {
+  builder->certificate_provider_registry()->RegisterCertificateProviderFactory(
+      std::make_unique<FileWatcherCertificateProviderFactory>());
 }
-
-void FileWatcherCertificateProviderShutdown() {}
 
 }  // namespace grpc_core

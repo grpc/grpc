@@ -53,11 +53,15 @@ UPB_INLINE google_rpc_Status* google_rpc_Status_parse_ex(const char* buf, size_t
   return ret;
 }
 UPB_INLINE char* google_rpc_Status_serialize(const google_rpc_Status* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_rpc_Status_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_rpc_Status_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_rpc_Status_serialize_ex(const google_rpc_Status* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_rpc_Status_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_rpc_Status_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void google_rpc_Status_clear_code(const google_rpc_Status* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;

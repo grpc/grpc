@@ -35,7 +35,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -129,7 +129,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   if (secure_mode) {
-    grpc::XdsServerBuilder xds_builder;
+    XdsServerBuilder xds_builder;
     xds_builder.RegisterService(&service);
     xds_builder.AddListeningPort(
         absl::StrCat("0.0.0.0:", port),

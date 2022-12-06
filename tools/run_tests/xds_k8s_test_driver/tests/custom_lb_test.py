@@ -19,6 +19,7 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_k8s_testcase
+from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -26,11 +27,20 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+_Lang = skips.Lang
 
 _EXPECTED_STATUS = grpc.StatusCode.DATA_LOSS
 
 
 class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    # As of 2022-07-06 custom load balancer configuration via xDS is only supported by
+    # Java clients v1.47.x and above.
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang == _Lang.JAVA:
+            return config.version_gte('v1.47.x')
+        return False
 
     def test_custom_lb_config(self):
         with self.subTest('0_create_health_check'):
@@ -38,8 +48,17 @@ class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         # Configures a custom, test LB on the client to instruct the servers
         # to always respond with a specific error code.
+        #
+        # The first policy in the list is a non-existent one to verify that
+        # the gRPC client can gracefully move down the list to the valid one
+        # once it determines the first one is not available.
         with self.subTest('1_create_backend_service'):
             self.td.create_backend_service(locality_lb_policies=[{
+                'customPolicy': {
+                    'name': 'test.ThisLoadBalancerDoesNotExist',
+                    'data': '{ "foo": "bar" }'
+                },
+            }, {
                 'customPolicy': {
                     'name':
                         'test.RpcBehaviorLoadBalancer',

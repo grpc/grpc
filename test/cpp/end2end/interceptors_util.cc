@@ -51,7 +51,7 @@ void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel) {
   ctx.AddMetadata("testkey", "testvalue");
   req.set_message("Hello");
   EchoResponse resp;
-  string expected_resp = "";
+  string expected_resp;
   auto writer = stub->RequestStream(&ctx, &resp);
   for (int i = 0; i < kNumStreamingMessages; i++) {
     writer->Write(req);
@@ -208,7 +208,7 @@ CreatePhonyClientInterceptors() {
   // Add 20 phony interceptors before hijacking interceptor
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+    creators.push_back(std::make_unique<PhonyInterceptorFactory>());
   }
   return creators;
 }

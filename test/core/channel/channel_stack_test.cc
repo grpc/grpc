@@ -18,33 +18,42 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <string.h>
+#include <limits.h>
 
-#include <grpc/grpc.h>
+#include <string>
+
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
                                            grpc_channel_element_args* args) {
-  GPR_ASSERT(args->channel_args->num_args == 1);
-  GPR_ASSERT(args->channel_args->args[0].type == GRPC_ARG_INTEGER);
-  GPR_ASSERT(0 == strcmp(args->channel_args->args[0].key, "test_key"));
-  GPR_ASSERT(args->channel_args->args[0].value.integer == 42);
-  GPR_ASSERT(args->is_first);
-  GPR_ASSERT(args->is_last);
+  int test_value = grpc_channel_args_find_integer(args->channel_args,
+                                                  "test_key", {-1, 0, INT_MAX});
+  EXPECT_EQ(test_value, 42);
+  auto* ee = grpc_channel_args_find_pointer<
+      grpc_event_engine::experimental::EventEngine>(
+      args->channel_args, GRPC_INTERNAL_ARG_EVENT_ENGINE);
+  EXPECT_NE(ee, nullptr);
+  EXPECT_TRUE(args->is_first);
+  EXPECT_TRUE(args->is_last);
   *static_cast<int*>(elem->channel_data) = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle call_init_func(
     grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   ++*static_cast<int*>(elem->channel_data);
   *static_cast<int*>(elem->call_data) = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void channel_destroy_func(grpc_channel_element* /*elem*/) {}
@@ -75,7 +84,7 @@ static void free_call(void* arg, grpc_error_handle /*error*/) {
   gpr_free(arg);
 }
 
-static void test_create_channel_stack(void) {
+TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_channel_filter filter = {
       call_func,
       nullptr,
@@ -95,30 +104,25 @@ static void test_create_channel_stack(void) {
   grpc_call_stack* call_stack;
   grpc_channel_element* channel_elem;
   grpc_call_element* call_elem;
-  grpc_arg arg;
-  grpc_channel_args chan_args;
   int* channel_data;
   int* call_data;
   grpc_core::ExecCtx exec_ctx;
   grpc_slice path = grpc_slice_from_static_string("/service/method");
 
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = const_cast<char*>("test_key");
-  arg.value.integer = 42;
-
-  chan_args.num_args = 1;
-  chan_args.args = &arg;
-
   channel_stack = static_cast<grpc_channel_stack*>(
       gpr_malloc(grpc_channel_stack_size(&filters, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  auto channel_args = grpc_core::CoreConfiguration::Get()
+                          .channel_args_preconditioning()
+                          .PreconditionChannelArgs(nullptr)
+                          .Set("test_key", 42);
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "grpc_channel_stack_init",
       grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
-                              &chan_args, "test", channel_stack)));
-  GPR_ASSERT(channel_stack->count == 1);
+                              channel_args, "test", channel_stack)));
+  EXPECT_EQ(channel_stack->count, 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = static_cast<int*>(channel_elem->channel_data);
-  GPR_ASSERT(*channel_data == 0);
+  EXPECT_EQ(*channel_data, 0);
 
   call_stack =
       static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
@@ -134,28 +138,27 @@ static void test_create_channel_stack(void) {
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
-  GPR_ASSERT(call_stack->count == 1);
+  ASSERT_TRUE(error.ok()) << grpc_core::StatusToString(error);
+  EXPECT_EQ(call_stack->count, 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
-  GPR_ASSERT(call_elem->filter == channel_elem->filter);
-  GPR_ASSERT(call_elem->channel_data == channel_elem->channel_data);
+  EXPECT_EQ(call_elem->filter, channel_elem->filter);
+  EXPECT_EQ(call_elem->channel_data, channel_elem->channel_data);
   call_data = static_cast<int*>(call_elem->call_data);
-  GPR_ASSERT(*call_data == 0);
-  GPR_ASSERT(*channel_data == 1);
+  EXPECT_EQ(*call_data, 0);
+  EXPECT_EQ(*channel_data, 1);
 
   GRPC_CALL_STACK_UNREF(call_stack, "done");
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(*channel_data == 2);
+  EXPECT_EQ(*channel_data, 2);
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
 
-  grpc_slice_unref_internal(path);
+  grpc_slice_unref(path);
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  test_create_channel_stack();
-  grpc_shutdown();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

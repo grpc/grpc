@@ -70,6 +70,7 @@ grpc_cc_library(
         "//:gpr",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -113,6 +114,8 @@ grpc_cc_test(
         ":httpcli_test_util",
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:closure",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
@@ -123,6 +126,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "parser_test",
     srcs = ["parser_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -131,17 +135,21 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "format_request_test",
     srcs = ["format_request_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

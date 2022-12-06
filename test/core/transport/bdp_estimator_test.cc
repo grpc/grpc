@@ -18,17 +18,15 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
-#include <limits.h>
+#include <stdlib.h>
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <atomic>
+
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
@@ -38,22 +36,17 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace testing {
 namespace {
-int g_clock = 123;
-Mutex mu_;
+std::atomic<int> g_clock{123};
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
-  MutexLock lock(&mu_);
   gpr_timespec ts;
-  ts.tv_sec = g_clock;
+  ts.tv_sec = g_clock.load();
   ts.tv_nsec = 0;
   ts.clock_type = clock_type;
   return ts;
 }
 
-void inc_time(void) {
-  MutexLock lock(&mu_);
-  g_clock += 30;
-}
+void inc_time(void) { g_clock.fetch_add(30); }
 }  // namespace
 
 TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }

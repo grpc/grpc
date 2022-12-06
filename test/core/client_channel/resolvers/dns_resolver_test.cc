@@ -16,19 +16,34 @@
  *
  */
 
-#include <string.h>
+#include <memory>
+#include <string>
+#include <utility>
 
-#include <grpc/grpc.h>
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
@@ -43,16 +58,16 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
+    FAIL() << "Error: " << uri.status().ToString();
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
-  args.result_handler = absl::make_unique<TestResultHandler>();
+  args.result_handler = std::make_unique<TestResultHandler>();
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
-  GPR_ASSERT(resolver != nullptr);
+  ASSERT_NE(resolver, nullptr);
 }
 
 static void test_fails(grpc_core::ResolverFactory* factory,
@@ -62,22 +77,19 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
+    FAIL() << "Error: " << uri.status().ToString();
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
-  args.result_handler = absl::make_unique<TestResultHandler>();
+  args.result_handler = std::make_unique<TestResultHandler>();
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
-  GPR_ASSERT(resolver == nullptr);
+  ASSERT_EQ(resolver, nullptr);
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
+TEST(DnsResolverTest, MainTest) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
@@ -96,7 +108,11 @@ int main(int argc, char** argv) {
   } else {
     test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
   }
-  grpc_shutdown();
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

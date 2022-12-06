@@ -49,7 +49,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_Matcher_OnMatch_
 const upb_MiniTable envoy_config_common_matcher_v3_Matcher_OnMatch_msginit = {
   &envoy_config_common_matcher_v3_Matcher_OnMatch_submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_OnMatch__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_Matcher_MatcherList_submsgs[1] = {
@@ -63,7 +63,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_Matcher_MatcherL
 const upb_MiniTable envoy_config_common_matcher_v3_Matcher_MatcherList_msginit = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList_submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_submsgs[4] = {
@@ -83,7 +83,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_Matcher_MatcherL
 const upb_MiniTable envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_msginit = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate__fields[0],
-  UPB_SIZE(8, 24), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(8, 16), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_submsgs[3] = {
@@ -115,7 +115,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_Matcher_MatcherL
 const upb_MiniTable envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_msginit = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_submsgs[2] = {
@@ -131,7 +131,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_Matcher_MatcherL
 const upb_MiniTable envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_msginit = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_Matcher_MatcherTree_submsgs[4] = {
@@ -165,7 +165,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_Matcher_MatcherT
 const upb_MiniTable envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_msginit = {
   &envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry_submsgs[1] = {
@@ -211,7 +211,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_MatchPredicate__
 const upb_MiniTable envoy_config_common_matcher_v3_MatchPredicate_msginit = {
   &envoy_config_common_matcher_v3_MatchPredicate_submsgs[0],
   &envoy_config_common_matcher_v3_MatchPredicate__fields[0],
-  UPB_SIZE(8, 24), 10, kUpb_ExtMode_NonExtendable, 10, 255, 0,
+  UPB_SIZE(8, 16), 10, kUpb_ExtMode_NonExtendable, 10, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_MatchPredicate_MatchSet_submsgs[1] = {
@@ -225,7 +225,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_MatchPredicate_M
 const upb_MiniTable envoy_config_common_matcher_v3_MatchPredicate_MatchSet_msginit = {
   &envoy_config_common_matcher_v3_MatchPredicate_MatchSet_submsgs[0],
   &envoy_config_common_matcher_v3_MatchPredicate_MatchSet__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_HttpHeadersMatch_submsgs[1] = {
@@ -239,7 +239,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_HttpHeadersMatch
 const upb_MiniTable envoy_config_common_matcher_v3_HttpHeadersMatch_msginit = {
   &envoy_config_common_matcher_v3_HttpHeadersMatch_submsgs[0],
   &envoy_config_common_matcher_v3_HttpHeadersMatch__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_common_matcher_v3_HttpGenericBodyMatch_submsgs[1] = {
@@ -254,7 +254,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_HttpGenericBodyM
 const upb_MiniTable envoy_config_common_matcher_v3_HttpGenericBodyMatch_msginit = {
   &envoy_config_common_matcher_v3_HttpGenericBodyMatch_submsgs[0],
   &envoy_config_common_matcher_v3_HttpGenericBodyMatch__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch__fields[2] = {
@@ -265,7 +265,7 @@ static const upb_MiniTable_Field envoy_config_common_matcher_v3_HttpGenericBodyM
 const upb_MiniTable envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch_msginit = {
   NULL,
   &envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[15] = {

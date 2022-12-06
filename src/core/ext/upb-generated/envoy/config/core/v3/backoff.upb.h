@@ -53,11 +53,15 @@ UPB_INLINE envoy_config_core_v3_BackoffStrategy* envoy_config_core_v3_BackoffStr
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_BackoffStrategy_serialize(const envoy_config_core_v3_BackoffStrategy* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_BackoffStrategy_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_BackoffStrategy_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_BackoffStrategy_serialize_ex(const envoy_config_core_v3_BackoffStrategy* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_BackoffStrategy_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_BackoffStrategy_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_core_v3_BackoffStrategy_has_base_interval(const envoy_config_core_v3_BackoffStrategy* msg) {
   return _upb_hasbit(msg, 1);

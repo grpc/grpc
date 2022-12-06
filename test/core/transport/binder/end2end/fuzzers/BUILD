@@ -40,7 +40,6 @@ grpc_cc_library(
     deps = [
         "binder_transport_fuzzer_proto",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
@@ -63,7 +62,6 @@ grpc_proto_fuzzer(
         "binder_transport_fuzzer_proto",
         ":fuzzer_utils",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
@@ -86,10 +84,10 @@ grpc_proto_fuzzer(
         "binder_transport_fuzzer_proto",
         ":fuzzer_utils",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
     ],
 )

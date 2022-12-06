@@ -101,12 +101,11 @@ CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -216,11 +215,11 @@ def check_linker_need_libatomic():
         return False
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
-    cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++14', '-', '-latomic'],
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE)
+    cpp_test = subprocess.Popen(cxx +
+                                ['-x', 'c++', '-std=c++14', '-', '-latomic'],
+                                stdin=PIPE,
+                                stdout=PIPE,
+                                stderr=PIPE)
     cpp_test.communicate(input=code_test)
     return cpp_test.returncode == 0
 
@@ -482,19 +481,14 @@ PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = (
-    "six>=1.5.2",
-    "futures>=2.2.0; python_version<'3.2'",
-    "enum34>=1.0.4; python_version<'3.4'",
-)
+INSTALL_REQUIRES = ()
+
 EXTRAS_REQUIRES = {
     'protobuf': 'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
 }
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
-    'Sphinx~=1.8.1',
-    'six>=1.10',
-) if ENABLE_DOCUMENTATION_BUILD else ()
+    'Sphinx~=1.8.1',) if ENABLE_DOCUMENTATION_BUILD else ()
 
 try:
     import Cython
@@ -552,7 +546,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

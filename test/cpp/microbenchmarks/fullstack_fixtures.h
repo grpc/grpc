@@ -30,6 +30,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -61,7 +62,10 @@ class FixtureConfiguration {
   }
 };
 
-class BaseFixture : public TrackCounters {};
+class BaseFixture {
+ public:
+  virtual ~BaseFixture() = default;
+};
 
 class FullstackFixture : public BaseFixture {
  public:
@@ -92,13 +96,6 @@ class FullstackFixture : public BaseFixture {
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
-  }
-
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
-    BaseFixture::AddToLabel(out, state);
-    out << " polls/iter:"
-        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
-               state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -176,7 +173,7 @@ class EndpointPairFixture : public BaseFixture {
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
-      const grpc_channel_args* server_args = core_server->channel_args();
+      grpc_core::ChannelArgs server_args = core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
       for (grpc_pollset* pollset : core_server->pollsets()) {
@@ -193,18 +190,24 @@ class EndpointPairFixture : public BaseFixture {
 
     /* create channel */
     {
-      ChannelArguments args;
-      args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
-      fixture_configuration.ApplyCommonChannelArguments(&args);
-
-      grpc_channel_args c_args = args.c_channel_args();
+      grpc_core::ChannelArgs c_args;
+      {
+        ChannelArguments args;
+        args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+        fixture_configuration.ApplyCommonChannelArguments(&args);
+        // precondition
+        grpc_channel_args tmp_args;
+        args.SetChannelArgs(&tmp_args);
+        c_args = grpc_core::CoreConfiguration::Get()
+                     .channel_args_preconditioning()
+                     .PreconditionChannelArgs(&tmp_args);
+      }
       client_transport_ =
-          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
+          grpc_create_chttp2_transport(c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
       grpc_channel* channel =
           grpc_core::Channel::Create(
-              "target", grpc_core::ChannelArgs::FromC(&c_args),
-              GRPC_CLIENT_DIRECT_CHANNEL, client_transport_)
+              "target", c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_)
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
@@ -224,13 +227,6 @@ class EndpointPairFixture : public BaseFixture {
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
-  }
-
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
-    BaseFixture::AddToLabel(out, state);
-    out << " polls/iter:"
-        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
-               state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -274,13 +270,6 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
-  }
-
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
-    EndpointPairFixture::AddToLabel(out, state);
-    out << " writes/iter:"
-        << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
-               static_cast<double>(state.iterations());
   }
 
  private:

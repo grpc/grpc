@@ -42,20 +42,20 @@ from framework import xds_k8s_flags
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
-from framework.test_app import client_app
-from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 Json = Any
-KubernetesClientRunner = client_app.KubernetesClientRunner
-KubernetesServerRunner = server_app.KubernetesServerRunner
+_KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
+_KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 GCLOUD = os.environ.get('GCLOUD', 'gcloud')
 GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
 SECONDARY_ZONE = 'us-west1-b'
 
-PSM_SECURITY_PREFIX = 'xds-k8s-security'  # Prefix for gke resources to delete.
+PSM_SECURITY_PREFIX = 'psm-interop'  # Prefix for gke resources to delete.
 URL_MAP_TEST_PREFIX = 'interop-psm-url-map'  # Prefix for url-map test resources to delete.
 
 KEEP_PERIOD_HOURS = flags.DEFINE_integer(
@@ -226,9 +226,9 @@ def cleanup_client(project, network, k8s_api_manager, resource_prefix,
         network=network,
         stats_port=xds_flags.CLIENT_PORT.value)
 
-    client_namespace = KubernetesClientRunner.make_namespace_name(
+    client_namespace = _KubernetesClientRunner.make_namespace_name(
         resource_prefix, resource_suffix)
-    client_runner = KubernetesClientRunner(
+    client_runner = _KubernetesClientRunner(
         k8s.KubernetesNamespace(k8s_api_manager, client_namespace),
         **runner_kwargs)
 
@@ -248,9 +248,9 @@ def cleanup_server(project, network, k8s_api_manager, resource_prefix,
         gcp_service_account=gcp_service_account,
         network=network)
 
-    server_namespace = KubernetesServerRunner.make_namespace_name(
+    server_namespace = _KubernetesServerRunner.make_namespace_name(
         resource_prefix, resource_suffix)
-    server_runner = KubernetesServerRunner(
+    server_runner = _KubernetesServerRunner(
         k8s.KubernetesNamespace(k8s_api_manager, server_namespace),
         **runner_kwargs)
 
@@ -335,6 +335,9 @@ def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
     load_keep_config()
+
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
 
     project: str = xds_flags.PROJECT.value
     network: str = xds_flags.NETWORK.value

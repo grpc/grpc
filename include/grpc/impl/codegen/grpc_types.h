@@ -235,6 +235,13 @@ typedef struct {
 /** Should we allow receipt of true-binary data on http2 connections?
     Defaults to on (1) */
 #define GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY "grpc.http2.true_binary"
+/** An experimental channel arg which determines whether the perferred crypto
+ * frame size http2 setting sent to the peer at startup. If set to 0 (false
+ * - default), the preferred frame size is not sent to the peer. Otherwise it
+ * sends a default preferred crypto frame size value of 4GB to the peer at
+ * the startup of each connection. */
+#define GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE \
+  "grpc.experimental.http2.enable_preferred_frame_size"
 /** After a duration of this time the client/server pings its peer to see if the
     transport is still alive. Int valued, milliseconds. */
 #define GRPC_ARG_KEEPALIVE_TIME_MS "grpc.keepalive_time_ms"
@@ -282,11 +289,7 @@ typedef struct {
 #define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
 /** If non-zero, it will determine the maximum frame size used by TSI's frame
  *  protector.
- *
- *  NOTE: Be aware that using a large "max_frame_size" is memory inefficient
- *        for non-zerocopy protectors. Also, increasing this value above 1MiB
- *        can break old binaries that don't support larger than 1MiB frame
- *        size. */
+ */
 #define GRPC_ARG_TSI_MAX_FRAME_SIZE "grpc.tsi.max_frame_size"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
@@ -368,6 +371,12 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
+/* Experimental Arg. Channel args to be used for the control-plane channel
+ * created to the grpclb load balancers. This is a pointer arg whose value is a
+ * grpc_channel_args object. If unset, most channel args from the parent channel
+ * will be propagated to the grpclb channel. */
+#define GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS \
+  "grpc.experimental.grpclb_channel_args"
 /* Timeout in milliseconds to wait for the child of a specific priority to
    complete its initial connection attempt before the priority LB policy fails
    over to the next priority. Default value is 10 seconds. */
@@ -524,14 +533,11 @@ typedef enum grpc_call_error {
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
-/** Signal that the initial metadata should be corked */
-#define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK                                  \
-  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET |                 \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY | GRPC_INITIAL_METADATA_CORKED | \
-   GRPC_WRITE_THROUGH)
+#define GRPC_INITIAL_METADATA_USED_MASK                  \
+  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY | GRPC_WRITE_THROUGH)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
@@ -586,8 +592,6 @@ typedef struct {
   grpc_slice method;
   grpc_slice host;
   gpr_timespec deadline;
-  uint32_t flags;
-  void* reserved;
 } grpc_call_details;
 
 typedef enum {

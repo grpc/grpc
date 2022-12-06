@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_LIB_JSON_JSON_H
 #define GRPC_CORE_LIB_JSON_JSON_H
@@ -26,9 +24,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -54,8 +51,8 @@ class Json {
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
 
-  // Parses JSON string from json_str.  On error, sets *error.
-  static Json Parse(absl::string_view json_str, grpc_error_handle* error);
+  // Parses JSON string from json_str.
+  static absl::StatusOr<Json> Parse(absl::string_view json_str);
 
   Json() = default;
 
@@ -246,4 +243,4 @@ class Json {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_JSON_JSON_H */
+#endif  // GRPC_CORE_LIB_JSON_JSON_H

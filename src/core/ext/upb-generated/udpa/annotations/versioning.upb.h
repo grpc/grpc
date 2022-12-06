@@ -54,11 +54,15 @@ UPB_INLINE udpa_annotations_VersioningAnnotation* udpa_annotations_VersioningAnn
   return ret;
 }
 UPB_INLINE char* udpa_annotations_VersioningAnnotation_serialize(const udpa_annotations_VersioningAnnotation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &udpa_annotations_VersioningAnnotation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &udpa_annotations_VersioningAnnotation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* udpa_annotations_VersioningAnnotation_serialize_ex(const udpa_annotations_VersioningAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &udpa_annotations_VersioningAnnotation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &udpa_annotations_VersioningAnnotation_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void udpa_annotations_VersioningAnnotation_clear_previous_message_type(const udpa_annotations_VersioningAnnotation* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -84,7 +88,7 @@ UPB_INLINE const udpa_annotations_VersioningAnnotation* udpa_annotations_version
 }
 UPB_INLINE void udpa_annotations_set_versioning(struct google_protobuf_MessageOptions* msg, const udpa_annotations_VersioningAnnotation* ext, upb_Arena* arena) {
   const upb_Message_Extension* msg_ext =
-      _upb_Message_Getorcreateext(msg, &udpa_annotations_versioning_ext, arena);
+      _upb_Message_GetOrCreateExtension(msg, &udpa_annotations_versioning_ext, arena);
   UPB_ASSERT(msg_ext);
   *UPB_PTR_AT(&msg_ext->data, 0, const udpa_annotations_VersioningAnnotation*) = ext;
 }

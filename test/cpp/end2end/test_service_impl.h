@@ -34,6 +34,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 namespace grpc {
@@ -131,10 +132,11 @@ class TestMultipleServiceImpl : public RpcService {
 
     // A bit of sleep to make sure that short deadline tests fail
     if (request->has_param() && request->param().server_sleep_us() > 0) {
-      gpr_sleep_until(
-          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                       gpr_time_from_micros(request->param().server_sleep_us(),
-                                            GPR_TIMESPAN)));
+      gpr_sleep_until(gpr_time_add(
+          gpr_now(GPR_CLOCK_MONOTONIC),
+          gpr_time_from_micros(
+              request->param().server_sleep_us() * grpc_test_slowdown_factor(),
+              GPR_TIMESPAN)));
     }
 
     if (request->has_param() && request->param().server_die()) {
@@ -176,7 +178,8 @@ class TestMultipleServiceImpl : public RpcService {
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us(),
+            gpr_time_from_micros(request->param().client_cancel_after_us() *
+                                     grpc_test_slowdown_factor(),
                                  GPR_TIMESPAN)));
       }
       {
@@ -188,7 +191,8 @@ class TestMultipleServiceImpl : public RpcService {
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us(),
+          gpr_time_from_micros(request->param().server_cancel_after_us() *
+                                   grpc_test_slowdown_factor(),
                                GPR_TIMESPAN)));
       return Status::CANCELLED;
     } else if (!request->has_param() ||

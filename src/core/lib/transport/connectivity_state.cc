@@ -21,7 +21,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 
 #include <string>
-#include <type_traits>
 
 #include <grpc/support/log.h>
 
@@ -65,12 +64,12 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
       : watcher_(std::move(watcher)), state_(state), status_(status) {
     if (work_serializer != nullptr) {
       work_serializer->Run(
-          [this]() { SendNotification(this, GRPC_ERROR_NONE); },
+          [this]() { SendNotification(this, absl::OkStatus()); },
           DEBUG_LOCATION);
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);
-      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
     }
   }
 

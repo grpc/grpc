@@ -23,19 +23,24 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_core {
 const char* kDefaultSecurePort = "https";
 
 namespace {
-DNSResolver* g_dns_resolver;
+NoDestruct<std::shared_ptr<DNSResolver>> g_dns_resolver;
 }
 
 constexpr DNSResolver::TaskHandle DNSResolver::kNullHandle;
 
-void SetDNSResolver(DNSResolver* resolver) { g_dns_resolver = resolver; }
+void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver) {
+  *g_dns_resolver = std::move(resolver);
+}
 
-DNSResolver* GetDNSResolver() { return g_dns_resolver; }
+std::shared_ptr<DNSResolver> GetDNSResolver() { return *g_dns_resolver; }
 
 std::string DNSResolver::HandleToString(TaskHandle handle) {
   return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");

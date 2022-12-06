@@ -40,7 +40,7 @@ namespace testing {
 namespace {
 
 const absl::string_view kRequestIdField = "x-request-id";
-// const absl::string_view kServiceVersionField = "ServiceVersion";
+const absl::string_view kServiceVersionField = "ServiceVersion";
 // const absl::string_view kServicePortField = "ServicePort";
 const absl::string_view kStatusCodeField = "StatusCode";
 // const absl::string_view kUrlField = "URL";
@@ -66,8 +66,10 @@ struct EchoCall {
 }  // namespace
 
 EchoTestServiceImpl::EchoTestServiceImpl(std::string hostname,
+                                         std::string service_version,
                                          std::string forwarding_address)
     : hostname_(std::move(hostname)),
+      service_version_(std::move(service_version)),
       forwarding_address_(std::move(forwarding_address)) {
   forwarding_stub_ = EchoTestService::NewStub(
       CreateChannel(forwarding_address_, InsecureChannelCredentials()));
@@ -98,10 +100,10 @@ Status EchoTestServiceImpl::Echo(ServerContext* context,
   //  need to add/remove fields later, if required by tests. Only keep the
   //  fields needed for now.
   //
-  //  absl::StrAppend(&s,kServiceVersionField,"=",this->version_,"\n");
   //  absl::StrAppend(&s,kServicePortField,"=",this->port_,"\n");
   //  absl::StrAppend(&s,kClusterField,"=",this->cluster_,"\n");
   //  absl::StrAppend(&s,kIstioVersionField,"=",this->istio_version_,"\n");
+  absl::StrAppend(&s, kServiceVersionField, "=", this->service_version_, "\n");
   absl::StrAppend(&s, kIpField, "=", host, "\n");
   absl::StrAppend(&s, kStatusCodeField, "=", std::to_string(200), "\n");
   absl::StrAppend(&s, kHostnameField, "=", this->hostname_, "\n");
@@ -166,9 +168,12 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
         calls[i].context.AddMetadata(header.key(), header.value());
       }
     }
+    constexpr int kDefaultTimeout = 5 * 1000 * 1000 /* 5 seconds */;
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
-        std::chrono::microseconds(request->timeout_micros());
+        std::chrono::microseconds(request->timeout_micros() > 0
+                                      ? request->timeout_micros()
+                                      : kDefaultTimeout);
     calls[i].context.set_deadline(deadline);
     stub->async()->Echo(&calls[i].context, &echo_request, &calls[i].response,
                         [&, index = i](Status s) {
@@ -197,6 +202,8 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
       gpr_log(GPR_ERROR, "RPC %d failed %d: %s", i,
               calls[i].status.error_code(),
               calls[i].status.error_message().c_str());
+      response->clear_output();
+      return calls[i].status;
     }
   }
   return Status::OK;

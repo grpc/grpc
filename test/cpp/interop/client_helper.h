@@ -27,7 +27,7 @@
 #include <grpcpp/client_context.h>
 
 #include "src/core/lib/surface/call_test_only.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc {
 namespace testing {

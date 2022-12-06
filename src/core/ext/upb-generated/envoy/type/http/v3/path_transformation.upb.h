@@ -60,11 +60,15 @@ UPB_INLINE envoy_type_http_v3_PathTransformation* envoy_type_http_v3_PathTransfo
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_serialize(const envoy_type_http_v3_PathTransformation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_serialize_ex(const envoy_type_http_v3_PathTransformation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_type_http_v3_PathTransformation_has_operations(const envoy_type_http_v3_PathTransformation* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
@@ -114,11 +118,15 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation* envoy_type_http_v3_P
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_serialize(const envoy_type_http_v3_PathTransformation_Operation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_type_http_v3_PathTransformation_Operation_operation_specifier_normalize_path_rfc_3986 = 2,
@@ -197,11 +205,15 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_serialize(const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 
@@ -230,11 +242,15 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_t
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_serialize(const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

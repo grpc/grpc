@@ -18,15 +18,15 @@
 
 #import "TestHelper.h"
 #import <Cronet/Cronet.h>
-#import <grpcpp/impl/codegen/config.h>
 #import <grpcpp/impl/codegen/string_ref.h>
+#import <grpcpp/support/config.h>
 
-using std::chrono::system_clock;
+using grpc::ServerContext;
+using grpc::Status;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
-using grpc::ServerContext;
-using grpc::Status;
+using std::chrono::system_clock;
 
 std::atomic<int> PhonyInterceptor::num_times_run_;
 std::atomic<int> PhonyInterceptor::num_times_run_reverse_;

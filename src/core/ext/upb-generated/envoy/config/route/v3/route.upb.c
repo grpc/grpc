@@ -11,7 +11,6 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
-#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -31,7 +30,7 @@ static const upb_MiniTable_Sub envoy_config_route_v3_RouteConfiguration_submsgs[
   {.submsg = &envoy_config_route_v3_RouteAction_RequestMirrorPolicy_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_route_v3_RouteConfiguration__fields[13] = {
+static const upb_MiniTable_Field envoy_config_route_v3_RouteConfiguration__fields[15] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 32), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
@@ -45,27 +44,14 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteConfiguration__field
   {11, UPB_SIZE(44, 88), UPB_SIZE(3, 3), 5, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {12, UPB_SIZE(48, 96), UPB_SIZE(0, 0), 6, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {13, UPB_SIZE(52, 104), UPB_SIZE(0, 0), 7, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {14, UPB_SIZE(2, 2), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {15, UPB_SIZE(3, 3), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_route_v3_RouteConfiguration_msginit = {
   &envoy_config_route_v3_RouteConfiguration_submsgs[0],
   &envoy_config_route_v3_RouteConfiguration__fields[0],
-  UPB_SIZE(56, 120), 13, kUpb_ExtMode_NonExtendable, 13, 255, 0,
-};
-
-static const upb_MiniTable_Sub envoy_config_route_v3_ClusterSpecifierPlugin_submsgs[1] = {
-  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
-};
-
-static const upb_MiniTable_Field envoy_config_route_v3_ClusterSpecifierPlugin__fields[2] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
-
-const upb_MiniTable envoy_config_route_v3_ClusterSpecifierPlugin_msginit = {
-  &envoy_config_route_v3_ClusterSpecifierPlugin_submsgs[0],
-  &envoy_config_route_v3_ClusterSpecifierPlugin__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(56, 112), 15, kUpb_ExtMode_NonExtendable, 15, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_Vhds_submsgs[1] = {
@@ -79,12 +65,11 @@ static const upb_MiniTable_Field envoy_config_route_v3_Vhds__fields[1] = {
 const upb_MiniTable envoy_config_route_v3_Vhds_msginit = {
   &envoy_config_route_v3_Vhds_submsgs[0],
   &envoy_config_route_v3_Vhds__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout[2] = {
   &envoy_config_route_v3_RouteConfiguration_msginit,
-  &envoy_config_route_v3_ClusterSpecifierPlugin_msginit,
   &envoy_config_route_v3_Vhds_msginit,
 };
 
@@ -92,7 +77,7 @@ const upb_MiniTable_File envoy_config_route_v3_route_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  3,
+  2,
   0,
   0,
 };

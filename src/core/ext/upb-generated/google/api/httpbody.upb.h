@@ -53,11 +53,15 @@ UPB_INLINE google_api_HttpBody* google_api_HttpBody_parse_ex(const char* buf, si
   return ret;
 }
 UPB_INLINE char* google_api_HttpBody_serialize(const google_api_HttpBody* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_HttpBody_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_HttpBody_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_api_HttpBody_serialize_ex(const google_api_HttpBody* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_HttpBody_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_HttpBody_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void google_api_HttpBody_clear_content_type(const google_api_HttpBody* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

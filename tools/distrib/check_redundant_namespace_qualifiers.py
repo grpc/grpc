@@ -118,6 +118,7 @@ namespace bar {
 namespace foo {}
 namespace foo {
     foo::a;
+    ::foo::a;
 }
 """
 _TEST_EXPECTED = """
@@ -128,6 +129,7 @@ namespace bar {
 namespace foo {}
 namespace foo {
     a;
+    ::foo::a;
 }
 """
 output = update_file(_TEST, ['foo'])

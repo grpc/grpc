@@ -43,7 +43,7 @@ static const grpc_core::Duration k25Days =
     grpc_core::Duration::Hours(kHoursIn25Days);
 
 static void cb(void* arg, grpc_error_handle error) {
-  cb_called[reinterpret_cast<intptr_t>(arg)][GRPC_ERROR_IS_NONE(error)]++;
+  cb_called[reinterpret_cast<intptr_t>(arg)][error.ok()]++;
 }
 
 static void add_test(void) {
@@ -58,7 +58,7 @@ static void add_test(void) {
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
-  grpc_core::Timestamp start = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp start = grpc_core::Timestamp::Now();
 
   /* 10 ms timers.  will expire in the current epoch */
   for (i = 0; i < 10; i++) {
@@ -178,7 +178,7 @@ void long_running_service_cleanup_test(void) {
 
   gpr_log(GPR_INFO, "long_running_service_cleanup_test");
 
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   GPR_ASSERT(now.milliseconds_after_process_epoch() >= k25Days.millis());
   grpc_timer_list_init();
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
