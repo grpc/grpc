@@ -361,6 +361,43 @@ RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannelByAddress(
             "[xds_override_host_lb %p] Subchannel for address %s was found",
             this, key.c_str());
   }
+  /*
+  if override_host is set in pick arguments:
+  entry = lb_policy.address_map[override_host]
+  if entry found:
+    idle_subchannel = None
+    found_connecting = False
+    if entry.subchannel is set AND
+     entry.health_status is in policy_config.override_host_status:
+      if entry.subchannel.connectivity_state == READY:
+        return entry.subchannel as pick result
+      elif entry.subchannel.connectivity_state == IDLE:
+        idle_subchannel = entry.subchannel
+      elif entry.subchannel.connectivity_state == CONNECTING:
+        found_connecting = True
+    // Java-only, for now: check equivalent addresses
+    for address in entry.equivalent_addresses:
+      other_entry = lb_policy.address_map[address]
+      if other_entry.subchannel is set AND
+       other_entry.health_status is in policy_config.override_host_status:
+        if other_entry.subchannel.connectivity_state == READY:
+          return other_entry.subchannel as pick result
+        elif other_entry.subchannel.connectivity_state == IDLE:
+          idle_subchannel = other_entry.subchannel
+        elif other_entry.subchannel.connectivity_state == CONNECTING:
+          found_connecting = True
+    // No READY subchannel found.  If we found an IDLE subchannel,
+    // trigger a connection attempt and queue the pick until that attempt
+    // completes.
+    if idle_subchannel is not None:
+      hop into control plane to trigger connection attempt for idle_subchannel
+      return queue as pick result
+    // No READY or IDLE subchannels.  If we found a CONNECTING
+    // subchannel, queue the pick and wait for the connection attempt
+    // to complete.
+    if found_connecting:
+      return queue as pick result
+  */
   return subchannel_record->second.subchannel;
 }
 
