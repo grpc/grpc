@@ -999,6 +999,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_client_channel",
+        "//src/core:default_event_engine",
         "grpc_public_hdrs",
         "orphanable",
         "ref_counted_ptr",

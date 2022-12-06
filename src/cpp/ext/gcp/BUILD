@@ -101,6 +101,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "googleapis_logging_cc_proto",
         "googleapis_logging_grpc_service",
         "protobuf_headers",
     ],
@@ -108,10 +109,14 @@ grpc_cc_library(
     visibility = ["//test:__subpackages__"],
     deps = [
         "observability_config",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
+        "//:grpc_unsecure",
         "//src/core:env",
+        "//src/core:json",
+        "//src/core:time",
         "//src/cpp/ext/filters/logging:logging_sink",
     ],
 )

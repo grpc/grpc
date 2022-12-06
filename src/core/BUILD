@@ -1419,10 +1419,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/posix_engine/lockfree_event.h",
     ],
-    external_deps = [
-        "absl/status",
-        "absl/strings:str_format",
-    ],
+    external_deps = ["absl/status"],
     deps = [
         "gpr_atm",
         "posix_event_engine_closure",
@@ -4359,19 +4356,19 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:optional",
     ],
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "lb_policy_registry",
         "pollset_set",
         "subchannel_interface",
+        "validation_errors",
         "//:config",
         "//:debug_location",
         "//:gpr",

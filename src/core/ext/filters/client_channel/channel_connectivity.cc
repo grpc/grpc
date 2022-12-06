@@ -132,7 +132,9 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
         Unref();
         return;
       }
-      Crash("something that is not a client channel");
+      Crash(
+          "grpc_channel_watch_connectivity_state called on something that is "
+          "not a client channel");
     }
     // Ref from object creation is held by the watcher callback.
     auto* watcher_timer_init_state = new WatcherTimerInitState(

@@ -40,7 +40,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"

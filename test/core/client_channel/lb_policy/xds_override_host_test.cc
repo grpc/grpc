@@ -14,8 +14,23 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
+#include <array>
+#include <memory>
+#include <string>
 
+#include <gtest/gtest.h>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 

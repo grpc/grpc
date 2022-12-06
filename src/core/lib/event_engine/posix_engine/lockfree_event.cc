@@ -19,7 +19,6 @@
 #include <cstdint>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
