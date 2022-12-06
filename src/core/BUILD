@@ -4236,6 +4236,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "event_engine_utils",
         "grpc_outlier_detection_header",
         "iomgr_fwd",
         "json",

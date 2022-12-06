@@ -791,194 +791,189 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
 }
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
-  parent_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
-  timer_handle_.reset();
+  if (timer_handle_.has_value()) {
+    parent_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    timer_handle_.reset();
+  }
   Unref();
 }
 
 void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
-  if (timer_handle_.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-      gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
-              parent_.get());
+  if (!timer_handle_.has_value()) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
+            parent_.get());
+  }
+  std::map<SubchannelState*, double> success_rate_ejection_candidates;
+  std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
+  size_t ejected_host_count = 0;
+  double success_rate_sum = 0;
+  auto time_now = Timestamp::Now();
+  auto& config = parent_->config_->outlier_detection_config();
+  for (auto& state : parent_->subchannel_state_map_) {
+    auto* subchannel_state = state.second.get();
+    // For each address, swap the call counter's buckets in that address's
+    // map entry.
+    subchannel_state->RotateBucket();
+    // Gather data to run success rate algorithm or failure percentage
+    // algorithm.
+    if (subchannel_state->ejection_time().has_value()) {
+      ++ejected_host_count;
     }
-    std::map<SubchannelState*, double> success_rate_ejection_candidates;
-    std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
-    size_t ejected_host_count = 0;
-    double success_rate_sum = 0;
-    auto time_now = Timestamp::Now();
-    auto& config = parent_->config_->outlier_detection_config();
-    for (auto& state : parent_->subchannel_state_map_) {
-      auto* subchannel_state = state.second.get();
-      // For each address, swap the call counter's buckets in that address's
-      // map entry.
-      subchannel_state->RotateBucket();
-      // Gather data to run success rate algorithm or failure percentage
-      // algorithm.
-      if (subchannel_state->ejection_time().has_value()) {
-        ++ejected_host_count;
-      }
-      absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
-          subchannel_state->GetSuccessRateAndVolume();
-      if (!host_success_rate_and_volume.has_value()) {
-        continue;
-      }
-      double success_rate = host_success_rate_and_volume->first;
-      uint64_t request_volume = host_success_rate_and_volume->second;
-      if (config.success_rate_ejection.has_value()) {
-        if (request_volume >= config.success_rate_ejection->request_volume) {
-          success_rate_ejection_candidates[subchannel_state] = success_rate;
-          success_rate_sum += success_rate;
-        }
-      }
-      if (config.failure_percentage_ejection.has_value()) {
-        if (request_volume >=
-            config.failure_percentage_ejection->request_volume) {
-          failure_percentage_ejection_candidates[subchannel_state] =
-              success_rate;
-        }
+    absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
+        subchannel_state->GetSuccessRateAndVolume();
+    if (!host_success_rate_and_volume.has_value()) {
+      continue;
+    }
+    double success_rate = host_success_rate_and_volume->first;
+    uint64_t request_volume = host_success_rate_and_volume->second;
+    if (config.success_rate_ejection.has_value()) {
+      if (request_volume >= config.success_rate_ejection->request_volume) {
+        success_rate_ejection_candidates[subchannel_state] = success_rate;
+        success_rate_sum += success_rate;
       }
     }
+    if (config.failure_percentage_ejection.has_value()) {
+      if (request_volume >=
+          config.failure_percentage_ejection->request_volume) {
+        failure_percentage_ejection_candidates[subchannel_state] = success_rate;
+      }
+    }
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] found %" PRIuPTR
+            " success rate candidates and %" PRIuPTR
+            " failure percentage candidates; ejected_host_count=%" PRIuPTR
+            "; success_rate_sum=%.3f",
+            parent_.get(), success_rate_ejection_candidates.size(),
+            failure_percentage_ejection_candidates.size(), ejected_host_count,
+            success_rate_sum);
+  }
+  // success rate algorithm
+  if (!success_rate_ejection_candidates.empty() &&
+      success_rate_ejection_candidates.size() >=
+          config.success_rate_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
-              "[outlier_detection_lb %p] found %" PRIuPTR
-              " success rate candidates and %" PRIuPTR
-              " failure percentage candidates; ejected_host_count=%" PRIuPTR
-              "; success_rate_sum=%.3f",
-              parent_.get(), success_rate_ejection_candidates.size(),
-              failure_percentage_ejection_candidates.size(), ejected_host_count,
-              success_rate_sum);
+              "[outlier_detection_lb %p] running success rate algorithm",
+              parent_.get());
     }
-    // success rate algorithm
-    if (!success_rate_ejection_candidates.empty() &&
-        success_rate_ejection_candidates.size() >=
-            config.success_rate_ejection->minimum_hosts) {
+    // calculate ejection threshold: (mean - stdev *
+    // (success_rate_ejection.stdev_factor / 1000))
+    double mean = success_rate_sum / success_rate_ejection_candidates.size();
+    double variance = 0;
+    for (const auto& p : success_rate_ejection_candidates) {
+      variance += std::pow(p.second - mean, 2);
+    }
+    variance /= success_rate_ejection_candidates.size();
+    double stdev = std::sqrt(variance);
+    const double success_rate_stdev_factor =
+        static_cast<double>(config.success_rate_ejection->stdev_factor) / 1000;
+    double ejection_threshold = mean - stdev * success_rate_stdev_factor;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      gpr_log(GPR_INFO,
+              "[outlier_detection_lb %p] stdev=%.3f, ejection_threshold=%.3f",
+              parent_.get(), stdev, ejection_threshold);
+    }
+    for (auto& candidate : success_rate_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
         gpr_log(GPR_INFO,
-                "[outlier_detection_lb %p] running success rate algorithm",
-                parent_.get());
+                "[outlier_detection_lb %p] checking candidate %p: "
+                "success_rate=%.3f",
+                parent_.get(), candidate.first, candidate.second);
       }
-      // calculate ejection threshold: (mean - stdev *
-      // (success_rate_ejection.stdev_factor / 1000))
-      double mean = success_rate_sum / success_rate_ejection_candidates.size();
-      double variance = 0;
-      for (const auto& p : success_rate_ejection_candidates) {
-        variance += std::pow(p.second - mean, 2);
-      }
-      variance /= success_rate_ejection_candidates.size();
-      double stdev = std::sqrt(variance);
-      const double success_rate_stdev_factor =
-          static_cast<double>(config.success_rate_ejection->stdev_factor) /
-          1000;
-      double ejection_threshold = mean - stdev * success_rate_stdev_factor;
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-        gpr_log(GPR_INFO,
-                "[outlier_detection_lb %p] stdev=%.3f, ejection_threshold=%.3f",
-                parent_.get(), stdev, ejection_threshold);
-      }
-      for (auto& candidate : success_rate_ejection_candidates) {
+      if (candidate.second < ejection_threshold) {
+        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        double current_percent =
+            100.0 * ejected_host_count / parent_->subchannel_state_map_.size();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] checking candidate %p: "
-                  "success_rate=%.3f",
-                  parent_.get(), candidate.first, candidate.second);
+                  "[outlier_detection_lb %p] random_key=%d "
+                  "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
+                  parent_.get(), random_key, ejected_host_count,
+                  current_percent);
         }
-        if (candidate.second < ejection_threshold) {
-          uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
-          double current_percent = 100.0 * ejected_host_count /
-                                   parent_->subchannel_state_map_.size();
+        if (random_key < config.success_rate_ejection->enforcement_percentage &&
+            (ejected_host_count == 0 ||
+             (current_percent < config.max_ejection_percent))) {
+          // Eject and record the timestamp for use when ejecting addresses in
+          // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-            gpr_log(GPR_INFO,
-                    "[outlier_detection_lb %p] random_key=%d "
-                    "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
-                    parent_.get(), random_key, ejected_host_count,
-                    current_percent);
+            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
+                    parent_.get());
           }
-          if (random_key <
-                  config.success_rate_ejection->enforcement_percentage &&
-              (ejected_host_count == 0 ||
-               (current_percent < config.max_ejection_percent))) {
-            // Eject and record the timestamp for use when ejecting addresses in
-            // this iteration.
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-              gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
-                      parent_.get());
-            }
-            candidate.first->Eject(time_now);
-            ++ejected_host_count;
-          }
+          candidate.first->Eject(time_now);
+          ++ejected_host_count;
         }
       }
     }
-    // failure percentage algorithm
-    if (!failure_percentage_ejection_candidates.empty() &&
-        failure_percentage_ejection_candidates.size() >=
-            config.failure_percentage_ejection->minimum_hosts) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "[outlier_detection_lb %p] running failure percentage algorithm",
-            parent_.get());
-      }
-      for (auto& candidate : failure_percentage_ejection_candidates) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-          gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] checking candidate %p: "
-                  "success_rate=%.3f",
-                  parent_.get(), candidate.first, candidate.second);
-        }
-        // Extra check to make sure success rate algorithm didn't already
-        // eject this backend.
-        if (candidate.first->ejection_time().has_value()) continue;
-        if ((100.0 - candidate.second) >
-            config.failure_percentage_ejection->threshold) {
-          uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
-          double current_percent = 100.0 * ejected_host_count /
-                                   parent_->subchannel_state_map_.size();
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-            gpr_log(GPR_INFO,
-                    "[outlier_detection_lb %p] random_key=%d "
-                    "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
-                    parent_.get(), random_key, ejected_host_count,
-                    current_percent);
-          }
-          if (random_key <
-                  config.failure_percentage_ejection->enforcement_percentage &&
-              (ejected_host_count == 0 ||
-               (current_percent < config.max_ejection_percent))) {
-            // Eject and record the timestamp for use when ejecting addresses in
-            // this iteration.
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-              gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
-                      parent_.get());
-            }
-            candidate.first->Eject(time_now);
-            ++ejected_host_count;
-          }
-        }
-      }
-    }
-    // For each address in the map:
-    //   If the address is not ejected and the multiplier is greater than 0,
-    //   decrease the multiplier by 1. If the address is ejected, and the
-    //   current time is after ejection_timestamp + min(base_ejection_time *
-    //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
-    //   address.
-    for (auto& state : parent_->subchannel_state_map_) {
-      auto* subchannel_state = state.second.get();
-      const bool unejected =
-          subchannel_state->MaybeUneject(config.base_ejection_time.millis(),
-                                         config.max_ejection_time.millis());
-      if (unejected &&
-          GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-        gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected address %s (%p)",
-                parent_.get(), state.first.c_str(), subchannel_state);
-      }
-    }
-    timer_handle_.reset();
-    parent_->ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
   }
+  // failure percentage algorithm
+  if (!failure_percentage_ejection_candidates.empty() &&
+      failure_percentage_ejection_candidates.size() >=
+          config.failure_percentage_ejection->minimum_hosts) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      gpr_log(GPR_INFO,
+              "[outlier_detection_lb %p] running failure percentage algorithm",
+              parent_.get());
+    }
+    for (auto& candidate : failure_percentage_ejection_candidates) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+        gpr_log(GPR_INFO,
+                "[outlier_detection_lb %p] checking candidate %p: "
+                "success_rate=%.3f",
+                parent_.get(), candidate.first, candidate.second);
+      }
+      // Extra check to make sure success rate algorithm didn't already
+      // eject this backend.
+      if (candidate.first->ejection_time().has_value()) continue;
+      if ((100.0 - candidate.second) >
+          config.failure_percentage_ejection->threshold) {
+        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        double current_percent =
+            100.0 * ejected_host_count / parent_->subchannel_state_map_.size();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] random_key=%d "
+                  "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
+                  parent_.get(), random_key, ejected_host_count,
+                  current_percent);
+        }
+        if (random_key <
+                config.failure_percentage_ejection->enforcement_percentage &&
+            (ejected_host_count == 0 ||
+             (current_percent < config.max_ejection_percent))) {
+          // Eject and record the timestamp for use when ejecting addresses in
+          // this iteration.
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
+                    parent_.get());
+          }
+          candidate.first->Eject(time_now);
+          ++ejected_host_count;
+        }
+      }
+    }
+  }
+  // For each address in the map:
+  //   If the address is not ejected and the multiplier is greater than 0,
+  //   decrease the multiplier by 1. If the address is ejected, and the
+  //   current time is after ejection_timestamp + min(base_ejection_time *
+  //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
+  //   address.
+  for (auto& state : parent_->subchannel_state_map_) {
+    auto* subchannel_state = state.second.get();
+    const bool unejected = subchannel_state->MaybeUneject(
+        config.base_ejection_time.millis(), config.max_ejection_time.millis());
+    if (unejected && GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected address %s (%p)",
+              parent_.get(), state.first.c_str(), subchannel_state);
+    }
+  }
+  timer_handle_.reset();
+  parent_->ejection_timer_ =
+      MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
 }
 
 //
