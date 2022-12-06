@@ -16,14 +16,19 @@
  *
  */
 
+#include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 static const char prefix[] =
     "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
@@ -71,7 +76,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* registered_method) {
   grpc_call_error error;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_metadata_array request_metadata_recv;
   gpr_timespec deadline;
   grpc_byte_buffer* payload = nullptr;
@@ -82,15 +87,14 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                               &deadline, &request_metadata_recv,
                                               &payload, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   GPR_ASSERT(payload != nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);
   grpc_byte_buffer_destroy(payload);
-  cq_verifier_destroy(cqv);
 }
 
 char* g_buffer;

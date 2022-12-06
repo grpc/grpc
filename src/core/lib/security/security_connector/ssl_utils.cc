@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <memory>
 #include <vector>
 
 #include "absl/strings/match.h"
@@ -144,25 +143,24 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
   const tsi_peer_property* p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    return GRPC_ERROR_CREATE(
         "Cannot check peer: missing selected ALPN property.");
   }
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: invalid ALPN value.");
+    return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
                                            const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return GRPC_ERROR_CREATE(
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,

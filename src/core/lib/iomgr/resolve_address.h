@@ -28,6 +28,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -37,6 +38,7 @@
 namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
+constexpr Duration kDefaultDNSRequestTimeout = Duration::Minutes(2);
 
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
@@ -60,17 +62,39 @@ class DNSResolver {
   // address this.
   //
   // \a interested_parties may be deleted after a request is cancelled.
-  virtual TaskHandle ResolveName(
-      absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
+  virtual TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) = 0;
+          on_resolved,
+      absl::string_view name, absl::string_view default_port, Duration timeout,
+      grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
 
   // Resolve name in a blocking fashion. Use \a default_port if a port isn't
   // designated in \a name, otherwise use the port in \a name.
   virtual absl::StatusOr<std::vector<grpc_resolved_address>>
-  ResolveNameBlocking(absl::string_view name,
-                      absl::string_view default_port) = 0;
+  LookupHostnameBlocking(absl::string_view name,
+                         absl::string_view default_port) = 0;
+
+  // Asynchronously resolve an SRV Record to Hostnames.
+  // On completion, \a on_done is invoked with the result.
+  //
+  // The same caveats in \a LookupHostname apply here as well.
+  //
+  // TODO(hork): return std::vector<SRVRecord> and ask the client to do the
+  // subsequent hostname lookups.
+  virtual TaskHandle LookupSRV(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view name, Duration timeout,
+      grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
+
+  // Asynchronously resolve a TXT Record. On completion, \a on_done is invoked
+  // with the resulting string.
+  //
+  // The same caveats in \a LookupHostname apply here.
+  virtual TaskHandle LookupTXT(
+      std::function<void(absl::StatusOr<std::string>)> on_resolved,
+      absl::string_view name, Duration timeout,
+      grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
 
   // This shares the same semantics with \a EventEngine::Cancel: successfully
   // cancelled lookups will not have their callbacks executed, and this
@@ -80,13 +104,12 @@ class DNSResolver {
 };
 
 // Override the active DNS resolver which should be used for all DNS
-// resolution in gRPC. Note this should only be used during library
-// initialization or within tests.
-void SetDNSResolver(DNSResolver* resolver);
+// resolution in gRPC.
+void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver);
 
 // Get the singleton DNS resolver instance which should be used for all
 // DNS resolution in gRPC.
-DNSResolver* GetDNSResolver();
+std::shared_ptr<DNSResolver> GetDNSResolver();
 
 }  // namespace grpc_core
 

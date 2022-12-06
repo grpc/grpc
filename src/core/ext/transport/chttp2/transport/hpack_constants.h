@@ -17,7 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace grpc_core {
 namespace hpack_constants {
@@ -31,6 +32,11 @@ static constexpr uint32_t kLastStaticEntry = 61;
 
 static constexpr uint32_t EntriesForBytes(uint32_t bytes) noexcept {
   return (bytes + kEntryOverhead - 1) / kEntryOverhead;
+}
+
+static constexpr size_t SizeForEntry(size_t key_length,
+                                     size_t value_length) noexcept {
+  return key_length + value_length + kEntryOverhead;
 }
 
 static constexpr uint32_t kInitialTableEntries =

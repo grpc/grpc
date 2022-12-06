@@ -31,7 +31,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_MetadataMatcher__fields[4
 const upb_MiniTable envoy_type_matcher_v3_MetadataMatcher_msginit = {
   &envoy_type_matcher_v3_MetadataMatcher_submsgs[0],
   &envoy_type_matcher_v3_MetadataMatcher__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_matcher_v3_MetadataMatcher_PathSegment__fields[1] = {
@@ -41,7 +41,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_MetadataMatcher_PathSegme
 const upb_MiniTable envoy_type_matcher_v3_MetadataMatcher_PathSegment_msginit = {
   NULL,
   &envoy_type_matcher_v3_MetadataMatcher_PathSegment__fields[0],
-  UPB_SIZE(12, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

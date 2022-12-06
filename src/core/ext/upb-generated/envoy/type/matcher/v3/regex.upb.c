@@ -29,7 +29,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_RegexMatcher__fields[2] =
 const upb_MiniTable envoy_type_matcher_v3_RegexMatcher_msginit = {
   &envoy_type_matcher_v3_RegexMatcher_submsgs[0],
   &envoy_type_matcher_v3_RegexMatcher__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_type_matcher_v3_RegexMatcher_GoogleRE2_submsgs[1] = {
@@ -43,7 +43,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_RegexMatcher_GoogleRE2__f
 const upb_MiniTable envoy_type_matcher_v3_RegexMatcher_GoogleRE2_msginit = {
   &envoy_type_matcher_v3_RegexMatcher_GoogleRE2_submsgs[0],
   &envoy_type_matcher_v3_RegexMatcher_GoogleRE2__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_type_matcher_v3_RegexMatchAndSubstitute_submsgs[1] = {
@@ -58,7 +58,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_RegexMatchAndSubstitute__
 const upb_MiniTable envoy_type_matcher_v3_RegexMatchAndSubstitute_msginit = {
   &envoy_type_matcher_v3_RegexMatchAndSubstitute_submsgs[0],
   &envoy_type_matcher_v3_RegexMatchAndSubstitute__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

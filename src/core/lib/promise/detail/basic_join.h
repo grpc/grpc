@@ -22,7 +22,6 @@
 
 #include <array>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include "absl/types/variant.h"

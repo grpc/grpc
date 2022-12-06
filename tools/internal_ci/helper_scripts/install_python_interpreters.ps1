@@ -111,3 +111,20 @@ $Python310x64Config = @{
     PythonInstallerHash = "9ea305690dbfd424a632b6a659347c1e"
 }
 Install-Python @Python310x64Config
+
+# Python 3.11
+$Python311x86Config = @{
+    PythonVersion = "3.11.0"
+    PythonInstaller = "python-3.11.0rc1"
+    PythonInstallPath = "C:\Python311_32bit"
+    PythonInstallerHash = "d2e5420e53d9e71c82b4a19763dbaa12"
+}
+Install-Python @Python311x86Config
+
+$Python311x64Config = @{
+    PythonVersion = "3.11.0"
+    PythonInstaller = "python-3.11.0rc1-amd64"
+    PythonInstallPath = "C:\Python311"
+    PythonInstallerHash = "5943d8702e40a5ccd62e5a8d4c8852aa"
+}
+Install-Python @Python311x64Config

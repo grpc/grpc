@@ -29,7 +29,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_NodeMatcher__fields[2] = 
 const upb_MiniTable envoy_type_matcher_v3_NodeMatcher_msginit = {
   &envoy_type_matcher_v3_NodeMatcher_submsgs[0],
   &envoy_type_matcher_v3_NodeMatcher__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

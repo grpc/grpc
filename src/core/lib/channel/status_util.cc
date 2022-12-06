@@ -22,6 +22,12 @@
 
 #include <string.h>
 
+#include <algorithm>
+#include <vector>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
 #include "src/core/lib/gpr/useful.h"
 
 struct status_string_entry {
@@ -109,3 +115,42 @@ bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
   *status = static_cast<grpc_status_code>(status_int);
   return true;
 }
+
+namespace grpc_core {
+
+namespace internal {
+
+std::string StatusCodeSet::ToString() const {
+  std::vector<absl::string_view> codes;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
+    if (Contains(g_status_string_entries[i].status)) {
+      codes.emplace_back(g_status_string_entries[i].str);
+    }
+  }
+  return absl::StrCat("{", absl::StrJoin(codes, ","), "}");
+}
+
+}  // namespace internal
+
+absl::Status MaybeRewriteIllegalStatusCode(absl::Status status,
+                                           absl::string_view source) {
+  switch (status.code()) {
+    // The set of disallowed codes, as per
+    // https://github.com/grpc/proposal/blob/master/A54-restrict-control-plane-status-codes.md.
+    case absl::StatusCode::kInvalidArgument:
+    case absl::StatusCode::kNotFound:
+    case absl::StatusCode::kAlreadyExists:
+    case absl::StatusCode::kFailedPrecondition:
+    case absl::StatusCode::kAborted:
+    case absl::StatusCode::kOutOfRange:
+    case absl::StatusCode::kDataLoss: {
+      return absl::InternalError(
+          absl::StrCat("Illegal status code from ", source,
+                       "; original status: ", status.ToString()));
+    }
+    default:
+      return status;
+  }
+}
+
+}  // namespace grpc_core

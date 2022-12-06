@@ -63,6 +63,7 @@ static void apple_iomgr_platform_flush(void) {}
 
 static void apple_iomgr_platform_shutdown(void) {
   grpc_pollset_global_shutdown();
+  grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
 }
 
 static void apple_iomgr_platform_shutdown_background_closure(void) {}
@@ -177,8 +178,9 @@ void grpc_set_default_iomgr_platform() {
     grpc_set_pollset_set_vtable(&grpc_apple_pollset_set_vtable);
     grpc_set_iomgr_platform_vtable(&apple_vtable);
   }
+  grpc_tcp_client_global_init();
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
-  grpc_core::SetDNSResolver(grpc_core::NativeDNSResolver::GetOrCreate());
+  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
 }
 
 bool grpc_iomgr_run_in_background() {

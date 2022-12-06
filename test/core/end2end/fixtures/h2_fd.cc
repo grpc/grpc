@@ -16,6 +16,9 @@
  *
  */
 
+#include "absl/status/status.h"
+
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -47,8 +50,8 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(

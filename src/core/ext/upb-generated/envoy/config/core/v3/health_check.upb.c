@@ -31,7 +31,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthStatusSet__fields[1]
 const upb_MiniTable envoy_config_core_v3_HealthStatusSet_msginit = {
   NULL,
   &envoy_config_core_v3_HealthStatusSet__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_HealthCheck_submsgs[20] = {
@@ -86,7 +86,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck__fields[23] = 
 const upb_MiniTable envoy_config_core_v3_HealthCheck_msginit = {
   &envoy_config_core_v3_HealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck__fields[0],
-  UPB_SIZE(92, 168), 23, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(96, 168), 23, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_Payload__fields[2] = {
@@ -97,7 +97,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_Payload__field
 const upb_MiniTable envoy_config_core_v3_HealthCheck_Payload_msginit = {
   NULL,
   &envoy_config_core_v3_HealthCheck_Payload__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_HealthCheck_HttpHealthCheck_submsgs[6] = {
@@ -125,7 +125,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_HttpHealthChec
 const upb_MiniTable envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit = {
   &envoy_config_core_v3_HealthCheck_HttpHealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck_HttpHealthCheck__fields[0],
-  UPB_SIZE(52, 104), 10, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(56, 96), 10, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_HealthCheck_TcpHealthCheck_submsgs[2] = {
@@ -141,7 +141,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_TcpHealthCheck
 const upb_MiniTable envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit = {
   &envoy_config_core_v3_HealthCheck_TcpHealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck_TcpHealthCheck__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_RedisHealthCheck__fields[1] = {
@@ -151,7 +151,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_RedisHealthChe
 const upb_MiniTable envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit = {
   NULL,
   &envoy_config_core_v3_HealthCheck_RedisHealthCheck__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_HealthCheck_GrpcHealthCheck_submsgs[1] = {
@@ -167,7 +167,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_GrpcHealthChec
 const upb_MiniTable envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit = {
   &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck_GrpcHealthCheck__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_HealthCheck_CustomHealthCheck_submsgs[1] = {
@@ -182,7 +182,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_CustomHealthCh
 const upb_MiniTable envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit = {
   &envoy_config_core_v3_HealthCheck_CustomHealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck_CustomHealthCheck__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_TlsOptions__fields[1] = {
@@ -192,7 +192,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HealthCheck_TlsOptions__fi
 const upb_MiniTable envoy_config_core_v3_HealthCheck_TlsOptions_msginit = {
   NULL,
   &envoy_config_core_v3_HealthCheck_TlsOptions__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[9] = {

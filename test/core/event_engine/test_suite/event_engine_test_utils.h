@@ -19,15 +19,18 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 using EventEngineFactory = std::function<
@@ -42,11 +45,18 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 
 EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str);
 
-// A helper method to exchange data between two endpoints. It is assumed that
-// both endpoints are connected. The data (specified as a string) is written by
-// the sender_endpoint and read by the receiver_endpoint. It returns OK
-// status only if data written == data read. It also blocks the calling thread
-// until said Write and Read operations are complete.
+// Returns a random message with bounded length.
+std::string GetNextSendMessage();
+
+// Waits until the use_count of the event engine shared_ptr has reached 1
+// and returns.
+void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine);
+
+// A helper method to exchange data between two endpoints. It is assumed
+// that both endpoints are connected. The data (specified as a string) is
+// written by the sender_endpoint and read by the receiver_endpoint. It
+// returns OK status only if data written == data read. It also blocks the
+// calling thread until said Write and Read operations are complete.
 absl::Status SendValidatePayload(std::string data,
                                  EventEngine::Endpoint* send_endpoint,
                                  EventEngine::Endpoint* receive_endpoint);
@@ -74,7 +84,7 @@ class ConnectionManager {
   // If connection is successful, returns a tuple containing:
   //    1. a pointer to the client side endpoint of the connection.
   //    2. a pointer to the server side endpoint of the connection.
-  // If un-successfull it returns a non-OK  status containing the error
+  // If un-successful it returns a non-OK  status containing the error
   // encountered.
   absl::StatusOr<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
                             std::unique_ptr<EventEngine::Endpoint>>>
@@ -89,26 +99,30 @@ class ConnectionManager {
 
     void SetClientEndpoint(
         std::unique_ptr<EventEngine::Endpoint>&& client_endpoint) {
-      client_endpoint_promise_.Set(std::move(client_endpoint));
+      client_endpoint_ = std::move(client_endpoint);
+      client_signal_.Notify();
     }
     void SetServerEndpoint(
         std::unique_ptr<EventEngine::Endpoint>&& server_endpoint) {
-      server_endpoint_promise_.Set(std::move(server_endpoint));
+      server_endpoint_ = std::move(server_endpoint);
+      server_signal_.Notify();
     }
     std::unique_ptr<EventEngine::Endpoint> GetClientEndpoint() {
-      auto client_endpoint = std::move(client_endpoint_promise_.Get());
-      client_endpoint_promise_.Reset();
+      auto client_endpoint = std::move(client_endpoint_);
+      client_endpoint_.reset();
       return client_endpoint;
     }
     std::unique_ptr<EventEngine::Endpoint> GetServerEndpoint() {
-      auto server_endpoint = std::move(server_endpoint_promise_.Get());
-      server_endpoint_promise_.Reset();
+      auto server_endpoint = std::move(server_endpoint_);
+      server_endpoint_.reset();
       return server_endpoint;
     }
 
    private:
-    Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise_;
-    Promise<std::unique_ptr<EventEngine::Endpoint>> server_endpoint_promise_;
+    std::unique_ptr<EventEngine::Endpoint> client_endpoint_;
+    std::unique_ptr<EventEngine::Endpoint> server_endpoint_;
+    grpc_core::Notification client_signal_;
+    grpc_core::Notification server_signal_;
   };
 
   grpc_core::Mutex mu_;

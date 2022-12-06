@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "upb/msg_internal.h"
 #include "envoy/service/status/v3/csds.upb.h"
-#include "envoy/admin/v3/config_dump.upb.h"
+#include "envoy/admin/v3/config_dump_shared.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/type/matcher/v3/node.upb.h"
 #include "google/api/annotations.upb.h"
@@ -34,7 +34,7 @@ static const upb_MiniTable_Field envoy_service_status_v3_ClientStatusRequest__fi
 const upb_MiniTable envoy_service_status_v3_ClientStatusRequest_msginit = {
   &envoy_service_status_v3_ClientStatusRequest_submsgs[0],
   &envoy_service_status_v3_ClientStatusRequest__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_service_status_v3_PerXdsConfig_submsgs[5] = {
@@ -76,7 +76,7 @@ static const upb_MiniTable_Field envoy_service_status_v3_ClientConfig__fields[3]
 const upb_MiniTable envoy_service_status_v3_ClientConfig_msginit = {
   &envoy_service_status_v3_ClientConfig_submsgs[0],
   &envoy_service_status_v3_ClientConfig__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[3] = {
@@ -100,7 +100,7 @@ static const upb_MiniTable_Field envoy_service_status_v3_ClientConfig_GenericXds
 const upb_MiniTable envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit = {
   &envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[0],
   &envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[0],
-  UPB_SIZE(52, 88), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(56, 88), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_service_status_v3_ClientStatusResponse_submsgs[1] = {
@@ -114,7 +114,7 @@ static const upb_MiniTable_Field envoy_service_status_v3_ClientStatusResponse__f
 const upb_MiniTable envoy_service_status_v3_ClientStatusResponse_msginit = {
   &envoy_service_status_v3_ClientStatusResponse_submsgs[0],
   &envoy_service_status_v3_ClientStatusResponse__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[5] = {

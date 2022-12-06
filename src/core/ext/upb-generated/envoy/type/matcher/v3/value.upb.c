@@ -36,13 +36,13 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_ValueMatcher__fields[6] =
 const upb_MiniTable envoy_type_matcher_v3_ValueMatcher_msginit = {
   &envoy_type_matcher_v3_ValueMatcher_submsgs[0],
   &envoy_type_matcher_v3_ValueMatcher__fields[0],
-  UPB_SIZE(8, 24), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(8, 16), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 const upb_MiniTable envoy_type_matcher_v3_ValueMatcher_NullMatch_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_type_matcher_v3_ListMatcher_submsgs[1] = {
@@ -56,7 +56,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_ListMatcher__fields[1] = 
 const upb_MiniTable envoy_type_matcher_v3_ListMatcher_msginit = {
   &envoy_type_matcher_v3_ListMatcher_submsgs[0],
   &envoy_type_matcher_v3_ListMatcher__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

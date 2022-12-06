@@ -24,7 +24,8 @@ namespace testing {
 
 class EchoTestServiceImpl : public proto::EchoTestService::Service {
  public:
-  EchoTestServiceImpl(std::string hostname, std::string forwarding_address);
+  EchoTestServiceImpl(std::string hostname, std::string service_version,
+                      std::string forwarding_address);
 
   grpc::Status Echo(grpc::ServerContext* context,
                     const proto::EchoRequest* request,
@@ -36,11 +37,11 @@ class EchoTestServiceImpl : public proto::EchoTestService::Service {
 
  private:
   std::string hostname_;
+  std::string service_version_;
   std::string forwarding_address_;
   std::unique_ptr<proto::EchoTestService::Stub> forwarding_stub_;
   // The following fields are not set yet. But we may need them later.
   //  int port_;
-  //  std::string version_;
   //  std::string cluster_;
   //  std::string istio_version_;
 };

@@ -18,7 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 
-#include <grpc/grpc.h>
+#include "gtest/gtest.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -32,10 +33,10 @@ static void test_varint(uint32_t value, uint8_t prefix_or,
       grpc_slice_from_copied_buffer(expect_bytes, expect_length);
   grpc_slice slice;
   gpr_log(GPR_DEBUG, "Test: 0x%08x", value);
-  GPR_ASSERT(w.length() == expect_length);
+  ASSERT_EQ(w.length(), expect_length);
   slice = grpc_slice_malloc(w.length());
   w.Write(prefix_or, GRPC_SLICE_START_PTR(slice));
-  GPR_ASSERT(grpc_slice_eq(expect, slice));
+  ASSERT_TRUE(grpc_slice_eq(expect, slice));
   grpc_slice_unref(expect);
   grpc_slice_unref(slice);
 }
@@ -43,15 +44,18 @@ static void test_varint(uint32_t value, uint8_t prefix_or,
 #define TEST_VARINT(value, prefix_bits, prefix_or, expect) \
   test_varint<prefix_bits>(value, prefix_or, expect, sizeof(expect) - 1)
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
+TEST(VarintTest, MainTest) {
   TEST_VARINT(0, 1, 0, "\x00");
   TEST_VARINT(128, 1, 0, "\x7f\x01");
   TEST_VARINT(16384, 1, 0, "\x7f\x81\x7f");
   TEST_VARINT(2097152, 1, 0, "\x7f\x81\xff\x7f");
   TEST_VARINT(268435456, 1, 0, "\x7f\x81\xff\xff\x7f");
   TEST_VARINT(0xffffffff, 1, 0, "\x7f\x80\xff\xff\xff\x0f");
-  grpc_shutdown();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

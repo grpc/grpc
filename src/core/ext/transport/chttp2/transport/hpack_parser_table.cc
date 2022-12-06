@@ -27,16 +27,16 @@
 #include <cstring>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
-
-extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
@@ -78,10 +78,6 @@ void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   entries_.swap(entries);
 }
 
-HPackTable::HPackTable() : static_metadata_(GetStaticMementos()) {}
-
-HPackTable::~HPackTable() = default;
-
 /* Evict one element from the table */
 void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
@@ -104,10 +100,10 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
 
 grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
   if (current_table_bytes_ == bytes) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   if (bytes > max_bytes_) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return GRPC_ERROR_CREATE(absl::StrFormat(
         "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
         max_bytes_));
   }
@@ -121,12 +117,12 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
   uint32_t new_cap = std::max(hpack_constants::EntriesForBytes(bytes),
                               hpack_constants::kInitialTableEntries);
   entries_.Rebuild(new_cap);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle HPackTable::Add(Memento md) {
   if (current_table_bytes_ > max_bytes_) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return GRPC_ERROR_CREATE(absl::StrFormat(
         "HPACK max table size reduced to %d but not reflected by hpack "
         "stream (still at %d)",
         max_bytes_, current_table_bytes_));
@@ -144,7 +140,7 @@ grpc_error_handle HPackTable::Add(Memento md) {
     while (entries_.num_entries()) {
       EvictOne();
     }
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   // evict entries to ensure no overflow
@@ -156,7 +152,7 @@ grpc_error_handle HPackTable::Add(Memento md) {
   // copy the finalized entry in
   mem_used_ += md.transport_size();
   entries_.Put(std::move(md));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 namespace {
@@ -229,7 +225,7 @@ const StaticTableEntry kStaticTable[hpack_constants::kLastStaticEntry] = {
     {"www-authenticate", ""},
 };
 
-GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
+HPackTable::Memento MakeMemento(size_t i) {
   auto sm = kStaticTable[i];
   return grpc_metadata_batch::Parse(
       sm.key, Slice::FromStaticString(sm.value),
@@ -240,11 +236,6 @@ GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
 }
 
 }  // namespace
-
-auto HPackTable::GetStaticMementos() -> const StaticMementos& {
-  static const StaticMementos* const static_mementos = new StaticMementos();
-  return *static_mementos;
-}
 
 HPackTable::StaticMementos::StaticMementos() {
   for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {

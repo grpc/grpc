@@ -18,15 +18,11 @@
 
 #include "src/core/lib/gprpp/global_config_env.h"
 
-#include <stdio.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/memory.h"
 
 namespace {
@@ -59,23 +55,23 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var, "Apple", "");
 TEST_F(GlobalConfigEnvTest, BoolWithEnvTest) {
   const char* bool_var_name = "BOOL_VAR";
 
-  gpr_unsetenv(bool_var_name);
+  grpc_core::UnsetEnv(bool_var_name);
   EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var));
 
-  gpr_setenv(bool_var_name, "true");
+  grpc_core::SetEnv(bool_var_name, "true");
   EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var));
 
-  gpr_setenv(bool_var_name, "false");
+  grpc_core::SetEnv(bool_var_name, "false");
   EXPECT_FALSE(GPR_GLOBAL_CONFIG_GET(bool_var));
 
   EXPECT_FALSE(IsConfigErrorCalled());
 
-  gpr_setenv(bool_var_name, "");
+  grpc_core::SetEnv(bool_var_name, "");
   GPR_GLOBAL_CONFIG_GET(bool_var);
   EXPECT_TRUE(IsConfigErrorCalled());
   ClearConfigErrorCalled();
 
-  gpr_setenv(bool_var_name, "!");
+  grpc_core::SetEnv(bool_var_name, "!");
   GPR_GLOBAL_CONFIG_GET(bool_var);
   EXPECT_TRUE(IsConfigErrorCalled());
   ClearConfigErrorCalled();
@@ -84,21 +80,21 @@ TEST_F(GlobalConfigEnvTest, BoolWithEnvTest) {
 TEST_F(GlobalConfigEnvTest, Int32WithEnvTest) {
   const char* int32_var_name = "INT32_VAR";
 
-  gpr_unsetenv(int32_var_name);
+  grpc_core::UnsetEnv(int32_var_name);
   EXPECT_EQ(1234, GPR_GLOBAL_CONFIG_GET(int32_var));
 
-  gpr_setenv(int32_var_name, "0");
+  grpc_core::SetEnv(int32_var_name, "0");
   EXPECT_EQ(0, GPR_GLOBAL_CONFIG_GET(int32_var));
 
-  gpr_setenv(int32_var_name, "-123456789");
+  grpc_core::SetEnv(int32_var_name, "-123456789");
   EXPECT_EQ(-123456789, GPR_GLOBAL_CONFIG_GET(int32_var));
 
-  gpr_setenv(int32_var_name, "123456789");
+  grpc_core::SetEnv(int32_var_name, "123456789");
   EXPECT_EQ(123456789, GPR_GLOBAL_CONFIG_GET(int32_var));
 
   EXPECT_FALSE(IsConfigErrorCalled());
 
-  gpr_setenv(int32_var_name, "-1AB");
+  grpc_core::SetEnv(int32_var_name, "-1AB");
   GPR_GLOBAL_CONFIG_GET(int32_var);
   EXPECT_TRUE(IsConfigErrorCalled());
   ClearConfigErrorCalled();
@@ -108,15 +104,15 @@ TEST_F(GlobalConfigEnvTest, StringWithEnvTest) {
   const char* string_var_name = "STRING_VAR";
   grpc_core::UniquePtr<char> value;
 
-  gpr_unsetenv(string_var_name);
+  grpc_core::UnsetEnv(string_var_name);
   value = GPR_GLOBAL_CONFIG_GET(string_var);
   EXPECT_EQ(0, strcmp(value.get(), "Apple"));
 
-  gpr_setenv(string_var_name, "Banana");
+  grpc_core::SetEnv(string_var_name, "Banana");
   value = GPR_GLOBAL_CONFIG_GET(string_var);
   EXPECT_EQ(0, strcmp(value.get(), "Banana"));
 
-  gpr_setenv(string_var_name, "");
+  grpc_core::SetEnv(string_var_name, "");
   value = GPR_GLOBAL_CONFIG_GET(string_var);
   EXPECT_EQ(0, strcmp(value.get(), ""));
 }

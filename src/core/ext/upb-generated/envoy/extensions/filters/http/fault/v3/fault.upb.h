@@ -67,11 +67,15 @@ UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort* envoy_extensions_f
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_http_fault_v3_FaultAbort_serialize(const envoy_extensions_filters_http_fault_v3_FaultAbort* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_fault_v3_FaultAbort_serialize_ex(const envoy_extensions_filters_http_fault_v3_FaultAbort* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_extensions_filters_http_fault_v3_FaultAbort_error_type_http_status = 2,
@@ -176,11 +180,15 @@ UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort* envoy_
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_serialize(const envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_serialize_ex(const envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 
@@ -209,11 +217,15 @@ UPB_INLINE envoy_extensions_filters_http_fault_v3_HTTPFault* envoy_extensions_fi
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_http_fault_v3_HTTPFault_serialize(const envoy_extensions_filters_http_fault_v3_HTTPFault* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_fault_v3_HTTPFault_serialize_ex(const envoy_extensions_filters_http_fault_v3_HTTPFault* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_extensions_filters_http_fault_v3_HTTPFault_has_delay(const envoy_extensions_filters_http_fault_v3_HTTPFault* msg) {
   return _upb_hasbit(msg, 1);

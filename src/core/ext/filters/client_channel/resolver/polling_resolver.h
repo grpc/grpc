@@ -22,19 +22,18 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 
@@ -45,7 +44,7 @@ namespace grpc_core {
 // Implementations need only to implement StartRequest().
 class PollingResolver : public Resolver {
  public:
-  PollingResolver(ResolverArgs args, const grpc_channel_args* channel_args,
+  PollingResolver(ResolverArgs args, const ChannelArgs& channel_args,
                   Duration min_time_between_resolutions,
                   BackOff::Options backoff_options, TraceFlag* tracer);
   ~PollingResolver() override;
@@ -70,23 +69,25 @@ class PollingResolver : public Resolver {
   const std::string& authority() const { return authority_; }
   const std::string& name_to_resolve() const { return name_to_resolve_; }
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
-  const grpc_channel_args* channel_args() const { return channel_args_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
   void OnRequestCompleteLocked(Result result);
+  void GetResultStatus(absl::Status status);
 
-  static void OnNextResolution(void* arg, grpc_error_handle error);
-  void OnNextResolutionLocked(grpc_error_handle error);
+  void ScheduleNextResolutionTimer(const Duration& timeout);
+  void OnNextResolutionLocked();
+  void MaybeCancelNextResolutionTimer();
 
   /// authority
   std::string authority_;
   /// name to resolve
   std::string name_to_resolve_;
   /// channel args
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
   TraceFlag* tracer_;
@@ -96,16 +97,23 @@ class PollingResolver : public Resolver {
   bool shutdown_ = false;
   /// are we currently resolving?
   OrphanablePtr<Orphanable> request_;
-  /// next resolution timer
-  bool have_next_resolution_timer_ = false;
-  grpc_timer next_resolution_timer_;
-  grpc_closure on_next_resolution_;
   /// min time between DNS requests
   Duration min_time_between_resolutions_;
   /// timestamp of last DNS request
   absl::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
+  /// state for handling interactions between re-resolution requests and
+  /// result health callbacks
+  enum class ResultStatusState {
+    kNone,
+    kResultHealthCallbackPending,
+    kReresolutionRequestedWhileCallbackWasPending,
+  };
+  ResultStatusState result_status_state_ = ResultStatusState::kNone;
+  /// next resolution timer
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      next_resolution_timer_handle_;
 };
 
 }  // namespace grpc_core

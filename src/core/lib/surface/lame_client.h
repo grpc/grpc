@@ -49,7 +49,7 @@ class LameClientFilter : public ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<LameClientFilter> Create(
-      ChannelArgs args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
   bool StartTransportOp(grpc_transport_op*) override;

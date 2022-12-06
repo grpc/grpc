@@ -23,11 +23,15 @@
 
 #include <stddef.h>
 
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -36,7 +40,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/iomgr/timer.h"
 
 namespace grpc_core {
 
@@ -63,7 +66,7 @@ namespace grpc_core {
 /// which the callback takes ownership of.
 struct HandshakerArgs {
   grpc_endpoint* endpoint = nullptr;
-  grpc_channel_args* args = nullptr;
+  ChannelArgs args;
   grpc_slice_buffer* read_buffer = nullptr;
   // A handshaker may set this to true before invoking on_handshake_done
   // to indicate that subsequent handshakers should be skipped.
@@ -102,11 +105,11 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
   /// Adds a handshaker to the handshake manager.
   /// Takes ownership of \a handshaker.
-  void Add(RefCountedPtr<Handshaker> handshaker);
+  void Add(RefCountedPtr<Handshaker> handshaker) ABSL_LOCKS_EXCLUDED(mu_);
 
   /// Shuts down the handshake manager (e.g., to clean up when the operation is
   /// aborted in the middle).
-  void Shutdown(grpc_error_handle why);
+  void Shutdown(grpc_error_handle why) ABSL_LOCKS_EXCLUDED(mu_);
 
   /// Invokes handshakers in the order they were added.
   /// Takes ownership of \a endpoint, and then passes that ownership to
@@ -117,43 +120,44 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   ///
   /// When done, invokes \a on_handshake_done with a HandshakerArgs
   /// object as its argument.  If the callback is invoked with error !=
-  /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
+  /// absl::OkStatus(), then handshaking failed and the handshaker has done
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
-  void DoHandshake(grpc_endpoint* endpoint,
-                   const grpc_channel_args* channel_args, Timestamp deadline,
-                   grpc_tcp_server_acceptor* acceptor,
-                   grpc_iomgr_cb_func on_handshake_done, void* user_data);
+  void DoHandshake(grpc_endpoint* endpoint, const ChannelArgs& channel_args,
+                   Timestamp deadline, grpc_tcp_server_acceptor* acceptor,
+                   grpc_iomgr_cb_func on_handshake_done, void* user_data)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
-  bool CallNextHandshakerLocked(grpc_error_handle error);
+  bool CallNextHandshakerLocked(grpc_error_handle error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // A function used as the handshaker-done callback when chaining
   // handshakers together.
-  static void CallNextHandshakerFn(void* arg, grpc_error_handle error);
-
-  // Callback invoked when deadline is exceeded.
-  static void OnTimeoutFn(void* arg, grpc_error_handle error);
+  static void CallNextHandshakerFn(void* arg, grpc_error_handle error)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   static const size_t HANDSHAKERS_INIT_SIZE = 2;
 
   Mutex mu_;
-  bool is_shutdown_ = false;
+  bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
   // An array of handshakers added via grpc_handshake_manager_add().
   absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE>
-      handshakers_;
+      handshakers_ ABSL_GUARDED_BY(mu_);
   // The index of the handshaker to invoke next and closure to invoke it.
-  size_t index_ = 0;
-  grpc_closure call_next_handshaker_;
+  size_t index_ ABSL_GUARDED_BY(mu_) = 0;
+  grpc_closure call_next_handshaker_ ABSL_GUARDED_BY(mu_);
   // The acceptor to call the handshakers with.
-  grpc_tcp_server_acceptor* acceptor_;
-  // Deadline timer across all handshakers.
-  grpc_timer deadline_timer_;
-  grpc_closure on_timeout_;
+  grpc_tcp_server_acceptor* acceptor_ ABSL_GUARDED_BY(mu_);
   // The final callback and user_data to invoke after the last handshaker.
-  grpc_closure on_handshake_done_;
+  grpc_closure on_handshake_done_ ABSL_GUARDED_BY(mu_);
   // Handshaker args.
-  HandshakerArgs args_;
+  HandshakerArgs args_ ABSL_GUARDED_BY(mu_);
+  // Deadline timer across all handshakers.
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      deadline_timer_handle_ ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

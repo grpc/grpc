@@ -21,6 +21,11 @@ extern "C" {
 
 extern _upb_DefPool_Init envoy_config_listener_v3_listener_proto_upbdefinit;
 
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_AdditionalAddress_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.AdditionalAddress");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerCollection_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ListenerCollection");

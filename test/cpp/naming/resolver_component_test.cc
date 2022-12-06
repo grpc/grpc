@@ -47,14 +47,15 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -77,6 +78,7 @@
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using std::vector;
 using testing::UnorderedElementsAreArray;
 
@@ -192,9 +194,9 @@ gpr_timespec TestDeadline(void) {
 
 struct ArgsStruct {
   gpr_event ev;
-  gpr_atm done_atm;
   gpr_mu* mu;
-  grpc_pollset* pollset;
+  bool done;              // guarded by mu
+  grpc_pollset* pollset;  // guarded by mu
   grpc_pollset_set* pollset_set;
   std::shared_ptr<grpc_core::WorkSerializer> lock;
   grpc_channel_args* channel_args;
@@ -211,7 +213,7 @@ void ArgsInit(ArgsStruct* args) {
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->lock = std::make_shared<grpc_core::WorkSerializer>();
-  gpr_atm_rel_store(&args->done_atm, 0);
+  args->done = false;
   args->channel_args = nullptr;
 }
 
@@ -243,24 +245,22 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   // for that server before succeeding with the healthy one).
   gpr_timespec deadline = NSecondDeadline(20);
   while (true) {
-    bool done = gpr_atm_acq_load(&args->done_atm) != 0;
-    if (done) {
+    grpc_core::MutexLockForGprMu lock(args->mu);
+    if (args->done) {
       break;
     }
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", args->done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
-    gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(
             args->pollset, &worker,
             grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
-    gpr_mu_unlock(args->mu);
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
@@ -280,16 +280,15 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
   }
 }
 
-void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
+void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
                                ArgsStruct* args) {
-  const grpc_arg* lb_policy_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
+  absl::optional<absl::string_view> lb_policy_arg =
+      channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
-    GPR_ASSERT(lb_policy_arg != nullptr);
-    GPR_ASSERT(lb_policy_arg->type == GRPC_ARG_STRING);
-    EXPECT_EQ(lb_policy_arg->value.string, args->expected_lb_policy);
+    EXPECT_TRUE(lb_policy_arg.has_value());
+    EXPECT_EQ(*lb_policy_arg, args->expected_lb_policy);
   } else {
-    GPR_ASSERT(lb_policy_arg == nullptr);
+    EXPECT_FALSE(lb_policy_arg.has_value());
   }
 }
 
@@ -316,7 +315,7 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
                   SOCKET_ERROR)
           << "Failed to set socketopt reuseaddr. WSA error: " +
                  std::to_string(WSAGetLastError());
-      ASSERT_TRUE(grpc_tcp_set_non_block(s) == GRPC_ERROR_NONE)
+      ASSERT_TRUE(grpc_tcp_set_non_block(s) == absl::OkStatus())
           << "Failed to set socket non-blocking";
       ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
           << "Failed to bind socket " + std::to_string(s) +
@@ -433,11 +432,11 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 
   void ReportResult(grpc_core::Resolver::Result result) override {
     CheckResult(result);
-    gpr_atm_rel_store(&args_->done_atm, 1);
-    gpr_mu_lock(args_->mu);
+    grpc_core::MutexLockForGprMu lock(args_->mu);
+    GPR_ASSERT(!args_->done);
+    args_->done = true;
     GRPC_LOG_IF_ERROR("pollset_kick",
                       grpc_pollset_kick(args_->pollset, nullptr));
-    gpr_mu_unlock(args_->mu);
   }
 
   virtual void CheckResult(const grpc_core::Resolver::Result& /*result*/) {}
@@ -466,7 +465,7 @@ class CheckingResultHandler : public ResultHandler {
     AddActualAddresses(*result.addresses, /*is_balancer=*/false,
                        &found_lb_addrs);
     const grpc_core::ServerAddressList* balancer_addresses =
-        grpc_core::FindGrpclbBalancerAddressesInChannelArgs(*result.args);
+        grpc_core::FindGrpclbBalancerAddressesInChannelArgs(result.args);
     if (balancer_addresses != nullptr) {
       AddActualAddresses(*balancer_addresses, /*is_balancer=*/true,
                          &found_lb_addrs);
@@ -567,7 +566,8 @@ void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }
 
 void RunResolvesRelevantRecordsTest(
     std::unique_ptr<grpc_core::Resolver::ResultHandler> (*CreateResultHandler)(
-        ArgsStruct* args)) {
+        ArgsStruct* args),
+    grpc_core::ChannelArgs resolver_args) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -585,7 +585,7 @@ void RunResolvesRelevantRecordsTest(
   std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer>
       fake_non_responsive_dns_server;
   if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "True") {
-    fake_non_responsive_dns_server = absl::make_unique<
+    fake_non_responsive_dns_server = std::make_unique<
         grpc_core::testing::FakeUdpAndTcpServer>(
         grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
             kWaitForClientToSendFirstBytes,
@@ -606,15 +606,11 @@ void RunResolvesRelevantRecordsTest(
   }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
           absl::GetFlag(FLAGS_enable_srv_queries).c_str());
-  grpc_channel_args* resolver_args = nullptr;
   // By default, SRV queries are disabled, so tests that expect no SRV query
   // should avoid setting any channel arg. Test cases that do rely on the SRV
   // query must explicitly enable SRV though.
   if (absl::GetFlag(FLAGS_enable_srv_queries) == "True") {
-    grpc_arg srv_queries_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
-    resolver_args =
-        grpc_channel_args_copy_and_add(nullptr, &srv_queries_arg, 1);
+    resolver_args = resolver_args.Set(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
   } else if (absl::GetFlag(FLAGS_enable_srv_queries) != "False") {
     gpr_log(GPR_DEBUG, "Invalid value for --enable_srv_queries.");
     abort();
@@ -629,22 +625,18 @@ void RunResolvesRelevantRecordsTest(
     // Rather, we use the resolver-agnostic "service config" resolution option,
     // for which c-ares has its own specific default value, which isn't
     // necessarily shared by other resolvers.
-    grpc_arg txt_queries_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), false);
-    grpc_channel_args* tmp_args =
-        grpc_channel_args_copy_and_add(resolver_args, &txt_queries_arg, 1);
-    grpc_channel_args_destroy(resolver_args);
-    resolver_args = tmp_args;
+    resolver_args =
+        resolver_args.Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, false);
   } else if (absl::GetFlag(FLAGS_enable_txt_queries) != "False") {
     gpr_log(GPR_DEBUG, "Invalid value for --enable_txt_queries.");
     abort();
   }
+  resolver_args = resolver_args.SetObject(GetDefaultEventEngine());
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
-  grpc_channel_args_destroy(resolver_args);
   auto* resolver_ptr = resolver.get();
   args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
                  DEBUG_LOCATION);
@@ -654,7 +646,8 @@ void RunResolvesRelevantRecordsTest(
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create);
+  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create,
+                                 grpc_core::ChannelArgs());
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
@@ -665,10 +658,20 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, phony_port,
                                    &done_ev);
   // Run the resolver test
-  RunResolvesRelevantRecordsTest(ResultHandler::Create);
+  RunResolvesRelevantRecordsTest(ResultHandler::Create,
+                                 grpc_core::ChannelArgs());
   // Shutdown and join stress thread
   gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
   socket_stress_thread.join();
+}
+
+TEST(ResolverComponentTest, TestDoesntCrashOrHangWith1MsTimeout) {
+  // Queries in this test could either complete successfully or time out
+  // and show cancellation. This test doesn't care - we just care that the
+  // query completes and doesn't crash, get stuck, leak, etc.
+  RunResolvesRelevantRecordsTest(
+      ResultHandler::Create,
+      grpc_core::ChannelArgs().Set(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS, 1));
 }
 
 }  // namespace

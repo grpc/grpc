@@ -26,7 +26,7 @@ static const upb_MiniTable_Field xds_type_v3_TypedStruct__fields[2] = {
 const upb_MiniTable xds_type_v3_TypedStruct_msginit = {
   &xds_type_v3_TypedStruct_submsgs[0],
   &xds_type_v3_TypedStruct__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

@@ -16,17 +16,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -37,7 +35,6 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -48,7 +45,6 @@ namespace {
 class SockaddrResolver : public Resolver {
  public:
   SockaddrResolver(ServerAddressList addresses, ResolverArgs args);
-  ~SockaddrResolver() override;
 
   void StartLocked() override;
 
@@ -57,25 +53,19 @@ class SockaddrResolver : public Resolver {
  private:
   std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
 };
 
 SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
                                    ResolverArgs args)
     : result_handler_(std::move(args.result_handler)),
       addresses_(std::move(addresses)),
-      channel_args_(grpc_channel_args_copy(args.args)) {}
-
-SockaddrResolver::~SockaddrResolver() {
-  grpc_channel_args_destroy(channel_args_);
-}
+      channel_args_(std::move(args.args)) {}
 
 void SockaddrResolver::StartLocked() {
   Result result;
   result.addresses = std::move(addresses_);
-  // TODO(roth): Use std::move() once channel args is converted to C++.
-  result.args = channel_args_;
-  channel_args_ = nullptr;
+  result.args = std::move(channel_args_);
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -105,7 +95,7 @@ bool ParseUri(const URI& uri,
       break;
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
   }
   return !errors_found;
@@ -186,14 +176,14 @@ class UnixAbstractResolverFactory : public ResolverFactory {
 
 void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<IPv4ResolverFactory>());
+      std::make_unique<IPv4ResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<IPv6ResolverFactory>());
+      std::make_unique<IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<UnixResolverFactory>());
+      std::make_unique<UnixResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<UnixAbstractResolverFactory>());
+      std::make_unique<UnixAbstractResolverFactory>());
 #endif
 }
 

@@ -77,11 +77,7 @@ void LockfreeEvent::DestroyEvent() {
   do {
     curr = gpr_atm_no_barrier_load(&state_);
     if (curr & kShutdownBit) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
       internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
-#else
-      GRPC_ERROR_UNREF((grpc_error_handle)(curr & ~kShutdownBit));
-#endif
     } else {
       GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
     }
@@ -131,7 +127,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
            closure when transitioning out of CLOSURE_NO_READY state (i.e there
            is no other code that needs to 'happen-after' this) */
         if (gpr_atm_no_barrier_cas(&state_, kClosureReady, kClosureNotReady)) {
-          ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
           return; /* Successful. Return */
         }
 
@@ -143,16 +139,11 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
            contains a pointer to the shutdown-error). If the fd is shutdown,
            schedule the closure with the shutdown error */
         if ((curr & kShutdownBit) > 0) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
           grpc_error_handle shutdown_err =
               internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
-#else
-          grpc_error_handle shutdown_err =
-              reinterpret_cast<grpc_error_handle>(curr & ~kShutdownBit);
-#endif
-          ExecCtx::Run(DEBUG_LOCATION, closure,
-                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "FD Shutdown", &shutdown_err, 1));
+          ExecCtx::Run(
+              DEBUG_LOCATION, closure,
+              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_err, 1));
           return;
         }
 
@@ -165,23 +156,19 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
     }
   }
 
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   intptr_t status_ptr = internal::StatusAllocHeapPtr(shutdown_error);
   gpr_atm new_state = status_ptr | kShutdownBit;
-#else
-  gpr_atm new_state = reinterpret_cast<gpr_atm>(shutdown_error) | kShutdownBit;
-#endif
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG,
               "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
-              &state_, curr, grpc_error_std_string(shutdown_error).c_str());
+              &state_, curr, StatusToString(shutdown_error).c_str());
     }
     switch (curr) {
       case kClosureReady:
@@ -198,11 +185,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
 
         /* If fd is already shutdown, we are done */
         if ((curr & kShutdownBit) > 0) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
           internal::StatusFreeHeapPtr(status_ptr);
-#else
-          GRPC_ERROR_UNREF(shutdown_error);
-#endif
           return false;
         }
 
@@ -212,9 +195,9 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(&state_, curr, new_state)) {
-          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
-                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "FD Shutdown", &shutdown_error, 1));
+          ExecCtx::Run(
+              DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
+              GRPC_ERROR_CREATE_REFERENCING("FD Shutdown", &shutdown_error, 1));
           return true;
         }
 
@@ -263,7 +246,7 @@ void LockfreeEvent::SetReady() {
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
           ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
-                       GRPC_ERROR_NONE);
+                       absl::OkStatus());
           return;
         }
         /* else the state changed again (only possible by either a racing

@@ -25,6 +25,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/status.h>
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
@@ -47,9 +48,9 @@ class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
  public:
   explicit SimpleEchoTestServerImpl() {}
 
-  grpc::Status Echo(grpc::ServerContext* context,
-                    const proto::EchoRequest* request,
-                    proto::EchoResponse* response) override {
+  grpc::Status Echo(grpc::ServerContext* /* context */,
+                    const proto::EchoRequest* /* request */,
+                    proto::EchoResponse* /* response */) override {
     GPR_ASSERT(false);
     return Status(StatusCode::INVALID_ARGUMENT, "Unexpected");
   }
@@ -57,13 +58,19 @@ class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
   grpc::Status ForwardEcho(grpc::ServerContext* /*context*/,
                            const proto::ForwardEchoRequest* request,
                            proto::ForwardEchoResponse* response) override {
+    if (fail_rpc_) {
+      return Status(StatusCode::UNAVAILABLE, "fail rpc");
+    }
     response->add_output(request->message());
     return Status::OK;
   }
 
+  void set_fail_rpc(bool fail_rpc) { fail_rpc_ = fail_rpc; }
+
  private:
   std::string hostname_;
   std::string forwarding_address_;
+  std::atomic<bool> fail_rpc_{false};
   // The following fields are not set yet. But we may need them later.
   //  int port_;
   //  std::string version_;
@@ -85,8 +92,8 @@ class EchoTest : public ::testing::Test {
     simple_server_ = simple_builder.BuildAndStart();
     // Start the EchoTestServiceImpl server
     ServerBuilder builder;
-    echo_test_service_impl_ =
-        std::make_unique<EchoTestServiceImpl>("hostname", forwarding_address_);
+    echo_test_service_impl_ = std::make_unique<EchoTestServiceImpl>(
+        "hostname", "v1", forwarding_address_);
     builder.RegisterService(echo_test_service_impl_.get());
     int port = grpc_pick_unused_port_or_die();
     server_address_ = grpc_core::JoinHostPort("localhost", port);
@@ -118,7 +125,8 @@ TEST_F(EchoTest, SimpleEchoTest) {
                                ::testing::HasSubstr("Hostname=hostname\n"),
                                ::testing::HasSubstr("Echo=hello\n"),
                                ::testing::HasSubstr("Host="),
-                               ::testing::HasSubstr("IP=")));
+                               ::testing::HasSubstr("IP="),
+                               ::testing::HasSubstr("ServiceVersion=v1")));
 }
 
 TEST_F(EchoTest, ForwardEchoTest) {
@@ -142,7 +150,8 @@ TEST_F(EchoTest, ForwardEchoTest) {
                 absl::StrFormat("[%d body] Hostname=hostname\n", i)),
             ::testing::HasSubstr(absl::StrFormat("[%d body] Echo=hello\n", i)),
             ::testing::HasSubstr(absl::StrFormat("[%d body] Host=", i)),
-            ::testing::HasSubstr(absl::StrFormat("[%d body] IP=", i))));
+            ::testing::HasSubstr(
+                absl::StrFormat("[%d body] ServiceVersion=v1", i))));
   }
 }
 
@@ -162,6 +171,22 @@ TEST_F(EchoTest, ForwardEchoTestUnhandledProtocols) {
                            << " Message = " << status.error_message();
   ASSERT_FALSE(response.output().empty());
   EXPECT_EQ(response.output()[0], "hello");
+}
+
+TEST_F(EchoTest, ForwardEchoFailure) {
+  simple_test_service_impl_.set_fail_rpc(true);
+  ClientContext context;
+  ForwardEchoRequest request;
+  ForwardEchoResponse response;
+  request.set_count(3);
+  request.set_qps(1);
+  request.set_timeout_micros(20 * 1000 * 1000);  // 20 seconds
+  // Use the unhandled protocol to make sure that we forward the request to
+  // SimpleEchoTestServerImpl.
+  request.set_url(absl::StrCat("http://", server_address_));
+  request.set_message("hello");
+  auto status = stub_->ForwardEcho(&context, request, &response);
+  ASSERT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
 }
 
 }  // namespace

@@ -31,7 +31,7 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 /* These trace flags default to 1. The corresponding lines are only traced
    if grpc_api_trace is also truthy */
@@ -70,9 +70,6 @@ void grpc_cq_internal_unref(grpc_completion_queue* cq);
 #define GRPC_CQ_INTERNAL_REF(cq, reason) grpc_cq_internal_ref(cq)
 #define GRPC_CQ_INTERNAL_UNREF(cq, reason) grpc_cq_internal_unref(cq)
 #endif
-
-/* Initializes global variables used by completion queues */
-void grpc_cq_global_init();
 
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made.

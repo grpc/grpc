@@ -31,7 +31,7 @@ static const upb_MiniTable_Field opencensus_proto_trace_v1_TraceConfig__fields[7
 const upb_MiniTable opencensus_proto_trace_v1_TraceConfig_msginit = {
   &opencensus_proto_trace_v1_TraceConfig_submsgs[0],
   &opencensus_proto_trace_v1_TraceConfig__fields[0],
-  UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(40, 48), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable_Field opencensus_proto_trace_v1_ProbabilitySampler__fields[1] = {
@@ -51,7 +51,7 @@ static const upb_MiniTable_Field opencensus_proto_trace_v1_ConstantSampler__fiel
 const upb_MiniTable opencensus_proto_trace_v1_ConstantSampler_msginit = {
   NULL,
   &opencensus_proto_trace_v1_ConstantSampler__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field opencensus_proto_trace_v1_RateLimitingSampler__fields[1] = {

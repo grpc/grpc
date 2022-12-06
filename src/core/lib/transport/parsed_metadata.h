@@ -21,7 +21,6 @@
 
 #include <cstdint>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/functional/function_ref.h"
@@ -153,7 +152,7 @@ class ParsedMetadata {
   // Construct metadata from a string key, slice value pair.
   ParsedMetadata(Slice key, Slice value)
       : vtable_(ParsedMetadata::KeyValueVTable(key.as_string_view())),
-        transport_size_(key.size() + value.size() + 32) {
+        transport_size_(static_cast<uint32_t>(key.size() + value.size() + 32)) {
     value_.pointer =
         new std::pair<Slice, Slice>(std::move(key), std::move(value));
   }
@@ -192,7 +191,9 @@ class ParsedMetadata {
     ParsedMetadata result;
     result.vtable_ = vtable_;
     result.value_ = value_;
-    result.transport_size_ = TransportSize(key().length(), value.length());
+    result.transport_size_ =
+        TransportSize(static_cast<uint32_t>(key().length()),
+                      static_cast<uint32_t>(value.length()));
     vtable_->with_new_value(&value, on_error, &result);
     return result;
   }

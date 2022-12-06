@@ -57,7 +57,7 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
 
     # Break import style to ensure that setup.py has had a chance to install the
     # relevant package.
-    from six.moves.urllib import request
+    from urllib import request
     decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT
     try:
         url = BINARIES_REPOSITORY + '/{target}'.format(target=decorated_path)
@@ -228,7 +228,8 @@ class BuildExt(build_ext.build_ext):
             """
             try:
                 # TODO(lidiz) Remove the generated a.out for success tests.
-                cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++14', '-'],
+                cc = os.environ.get('CC', 'cc')
+                cc_test = subprocess.Popen([cc, '-x', 'c', '-std=c++14', '-'],
                                            stdin=subprocess.PIPE,
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)

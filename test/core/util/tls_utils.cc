@@ -16,12 +16,19 @@
 
 #include "test/core/util/tls_utils.h"
 
+#include <stdio.h>
+
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -38,8 +45,13 @@ void TmpFile::RewriteFile(absl::string_view data) {
   // Create a new file containing new data.
   std::string new_name = CreateTmpFileAndWriteData(data);
   GPR_ASSERT(!new_name.empty());
+#ifdef GPR_WINDOWS
   // Remove the old file.
+  // On Windows rename requires that the new name not exist, whereas
+  // on posix systems rename does an atomic replacement of the new
+  // name.
   GPR_ASSERT(remove(name_.c_str()) == 0);
+#endif
   // Rename the new file to the original name.
   GPR_ASSERT(rename(new_name.c_str(), name_.c_str()) == 0);
 }

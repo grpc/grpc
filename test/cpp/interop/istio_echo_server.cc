@@ -44,7 +44,7 @@
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
@@ -64,6 +64,7 @@ ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
 ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
 ABSL_FLAG(std::string, forwarding_address, "0.0.0.0:7072",
           "Forwarding address for unhandled protocols");
+ABSL_FLAG(std::string, service_version, "", "Version string for the service");
 
 // The following flags must be defined, but are not used for now. Some may be
 // necessary for certain tests.
@@ -88,8 +89,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
-               std::set<int> tls_ports) {
+void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
+               const std::set<int>& tls_ports) {
   // Get hostname
   std::string hostname;
   char* hostname_p = grpc_gethostname();
@@ -100,11 +101,14 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
     free(hostname_p);
   }
   EchoTestServiceImpl echo_test_service(
-      std::move(hostname), absl::GetFlag(FLAGS_forwarding_address));
+      std::move(hostname), absl::GetFlag(FLAGS_service_version),
+      absl::GetFlag(FLAGS_forwarding_address));
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   XdsServerBuilder xds_builder;
   bool has_xds_listeners = false;
   builder.RegisterService(&echo_test_service);
+  xds_builder.RegisterService(&echo_test_service);
   for (int port : grpc_ports) {
     auto server_address = grpc_core::JoinHostPort("0.0.0.0", port);
     if (xds_ports.find(port) != xds_ports.end()) {
@@ -140,10 +144,6 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
   if (has_xds_listeners) {
     xds_server = xds_builder.BuildAndStart();
   }
-  // 3333 is the magic port that the istio testing for k8s health checks. And
-  // it only needs TCP. So also make the gRPC server to listen on 3333.
-  builder.AddListeningPort(grpc_core::JoinHostPort("0.0.0.0", 3333),
-                           grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
   server->Wait();
 }
@@ -153,23 +153,24 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // Preprocess argv, for two things:
-  // 1. merge duplciate flags. So "--grpc=8080 --grpc=9090" becomes
-  // "--grpc=8080,9090".
-  // 2. replace '-' to '_'. So "--istio-version=123" becomes
-  // "--istio_version=123".
-  // 3. remove --version since that is specially interpretted by absl
+  //  Preprocess argv, for two things:
+  //  1. merge duplciate flags. So "--grpc=8080 --grpc=9090" becomes
+  //  "--grpc=8080,9090".
+  //  2. replace '-' to '_'. So "--istio-version=123" becomes
+  //  "--istio_version=123".
+  //  3. remove --version since that is specially interpretted by absl
   std::map<std::string, std::vector<std::string>> argv_dict;
   for (int i = 0; i < argc; i++) {
     std::string arg(argv[i]);
     size_t equal = arg.find_first_of('=');
     if (equal != std::string::npos) {
       std::string f = arg.substr(0, equal);
-      if (f == "--version") {
-        continue;
-      }
       std::string v = arg.substr(equal + 1, std::string::npos);
-      argv_dict[f].push_back(v);
+      if (f == "--version") {
+        argv_dict["--service_version"].push_back(v);
+      } else {
+        argv_dict[f].push_back(v);
+      }
     }
   }
   std::vector<char*> new_argv_strs;
@@ -195,10 +196,10 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&new_argc, new_argv);
   grpc::testing::InitTest(&new_argc, &new_argv, true);
   // Turn gRPC ports from a string vector to an int vector.
-  std::vector<int> grpc_ports;
+  std::set<int> grpc_ports;
   for (const auto& p : absl::GetFlag(FLAGS_grpc)) {
     int grpc_port = std::stoi(p);
-    grpc_ports.push_back(grpc_port);
+    grpc_ports.insert(grpc_port);
   }
   // Create a map of which ports are supposed to use xds
   std::set<int> xds_ports;
@@ -209,6 +210,10 @@ int main(int argc, char** argv) {
       return 1;
     }
     xds_ports.insert(port);
+    // If the port does not exist in gRPC ports set, add it.
+    if (grpc_ports.find(port) == grpc_ports.end()) {
+      grpc_ports.insert(port);
+    }
   }
   // Create a map of which ports are supposed to use tls
   std::set<int> tls_ports;

@@ -51,11 +51,15 @@ UPB_INLINE envoy_service_discovery_v3_AdsDummy* envoy_service_discovery_v3_AdsDu
   return ret;
 }
 UPB_INLINE char* envoy_service_discovery_v3_AdsDummy_serialize(const envoy_service_discovery_v3_AdsDummy* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_AdsDummy_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_AdsDummy_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_AdsDummy_serialize_ex(const envoy_service_discovery_v3_AdsDummy* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_AdsDummy_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_AdsDummy_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

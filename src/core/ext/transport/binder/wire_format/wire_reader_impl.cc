@@ -32,12 +32,7 @@
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
-
-#define RETURN_IF_ERROR(expr)           \
-  do {                                  \
-    const absl::Status status = (expr); \
-    if (!status.ok()) return status;    \
-  } while (0)
+#include "src/core/lib/gprpp/status_helper.h"
 
 namespace grpc_binder {
 namespace {
@@ -47,24 +42,19 @@ const char kAuthorityMetadataKey[] = ":authority";
 
 absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
   int num_header;
-  RETURN_IF_ERROR(reader->ReadInt32(&num_header));
-  gpr_log(GPR_INFO, "num_header = %d", num_header);
+  GRPC_RETURN_IF_ERROR(reader->ReadInt32(&num_header));
   if (num_header < 0) {
     return absl::InvalidArgumentError("num_header cannot be negative");
   }
   std::vector<std::pair<std::string, std::string>> ret;
   for (int i = 0; i < num_header; i++) {
     int count;
-    RETURN_IF_ERROR(reader->ReadInt32(&count));
-    gpr_log(GPR_INFO, "count = %d", count);
+    GRPC_RETURN_IF_ERROR(reader->ReadInt32(&count));
     std::string key{};
-    if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&key));
-    gpr_log(GPR_INFO, "key = %s", key.c_str());
-    RETURN_IF_ERROR(reader->ReadInt32(&count));
-    gpr_log(GPR_INFO, "count = %d", count);
+    if (count > 0) GRPC_RETURN_IF_ERROR(reader->ReadByteArray(&key));
+    GRPC_RETURN_IF_ERROR(reader->ReadInt32(&count));
     std::string value{};
-    if (count > 0) RETURN_IF_ERROR(reader->ReadByteArray(&value));
-    gpr_log(GPR_INFO, "value = %s", value.c_str());
+    if (count > 0) GRPC_RETURN_IF_ERROR(reader->ReadByteArray(&value));
     ret.emplace_back(key, value);
   }
   return ret;
@@ -90,14 +80,14 @@ WireReaderImpl::~WireReaderImpl() {
 
 std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
     std::unique_ptr<Binder> binder) {
-  gpr_log(GPR_INFO, "Setting up transport");
   if (!is_client_) {
+    connected_ = true;
     SendSetupTransport(binder.get());
     {
       grpc_core::MutexLock lock(&mu_);
-      connected_ = true;
       wire_writer_ = std::make_shared<WireWriterImpl>(std::move(binder));
     }
+    wire_writer_ready_notification_.Notify();
     return wire_writer_;
   } else {
     SendSetupTransport(binder.get());
@@ -108,16 +98,17 @@ std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
       wire_writer_ =
           std::make_shared<WireWriterImpl>(std::move(other_end_binder));
     }
+    wire_writer_ready_notification_.Notify();
     return wire_writer_;
   }
 }
 
 void WireReaderImpl::SendSetupTransport(Binder* binder) {
   binder->Initialize();
-  gpr_log(GPR_INFO, "prepare transaction = %d",
+  gpr_log(GPR_DEBUG, "prepare transaction = %d",
           binder->PrepareTransaction().ok());
   WritableParcel* writable_parcel = binder->GetWritableParcel();
-  gpr_log(GPR_INFO, "write int32 = %d",
+  gpr_log(GPR_DEBUG, "write int32 = %d",
           writable_parcel->WriteInt32(kWireFormatVersion).ok());
   // The lifetime of the transaction receiver is the same as the wire writer's.
   // The transaction receiver is responsible for not calling the on-transact
@@ -132,29 +123,26 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
         return this->ProcessTransaction(code, readable_parcel, uid);
       });
 
-  gpr_log(GPR_INFO, "tx_receiver = %p", tx_receiver_->GetRawBinder());
-  gpr_log(GPR_INFO, "AParcel_writeStrongBinder = %d",
+  gpr_log(GPR_DEBUG, "tx_receiver = %p", tx_receiver_->GetRawBinder());
+  gpr_log(GPR_DEBUG, "AParcel_writeStrongBinder = %d",
           writable_parcel->WriteBinder(tx_receiver_.get()).ok());
-  gpr_log(GPR_INFO, "AIBinder_transact = %d",
+  gpr_log(GPR_DEBUG, "AIBinder_transact = %d",
           binder->Transact(BinderTransportTxCode::SETUP_TRANSPORT).ok());
 }
 
 std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
   // TODO(b/191941760): avoid blocking, handle wire_writer_noti lifetime
   // better
-  gpr_log(GPR_INFO, "start waiting for noti");
+  gpr_log(GPR_DEBUG, "start waiting for noti");
   connection_noti_.WaitForNotification();
-  gpr_log(GPR_INFO, "end waiting for noti");
+  gpr_log(GPR_DEBUG, "end waiting for noti");
   return std::move(other_end_binder_);
 }
 
 absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
                                                 ReadableParcel* parcel,
                                                 int uid) {
-  gpr_log(GPR_INFO, __func__);
-  gpr_log(GPR_INFO, "tx code = %u", code);
   if (code >= static_cast<unsigned>(kFirstCallId)) {
-    gpr_log(GPR_INFO, "This is probably a Streaming Tx");
     return ProcessStreamingTransaction(code, parcel);
   }
 
@@ -168,25 +156,28 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     return absl::OkStatus();
   }
 
-  grpc_core::MutexLock lock(&mu_);
-
-  if (BinderTransportTxCode(code) != BinderTransportTxCode::SETUP_TRANSPORT &&
-      !connected_) {
-    return absl::InvalidArgumentError("Transports not connected yet");
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (static_cast<BinderTransportTxCode>(code) !=
+            BinderTransportTxCode::SETUP_TRANSPORT &&
+        !connected_) {
+      return absl::InvalidArgumentError("Transports not connected yet");
+    }
   }
 
   // TODO(mingcl): See if we want to check the security policy for every RPC
   // call or just during transport setup.
 
-  switch (BinderTransportTxCode(code)) {
+  switch (static_cast<BinderTransportTxCode>(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
+      grpc_core::MutexLock lock(&mu_);
       if (recvd_setup_transport_) {
         return absl::InvalidArgumentError(
             "Already received a SETUP_TRANSPORT request");
       }
       recvd_setup_transport_ = true;
 
-      gpr_log(GPR_ERROR, "calling uid = %d", uid);
+      gpr_log(GPR_DEBUG, "calling uid = %d", uid);
       if (!security_policy_->IsAuthorized(uid)) {
         return absl::PermissionDeniedError(
             "UID " + std::to_string(uid) +
@@ -195,8 +186,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
       }
 
       int version;
-      RETURN_IF_ERROR(parcel->ReadInt32(&version));
-      gpr_log(GPR_INFO, "The other end respond with version = %d", version);
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&version));
+      gpr_log(GPR_DEBUG, "The other end respond with version = %d", version);
       // We only support this single lowest possible version, so server must
       // respond that version too.
       if (version != kWireFormatVersion) {
@@ -206,7 +197,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
                 version, kWireFormatVersion);
       }
       std::unique_ptr<Binder> binder{};
-      RETURN_IF_ERROR(parcel->ReadBinder(&binder));
+      GRPC_RETURN_IF_ERROR(parcel->ReadBinder(&binder));
       if (!binder) {
         return absl::InternalError("Read NULL binder from the parcel");
       }
@@ -222,9 +213,13 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     }
     case BinderTransportTxCode::ACKNOWLEDGE_BYTES: {
       int64_t num_bytes = -1;
-      RETURN_IF_ERROR(parcel->ReadInt64(&num_bytes));
-      gpr_log(GPR_INFO, "received acknowledge bytes = %lld",
-              static_cast<long long>(num_bytes));
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt64(&num_bytes));
+      gpr_log(GPR_DEBUG, "received acknowledge bytes = %" PRId64, num_bytes);
+      if (!wire_writer_ready_notification_.WaitForNotificationWithTimeout(
+              absl::Seconds(5))) {
+        return absl::DeadlineExceededError(
+            "wire_writer_ is not ready in time!");
+      }
       wire_writer_->OnAckReceived(num_bytes);
       break;
     }
@@ -233,15 +228,15 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
         return absl::FailedPreconditionError("Receive PING request in client");
       }
       int ping_id = -1;
-      RETURN_IF_ERROR(parcel->ReadInt32(&ping_id));
-      gpr_log(GPR_INFO, "received ping id = %d", ping_id);
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&ping_id));
+      gpr_log(GPR_DEBUG, "received ping id = %d", ping_id);
       // TODO(waynetu): Ping back.
       break;
     }
     case BinderTransportTxCode::PING_RESPONSE: {
       int value = -1;
-      RETURN_IF_ERROR(parcel->ReadInt32(&value));
-      gpr_log(GPR_INFO, "received ping response = %d", value);
+      GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&value));
+      gpr_log(GPR_DEBUG, "received ping response = %d", value);
       break;
     }
   }
@@ -250,54 +245,77 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
 
 absl::Status WireReaderImpl::ProcessStreamingTransaction(
     transaction_code_t code, ReadableParcel* parcel) {
-  grpc_core::MutexLock lock(&mu_);
-  if (!connected_) {
-    return absl::InvalidArgumentError("Transports not connected yet");
-  }
+  bool need_to_send_ack = false;
+  int64_t num_bytes = 0;
+  absl::Status tx_process_result;
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (!connected_) {
+      return absl::InvalidArgumentError("Transports not connected yet");
+    }
 
-  // Indicate which callbacks should be cancelled. It will be initialized as the
-  // flags the in-coming transaction carries, and when a particular callback is
-  // completed, the corresponding bit in cancellation_flag will be set to 0 so
-  // that we won't cancel it afterward.
-  int cancellation_flags = 0;
-  absl::Status status =
-      ProcessStreamingTransactionImpl(code, parcel, &cancellation_flags);
-  if (!status.ok()) {
-    gpr_log(GPR_ERROR, "Failed to process streaming transaction: %s",
-            status.ToString().c_str());
-    // Something went wrong when receiving transaction. Cancel failed requests.
-    if (cancellation_flags & kFlagPrefix) {
-      gpr_log(GPR_INFO, "cancelling initial metadata");
-      transport_stream_receiver_->NotifyRecvInitialMetadata(code, status);
+    // Indicate which callbacks should be cancelled. It will be initialized as
+    // the flags the in-coming transaction carries, and when a particular
+    // callback is completed, the corresponding bit in cancellation_flag will be
+    // set to 0 so that we won't cancel it afterward.
+    int cancellation_flags = 0;
+    tx_process_result =
+        ProcessStreamingTransactionImpl(code, parcel, &cancellation_flags);
+    if (!tx_process_result.ok()) {
+      gpr_log(GPR_ERROR, "Failed to process streaming transaction: %s",
+              tx_process_result.ToString().c_str());
+      // Something went wrong when receiving transaction. Cancel failed
+      // requests.
+      if (cancellation_flags & kFlagPrefix) {
+        gpr_log(GPR_INFO, "cancelling initial metadata");
+        transport_stream_receiver_->NotifyRecvInitialMetadata(
+            code, tx_process_result);
+      }
+      if (cancellation_flags & kFlagMessageData) {
+        gpr_log(GPR_INFO, "cancelling message data");
+        transport_stream_receiver_->NotifyRecvMessage(code, tx_process_result);
+      }
+      if (cancellation_flags & kFlagSuffix) {
+        gpr_log(GPR_INFO, "cancelling trailing metadata");
+        transport_stream_receiver_->NotifyRecvTrailingMetadata(
+            code, tx_process_result, 0);
+      }
     }
-    if (cancellation_flags & kFlagMessageData) {
-      gpr_log(GPR_INFO, "cancelling message data");
-      transport_stream_receiver_->NotifyRecvMessage(code, status);
-    }
-    if (cancellation_flags & kFlagSuffix) {
-      gpr_log(GPR_INFO, "cancelling trailing metadata");
-      transport_stream_receiver_->NotifyRecvTrailingMetadata(code, status, 0);
+    if ((num_incoming_bytes_ - num_acknowledged_bytes_) >=
+        kFlowControlAckBytes) {
+      need_to_send_ack = true;
+      num_bytes = num_incoming_bytes_;
+      num_acknowledged_bytes_ = num_incoming_bytes_;
     }
   }
-  if ((num_incoming_bytes_ - num_acknowledged_bytes_) >= kFlowControlAckBytes) {
+  if (need_to_send_ack) {
+    if (!wire_writer_ready_notification_.WaitForNotificationWithTimeout(
+            absl::Seconds(5))) {
+      return absl::DeadlineExceededError("wire_writer_ is not ready in time!");
+    }
     GPR_ASSERT(wire_writer_);
-    absl::Status ack_status = wire_writer_->SendAck(num_incoming_bytes_);
-    if (status.ok()) {
-      status = ack_status;
+    // wire_writer_ should not be accessed while holding mu_!
+    // Otherwise, it is possible that
+    // 1. wire_writer_::mu_ is acquired before mu_ (NDK call back during
+    // transaction)
+    // 2. mu_ is acquired before wire_writer_::mu_ (e.g. Java call back us, and
+    // we call WireWriter::SendAck which will try to acquire wire_writer_::mu_)
+    absl::Status ack_status = wire_writer_->SendAck(num_bytes);
+    if (tx_process_result.ok()) {
+      return ack_status;
     }
-    num_acknowledged_bytes_ = num_incoming_bytes_;
   }
-  return status;
+  return tx_process_result;
 }
 
 absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     transaction_code_t code, ReadableParcel* parcel, int* cancellation_flags) {
   GPR_ASSERT(cancellation_flags);
   num_incoming_bytes_ += parcel->GetDataSize();
+  gpr_log(GPR_INFO, "Total incoming bytes: %" PRId64, num_incoming_bytes_);
 
   int flags;
-  RETURN_IF_ERROR(parcel->ReadInt32(&flags));
-  gpr_log(GPR_INFO, "flags = %d", flags);
+  GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&flags));
   *cancellation_flags = flags;
 
   // Ignore in-coming transaction with flag = 0 to match with Java
@@ -311,12 +329,12 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   }
 
   int status = flags >> 16;
-  gpr_log(GPR_INFO, "status = %d", status);
-  gpr_log(GPR_INFO, "FLAG_PREFIX = %d", (flags & kFlagPrefix));
-  gpr_log(GPR_INFO, "FLAG_MESSAGE_DATA = %d", (flags & kFlagMessageData));
-  gpr_log(GPR_INFO, "FLAG_SUFFIX = %d", (flags & kFlagSuffix));
+  gpr_log(GPR_DEBUG, "status = %d", status);
+  gpr_log(GPR_DEBUG, "FLAG_PREFIX = %d", (flags & kFlagPrefix));
+  gpr_log(GPR_DEBUG, "FLAG_MESSAGE_DATA = %d", (flags & kFlagMessageData));
+  gpr_log(GPR_DEBUG, "FLAG_SUFFIX = %d", (flags & kFlagSuffix));
   int seq_num;
-  RETURN_IF_ERROR(parcel->ReadInt32(&seq_num));
+  GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&seq_num));
   // TODO(waynetu): For now we'll just assume that the transactions commit in
   // the same order they're issued. The following assertion detects
   // out-of-order or missing transactions. WireReaderImpl should be fixed if
@@ -332,11 +350,11 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   GPR_ASSERT(expectation < std::numeric_limits<int32_t>::max() &&
              "Sequence number too large");
   expectation++;
-  gpr_log(GPR_INFO, "sequence number = %d", seq_num);
+  gpr_log(GPR_DEBUG, "sequence number = %d", seq_num);
   if (flags & kFlagPrefix) {
     std::string method_ref;
     if (!is_client_) {
-      RETURN_IF_ERROR(parcel->ReadString(&method_ref));
+      GRPC_RETURN_IF_ERROR(parcel->ReadString(&method_ref));
     }
     absl::StatusOr<Metadata> initial_metadata_or_error = parse_metadata(parcel);
     if (!initial_metadata_or_error.ok()) {
@@ -367,13 +385,12 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   }
   if (flags & kFlagMessageData) {
     int count;
-    RETURN_IF_ERROR(parcel->ReadInt32(&count));
-    gpr_log(GPR_INFO, "count = %d", count);
+    GRPC_RETURN_IF_ERROR(parcel->ReadInt32(&count));
+    gpr_log(GPR_DEBUG, "count = %d", count);
     std::string msg_data{};
     if (count > 0) {
-      RETURN_IF_ERROR(parcel->ReadByteArray(&msg_data));
+      GRPC_RETURN_IF_ERROR(parcel->ReadByteArray(&msg_data));
     }
-    gpr_log(GPR_INFO, "msg_data = %s", msg_data.c_str());
     message_buffer_[code] += msg_data;
     if ((flags & kFlagMessageDataIsPartial) == 0) {
       std::string s = std::move(message_buffer_[code]);
@@ -386,8 +403,8 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     if (flags & kFlagStatusDescription) {
       // FLAG_STATUS_DESCRIPTION set
       std::string desc;
-      RETURN_IF_ERROR(parcel->ReadString(&desc));
-      gpr_log(GPR_INFO, "description = %s", desc.c_str());
+      GRPC_RETURN_IF_ERROR(parcel->ReadString(&desc));
+      gpr_log(GPR_DEBUG, "description = %s", desc.c_str());
     }
     Metadata trailing_metadata;
     if (is_client_) {

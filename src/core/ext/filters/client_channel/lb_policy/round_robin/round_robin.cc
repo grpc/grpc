@@ -19,32 +19,32 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -58,15 +58,15 @@ namespace {
 // round_robin LB policy
 //
 
-constexpr char kRoundRobin[] = "round_robin";
+constexpr absl::string_view kRoundRobin = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(Args args);
 
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -101,9 +101,8 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state) override;
 
-    // Updates the logical connectivity state.  Returns true if the
-    // state has changed.
-    bool UpdateLogicalConnectivityStateLocked(
+    // Updates the logical connectivity state.
+    void UpdateLogicalConnectivityStateLocked(
         grpc_connectivity_state connectivity_state);
 
     // The logical connectivity state of the subchannel.
@@ -120,7 +119,7 @@ class RoundRobin : public LoadBalancingPolicy {
                               RoundRobinSubchannelData> {
    public:
     RoundRobinSubchannelList(RoundRobin* policy, ServerAddressList addresses,
-                             const grpc_channel_args& args)
+                             const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)
                               ? "RoundRobinSubchannelList"
@@ -161,6 +160,8 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
+
+    absl::Status last_failure_;
   };
 
   class Picker : public SubchannelPicker {
@@ -174,18 +175,18 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobin* parent_;
 
     size_t last_picked_index_;
-    absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
+    std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
   };
 
   void ShutdownLocked() override;
 
   // List of subchannels.
-  OrphanablePtr<RoundRobinSubchannelList> subchannel_list_;
+  RefCountedPtr<RoundRobinSubchannelList> subchannel_list_;
   // Latest pending subchannel list.
   // When we get an updated address list, we create a new subchannel list
   // for it here, and we wait to swap it into subchannel_list_ until the new
   // list becomes READY.
-  OrphanablePtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
+  RefCountedPtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
 
   bool shutdown_ = false;
 };
@@ -263,7 +264,7 @@ void RoundRobin::ResetBackoffLocked() {
   }
 }
 
-void RoundRobin::UpdateLocked(UpdateArgs args) {
+absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   ServerAddressList addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
@@ -276,9 +277,9 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RR %p] received update with address error: %s", this,
               args.addresses.status().ToString().c_str());
     }
-    // If we already have a subchannel list, then ignore the resolver
-    // failure and keep using the existing list.
-    if (subchannel_list_ != nullptr) return;
+    // If we already have a subchannel list, then keep using the existing
+    // list, but still report back that the update was not accepted.
+    if (subchannel_list_ != nullptr) return args.addresses.status();
   }
   // Create new subchannel list, replacing the previous pending list, if any.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace) &&
@@ -286,8 +287,9 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[RR %p] replacing previous pending subchannel list %p",
             this, latest_pending_subchannel_list_.get());
   }
-  latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, std::move(addresses), *args.args);
+  latest_pending_subchannel_list_ = MakeRefCounted<RoundRobinSubchannelList>(
+      this, std::move(addresses), args.args);
+  latest_pending_subchannel_list_->StartWatchingLocked();
   // If the new list is empty, immediately promote it to
   // subchannel_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
@@ -303,16 +305,18 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
                             : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        MakeRefCounted<TransientFailurePicker>(status));
+    return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
   // subchannel_list_ and report CONNECTING.
-  else if (subchannel_list_.get() == nullptr) {
+  if (subchannel_list_.get() == nullptr) {
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
-        absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
+  return absl::OkStatus();
 }
 
 //
@@ -381,8 +385,8 @@ void RoundRobin::RoundRobinSubchannelList::
       gpr_log(GPR_INFO, "[RR %p] reporting READY with subchannel list %p", p,
               this);
     }
-    p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, absl::Status(), absl::make_unique<Picker>(p, this));
+    p->channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
+                                             MakeRefCounted<Picker>(p, this));
   } else if (num_connecting_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO, "[RR %p] reporting CONNECTING with subchannel list %p",
@@ -390,16 +394,21 @@ void RoundRobin::RoundRobinSubchannelList::
     }
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
-        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+        MakeRefCounted<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
               "[RR %p] reporting TRANSIENT_FAILURE with subchannel list %p: %s",
               p, this, status_for_tf.ToString().c_str());
     }
+    if (!status_for_tf.ok()) {
+      last_failure_ = absl::UnavailableError(
+          absl::StrCat("connections to all backends failing; last error: ",
+                       status_for_tf.ToString()));
+    }
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status_for_tf,
-        absl::make_unique<TransientFailurePicker>(status_for_tf));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, last_failure_,
+        MakeRefCounted<TransientFailurePicker>(last_failure_));
   }
 }
 
@@ -434,16 +443,13 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     subchannel()->RequestConnection();
   }
   // Update logical connectivity state.
-  // If it changed, update the policy state.
-  if (UpdateLogicalConnectivityStateLocked(new_state)) {
-    subchannel_list()->MaybeUpdateRoundRobinConnectivityStateLocked(
-        absl::UnavailableError(
-            absl::StrCat("connections to all backends failing; last error: ",
-                         connectivity_status().ToString())));
-  }
+  UpdateLogicalConnectivityStateLocked(new_state);
+  // Update the policy state.
+  subchannel_list()->MaybeUpdateRoundRobinConnectivityStateLocked(
+      connectivity_status());
 }
 
-bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
+void RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
@@ -464,7 +470,7 @@ bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
   if (logical_connectivity_state_.has_value() &&
       *logical_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       connectivity_state != GRPC_CHANNEL_READY) {
-    return false;
+    return;
   }
   // If the new state is IDLE, treat it as CONNECTING, since it will
   // immediately transition into CONNECTING anyway.
@@ -481,13 +487,12 @@ bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
   // If no change, return false.
   if (logical_connectivity_state_.has_value() &&
       *logical_connectivity_state_ == connectivity_state) {
-    return false;
+    return;
   }
   // Otherwise, update counters and logical state.
   subchannel_list()->UpdateStateCountersLocked(logical_connectivity_state_,
                                                connectivity_state);
   logical_connectivity_state_ = connectivity_state;
-  return true;
 }
 
 //
@@ -496,7 +501,7 @@ bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
 
 class RoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 };
 
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
@@ -506,22 +511,19 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<RoundRobin>(std::move(args));
   }
 
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<RoundRobinConfig>();
   }
 };
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_lb_policy_round_robin_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::RoundRobinFactory>());
+void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<RoundRobinFactory>());
 }
 
-void grpc_lb_policy_round_robin_shutdown() {}
+}  // namespace grpc_core

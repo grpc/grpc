@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_BUFFER_Habc_SLICE_BUFFER_H
-#define GRPC_CORE_LIB_SLICE_SLICE_BUFFER_Habc_SLICE_BUFFER_H
+#ifndef GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H
+#define GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <string.h>
+
+#include <string>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -45,27 +48,31 @@ class SliceBuffer {
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept {
     grpc_slice_buffer_init(&slice_buffer_);
-    grpc_slice_buffer_move_into(&slice_buffer_, &other.slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
   }
   /// Upon destruction, the underlying raw slice buffer is cleaned out and all
   /// slices are unreffed.
   ~SliceBuffer() { grpc_slice_buffer_destroy(&slice_buffer_); }
 
+  SliceBuffer& operator=(const SliceBuffer&) = delete;
   SliceBuffer& operator=(SliceBuffer&& other) noexcept {
-    grpc_slice_buffer_move_into(&slice_buffer_, &other.slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
     return *this;
   }
 
   /// Appends a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
   void Append(Slice slice);
+  /// Appends a SliceBuffer into the SliceBuffer and makes an attempt to merge
+  /// this slice with the last slice in the SliceBuffer.
+  void Append(const SliceBuffer& other);
 
   /// Adds a new slice into the SliceBuffer at the next available index.
   /// Returns the index at which the new slice is added.
   size_t AppendIndexed(Slice slice);
 
   /// Returns the number of slices held by the SliceBuffer.
-  size_t Count() { return slice_buffer_.count; }
+  size_t Count() const { return slice_buffer_.count; }
 
   /// Removes/deletes the last n bytes in the SliceBuffer.
   void RemoveLastNBytes(size_t n) {
@@ -75,6 +82,17 @@ class SliceBuffer {
   /// Move the first n bytes of the SliceBuffer into a memory pointed to by dst.
   void MoveFirstNBytesIntoBuffer(size_t n, void* dst) {
     grpc_slice_buffer_move_first_into_buffer(&slice_buffer_, n, dst);
+  }
+
+  /// Removes/deletes the last n bytes in the SliceBuffer and add it to the
+  /// other SliceBuffer
+  void MoveLastNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
+    grpc_slice_buffer_trim_end(&slice_buffer_, n, &other.slice_buffer_);
+  }
+
+  /// Move the first n bytes of the SliceBuffer into the other SliceBuffer
+  void MoveFirstNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
+    grpc_slice_buffer_move_first(&slice_buffer_, n, &other.slice_buffer_);
   }
 
   /// Removes and unrefs all slices in the SliceBuffer.
@@ -88,13 +106,42 @@ class SliceBuffer {
 
   /// Increased the ref-count of slice at the specified index and returns the
   /// associated slice.
-  Slice RefSlice(size_t index);
+  Slice RefSlice(size_t index) const;
 
   /// The total number of bytes held by the SliceBuffer
-  size_t Length() { return slice_buffer_.length; }
+  size_t Length() const { return slice_buffer_.length; }
+
+  /// Swap with another slice buffer
+  void Swap(SliceBuffer* other) {
+    grpc_slice_buffer_swap(c_slice_buffer(), other->c_slice_buffer());
+  }
+
+  /// Concatenate all slices and return the resulting string.
+  std::string JoinIntoString() const;
+
+  // Return a copy of the slice buffer
+  SliceBuffer Copy() const {
+    SliceBuffer copy;
+    for (size_t i = 0; i < Count(); i++) {
+      copy.Append(RefSlice(i));
+    }
+    return copy;
+  }
+
+  /// Add a small amount to the end of the slice buffer.
+  uint8_t* AddTiny(size_t n) {
+    return grpc_slice_buffer_tiny_add(&slice_buffer_, n);
+  }
 
   /// Return a pointer to the back raw grpc_slice_buffer
-  grpc_slice_buffer* RawSliceBuffer() { return &slice_buffer_; }
+  grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
+
+  /// Return a pointer to the back raw grpc_slice_buffer
+  const grpc_slice_buffer* c_slice_buffer() const { return &slice_buffer_; }
+
+  const grpc_slice& c_slice_at(size_t index) {
+    return slice_buffer_.slices[index];
+  }
 
  private:
   /// The backing raw slice buffer.
@@ -102,5 +149,9 @@ class SliceBuffer {
 };
 
 }  // namespace grpc_core
+
+// Copy the first n bytes of src into memory pointed to by dst.
+void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
+                                              void* dst);
 
 #endif  // GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H

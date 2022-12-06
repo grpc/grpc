@@ -44,7 +44,13 @@ def grpc_bad_client_tests():
         srcs = ["bad_client.cc"],
         hdrs = ["bad_client.h"],
         language = "C++",
-        deps = ["//test/core/util:grpc_test_util", "//:grpc", "//:gpr", "//test/core/end2end:cq_verifier"],
+        deps = [
+            "//test/core/util:grpc_test_util",
+            "//:grpc",
+            "//:gpr",
+            "//test/core/end2end:cq_verifier",
+            "//:grpc_http_filters",
+        ],
     )
     for t, topt in BAD_CLIENT_TESTS.items():
         grpc_cc_test(

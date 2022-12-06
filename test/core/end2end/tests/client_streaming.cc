@@ -16,16 +16,19 @@
 //
 //
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -93,7 +96,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
       begin_test(config, "test_client_streaming", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -140,8 +143,8 @@ static void test_client_streaming(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(100), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(100), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -154,9 +157,9 @@ static void test_client_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   // Client writes bunch of messages and server reads them
   for (i = 0; i < messages; i++) {
@@ -183,9 +186,9 @@ static void test_client_streaming(grpc_end2end_test_config config,
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(102), true);
+    cqv.Expect(tag(103), true);
+    cqv.Verify();
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
     grpc_byte_buffer_destroy(request_payload_recv);
   }
@@ -204,10 +207,10 @@ static void test_client_streaming(grpc_end2end_test_config config,
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(104), true);
+  cqv.Verify();
   // Do an empty verify to make sure that the client receives the status
-  cq_verify_empty(cqv);
+  cqv.VerifyEmpty();
 
   // Client tries sending another message which should fail
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -222,8 +225,8 @@ static void test_client_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_byte_buffer_destroy(request_payload);
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 0);
-  cq_verify(cqv);
+  cqv.Expect(tag(103), false);
+  cqv.Verify();
 
   // Client sends close and requests status
   memset(ops, 0, sizeof(ops));
@@ -242,8 +245,8 @@ static void test_client_streaming(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(3), true);
+  cqv.Verify();
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
 
@@ -251,8 +254,6 @@ static void test_client_streaming(grpc_end2end_test_config config,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

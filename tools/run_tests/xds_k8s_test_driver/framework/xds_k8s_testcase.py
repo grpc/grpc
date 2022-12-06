@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import abc
+import contextlib
 import datetime
 import enum
 import hashlib
@@ -39,6 +40,8 @@ from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -56,8 +59,8 @@ TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
-KubernetesServerRunner = server_app.KubernetesServerRunner
-KubernetesClientRunner = client_app.KubernetesClientRunner
+KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
@@ -71,6 +74,7 @@ class TdPropagationRetryableError(Exception):
 
 
 class XdsKubernetesBaseTestCase(absltest.TestCase):
+    lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
     ensure_firewall: bool
@@ -114,7 +118,10 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        skips.evaluate_test_config(cls.is_supported)
+        cls.lang_spec = skips.evaluate_test_config(cls.is_supported)
+
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
 
         # GCP
         cls.project = xds_flags.PROJECT.value
@@ -165,6 +172,14 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         cls.k8s_api_manager.close()
         cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
+
+    @contextlib.contextmanager
+    def subTest(self, msg, **params):  # noqa pylint: disable=signature-differs
+        logger.info('--- Starting subTest %s.%s ---', self.id(), msg)
+        try:
+            yield super().subTest(msg, **params)
+        finally:
+            logger.info('--- Finished subTest %s.%s ---', self.id(), msg)
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,
@@ -224,26 +239,30 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                     diff.stats_per_method[method].result[status] = count
         return diff
 
-    def assertRpcStatusCodes(self, test_client: XdsTestClient, *,
-                             status_code: grpc.StatusCode, duration: _timedelta,
-                             method: str) -> None:
+    def assertRpcStatusCodes(self,
+                             test_client: XdsTestClient,
+                             *,
+                             status_code: grpc.StatusCode,
+                             duration: _timedelta,
+                             method: str,
+                             stray_rpc_limit: int = 0) -> None:
         """Assert all RPCs for a method are completing with a certain status."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
         response_type = 'LoadBalancerAccumulatedStatsResponse'
         logging.info('Received %s from test client %s: before:\n%s',
-                     response_type, test_client.ip, before_stats)
+                     response_type, test_client.hostname, before_stats)
         time.sleep(duration.total_seconds())
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info('Received %s from test client %s: after:\n%s',
-                     response_type, test_client.ip, after_stats)
+                     response_type, test_client.hostname, after_stats)
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
         stats = diff_stats.stats_per_method[method]
         status = status_code.value[0]
         for found_status, count in stats.result.items():
-            if found_status != status and count > 0:
+            if found_status != status and count > stray_rpc_limit:
                 self.fail(f"Expected only status {status} but found status "
                           f"{found_status} for method {method}:\n{diff_stats}")
         self.assertGreater(stats.result[status_code.value[0]], 0)
@@ -259,28 +278,29 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         try:
             retryer(self._assertRpcsEventuallyGoToGivenServers, test_client,
                     servers, num_rpcs)
-        except retryers.RetryError:
+        except retryers.RetryError as retry_error:
             logger.exception(
                 'Rpcs did not go to expected servers before timeout %s',
                 _TD_CONFIG_MAX_WAIT_SEC)
+            raise retry_error
 
     def _assertRpcsEventuallyGoToGivenServers(self, test_client: XdsTestClient,
                                               servers: List[XdsTestServer],
                                               num_rpcs: int):
-        server_names = [server.pod_name for server in servers]
-        logger.info('Verifying RPCs go to %s', server_names)
+        server_hostnames = [server.hostname for server in servers]
+        logger.info('Verifying RPCs go to servers %s', server_hostnames)
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         failed = int(lb_stats.num_failures)
         self.assertLessEqual(
             failed,
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
-        for server_name in server_names:
-            self.assertIn(server_name, lb_stats.rpcs_by_peer,
-                          f'{server_name} did not receive RPCs')
-        for peer in lb_stats.rpcs_by_peer.keys():
-            self.assertIn(peer, server_names,
-                          f'Unexpected server {peer} received RPCs')
+        for server_hostname in server_hostnames:
+            self.assertIn(server_hostname, lb_stats.rpcs_by_peer,
+                          f'Server {server_hostname} did not receive RPCs')
+        for server_hostname in lb_stats.rpcs_by_peer.keys():
+            self.assertIn(server_hostname, server_hostnames,
+                          f'Unexpected server {server_hostname} received RPCs')
 
     def assertXdsConfigExists(self, test_client: XdsTestClient):
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
@@ -363,7 +383,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logger.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.ip, lb_stats)
+            test_client.hostname, lb_stats)
         return lb_stats
 
     def assertAllBackendsReceivedRpcs(self, lb_stats):
@@ -438,11 +458,11 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
                                             attempts=3,
                                             log_level=logging.INFO)
         try:
-            retryer(self._cleanup)
+            retryer(self.cleanup)
         except retryers.RetryError:
             logger.exception('Got error during teardown')
 
-    def _cleanup(self):
+    def cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,

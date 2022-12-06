@@ -53,11 +53,15 @@ UPB_INLINE xds_core_v3_TypedExtensionConfig* xds_core_v3_TypedExtensionConfig_pa
   return ret;
 }
 UPB_INLINE char* xds_core_v3_TypedExtensionConfig_serialize(const xds_core_v3_TypedExtensionConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_TypedExtensionConfig_serialize_ex(const xds_core_v3_TypedExtensionConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void xds_core_v3_TypedExtensionConfig_clear_name(const xds_core_v3_TypedExtensionConfig* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

@@ -47,7 +47,7 @@ static const upb_MiniTable_Field xds_core_v3_ResourceLocator_Directive__fields[2
 const upb_MiniTable xds_core_v3_ResourceLocator_Directive_msginit = {
   &xds_core_v3_ResourceLocator_Directive_submsgs[0],
   &xds_core_v3_ResourceLocator_Directive__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

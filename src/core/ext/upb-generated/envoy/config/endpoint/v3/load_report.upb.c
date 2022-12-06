@@ -39,7 +39,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_UpstreamLocalityStats_
 const upb_MiniTable envoy_config_endpoint_v3_UpstreamLocalityStats_msginit = {
   &envoy_config_endpoint_v3_UpstreamLocalityStats_submsgs[0],
   &envoy_config_endpoint_v3_UpstreamLocalityStats__fields[0],
-  UPB_SIZE(56, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_UpstreamEndpointStats_submsgs[3] = {
@@ -61,7 +61,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_UpstreamEndpointStats_
 const upb_MiniTable envoy_config_endpoint_v3_UpstreamEndpointStats_msginit = {
   &envoy_config_endpoint_v3_UpstreamEndpointStats_submsgs[0],
   &envoy_config_endpoint_v3_UpstreamEndpointStats__fields[0],
-  UPB_SIZE(48, 72), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(48, 64), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_endpoint_v3_EndpointLoadMetricStats__fields[3] = {
@@ -73,7 +73,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_EndpointLoadMetricStat
 const upb_MiniTable envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit = {
   NULL,
   &envoy_config_endpoint_v3_EndpointLoadMetricStats__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_ClusterStats_submsgs[3] = {

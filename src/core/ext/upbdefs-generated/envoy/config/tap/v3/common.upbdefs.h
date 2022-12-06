@@ -66,6 +66,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_tap_v3_StreamingAdminSink_getmsgde
   return upb_DefPool_FindMessageByName(s, "envoy.config.tap.v3.StreamingAdminSink");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_tap_v3_BufferedAdminSink_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_tap_v3_common_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.tap.v3.BufferedAdminSink");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_tap_v3_FilePerTapSink_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_tap_v3_common_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.tap.v3.FilePerTapSink");

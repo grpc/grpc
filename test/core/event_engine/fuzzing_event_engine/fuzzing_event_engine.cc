@@ -14,42 +14,109 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
+#include <stdlib.h>
+
+#include <algorithm>
 #include <chrono>
+#include <ratio>
+#include <vector>
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/time.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
 const intptr_t kTaskHandleSalt = 12345;
+FuzzingEventEngine* g_fuzzing_event_engine = nullptr;
+gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
+}  // namespace
+
+FuzzingEventEngine::FuzzingEventEngine(
+    Options options, const fuzzing_event_engine::Actions& actions)
+    : final_tick_length_(options.final_tick_length) {
+  tick_increments_.clear();
+  task_delays_.clear();
+  tasks_by_id_.clear();
+  tasks_by_time_.clear();
+  next_task_id_ = 1;
+  current_tick_ = 0;
+  // Start at 5 seconds after the epoch.
+  // This needs to be more than 1, and otherwise is kind of arbitrary.
+  // The grpc_core::Timer code special cases the zero second time period after
+  // epoch to allow for some fancy atomic stuff.
+  now_ = Time() + std::chrono::seconds(5);
+
+  // Whilst a fuzzing event engine is active we override grpc's now function.
+  grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
+
+  auto update_delay = [](std::map<intptr_t, Duration>* map,
+                         const fuzzing_event_engine::Delay& delay,
+                         Duration max) {
+    auto& value = (*map)[delay.id()];
+    if (delay.delay_us() > static_cast<uint64_t>(max.count() / GPR_NS_PER_US)) {
+      value = max;
+      return;
+    }
+    Duration add = std::chrono::microseconds(delay.delay_us());
+    if (add >= max - value) {
+      value = max;
+    } else {
+      value += add;
+    }
+  };
+
+  for (const auto& delay : actions.tick_lengths()) {
+    update_delay(&tick_increments_, delay, std::chrono::hours(24));
+  }
+  for (const auto& delay : actions.run_delay()) {
+    update_delay(&task_delays_, delay, std::chrono::seconds(30));
+  }
 }
 
-FuzzingEventEngine::FuzzingEventEngine(Options options)
-    : final_tick_length_(options.final_tick_length) {
-  for (const auto& delay : options.actions.tick_lengths()) {
-    tick_increments_[delay.id()] += std::chrono::microseconds(delay.delay_us());
-  }
-  for (const auto& delay : options.actions.run_delay()) {
-    task_delays_[delay.id()] += std::chrono::microseconds(delay.delay_us());
-  }
+void FuzzingEventEngine::FuzzingDone() {
+  grpc_core::MutexLock lock(&mu_);
+  tick_increments_.clear();
+}
+
+gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
+  // TODO(ctiller): add a facility to track realtime and monotonic clocks
+  // separately to simulate divergence.
+  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  const Duration d = now_.time_since_epoch();
+  auto secs = std::chrono::duration_cast<std::chrono::seconds>(d);
+  return {secs.count(), static_cast<int32_t>((d - secs).count()), clock_type};
 }
 
 void FuzzingEventEngine::Tick() {
-  std::vector<std::function<void()>> to_run;
+  std::vector<absl::AnyInvocable<void()>> to_run;
   {
     grpc_core::MutexLock lock(&mu_);
     // Increment time
     auto tick_it = tick_increments_.find(current_tick_);
     if (tick_it != tick_increments_.end()) {
       now_ += tick_it->second;
+      GPR_ASSERT(now_.time_since_epoch().count() >= 0);
       tick_increments_.erase(tick_it);
     } else if (tick_increments_.empty()) {
       now_ += final_tick_length_;
+      GPR_ASSERT(now_.time_since_epoch().count() >= 0);
     }
     ++current_tick_;
     // Find newly expired timers.
     while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
-      tasks_by_id_.erase(tasks_by_time_.begin()->second->id);
-      to_run.push_back(std::move(tasks_by_time_.begin()->second->closure));
+      auto& task = *tasks_by_time_.begin()->second;
+      tasks_by_id_.erase(task.id);
+      if (task.closure != nullptr) {
+        to_run.push_back(std::move(task.closure));
+      }
       tasks_by_time_.erase(tasks_by_time_.begin());
     }
   }
@@ -65,7 +132,7 @@ FuzzingEventEngine::Time FuzzingEventEngine::Now() {
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 FuzzingEventEngine::CreateListener(Listener::AcceptCallback,
-                                   std::function<void(absl::Status)>,
+                                   absl::AnyInvocable<void(absl::Status)>,
                                    const EndpointConfig&,
                                    std::unique_ptr<MemoryAllocatorFactory>) {
   abort();
@@ -90,8 +157,8 @@ void FuzzingEventEngine::Run(Closure* closure) {
   RunAfter(Duration::zero(), closure);
 }
 
-void FuzzingEventEngine::Run(std::function<void()> closure) {
-  RunAfter(Duration::zero(), closure);
+void FuzzingEventEngine::Run(absl::AnyInvocable<void()> closure) {
+  RunAfter(Duration::zero(), std::move(closure));
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
@@ -100,7 +167,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
-    Duration when, std::function<void()> closure) {
+    Duration when, absl::AnyInvocable<void()> closure) {
   grpc_core::MutexLock lock(&mu_);
   const intptr_t id = next_task_id_;
   ++next_task_id_;
@@ -124,11 +191,34 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
   if (it == tasks_by_id_.end()) {
     return false;
   }
-  if (it->second == nullptr) {
+  if (it->second->closure == nullptr) {
     return false;
   }
-  it->second = nullptr;
+  it->second->closure = nullptr;
   return true;
+}
+
+gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
+  if (g_fuzzing_event_engine == nullptr) {
+    return gpr_inf_future(clock_type);
+  }
+  GPR_ASSERT(g_fuzzing_event_engine != nullptr);
+  grpc_core::MutexLock lock(&g_fuzzing_event_engine->mu_);
+  return g_fuzzing_event_engine->NowAsTimespec(clock_type);
+}
+
+void FuzzingEventEngine::SetGlobalNowImplEngine(FuzzingEventEngine* engine) {
+  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
+  g_fuzzing_event_engine = engine;
+  g_orig_gpr_now_impl = gpr_now_impl;
+  gpr_now_impl = GlobalNowImpl;
+}
+
+void FuzzingEventEngine::UnsetGlobalNowImplEngine(FuzzingEventEngine* engine) {
+  GPR_ASSERT(g_fuzzing_event_engine == engine);
+  g_fuzzing_event_engine = nullptr;
+  gpr_now_impl = g_orig_gpr_now_impl;
+  g_orig_gpr_now_impl = nullptr;
 }
 
 }  // namespace experimental

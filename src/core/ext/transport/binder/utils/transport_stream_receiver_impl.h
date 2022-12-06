@@ -58,7 +58,7 @@ class TransportStreamReceiverImpl : public TransportStreamReceiver {
   // never be in-coming message data anymore, and all recv_message callbacks
   // (as well as recv_initial_metadata callback, if there's any) registered will
   // never be satisfied. This function cancels all such callbacks gracefully
-  // (with GRPC_ERROR_NONE) to avoid being blocked waiting for them.
+  // (with absl::OkStatus()) to avoid being blocked waiting for them.
   void OnRecvTrailingMetadata(StreamIdentifier id);
 
   void CancelInitialMetadataCallback(StreamIdentifier id, absl::Status error);

@@ -60,11 +60,15 @@ UPB_INLINE envoy_config_trace_v3_XRayConfig* envoy_config_trace_v3_XRayConfig_pa
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_serialize(const envoy_config_trace_v3_XRayConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_serialize_ex(const envoy_config_trace_v3_XRayConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_trace_v3_XRayConfig_has_daemon_endpoint(const envoy_config_trace_v3_XRayConfig* msg) {
   return _upb_hasbit(msg, 1);
@@ -168,11 +172,15 @@ UPB_INLINE envoy_config_trace_v3_XRayConfig_SegmentFields* envoy_config_trace_v3
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_SegmentFields_serialize(const envoy_config_trace_v3_XRayConfig_SegmentFields* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_SegmentFields_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_SegmentFields_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_XRayConfig_SegmentFields_serialize_ex(const envoy_config_trace_v3_XRayConfig_SegmentFields* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_SegmentFields_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_XRayConfig_SegmentFields_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_XRayConfig_SegmentFields_clear_origin(const envoy_config_trace_v3_XRayConfig_SegmentFields* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

@@ -18,7 +18,10 @@
 
 #include "test/core/util/test_tcp_server.h"
 
+#include <stdint.h>
 #include <string.h>
+
+#include <algorithm>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -26,13 +29,17 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/resource_quota/api.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
@@ -66,17 +73,17 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
-  grpc_error_handle error = grpc_tcp_server_create(&server->shutdown_complete,
-                                                   args, &server->tcp_server);
-  grpc_channel_args_destroy(args);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr);
+  grpc_error_handle error = grpc_tcp_server_create(
+      &server->shutdown_complete,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &server->tcp_server);
+  GPR_ASSERT(error.ok());
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset,

@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/slice/slice.h"
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                  grpc_byte_buffer* buffer) {
@@ -70,8 +70,8 @@ int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
       grpc_slice_buffer* slice_buffer;
       slice_buffer = &reader->buffer_out->data.raw.slice_buffer;
       if (reader->current.index < slice_buffer->count) {
-        *slice = grpc_slice_ref_internal(
-            slice_buffer->slices[reader->current.index]);
+        *slice =
+            grpc_core::CSliceRef(slice_buffer->slices[reader->current.index]);
         reader->current.index += 1;
         return 1;
       }
@@ -93,7 +93,7 @@ grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) {
     const size_t slice_length = GRPC_SLICE_LENGTH(in_slice);
     memcpy(&(outbuf[bytes_read]), GRPC_SLICE_START_PTR(in_slice), slice_length);
     bytes_read += slice_length;
-    grpc_slice_unref_internal(in_slice);
+    grpc_core::CSliceUnref(in_slice);
     GPR_ASSERT(bytes_read <= input_size);
   }
 

@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -94,7 +95,7 @@ class ClientIdleFilter final : public ChannelIdleFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientIdleFilter> Create(
-      ChannelArgs args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 
  private:
   using ChannelIdleFilter::ChannelIdleFilter;
@@ -105,7 +106,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   static const grpc_channel_filter kFilter;
   struct Config;
 
-  static absl::StatusOr<MaxAgeFilter> Create(ChannelArgs args,
+  static absl::StatusOr<MaxAgeFilter> Create(const ChannelArgs& args,
                                              ChannelFilter::Args filter_args);
 
   void PostInit() override;

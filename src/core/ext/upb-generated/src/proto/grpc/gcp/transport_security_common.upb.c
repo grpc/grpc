@@ -25,7 +25,7 @@ static const upb_MiniTable_Field grpc_gcp_RpcProtocolVersions__fields[2] = {
 const upb_MiniTable grpc_gcp_RpcProtocolVersions_msginit = {
   &grpc_gcp_RpcProtocolVersions_submsgs[0],
   &grpc_gcp_RpcProtocolVersions__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_gcp_RpcProtocolVersions_Version__fields[2] = {

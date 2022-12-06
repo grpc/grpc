@@ -21,9 +21,12 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <grpc/support/alloc.h>
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -44,7 +47,7 @@ static test_node* new_node(size_t i, size_t* ctr) {
   return n;
 }
 
-static void test_serial(void) {
+TEST(MpscqTest, Serial) {
   gpr_log(GPR_DEBUG, "test_serial");
   MultiProducerSingleConsumerQueue q;
   for (size_t i = 0; i < 10000000; i++) {
@@ -52,8 +55,8 @@ static void test_serial(void) {
   }
   for (size_t i = 0; i < 10000000; i++) {
     test_node* n = reinterpret_cast<test_node*>(q.Pop());
-    GPR_ASSERT(n);
-    GPR_ASSERT(n->i == i);
+    ASSERT_NE(n, nullptr);
+    ASSERT_EQ(n->i, i);
     delete n;
   }
 }
@@ -74,7 +77,7 @@ static void test_thread(void* args) {
   }
 }
 
-static void test_mt(void) {
+TEST(MpscqTest, Mt) {
   gpr_log(GPR_DEBUG, "test_mt");
   gpr_event start;
   gpr_event_init(&start);
@@ -97,7 +100,7 @@ static void test_mt(void) {
       spins++;
     }
     test_node* tn = reinterpret_cast<test_node*>(n);
-    GPR_ASSERT(*tn->ctr == tn->i - 1);
+    ASSERT_EQ(*tn->ctr, tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) num_done++;
     delete tn;
@@ -133,7 +136,7 @@ static void pull_thread(void* arg) {
       pa->spins++;
     }
     test_node* tn = reinterpret_cast<test_node*>(n);
-    GPR_ASSERT(*tn->ctr == tn->i - 1);
+    ASSERT_EQ(*tn->ctr, tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) pa->num_done++;
     delete tn;
@@ -141,7 +144,7 @@ static void pull_thread(void* arg) {
   }
 }
 
-static void test_mt_multipop(void) {
+TEST(MpscqTest, MtMultipop) {
   gpr_log(GPR_DEBUG, "test_mt_multipop");
   gpr_event start;
   gpr_event_init(&start);
@@ -181,8 +184,6 @@ static void test_mt_multipop(void) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  test_serial();
-  test_mt();
-  test_mt_multipop();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

@@ -26,19 +26,13 @@
 #include <cstddef>
 #include <string>
 
+#include "absl/hash/hash.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/slice/slice_refcount.h"
-
-void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
-void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
-                                              size_t idx);
-void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
 
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.
@@ -54,7 +48,6 @@ void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb);
 void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
                                  size_t end);
 
-void grpc_test_only_set_slice_hash_seed(uint32_t seed);
 // if slice matches a static slice, returns the static slice
 // otherwise returns the passed in slice (without reffing it)
 // used for surface boundaries where we might receive an un-interned static
@@ -63,11 +56,6 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
                                           bool* returned_slice_is_different);
 uint32_t grpc_static_slice_hash(grpc_slice s);
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b);
-
-inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
-  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
-                          grpc_core::g_hash_seed);
-}
 
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
                                         size_t len);
@@ -81,14 +69,6 @@ size_t grpc_slice_memory_usage(grpc_slice s);
 
 namespace grpc_core {
 
-struct SliceHash {
-  std::size_t operator()(const grpc_slice& slice) const {
-    return grpc_slice_hash_internal(slice);
-  }
-};
-
-extern uint32_t g_hash_seed;
-
 // Converts grpc_slice to absl::string_view.
 inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
   return absl::string_view(
@@ -96,6 +76,18 @@ inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
       GRPC_SLICE_LENGTH(slice));
 }
 
+}  // namespace grpc_core
+
+inline uint32_t grpc_slice_hash(const grpc_slice& s) {
+  return absl::HashOf(grpc_core::StringViewFromSlice(s));
+}
+
+namespace grpc_core {
+struct SliceHash {
+  std::size_t operator()(const grpc_slice& slice) const {
+    return grpc_slice_hash(slice);
+  }
+};
 }  // namespace grpc_core
 
 inline bool operator==(const grpc_slice& s1, const grpc_slice& s2) {

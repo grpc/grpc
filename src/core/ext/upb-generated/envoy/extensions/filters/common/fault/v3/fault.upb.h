@@ -71,11 +71,15 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay* envoy_extensions
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_serialize(const envoy_extensions_filters_common_fault_v3_FaultDelay* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultDelay* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_extensions_filters_common_fault_v3_FaultDelay_fault_delay_secifier_fixed_delay = 3,
@@ -176,11 +180,15 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* envo
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_serialize(const envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 
@@ -209,11 +217,15 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit* envoy_extens
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_extensions_filters_common_fault_v3_FaultRateLimit_limit_type_fixed_limit = 1,
@@ -314,11 +326,15 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* e
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_clear_limit_kbps(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = 0;
@@ -356,11 +372,15 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* 
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_serialize_ex(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

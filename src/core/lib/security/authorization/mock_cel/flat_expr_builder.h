@@ -22,7 +22,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"
@@ -46,8 +45,8 @@ class FlatExprBuilder : public CelExpressionBuilder {
       const google_api_expr_v1alpha1_Expr* expr,
       const google_api_expr_v1alpha1_SourceInfo* source_info) const override {
     ExecutionPath path;
-    return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
-                                                    std::set<std::string>{});
+    return std::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
+                                                   std::set<std::string>{});
   }
 
   absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
@@ -55,8 +54,8 @@ class FlatExprBuilder : public CelExpressionBuilder {
       const google_api_expr_v1alpha1_SourceInfo* source_info,
       std::vector<absl::Status>* warnings) const override {
     ExecutionPath path;
-    return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
-                                                    std::set<std::string>{});
+    return std::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
+                                                   std::set<std::string>{});
   }
 };
 

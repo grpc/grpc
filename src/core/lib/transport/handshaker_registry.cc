@@ -22,15 +22,22 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <utility>
 
 namespace grpc_core {
 
 void HandshakerRegistry::Builder::RegisterHandshakerFactory(
-    bool at_start, HandshakerType handshaker_type,
+    HandshakerType handshaker_type,
     std::unique_ptr<HandshakerFactory> factory) {
   auto& vec = factories_[handshaker_type];
-  auto where = at_start ? vec.begin() : vec.end();
+  auto where = vec.empty() ? vec.begin() : vec.end();
+  for (auto iter = vec.begin(); iter != vec.end(); ++iter) {
+    if (factory->Priority() < iter->get()->Priority()) {
+      where = iter;
+      break;
+    }
+  }
   vec.insert(where, std::move(factory));
 }
 
@@ -43,7 +50,7 @@ HandshakerRegistry HandshakerRegistry::Builder::Build() {
 }
 
 void HandshakerRegistry::AddHandshakers(HandshakerType handshaker_type,
-                                        const grpc_channel_args* args,
+                                        const ChannelArgs& args,
                                         grpc_pollset_set* interested_parties,
                                         HandshakeManager* handshake_mgr) const {
   for (const auto& factory : factories_[handshaker_type]) {

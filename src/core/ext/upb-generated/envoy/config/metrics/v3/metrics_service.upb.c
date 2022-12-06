@@ -33,7 +33,7 @@ static const upb_MiniTable_Field envoy_config_metrics_v3_MetricsServiceConfig__f
 const upb_MiniTable envoy_config_metrics_v3_MetricsServiceConfig_msginit = {
   &envoy_config_metrics_v3_MetricsServiceConfig_submsgs[0],
   &envoy_config_metrics_v3_MetricsServiceConfig__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

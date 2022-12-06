@@ -88,17 +88,14 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
 #include <mach/mach_time.h>
 #include <sys/time.h>
 
-static double g_time_scale;
-static uint64_t g_time_start;
-
-void gpr_time_init(void) {
+static double g_time_scale = []() {
   mach_timebase_info_data_t tb = {0, 1};
-  gpr_precise_clock_init();
   mach_timebase_info(&tb);
-  g_time_scale = tb.numer;
-  g_time_scale /= tb.denom;
-  g_time_start = mach_absolute_time();
-}
+  return static_cast<double>(tb.numer) / static_cast<double>(tb.denom);
+}();
+static uint64_t g_time_start = mach_absolute_time();
+
+void gpr_time_init(void) { gpr_precise_clock_init(); }
 
 static gpr_timespec now_impl(gpr_clock_type clock) {
   gpr_timespec now;
@@ -143,13 +140,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
 
 gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
 
-#ifdef GPR_LOW_LEVEL_COUNTERS
-gpr_atm gpr_now_call_count;
-#endif
 gpr_timespec gpr_now(gpr_clock_type clock_type) {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  __atomic_fetch_add(&gpr_now_call_count, 1, __ATOMIC_RELAXED);
-#endif
   // validate clock type
   GPR_ASSERT(clock_type == GPR_CLOCK_MONOTONIC ||
              clock_type == GPR_CLOCK_REALTIME ||

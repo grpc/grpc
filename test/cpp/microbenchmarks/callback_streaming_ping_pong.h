@@ -23,7 +23,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -136,11 +135,9 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
     request.set_message("");
   }
   if (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     BidiClient test{&state, stub_.get(), &cli_ctx, &request, &response};
     test.Await();
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(2 * message_size * max_ping_pongs *
                           state.iterations());

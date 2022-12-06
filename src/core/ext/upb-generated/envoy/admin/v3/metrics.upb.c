@@ -23,7 +23,7 @@ static const upb_MiniTable_Field envoy_admin_v3_SimpleMetric__fields[3] = {
 const upb_MiniTable envoy_admin_v3_SimpleMetric_msginit = {
   NULL,
   &envoy_admin_v3_SimpleMetric__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

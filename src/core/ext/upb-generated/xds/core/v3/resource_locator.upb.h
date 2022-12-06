@@ -62,11 +62,15 @@ UPB_INLINE xds_core_v3_ResourceLocator* xds_core_v3_ResourceLocator_parse_ex(con
   return ret;
 }
 UPB_INLINE char* xds_core_v3_ResourceLocator_serialize(const xds_core_v3_ResourceLocator* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ResourceLocator_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ResourceLocator_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_ResourceLocator_serialize_ex(const xds_core_v3_ResourceLocator* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ResourceLocator_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ResourceLocator_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   xds_core_v3_ResourceLocator_context_param_specifier_exact_context = 5,
@@ -180,11 +184,15 @@ UPB_INLINE xds_core_v3_ResourceLocator_Directive* xds_core_v3_ResourceLocator_Di
   return ret;
 }
 UPB_INLINE char* xds_core_v3_ResourceLocator_Directive_serialize(const xds_core_v3_ResourceLocator_Directive* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ResourceLocator_Directive_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ResourceLocator_Directive_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_ResourceLocator_Directive_serialize_ex(const xds_core_v3_ResourceLocator_Directive* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ResourceLocator_Directive_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ResourceLocator_Directive_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   xds_core_v3_ResourceLocator_Directive_directive_alt = 1,

@@ -18,8 +18,19 @@
 #include <chrono>
 #include <cstdint>
 #include <map>
+#include <memory>
+#include <ratio>
+#include <utility>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -34,14 +45,17 @@ class FuzzingEventEngine : public EventEngine {
     // After all scheduled tick lengths are completed, this is the amount of
     // time Now() will be incremented each tick.
     Duration final_tick_length = std::chrono::seconds(1);
-    fuzzing_event_engine::Actions actions;
   };
-  explicit FuzzingEventEngine(Options options);
+  explicit FuzzingEventEngine(Options options,
+                              const fuzzing_event_engine::Actions& actions);
+  ~FuzzingEventEngine() override = default;
+
+  void FuzzingDone();
   void Tick();
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
@@ -60,30 +74,40 @@ class FuzzingEventEngine : public EventEngine {
       const DNSResolver::ResolverOptions& options) override;
 
   void Run(Closure* closure) override;
-  void Run(std::function<void()> closure) override;
+  void Run(absl::AnyInvocable<void()> closure) override;
   TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when, std::function<void()> closure) override;
+  TaskHandle RunAfter(Duration when,
+                      absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
   using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
 
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
+  static void SetGlobalNowImplEngine(FuzzingEventEngine* engine)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  static void UnsetGlobalNowImplEngine(FuzzingEventEngine* engine)
+      ABSL_LOCKS_EXCLUDED(mu_);
+
  private:
   struct Task {
-    Task(intptr_t id, std::function<void()> closure)
+    Task(intptr_t id, absl::AnyInvocable<void()> closure)
         : id(id), closure(std::move(closure)) {}
     intptr_t id;
-    std::function<void()> closure;
+    absl::AnyInvocable<void()> closure;
   };
 
+  gpr_timespec NowAsTimespec(gpr_clock_type clock_type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  static gpr_timespec GlobalNowImpl(gpr_clock_type clock_type)
+      ABSL_LOCKS_EXCLUDED(mu_);
   const Duration final_tick_length_;
 
   grpc_core::Mutex mu_;
 
-  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_) = 1;
-  intptr_t current_tick_ ABSL_GUARDED_BY(mu_) = 0;
-  Time now_ ABSL_GUARDED_BY(mu_) = Time::min();
+  intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
+  intptr_t current_tick_ ABSL_GUARDED_BY(mu_);
+  Time now_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, Duration> tick_increments_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);

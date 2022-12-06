@@ -156,6 +156,8 @@ inline map< ::std::string, ::std::string> GetMethodVars(
 }
 
 void PrintMethodDeclarations(Printer* printer, const MethodDescriptor* method) {
+  if (!ShouldIncludeMethod(method)) return;
+
   map< ::std::string, ::std::string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
@@ -168,6 +170,8 @@ void PrintMethodDeclarations(Printer* printer, const MethodDescriptor* method) {
 
 void PrintV2MethodDeclarations(Printer* printer,
                                const MethodDescriptor* method) {
+  if (!ShouldIncludeMethod(method)) return;
+
   map< ::std::string, ::std::string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
@@ -240,6 +244,8 @@ void PrintV2Implementation(Printer* printer, const MethodDescriptor* method,
 void PrintMethodImplementations(Printer* printer,
                                 const MethodDescriptor* method,
                                 const Parameters& generator_params) {
+  if (!ShouldIncludeMethod(method)) return;
+
   map< ::std::string, ::std::string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
@@ -267,8 +273,10 @@ void PrintMethodImplementations(Printer* printer,
     const auto service = file->service(i);
     for (int i = 0; i < service->method_count(); i++) {
       const auto method = service->method(i);
-      classes.insert(ClassName(method->input_type()));
-      classes.insert(ClassName(method->output_type()));
+      if (ShouldIncludeMethod(method)) {
+        classes.insert(ClassName(method->input_type()));
+        classes.insert(ClassName(method->output_type()));
+      }
     }
   }
   for (auto one_class : classes) {

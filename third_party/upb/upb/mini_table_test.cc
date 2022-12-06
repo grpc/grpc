@@ -180,3 +180,67 @@ TEST(MiniTablePlatformIndependentTest, IsTypePackable) {
                   static_cast<protobuf::FieldDescriptor::Type>(i)));
   }
 }
+
+TEST(MiniTableEnumTest, Enum) {
+  upb::Arena arena;
+  upb::MtDataEncoder e;
+
+  e.StartEnum();
+  absl::flat_hash_set<int32_t> values;
+  for (int i = 0; i < 256; i++) {
+    values.insert(i * 2);
+    e.PutEnumValue(i * 2);
+  }
+  e.EndEnum();
+
+  upb::Status status;
+  upb_MiniTable_Enum* table = upb_MiniTable_BuildEnum(
+      e.data().data(), e.data().size(), arena.ptr(), status.ptr());
+  ASSERT_NE(nullptr, table) << status.error_message();
+
+  for (int i = 0; i < UINT16_MAX; i++) {
+    EXPECT_EQ(values.contains(i), upb_MiniTable_Enum_CheckValue(table, i)) << i;
+  }
+}
+
+TEST(MiniTableEnumTest, PositiveAndNegative) {
+  upb::Arena arena;
+  upb::MtDataEncoder e;
+
+  e.StartEnum();
+  absl::flat_hash_set<int32_t> values;
+  for (int i = 0; i < 100; i++) {
+    values.insert(i);
+    e.PutEnumValue(i);
+  }
+  for (int i = 100; i > 0; i--) {
+    values.insert(-i);
+    e.PutEnumValue(-i);
+  }
+  e.EndEnum();
+
+  upb::Status status;
+  upb_MiniTable_Enum* table = upb_MiniTable_BuildEnum(
+      e.data().data(), e.data().size(), arena.ptr(), status.ptr());
+  ASSERT_NE(nullptr, table) << status.error_message();
+
+  for (int i = -UINT16_MAX; i < UINT16_MAX; i++) {
+    EXPECT_EQ(values.contains(i), upb_MiniTable_Enum_CheckValue(table, i)) << i;
+  }
+}
+
+TEST_P(MiniTableTest, Extendible) {
+  upb::Arena arena;
+  upb::MtDataEncoder e;
+  ASSERT_TRUE(e.StartMessage(kUpb_MessageModifier_IsExtendable));
+  int count = 0;
+  for (int i = kUpb_FieldType_Double; i < kUpb_FieldType_SInt64; i++) {
+    ASSERT_TRUE(e.PutField(static_cast<upb_FieldType>(i), i, 0));
+    count++;
+  }
+  upb::Status status;
+  upb_MiniTable* table = upb_MiniTable_Build(
+      e.data().data(), e.data().size(), GetParam(), arena.ptr(), status.ptr());
+  ASSERT_NE(nullptr, table);
+  EXPECT_EQ(kUpb_ExtMode_Extendable, table->ext & kUpb_ExtMode_Extendable);
+}

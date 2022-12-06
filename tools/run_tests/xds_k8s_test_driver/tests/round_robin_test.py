@@ -74,12 +74,12 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.assertEqual(total_requests_received, num_rpcs,
                              'Wrong number of RPCS')
             for server in test_servers:
-                pod_name = server.pod_name
-                self.assertIn(pod_name, rpcs_by_peer,
-                              f'pod {pod_name} did not receive RPCs')
+                hostname = server.hostname
+                self.assertIn(hostname, rpcs_by_peer,
+                              f'Server {hostname} did not receive RPCs')
                 self.assertLessEqual(
-                    abs(rpcs_by_peer[pod_name] - expected_rpcs_per_replica), 1,
-                    f'Wrong number of RPCs for {pod_name}')
+                    abs(rpcs_by_peer[hostname] - expected_rpcs_per_replica), 1,
+                    f'Wrong number of RPCs for server {hostname}')
 
 
 if __name__ == '__main__':

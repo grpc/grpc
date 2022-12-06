@@ -14,12 +14,17 @@
 
 package io.grpc.binder.cpp;
 
+import static android.content.Intent.URI_ANDROID_APP_SCHEME;
+import static android.content.Intent.URI_INTENT_SCHEME;
+
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
+import java.net.URISyntaxException;
 
 /* Handles the binder connection state with OnDeviceServer server */
 public class GrpcBinderConnection implements ServiceConnection {
@@ -61,10 +66,24 @@ public class GrpcBinderConnection implements ServiceConnection {
   }
 
   public void tryConnect(String pkg, String cls, String action_name) {
+    Intent intent = new Intent(action_name);
+    ComponentName compName = new ComponentName(pkg, cls);
+    intent.setComponent(compName);
+    tryConnect(intent);
+  }
+
+  @TargetApi(22)
+  public void tryConnect(String uri) {
+    // Try connect with an URI that can be parsed as intent.
+    try {
+      tryConnect(Intent.parseUri(uri, URI_ANDROID_APP_SCHEME | URI_INTENT_SCHEME));
+    } catch (URISyntaxException e) {
+      Log.e(logTag, "Unable to parse the Uri: " + uri);
+    }
+  }
+
+  private void tryConnect(Intent intent) {
     synchronized (this) {
-      Intent intent = new Intent(action_name);
-      ComponentName compName = new ComponentName(pkg, cls);
-      intent.setComponent(compName);
       // Will return true if the system is in the process of bringing up a service that your client
       // has permission to bind to; false if the system couldn't find the service or if your client
       // doesn't have permission to bind to it

@@ -29,7 +29,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_BackoffStrategy__fields[2]
 const upb_MiniTable envoy_config_core_v3_BackoffStrategy_msginit = {
   &envoy_config_core_v3_BackoffStrategy_submsgs[0],
   &envoy_config_core_v3_BackoffStrategy__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
