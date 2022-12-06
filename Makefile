@@ -1675,6 +1675,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
+    include/grpc/event_engine/posix.h \
     include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
@@ -2141,6 +2142,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
+    include/grpc/event_engine/posix.h \
     include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \

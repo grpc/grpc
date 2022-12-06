@@ -39,6 +39,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_allocator.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_request.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
