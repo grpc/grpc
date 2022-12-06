@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_STATUS_H
 #define GRPC_IMPL_CODEGEN_STATUS_H
 
-// IWYU pragma: private, include <grpc/status.h>
+// IWYU pragma: private
 
 #include <grpc/support/port_platform.h>
 
