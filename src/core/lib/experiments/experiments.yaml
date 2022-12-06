@@ -123,7 +123,7 @@
 - name: posix_event_engine_enable_polling
   description:
     If set, enables polling on the default posix event engine.
-  default: debug
+  default: true
   expiry: 2023/01/01
   owner: vigneshbabu@google.com
   test_tags: ["event_engine_client_test"]

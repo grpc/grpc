@@ -1083,6 +1083,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -13133,6 +13134,25 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_override_host_lb_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/xds_override_host_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
+- name: xds_override_host_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  src:
+  - test/core/client_channel/lb_policy/xds_override_host_test.cc
+  deps:
+  - grpc_test_util
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test

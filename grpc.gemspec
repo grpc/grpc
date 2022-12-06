@@ -176,6 +176,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc )
   s.files += %w( src/core/ext/filters/client_channel/local_subchannel_pool.cc )
   s.files += %w( src/core/ext/filters/client_channel/local_subchannel_pool.h )

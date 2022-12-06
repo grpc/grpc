@@ -265,6 +265,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.cc',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
