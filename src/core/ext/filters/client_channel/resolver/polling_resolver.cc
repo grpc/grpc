@@ -121,10 +121,11 @@ void PollingResolver::OnNextResolutionLocked() {
             "[polling resolver %p] re-resolution timer fired: shutdown_=%d",
             this, shutdown_);
   }
-  next_resolution_timer_handle_.reset();
-  if (!shutdown_) {
+  // If we haven't been cancelled nor shutdown, then start resolving.
+  if (next_resolution_timer_handle_.has_value() && !shutdown_) {
     StartResolvingLocked();
   }
+  next_resolution_timer_handle_.reset();
 }
 
 void PollingResolver::MaybeCancelNextResolutionTimer() {
@@ -133,9 +134,12 @@ void PollingResolver::MaybeCancelNextResolutionTimer() {
       gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
               this);
     }
-    channel_args_.GetObject<EventEngine>()->Cancel(
-        *next_resolution_timer_handle_);
-    next_resolution_timer_handle_.reset();
+    if (!channel_args_.GetObject<EventEngine>()->Cancel(
+            *next_resolution_timer_handle_)) {
+      // Timer callback has already been scheduled, reset to indicate that
+      // cancellation has happened.
+      next_resolution_timer_handle_.reset();
+    }
   }
 }
 
