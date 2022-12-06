@@ -33,7 +33,7 @@
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class PollEventHandle;
 
@@ -91,7 +91,7 @@ class PollPoller : public PosixEventPoller {
 // crash failure.
 PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_POLL_POSIX_H

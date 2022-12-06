@@ -43,15 +43,7 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-namespace {
-using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressIsWildcard;
-using ::grpc_event_engine::experimental::ResolvedAddressSetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
-using ::grpc_event_engine::experimental::ResolvedAddressToV4Mapped;
-}  // namespace
+namespace experimental {
 
 PosixEngineListenerImpl::PosixEngineListenerImpl(
     EventEngine::Listener::AcceptCallback on_accept,
@@ -238,7 +230,7 @@ PosixEngineListenerImpl::~PosixEngineListenerImpl() {
   }
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_POSIX_SOCKET_TCP

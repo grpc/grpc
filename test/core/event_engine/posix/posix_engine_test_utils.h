@@ -21,7 +21,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class TestScheduler : public Scheduler {
  public:
@@ -58,5 +58,5 @@ int ConnectToServerOrDie(
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
         server_address);
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

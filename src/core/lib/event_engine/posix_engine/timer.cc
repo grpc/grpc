@@ -32,7 +32,7 @@
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
 static const double kAddDeadlineScale = 0.33;
@@ -307,5 +307,5 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   return std::move(run);
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

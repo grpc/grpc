@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
@@ -63,5 +63,5 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
 
 #endif /* GRPC_POSIX_WAKEUP_FD */
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

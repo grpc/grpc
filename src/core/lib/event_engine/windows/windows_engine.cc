@@ -44,7 +44,7 @@ namespace experimental {
 
 struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
-  posix_engine::Timer timer;
+  Timer timer;
   WindowsEventEngine* engine;
   EventEngine::TaskHandle handle;
 

@@ -27,7 +27,7 @@
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 /* Adjusts a heap so as to move a hole at position i closer to the root,
    until a suitable position is found for element t. Then, copies t into that
@@ -103,5 +103,5 @@ Timer* TimerHeap::Top() { return timers_[0]; }
 
 void TimerHeap::Pop() { Remove(Top()); }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

@@ -33,7 +33,7 @@
 #include "src/core/lib/gprpp/sync.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::posix_engine::Scheduler;
+using ::grpc_event_engine::experimental::Scheduler;
 
 namespace {
 class TestScheduler : public Scheduler {
@@ -58,7 +58,7 @@ TestScheduler* g_scheduler;
 }  // namespace
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 TEST(LockFreeEventTest, BasicTest) {
   LockfreeEvent event(g_scheduler);
@@ -151,7 +151,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
   event.DestroyEvent();
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

@@ -36,7 +36,7 @@ using testing::Contains;
 using testing::Not;
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 int64_t RandomDeadline(void) { return rand(); }
@@ -197,7 +197,7 @@ TEST(TimerHeapTest, RandomMutations) {
 }
 
 }  // namespace
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

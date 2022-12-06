@@ -62,15 +62,9 @@
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
-
-using ::grpc_event_engine::experimental::EndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::ResolvedAddressIsV4Mapped;
-using ::grpc_event_engine::experimental::ResolvedAddressToNormalizedString;
-using ::grpc_event_engine::experimental::ResolvedAddressToV4Mapped;
 
 int AdjustValue(int default_value, int min_value, int max_value,
                 absl::optional<int> actual_value) {
@@ -844,5 +838,5 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

@@ -24,7 +24,7 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
@@ -39,7 +39,7 @@ class EventFdWakeupFd : public WakeupFd {
   absl::Status Init();
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_EVENTFD_H
