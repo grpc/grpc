@@ -4236,7 +4236,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "closure",
         "error",
         "grpc_outlier_detection_header",
         "iomgr_fwd",
@@ -4254,7 +4253,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",

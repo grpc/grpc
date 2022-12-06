@@ -52,11 +52,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
@@ -70,6 +68,8 @@ namespace grpc_core {
 TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 constexpr absl::string_view kOutlierDetection =
     "outlier_detection_experimental";
@@ -352,13 +352,10 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     Timestamp StartTime() const { return start_time_; }
 
    private:
-    static void OnTimer(void* arg, grpc_error_handle error);
-    void OnTimerLocked(grpc_error_handle);
+    void OnTimerLocked();
 
     RefCountedPtr<OutlierDetectionLb> parent_;
-    grpc_timer timer_;
-    grpc_closure on_timer_;
-    bool timer_pending_ = true;
+    absl::optional<EventEngine::TaskHandle> timer_handle_;
     Timestamp start_time_;
     absl::BitGen bit_gen_;
   };
@@ -782,28 +779,22 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer will run in %s",
             parent_.get(), interval.ToString().c_str());
   }
-  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-  Ref().release();
-  grpc_timer_init(&timer_, start_time_ + interval, &on_timer_);
+  timer_handle_ = parent_->channel_control_helper()->GetEventEngine()->RunAfter(
+      interval, [self = Ref(DEBUG_LOCATION, "EjectionTimer")]() mutable {
+        self->parent_->work_serializer()->Run(
+            [self = std::move(self)]() { self->OnTimerLocked(); },
+            DEBUG_LOCATION);
+      });
 }
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
-  if (timer_pending_) {
-    timer_pending_ = false;
-    grpc_timer_cancel(&timer_);
-  }
+  parent_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+  timer_handle_.reset();
   Unref();
 }
 
-void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
-                                                grpc_error_handle error) {
-  auto* self = static_cast<EjectionTimer*>(arg);
-  self->parent_->work_serializer()->Run(
-      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
-}
-
-void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
-  if (error.ok() && timer_pending_) {
+void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
+  if (timer_handle_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
               parent_.get());
@@ -981,11 +972,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
                 parent_.get(), state.first.c_str(), subchannel_state);
       }
     }
-    timer_pending_ = false;
+    timer_handle_.reset();
     parent_->ejection_timer_ =
         MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
   }
-  Unref(DEBUG_LOCATION, "Timer");
 }
 
 //
