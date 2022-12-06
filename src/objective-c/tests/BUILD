@@ -294,6 +294,21 @@ macos_unit_test(
     ],
 )
 
+grpc_objc_testing_library(
+    name = "CFStreamTests-lib",
+    srcs = glob(["CFStreamTests/*.mm"]),
+    deps = [
+        "//:gpr_platform",
+        "//src/core:iomgr_port",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CFStreamTests",
+    deps = [":CFStreamTests-lib"],
+)
+
 # Note that bazel currently doesn't support running tvos_unit_test
 # See https://github.com/bazelbuild/rules_apple/blob/8d841342c238457896cd7596cc29b2d06c9a75f0/apple/testing/default_runner/tvos_test_runner.template.sh
 tvos_unit_test(
