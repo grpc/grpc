@@ -419,6 +419,34 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
+grpc_proto_library(
+    name = "cookie_proto",
+    srcs = [
+        "cookie.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "stateful_session_cookie_proto",
+    srcs = [
+        "stateful_session_cookie.proto",
+    ],
+    deps = [
+        "cookie_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "stateful_session_proto",
+    srcs = [
+        "stateful_session.proto",
+    ],
+    deps = [
+        "extension_proto",
+    ],
+)
+
 py_proto_library(
     name = "csds_py_pb2",
     deps = [":_csds_proto_only"],
