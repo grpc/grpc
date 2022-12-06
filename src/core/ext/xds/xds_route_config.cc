@@ -620,8 +620,8 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       continue;
     }
     absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            context, std::move(*extension_to_use), errors);
+        filter_impl->GenerateFilterConfigOverride(std::move(*extension_to_use),
+                                                  context.arena, errors);
     if (filter_config.has_value()) {
       typed_per_filter_config[std::string(key)] = std::move(*filter_config);
     }
