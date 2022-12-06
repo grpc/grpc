@@ -528,6 +528,7 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_resolver_xds",
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
+    "//src/core:grpc_stateful_session_filter",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -3175,11 +3176,12 @@ grpc_cc_library(
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:context",
-        "//src/core:for_each",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
         "//src/core:map_pipe",
         "//src/core:percent_encoding",
+        "//src/core:pipe",
+        "//src/core:promise_like",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",

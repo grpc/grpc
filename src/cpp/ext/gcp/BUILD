@@ -102,6 +102,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "googleapis_logging_grpc_service",
+        "protobuf_headers",
     ],
     language = "c++",
     visibility = ["//test:__subpackages__"],

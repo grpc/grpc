@@ -21,7 +21,6 @@
 
 #include <stddef.h>
 
-#include <deque>
 #include <functional>
 #include <map>
 #include <memory>
