@@ -810,6 +810,7 @@ doc/xds-test-descriptions.md \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
+include/grpc/channel_credentials/google_default.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
@@ -938,6 +939,7 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
@@ -1003,6 +1005,10 @@ src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+src/core/ext/filters/stateful_session/stateful_session_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \

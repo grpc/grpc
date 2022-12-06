@@ -5,6 +5,7 @@ framework module grpc {
 header "byte_buffer.h"
   header "byte_buffer_reader.h"
   header "census.h"
+  header "channel_credentials/google_default.h"
   header "compression.h"
   header "fork.h"
   header "grpc.h"

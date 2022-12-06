@@ -65,10 +65,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_read_chunks", description_tcp_read_chunks, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
     {"peer_state_based_framing", description_peer_state_based_framing, false},
-    {"flow_control_fixes", description_flow_control_fixes,
-     kDefaultForDebugOnly},
+    {"flow_control_fixes", description_flow_control_fixes, true},
     {"memory_pressure_controller", description_memory_pressure_controller,
-     false},
+     kDefaultForDebugOnly},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
@@ -77,7 +76,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"monitoring_experiment", description_monitoring_experiment, true},
     {"promise_based_client_call", description_promise_based_client_call, false},
     {"posix_event_engine_enable_polling",
-     description_posix_event_engine_enable_polling, kDefaultForDebugOnly},
+     description_posix_event_engine_enable_polling, true},
 };
 
 }  // namespace grpc_core
