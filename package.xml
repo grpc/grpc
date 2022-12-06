@@ -416,8 +416,12 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c" role="src" />
@@ -710,8 +714,12 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c" role="src" />
@@ -884,6 +892,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_stateful_session_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_stateful_session_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />

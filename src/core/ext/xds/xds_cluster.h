@@ -45,6 +45,7 @@
 namespace grpc_core {
 
 bool XdsCustomLbPolicyEnabled();
+bool XdsHostOverrideEnabled();
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };

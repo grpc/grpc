@@ -3665,6 +3665,31 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_stateful_session_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_stateful_session_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upb",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_type_http_upb",
+    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_ring_hash_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
 )
