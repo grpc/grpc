@@ -33,9 +33,7 @@ grpc_cc_library(
     hdrs = [
         "logging_sink.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     visibility = [
         "//src/cpp/ext/gcp:__subpackages__",
@@ -43,5 +41,6 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr_platform",
+        "//src/core:time",
     ],
 )

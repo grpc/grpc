@@ -889,7 +889,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -994,6 +993,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
@@ -1023,14 +1023,14 @@ LIBGRPC_SRC = \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
-    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
-    src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
+    src/core/ext/filters/http/message_compress/compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
-    src/core/ext/filters/server_config_selector/server_config_selector.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -1415,6 +1415,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
+    src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
@@ -1660,6 +1661,7 @@ LIBGRPC_SRC = \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
     src/core/tsi/ssl_transport_security.cc \
+    src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
 
@@ -1667,6 +1669,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
+    include/grpc/channel_credentials/google_default.h \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
@@ -1690,7 +1693,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
@@ -1704,6 +1706,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/compression_types.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -1838,8 +1841,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
-    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
-    src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
+    src/core/ext/filters/http/message_compress/compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -1937,6 +1939,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
+    src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_pool.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
@@ -2132,6 +2135,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
+    include/grpc/channel_credentials/google_default.h \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
@@ -2155,7 +2159,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
@@ -2169,6 +2172,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/compression_types.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -2902,13 +2906,15 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc: $(OPENSSL_D
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
-src/core/ext/filters/server_config_selector/server_config_selector.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_filter.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/alpn/alpn.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c: $(OPENSSL_DEP)
@@ -3255,6 +3261,7 @@ src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl_transport_security_utils.cc: $(OPENSSL_DEP)
 endif
 
 .PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install_csharp install-static install-certs strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean

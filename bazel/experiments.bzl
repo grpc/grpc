@@ -21,11 +21,11 @@ EXPERIMENTS = {
         "core_end2end_tests": [
             "new_hpack_huffman_decoder",
         ],
-        "event_engine_client_test": [
-            "posix_event_engine_enable_polling",
-        ],
         "hpack_test": [
             "new_hpack_huffman_decoder",
+        ],
+        "resource_quota_test": [
+            "memory_pressure_controller",
         ],
     },
     "off": {
@@ -40,7 +40,6 @@ EXPERIMENTS = {
             "event_engine_client",
         ],
         "flow_control_test": [
-            "flow_control_fixes",
             "peer_state_based_framing",
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
@@ -49,7 +48,6 @@ EXPERIMENTS = {
             "promise_based_client_call",
         ],
         "resource_quota_test": [
-            "memory_pressure_controller",
             "unconstrained_max_quota_buffer_size",
         ],
     },
@@ -57,7 +55,11 @@ EXPERIMENTS = {
         "endpoint_test": [
             "tcp_read_chunks",
         ],
+        "event_engine_client_test": [
+            "posix_event_engine_enable_polling",
+        ],
         "flow_control_test": [
+            "flow_control_fixes",
             "tcp_read_chunks",
         ],
     },

@@ -810,6 +810,7 @@ doc/xds-test-descriptions.md \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
+include/grpc/channel_credentials/google_default.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
@@ -833,7 +834,6 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/fork.h \
-include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/log.h \
@@ -847,6 +847,7 @@ include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
+include/grpc/impl/compression_types.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \

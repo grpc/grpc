@@ -1,4 +1,16 @@
 EXPORTS
+    grpc_raw_byte_buffer_create
+    grpc_raw_compressed_byte_buffer_create
+    grpc_byte_buffer_copy
+    grpc_byte_buffer_length
+    grpc_byte_buffer_destroy
+    grpc_byte_buffer_reader_init
+    grpc_byte_buffer_reader_destroy
+    grpc_byte_buffer_reader_next
+    grpc_byte_buffer_reader_peek
+    grpc_byte_buffer_reader_readall
+    grpc_raw_byte_buffer_from_reader
+    grpc_google_default_credentials_create
     grpc_compression_algorithm_is_message
     grpc_compression_algorithm_is_stream
     grpc_compression_algorithm_parse
@@ -104,7 +116,6 @@ EXPORTS
     grpc_ssl_session_cache_destroy
     grpc_ssl_session_cache_create_channel_arg
     grpc_call_credentials_release
-    grpc_google_default_credentials_create
     grpc_set_ssl_roots_override_callback
     grpc_ssl_credentials_create
     grpc_ssl_credentials_create_ex
@@ -163,24 +174,6 @@ EXPORTS
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
-    grpc_raw_byte_buffer_create
-    grpc_raw_compressed_byte_buffer_create
-    grpc_byte_buffer_copy
-    grpc_byte_buffer_length
-    grpc_byte_buffer_destroy
-    grpc_byte_buffer_reader_init
-    grpc_byte_buffer_reader_destroy
-    grpc_byte_buffer_reader_next
-    grpc_byte_buffer_reader_peek
-    grpc_byte_buffer_reader_readall
-    grpc_raw_byte_buffer_from_reader
-    gpr_log_severity_string
-    gpr_log
-    gpr_should_log
-    gpr_log_message
-    gpr_set_log_verbosity
-    gpr_log_verbosity_init
-    gpr_set_log_function
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy
@@ -233,6 +226,13 @@ EXPORTS
     gpr_free_aligned
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
+    gpr_log_severity_string
+    gpr_log
+    gpr_should_log
+    gpr_log_message
+    gpr_set_log_verbosity
+    gpr_log_verbosity_init
+    gpr_set_log_function
     gpr_format_message
     gpr_strdup
     gpr_asprintf

@@ -110,7 +110,8 @@ class XdsClusterTest : public ::testing::Test {
       GPR_ASSERT(false);
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr);
+                                     /*transport_factory=*/nullptr,
+                                     /*event_engine=*/nullptr);
   }
 
   RefCountedPtr<XdsClient> xds_client_;
