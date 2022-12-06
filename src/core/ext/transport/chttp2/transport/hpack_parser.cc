@@ -1225,7 +1225,6 @@ class HPackParser::Parser {
         absl::StrCat("; adding ", md.key(), " (length ", md.transport_size(),
                      "B)", summary.empty() ? "" : " to ", summary);
     if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
-    // TODO(alishananda): add debug log with metadata details
     return input_->MaybeSetErrorAndReturn(
         [this, summary = std::move(summary)] {
           return grpc_error_set_int(
