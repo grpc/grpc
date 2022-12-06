@@ -38,7 +38,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
-#include "hpack_constants.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -1195,17 +1194,16 @@ class HPackParser::Parser {
         : summary_(summary) {}
 
     void Encode(const Slice& key, const Slice& value) {
-      absl::StrAppend(
-          &summary_, " ", key.as_string_view(), ":",
-          grpc_core::hpack_constants::SizeForEntry(key.size(), value.size()),
-          "B");
+      absl::StrAppend(&summary_, " ", key.as_string_view(), ":",
+                      hpack_constants::SizeForEntry(key.size(), value.size()),
+                      "B");
     }
 
     template <typename Key, typename Value>
     void Encode(Key key, const Value& value) {
       absl::StrAppend(&summary_, " ", Key::key(), ":",
-                      grpc_core::hpack_constants::SizeForEntry(
-                          Key::key().size(), Key::Encode(value).size()),
+                      hpack_constants::SizeForEntry(Key::key().size(),
+                                                    Key::Encode(value).size()),
                       "B");
     }
 
@@ -1226,7 +1224,6 @@ class HPackParser::Parser {
         absl::StrCat("; adding ", md.key(), " (length ", md.transport_size(),
                      "B)", summary.empty() ? "" : " to ", summary);
     if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
-    // TODO(alishananda): add debug log with metadata details
     return input_->MaybeSetErrorAndReturn(
         [this, summary = std::move(summary)] {
           return grpc_error_set_int(
