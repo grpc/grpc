@@ -1579,6 +1579,8 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
             fallback_at_startup_timeout_,
             [self = static_cast<RefCountedPtr<GrpcLb>>(
                  Ref(DEBUG_LOCATION, "on_fallback_timer"))]() mutable {
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
               self->work_serializer()->Run(
                   [self = std::move(self)]() { self->OnFallbackTimerLocked(); },
                   DEBUG_LOCATION);
@@ -1688,6 +1690,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
           timeout,
           [self = static_cast<RefCountedPtr<GrpcLb>>(
                Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer"))]() mutable {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
             self->work_serializer()->Run(
                 [self = std::move(self)]() {
                   self->OnBalancerCallRetryTimerLocked();
@@ -1839,6 +1843,8 @@ void GrpcLb::StartSubchannelCacheTimerLocked() {
   subchannel_cache_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
           cached_subchannels_.begin()->first - ExecCtx::Get()->Now(), [this] {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
             work_serializer()->Run(
                 [this]() { GrpcLb::OnSubchannelCacheTimerLocked(); },
                 DEBUG_LOCATION);
