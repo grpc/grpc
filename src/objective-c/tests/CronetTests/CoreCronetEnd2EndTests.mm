@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/channel_credentials/ssl.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
