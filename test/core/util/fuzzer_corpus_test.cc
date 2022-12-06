@@ -62,7 +62,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   size_t length = GRPC_SLICE_LENGTH(buffer);
   void* data = gpr_malloc(length);
   if (length > 0) {
-    memcpy(data, GPR_SLICE_START_PTR(buffer), length);
+    memcpy(data, GRPC_SLICE_START_PTR(buffer), length);
   }
   grpc_slice_unref(buffer);
   LLVMFuzzerTestOneInput(static_cast<uint8_t*>(data), length);
