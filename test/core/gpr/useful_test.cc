@@ -20,7 +20,11 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-#include <gtest/gtest.h>
+#include <stdint.h>
+
+#include <limits>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -74,6 +78,18 @@ TEST(UsefulTest, SaturatingAdd) {
             std::numeric_limits<int64_t>::max());
   EXPECT_EQ(SaturatingAdd(std::numeric_limits<int64_t>::min(), -1),
             std::numeric_limits<int64_t>::min());
+}
+
+TEST(UsefulTest, RoundUpToPowerOf2) {
+  EXPECT_EQ(RoundUpToPowerOf2(0), 0);
+  EXPECT_EQ(RoundUpToPowerOf2(1), 1);
+  EXPECT_EQ(RoundUpToPowerOf2(2), 2);
+  EXPECT_EQ(RoundUpToPowerOf2(3), 4);
+  EXPECT_EQ(RoundUpToPowerOf2(4), 4);
+  EXPECT_EQ(RoundUpToPowerOf2(5), 8);
+  EXPECT_EQ(RoundUpToPowerOf2(6), 8);
+  EXPECT_EQ(RoundUpToPowerOf2(7), 8);
+  EXPECT_EQ(RoundUpToPowerOf2(8), 8);
 }
 
 }  // namespace grpc_core

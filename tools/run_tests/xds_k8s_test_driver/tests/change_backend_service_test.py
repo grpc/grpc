@@ -19,7 +19,7 @@ from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
-from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -27,6 +27,7 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+_KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 
 class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
@@ -35,7 +36,7 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         super().setUp()
         self.alternate_k8s_namespace = k8s.KubernetesNamespace(
             self.k8s_api_manager, self.server_namespace)
-        self.alternate_server_runner = server_app.KubernetesServerRunner(
+        self.alternate_server_runner = _KubernetesServerRunner(
             self.alternate_k8s_namespace,
             deployment_name=self.server_name + '-alt',
             image_name=self.server_image,
@@ -48,10 +49,11 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             reuse_namespace=True)
 
-    def tearDown(self):
+    def cleanup(self):
+        super().cleanup()
         if hasattr(self, 'alternate_server_runner'):
-            self.alternate_server_runner.cleanup()
-        super().tearDown()
+            self.alternate_server_runner.cleanup(
+                force=self.force_cleanup, force_namespace=self.force_cleanup)
 
     def test_change_backend_service(self) -> None:
         with self.subTest('00_create_health_check'):

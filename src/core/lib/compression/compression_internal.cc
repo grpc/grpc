@@ -21,11 +21,13 @@
 #include "src/core/lib/compression/compression_internal.h"
 
 #include <stdlib.h>
-#include <string.h>
+
+#include <string>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_split.h"
+#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
@@ -163,19 +165,13 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromUint32(uint32_t value) {
 }
 
 CompressionAlgorithmSet CompressionAlgorithmSet::FromChannelArgs(
-    const grpc_channel_args* args) {
+    const ChannelArgs& args) {
   CompressionAlgorithmSet set;
   static const uint32_t kEverything =
       (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
-  if (args != nullptr) {
-    set = CompressionAlgorithmSet::FromUint32(grpc_channel_args_find_integer(
-        args, GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
-        grpc_integer_options{kEverything, 0, kEverything}));
-    set.Set(GRPC_COMPRESS_NONE);
-  } else {
-    set = CompressionAlgorithmSet::FromUint32(kEverything);
-  }
-  return set;
+  return CompressionAlgorithmSet::FromUint32(
+      args.GetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)
+          .value_or(kEverything));
 }
 
 CompressionAlgorithmSet::CompressionAlgorithmSet() = default;
@@ -230,18 +226,14 @@ uint32_t CompressionAlgorithmSet::ToLegacyBitmask() const {
 }
 
 absl::optional<grpc_compression_algorithm>
-DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args) {
-  if (args == nullptr) return absl::nullopt;
-  for (size_t i = 0; i < args->num_args; i++) {
-    if (strcmp(args->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) ==
-        0) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        return static_cast<grpc_compression_algorithm>(
-            args->args[i].value.integer);
-      } else if (args->args[i].type == GRPC_ARG_STRING) {
-        return ParseCompressionAlgorithm(args->args[i].value.string);
-      }
-    }
+DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
+  auto* value = args.Get(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
+  if (value == nullptr) return absl::nullopt;
+  if (auto* p = absl::get_if<int>(value)) {
+    return static_cast<grpc_compression_algorithm>(*p);
+  }
+  if (auto* p = absl::get_if<std::string>(value)) {
+    return ParseCompressionAlgorithm(*p);
   }
   return absl::nullopt;
 }

@@ -11,23 +11,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/event_engine/default_event_engine_factory.h"
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/iomgr_engine.h"
+#ifdef GPR_WINDOWS
+#include "src/core/lib/event_engine/windows/windows_engine.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<IomgrEventEngine>();
+  return std::make_unique<WindowsEventEngine>();
 }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+#else  // not GPR_WINDOWS
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+
+namespace grpc_event_engine {
+namespace experimental {
+
+std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
+  return std::make_unique<PosixEventEngine>();
+}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+#endif

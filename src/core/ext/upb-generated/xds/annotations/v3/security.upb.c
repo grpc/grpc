@@ -22,7 +22,7 @@ static const upb_MiniTable_Field xds_annotations_v3_FieldSecurityAnnotation__fie
 const upb_MiniTable xds_annotations_v3_FieldSecurityAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_FieldSecurityAnnotation__fields[0],
-  UPB_SIZE(2, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

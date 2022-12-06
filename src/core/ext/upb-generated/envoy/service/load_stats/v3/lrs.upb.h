@@ -60,11 +60,15 @@ UPB_INLINE envoy_service_load_stats_v3_LoadStatsRequest* envoy_service_load_stat
   return ret;
 }
 UPB_INLINE char* envoy_service_load_stats_v3_LoadStatsRequest_serialize(const envoy_service_load_stats_v3_LoadStatsRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_load_stats_v3_LoadStatsRequest_serialize_ex(const envoy_service_load_stats_v3_LoadStatsRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsRequest_has_node(const envoy_service_load_stats_v3_LoadStatsRequest* msg) {
   return _upb_hasbit(msg, 1);
@@ -136,11 +140,15 @@ UPB_INLINE envoy_service_load_stats_v3_LoadStatsResponse* envoy_service_load_sta
   return ret;
 }
 UPB_INLINE char* envoy_service_load_stats_v3_LoadStatsResponse_serialize(const envoy_service_load_stats_v3_LoadStatsResponse* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_load_stats_v3_LoadStatsResponse_serialize_ex(const envoy_service_load_stats_v3_LoadStatsResponse* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_service_load_stats_v3_LoadStatsResponse_clear_clusters(const envoy_service_load_stats_v3_LoadStatsResponse* msg) {
   _upb_array_detach(msg, UPB_SIZE(4, 8));

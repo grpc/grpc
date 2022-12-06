@@ -58,6 +58,9 @@ class StringValue
 
 class ServerCallTest extends \PHPUnit\Framework\TestCase
 {
+    private $mockCall;
+    private $serverContext;
+
     public function setUp(): void
     {
         $this->mockCall = $this->getMockBuilder(stdClass::class)
@@ -279,6 +282,9 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
         $serverCallWriter->finish($message, ['flags' => 0x02]);
     }
 
+    /**
+     * @todo `at` is deprecated and will be removed in phpunit 10
+     */
     public function testStartWriteFinish()
     {
         $metadata = ['a' => 1];
@@ -286,30 +292,26 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
         $message1 = $this->newStringMessage();
         $message2 = $this->newStringMessage('another string');
 
-        $this->mockCall->expects($this->at(0))
+        $this->mockCall->expects($this->exactly(4))
             ->method('startBatch')
-            ->with($this->identicalTo([
-                \Grpc\OP_SEND_INITIAL_METADATA => $metadata,
-            ]));
-        $this->mockCall->expects($this->at(1))
-            ->method('startBatch')
-            ->with($this->identicalTo([
-                \Grpc\OP_SEND_MESSAGE => ['message' => $message1->serializeToString()],
-            ]));
-        $this->mockCall->expects($this->at(2))
-            ->method('startBatch')
-            ->with($this->identicalTo([
-                \Grpc\OP_SEND_MESSAGE => [
-                    'message' => $message2->serializeToString(),
-                    'flags' => 0x02,
-                ]
-            ]));
-        $this->mockCall->expects($this->at(3))
-            ->method('startBatch')
-            ->with($this->identicalTo([
-                \Grpc\OP_SEND_STATUS_FROM_SERVER => \Grpc\Status::ok(),
-                \Grpc\OP_RECV_CLOSE_ON_SERVER => true,
-            ]));
+            ->withConsecutive(
+                [$this->identicalTo([
+                    \Grpc\OP_SEND_INITIAL_METADATA => $metadata,
+                ])],
+                [$this->identicalTo([
+                    \Grpc\OP_SEND_MESSAGE => ['message' => $message1->serializeToString()],
+                ])],
+                [$this->identicalTo([
+                    \Grpc\OP_SEND_MESSAGE => [
+                        'message' => $message2->serializeToString(),
+                        'flags' => 0x02,
+                    ]
+                ])],
+                [$this->identicalTo([
+                    \Grpc\OP_SEND_STATUS_FROM_SERVER => \Grpc\Status::ok(),
+                    \Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+                ])]
+            );
 
         $serverCallWriter = new \Grpc\ServerCallWriter(
             $this->mockCall,

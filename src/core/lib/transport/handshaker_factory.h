@@ -21,8 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
 // A handshaker factory is used to create handshakers.
@@ -38,9 +37,35 @@ class HandshakeManager;
 
 class HandshakerFactory {
  public:
-  virtual void AddHandshakers(const grpc_channel_args* args,
+  // Enum representing the priority of the handshakers.
+  // The order of the handshakers is decided by the priority.
+  // For example kPreTCPConnect handshakers are called before kTCPConnect and so
+  // on.
+  enum class HandshakerPriority : int {
+    // Handshakers that should be called before a TCP connect. Applicable mainly
+    // for Client handshakers.
+    kPreTCPConnectHandshakers,
+    // Handshakers responsible for the actual TCP connect establishment.
+    // Applicable mainly for Client handshakers.
+    kTCPConnectHandshakers,
+    // Handshakers responsible for the actual HTTP connect established.
+    // Applicable
+    // mainly for Client handshakers.
+    kHTTPConnectHandshakers,
+    // Handshakers that should be called before security handshakes but after
+    // connect establishment. Applicable mainly for Server handshakers
+    // currently.
+    kReadAheadSecurityHandshakers,
+    // Handshakers that are responsible for post connect security handshakes.
+    // Applicable for both Client and Server handshakers.
+    kSecurityHandshakers,
+  };
+
+  virtual void AddHandshakers(const ChannelArgs& args,
                               grpc_pollset_set* interested_parties,
                               HandshakeManager* handshake_mgr) = 0;
+  // Return the priority associated with the handshaker.
+  virtual HandshakerPriority Priority() = 0;
   virtual ~HandshakerFactory() = default;
 };
 

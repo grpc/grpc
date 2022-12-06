@@ -21,6 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/status.h>
 
 /// If \a status_str is a valid status string, sets \a status to the
@@ -44,7 +49,10 @@ class StatusCodeSet {
  public:
   bool Empty() const { return status_code_mask_ == 0; }
 
-  void Add(grpc_status_code status) { status_code_mask_ |= (1 << status); }
+  StatusCodeSet& Add(grpc_status_code status) {
+    status_code_mask_ |= (1 << status);
+    return *this;
+  }
 
   bool Contains(grpc_status_code status) const {
     return status_code_mask_ & (1 << status);
@@ -54,11 +62,20 @@ class StatusCodeSet {
     return status_code_mask_ == other.status_code_mask_;
   }
 
+  std::string ToString() const;
+
  private:
   int status_code_mask_ = 0;  // A bitfield of status codes in the set.
 };
 
 }  // namespace internal
+
+// Optionally rewrites a status as per
+// https://github.com/grpc/proposal/blob/master/A54-restrict-control-plane-status-codes.md.
+// The source parameter indicates where the status came from.
+absl::Status MaybeRewriteIllegalStatusCode(absl::Status status,
+                                           absl::string_view source);
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_STATUS_UTIL_H */

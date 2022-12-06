@@ -30,7 +30,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -230,10 +230,10 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
  protected:
   HybridEnd2endTest() {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
 
@@ -540,7 +540,7 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream) {
 }
 
 // Add a second service with one sync method.
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
+TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStreamSyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -579,7 +579,7 @@ class StreamedUnaryDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncStreamedUnaryDupService) {
+       AsyncRequestStreamResponseStreamSyncStreamedUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -617,7 +617,7 @@ class FullyStreamedUnaryDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncFullyStreamedUnaryDupService) {
+       AsyncRequestStreamResponseStreamSyncFullyStreamedUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -658,7 +658,7 @@ class SplitResponseStreamDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncSplitStreamedDupService) {
+       AsyncRequestStreamResponseStreamSyncSplitStreamedDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -698,7 +698,7 @@ class FullySplitStreamedDupPkg
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_FullySplitStreamedDupService) {
+       asyncRequestStreamResponseStreamFullySplitStreamedDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -750,7 +750,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
 };
 
 TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_FullyStreamedDupService) {
+       AsyncRequestStreamResponseStreamFullyStreamedDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -770,7 +770,7 @@ TEST_F(HybridEnd2endTest,
 }
 
 // Add a second service with one async method.
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_AsyncDupService) {
+TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStreamAsyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -866,7 +866,7 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
 }
 
 // Add a second service with one sync method.
-TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
+TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamSyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<TestServiceImpl>>
       SType;
@@ -886,7 +886,7 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
 }
 
 // Add a second service with one async method.
-TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_AsyncDupService) {
+TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamAsyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<TestServiceImpl>>
       SType;

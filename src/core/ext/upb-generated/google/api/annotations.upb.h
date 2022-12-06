@@ -38,7 +38,7 @@ UPB_INLINE const struct google_api_HttpRule* google_api_http(const struct google
 }
 UPB_INLINE void google_api_set_http(struct google_protobuf_MethodOptions* msg, const struct google_api_HttpRule* ext, upb_Arena* arena) {
   const upb_Message_Extension* msg_ext =
-      _upb_Message_Getorcreateext(msg, &google_api_http_ext, arena);
+      _upb_Message_GetOrCreateExtension(msg, &google_api_http_ext, arena);
   UPB_ASSERT(msg_ext);
   *UPB_PTR_AT(&msg_ext->data, 0, const struct google_api_HttpRule*) = ext;
 }

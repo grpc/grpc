@@ -60,11 +60,15 @@ UPB_INLINE grpc_gcp_RpcProtocolVersions* grpc_gcp_RpcProtocolVersions_parse_ex(c
   return ret;
 }
 UPB_INLINE char* grpc_gcp_RpcProtocolVersions_serialize(const grpc_gcp_RpcProtocolVersions* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* grpc_gcp_RpcProtocolVersions_serialize_ex(const grpc_gcp_RpcProtocolVersions* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool grpc_gcp_RpcProtocolVersions_has_max_rpc_version(const grpc_gcp_RpcProtocolVersions* msg) {
   return _upb_hasbit(msg, 1);
@@ -137,11 +141,15 @@ UPB_INLINE grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVersions_Ve
   return ret;
 }
 UPB_INLINE char* grpc_gcp_RpcProtocolVersions_Version_serialize(const grpc_gcp_RpcProtocolVersions_Version* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_Version_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_Version_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* grpc_gcp_RpcProtocolVersions_Version_serialize_ex(const grpc_gcp_RpcProtocolVersions_Version* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_Version_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_RpcProtocolVersions_Version_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void grpc_gcp_RpcProtocolVersions_Version_clear_major(const grpc_gcp_RpcProtocolVersions_Version* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = 0;

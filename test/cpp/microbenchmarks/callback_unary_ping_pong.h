@@ -25,7 +25,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -83,7 +82,6 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   std::condition_variable cv;
   bool done = false;
   if (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     SendCallbackUnaryPingPong(&state, &cli_ctx, &request, &response,
                               stub_.get(), &done, &mu, &cv);
   }
@@ -91,7 +89,6 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   while (!done) {
     cv.wait(l);
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(request_msgs_size * state.iterations() +
                           response_msgs_size * state.iterations());

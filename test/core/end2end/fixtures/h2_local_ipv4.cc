@@ -18,7 +18,10 @@
 
 #include <unistd.h>
 
-#include <grpc/support/string_util.h>
+#include <string>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"

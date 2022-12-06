@@ -18,29 +18,24 @@
 
 #include "src/core/lib/slice/slice_string_helpers.h"
 
-#include <limits.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
+#include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 static void expect_slice_dump(grpc_slice slice, uint32_t flags,
                               const char* result) {
   char* got = grpc_dump_slice(slice, flags);
-  GPR_ASSERT(0 == strcmp(got, result));
+  ASSERT_STREQ(got, result);
   gpr_free(got);
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
 }
 
-static void test_dump_slice(void) {
+TEST(SliceStringHelpersTest, DumpSlice) {
   static const char* text = "HELLO WORLD!";
   static const char* long_text =
       "It was a bright cold day in April, and the clocks were striking "
@@ -60,7 +55,7 @@ static void test_dump_slice(void) {
                     GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
 }
 
-int main(int, char**) {
-  test_dump_slice();
-  return 0;
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

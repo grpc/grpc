@@ -63,10 +63,6 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
  * latter is present. */
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
 
-/* Return the value associated with the expected targets channel arg or NULL */
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args);
-
 /* --  Metadata-only Test credentials. -- */
 
 class grpc_md_only_test_credentials : public grpc_call_credentials {

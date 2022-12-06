@@ -27,23 +27,26 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
+#if defined(__APPLE__)
+// Use less # of threads on Mac because its test machines are less powerful
+// to finish the test on time. (context: b/185231823)
+const int kNumThreads = 100;  // Number of threads
+#else
 const int kNumThreads = 300;  // Number of threads
+#endif
 const int kNumAsyncSendThreads = 2;
 const int kNumAsyncReceiveThreads = 50;
 const int kNumAsyncServerThreads = 50;
@@ -69,7 +72,7 @@ class CommonStressTest {
   CommonStressTest() : kMaxMessageSize_(8192) {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   virtual ~CommonStressTest() {}
@@ -291,7 +294,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
         gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
                 s.error_message().c_str());
       }
-      gpr_atm_no_barrier_fetch_add(errors, static_cast<gpr_atm>(1));
+      gpr_atm_no_barrier_fetch_add(errors, gpr_atm{1});
     } else {
       EXPECT_EQ(response.message(), request.message());
     }
@@ -313,13 +316,16 @@ TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> threads;
   gpr_atm errors;
-  gpr_atm_rel_store(&errors, static_cast<gpr_atm>(0));
-  threads.reserve(kNumThreads);
-  for (int i = 0; i < kNumThreads; ++i) {
+  gpr_atm_rel_store(&errors, gpr_atm{0});
+  int num_threads = kNumThreads / grpc_test_slowdown_factor();
+  // The number of threads should be > 10 to be able to catch errors
+  ASSERT_GT(num_threads, 10);
+  threads.reserve(num_threads);
+  for (int i = 0; i < num_threads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs,
                          this->common_.AllowExhaustion(), &errors);
   }
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < num_threads; ++i) {
     threads[i].join();
   }
   uint64_t error_cnt = static_cast<uint64_t>(gpr_atm_no_barrier_load(&errors));
@@ -328,7 +334,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   }
   // If this test allows resource exhaustion, expect that it actually sees some
   if (this->common_.AllowExhaustion()) {
-    EXPECT_GT(error_cnt, static_cast<uint64_t>(0));
+    EXPECT_GT(error_cnt, 0);
   }
 }
 

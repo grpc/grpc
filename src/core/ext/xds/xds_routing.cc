@@ -218,22 +218,23 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
 
 }  // namespace
 
-XdsRouting::GeneratePerHttpFilterConfigsResult
+absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
 XdsRouting::GeneratePerHTTPFilterConfigs(
+    const XdsHttpFilterRegistry& http_filter_registry,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
         cluster_weight,
-    grpc_channel_args* args) {
+    const ChannelArgs& args) {
   GeneratePerHttpFilterConfigsResult result;
   result.args = args;
   for (const auto& http_filter : http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(
+        http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
     // If there is not actually any C-core filter associated with this
@@ -250,12 +251,9 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     auto method_config_field =
         filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
-      grpc_channel_args_destroy(result.args);
-      result.args = nullptr;
-      result.error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      return absl::FailedPreconditionError(absl::StrCat(
           "failed to generate method config for HTTP filter ", http_filter.name,
           ": ", method_config_field.status().ToString()));
-      break;
     }
     result.per_filter_configs[method_config_field->service_config_field_name]
         .push_back(method_config_field->element);

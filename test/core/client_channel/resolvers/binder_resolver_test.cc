@@ -12,24 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
+#include <sys/socket.h>
 #include <sys/un.h>
 
-#include <cstring>
-
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 
@@ -50,26 +60,29 @@ class BinderResolverTest : public ::testing::Test {
   }
   ~BinderResolverTest() override {}
   static void SetUpTestSuite() {
-    grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::BuildSpecialConfiguration(
-        [](grpc_core::CoreConfiguration::Builder* builder) {
-          BuildCoreConfiguration(builder);
-          if (!builder->resolver_registry()->HasResolverFactory("binder")) {
-            // Binder resolver will only be registered on platforms that support
-            // binder transport. If it is not registered on current platform, we
-            // manually register it here for testing purpose.
-            RegisterBinderResolver(builder);
-            ASSERT_TRUE(
-                builder->resolver_registry()->HasResolverFactory("binder"));
-          }
-        });
+    builder_ =
+        std::make_unique<grpc_core::CoreConfiguration::WithSubstituteBuilder>(
+            [](grpc_core::CoreConfiguration::Builder* builder) {
+              BuildCoreConfiguration(builder);
+              if (!builder->resolver_registry()->HasResolverFactory("binder")) {
+                // Binder resolver will only be registered on platforms that
+                // support binder transport. If it is not registered on current
+                // platform, we manually register it here for testing purpose.
+                RegisterBinderResolver(builder);
+                ASSERT_TRUE(
+                    builder->resolver_registry()->HasResolverFactory("binder"));
+              }
+            });
     grpc_init();
     if (grpc_core::CoreConfiguration::Get()
             .resolver_registry()
             .LookupResolverFactory("binder") == nullptr) {
     }
   }
-  static void TearDownTestSuite() { grpc_shutdown(); }
+  static void TearDownTestSuite() {
+    grpc_shutdown();
+    builder_.reset();
+  }
 
   void SetUp() override { ASSERT_TRUE(factory_); }
 
@@ -109,7 +122,7 @@ class BinderResolverTest : public ::testing::Test {
     grpc_core::ResolverArgs args;
     args.uri = std::move(*uri);
     args.result_handler =
-        absl::make_unique<BinderResolverTest::ResultHandler>(expected_path);
+        std::make_unique<BinderResolverTest::ResultHandler>(expected_path);
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
         factory_->CreateResolver(std::move(args));
     ASSERT_TRUE(resolver != nullptr);
@@ -124,8 +137,7 @@ class BinderResolverTest : public ::testing::Test {
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
     grpc_core::ResolverArgs args;
     args.uri = std::move(*uri);
-    args.result_handler =
-        absl::make_unique<BinderResolverTest::ResultHandler>();
+    args.result_handler = std::make_unique<BinderResolverTest::ResultHandler>();
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
         factory_->CreateResolver(std::move(args));
     EXPECT_TRUE(resolver == nullptr);
@@ -133,7 +145,12 @@ class BinderResolverTest : public ::testing::Test {
 
  private:
   grpc_core::ResolverFactory* factory_;
+  static std::unique_ptr<grpc_core::CoreConfiguration::WithSubstituteBuilder>
+      builder_;
 };
+
+std::unique_ptr<grpc_core::CoreConfiguration::WithSubstituteBuilder>
+    BinderResolverTest::builder_;
 
 }  // namespace
 

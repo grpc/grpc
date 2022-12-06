@@ -23,13 +23,16 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <map>
 #include <string>
+#include <utility>
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -73,7 +76,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   BIO* bio = nullptr;
   const char* prop_value;
   int success = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -125,9 +128,14 @@ end:
 
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(json_string, &error);
-  GRPC_LOG_IF_ERROR("JSON key parsing", error);
+  Json json;
+  auto json_or = Json::Parse(json_string);
+  if (!json_or.ok()) {
+    gpr_log(GPR_ERROR, "JSON key parsing error: %s",
+            json_or.status().ToString().c_str());
+  } else {
+    json = std::move(*json_or);
+  }
   return grpc_auth_json_key_create_from_json(json);
 }
 

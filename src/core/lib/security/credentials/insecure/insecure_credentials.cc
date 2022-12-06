@@ -24,6 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
 namespace grpc_core {
@@ -31,8 +32,7 @@ namespace grpc_core {
 RefCountedPtr<grpc_channel_security_connector>
 InsecureCredentials::create_security_connector(
     RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* /* target_name */, const grpc_channel_args* /* args */,
-    grpc_channel_args** /* new_args */) {
+    const char* /* target_name */, ChannelArgs* /* args */) {
   return MakeRefCounted<InsecureChannelSecurityConnector>(
       Ref(), std::move(request_metadata_creds));
 }
@@ -50,7 +50,7 @@ int InsecureCredentials::cmp_impl(
 
 RefCountedPtr<grpc_server_security_connector>
 InsecureServerCredentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    const ChannelArgs& /* args */) {
   return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
 }
 

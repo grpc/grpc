@@ -21,7 +21,6 @@
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
@@ -89,7 +88,7 @@ class Fuzzer {
           break;
         // Flush any pending wakeups
         case promise_fuzzer::Action::kFlushWakeup:
-          if (wakeup_ != nullptr) absl::exchange(wakeup_, nullptr)();
+          if (wakeup_ != nullptr) std::exchange(wakeup_, nullptr)();
           break;
         // Drop some wakeups (external system closed?)
         case promise_fuzzer::Action::kDropWaker: {
@@ -114,7 +113,7 @@ class Fuzzer {
     }
     ExpectCancelled();
     activity_.reset();
-    if (wakeup_ != nullptr) absl::exchange(wakeup_, nullptr)();
+    if (wakeup_ != nullptr) std::exchange(wakeup_, nullptr)();
     GPR_ASSERT(done_);
   }
 

@@ -14,18 +14,28 @@
 // limitations under the License.
 //
 
-#include <gtest/gtest.h>
+#include <stdlib.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
-
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
 struct EmptyMetadataMap : public MetadataMap<EmptyMetadataMap> {
   using MetadataMap<EmptyMetadataMap>::MetadataMap;
@@ -43,18 +53,24 @@ struct StreamNetworkStateMetadataMap
                     GrpcStreamNetworkState>::MetadataMap;
 };
 
-TEST(MetadataMapTest, Noop) {
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+class MetadataMapTest : public ::testing::Test {
+ protected:
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+};
+
+TEST_F(MetadataMapTest, Noop) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   EmptyMetadataMap(arena.get());
 }
 
-TEST(MetadataMapTest, NoopWithDeadline) {
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+TEST_F(MetadataMapTest, NoopWithDeadline) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   TimeoutOnlyMetadataMap(arena.get());
 }
 
-TEST(MetadataMapTest, SimpleOps) {
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+TEST_F(MetadataMapTest, SimpleOps) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   TimeoutOnlyMetadataMap map(arena.get());
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
@@ -91,17 +107,17 @@ class FakeEncoder {
   std::string output_;
 };
 
-TEST(MetadataMapTest, EmptyEncodeTest) {
+TEST_F(MetadataMapTest, EmptyEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   TimeoutOnlyMetadataMap map(arena.get());
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "");
 }
 
-TEST(MetadataMapTest, TimeoutEncodeTest) {
+TEST_F(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   TimeoutOnlyMetadataMap map(arena.get());
   map.Set(GrpcTimeoutMetadata(),
           Timestamp::FromMillisecondsAfterProcessEpoch(1234));
@@ -109,13 +125,13 @@ TEST(MetadataMapTest, TimeoutEncodeTest) {
   EXPECT_EQ(encoder.output(), "grpc-timeout: deadline=1234\n");
 }
 
-TEST(MetadataMapTest, NonEncodableTrait) {
+TEST_F(MetadataMapTest, NonEncodableTrait) {
   struct EncoderWithNoTraitEncodeFunctions {
     void Encode(const Slice&, const Slice&) {
       abort();  // should not be called
     }
   };
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
   StreamNetworkStateMetadataMap map(arena.get());
   map.Set(GrpcStreamNetworkState(), GrpcStreamNetworkState::kNotSentOnWire);
   EXPECT_EQ(map.get(GrpcStreamNetworkState()),

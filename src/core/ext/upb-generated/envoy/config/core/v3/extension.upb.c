@@ -27,7 +27,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_TypedExtensionConfig__fiel
 const upb_MiniTable envoy_config_core_v3_TypedExtensionConfig_msginit = {
   &envoy_config_core_v3_TypedExtensionConfig_submsgs[0],
   &envoy_config_core_v3_TypedExtensionConfig__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

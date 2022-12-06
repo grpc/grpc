@@ -55,11 +55,15 @@ UPB_INLINE envoy_config_metrics_v3_MetricsServiceConfig* envoy_config_metrics_v3
   return ret;
 }
 UPB_INLINE char* envoy_config_metrics_v3_MetricsServiceConfig_serialize(const envoy_config_metrics_v3_MetricsServiceConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_metrics_v3_MetricsServiceConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_metrics_v3_MetricsServiceConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_metrics_v3_MetricsServiceConfig_serialize_ex(const envoy_config_metrics_v3_MetricsServiceConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_metrics_v3_MetricsServiceConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_metrics_v3_MetricsServiceConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_metrics_v3_MetricsServiceConfig_has_grpc_service(const envoy_config_metrics_v3_MetricsServiceConfig* msg) {
   return _upb_hasbit(msg, 1);

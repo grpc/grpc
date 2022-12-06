@@ -178,7 +178,7 @@ TEST_P(FakeBinderTest, SendBinder) {
 
   int called2 = 0;
   std::unique_ptr<TransactionReceiver> tx_receiver2 =
-      absl::make_unique<FakeTransactionReceiver>(
+      std::make_unique<FakeTransactionReceiver>(
           nullptr,
           [&](transaction_code_t tx_code, ReadableParcel* parcel, int /*uid*/) {
             int value;

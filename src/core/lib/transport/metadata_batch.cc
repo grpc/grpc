@@ -24,7 +24,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -120,11 +119,11 @@ GrpcTimeoutMetadata::ValueType GrpcTimeoutMetadata::MementoToValue(
   if (timeout == Duration::Infinity()) {
     return Timestamp::InfFuture();
   }
-  return ExecCtx::Get()->Now() + timeout;
+  return Timestamp::Now() + timeout;
 }
 
 Slice GrpcTimeoutMetadata::Encode(ValueType x) {
-  return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
+  return Timeout::FromDuration(x - Timestamp::Now()).Encode();
 }
 
 TeMetadata::MementoType TeMetadata::ParseMemento(
@@ -205,7 +204,10 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
     case kGet:
       return StaticSlice::FromStaticString("GET");
     default:
-      abort();
+      // TODO(ctiller): this should be an abort, we should split up the debug
+      // string generation from the encode string generation so that debug
+      // strings can always succeed and encode strings can crash.
+      return StaticSlice::FromStaticString("<<INVALID METHOD>>");
   }
 }
 
@@ -282,6 +284,11 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
 std::string PeerString::DisplayValue(ValueType x) { return std::string(x); }
 const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
   return x;
+}
+
+std::string WaitForReady::DisplayValue(ValueType x) {
+  return absl::StrCat(x.value ? "true" : "false",
+                      x.explicitly_set ? " (explicit)" : "");
 }
 
 }  // namespace grpc_core

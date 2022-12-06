@@ -69,7 +69,7 @@ static const upb_MiniTable_Field envoy_config_cluster_v3_OutlierDetection__field
 const upb_MiniTable envoy_config_cluster_v3_OutlierDetection_msginit = {
   &envoy_config_cluster_v3_OutlierDetection_submsgs[0],
   &envoy_config_cluster_v3_OutlierDetection__fields[0],
-  UPB_SIZE(88, 184), 22, kUpb_ExtMode_NonExtendable, 22, 255, 0,
+  UPB_SIZE(88, 176), 22, kUpb_ExtMode_NonExtendable, 22, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

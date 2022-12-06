@@ -67,6 +67,8 @@ _SKIP_ADVANCED = [
 
 _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
 
+_ORCA_TEST_CASES = ['orca_per_rpc', 'orca_oob']
+
 _GOOGLE_DEFAULT_CREDS_TEST_CASE = 'google_default_credentials'
 
 _SKIP_GOOGLE_DEFAULT_CREDS = [
@@ -115,11 +117,12 @@ class CXXLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'c++'
@@ -146,10 +149,11 @@ class AspNetCoreLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'aspnetcore'
@@ -177,12 +181,13 @@ class DartLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES
 
     def __str__(self):
         return 'dart'
@@ -272,10 +277,12 @@ class GoLanguage:
         return {'GO111MODULE': 'on'}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'go'
@@ -377,12 +384,14 @@ class NodeLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'node'
@@ -410,12 +419,13 @@ class NodePureJSLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'nodepurejs'
@@ -442,12 +452,14 @@ class PHP7Language:
 
     def unimplemented_test_cases(self):
         return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'php7'
@@ -480,14 +492,16 @@ class ObjcLanguage:
         # and depend upon ObjC test's behavior that it runs all cases even when
         # we tell it to run just one.
         return _TEST_CASES[1:] + \
-            _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_COMPRESSION + \
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'objc'
@@ -520,13 +534,15 @@ class RubyLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_SPECIAL_STATUS_MESSAGE + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'ruby'
@@ -572,12 +588,14 @@ class PythonLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+               _SKIP_DATA_FRAME_PADDING + \
+               _SKIP_GOOGLE_DEFAULT_CREDS + \
+               _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'python'
@@ -608,9 +626,8 @@ class PythonAsyncIOLanguage:
 
     def server_cmd(self, args):
         return [
-            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
-            'py39/bin/python', 'src/python/grpcio_tests/setup.py',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):
@@ -622,9 +639,10 @@ class PythonAsyncIOLanguage:
     def unimplemented_test_cases(self):
         # TODO(https://github.com/grpc/grpc/issues/21707)
         return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _AUTH_TEST_CASES + \
-            ['timeout_on_sleeping_server']
+               _SKIP_DATA_FRAME_PADDING + \
+               _AUTH_TEST_CASES + \
+               ['timeout_on_sleeping_server'] + \
+               _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
         # TODO(https://github.com/grpc/grpc/issues/21749)
@@ -666,7 +684,8 @@ _TEST_CASES = [
     'custom_metadata', 'status_code_and_message', 'unimplemented_method',
     'client_compressed_unary', 'server_compressed_unary',
     'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service', 'special_status_message'
+    'unimplemented_service', 'special_status_message', 'orca_per_rpc',
+    'orca_oob'
 ]
 
 _AUTH_TEST_CASES = [
@@ -942,6 +961,11 @@ def cloud_to_cloud_jobspec(language,
         print('asking client %s to run unimplemented test case %s' %
               (repr(language), client_test_case))
         sys.exit(1)
+
+    if test_case in _ORCA_TEST_CASES:
+        interop_only_options += [
+            '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
+        ]
 
     common_options = [
         '--test_case=%s' % client_test_case,
@@ -1401,7 +1425,7 @@ try:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
-                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE:
+                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES:
                             for transport_security in args.custom_credentials_type:
                                 # google_default_credentials not yet supported by all languages
                                 if transport_security == 'google_default_credentials' and str(

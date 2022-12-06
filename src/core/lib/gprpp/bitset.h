@@ -24,12 +24,6 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-#if __cplusplus > 201103l
-#define GRPC_BITSET_CONSTEXPR_MUTATOR constexpr
-#else
-#define GRPC_BITSET_CONSTEXPR_MUTATOR
-#endif
-
 namespace grpc_core {
 
 // Given a bit count as an integer, vend as member type `Type` a type with
@@ -90,12 +84,10 @@ class BitSet {
   constexpr BitSet() : units_{} {}
 
   // Set bit i to true
-  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i) {
-    units_[unit_for(i)] |= mask_for(i);
-  }
+  constexpr void set(int i) { units_[unit_for(i)] |= mask_for(i); }
 
   // Set bit i to is_set
-  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i, bool is_set) {
+  constexpr void set(int i, bool is_set) {
     if (is_set) {
       set(i);
     } else {
@@ -104,9 +96,7 @@ class BitSet {
   }
 
   // Set bit i to false
-  GRPC_BITSET_CONSTEXPR_MUTATOR void clear(int i) {
-    units_[unit_for(i)] &= ~mask_for(i);
-  }
+  constexpr void clear(int i) { units_[unit_for(i)] &= ~mask_for(i); }
 
   // Return true if bit i is set
   constexpr bool is_set(int i) const {
@@ -141,6 +131,9 @@ class BitSet {
     return true;
   }
 
+  // Returns true if any bites are set.
+  bool any() const { return !none(); }
+
   // Return a count of how many bits are set.
   uint32_t count() const {
     uint32_t count = 0;
@@ -167,6 +160,27 @@ class BitSet {
       if (is_set(i)) result |= (Int(1) << i);
     }
     return result;
+  }
+
+  template <typename Int>
+  static BitSet<kTotalBits, kUnitBits> FromInt(Int value) {
+    BitSet<kTotalBits, kUnitBits> result;
+    for (size_t i = 0; i < kTotalBits; i++) {
+      result.set(i, (value & (Int(1) << i)) != 0);
+    }
+    return result;
+  }
+
+  BitSet& Set(int i, bool value) {
+    set(i, value);
+    return *this;
+  }
+
+  BitSet& SetAll(bool value) {
+    for (size_t i = 0; i < kTotalBits; i++) {
+      set(i, value);
+    }
+    return *this;
   }
 
  private:

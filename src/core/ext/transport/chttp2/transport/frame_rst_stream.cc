@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -29,9 +30,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -75,11 +77,11 @@ void grpc_chttp2_add_rst_stream_to_next_write(
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags) {
   if (length != 4) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return GRPC_ERROR_CREATE(absl::StrFormat(
         "invalid rst_stream: length=%d, flags=%02x", length, flags));
   }
   parser->byte = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
@@ -111,17 +113,18 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
               "[chttp2 transport=%p stream=%p] received RST_STREAM(reason=%d)",
               t, s, reason);
     }
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
           grpc_error_set_str(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
-              GRPC_ERROR_STR_GRPC_MESSAGE,
+              GRPC_ERROR_CREATE("RST_STREAM"),
+              grpc_core::StatusStrProperty::kGrpcMessage,
               absl::StrCat("Received RST_STREAM with error code ", reason)),
-          GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(reason));
+          grpc_core::StatusIntProperty::kHttp2Error,
+          static_cast<intptr_t>(reason));
     }
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

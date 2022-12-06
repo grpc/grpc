@@ -32,7 +32,7 @@ def main
   sleep 1
   Process.kill('SIGINT', client_controller.client_pid)
   begin
-    Timeout.timeout(10) do
+    Timeout.timeout(120) do
       Process.wait(client_controller.client_pid)
     end
   rescue Timeout::Error

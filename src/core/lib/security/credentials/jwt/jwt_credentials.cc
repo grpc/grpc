@@ -23,7 +23,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <map>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -37,10 +37,8 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -141,14 +139,12 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
 }
 
 static char* redact_private_key(const char* json_key) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(json_key, &error);
-  if (!GRPC_ERROR_IS_NONE(error) || json.type() != Json::Type::OBJECT) {
-    GRPC_ERROR_UNREF(error);
+  auto json = Json::Parse(json_key);
+  if (!json.ok() || json->type() != Json::Type::OBJECT) {
     return gpr_strdup("<Json failed to parse.>");
   }
-  (*json.mutable_object())["private_key"] = "<redacted>";
-  return gpr_strdup(json.Dump(/*indent=*/2).c_str());
+  (*json->mutable_object())["private_key"] = "<redacted>";
+  return gpr_strdup(json->Dump(/*indent=*/2).c_str());
 }
 
 grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(

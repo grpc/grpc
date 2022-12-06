@@ -35,10 +35,6 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
@@ -51,7 +47,11 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   auto pops = grpc_polling_entity_create_from_pollset(pollset);
   bool is_done = false;
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch initial_metadata{arena.get()};
   char* token = nullptr;
 
@@ -59,8 +59,9 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
       [creds, &initial_metadata, &get_request_metadata_args]() {
         return grpc_core::Map(
             creds->GetRequestMetadata(
-                grpc_core::ClientMetadataHandle::TestOnlyWrap(
-                    &initial_metadata),
+                grpc_core::ClientMetadataHandle(
+                    &initial_metadata,
+                    grpc_core::Arena::PooledDeleter(nullptr)),
                 &get_request_metadata_args),
             [](const absl::StatusOr<grpc_core::ClientMetadataHandle>& s) {
               return s.status();

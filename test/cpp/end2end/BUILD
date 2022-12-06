@@ -28,9 +28,11 @@ grpc_cc_library(
     hdrs = ["test_service_impl.h"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     deps = [
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -57,10 +59,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "connection_delay_injector",
+    name = "connection_attempt_injector",
     testonly = True,
-    srcs = ["connection_delay_injector.cc"],
-    hdrs = ["connection_delay_injector.h"],
+    srcs = ["connection_attempt_injector.cc"],
+    hdrs = ["connection_attempt_injector.h"],
     deps = [
         "//:grpc",
     ],
@@ -150,7 +152,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/161828686)
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
@@ -293,6 +294,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
+        "//src/core:slice",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -488,13 +490,14 @@ grpc_cc_test(
     flaky = True,  # TODO(b/151315347)
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":connection_delay_injector",
+        ":connection_attempt_injector",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_orca_interceptor",
         "//:grpcpp_orca_service",
+        "//src/core:channel_args",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -512,6 +515,7 @@ grpc_cc_test(
         "gtest",
         "absl/types:optional",
     ],
+    flaky = True,
     tags = ["no_test_ios"],
     deps = [
         ":counted_service",
@@ -520,6 +524,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:channel_args",
         "//src/proto/grpc/lookup/v1:rls_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -542,6 +547,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:channel_args",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -565,6 +571,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
+        "//src/core:channel_args",
         "//src/proto/grpc/lb/v1:load_balancer_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",

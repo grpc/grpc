@@ -20,6 +20,8 @@
 
 #include <stdbool.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -37,8 +39,8 @@ static void alts_test_do_round_trip_check_frames(
     const size_t client_frame_size, const uint8_t* server_message,
     const size_t server_message_size, const uint8_t* server_expected_frames,
     const size_t server_frame_size) {
-  GPR_ASSERT(fixture != nullptr);
-  GPR_ASSERT(fixture->config != nullptr);
+  ASSERT_NE(fixture, nullptr);
+  ASSERT_NE(fixture->config, nullptr);
   tsi_frame_protector* client_frame_protector = nullptr;
   tsi_frame_protector* server_frame_protector = nullptr;
   tsi_test_frame_protector_config* config = fixture->config;
@@ -46,21 +48,22 @@ static void alts_test_do_round_trip_check_frames(
   /* Create a client frame protector. */
   size_t client_max_output_protected_frame_size =
       config->client_max_output_protected_frame_size;
-  GPR_ASSERT(
+  ASSERT_EQ(
       alts_create_frame_protector(key, key_size, /*is_client=*/true, rekey,
                                   client_max_output_protected_frame_size == 0
                                       ? nullptr
                                       : &client_max_output_protected_frame_size,
-                                  &client_frame_protector) == TSI_OK);
-  /* Create a server frame protector. */
+                                  &client_frame_protector),
+      TSI_OK); /* Create a server frame protector. */
   size_t server_max_output_protected_frame_size =
       config->server_max_output_protected_frame_size;
-  GPR_ASSERT(
+  ASSERT_EQ(
       alts_create_frame_protector(key, key_size, /*is_client=*/false, rekey,
                                   server_max_output_protected_frame_size == 0
                                       ? nullptr
                                       : &server_max_output_protected_frame_size,
-                                  &server_frame_protector) == TSI_OK);
+                                  &server_frame_protector),
+      TSI_OK);
   tsi_test_frame_protector_fixture_init(fixture, client_frame_protector,
                                         server_frame_protector);
   /* Client sends a message to server. */
@@ -71,18 +74,20 @@ static void alts_test_do_round_trip_check_frames(
                                                 client_frame_protector,
                                                 /*is_client=*/true);
   /* Verify if the generated frame is the same as the expected. */
-  GPR_ASSERT(channel->bytes_written_to_server_channel == client_frame_size);
-  GPR_ASSERT(memcmp(client_expected_frames, channel->server_channel,
-                    client_frame_size) == 0);
+  ASSERT_EQ(channel->bytes_written_to_server_channel, client_frame_size);
+  ASSERT_EQ(memcmp(client_expected_frames, channel->server_channel,
+                   client_frame_size),
+            0);
   unsigned char* server_received_message =
       static_cast<unsigned char*>(gpr_malloc(kChannelSize));
   size_t server_received_message_size = 0;
   tsi_test_frame_protector_receive_message_from_peer(
       config, channel, server_frame_protector, server_received_message,
       &server_received_message_size, /*is_client=*/false);
-  GPR_ASSERT(config->client_message_size == server_received_message_size);
-  GPR_ASSERT(memcmp(config->client_message, server_received_message,
-                    server_received_message_size) == 0);
+  ASSERT_EQ(config->client_message_size, server_received_message_size);
+  ASSERT_EQ(memcmp(config->client_message, server_received_message,
+                   server_received_message_size),
+            0);
   /* Server sends a message to client. */
   uint8_t* saved_server_message = config->server_message;
   config->server_message = const_cast<uint8_t*>(server_message);
@@ -91,9 +96,10 @@ static void alts_test_do_round_trip_check_frames(
                                                 server_frame_protector,
                                                 /*is_client=*/false);
   /* Verify if the generated frame is the same as the expected. */
-  GPR_ASSERT(channel->bytes_written_to_client_channel == server_frame_size);
-  GPR_ASSERT(memcmp(server_expected_frames, channel->client_channel,
-                    server_frame_size) == 0);
+  ASSERT_EQ(channel->bytes_written_to_client_channel, server_frame_size);
+  ASSERT_EQ(memcmp(server_expected_frames, channel->client_channel,
+                   server_frame_size),
+            0);
   unsigned char* client_received_message =
       static_cast<unsigned char*>(gpr_malloc(kChannelSize));
   size_t client_received_message_size = 0;
@@ -101,9 +107,10 @@ static void alts_test_do_round_trip_check_frames(
       config, channel, client_frame_protector, client_received_message,
       &client_received_message_size,
       /*is_client=*/true);
-  GPR_ASSERT(config->server_message_size == client_received_message_size);
-  GPR_ASSERT(memcmp(config->server_message, client_received_message,
-                    client_received_message_size) == 0);
+  ASSERT_EQ(config->server_message_size, client_received_message_size);
+  ASSERT_EQ(memcmp(config->server_message, client_received_message,
+                   client_received_message_size),
+            0);
   config->client_message = saved_client_message;
   config->server_message = saved_server_message;
   /* Destroy server and client frame protectors. */
@@ -330,8 +337,8 @@ static void alts_test_do_round_trip_vector_tests() {
 
 static void alts_test_do_round_trip(tsi_test_frame_protector_fixture* fixture,
                                     bool rekey) {
-  GPR_ASSERT(fixture != nullptr);
-  GPR_ASSERT(fixture->config != nullptr);
+  ASSERT_NE(fixture, nullptr);
+  ASSERT_NE(fixture->config, nullptr);
   tsi_frame_protector* client_frame_protector = nullptr;
   tsi_frame_protector* server_frame_protector = nullptr;
   tsi_test_frame_protector_config* config = fixture->config;
@@ -342,21 +349,23 @@ static void alts_test_do_round_trip(tsi_test_frame_protector_fixture* fixture,
   /* Create a client frame protector. */
   size_t client_max_output_protected_frame_size =
       config->client_max_output_protected_frame_size;
-  GPR_ASSERT(
+  ASSERT_EQ(
       alts_create_frame_protector(key, key_length, /*is_client=*/true, rekey,
                                   client_max_output_protected_frame_size == 0
                                       ? nullptr
                                       : &client_max_output_protected_frame_size,
-                                  &client_frame_protector) == TSI_OK);
+                                  &client_frame_protector),
+      TSI_OK);
   /* Create a server frame protector. */
   size_t server_max_output_protected_frame_size =
       config->server_max_output_protected_frame_size;
-  GPR_ASSERT(
+  ASSERT_EQ(
       alts_create_frame_protector(key, key_length, /*is_client=*/false, rekey,
                                   server_max_output_protected_frame_size == 0
                                       ? nullptr
                                       : &server_max_output_protected_frame_size,
-                                  &server_frame_protector) == TSI_OK);
+                                  &server_frame_protector),
+      TSI_OK);
   tsi_test_frame_protector_fixture_init(fixture, client_frame_protector,
                                         server_frame_protector);
   tsi_test_frame_protector_do_round_trip_no_handshake(fixture);
@@ -387,9 +396,13 @@ static void alts_test_do_round_trip_all(bool rekey) {
   gpr_free(bit_array);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
+TEST(AltsFrameProtectorTest, MainTest) {
   alts_test_do_round_trip_vector_tests();
   alts_test_do_round_trip_all(/*rekey=*/false);
   alts_test_do_round_trip_all(/*rekey=*/true);
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

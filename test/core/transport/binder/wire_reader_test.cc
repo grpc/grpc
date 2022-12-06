@@ -84,7 +84,7 @@ class WireReaderTest : public ::testing::Test {
     // requests and streaming calls. The MockBinder will construct a
     // MockTransactionReceiver, which will then sends SETUP_TRANSPORT request
     // back to us.
-    wire_reader_->SetupTransport(absl::make_unique<MockBinder>());
+    wire_reader_->SetupTransport(std::make_unique<MockBinder>());
   }
 
   template <typename T>
@@ -113,7 +113,7 @@ MATCHER_P(StatusOrContainerEq, target, "") {
 }  // namespace
 
 TEST_F(WireReaderTest, SetupTransport) {
-  auto mock_binder = absl::make_unique<MockBinder>();
+  auto mock_binder = std::make_unique<MockBinder>();
   MockBinder& mock_binder_ref = *mock_binder;
 
   ::testing::InSequence sequence;
@@ -233,7 +233,7 @@ TEST_F(WireReaderTest, ProcessTransactionServerRpcDataFlagMessageDataEmpty) {
 
   // message data
   // TODO(waynetu): message data can also be "parcelable".
-  const std::string kMessageData = "";
+  const std::string kMessageData;
   ExpectReadByteArray(kMessageData);
   EXPECT_CALL(*transport_stream_receiver_,
               NotifyRecvMessage(kFirstCallId, StatusOrStrEq(kMessageData)));

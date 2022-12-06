@@ -20,7 +20,7 @@ static const upb_MiniTable_Field xds_annotations_v3_VersioningAnnotation__fields
 const upb_MiniTable xds_annotations_v3_VersioningAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_VersioningAnnotation__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

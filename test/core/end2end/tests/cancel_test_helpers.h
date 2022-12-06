@@ -20,6 +20,7 @@
 #define GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 
 typedef struct {
   const char* name;

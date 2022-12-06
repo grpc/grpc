@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc_security_constants.h>
@@ -29,7 +28,6 @@
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 #include <grpcpp/security/auth_context.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
@@ -63,7 +61,7 @@ std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
     gpr_log(GPR_ERROR, "security_level is invalid.");
     return nullptr;
   }
-  return absl::make_unique<AltsContext>(AltsContext(ctx));
+  return std::make_unique<AltsContext>(AltsContext(ctx));
 }
 
 grpc::Status AltsClientAuthzCheck(

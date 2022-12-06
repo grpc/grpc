@@ -29,6 +29,7 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -37,7 +38,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -45,9 +45,12 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
+
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 /* one listening port */
 typedef struct grpc_tcp_listener grpc_tcp_listener;
@@ -94,17 +97,14 @@ struct grpc_tcp_server {
 
   /* shutdown callback */
   grpc_closure* shutdown_complete;
-
-  grpc_channel_args* channel_args;
 };
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const grpc_channel_args* args,
+                                           const EndpointConfig& config,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
@@ -116,7 +116,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.tail = NULL;
   s->shutdown_complete = shutdown_complete;
   *server = s;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_server(void* arg, grpc_error_handle error) {
@@ -132,7 +132,6 @@ static void destroy_server(void* arg, grpc_error_handle error) {
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
-  grpc_channel_args_destroy(s->channel_args);
   gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
@@ -140,13 +139,13 @@ static void destroy_server(void* arg, grpc_error_handle error) {
 static void finish_shutdown_locked(grpc_tcp_server* s) {
   if (s->shutdown_complete != NULL) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 
   grpc_core::ExecCtx::Run(
       DEBUG_LOCATION,
       GRPC_CLOSURE_CREATE(destroy_server, s, grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 static grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
@@ -158,7 +157,7 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                                              grpc_closure* shutdown_starting) {
   gpr_mu_lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
-                           GRPC_ERROR_NONE);
+                           absl::OkStatus());
   gpr_mu_unlock(&s->mu);
 }
 
@@ -193,11 +192,11 @@ static grpc_error_handle prepare_socket(SOCKET sock,
                                         const grpc_resolved_address* addr,
                                         int* port) {
   grpc_resolved_address sockname_temp;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   int sockname_temp_len;
 
   error = grpc_tcp_prepare_socket(sock);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     goto failure;
   }
 
@@ -221,19 +220,18 @@ static grpc_error_handle prepare_socket(SOCKET sock,
   sockname_temp.len = (size_t)sockname_temp_len;
 
   *port = grpc_sockaddr_get_port(&sockname_temp);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 
 failure:
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   grpc_error_set_int(
       grpc_error_set_str(
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Failed to prepare server socket", &error, 1),
-          GRPC_ERROR_STR_TARGET_ADDRESS,
+          GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
+                                        &error, 1),
+          grpc_core::StatusStrProperty::kTargetAddress,
           addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
-      GRPC_ERROR_INT_FD, (intptr_t)sock);
-  GRPC_ERROR_UNREF(error);
+      grpc_core::StatusIntProperty::kFd, (intptr_t)sock);
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }
@@ -253,10 +251,10 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   BOOL success;
   DWORD addrlen = sizeof(grpc_sockaddr_in6) + 16;
   DWORD bytes_received = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   if (port->shutting_down) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
@@ -267,7 +265,7 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   }
 
   error = grpc_tcp_prepare_socket(sock);
-  if (!GRPC_ERROR_IS_NONE(error)) goto failure;
+  if (!error.ok()) goto failure;
 
   /* Start the "accept" asynchronously. */
   success = port->AcceptEx(port->socket->socket, sock, port->addresses, 0,
@@ -292,7 +290,7 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   return error;
 
 failure:
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }
@@ -316,9 +314,9 @@ static void on_accept(void* arg, grpc_error_handle error) {
   /* The general mechanism for shutting down is to queue abortion calls. While
      this is necessary in the read/write case, it's useless for the accept
      case. We only need to adjust the pending callback count */
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
 
     gpr_mu_unlock(&sp->server->mu);
     return;
@@ -363,7 +361,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           sp->server->channel_args, peer_name_string);
+                           peer_name_string);
     } else {
       closesocket(sock);
     }
@@ -402,7 +400,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   GUID guid = WSAID_ACCEPTEX;
   DWORD ioctl_num_bytes;
   LPFN_ACCEPTEX AcceptEx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   /* We need to grab the AcceptEx pointer for that port, as it may be
      interface-dependent. We'll cache it to avoid doing that again. */
@@ -415,11 +413,11 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
     gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
     gpr_free(utf8_message);
     closesocket(sock);
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   error = prepare_socket(sock, addr, &port);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     return error;
   }
 
@@ -447,7 +445,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   gpr_mu_unlock(&s->mu);
   *listener = sp;
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
@@ -460,7 +458,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   grpc_resolved_address* allocated_addr = NULL;
   grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;
@@ -511,11 +509,9 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
 done:
   gpr_free(allocated_addr);
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    grpc_error_handle error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Failed to add port to server", &error, 1);
-    GRPC_ERROR_UNREF(error);
+  if (!error.ok()) {
+    grpc_error_handle error_out = GRPC_ERROR_CREATE_REFERENCING(
+        "Failed to add port to server", &error, 1);
     error = error_out;
     *port = -1;
   } else {

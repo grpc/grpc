@@ -12,13 +12,16 @@
 #include "envoy/config/accesslog/v3/accesslog.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/core/v3/socket_option.upb.h"
 #include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
 #include "envoy/config/listener/v3/udp_listener_config.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "xds/annotations/v3/status.upb.h"
 #include "xds/core/v3/collection_entry.upb.h"
+#include "xds/type/matcher/v3/matcher.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/security.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -26,6 +29,20 @@
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
+
+static const upb_MiniTable_Sub envoy_config_listener_v3_AdditionalAddress_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_Address_msginit},
+};
+
+static const upb_MiniTable_Field envoy_config_listener_v3_AdditionalAddress__fields[1] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_config_listener_v3_AdditionalAddress_msginit = {
+  &envoy_config_listener_v3_AdditionalAddress_submsgs[0],
+  &envoy_config_listener_v3_AdditionalAddress__fields[0],
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+};
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_ListenerCollection_submsgs[1] = {
   {.submsg = &xds_core_v3_CollectionEntry_msginit},
@@ -38,10 +55,10 @@ static const upb_MiniTable_Field envoy_config_listener_v3_ListenerCollection__fi
 const upb_MiniTable envoy_config_listener_v3_ListenerCollection_msginit = {
   &envoy_config_listener_v3_ListenerCollection_submsgs[0],
   &envoy_config_listener_v3_ListenerCollection__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_submsgs[21] = {
+static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_submsgs[23] = {
   {.submsg = &envoy_config_core_v3_Address_msginit},
   {.submsg = &envoy_config_listener_v3_FilterChain_msginit},
   {.submsg = &google_protobuf_BoolValue_msginit},
@@ -63,9 +80,11 @@ static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_submsgs[21] = {
   {.submsg = &google_protobuf_BoolValue_msginit},
   {.submsg = &envoy_config_listener_v3_Listener_InternalListenerConfig_msginit},
   {.submsg = &google_protobuf_BoolValue_msginit},
+  {.submsg = &xds_type_matcher_v3_Matcher_msginit},
+  {.submsg = &envoy_config_listener_v3_AdditionalAddress_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_listener_v3_Listener__fields[29] = {
+static const upb_MiniTable_Field envoy_config_listener_v3_Listener__fields[31] = {
   {1, UPB_SIZE(24, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 40), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(36, 48), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
@@ -90,17 +109,19 @@ static const upb_MiniTable_Field envoy_config_listener_v3_Listener__fields[29] =
   {24, UPB_SIZE(96, 168), UPB_SIZE(13, 13), 16, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {25, UPB_SIZE(100, 176), UPB_SIZE(14, 14), 17, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {26, UPB_SIZE(104, 184), UPB_SIZE(15, 15), 18, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {27, UPB_SIZE(120, 216), UPB_SIZE(-17, -17), 19, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {27, UPB_SIZE(128, 232), UPB_SIZE(-17, -17), 19, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {28, UPB_SIZE(108, 192), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {29, UPB_SIZE(116, 208), UPB_SIZE(16, 16), 20, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {30, UPB_SIZE(20, 20), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {31, UPB_SIZE(21, 21), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {32, UPB_SIZE(120, 216), UPB_SIZE(17, 17), 21, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {33, UPB_SIZE(124, 224), UPB_SIZE(0, 0), 22, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_listener_v3_Listener_msginit = {
   &envoy_config_listener_v3_Listener_submsgs[0],
   &envoy_config_listener_v3_Listener__fields[0],
-  UPB_SIZE(124, 232), 29, kUpb_ExtMode_NonExtendable, 13, 255, 0,
+  UPB_SIZE(136, 240), 31, kUpb_ExtMode_NonExtendable, 13, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[1] = {
@@ -114,36 +135,39 @@ static const upb_MiniTable_Field envoy_config_listener_v3_Listener_DeprecatedV1_
 const upb_MiniTable envoy_config_listener_v3_Listener_DeprecatedV1_msginit = {
   &envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[0],
   &envoy_config_listener_v3_Listener_DeprecatedV1__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[2] = {
   {.submsg = &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_listener_v3_Listener_ConnectionBalanceConfig__fields[1] = {
+static const upb_MiniTable_Field envoy_config_listener_v3_Listener_ConnectionBalanceConfig__fields[2] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_listener_v3_Listener_ConnectionBalanceConfig_msginit = {
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[0],
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 const upb_MiniTable envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 const upb_MiniTable envoy_config_listener_v3_Listener_InternalListenerConfig_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_MiniTable *messages_layout[6] = {
+static const upb_MiniTable *messages_layout[7] = {
+  &envoy_config_listener_v3_AdditionalAddress_msginit,
   &envoy_config_listener_v3_ListenerCollection_msginit,
   &envoy_config_listener_v3_Listener_msginit,
   &envoy_config_listener_v3_Listener_DeprecatedV1_msginit,
@@ -156,7 +180,7 @@ const upb_MiniTable_File envoy_config_listener_v3_listener_proto_upb_file_layout
   messages_layout,
   NULL,
   NULL,
-  6,
+  7,
   0,
   0,
 };

@@ -16,11 +16,16 @@
 //
 //
 
-#include <gmock/gmock.h>
+#include <string>
+
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "test/core/util/test_config.h"
 
@@ -28,64 +33,41 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+class ScopedSetEnv {
+ public:
+  explicit ScopedSetEnv(const char* value) { SetEnv("no_proxy", value); }
+  ScopedSetEnv(const ScopedSetEnv&) = delete;
+  ScopedSetEnv& operator=(const ScopedSetEnv&) = delete;
+  ~ScopedSetEnv() { UnsetEnv("no_proxy"); }
+};
+
 // Test that an empty no_proxy works as expected, i.e., proxy is used.
 TEST(NoProxyTest, EmptyList) {
-  gpr_setenv("no_proxy", "");
-  grpc_arg proxy_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_HTTP_PROXY),
-      const_cast<char*>("http://proxy.google.com"));
-  grpc_channel_args args = {1, &proxy_arg};
-  grpc_channel_args* new_args = nullptr;
-  char* name_to_resolve = nullptr;
-  EXPECT_TRUE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
-                                        &name_to_resolve, &new_args));
-  EXPECT_STREQ(name_to_resolve, "proxy.google.com");
-  EXPECT_STREQ(grpc_channel_args_find_string(
-                   new_args, const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER)),
-               "test.google.com:443");
-  gpr_free(name_to_resolve);
-  grpc_channel_args_destroy(new_args);
-  gpr_unsetenv("no_proxy");
+  ScopedSetEnv no_proxy("");
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
 }
 
 // Test basic usage of 'no_proxy' to avoid using proxy for certain domain names.
 TEST(NoProxyTest, Basic) {
-  gpr_setenv("no_proxy", "google.com");
-  grpc_arg proxy_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_HTTP_PROXY),
-      const_cast<char*>("http://proxy.google.com"));
-  grpc_channel_args args = {1, &proxy_arg};
-  grpc_channel_args* new_args = nullptr;
-  char* name_to_resolve = nullptr;
-  EXPECT_FALSE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
-                                         &name_to_resolve, &new_args));
-  EXPECT_EQ(name_to_resolve, nullptr);
-  EXPECT_EQ(grpc_channel_args_find_string(
-                new_args, const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER)),
-            nullptr);
-  gpr_free(name_to_resolve);
-  grpc_channel_args_destroy(new_args);
-  gpr_unsetenv("no_proxy");
+  ScopedSetEnv no_proxy("google.com");
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            absl::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
 
 // Test empty entries in 'no_proxy' list.
 TEST(NoProxyTest, EmptyEntries) {
-  gpr_setenv("no_proxy", "foo.com,,google.com,,");
-  grpc_arg proxy_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_HTTP_PROXY),
-      const_cast<char*>("http://proxy.google.com"));
-  grpc_channel_args args = {1, &proxy_arg};
-  grpc_channel_args* new_args = nullptr;
-  char* name_to_resolve = nullptr;
-  EXPECT_FALSE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
-                                         &name_to_resolve, &new_args));
-  EXPECT_EQ(name_to_resolve, nullptr);
-  EXPECT_EQ(grpc_channel_args_find_string(
-                new_args, const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER)),
-            nullptr);
-  gpr_free(name_to_resolve);
-  grpc_channel_args_destroy(new_args);
-  gpr_unsetenv("no_proxy");
+  ScopedSetEnv no_proxy("foo.com,,google.com,,");
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
+  absl::optional<std::string> name_to_resolve;
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            absl::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
 
 }  // namespace

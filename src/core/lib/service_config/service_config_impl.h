@@ -26,15 +26,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_parser.h"
@@ -69,13 +69,18 @@ namespace grpc_core {
 class ServiceConfigImpl final : public ServiceConfig {
  public:
   /// Creates a new service config from parsing \a json_string.
-  /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const grpc_channel_args* args,
-                                             absl::string_view json_string,
-                                             grpc_error_handle* error);
+  static absl::StatusOr<RefCountedPtr<ServiceConfig>> Create(
+      const ChannelArgs& args, absl::string_view json_string);
 
-  ServiceConfigImpl(const grpc_channel_args* args, std::string json_string,
-                    Json json, grpc_error_handle* error);
+  // Alternate forms that are useful in edge cases.
+  static RefCountedPtr<ServiceConfig> Create(const ChannelArgs& args,
+                                             const Json& json,
+                                             absl::string_view json_string,
+                                             ValidationErrors* errors);
+  static RefCountedPtr<ServiceConfig> Create(const ChannelArgs& args,
+                                             const Json& json,
+                                             ValidationErrors* errors);
+
   ~ServiceConfigImpl() override;
 
   absl::string_view json_string() const override { return json_string_; }
@@ -96,21 +101,10 @@ class ServiceConfigImpl final : public ServiceConfig {
       const grpc_slice& path) const override;
 
  private:
-  // Helper functions for parsing the method configs.
-  grpc_error_handle ParsePerMethodParams(const grpc_channel_args* args);
-  grpc_error_handle ParseJsonMethodConfig(const grpc_channel_args* args,
-                                          const Json& json);
-
-  // Returns a path string for the JSON name object specified by json.
-  // Sets *error on error.
-  static std::string ParseJsonMethodName(const Json& json,
-                                         grpc_error_handle* error);
-
   std::string json_string_;
   Json json_;
 
-  std::vector<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-      parsed_global_configs_;
+  ServiceConfigParser::ParsedConfigVector parsed_global_configs_;
   // A map from the method name to the parsed config vector. Note that we are
   // using a raw pointer and not a unique pointer so that we can use the same
   // vector for multiple names.
@@ -121,12 +115,11 @@ class ServiceConfigImpl final : public ServiceConfig {
   const ServiceConfigParser::ParsedConfigVector* default_method_config_vector_ =
       nullptr;
   // Storage for all the vectors that are being used in
-  // parsed_method_configs_table_.
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>,
-                      32>
+  // parsed_method_configs_map_ and default_method_config_vector_.
+  std::vector<ServiceConfigParser::ParsedConfigVector>
       parsed_method_config_vectors_storage_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H */
+#endif  // GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H

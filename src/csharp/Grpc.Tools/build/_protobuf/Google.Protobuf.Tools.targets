@@ -149,8 +149,12 @@
       <!-- Remove files not for compile. -->
       <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" '%(ProtoCompile)' != 'true' " />
       <!-- Ensure invariant Source=%(Identity). -->
+      <!-- Need to Unescape otherwise errors with characters such as '@' in paths 
+          See https://github.com/grpc/grpc/issues/30746
+          and https://github.com/dotnet/msbuild/issues/8104
+      -->
       <Protobuf_Compile>
-        <Source>%(Identity)</Source>
+        <Source>$([MSBuild]::Unescape(%(Identity)))</Source>
       </Protobuf_Compile>
     </ItemGroup>
   </Target>
@@ -190,7 +194,10 @@
     <ItemGroup>
       <_Protobuf_CodeCompile Include="@(Protobuf_ExpectedOutputs->Distinct())"
          Condition=" '%(Source)' != '' and '@(Protobuf_Compile->WithMetadataValue('CompileOutputs', 'true'))' != '' " />
-      <Compile Include="@(_Protobuf_CodeCompile)" />
+      <!-- Adding Distinct() is just a precaution as the CSC compiler complains if there are 
+           duplicate source files
+      -->
+      <Compile Include="@(_Protobuf_CodeCompile->Distinct())" />
     </ItemGroup>
   </Target>
 
@@ -198,9 +205,13 @@
   <Target Name="_Protobuf_EnforceInvariants">
     <!-- Enforce Source=Identity on proto files. The 'Source' metadata is used as a common
          key to match dependencies/expected outputs in the lists for up-to-date checks. -->
+    <!--  Need to Unescape otherwise errors with characters such as '@' in paths 
+          See https://github.com/grpc/grpc/issues/30746
+          and https://github.com/dotnet/msbuild/issues/8104
+      -->
     <ItemGroup>
       <Protobuf_Compile>
-        <Source>%(Identity)</Source>
+        <Source>$([MSBuild]::Unescape(%(Identity)))</Source>
       </Protobuf_Compile>
     </ItemGroup>
 
@@ -284,10 +295,10 @@
       ProtoPath="%(_Protobuf_OutOfDateProto.AdditionalImportDirs);$(Protobuf_StandardImportsPath);%(_Protobuf_OutOfDateProto.ProtoRoot)"
       ProtoDepDir="$(Protobuf_DepFilesPath)"
       OutputDir="%(_Protobuf_OutOfDateProto.OutputDir)"
-      OutputOptions="%(_Protobuf_OutOfDateProto._OutputOptions)"
+      OutputOptions="%(_Protobuf_OutOfDateProto.OutputOptions);%(_Protobuf_OutOfDateProto._OutputOptions)"
       GrpcPluginExe="%(_Protobuf_OutOfDateProto.GrpcPluginExe)"
       GrpcOutputDir="%(_Protobuf_OutOfDateProto.GrpcOutputDir)"
-      GrpcOutputOptions="%(_Protobuf_OutOfDateProto._GrpcOutputOptions)"
+      GrpcOutputOptions="%(_Protobuf_OutOfDateProto.GrpcOutputOptions);%(_Protobuf_OutOfDateProto._GrpcOutputOptions)"
       AdditionalProtocArguments="%(_Protobuf_OutOfDateProto.AdditionalProtocArguments)"
     >
       <Output TaskParameter="GeneratedFiles" ItemName="_Protobuf_GeneratedFiles"/>

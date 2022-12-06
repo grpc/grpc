@@ -29,12 +29,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string_windows.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/tchar.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {
   FILE* result = NULL;
-  LPTSTR template_string = NULL;
   TCHAR tmp_path[MAX_PATH];
   TCHAR tmp_filename[MAX_PATH];
   DWORD status;
@@ -43,15 +42,14 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {
   if (tmp_filename_out != NULL) *tmp_filename_out = NULL;
 
   /* Convert our prefix to TCHAR. */
-  template_string = gpr_char_to_tchar(prefix);
-  GPR_ASSERT(template_string);
+  grpc_core::TcharString template_string = grpc_core::CharToTchar(prefix);
 
   /* Get the path to the best temporary folder available. */
   status = GetTempPath(MAX_PATH, tmp_path);
   if (status == 0 || status > MAX_PATH) goto end;
 
   /* Generate a unique filename with our template + temporary path. */
-  success = GetTempFileName(tmp_path, template_string, 0, tmp_filename);
+  success = GetTempFileName(tmp_path, template_string.c_str(), 0, tmp_filename);
   if (!success) goto end;
 
   /* Open a file there. */
@@ -59,10 +57,10 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {
 
 end:
   if (result && tmp_filename_out) {
-    *tmp_filename_out = gpr_tchar_to_char(tmp_filename);
+    *tmp_filename_out =
+        gpr_strdup(grpc_core::TcharToChar(tmp_filename).c_str());
   }
 
-  gpr_free(template_string);
   return result;
 }
 

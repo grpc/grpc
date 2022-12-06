@@ -16,22 +16,36 @@
  *
  */
 
+#include <inttypes.h>
 #include <limits.h>
 #include <string.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -92,13 +106,13 @@ static grpc_closure on_write;
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(void* /*arg*/, grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   gpr_atm_rel_store(&state.done_atm, 1);
 }
 
 static void done_writing_settings_frame(void* /* arg */,
                                         grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
 }
@@ -114,9 +128,9 @@ static void handle_write() {
 }
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR, "handle_read error: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     return;
   }
   state.incoming_data_length += state.temp_incoming_buffer.length;
@@ -186,11 +200,10 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  cq_verifier* cqv;
   grpc_slice details;
 
   state.cq = grpc_completion_queue_create_for_next(nullptr);
-  cqv = cq_verifier_create(state.cq);
+  grpc_core::CqVerifier cqv(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
@@ -239,8 +252,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == expected_status);
   if (expected_detail != nullptr) {
@@ -251,13 +264,12 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_slice_unref(details);
-  cq_verifier_destroy(cqv);
 }
 
 static void cleanup_rpc() {
   grpc_event ev;
-  grpc_slice_buffer_destroy_internal(&state.temp_incoming_buffer);
-  grpc_slice_buffer_destroy_internal(&state.outgoing_buffer);
+  grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy(&state.outgoing_buffer);
   grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
@@ -332,8 +344,7 @@ static void run_test(bool http2_response, bool send_settings,
   /* Proof that the server accepted the TCP connection. */
   GPR_ASSERT(state.connection_attempt_made == true);
   /* clean up */
-  grpc_endpoint_shutdown(state.tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+  grpc_endpoint_shutdown(state.tcp, GRPC_ERROR_CREATE("Test Shutdown"));
   grpc_endpoint_destroy(state.tcp);
   cleanup_rpc();
   grpc_core::ExecCtx::Get()->Flush();

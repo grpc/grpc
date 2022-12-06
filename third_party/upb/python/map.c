@@ -30,6 +30,7 @@
 #include "python/convert.h"
 #include "python/message.h"
 #include "python/protobuf.h"
+#include "upb/map.h"
 
 // -----------------------------------------------------------------------------
 // MapContainer
@@ -71,8 +72,8 @@ static void PyUpb_MapContainer_Dealloc(void* _self) {
   PyUpb_MapContainer* self = _self;
   Py_DECREF(self->arena);
   if (PyUpb_MapContainer_IsStub(self)) {
-    PyUpb_CMessage_CacheDelete(self->ptr.parent,
-                               PyUpb_MapContainer_GetField(self));
+    PyUpb_Message_CacheDelete(self->ptr.parent,
+                              PyUpb_MapContainer_GetField(self));
     Py_DECREF(self->ptr.parent);
   } else {
     PyUpb_ObjCache_Delete(self->ptr.map);
@@ -91,7 +92,7 @@ PyObject* PyUpb_MapContainer_NewStub(PyObject* parent, const upb_FieldDef* f,
                                      PyObject* arena) {
   // We only create stubs when the parent is reified, by convention.  However
   // this is not an invariant: the parent could become reified at any time.
-  assert(PyUpb_CMessage_GetIfReified(parent) == NULL);
+  assert(PyUpb_Message_GetIfReified(parent) == NULL);
   PyTypeObject* cls = PyUpb_MapContainer_GetClass(f);
   PyUpb_MapContainer* map = (void*)PyType_GenericAlloc(cls, 0);
   map->arena = arena;
@@ -140,9 +141,25 @@ upb_Map* PyUpb_MapContainer_EnsureReified(PyObject* _self) {
   map =
       upb_Map_New(arena, upb_FieldDef_CType(key_f), upb_FieldDef_CType(val_f));
   upb_MessageValue msgval = {.map_val = map};
-  PyUpb_CMessage_SetConcreteSubobj(self->ptr.parent, f, msgval);
+  PyUpb_Message_SetConcreteSubobj(self->ptr.parent, f, msgval);
   PyUpb_MapContainer_Reify((PyObject*)self, map);
   return map;
+}
+
+bool PyUpb_MapContainer_Set(PyUpb_MapContainer* self, upb_Map* map,
+                            upb_MessageValue key, upb_MessageValue val,
+                            upb_Arena* arena) {
+  switch (upb_Map_Insert(map, key, val, arena)) {
+    case kUpb_MapInsertStatus_Inserted:
+      return true;
+    case kUpb_MapInsertStatus_Replaced:
+      // We did not insert a new key, undo the previous invalidate.
+      self->version--;
+      return true;
+    case kUpb_MapInsertStatus_OutOfMemory:
+      return false;
+  }
+  return false;  // Unreachable, silence compiler warning.
 }
 
 int PyUpb_MapContainer_AssignSubscript(PyObject* _self, PyObject* key,
@@ -159,7 +176,7 @@ int PyUpb_MapContainer_AssignSubscript(PyObject* _self, PyObject* key,
 
   if (val) {
     if (!PyUpb_PyToUpb(val, val_f, &u_val, arena)) return -1;
-    upb_Map_Set(map, u_key, u_val, arena);
+    if (!PyUpb_MapContainer_Set(self, map, u_key, u_val, arena)) return -1;
   } else {
     if (!upb_Map_Delete(map, u_key)) {
       PyErr_Format(PyExc_KeyError, "Key not present in map");
@@ -187,7 +204,7 @@ PyObject* PyUpb_MapContainer_Subscript(PyObject* _self, PyObject* key) {
     } else {
       memset(&u_val, 0, sizeof(u_val));
     }
-    upb_Map_Set(map, u_key, u_val, arena);
+    if (!PyUpb_MapContainer_Set(self, map, u_key, u_val, arena)) return false;
   }
   return PyUpb_UpbToPy(u_val, val_f, self->arena);
 }
@@ -267,8 +284,8 @@ PyUpb_MapContainer* PyUpb_MapContainer_Check(PyObject* _self) {
   return (PyUpb_MapContainer*)_self;
 }
 
-int PyUpb_CMessage_InitMapAttributes(PyObject* map, PyObject* value,
-                                     const upb_FieldDef* f);
+int PyUpb_Message_InitMapAttributes(PyObject* map, PyObject* value,
+                                    const upb_FieldDef* f);
 
 static PyObject* PyUpb_MapContainer_MergeFrom(PyObject* _self, PyObject* _arg) {
   PyUpb_MapContainer* self = (PyUpb_MapContainer*)_self;
@@ -278,7 +295,7 @@ static PyObject* PyUpb_MapContainer_MergeFrom(PyObject* _self, PyObject* _arg) {
     return PyErr_Format(PyExc_AttributeError, "Merging of dict is not allowed");
   }
 
-  if (PyUpb_CMessage_InitMapAttributes(_self, _arg, f) < 0) {
+  if (PyUpb_Message_InitMapAttributes(_self, _arg, f) < 0) {
     return NULL;
   }
 

@@ -32,9 +32,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/matchers/matchers.h"
@@ -72,7 +72,7 @@ class XdsCredentials final : public grpc_channel_credentials {
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
-      const grpc_channel_args* args, grpc_channel_args** new_args) override;
+      ChannelArgs* args) override;
 
   static UniqueTypeName Type();
 
@@ -94,7 +94,7 @@ class XdsServerCredentials final : public grpc_server_credentials {
       : fallback_credentials_(std::move(fallback_credentials)) {}
 
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
-      const grpc_channel_args* /* args */) override;
+      const ChannelArgs& /* args */) override;
 
   static UniqueTypeName Type();
 

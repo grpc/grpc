@@ -44,7 +44,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
@@ -77,7 +76,7 @@ void gpr_default_log(gpr_log_func_args* args) {
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
-  static GPR_THREAD_LOCAL(long) tid(0);
+  static thread_local long tid(0);
   if (tid == 0) tid = sys_gettid();
 
   timer = static_cast<time_t>(now.tv_sec);
@@ -104,10 +103,10 @@ void gpr_default_log(gpr_log_func_args* args) {
           ? grpc_core::GetCurrentStackTrace()
           : absl::nullopt;
   if (stack_trace) {
-    fprintf(stderr, "%-60s %s\n%s\n", prefix.c_str(), args->message,
+    fprintf(stderr, "%-70s %s\n%s\n", prefix.c_str(), args->message,
             stack_trace->c_str());
   } else {
-    fprintf(stderr, "%-60s %s\n", prefix.c_str(), args->message);
+    fprintf(stderr, "%-70s %s\n", prefix.c_str(), args->message);
   }
 }
 

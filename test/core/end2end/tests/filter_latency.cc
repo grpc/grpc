@@ -17,21 +17,33 @@
  */
 
 #include <limits.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <vector>
+
+#include "absl/status/status.h"
+
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -105,7 +117,7 @@ static void test_request(grpc_end2end_test_config config) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_end2end_test_fixture f =
       begin_test(config, "filter_latency", nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -173,8 +185,8 @@ static void test_request(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -200,9 +212,9 @@ static void test_request(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -215,8 +227,6 @@ static void test_request(grpc_end2end_test_config config) {
 
   grpc_call_unref(s);
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
@@ -249,7 +259,7 @@ static void test_request(grpc_end2end_test_config config) {
 
 static grpc_error_handle init_call_elem(
     grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void client_destroy_call_elem(grpc_call_element* /*elem*/,
@@ -270,7 +280,7 @@ static void server_destroy_call_elem(grpc_call_element* /*elem*/,
 
 static grpc_error_handle init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}

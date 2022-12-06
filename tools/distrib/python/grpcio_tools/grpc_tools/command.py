@@ -38,6 +38,7 @@ def build_package_protos(package_root, strict_mode=False):
             '--proto_path={}'.format(inclusion_root),
             '--proto_path={}'.format(well_known_protos_include),
             '--python_out={}'.format(inclusion_root),
+            '--pyi_out={}'.format(inclusion_root),
             '--grpc_python_out={}'.format(inclusion_root),
         ] + [proto_file]
         if protoc.main(command) != 0:

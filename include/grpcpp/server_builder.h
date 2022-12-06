@@ -30,12 +30,12 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/support/server_interceptor.h>
 
 struct grpc_resource_quota;
 
@@ -328,6 +328,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<NamedService*> services() {
     std::vector<NamedService*> service_refs;
+    service_refs.reserve(services_.size());
     for (auto& ptr : services_) {
       service_refs.push_back(ptr.get());
     }
@@ -337,6 +338,7 @@ class ServerBuilder {
   /// Experimental, to be deprecated
   std::vector<grpc::ServerBuilderOption*> options() {
     std::vector<grpc::ServerBuilderOption*> option_refs;
+    option_refs.reserve(options_.size());
     for (auto& ptr : options_) {
       option_refs.push_back(ptr.get());
     }

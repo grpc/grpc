@@ -79,10 +79,18 @@ upb_proto_library_copts(
     visibility = ["//visibility:public"],
 )
 
+package_group(
+    name = "friends",
+    packages = [],
+)
+
 # Public C/C++ libraries #######################################################
 
 cc_library(
     name = "port",
+    hdrs = [
+        "upb/internal/vsnprintf_compat.h",
+    ],
     copts = UPB_DEFAULT_COPTS,
     textual_hdrs = [
         "upb/port_def.inc",
@@ -94,26 +102,32 @@ cc_library(
 cc_library(
     name = "upb",
     srcs = [
+        "upb/arena.c",
         "upb/decode.c",
-        "upb/decode_internal.h",
         "upb/encode.c",
+        "upb/internal/decode.h",
+        "upb/internal/table.h",
+        "upb/internal/upb.h",
         "upb/msg.c",
         "upb/msg_internal.h",
+        "upb/status.c",
         "upb/table.c",
-        "upb/table_internal.h",
         "upb/upb.c",
-        "upb/upb_internal.h",
     ],
     hdrs = [
+        "upb/arena.h",
         "upb/decode.h",
         "upb/encode.h",
+        "upb/extension_registry.h",
         "upb/msg.h",
+        "upb/status.h",
         "upb/upb.h",
         "upb/upb.hpp",
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":extension_registry",
         ":fastdecode",
         ":port",
         "//third_party/utf8_range",
@@ -121,9 +135,51 @@ cc_library(
 )
 
 cc_library(
-    name = "mini_table_internal",
-    hdrs = ["upb/msg_internal.h"],
+    name = "extension_registry",
+    srcs = [
+        "upb/extension_registry.c",
+        "upb/msg.h",
+        "upb/msg_internal.h",
+        "upb/upb.h",
+    ],
+    hdrs = [
+        "upb/extension_registry.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
     deps = [
+        ":port",
+        ":table",
+    ],
+)
+
+cc_library(
+    name = "mini_descriptor",
+    srcs = [
+        "upb/mini_descriptor.c",
+    ],
+    hdrs = [
+        "upb/mini_descriptor.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":descriptor_upb_proto",
+        ":mini_table",
+        ":port",
+        ":reflection",
+        ":table",
+        ":upb",
+    ],
+)
+
+cc_library(
+    name = "mini_table_internal",
+    hdrs = [
+        "upb/msg_internal.h",
+    ],
+    deps = [
+        ":extension_registry",
         ":port",
         ":table",
         ":upb",
@@ -132,7 +188,9 @@ cc_library(
 
 cc_library(
     name = "mini_table",
-    srcs = ["upb/mini_table.c"],
+    srcs = [
+        "upb/mini_table.c",
+    ],
     hdrs = [
         "upb/mini_table.h",
         "upb/mini_table.hpp",
@@ -140,6 +198,27 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":extension_registry",
+        ":mini_table_internal",
+        ":port",
+        ":upb",
+    ],
+)
+
+cc_library(
+    name = "mini_table_accessors",
+    srcs = [
+        "upb/internal/mini_table_accessors.h",
+        "upb/mini_table_accessors.c",
+    ],
+    hdrs = [
+        "upb/mini_table_accessors.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":collections",
+        ":mini_table",
         ":mini_table_internal",
         ":port",
         ":upb",
@@ -148,10 +227,33 @@ cc_library(
 
 cc_test(
     name = "mini_table_test",
-    srcs = ["upb/mini_table_test.cc"],
+    srcs = [
+        "upb/internal/table.h",
+        "upb/mini_table_test.cc",
+    ],
     deps = [
+        ":extension_registry",
         ":mini_table",
         ":mini_table_internal",
+        ":port",
+        ":upb",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "mini_table_accessors_test",
+    srcs = ["upb/mini_table_accessors_test.cc"],
+    deps = [
+        ":collections",
+        ":mini_table",
+        ":mini_table_accessors",
+        ":mini_table_internal",
+        ":test_messages_proto2_proto_upb",
+        ":test_messages_proto3_proto_upb",
+        ":test_upb_proto",
         ":upb",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest_main",
@@ -165,13 +267,14 @@ cc_library(
         "upb/decode.h",
         "upb/decode_fast.c",
         "upb/decode_fast.h",
-        "upb/decode_internal.h",
+        "upb/internal/decode.h",
+        "upb/internal/upb.h",
         "upb/msg.h",
         "upb/msg_internal.h",
-        "upb/upb_internal.h",
     ],
     copts = UPB_DEFAULT_COPTS,
     deps = [
+        ":extension_registry",
         ":port",
         ":table",
         "//third_party/utf8_range",
@@ -190,6 +293,7 @@ cc_library(
         "upb/decode.h",
         "upb/decode_fast.h",
         "upb/encode.h",
+        "upb/extension_registry.h",
         "upb/msg.h",
         "upb/msg_internal.h",
         "upb/port_def.inc",
@@ -232,6 +336,29 @@ upb_proto_reflection_library(
 )
 
 cc_library(
+    name = "collections",
+    srcs = [
+        "upb/array.c",
+        "upb/map.c",
+    ],
+    hdrs = [
+        "upb/array.h",
+        "upb/collections.h",
+        "upb/map.h",
+        "upb/message_value.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":descriptor_upb_proto",
+        ":mini_table",
+        ":port",
+        ":table",
+        ":upb",
+    ],
+)
+
+cc_library(
     name = "reflection",
     srcs = [
         "upb/def.c",
@@ -247,7 +374,9 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":collections",
         ":descriptor_upb_proto",
+        ":mini_table",
         ":port",
         ":table",
         ":upb",
@@ -257,8 +386,8 @@ cc_library(
 cc_library(
     name = "textformat",
     srcs = [
+        "upb/internal/upb.h",
         "upb/text_encode.c",
-        "upb/upb_internal.h",
     ],
     hdrs = [
         "upb/text_encode.h",
@@ -275,9 +404,9 @@ cc_library(
 cc_library(
     name = "json",
     srcs = [
+        "upb/internal/upb.h",
         "upb/json_decode.c",
         "upb/json_encode.c",
-        "upb/upb_internal.h",
     ],
     hdrs = [
         "upb/json_decode.h",
@@ -299,6 +428,7 @@ cc_test(
     srcs = ["upb/test_generated_code.cc"],
     deps = [
         ":empty_upbdefs_proto",
+        ":port",
         ":test_messages_proto2_proto_upb",
         ":test_messages_proto3_proto_upb",
         ":test_upb_proto",
@@ -340,6 +470,39 @@ upb_proto_library(
     name = "test_messages_proto3_proto_upb",
     testonly = 1,
     deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+
+proto_library(
+    name = "json_test_proto",
+    testonly = 1,
+    srcs = ["upb/json_test.proto"],
+    deps = ["@com_google_protobuf//:struct_proto"],
+)
+
+upb_proto_library(
+    name = "json_test_upb_proto",
+    testonly = 1,
+    deps = [":json_test_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "json_test_upb_proto_reflection",
+    testonly = 1,
+    deps = [":json_test_proto"],
+)
+
+cc_test(
+    name = "json_test",
+    srcs = ["upb/json_test.cc"],
+    deps = [
+        ":json",
+        ":json_test_upb_proto",
+        ":json_test_upb_proto_reflection",
+        ":reflection",
+        ":struct_upb_proto",
+        ":upb",
+        "@com_google_googletest//:gtest_main",
+    ],
 )
 
 cc_test(
@@ -392,6 +555,11 @@ upb_proto_reflection_library(
 )
 
 upb_proto_library(
+    name = "struct_upb_proto",
+    deps = ["@com_google_protobuf//:struct_proto"],
+)
+
+upb_proto_library(
     name = "timestamp_upb_proto",
     deps = ["@com_google_protobuf//:timestamp_proto"],
 )
@@ -433,13 +601,13 @@ cc_test(
 upb_proto_library(
     name = "conformance_proto_upb",
     testonly = 1,
-    deps = ["@com_google_protobuf//:conformance_proto"],
+    deps = ["@com_google_protobuf//conformance:conformance_proto"],
 )
 
 upb_proto_reflection_library(
     name = "conformance_proto_upbdefs",
     testonly = 1,
-    deps = ["@com_google_protobuf//:conformance_proto"],
+    deps = ["@com_google_protobuf//conformance:conformance_proto"],
 )
 
 upb_proto_reflection_library(
@@ -476,7 +644,7 @@ cc_binary(
 make_shell_script(
     name = "gen_test_conformance_upb",
     out = "test_conformance_upb.sh",
-    contents = "external/com_google_protobuf/conformance_test_runner " +
+    contents = "external/com_google_protobuf/conformance/conformance_test_runner " +
                " --enforce_recommended " +
                " --failure_list ./upb/conformance_upb_failures.txt" +
                " ./conformance_upb",
@@ -488,7 +656,7 @@ sh_test(
     data = [
         "upb/conformance_upb_failures.txt",
         ":conformance_upb",
-        "@com_google_protobuf//:conformance_test_runner",
+        "@com_google_protobuf//conformance:conformance_test_runner",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
@@ -517,7 +685,7 @@ cc_binary(
 make_shell_script(
     name = "gen_test_conformance_upb_dynamic_minitable",
     out = "test_conformance_upb_dynamic_minitable.sh",
-    contents = "external/com_google_protobuf/conformance_test_runner " +
+    contents = "external/com_google_protobuf/conformance/conformance_test_runner " +
                " --enforce_recommended " +
                " --failure_list ./upb/conformance_upb_failures.txt" +
                " ./conformance_upb_dynamic_minitable",
@@ -529,7 +697,7 @@ sh_test(
     data = [
         "upb/conformance_upb_failures.txt",
         ":conformance_upb_dynamic_minitable",
-        "@com_google_protobuf//:conformance_test_runner",
+        "@com_google_protobuf//conformance:conformance_test_runner",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
@@ -539,6 +707,9 @@ sh_test(
 cc_library(
     name = "table",
     hdrs = [
+        "upb/arena.h",
+        "upb/internal/table.h",
+        "upb/status.h",
         "upb/table_internal.h",
         "upb/upb.h",
     ],
@@ -562,11 +733,14 @@ upb_amalgamation(
         "upb.h",
     ],
     libs = [
-        ":upb",
-        ":fastdecode",
+        ":collections",
         ":descriptor_upb_proto",
-        ":reflection",
+        ":extension_registry",
+        ":fastdecode",
+        ":mini_table",
         ":port",
+        ":reflection",
+        ":upb",
     ],
 )
 
@@ -585,13 +759,16 @@ upb_amalgamation(
         "php-upb.h",
     ],
     libs = [
-        ":upb",
-        ":fastdecode",
+        ":collections",
         ":descriptor_upb_proto",
         ":descriptor_upb_proto_reflection",
-        ":reflection",
-        ":port",
+        ":extension_registry",
+        ":fastdecode",
         ":json",
+        ":mini_table",
+        ":port",
+        ":reflection",
+        ":upb",
     ],
     prefix = "php-",
 )
@@ -611,12 +788,15 @@ upb_amalgamation(
         "ruby-upb.h",
     ],
     libs = [
-        ":upb",
-        ":fastdecode",
+        ":collections",
         ":descriptor_upb_proto",
-        ":reflection",
-        ":port",
+        ":extension_registry",
+        ":fastdecode",
         ":json",
+        ":mini_table",
+        ":port",
+        ":reflection",
+        ":upb",
     ],
     prefix = "ruby-",
 )
@@ -640,13 +820,24 @@ exports_files(
 filegroup(
     name = "cmake_files",
     srcs = glob([
-        "google/**/*",
         "upbc/**/*",
         "upb/**/*",
-        "tests/**/*",
         "third_party/**/*",
     ]),
     visibility = ["//cmake:__pkg__"],
 )
 
 # end:github_only
+
+# begin:google_only
+#
+# py_binary(
+#     name = "update_check_runs",
+#     srcs = ["update_check_runs.py"],
+#     main = "update_check_runs.py",
+#     deps = [
+#         "//third_party/py/absl:app",
+#     ],
+# )
+#
+# end:google_only

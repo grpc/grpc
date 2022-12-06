@@ -22,8 +22,8 @@ load(
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
+load("//test/core/end2end:generate_tests.bzl", "grpc_end2end_tests")
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
 
@@ -32,6 +32,8 @@ licenses(["notice"])
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
+
+grpc_end2end_tests()
 
 proto_library_objc_wrapper(
     name = "messages_proto",
@@ -80,18 +82,6 @@ objc_library(
     name = "host-lib",
     srcs = glob(["Hosts/ios-host/*.m"]),
     hdrs = glob(["Hosts/ios-host/*.h"]),
-)
-
-ios_application(
-    name = "ios-host",
-    bundle_id = "grpc.objc.tests.ios-host",
-    families = [
-        "iphone",
-        "ipad",
-    ],
-    infoplists = ["Hosts/ios-host/Info.plist"],
-    minimum_os_version = "9.0",
-    deps = ["host-lib"],
 )
 
 tvos_application(
@@ -184,7 +174,55 @@ grpc_objc_testing_library(
     hdrs = ["MacTests/StressTests.h"],
 )
 
-grpc_objc_ios_unit_test(
+grpc_objc_testing_library(
+    name = "CronetTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+    ] + glob([
+        "CronetTests/*.m",
+        "CronetTests/*.mm",
+    ]),
+    hdrs = [
+        "ConfigureCronet.h",
+    ],
+    deps = [
+        "InteropTests-lib",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//test/core/end2end:end2end_tests",
+        "//third_party/objective_c/Cronet:cronet_c_for_grpc",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "PerfTests-lib-Posix",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsNoCFStreamSSL.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "PerfTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+        "PerfTests/PerfTests.m",
+        "PerfTests/PerfTestsBlockCallbacks.m",
+        "PerfTests/PerfTestsCFStreamSSL.m",
+        "PerfTests/PerfTestsCronet.m",
+    ],
+    hdrs = ["ConfigureCronet.h"] + glob(["PerfTests/*.h"]),
+    deps = [
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "UnitTests",
     deps = [
         ":APIv2Tests-lib",
@@ -198,19 +236,47 @@ grpc_objc_ios_unit_test(
 )
 
 grpc_objc_ios_unit_test(
-    name = "InteropTestsLocal",
+    name = "InteropTestsLocalCleartext",
     deps = [
         ":InteropTestsLocalCleartext-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalSSL",
+    deps = [
         ":InteropTestsLocalSSL-lib",
     ],
 )
 
-ios_unit_test(
+grpc_objc_ios_unit_test(
     name = "InteropTestsRemote",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
     deps = [
         ":InteropTestsRemote-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CronetTests",
+    deps = [
+        "CronetTests-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTestsPosix",
+    deps = [
+        "PerfTests-lib-Posix",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "PerfTests",
+    env = {
+        "GRPC_CFSTREAM_RUN_LOOP": "1",
+    },
+    deps = [
+        "PerfTests-lib",
     ],
 )
 
@@ -228,7 +294,8 @@ macos_unit_test(
     ],
 )
 
-# bazel run tvos_unit_test is not yet supported by xctestrunner
+# Note that bazel currently doesn't support running tvos_unit_test
+# See https://github.com/bazelbuild/rules_apple/blob/8d841342c238457896cd7596cc29b2d06c9a75f0/apple/testing/default_runner/tvos_test_runner.template.sh
 tvos_unit_test(
     name = "TvTests",
     minimum_os_version = "10.0",
@@ -241,6 +308,20 @@ tvos_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+)
+
+# TvTests is not runnable with bazel, so the best we can do is to test
+# that the testsuite builds correctly. This is achieved by having
+# a dummy sh_test depend on :TvTests.
+grpc_sh_test(
+    name = "tvtests_build_test",
+    srcs = [
+        "tvtests_build_test.sh",
+    ],
+    data = [
+        ":TvTests",
+    ],
+    uses_polling = False,
 )
 
 grpc_sh_test(
@@ -259,8 +340,7 @@ grpc_sh_test(
     data = [
         "@com_google_protobuf//:protoc",
         "//src/compiler:grpc_objective_c_plugin",
-        # NOTE: the :well_known_protos has been recently renamed to :well_known_type_protos on protobuf's main branch
-        "@com_google_protobuf//:well_known_protos",
+        "@com_google_protobuf//:well_known_type_protos",
     ] + glob(["RemoteTestClient/*.proto"]),
     uses_polling = False,
 )

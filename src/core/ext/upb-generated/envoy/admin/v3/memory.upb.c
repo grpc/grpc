@@ -26,7 +26,7 @@ static const upb_MiniTable_Field envoy_admin_v3_Memory__fields[6] = {
 const upb_MiniTable envoy_admin_v3_Memory_msginit = {
   NULL,
   &envoy_admin_v3_Memory__fields[0],
-  UPB_SIZE(48, 56), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(48, 48), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

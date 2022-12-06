@@ -27,7 +27,7 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/impl/codegen/log.h>
+#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -74,8 +74,8 @@ void TestScenario::Log() const {
 class ContextAllocatorEnd2endTestBase
     : public ::testing::TestWithParam<TestScenario> {
  protected:
-  static void SetUpTestCase() { grpc_init(); }
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void SetUpTestSuite() { grpc_init(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
   ContextAllocatorEnd2endTestBase() {}
 
   ~ContextAllocatorEnd2endTestBase() override = default;
@@ -131,7 +131,7 @@ class ContextAllocatorEnd2endTestBase
   }
 
   void SendRpcs(int num_rpcs) {
-    std::string test_string("");
+    std::string test_string;
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest request;
       EchoResponse response;

@@ -20,113 +20,137 @@
 
 #include <string.h>
 
-#include <map>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/log.h>
+#include "absl/types/optional.h"
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
-RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
-    const grpc_channel_args* args, absl::string_view json_string,
-    grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr);
-  Json json = Json::Parse(json_string, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
-  return MakeRefCounted<ServiceConfigImpl>(args, std::string(json_string),
-                                           std::move(json), error);
-}
+namespace {
 
-ServiceConfigImpl::ServiceConfigImpl(const grpc_channel_args* args,
-                                     std::string json_string, Json json,
-                                     grpc_error_handle* error)
-    : json_string_(std::move(json_string)), json_(std::move(json)) {
-  GPR_DEBUG_ASSERT(error != nullptr);
-  if (json_.type() != Json::Type::OBJECT) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON value is not an object");
-    return;
-  }
-  std::vector<grpc_error_handle> error_list;
-  grpc_error_handle global_error = GRPC_ERROR_NONE;
-  parsed_global_configs_ =
-      CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
-          args, json_, &global_error);
-  if (!GRPC_ERROR_IS_NONE(global_error)) error_list.push_back(global_error);
-  grpc_error_handle local_error = ParsePerMethodParams(args);
-  if (!GRPC_ERROR_IS_NONE(local_error)) error_list.push_back(local_error);
-  if (!error_list.empty()) {
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service config parsing error",
-                                           &error_list);
-  }
-}
+struct MethodConfig {
+  struct Name {
+    absl::optional<std::string> service;
+    absl::optional<std::string> method;
 
-ServiceConfigImpl::~ServiceConfigImpl() {
-  for (auto& p : parsed_method_configs_map_) {
-    grpc_slice_unref_internal(p.first);
-  }
-}
-
-grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
-    const grpc_channel_args* args, const Json& json) {
-  std::vector<grpc_error_handle> error_list;
-  // Parse method config with each registered parser.
-  auto parsed_configs =
-      absl::make_unique<ServiceConfigParser::ParsedConfigVector>();
-  grpc_error_handle parser_error = GRPC_ERROR_NONE;
-  *parsed_configs =
-      CoreConfiguration::Get().service_config_parser().ParsePerMethodParameters(
-          args, json, &parser_error);
-  if (!GRPC_ERROR_IS_NONE(parser_error)) {
-    error_list.push_back(parser_error);
-  }
-  parsed_method_config_vectors_storage_.push_back(std::move(parsed_configs));
-  const auto* vector_ptr = parsed_method_config_vectors_storage_.back().get();
-  // Add an entry for each path.
-  bool found_name = false;
-  auto it = json.object_value().find("name");
-  if (it != json.object_value().end()) {
-    if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:name error:not of type Array"));
-      return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader = JsonObjectLoader<Name>()
+                                      .OptionalField("service", &Name::service)
+                                      .OptionalField("method", &Name::method)
+                                      .Finish();
+      return loader;
     }
-    const Json::Array& name_array = it->second.array_value();
-    for (const Json& name : name_array) {
-      grpc_error_handle parse_error = GRPC_ERROR_NONE;
-      std::string path = ParseJsonMethodName(name, &parse_error);
-      if (!GRPC_ERROR_IS_NONE(parse_error)) {
-        error_list.push_back(parse_error);
-      } else {
-        found_name = true;
+
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
+      if (!service.has_value() && method.has_value()) {
+        errors->AddError("method name populated without service name");
+      }
+    }
+
+    std::string Path() const {
+      if (!service.has_value() || service->empty()) return "";
+      return absl::StrCat("/", *service, "/",
+                          method.has_value() ? *method : "");
+    }
+  };
+
+  std::vector<Name> names;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader = JsonObjectLoader<MethodConfig>()
+                                    .OptionalField("name", &MethodConfig::names)
+                                    .Finish();
+    return loader;
+  }
+};
+
+}  // namespace
+
+absl::StatusOr<RefCountedPtr<ServiceConfig>> ServiceConfigImpl::Create(
+    const ChannelArgs& args, absl::string_view json_string) {
+  auto json = Json::Parse(json_string);
+  if (!json.ok()) return json.status();
+  ValidationErrors errors;
+  auto service_config = Create(args, *json, json_string, &errors);
+  if (!errors.ok()) return errors.status("errors validating service config");
+  return service_config;
+}
+
+RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
+    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
+  return Create(args, json, json.Dump(), errors);
+}
+
+RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
+    const ChannelArgs& args, const Json& json, absl::string_view json_string,
+    ValidationErrors* errors) {
+  if (json.type() != Json::Type::OBJECT) {
+    errors->AddError("is not an object");
+    return nullptr;
+  }
+  auto service_config = MakeRefCounted<ServiceConfigImpl>();
+  service_config->json_string_ = std::string(json_string);
+  // Parse global parameters.
+  service_config->parsed_global_configs_ =
+      CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
+          args, json, errors);
+  // Parse per-method parameters.
+  auto method_configs = LoadJsonObjectField<std::vector<Json::Object>>(
+      json.object_value(), JsonArgs(), "methodConfig", errors,
+      /*required=*/false);
+  if (method_configs.has_value()) {
+    service_config->parsed_method_config_vectors_storage_.reserve(
+        method_configs->size());
+    for (size_t i = 0; i < method_configs->size(); ++i) {
+      const Json::Object& method_config_json = (*method_configs)[i];
+      ValidationErrors::ScopedField field(
+          errors, absl::StrCat(".methodConfig[", i, "]"));
+      // Have each parser read this method config.
+      auto parsed_configs =
+          CoreConfiguration::Get()
+              .service_config_parser()
+              .ParsePerMethodParameters(args, method_config_json, errors);
+      // Store the parsed configs.
+      service_config->parsed_method_config_vectors_storage_.push_back(
+          std::move(parsed_configs));
+      const ServiceConfigParser::ParsedConfigVector* vector_ptr =
+          &service_config->parsed_method_config_vectors_storage_.back();
+      // Parse the names.
+      auto method_config =
+          LoadFromJson<MethodConfig>(method_config_json, JsonArgs(), errors);
+      for (size_t j = 0; j < method_config.names.size(); ++j) {
+        ValidationErrors::ScopedField field(errors,
+                                            absl::StrCat(".name[", j, "]"));
+        std::string path = method_config.names[j].Path();
         if (path.empty()) {
-          if (default_method_config_vector_ != nullptr) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "field:name error:multiple default method configs"));
+          if (service_config->default_method_config_vector_ != nullptr) {
+            errors->AddError("duplicate default method config");
           }
-          default_method_config_vector_ = vector_ptr;
+          service_config->default_method_config_vector_ = vector_ptr;
         } else {
-          grpc_slice key = grpc_slice_from_copied_string(path.c_str());
+          grpc_slice key = grpc_slice_from_cpp_string(std::move(path));
           // If the key is not already present in the map, this will
           // store a ref to the key in the map.
-          auto& value = parsed_method_configs_map_[key];
+          auto& value = service_config->parsed_method_configs_map_[key];
           if (value != nullptr) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "field:name error:multiple method configs with same name"));
+            errors->AddError(absl::StrCat("multiple method configs for path ",
+                                          StringViewFromSlice(key)));
             // The map entry already existed, so we need to unref the
             // key we just created.
-            grpc_slice_unref_internal(key);
+            CSliceUnref(key);
           } else {
             value = vector_ptr;
           }
@@ -134,83 +158,13 @@ grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
       }
     }
   }
-  if (!found_name) {
-    parsed_method_config_vectors_storage_.pop_back();
-  }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
+  return service_config;
 }
 
-grpc_error_handle ServiceConfigImpl::ParsePerMethodParams(
-    const grpc_channel_args* args) {
-  std::vector<grpc_error_handle> error_list;
-  auto it = json_.object_value().find("methodConfig");
-  if (it != json_.object_value().end()) {
-    if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:methodConfig error:not of type Array"));
-    }
-    for (const Json& method_config : it->second.array_value()) {
-      if (method_config.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:methodConfig error:not of type Object"));
-        continue;
-      }
-      grpc_error_handle error = ParseJsonMethodConfig(args, method_config);
-      if (!GRPC_ERROR_IS_NONE(error)) {
-        error_list.push_back(error);
-      }
-    }
+ServiceConfigImpl::~ServiceConfigImpl() {
+  for (auto& p : parsed_method_configs_map_) {
+    CSliceUnref(p.first);
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("Method Params", &error_list);
-}
-
-std::string ServiceConfigImpl::ParseJsonMethodName(const Json& json,
-                                                   grpc_error_handle* error) {
-  if (json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:name error:type is not object");
-    return "";
-  }
-  // Find service name.
-  const std::string* service_name = nullptr;
-  auto it = json.object_value().find("service");
-  if (it != json.object_value().end() &&
-      it->second.type() != Json::Type::JSON_NULL) {
-    if (it->second.type() != Json::Type::STRING) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:name error: field:service error:not of type string");
-      return "";
-    }
-    if (!it->second.string_value().empty()) {
-      service_name = &it->second.string_value();
-    }
-  }
-  const std::string* method_name = nullptr;
-  // Find method name.
-  it = json.object_value().find("method");
-  if (it != json.object_value().end() &&
-      it->second.type() != Json::Type::JSON_NULL) {
-    if (it->second.type() != Json::Type::STRING) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:name error: field:method error:not of type string");
-      return "";
-    }
-    if (!it->second.string_value().empty()) {
-      method_name = &it->second.string_value();
-    }
-  }
-  // If neither service nor method are specified, it's the default.
-  // Method name may not be specified without service name.
-  if (service_name == nullptr) {
-    if (method_name != nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:name error:method name populated without service name");
-    }
-    return "";
-  }
-  // Construct path.
-  return absl::StrCat("/", *service_name, "/",
-                      method_name == nullptr ? "" : *method_name);
 }
 
 const ServiceConfigParser::ParsedConfigVector*

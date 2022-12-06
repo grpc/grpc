@@ -24,6 +24,7 @@ grpc_package(
 grpc_cc_test(
     name = "alts_crypt_test",
     srcs = ["aes_gcm_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         ":alts_crypt_test_util",

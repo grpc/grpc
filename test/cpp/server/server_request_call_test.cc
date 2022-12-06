@@ -22,10 +22,10 @@
 
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/config.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -93,7 +93,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       response.set_message("foobar");
       // A bit of sleep to make sure the deadline elapses.
       gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_millis(50, GPR_TIMESPAN)));
+                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
       {
         std::lock_guard<std::mutex> lock(mu);
         if (shutting_down) {

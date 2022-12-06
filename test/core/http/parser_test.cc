@@ -23,11 +23,11 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/util/slice_splitter.h"
@@ -54,22 +54,22 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
   grpc_http_parser_init(&parser, GRPC_HTTP_REQUEST, &request);
 
   for (i = 0; i < num_slices; i++) {
-    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i], nullptr) ==
-               GRPC_ERROR_NONE);
+    ASSERT_EQ(grpc_http_parser_parse(&parser, slices[i], nullptr),
+              absl::OkStatus());
     grpc_slice_unref(slices[i]);
   }
-  GPR_ASSERT(grpc_http_parser_eof(&parser) == GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_http_parser_eof(&parser), absl::OkStatus());
 
-  GPR_ASSERT(GRPC_HTTP_REQUEST == parser.type);
-  GPR_ASSERT(0 == strcmp(expect_method, request.method));
-  GPR_ASSERT(0 == strcmp(expect_path, request.path));
-  GPR_ASSERT(expect_version == request.version);
+  ASSERT_EQ(GRPC_HTTP_REQUEST, parser.type);
+  ASSERT_STREQ(expect_method, request.method);
+  ASSERT_STREQ(expect_path, request.path);
+  ASSERT_EQ(expect_version, request.version);
 
   if (expect_body != nullptr) {
-    GPR_ASSERT(strlen(expect_body) == request.body_length);
-    GPR_ASSERT(0 == memcmp(expect_body, request.body, request.body_length));
+    ASSERT_EQ(strlen(expect_body), request.body_length);
+    ASSERT_EQ(0, memcmp(expect_body, request.body, request.body_length));
   } else {
-    GPR_ASSERT(request.body_length == 0);
+    ASSERT_EQ(request.body_length, 0);
   }
 
   va_start(args, expect_body);
@@ -79,15 +79,15 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
     char* expect_value;
     expect_key = va_arg(args, char*);
     if (!expect_key) break;
-    GPR_ASSERT(i < request.hdr_count);
+    ASSERT_LT(i, request.hdr_count);
     expect_value = va_arg(args, char*);
-    GPR_ASSERT(expect_value);
-    GPR_ASSERT(0 == strcmp(expect_key, request.hdrs[i].key));
-    GPR_ASSERT(0 == strcmp(expect_value, request.hdrs[i].value));
+    ASSERT_TRUE(expect_value);
+    ASSERT_STREQ(expect_key, request.hdrs[i].key);
+    ASSERT_STREQ(expect_value, request.hdrs[i].value);
     i++;
   }
   va_end(args);
-  GPR_ASSERT(i == request.hdr_count);
+  ASSERT_EQ(i, request.hdr_count);
 
   grpc_http_request_destroy(&request);
   grpc_http_parser_destroy(&parser);
@@ -112,19 +112,19 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
   for (i = 0; i < num_slices; i++) {
-    GPR_ASSERT(grpc_http_parser_parse(&parser, slices[i], nullptr) ==
-               GRPC_ERROR_NONE);
+    ASSERT_EQ(grpc_http_parser_parse(&parser, slices[i], nullptr),
+              absl::OkStatus());
     grpc_slice_unref(slices[i]);
   }
-  GPR_ASSERT(grpc_http_parser_eof(&parser) == GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_http_parser_eof(&parser), absl::OkStatus());
 
-  GPR_ASSERT(GRPC_HTTP_RESPONSE == parser.type);
-  GPR_ASSERT(expect_status == response.status);
+  ASSERT_EQ(GRPC_HTTP_RESPONSE, parser.type);
+  ASSERT_EQ(expect_status, response.status);
   if (expect_body != nullptr) {
-    GPR_ASSERT(strlen(expect_body) == response.body_length);
-    GPR_ASSERT(0 == memcmp(expect_body, response.body, response.body_length));
+    ASSERT_EQ(strlen(expect_body), response.body_length);
+    ASSERT_EQ(0, memcmp(expect_body, response.body, response.body_length));
   } else {
-    GPR_ASSERT(response.body_length == 0);
+    ASSERT_EQ(response.body_length, 0);
   }
 
   va_start(args, expect_body);
@@ -134,15 +134,15 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
     char* expect_value;
     expect_key = va_arg(args, char*);
     if (!expect_key) break;
-    GPR_ASSERT(i < response.hdr_count);
+    ASSERT_LT(i, response.hdr_count);
     expect_value = va_arg(args, char*);
-    GPR_ASSERT(expect_value);
-    GPR_ASSERT(0 == strcmp(expect_key, response.hdrs[i].key));
-    GPR_ASSERT(0 == strcmp(expect_value, response.hdrs[i].value));
+    ASSERT_TRUE(expect_value);
+    ASSERT_STREQ(expect_key, response.hdrs[i].key);
+    ASSERT_STREQ(expect_value, response.hdrs[i].value);
     i++;
   }
   va_end(args);
-  GPR_ASSERT(i == response.hdr_count);
+  ASSERT_EQ(i, response.hdr_count);
 
   grpc_http_response_destroy(&response);
   grpc_http_parser_destroy(&parser);
@@ -156,7 +156,7 @@ static void test_fails(grpc_slice_split_mode split_mode,
   size_t num_slices;
   size_t i;
   grpc_slice* slices;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_http_response response;
   response = {};
 
@@ -166,16 +166,15 @@ static void test_fails(grpc_slice_split_mode split_mode,
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
   for (i = 0; i < num_slices; i++) {
-    if (GRPC_ERROR_NONE == error) {
+    if (absl::OkStatus() == error) {
       error = grpc_http_parser_parse(&parser, slices[i], nullptr);
     }
     grpc_slice_unref(slices[i]);
   }
-  if (GRPC_ERROR_NONE == error) {
+  if (absl::OkStatus() == error) {
     error = grpc_http_parser_eof(&parser);
   }
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
-  GRPC_ERROR_UNREF(error);
+  ASSERT_FALSE(error.ok());
 
   grpc_http_response_destroy(&response);
   grpc_http_parser_destroy(&parser);
@@ -189,7 +188,7 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
   size_t num_slices;
   size_t i;
   grpc_slice* slices;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
 
@@ -199,30 +198,25 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
   grpc_http_parser_init(&parser, GRPC_HTTP_REQUEST, &request);
 
   for (i = 0; i < num_slices; i++) {
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       error = grpc_http_parser_parse(&parser, slices[i], nullptr);
     }
     grpc_slice_unref(slices[i]);
   }
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     error = grpc_http_parser_eof(&parser);
   }
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
-  GRPC_ERROR_UNREF(error);
+  ASSERT_FALSE(error.ok());
 
   grpc_http_request_destroy(&request);
   grpc_http_parser_destroy(&parser);
   gpr_free(slices);
 }
 
-int main(int argc, char** argv) {
+TEST(ParserTest, MainTest) {
   size_t i;
   const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
-
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
   for (i = 0; i < GPR_ARRAY_SIZE(split_modes); i++) {
     test_succeeds(split_modes[i],
                   "HTTP/1.0 200 OK\r\n"
@@ -332,7 +326,11 @@ int main(int argc, char** argv) {
     gpr_free(tmp1);
     test_fails(split_modes[i], tmp2.c_str());
   }
+}
 
-  grpc_shutdown();
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

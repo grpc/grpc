@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <new>
 #include <utility>
 
 #include "absl/strings/cord.h"
@@ -35,6 +34,7 @@
 #include "absl/time/clock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
+#include "upb/arena.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
@@ -141,8 +141,9 @@ void EncodeUInt32ToBytes(uint32_t v, char* buf) {
 
 uint32_t DecodeUInt32FromBytes(const char* buf) {
   const unsigned char* ubuf = reinterpret_cast<const unsigned char*>(buf);
-  return ubuf[0] | (uint32_t(ubuf[1]) << 8) | (uint32_t(ubuf[2]) << 16) |
-         (uint32_t(ubuf[3]) << 24);
+  return ubuf[0] | (static_cast<uint32_t>(ubuf[1]) << 8) |
+         (static_cast<uint32_t>(ubuf[2]) << 16) |
+         (static_cast<uint32_t>(ubuf[3]) << 24);
 }
 
 std::vector<absl::Status> ParseChildren(absl::Cord children) {
@@ -227,23 +228,10 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
-#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1910
-  // Abseil has a workaround for MSVC 2015 which prevents absl::Time
-  // from being is_trivially_copyable but it's still safe to be
-  // memcopied.
-#elif defined(__GNUG__) && __GNUC__ < 5
-  // GCC versions < 5 do not support std::is_trivially_copyable
-#else
-  static_assert(std::is_trivially_copyable<absl::Time>::value,
-                "absl::Time needs to be able to be memcopied");
-#endif
-  // This is required not to get uninitialized padding of absl::Time.
-  alignas(absl::Time) char buf[sizeof(time)] = {
-      0,
-  };
-  new (buf) absl::Time(time);
+  std::string time_str =
+      absl::FormatTime(absl::RFC3339_full, time, absl::UTCTimeZone());
   status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(absl::string_view(buf, sizeof(time))));
+                     absl::Cord(std::move(time_str)));
 }
 
 absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
@@ -252,14 +240,16 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
       status.GetPayload(GetStatusTimePropertyUrl(key));
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
+    absl::Time time;
     if (sv.has_value()) {
-      // copy the content before casting to avoid misaligned address access
-      alignas(absl::Time) char buf[sizeof(const absl::Time)];
-      memcpy(buf, sv->data(), sizeof(const absl::Time));
-      return *reinterpret_cast<const absl::Time*>(buf);
+      if (absl::ParseTime(absl::RFC3339_full, sv.value(), &time, nullptr)) {
+        return time;
+      }
     } else {
       std::string s = std::string(*p);
-      return *reinterpret_cast<const absl::Time*>(s.c_str());
+      if (absl::ParseTime(absl::RFC3339_full, s, &time, nullptr)) {
+        return time;
+      }
     }
   }
   return {};
@@ -327,11 +317,14 @@ std::string StatusToString(const absl::Status& status) {
                                    absl::CHexEscape(payload_view), "\""));
       } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
         type_url.remove_prefix(kTypeTimeTag.size());
-        // copy the content before casting to avoid misaligned address access
-        alignas(absl::Time) char buf[sizeof(const absl::Time)];
-        memcpy(buf, payload_view.data(), sizeof(const absl::Time));
-        absl::Time t = *reinterpret_cast<const absl::Time*>(buf);
-        kvs.push_back(absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
+        absl::Time t;
+        if (absl::ParseTime(absl::RFC3339_full, payload_view, &t, nullptr)) {
+          kvs.push_back(
+              absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
+        } else {
+          kvs.push_back(absl::StrCat(type_url, ":\"",
+                                     absl::CHexEscape(payload_view), "\""));
+        }
       } else {
         kvs.push_back(absl::StrCat(type_url, ":\"",
                                    absl::CHexEscape(payload_view), "\""));
@@ -361,7 +354,7 @@ namespace internal {
 
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
-  google_rpc_Status_set_code(msg, int32_t(status.code()));
+  google_rpc_Status_set_code(msg, static_cast<int32_t>(status.code()));
   // Protobuf string field requires to be utf-8 encoding but C++ string doesn't
   // this requirement so it can be a non utf-8 string. So it should be converted
   // to a percent-encoded string to keep it as a utf-8 string.
