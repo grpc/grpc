@@ -38,7 +38,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
-#include "hpack_constants.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
