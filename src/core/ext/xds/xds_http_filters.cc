@@ -29,10 +29,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
-#include "src/core/ext/xds/xds_http_stateful_session_filter.h"
 
 namespace grpc_core {
 
@@ -53,9 +51,9 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfig(
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
+XdsHttpRouterFilter::GenerateFilterConfig(XdsExtension extension,
+                                          upb_Arena* arena,
+                                          ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
@@ -64,7 +62,7 @@ XdsHttpRouterFilter::GenerateFilterConfig(
   }
   if (envoy_extensions_filters_http_router_v3_Router_parse(
           serialized_filter_config->data(), serialized_filter_config->size(),
-          context.arena) == nullptr) {
+          arena) == nullptr) {
     errors->AddError("could not parse router filter config");
     return absl::nullopt;
   }
@@ -73,8 +71,8 @@ XdsHttpRouterFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfigOverride(
-    const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    XdsExtension /*extension*/, upb_Arena* /*arena*/,
+    ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
   return absl::nullopt;
 }
@@ -88,9 +86,6 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
     RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
-    if (XdsHostOverrideEnabled()) {
-      RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-    }
   }
 }
 

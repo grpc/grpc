@@ -208,6 +208,10 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     const auto* typed_config =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(
             typed_extension_config);
+    if (typed_config == nullptr) {
+      errors->AddError("field not present");
+      return {};
+    }
     auto extension = ExtractXdsExtension(context, typed_config, errors);
     if (!extension.has_value()) return {};
     // Check for registered LB policy type.

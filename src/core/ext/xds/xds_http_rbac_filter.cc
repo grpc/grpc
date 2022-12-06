@@ -434,9 +434,9 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfig(
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
+XdsHttpRbacFilter::GenerateFilterConfig(XdsExtension extension,
+                                        upb_Arena* arena,
+                                        ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
@@ -445,7 +445,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(
   }
   auto* rbac = envoy_extensions_filters_http_rbac_v3_RBAC_parse(
       serialized_filter_config->data(), serialized_filter_config->size(),
-      context.arena);
+      arena);
   if (rbac == nullptr) {
     errors->AddError("could not parse HTTP RBAC filter config");
     return absl::nullopt;
@@ -455,8 +455,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
+    XdsExtension extension, upb_Arena* arena, ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
@@ -466,7 +465,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
   auto* rbac_per_route =
       envoy_extensions_filters_http_rbac_v3_RBACPerRoute_parse(
           serialized_filter_config->data(), serialized_filter_config->size(),
-          context.arena);
+          arena);
   if (rbac_per_route == nullptr) {
     errors->AddError("could not parse RBACPerRoute");
     return absl::nullopt;
