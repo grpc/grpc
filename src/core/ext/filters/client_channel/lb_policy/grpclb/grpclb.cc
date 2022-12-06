@@ -1581,7 +1581,8 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
                  Ref(DEBUG_LOCATION, "on_fallback_timer"))]() mutable {
               ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
-              self->work_serializer()->Run(
+              auto self_ptr = self.get();
+              self_ptr->work_serializer()->Run(
                   [self = std::move(self)]() { self->OnFallbackTimerLocked(); },
                   DEBUG_LOCATION);
             });
@@ -1692,7 +1693,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
                Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer"))]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
-            self->work_serializer()->Run(
+            auto self_ptr = self.get();
+            self_ptr->work_serializer()->Run(
                 [self = std::move(self)]() {
                   self->OnBalancerCallRetryTimerLocked();
                 },
