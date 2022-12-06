@@ -45,7 +45,6 @@
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -65,8 +64,8 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       tracer_(tracer),
       node_(node),
       symtab_(symtab),
-      user_agent_name_(user_agent_name),
-      user_agent_version_(user_agent_version) {}
+      user_agent_name_(std::move(user_agent_name)),
+      user_agent_version_(std::move(user_agent_version)) {}
 
 namespace {
 
