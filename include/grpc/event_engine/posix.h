@@ -34,7 +34,7 @@ namespace experimental {
 #ifdef GRPC_EVENT_ENGINE_POSIX
 
 /// This defines an EventEngine interface that all posix specific event engines
-/// must implement.
+/// may implement.
 class PosixEventEngine : public EventEngine {
   class PosixEventEngineEndpoint : public EventEngine::Endpoint {
    public:
