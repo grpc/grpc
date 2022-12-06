@@ -225,7 +225,7 @@ static grpc_byte_buffer* generate_handshaker_response(
   }
   size_t buf_len;
   char* buf = grpc_gcp_HandshakerResp_serialize(resp, arena.ptr(), &buf_len);
-  grpc_slice slice = gpr_slice_from_copied_buffer(buf, buf_len);
+  grpc_slice slice = grpc_slice_from_copied_buffer(buf, buf_len);
   if (type == INVALID) {
     grpc_slice bad_slice =
         grpc_slice_split_head(&slice, GRPC_SLICE_LENGTH(slice) - 1);
