@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -520,7 +521,10 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
           ->GetEventEngine()
           ->RunAfter(kChildRetentionInterval, [self = Ref(DEBUG_LOCATION,
                                                           "Timer")]() mutable {
-            self->child_priority_->priority_policy_->work_serializer()->Run(
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            auto self_ptr = self.get();
+            self_ptr->child_priority_->priority_policy_->work_serializer()->Run(
                 [self = std::move(self)]() { self->OnTimerLocked(); },
                 DEBUG_LOCATION);
           });
@@ -578,9 +582,12 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
           ->RunAfter(
               child_priority_->priority_policy_->child_failover_timeout_,
               [self = Ref(DEBUG_LOCATION, "Timer")]() mutable {
-                self->child_priority_->priority_policy_->work_serializer()->Run(
-                    [self = std::move(self)]() { self->OnTimerLocked(); },
-                    DEBUG_LOCATION);
+                ApplicationCallbackExecCtx callback_exec_ctx;
+                ExecCtx exec_ctx;
+                auto self_ptr = self.get();
+                self_ptr->child_priority_->priority_policy_->work_serializer()
+                    ->Run([self = std::move(self)]() { self->OnTimerLocked(); },
+                          DEBUG_LOCATION);
               });
 }
 
