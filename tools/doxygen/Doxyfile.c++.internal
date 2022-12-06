@@ -880,6 +880,7 @@ include/grpc++/support/time.h \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
+include/grpc/channel_credentials/google_default.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
@@ -1197,6 +1198,10 @@ src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+src/core/ext/filters/stateful_session/stateful_session_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/binder/client/binder_connector.cc \
 src/core/ext/transport/binder/client/binder_connector.h \
 src/core/ext/transport/binder/client/channel_create.cc \
