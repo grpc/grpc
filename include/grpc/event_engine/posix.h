@@ -43,16 +43,14 @@ class PosixEventEngine : public EventEngine {
 
     /// Shutdown the endpoint. After this function call its illegal to invoke
     /// any other methods on the endpoint.
-    /// \a release_fd - a pointer to hold the file descriptor associated with
-    /// the posix endpoint. If it is not nullptr, then the file descriptor is
-    /// not closed while the endpoint is shutdown. The pointer will be updated
-    /// to hold the endpoint's associated file descriptor.
-    /// \a on_release_cb - a callback to be invoked when the endpoint is
-    /// shutdown and the file descriptor is released. It should be invoked only
-    /// if release_fd is not nullptr.
+    /// \a on_release_fd - If specifed, the callback is invoked when the
+    /// endpoint is shutdown and the underlying file descriptor is released
+    /// instead of being closed. The callback will get the released file
+    /// descriptor as its argument if the release operation is successful.
+    /// Otherwise it would get an appropriate error status as its argument.
     virtual void Shutdown(
-        int* release_fd,
-        absl::AnyInvocable<void(absl::Status)> on_release_cb) = 0;
+        absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+            on_release_fd) = 0;
   };
 
   /// Creates a PosixEventEngineEndpoint from an fd which is already assumed to
@@ -79,7 +77,7 @@ class PosixEventEngine : public EventEngine {
     /// \a is_external - A boolean indicating whether the new client connection
     /// is accepted by an external listener_fd or by a listener_fd that is
     /// managed by the event engine listener.
-    /// \a memory_allocation - The callback may use the provided memory
+    /// \a memory_allocator - The callback may use the provided memory
     /// allocator to handle memory allocation operations.
     /// \a pending_data - If specified, it holds any pending data that may have
     /// already been read over the new client connection. Otherwise, it is
