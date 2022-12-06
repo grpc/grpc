@@ -4403,9 +4403,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_plugin",
+    srcs = [
+        "ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_resolver_dns_native",
+        "grpc_resolver_dns_selection",
+        "//:gpr",
+        "//:grpc_resolver_dns_ares",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/dns/native/dns_resolver.h",
     ],
     external_deps = [
         "absl/functional:bind_front",

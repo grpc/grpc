@@ -815,6 +815,8 @@ bool ShouldUseAres(const char* resolver_env) {
          gpr_stricmp(resolver_env, "ares") == 0;
 }
 
+}  // namespace
+
 bool UseAresDnsResolver() {
   static const bool result = []() {
     UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
@@ -825,13 +827,9 @@ bool UseAresDnsResolver() {
   return result;
 }
 
-}  // namespace
-
 void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
-  if (UseAresDnsResolver()) {
-    builder->resolver_registry()->RegisterResolverFactory(
-        std::make_unique<AresClientChannelDNSResolverFactory>());
-  }
+  builder->resolver_registry()->RegisterResolverFactory(
+      std::make_unique<AresClientChannelDNSResolverFactory>());
 }
 
 }  // namespace grpc_core
@@ -858,6 +856,7 @@ void grpc_resolver_dns_ares_shutdown() {
 #else /* GRPC_ARES == 1 */
 
 namespace grpc_core {
+bool UseAresDnsResolver() { return false; }
 void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
 }  // namespace grpc_core
 
