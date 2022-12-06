@@ -10,7 +10,6 @@ EXPORTS
     grpc_byte_buffer_reader_peek
     grpc_byte_buffer_reader_readall
     grpc_raw_byte_buffer_from_reader
-    grpc_google_default_credentials_create
     grpc_compression_algorithm_is_message
     grpc_compression_algorithm_is_stream
     grpc_compression_algorithm_parse
@@ -116,6 +115,7 @@ EXPORTS
     grpc_ssl_session_cache_destroy
     grpc_ssl_session_cache_create_channel_arg
     grpc_call_credentials_release
+    grpc_google_default_credentials_create
     grpc_set_ssl_roots_override_callback
     grpc_ssl_credentials_create
     grpc_ssl_credentials_create_ex

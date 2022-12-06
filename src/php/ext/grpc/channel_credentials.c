@@ -27,7 +27,6 @@
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
 
-#include <grpc/channel_credentials/google_default.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
