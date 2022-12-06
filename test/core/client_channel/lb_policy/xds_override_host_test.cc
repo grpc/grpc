@@ -27,6 +27,8 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::testing::UnorderedElementsAre;
+
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
   XdsOverrideHostTest()
@@ -141,8 +143,12 @@ TEST_F(XdsOverrideHostTest, OverrideHostChannelNotFound) {
   // Check that the host is overridden
   std::map<std::string, std::string> pick_arg{
       {std::string(kOverrideHostHeaderName), "no such host"}};
-  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
-  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+
+  std::unordered_set<absl::optional<std::string>> picks{
+      ExpectPickComplete(picker.get(), pick_arg),
+      ExpectPickComplete(picker.get(), pick_arg)};
+
+  ASSERT_THAT(picks, UnorderedElementsAre(kAddresses[0], kAddresses[1]));
 }
 }  // namespace
 }  // namespace testing
