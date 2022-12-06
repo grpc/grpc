@@ -1769,7 +1769,8 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper = std::make_unique<Helper>(Ref());
+  lb_policy_args.channel_control_helper =
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_glb_trace);
@@ -1835,7 +1836,6 @@ void GrpcLb::CacheDeletedSubchannelLocked(
   Timestamp deletion_time = Timestamp::Now() + subchannel_cache_interval_;
   cached_subchannels_[deletion_time].push_back(std::move(subchannel));
   if (!subchannel_cache_timer_handle_.has_value()) {
-    Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer").release();
     StartSubchannelCacheTimerLocked();
   }
 }
@@ -1844,11 +1844,16 @@ void GrpcLb::StartSubchannelCacheTimerLocked() {
   GPR_ASSERT(!cached_subchannels_.empty());
   subchannel_cache_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
-          cached_subchannels_.begin()->first - ExecCtx::Get()->Now(), [this] {
+          cached_subchannels_.begin()->first - Timestamp::Now(),
+          [self = static_cast<RefCountedPtr<GrpcLb>>(
+               Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer"))]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
-            work_serializer()->Run(
-                [this]() { GrpcLb::OnSubchannelCacheTimerLocked(); },
+            auto* self_ptr = self.get();
+            self_ptr->work_serializer()->Run(
+                [self = std::move(self)]() mutable {
+                  self->OnSubchannelCacheTimerLocked();
+                },
                 DEBUG_LOCATION);
           });
 }
@@ -1870,7 +1875,6 @@ void GrpcLb::OnSubchannelCacheTimerLocked() {
     }
     subchannel_cache_timer_handle_.reset();
   }
-  Unref(DEBUG_LOCATION, "OnSubchannelCacheTimer");
 }
 
 //
