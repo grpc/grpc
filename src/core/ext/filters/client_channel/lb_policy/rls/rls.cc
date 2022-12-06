@@ -1118,7 +1118,7 @@ RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
     : entry_(std::move(entry)) {
   backoff_timer_task_handle_ =
       entry_->lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
-          backoff_time - ExecCtx::Get()->Now(),
+          backoff_time - Timestamp::Now(),
           [self = Ref(DEBUG_LOCATION, "BackoffTimer")] {
             self->OnBackoffTimer();
           });
