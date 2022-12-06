@@ -280,12 +280,12 @@ class BasicMemoryQuota final
   // Data about current memory pressure.
   struct PressureInfo {
     // The current instantaneously measured memory pressure.
-    double instantaneous_pressure = 0.0;
+    double instantaneous_pressure;
     // A control value that can be used to scale buffer sizes up or down to
     // adjust memory pressure to our target set point.
-    double pressure_control_value = 0.0;
+    double pressure_control_value;
     // Maximum recommended individual allocation size.
-    size_t max_recommended_allocation_size = 0;
+    size_t max_recommended_allocation_size;
   };
 
   explicit BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
@@ -460,7 +460,6 @@ class MemoryOwner final : public MemoryAllocator {
 
   // Instantaneous memory pressure in the underlying quota.
   BasicMemoryQuota::PressureInfo GetPressureInfo() const {
-    if (!is_valid()) return BasicMemoryQuota::PressureInfo{};
     return impl()->GetPressureInfo();
   }
 
