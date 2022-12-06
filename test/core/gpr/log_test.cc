@@ -37,7 +37,7 @@ static void test_should_log(gpr_log_func_args* /*args*/) {
 }
 
 static void test_should_not_log(gpr_log_func_args* /*args*/) {
-  GPR_ASSERT(false);
+  grpc_core::Crash("unreachable");
 }
 
 #define test_log_function_reached(SEVERITY)     \

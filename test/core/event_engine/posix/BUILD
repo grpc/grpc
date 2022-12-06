@@ -206,6 +206,7 @@ grpc_cc_test(
     uses_event_engine = False,
     deps = [
         "//src/core:event_engine_common",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:posix_event_engine_listener_utils",
         "//src/core:posix_event_engine_tcp_socket_utils",
         "//src/core:socket_mutator",
@@ -224,6 +225,7 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//src/core:channel_args",
         "//src/core:event_engine_poller",
         "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_closure",

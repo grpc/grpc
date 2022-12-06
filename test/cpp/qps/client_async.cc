@@ -107,7 +107,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         next_state_ = State::INVALID;
         return false;
       default:
-        GPR_ASSERT(false);
+        grpc_core::Crash("unreachable");
         return false;
     }
   }
@@ -421,7 +421,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           return false;
           break;
         default:
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
           return false;
       }
     }
@@ -577,7 +577,7 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
         default:
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
           return false;
       }
     }
@@ -698,7 +698,7 @@ class ClientRpcContextStreamingFromServerImpl : public ClientRpcContext {
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
         default:
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
           return false;
       }
     }
@@ -842,7 +842,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           next_state_ = State::INVALID;
           return false;
         default:
-          GPR_ASSERT(false);
+          grpc_core::Crash("unreachable");
           return false;
       }
     }

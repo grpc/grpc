@@ -38,6 +38,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -64,6 +65,8 @@
 #endif
 
 namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 void* Tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -149,7 +152,7 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 
   void ReportResult(grpc_core::Resolver::Result /*result*/) override {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 
  private:
@@ -167,8 +170,9 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
-          client_target.c_str(), grpc_core::ChannelArgs(), args->pollset_set,
-          args->lock,
+          client_target.c_str(),
+          grpc_core::ChannelArgs().SetObject(GetDefaultEventEngine()),
+          args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();

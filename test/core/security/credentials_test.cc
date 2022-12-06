@@ -33,6 +33,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 
+#include <grpc/channel_credentials/google_default.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -78,9 +79,6 @@ using internal::grpc_flush_cached_google_default_credentials;
 using internal::set_gce_tenancy_checker_for_testing;
 
 namespace {
-
-auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
 /* -- Constants. -- */
 
@@ -537,11 +535,11 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
     void check_peer(tsi_peer, grpc_endpoint*, const ChannelArgs&,
                     RefCountedPtr<grpc_auth_context>*, grpc_closure*) override {
-      GPR_ASSERT(false);
+      grpc_core::Crash("unreachable");
     }
 
     void cancel_check_peer(grpc_closure*, grpc_error_handle) override {
-      GPR_ASSERT(false);
+      grpc_core::Crash("unreachable");
     }
 
     int cmp(const grpc_security_connector*) const override {
@@ -556,7 +554,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
     void add_handshakers(const ChannelArgs&, grpc_pollset_set*,
                          HandshakeManager*) override {
-      GPR_ASSERT(false);
+      grpc_core::Crash("unreachable");
     }
   };
 
@@ -584,7 +582,9 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   grpc_error_handle expected_error_;
   std::string expected_;
-  ScopedArenaPtr arena_ = MakeScopedArena(1024, g_memory_allocator);
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
   grpc_metadata_batch md_{arena_.get()};
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
   grpc_polling_entity pollent_;

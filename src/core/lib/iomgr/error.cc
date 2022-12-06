@@ -70,8 +70,9 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
 }
 
 #ifdef GPR_WINDOWS
+// TODO(veblush): lift out of iomgr for use in the WindowsEventEngine
 absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
-                            const char* call_name) {
+                            absl::string_view call_name) {
   char* utf8_message = gpr_format_message(err);
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnavailable, "WSA Error", location, {});

@@ -32,6 +32,7 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/channel_credentials/google_default.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
@@ -157,6 +158,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.h" role="src" />
@@ -215,10 +217,13 @@
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
@@ -998,6 +1003,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
@@ -1581,6 +1588,8 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />

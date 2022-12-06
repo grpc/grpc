@@ -64,7 +64,7 @@ class ClientRequestCreator {
     // this template must be specialized
     // fail with an assertion rather than a compile-time
     // check since these only happen at the beginning anyway
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 };
 
@@ -374,7 +374,7 @@ class Client {
                                                 num_threads);
         break;
       default:
-        GPR_ASSERT(false);
+        grpc_core::Crash("unreachable");
     }
 
     // Set closed_loop_ based on whether or not random_dist is set

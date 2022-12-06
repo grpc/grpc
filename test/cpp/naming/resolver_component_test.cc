@@ -47,6 +47,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -78,6 +79,7 @@
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using std::vector;
 using testing::UnorderedElementsAreArray;
 
@@ -624,6 +626,7 @@ void RunResolvesRelevantRecordsTest(
   } else if (absl::GetFlag(FLAGS_enable_txt_queries) != "False") {
     grpc_core::Crash("Invalid value for --enable_txt_queries.");
   }
+  resolver_args = resolver_args.SetObject(GetDefaultEventEngine());
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(

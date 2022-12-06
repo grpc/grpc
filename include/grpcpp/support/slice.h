@@ -90,8 +90,7 @@ class Slice final {
   /// different (e.g., if data is part of a larger structure that must be
   /// destroyed when the data is no longer needed)
   Slice(void* buf, size_t len, void (*destroy)(void*), void* user_data)
-      : slice_(g_core_codegen_interface->grpc_slice_new_with_user_data(
-            buf, len, destroy, user_data)) {}
+      : slice_(grpc_slice_new_with_user_data(buf, len, destroy, user_data)) {}
 
   /// Specialization of above for common case where buf == user_data
   Slice(void* buf, size_t len, void (*destroy)(void*))
@@ -99,8 +98,7 @@ class Slice final {
 
   /// Similar to the above but has a destroy that also takes slice length
   Slice(void* buf, size_t len, void (*destroy)(void*, size_t))
-      : slice_(g_core_codegen_interface->grpc_slice_new_with_len(buf, len,
-                                                                 destroy)) {}
+      : slice_(grpc_slice_new_with_len(buf, len, destroy)) {}
 
   /// Byte size.
   size_t size() const { return GRPC_SLICE_LENGTH(slice_); }

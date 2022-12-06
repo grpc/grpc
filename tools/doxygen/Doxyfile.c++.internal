@@ -880,6 +880,7 @@ include/grpc++/support/time.h \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
+include/grpc/channel_credentials/google_default.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
@@ -1019,6 +1020,7 @@ include/grpcpp/impl/intercepted_channel.h \
 include/grpcpp/impl/interceptor_common.h \
 include/grpcpp/impl/metadata_map.h \
 include/grpcpp/impl/method_handler_impl.h \
+include/grpcpp/impl/proto_utils.h \
 include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
 include/grpcpp/impl/serialization_traits.h \
@@ -1134,6 +1136,7 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
@@ -1192,10 +1195,13 @@ src/core/ext/filters/rbac/rbac_filter.cc \
 src/core/ext/filters/rbac/rbac_filter.h \
 src/core/ext/filters/rbac/rbac_service_config_parser.cc \
 src/core/ext/filters/rbac/rbac_service_config_parser.h \
-src/core/ext/filters/server_config_selector/server_config_selector.cc \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+src/core/ext/filters/stateful_session/stateful_session_filter.h \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/binder/client/binder_connector.cc \
 src/core/ext/transport/binder/client/binder_connector.h \
 src/core/ext/transport/binder/client/channel_create.cc \
@@ -2013,6 +2019,8 @@ src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
+src/core/lib/event_engine/tcp_socket_utils.cc \
+src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_pool.cc \
 src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/time_util.cc \
@@ -2596,6 +2604,8 @@ src/core/tsi/ssl/session_cache/ssl_session_cache.h \
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
+src/core/tsi/ssl_transport_security_utils.cc \
+src/core/tsi/ssl_transport_security_utils.h \
 src/core/tsi/ssl_types.h \
 src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \

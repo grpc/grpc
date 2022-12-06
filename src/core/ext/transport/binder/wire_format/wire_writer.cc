@@ -84,9 +84,7 @@ absl::Status WriteTrailingMetadata(const Transaction& tx,
 }
 
 WireWriterImpl::WireWriterImpl(std::unique_ptr<Binder> binder)
-    : binder_(std::move(binder)),
-      combiner_(grpc_combiner_create(
-          grpc_event_engine::experimental::GetDefaultEventEngine())) {}
+    : binder_(std::move(binder)), combiner_(grpc_combiner_create()) {}
 
 WireWriterImpl::~WireWriterImpl() {
   GRPC_COMBINER_UNREF(combiner_, "wire_writer_impl");

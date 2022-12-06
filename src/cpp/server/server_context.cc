@@ -139,7 +139,7 @@ class ServerContextBase::CompletionOp final
   // RPC. This should set hijacking state for each of the ops.
   void SetHijackingState() override {
     /* Servers don't allow hijacking */
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 
   /* Should be called after interceptors are done running */

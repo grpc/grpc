@@ -880,6 +880,7 @@ include/grpc++/support/time.h \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
+include/grpc/channel_credentials/google_default.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
@@ -1019,6 +1020,7 @@ include/grpcpp/impl/intercepted_channel.h \
 include/grpcpp/impl/interceptor_common.h \
 include/grpcpp/impl/metadata_map.h \
 include/grpcpp/impl/method_handler_impl.h \
+include/grpcpp/impl/proto_utils.h \
 include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
 include/grpcpp/impl/serialization_traits.h \
