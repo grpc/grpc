@@ -24,7 +24,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/config_protobuf.h>
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/iomgr/error.h"
