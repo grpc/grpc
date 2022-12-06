@@ -4236,7 +4236,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "error",
         "grpc_outlier_detection_header",
         "iomgr_fwd",
         "json",
@@ -4249,6 +4248,7 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",

@@ -52,7 +52,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
@@ -781,7 +781,10 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
   }
   timer_handle_ = parent_->channel_control_helper()->GetEventEngine()->RunAfter(
       interval, [self = Ref(DEBUG_LOCATION, "EjectionTimer")]() mutable {
-        self->parent_->work_serializer()->Run(
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        auto self_ptr = self.get();
+        self_ptr->parent_->work_serializer()->Run(
             [self = std::move(self)]() { self->OnTimerLocked(); },
             DEBUG_LOCATION);
       });
