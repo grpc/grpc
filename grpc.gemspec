@@ -903,6 +903,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_common_types.h )
   s.files += %w( src/core/ext/xds/xds_endpoint.cc )
   s.files += %w( src/core/ext/xds/xds_endpoint.h )
+  s.files += %w( src/core/ext/xds/xds_health_status.cc )
+  s.files += %w( src/core/ext/xds/xds_health_status.h )
   s.files += %w( src/core/ext/xds/xds_http_fault_filter.cc )
   s.files += %w( src/core/ext/xds/xds_http_fault_filter.h )
   s.files += %w( src/core/ext/xds/xds_http_filters.cc )
