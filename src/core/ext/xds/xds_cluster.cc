@@ -74,6 +74,15 @@ bool XdsCustomLbPolicyEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(eostroukhov): Remove once this feature is no longer experimental.
+bool XdsHostOverrideEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsClusterResource
 //

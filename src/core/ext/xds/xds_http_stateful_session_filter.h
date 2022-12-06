@@ -1,5 +1,5 @@
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
+#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H
+#define GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,7 +33,7 @@
 
 namespace grpc_core {
 
-class XdsHttpFaultFilter : public XdsHttpFilterImpl {
+class XdsHttpStatefulSessionFilter : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
@@ -55,4 +55,4 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
+#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H
