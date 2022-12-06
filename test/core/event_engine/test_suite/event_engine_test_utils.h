@@ -27,7 +27,6 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"

@@ -49,6 +49,7 @@
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
+#include "test/core/event_engine/test_utils.h"
 #include "test/core/util/port.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);

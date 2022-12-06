@@ -61,7 +61,8 @@ TEST_F(WindowsEventEngineClientTest, NoOpCommunication) {
       [_ = NotifyOnDelete(&signal)](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
         ASSERT_FALSE(endpoint.ok());
-        ASSERT_EQ(endpoint.status().code(), absl::StatusCode::kDeadlineExceeded);
+        ASSERT_EQ(endpoint.status().code(),
+                  absl::StatusCode::kDeadlineExceeded);
       };
   auto addr = URIToResolvedAddress("ipv4:/127.0.0.1:12345");
   ChannelArgsEndpointConfig cfg;

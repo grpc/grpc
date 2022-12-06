@@ -15,16 +15,26 @@
 
 #include "test/core/event_engine/test_utils.h"
 
+#include <stdlib.h>
+#include <sys/socket.h>
+
+#include <algorithm>
 #include <random>
 #include <string>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_event_engine {
 namespace experimental {

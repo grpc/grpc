@@ -20,15 +20,32 @@ grpc_package(name = "test/core/event_engine/test_suite")
 
 COMMON_HEADERS = [
     "event_engine_test.h",
-    "event_engine_test_utils.h",
 ]
+
+grpc_cc_library(
+    name = "test_suite_utils",
+    testonly = True,
+    srcs = ["event_engine_test_utils.cc"],
+    hdrs = ["event_engine_test_utils.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:grpc_base",
+        "//test/core/event_engine:test_utils",
+    ],
+)
 
 grpc_cc_library(
     name = "timer",
     testonly = True,
     srcs = ["timer_test.cc"],
     hdrs = COMMON_HEADERS,
-    deps = [":conformance_test_base_lib"],
+    deps = [
+        "conformance_test_base_lib",
+        "//test/core/event_engine:test_utils",
+    ],
     alwayslink = 1,
 )
 
@@ -37,7 +54,10 @@ grpc_cc_library(
     testonly = True,
     srcs = ["dns_test.cc"],
     hdrs = COMMON_HEADERS,
-    deps = [":conformance_test_base_lib"],
+    deps = [
+        "conformance_test_base_lib",
+        "//test/core/event_engine:test_utils",
+    ],
     alwayslink = 1,
 )
 
@@ -47,8 +67,10 @@ grpc_cc_library(
     srcs = ["client_test.cc"],
     hdrs = COMMON_HEADERS,
     deps = [
-        ":conformance_test_base_lib",
+        "conformance_test_base_lib",
+        "test_suite_utils",
         "//src/core:channel_args",
+        "//test/core/event_engine:test_utils",
     ],
     alwayslink = 1,
 )
@@ -59,8 +81,10 @@ grpc_cc_library(
     srcs = ["server_test.cc"],
     hdrs = COMMON_HEADERS,
     deps = [
-        ":conformance_test_base_lib",
+        "conformance_test_base_lib",
+        "test_suite_utils",
         "//src/core:channel_args",
+        "//test/core/event_engine:test_utils",
     ],
     alwayslink = 1,
 )
@@ -70,10 +94,10 @@ grpc_cc_library(
     testonly = 1,
     hdrs = COMMON_HEADERS,
     deps = [
-        ":client",
-        ":dns",
-        ":server",
-        ":timer",
+        "client",
+        "dns",
+        "server",
+        "timer",
     ],
     alwayslink = 1,
 )
@@ -89,10 +113,11 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
-        ":client",
-        ":oracle_event_engine_posix",
-        ":server",
+        "client",
+        "oracle_event_engine_posix",
+        "server",
         "//src/core:posix_event_engine",
+        "//test/core/event_engine:test_utils",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
@@ -108,6 +133,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:windows_event_engine",
+        "//test/core/event_engine:test_utils",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
@@ -139,8 +165,10 @@ grpc_cc_library(
     ],
     visibility = ["//test:__subpackages__"],
     deps = [
-        ":conformance_test_base_lib",
+        "conformance_test_base_lib",
+        "test_suite_utils",
         "//:grpc",
+        "//test/core/event_engine:test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -161,9 +189,9 @@ grpc_cc_test(
     # engine design which doesn't rely on poll is required.
     uses_polling = True,
     deps = [
-        ":client",
-        ":oracle_event_engine_posix",
-        ":server",
+        "client",
+        "oracle_event_engine_posix",
+        "server",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -174,13 +202,13 @@ grpc_cc_library(
     testonly = True,
     srcs = [
         "event_engine_test.cc",
-        "event_engine_test_utils.cc",
     ],
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
     visibility = ["@grpc:public"],
     deps = [
         "//:grpc",
+        "//test/core/event_engine:test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )

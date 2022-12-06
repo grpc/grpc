@@ -72,8 +72,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr_platform",
-        "//:grpc",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
     ],
 )
 
@@ -137,11 +137,14 @@ grpc_cc_library(
     hdrs = ["test_utils.h"],
     external_deps = [
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:uri_parser",
+        "//src/core:resolved_address",
     ],
 )
 

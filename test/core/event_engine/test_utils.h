@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
