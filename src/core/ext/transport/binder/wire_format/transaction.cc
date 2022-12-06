@@ -28,7 +28,6 @@ ABSL_CONST_INIT const int kFlagExpectSingleMessage = 0x10;
 ABSL_CONST_INIT const int kFlagStatusDescription = 0x20;
 ABSL_CONST_INIT const int kFlagMessageDataIsParcelable = 0x40;
 ABSL_CONST_INIT const int kFlagMessageDataIsPartial = 0x80;
-
 ABSL_CONST_INIT const int kStatusCodeShift = 16;
 
 }  // namespace grpc_binder
