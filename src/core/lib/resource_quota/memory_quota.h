@@ -29,6 +29,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -387,6 +388,7 @@ class BasicMemoryQuota final
   memory_quota_detail::PressureTracker pressure_tracker_;
   // The name of this quota - used for debugging/tracing/etc..
   std::string name_;
+  absl::BitGen gen_;
 };
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an

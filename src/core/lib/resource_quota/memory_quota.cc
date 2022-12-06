@@ -436,7 +436,7 @@ void BasicMemoryQuota::Take(size_t amount) {
 
   if (IsFreeLargeAllocatorEnabled()) {
     GrpcMemoryAllocatorImpl* chosen_allocator = nullptr;
-    int shard_idx = rand() % big_allocators_.shards.size();
+    auto shard_idx = absl::Uniform(gen_, 0u, big_allocators_.shards.size());
     auto& shard = big_allocators_.shards[shard_idx];
 
     if (shard.shard_mu.TryLock()) {
@@ -446,7 +446,13 @@ void BasicMemoryQuota::Take(size_t amount) {
       shard.shard_mu.Unlock();
     }
 
-    if (chosen_allocator != nullptr) chosen_allocator->ReturnFree();
+    if (chosen_allocator != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+        gpr_log(GPR_INFO, "Returning bytes from big allocator %p",
+                chosen_allocator);
+      }
+      chosen_allocator->ReturnFree();
+    }
   }
 }
 

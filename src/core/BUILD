@@ -947,6 +947,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
+        "absl/random",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
