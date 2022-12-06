@@ -113,7 +113,7 @@ class WindowsEventEngine : public EventEngine,
 
   std::shared_ptr<ThreadPool> executor_;
   IOCP iocp_;
-  posix_engine::TimerManager timer_manager_;
+  TimerManager timer_manager_;
 };
 
 }  // namespace experimental

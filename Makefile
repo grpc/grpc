@@ -889,7 +889,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -994,6 +993,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
@@ -1029,6 +1029,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -1690,7 +1692,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
@@ -2156,7 +2157,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
@@ -2904,12 +2904,15 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc: $(OPENSSL_D
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_filter.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/alpn/alpn.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c: $(OPENSSL_DEP)
