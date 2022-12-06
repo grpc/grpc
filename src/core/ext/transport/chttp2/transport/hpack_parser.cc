@@ -1200,7 +1200,7 @@ class HPackParser::Parser {
     }
 
     template <typename Key, typename Value>
-    void Encode(Key key, const Value& value) {
+    void Encode(Key, const Value& value) {
       absl::StrAppend(&summary_, " ", Key::key(), ":",
                       hpack_constants::SizeForEntry(Key::key().size(),
                                                     Key::Encode(value).size()),
