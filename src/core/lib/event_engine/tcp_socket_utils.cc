@@ -93,9 +93,7 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   std::string path;
   if (abstract) {
     scheme = "unix-abstract";
-    if (resolved_addr->size() < sizeof(unix_addr->sun_family) + 1) {
-      path = "";
-    } else {
+    if (resolved_addr->size() >= sizeof(unix_addr->sun_family) + 1) {
       path = std::string(
           unix_addr->sun_path + 1,
           resolved_addr->size() - sizeof(unix_addr->sun_family) - 1);
@@ -348,17 +346,17 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
   if (resolved_address.size() == 0) {
     return absl::InvalidArgumentError("Empty address");
   }
-  EventEngine::ResolvedAddress resolved_addr = resolved_address;
+  EventEngine::ResolvedAddress addr = resolved_address;
   EventEngine::ResolvedAddress addr_normalized;
-  if (ResolvedAddressIsV4Mapped(resolved_addr, &addr_normalized)) {
-    resolved_addr = addr_normalized;
+  if (ResolvedAddressIsV4Mapped(addr, &addr_normalized)) {
+    addr = addr_normalized;
   }
-  auto scheme = GetScheme(resolved_addr);
+  auto scheme = GetScheme(addr);
   GRPC_RETURN_IF_ERROR(scheme.status());
   if (*scheme == "unix") {
-    return ResolvedAddrToUriUnixIfPossible(&resolved_addr);
+    return ResolvedAddrToUriUnixIfPossible(&addr);
   }
-  auto path = ResolvedAddressToString(resolved_addr);
+  auto path = ResolvedAddressToString(addr);
   GRPC_RETURN_IF_ERROR(path.status());
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Create(*scheme, /*authority=*/"", std::move(path.value()),
