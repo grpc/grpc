@@ -2389,8 +2389,6 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
       error = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
                                             GPR_ARRAY_SIZE(errors));
     }
-    for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
-    }
 
     if (t->initial_window_update != 0) {
       if (t->initial_window_update > 0) {
