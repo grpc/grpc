@@ -1437,10 +1437,6 @@ void RlsLb::Cache::Shutdown() {
 }
 
 void RlsLb::Cache::OnCleanupTimer() {
-  {
-    MutexLock lock(&lb_policy_->mu_);
-    cleanup_timer_handle_.reset();
-  }
   lb_policy_->work_serializer()->Run(
       [this]() {
         RefCountedPtr<RlsLb> lb_policy(lb_policy_);
@@ -1448,6 +1444,8 @@ void RlsLb::Cache::OnCleanupTimer() {
           gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired", lb_policy_);
         }
         MutexLock lock(&lb_policy->mu_);
+        if (!cleanup_timer_handle_.has_value()) return;
+        cleanup_timer_handle_.reset();
         if (lb_policy->is_shutdown_) return;
         for (auto it = map_.begin(); it != map_.end();) {
           if (GPR_UNLIKELY(it->second->ShouldRemove() &&
