@@ -180,7 +180,10 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
-  std::unordered_map<std::string, AddressMapEntry> subchannel_by_address_map_;
+
+  absl::Mutex subchannel_by_address_map_mu_;
+  std::unordered_map<std::string, AddressMapEntry> subchannel_by_address_map_
+      ABSL_GUARDED_BY(subchannel_by_address_map_mu_);
 };
 
 //
@@ -281,6 +284,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
       }
     }
   } else {
+    absl::MutexLock lock(&subchannel_by_address_map_mu_);
     subchannel_by_address_map_.clear();
   }
   // Update child policy.
@@ -340,6 +344,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
 
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannelByAddress(
     absl::string_view address) {
+  absl::MutexLock lock(&subchannel_by_address_map_mu_);
   std::string key{address};
   auto subchannel_record = subchannel_by_address_map_.find(key);
   if (subchannel_record == subchannel_by_address_map_.end()) {
@@ -362,6 +367,7 @@ RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannelByAddress(
 void XdsOverrideHostLb::RegisterSubchannel(
     const ServerAddress& address,
     RefCountedPtr<SubchannelInterface> subchannel) {
+  absl::MutexLock lock(&subchannel_by_address_map_mu_);
   auto key = MakeKeyForAddress(address);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO,
