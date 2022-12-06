@@ -16,7 +16,6 @@
 #include "test/core/event_engine/test_utils.h"
 
 #include <stdlib.h>
-#include <sys/socket.h>
 
 #include <algorithm>
 #include <random>

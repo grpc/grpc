@@ -118,7 +118,7 @@ grpc_cc_test(
         "server",
         "//src/core:posix_event_engine",
         "//test/core/event_engine:test_utils",
-        "//test/core/event_engine/test_suite:timer",
+        "timer",
     ],
 )
 
@@ -134,7 +134,7 @@ grpc_cc_test(
     deps = [
         "//src/core:windows_event_engine",
         "//test/core/event_engine:test_utils",
-        "//test/core/event_engine/test_suite:timer",
+        "timer",
     ],
 )
 
@@ -148,7 +148,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/test_suite:timer",
+        "timer",
     ],
 )
 
