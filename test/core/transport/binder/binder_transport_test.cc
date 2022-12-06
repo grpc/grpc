@@ -82,7 +82,12 @@ MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
     }
   }
   if (flag & kFlagMessageData) {
-    if (arg->GetMessageData() != message_data) return false;
+    if (arg->GetMessageData() != message_data) {
+      printf("MESSAGE NOT EQUIVALENT: %s %s\n",
+             std::string(arg->GetMessageData()).c_str(),
+             std::string(message_data).c_str());
+      return false;
+    }
   }
   return true;
 }
