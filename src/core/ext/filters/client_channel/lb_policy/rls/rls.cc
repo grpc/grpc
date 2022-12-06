@@ -1146,7 +1146,6 @@ void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer() {
       [self = Ref(DEBUG_LOCATION, "BackoffTimer-WorkSerializer")]() {
         {
           MutexLock lock(&self->entry_->lb_policy_->mu_);
-          self->backoff_timer_task_handle_.reset();
           if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
             gpr_log(GPR_INFO,
                     "[rlslb %p] cache entry=%p %s, backoff timer fired",
@@ -1155,6 +1154,9 @@ void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer() {
                         ? "(shut down)"
                         : self->entry_->lru_iterator_->ToString().c_str());
           }
+          // Skip the update if Orphaned
+          if (!self->backoff_timer_task_handle_.has_value()) return;
+          self->backoff_timer_task_handle_.reset();
         }
         // The pick was in backoff state and there could be a pick queued if
         // wait_for_ready is true. We'll update the picker for that case.
