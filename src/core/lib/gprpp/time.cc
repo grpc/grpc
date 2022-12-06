@@ -24,7 +24,7 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/no_destruct.h"
 

@@ -23,7 +23,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/gprpp/sync.h"
