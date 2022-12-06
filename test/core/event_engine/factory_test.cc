@@ -14,7 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <gtest/gtest.h>
+#include <memory>
+
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -33,14 +35,14 @@ using ::grpc_event_engine::experimental::SetEventEngineFactory;
 class EventEngineFactoryTest : public testing::Test {
  public:
   EventEngineFactoryTest() = default;
-  ~EventEngineFactoryTest() { EventEngineFactoryReset(); }
+  ~EventEngineFactoryTest() override { EventEngineFactoryReset(); }
 };
 
 TEST_F(EventEngineFactoryTest, CustomFactoryIsUsed) {
   int counter{0};
   SetEventEngineFactory([&counter] {
     ++counter;
-    return absl::make_unique<AbortingEventEngine>();
+    return std::make_unique<AbortingEventEngine>();
   });
   auto ee1 = GetDefaultEventEngine();
   ASSERT_EQ(counter, 1);
@@ -50,13 +52,11 @@ TEST_F(EventEngineFactoryTest, CustomFactoryIsUsed) {
 }
 
 TEST_F(EventEngineFactoryTest, FactoryResetWorks) {
-  // eliminate a global default if one has been created already.
-  EventEngineFactoryReset();
   int counter{0};
   SetEventEngineFactory([&counter]() -> std::unique_ptr<EventEngine> {
-    // called at most twice;
+    // this factory should only be used twice;
     EXPECT_LE(++counter, 2);
-    return absl::make_unique<AbortingEventEngine>();
+    return std::make_unique<AbortingEventEngine>();
   });
   auto custom_ee = GetDefaultEventEngine();
   ASSERT_EQ(counter, 1);

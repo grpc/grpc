@@ -23,7 +23,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -32,10 +31,12 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -44,10 +45,6 @@
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 struct TestInput {
   const char* input;
@@ -63,7 +60,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
  public:
   ParseTest() {
     grpc_init();
-    parser_ = absl::make_unique<grpc_core::HPackParser>();
+    parser_ = std::make_unique<grpc_core::HPackParser>();
   }
 
   ~ParseTest() override {
@@ -86,7 +83,11 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   void TestVector(grpc_slice_split_mode mode, const char* hexstring,
                   std::string expect) {
-    auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+    grpc_core::MemoryAllocator memory_allocator =
+        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                       ->memory_quota()
+                                       ->CreateMemoryAllocator("test"));
+    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
     grpc_core::ExecCtx exec_ctx;
     grpc_slice input = parse_hexstring(hexstring);
     grpc_slice* slices;
@@ -109,7 +110,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
       auto err = parser_->Parse(slices[i], i == nslices - 1);
       if (!err.ok()) {
         gpr_log(GPR_ERROR, "Unexpected parse error: %s",
-                grpc_error_std_string(err).c_str());
+                grpc_core::StatusToString(err).c_str());
         abort();
       }
     }

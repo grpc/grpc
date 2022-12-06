@@ -23,15 +23,16 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <random>
+#include <string>
+#include <vector>
 
-#include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
-#include "absl/memory/memory.h"
-
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -311,7 +312,7 @@ std::string RandomString(size_t length) {
   std::string str;
   std::random_device r;
   for (size_t i = 0; i < length; ++i) {
-    str.push_back(char(r()));
+    str.push_back(static_cast<char>(r()));
   }
   return str;
 }
@@ -359,7 +360,7 @@ size_t SumSlice(const Slice& slice) {
 }
 
 TEST(SliceTest, ExternalAsOwned) {
-  auto external_string = absl::make_unique<std::string>(RandomString(1024));
+  auto external_string = std::make_unique<std::string>(RandomString(1024));
   Slice slice = Slice::FromExternalString(*external_string);
   const auto initial_sum = SumSlice(slice);
   Slice owned = slice.AsOwned();

@@ -18,28 +18,46 @@
 
 #include <string.h>
 
-#include <gmock/gmock.h>
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
+
 #include <gtest/gtest.h>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
@@ -145,7 +163,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
   GPR_ASSERT(error.ok());
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
-          grpc_error_std_string(error).c_str());
+          grpc_core::StatusToString(error).c_str());
   GPR_ASSERT(response.status == 200);
   GPR_ASSERT(response.body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
@@ -157,7 +175,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
-          grpc_error_std_string(error).c_str());
+          grpc_core::StatusToString(error).c_str());
   GPR_ASSERT(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });

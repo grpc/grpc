@@ -23,7 +23,6 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -114,8 +113,7 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle /*why*/) {
       // the necessary clean up.
       if (on_handshake_done_ != nullptr) {
         CleanupArgsForFailureLocked();
-        FinishLocked(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
+        FinishLocked(GRPC_ERROR_CREATE("tcp handshaker shutdown"));
       }
     }
   }
@@ -134,8 +132,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
     MutexLock lock(&mu_);
-    FinishLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Resolved address in invalid format"));
+    FinishLocked(GRPC_ERROR_CREATE("Resolved address in invalid format"));
     return;
   }
   bind_endpoint_to_pollset_ =
@@ -169,7 +166,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
     MutexLock lock(&self->mu_);
     if (!error.ok() || self->shutdown_) {
       if (error.ok()) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
+        error = GRPC_ERROR_CREATE("tcp handshaker shutdown");
       }
       if (self->endpoint_to_destroy_ != nullptr) {
         grpc_endpoint_shutdown(self->endpoint_to_destroy_, error);
@@ -233,6 +230,9 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
     handshake_mgr->Add(
         MakeRefCounted<TCPConnectHandshaker>(interested_parties));
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kTCPConnectHandshakers;
+  }
   ~TCPConnectHandshakerFactory() override = default;
 };
 
@@ -240,8 +240,7 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
 
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<TCPConnectHandshakerFactory>());
+      HANDSHAKER_CLIENT, std::make_unique<TCPConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

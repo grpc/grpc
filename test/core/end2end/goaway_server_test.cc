@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -185,9 +184,9 @@ static grpc_ares_request* my_dns_lookup_ares(
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
+    error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
-    *addresses = absl::make_unique<grpc_core::ServerAddressList>();
+    *addresses = std::make_unique<grpc_core::ServerAddressList>();
     grpc_sockaddr_in sa;
     memset(&sa, 0, sizeof(sa));
     sa.sin_family = GRPC_AF_INET;
@@ -216,7 +215,7 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   grpc_init();
   grpc_core::ResetDNSResolver(
-      absl::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
+      std::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
   iomgr_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   iomgr_cancel_ares_request = grpc_cancel_ares_request;
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;

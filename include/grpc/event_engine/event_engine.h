@@ -400,7 +400,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
-  /// run. Unilke the overloaded \a Closure alternative, the absl::AnyInvocable
+  /// run. Unlike the overloaded \a Closure alternative, the absl::AnyInvocable
   /// version's \a closure will be deleted by the EventEngine after the closure
   /// has been run, or upon cancellation.
   ///
@@ -414,12 +414,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// If the associated closure has already been scheduled to run, it will not
   /// be cancelled, and this function will return false.
   ///
-  /// If the associated callback has not been scheduled to run, it will be
+  /// If the associated closure has not been scheduled to run, it will be
   /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
   /// be executed. In this case, Cancel will return true.
   ///
   /// Implementation note: closures should be destroyed in a timely manner after
-  /// execution or cancelliation (milliseconds), since any state bound to the
+  /// execution or cancellation (milliseconds), since any state bound to the
   /// closure may need to be destroyed for things to progress (e.g., if a
   /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
@@ -427,9 +427,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
 /// Replace gRPC's default EventEngine factory.
 ///
-/// Applications may call \a SetEventEngineFactory time to replace the default
-/// factory used within gRPC. EventEngines will be created when necessary, when
-/// they are otherwise not provided by the application.
+/// Applications may call \a SetEventEngineFactory at any time to replace the
+/// default factory used within gRPC. EventEngines will be created when
+/// necessary, when they are otherwise not provided by the application.
 ///
 /// To be certain that none of the gRPC-provided built-in EventEngines are
 /// created, applications must set a custom EventEngine factory method *before*
@@ -437,14 +437,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 void SetEventEngineFactory(
     absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
 
-/// Revert to using gRPC's default EventEngine factory.
+/// Reset gRPC's EventEngine factory to the built-in default.
 ///
-/// Applications that have called \a SetEventEngineFactory can unregister their
-/// custom factory, reverting to use gRPC's built-in default EventEngines. This
-/// has no effect on any EventEngines that were already created using the custom
-/// factory.
-void RevertToDefaultEventEngineFactory();
-
+/// Applications that have called \a SetEventEngineFactory can remove their
+/// custom factory using this method. The built-in EventEngine factories will be
+/// used going forward. This has no affect on any EventEngines that were created
+/// using the previous factories.
+void EventEngineFactoryReset();
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
 

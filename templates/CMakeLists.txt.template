@@ -71,18 +71,19 @@
 
   def get_deps(target_dict):
     deps = []
-    if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
-      deps.append("${_gRPC_BASELIB_LIBRARIES}")
+    deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
+    deps.append("${_gRPC_ZLIB_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
-      deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    if target_dict['name'] in ['grpc_authorization_provider']:
+      deps.append("${_gRPC_RE2_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -800,7 +801,11 @@
   % else:
   if(gRPC_INSTALL)
   % endif
+  % if tgt.build == 'protoc' and 'grpc_plugin_support' in tgt.get('deps', []):
+    install(TARGETS ${tgt.name} EXPORT gRPCPluginTargets
+  % else:
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
+  % endif
       RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
       BUNDLE DESTINATION  <%text>${gRPC_INSTALL_BINDIR}</%text>
       LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
@@ -811,6 +816,10 @@
 
   if(gRPC_INSTALL)
     install(EXPORT gRPCTargets
+      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+      NAMESPACE gRPC::
+    )
+    install(EXPORT gRPCPluginTargets
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
       NAMESPACE gRPC::
     )
@@ -838,12 +847,13 @@
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
 
   # Function to generate pkg-config files.
-  function(generate_pkgconfig name description version requires
+  function(generate_pkgconfig name description version requires requires_private
                               libs libs_private output_filename)
     set(PC_NAME "<%text>${name}</%text>")
     set(PC_DESCRIPTION "<%text>${description}</%text>")
     set(PC_VERSION "<%text>${version}</%text>")
     set(PC_REQUIRES "<%text>${requires}</%text>")
+    set(PC_REQUIRES_PRIVATE "<%text>${requires_private}</%text>")
     set(PC_LIB "<%text>${libs}</%text>")
     set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
     set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
@@ -861,6 +871,7 @@
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(list_abseil_pkg_targets("gpr"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["gpr"])}"
     ""
     "gpr.pc")
@@ -870,9 +881,10 @@
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
-    ""
+    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc"))}"
+    "${" ".join(["openssl", "re2", "libcares", "zlib"])}"
+    "${" ".join(("-l" + l) for l in ["grpc",])}"
+    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
     "grpc.pc")
 
   # grpc_unsecure .pc file
@@ -881,8 +893,9 @@
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
+    "${" ".join(["re2", "libcares", "zlib"])}"
     "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
-    ""
+    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
     "grpc_unsecure.pc")
 
   # grpc++ .pc file
@@ -891,6 +904,7 @@
     "C++ wrapper for gRPC"
     "<%text>${gRPC_CPP_VERSION}</%text>"
     "${" ".join(["grpc"] + list_abseil_pkg_targets("grpc++"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["grpc++"])}"
     ""
     "grpc++.pc")
@@ -901,6 +915,7 @@
     "C++ wrapper for gRPC without SSL"
     "<%text>${gRPC_CPP_VERSION}</%text>"
     "${" ".join(["grpc_unsecure"] + list_abseil_pkg_targets("grpc++_unsecure"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
     ""
     "grpc++_unsecure.pc")

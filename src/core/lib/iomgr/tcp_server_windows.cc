@@ -227,11 +227,11 @@ failure:
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   grpc_error_set_int(
       grpc_error_set_str(
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Failed to prepare server socket", &error, 1),
-          GRPC_ERROR_STR_TARGET_ADDRESS,
+          GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
+                                        &error, 1),
+          grpc_core::StatusStrProperty::kTargetAddress,
           addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
-      GRPC_ERROR_INT_FD, (intptr_t)sock);
+      grpc_core::StatusIntProperty::kFd, (intptr_t)sock);
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }
@@ -316,7 +316,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
      case. We only need to adjust the pending callback count */
   if (!error.ok()) {
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
 
     gpr_mu_unlock(&sp->server->mu);
     return;
@@ -510,9 +510,8 @@ done:
   gpr_free(allocated_addr);
 
   if (!error.ok()) {
-    grpc_error_handle error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Failed to add port to server", &error, 1);
+    grpc_error_handle error_out = GRPC_ERROR_CREATE_REFERENCING(
+        "Failed to add port to server", &error, 1);
     error = error_out;
     *port = -1;
   } else {

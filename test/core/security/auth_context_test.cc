@@ -131,6 +131,15 @@ TEST(AuthContextTest, ChainedContext) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
+TEST(AuthContextTest, ContextWithExtension) {
+  class SampleExtension : public grpc_auth_context::Extension {};
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  // Just set the extension, the goal of this test is to catch any memory
+  // leaks when context goes out of scope.
+  ctx->set_extension(std::make_unique<SampleExtension>());
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

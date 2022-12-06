@@ -30,25 +30,24 @@ namespace grpc_core {
 
 // Base class for XdsResourceType implementations.
 // Handles all down-casting logic for a particular resource type struct.
+// ResourceTypeStruct must inherit from XdsResourceType::ResourceData,
+// must be copy-constructible, and must implement operator==().
 template <typename Subclass, typename ResourceTypeStruct>
 class XdsResourceTypeImpl : public XdsResourceType {
  public:
-  struct ResourceDataSubclass : public ResourceData {
-    ResourceTypeStruct resource;
-  };
+  using ResourceType = ResourceTypeStruct;
 
   // XdsClient watcher that handles down-casting.
   class WatcherInterface : public XdsClient::ResourceWatcherInterface {
    public:
-    virtual void OnResourceChanged(ResourceTypeStruct listener) = 0;
+    virtual void OnResourceChanged(ResourceType listener) = 0;
 
    private:
     // Get result from XdsClient generic watcher interface, perform
-    // down-casting, and invoke the caller's OnListenerChanged() method.
+    // down-casting, and invoke the caller's OnResourceChanged() method.
     void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource) override {
-      OnResourceChanged(
-          static_cast<const ResourceDataSubclass*>(resource)->resource);
+      OnResourceChanged(*static_cast<const ResourceType*>(resource));
     }
   };
 
@@ -73,16 +72,14 @@ class XdsResourceTypeImpl : public XdsResourceType {
 
   bool ResourcesEqual(const ResourceData* r1,
                       const ResourceData* r2) const override {
-    return static_cast<const ResourceDataSubclass*>(r1)->resource ==
-           static_cast<const ResourceDataSubclass*>(r2)->resource;
+    return *static_cast<const ResourceType*>(r1) ==
+           *static_cast<const ResourceType*>(r2);
   }
 
   std::unique_ptr<ResourceData> CopyResource(
       const ResourceData* resource) const override {
-    auto* resource_copy = new ResourceDataSubclass();
-    resource_copy->resource =
-        static_cast<const ResourceDataSubclass*>(resource)->resource;
-    return std::unique_ptr<ResourceData>(resource_copy);
+    return std::make_unique<ResourceType>(
+        *static_cast<const ResourceType*>(resource));
   }
 };
 

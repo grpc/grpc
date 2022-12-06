@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -96,7 +97,7 @@ struct call_data {
         grpc_server_security_context_destroy;
   }
 
-  ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_error); }
+  ~call_data() {}
 
   grpc_core::CallCombiner* call_combiner;
   grpc_call_stack* owning_call;
@@ -207,17 +208,17 @@ static void on_md_processing_done(
       if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";
       }
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
-          GRPC_ERROR_INT_GRPC_STATUS, status);
+      error =
+          grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
+                             grpc_core::StatusIntProperty::kRpcStatus, status);
     }
     on_md_processing_done_inner(elem, consumed_md, num_consumed_md, response_md,
                                 num_response_md, error);
   }
   // Clean up.
   for (size_t i = 0; i < calld->md.count; i++) {
-    grpc_slice_unref(calld->md.metadata[i].key);
-    grpc_slice_unref(calld->md.metadata[i].value);
+    grpc_core::CSliceUnref(calld->md.metadata[i].key);
+    grpc_core::CSliceUnref(calld->md.metadata[i].value);
   }
   grpc_metadata_array_destroy(&calld->md);
   GRPC_CALL_STACK_UNREF(calld->owning_call, "server_auth_metadata");

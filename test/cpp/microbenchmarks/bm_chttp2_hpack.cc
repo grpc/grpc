@@ -41,10 +41,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
   uint8_t* p = GRPC_SLICE_START_PTR(s);
@@ -59,23 +55,23 @@ static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
 //
 
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_core::HPackCompressor c;
     grpc_core::ExecCtx::Get()->Flush();
   }
-
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderInitDestroy);
 
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Timestamp saved_now = grpc_core::Timestamp::Now();
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(),
         saved_now + grpc_core::Duration::Seconds(30));
@@ -91,7 +87,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             static_cast<uint32_t>(state.iterations()),
             true,
             false,
-            static_cast<size_t>(1024),
+            size_t{1024},
             &stats,
         },
         b, &outbuf);
@@ -99,26 +95,19 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_slice_buffer_destroy(&outbuf);
-
-  std::ostringstream label;
-  label << "framing_bytes/iter:"
-        << (static_cast<double>(stats.framing_bytes) /
-            static_cast<double>(state.iterations()))
-        << " header_bytes/iter:"
-        << (static_cast<double>(stats.header_bytes) /
-            static_cast<double>(state.iterations()));
-  track_counters.AddLabel(label.str());
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderEncodeDeadline);
 
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
   Fixture::Prepare(&b);
 
@@ -150,16 +139,6 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_slice_buffer_destroy(&outbuf);
-
-  std::ostringstream label;
-  label << "framing_bytes/iter:"
-        << (static_cast<double>(stats.framing_bytes) /
-            static_cast<double>(state.iterations()))
-        << " header_bytes/iter:"
-        << (static_cast<double>(stats.header_bytes) /
-            static_cast<double>(state.iterations()));
-  track_counters.AddLabel(label.str());
-  track_counters.Finish(state);
 }
 
 namespace hpack_encoder_fixtures {
@@ -346,26 +325,26 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 //
 
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     { grpc_core::HPackParser(); }
     grpc_core::ExecCtx::Get()->Flush();
   }
-
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
-  TrackCounters track_counters;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::ExecCtx exec_ctx;
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
-  auto* arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto* arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
@@ -388,7 +367,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     if (0 == (state.iterations() & 0xfff)) {
       b.Destroy();
       arena->Destroy();
-      arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
+      arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
@@ -402,8 +381,6 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   arena->Destroy();
-
-  track_counters.Finish(state);
 }
 
 namespace hpack_parser_fixtures {
@@ -418,7 +395,11 @@ class FromEncoderFixture {
   static std::vector<grpc_slice> Generate(int iteration) {
     grpc_core::ExecCtx exec_ctx;
 
-    auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+    grpc_core::MemoryAllocator memory_allocator =
+        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                       ->memory_quota()
+                                       ->CreateMemoryAllocator("test"));
+    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
     grpc_metadata_batch b(arena.get());
     EncoderFixture::Prepare(&b);
 

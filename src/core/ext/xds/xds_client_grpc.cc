@@ -26,7 +26,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -38,12 +37,11 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
-#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -53,6 +51,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -64,11 +63,7 @@ namespace grpc_core {
 
 namespace {
 
-Mutex* g_mu = [] {
-  XdsHttpFilterRegistry::Init();
-  XdsClusterSpecifierPluginRegistry::Init();
-  return new Mutex;
-}();
+Mutex* g_mu = new Mutex;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 GrpcXdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
@@ -92,7 +87,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
     if (!error.ok()) return grpc_error_to_absl_status(error);
     std::string contents_str(StringViewFromSlice(contents));
-    grpc_slice_unref(contents);
+    CSliceUnref(contents);
     return contents_str;
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
@@ -161,6 +156,7 @@ GrpcXdsClient::GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
                              const ChannelArgs& args)
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
+          grpc_event_engine::experimental::GetDefaultEventEngine(),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)

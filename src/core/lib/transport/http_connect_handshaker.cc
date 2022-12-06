@@ -27,7 +27,6 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -128,7 +127,7 @@ void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
     // If we were shut down after an endpoint operation succeeded but
     // before the endpoint callback was invoked, we need to generate our
     // own error.
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
+    error = GRPC_ERROR_CREATE("Handshaker shutdown");
   }
   if (!is_shutdown_) {
     // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -259,9 +258,8 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
   // Make sure we got a 2xx response.
   if (handshaker->http_response_.status < 200 ||
       handshaker->http_response_.status >= 300) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("HTTP proxy returned response code ",
-                     handshaker->http_response_.status));
+    error = GRPC_ERROR_CREATE(absl::StrCat("HTTP proxy returned response code ",
+                                           handshaker->http_response_.status));
     handshaker->HandshakeFailedLocked(error);
     goto done;
   }
@@ -386,6 +384,9 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kHTTPConnectHandshakers;
+  }
   ~HttpConnectHandshakerFactory() override = default;
 };
 
@@ -393,8 +394,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<HttpConnectHandshakerFactory>());
+      HANDSHAKER_CLIENT, std::make_unique<HttpConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

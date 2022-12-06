@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <memory>
 #include <string>
 
 #include "absl/status/status.h"
@@ -41,8 +40,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer.h"
-
-struct passthru_endpoint;
 
 typedef struct passthru_endpoint passthru_endpoint;
 
@@ -90,9 +87,8 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
   GPR_ASSERT(m->bytes_read_so_far <=
              m->parent->channel_effects->allowed_read_bytes);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->pending_read_op.cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb,
+                            GRPC_ERROR_CREATE("Already shutdown"));
     // Move any pending data into pending_read_op.slices so that it may be
     // free'ed by the executing callback.
     grpc_slice_buffer_move_into(&m->read_buffer, m->pending_read_op.slices);
@@ -126,9 +122,8 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
+                            GRPC_ERROR_CREATE("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     GPR_ASSERT(!m->pending_read_op.is_armed);
     GPR_ASSERT(!m->on_read);
@@ -171,9 +166,8 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   GPR_ASSERT(m->bytes_written_so_far <=
              m->parent->channel_effects->allowed_write_bytes);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->pending_write_op.cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_write_op.cb,
+                            GRPC_ERROR_CREATE("Already shutdown"));
     m->pending_write_op.is_armed = false;
     grpc_slice_buffer_reset_and_unref(m->pending_write_op.slices);
     return;
@@ -275,9 +269,8 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_lock(&m->parent->mu);
   gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
+                            GRPC_ERROR_CREATE("Endpoint already shutdown"));
   } else {
     GPR_ASSERT(!m->pending_write_op.is_armed);
     // Copy slices into m->pending_write_op.slices
@@ -324,17 +317,15 @@ static void shutdown_locked(half* m, grpc_error_handle why) {
   m->parent->shutdown = true;
   flush_pending_ops_locked(m, absl::OkStatus());
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   m = other_half(m);
   flush_pending_ops_locked(m, absl::OkStatus());
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
 }
@@ -488,8 +479,7 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 
 static void sched_next_channel_action_locked(half* m) {
   if (m->parent->channel_effects->actions.empty()) {
-    grpc_error_handle err =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel actions complete");
+    grpc_error_handle err = GRPC_ERROR_CREATE("Channel actions complete");
     shutdown_locked(m, err);
     return;
   }

@@ -187,6 +187,11 @@ void cancel_after_invoke(grpc_end2end_test_config config) {
 
   for (j = 3; j < 6; j++) {
     for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
+      if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES &&
+          cancellation_modes[i].expect_status ==
+              GRPC_STATUS_DEADLINE_EXCEEDED) {
+        continue;
+      }
       test_cancel_after_invoke(config, cancellation_modes[i], j);
     }
   }

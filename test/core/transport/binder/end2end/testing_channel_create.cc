@@ -35,7 +35,7 @@ namespace {
 class ServerSetupTransportHelper {
  public:
   ServerSetupTransportHelper()
-      : wire_reader_(absl::make_unique<WireReaderImpl>(
+      : wire_reader_(std::make_unique<WireReaderImpl>(
             /*transport_stream_receiver=*/nullptr, /*is_client=*/false,
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {

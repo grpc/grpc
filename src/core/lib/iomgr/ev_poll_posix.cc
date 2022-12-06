@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -492,10 +492,9 @@ static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
     return absl::OkStatus();
   } else {
-    return grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                  "FD shutdown", &fd->shutdown_error, 1),
-                              GRPC_ERROR_INT_GRPC_STATUS,
-                              GRPC_STATUS_UNAVAILABLE);
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1),
+        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   }
 }
 
@@ -504,8 +503,8 @@ static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
-                           GRPC_ERROR_INT_GRPC_STATUS,
+        grpc_error_set_int(GRPC_ERROR_CREATE("FD shutdown"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
                            GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
@@ -757,7 +756,7 @@ static void kick_append_error(grpc_error_handle* composite,
                               grpc_error_handle error) {
   if (error.ok()) return;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Kick Failure");
+    *composite = GRPC_ERROR_CREATE("Kick Failure");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -893,7 +892,7 @@ static void work_combine_error(grpc_error_handle* composite,
                                grpc_error_handle error) {
   if (error.ok()) return;
   if (composite->ok()) {
-    *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("pollset_work");
+    *composite = GRPC_ERROR_CREATE("pollset_work");
   }
   *composite = grpc_error_add_child(*composite, error);
 }
@@ -1194,7 +1193,7 @@ static void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->pollset_count == pollset_set->pollset_capacity) {
     pollset_set->pollset_capacity =
-        std::max(size_t(8), 2 * pollset_set->pollset_capacity);
+        std::max(size_t{8}, 2 * pollset_set->pollset_capacity);
     pollset_set->pollsets = static_cast<grpc_pollset**>(gpr_realloc(
         pollset_set->pollsets,
         pollset_set->pollset_capacity * sizeof(*pollset_set->pollsets)));
@@ -1244,7 +1243,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
   gpr_mu_lock(&bag->mu);
   if (bag->pollset_set_count == bag->pollset_set_capacity) {
     bag->pollset_set_capacity =
-        std::max(size_t(8), 2 * bag->pollset_set_capacity);
+        std::max(size_t{8}, 2 * bag->pollset_set_capacity);
     bag->pollset_sets = static_cast<grpc_pollset_set**>(
         gpr_realloc(bag->pollset_sets,
                     bag->pollset_set_capacity * sizeof(*bag->pollset_sets)));
@@ -1282,7 +1281,7 @@ static void pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->fd_count == pollset_set->fd_capacity) {
     pollset_set->fd_capacity =
-        std::max(size_t(8), 2 * pollset_set->fd_capacity);
+        std::max(size_t{8}, 2 * pollset_set->fd_capacity);
     pollset_set->fds = static_cast<grpc_fd**>(
         gpr_realloc(pollset_set->fds,
                     pollset_set->fd_capacity * sizeof(*pollset_set->fds)));

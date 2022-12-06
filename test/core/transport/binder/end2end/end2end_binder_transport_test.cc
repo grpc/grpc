@@ -41,7 +41,7 @@ class End2EndBinderTransportTest
   End2EndBinderTransportTest() {
     end2end_testing::g_transaction_processor =
         new end2end_testing::TransactionProcessor(GetParam());
-    service_ = absl::make_unique<grpc::testing::TestServiceImpl>();
+    service_ = std::make_unique<grpc::testing::TestServiceImpl>();
     grpc::ServerBuilder builder;
     builder.RegisterService(service_.get());
     server_ = builder.BuildAndStart();
@@ -361,7 +361,7 @@ TEST_P(End2EndBinderTransportTest, ClientStreamingCall) {
   std::unique_ptr<grpc::ClientWriter<grpc::testing::EchoRequest>> writer =
       stub->RequestStream(&context, &response);
   constexpr size_t kClientStreamingCounts = 100;
-  std::string expected = "";
+  std::string expected;
   for (size_t i = 0; i < kClientStreamingCounts; ++i) {
     grpc::testing::EchoRequest request;
     request.set_message("ClientStreamingCall" + std::to_string(i));

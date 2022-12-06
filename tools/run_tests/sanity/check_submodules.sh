@@ -37,9 +37,9 @@ third_party/libuv 02a9e1be252b623ee032a3137c0b0c94afbe6809
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
 third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
 third_party/protobuf 24487dd1045c7f3d64a21f38a3f0c06cc4cf2edb
-third_party/re2 8e08f47b11b413302749c0d8b17a1c94777495d5
+third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
 third_party/xds cb28da3451f158a947dfc45090fe92b07b243bc1
-third_party/zlib 21767c654d31d2dccdde4330529775c6c5fd5389
+third_party/zlib 04f42ceca40f73e2978b50e93806c2a18c1281fc
 EOF
 
 diff -u "$submodules" "$want_submodules"

@@ -47,6 +47,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -59,7 +60,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 using grpc_core::Json;
@@ -273,7 +273,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
           [](absl::string_view, const grpc_core::Slice&) { abort(); });
       pending_request->result = std::move(pending_request->md);
     } else {
-      auto err = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      auto err = GRPC_ERROR_CREATE_REFERENCING(
           "Error occurred when fetching oauth2 token.", &error, 1);
       pending_request->result = grpc_error_to_absl_status(err);
     }
@@ -534,7 +534,7 @@ grpc_error_handle LoadTokenFile(const char* path, gpr_slice* token) {
   if (!err.ok()) return err;
   if (GRPC_SLICE_LENGTH(*token) == 0) {
     gpr_log(GPR_ERROR, "Token file %s is empty", path);
-    err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Token file is empty.");
+    err = GRPC_ERROR_CREATE("Token file is empty.");
   }
   return err;
 }
@@ -611,8 +611,8 @@ class StsTokenFetcherCredentials
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
       }
-      grpc_slice_unref(subject_token);
-      grpc_slice_unref(actor_token);
+      CSliceUnref(subject_token);
+      CSliceUnref(actor_token);
       return err;
     };
 
@@ -662,30 +662,29 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
                      ? ""
                      : options->token_exchange_service_uri);
   if (!sts_url.ok()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    error_list.push_back(GRPC_ERROR_CREATE(
         absl::StrFormat("Invalid or missing STS endpoint URL. Error: %s",
                         sts_url.status().ToString())));
   } else if (sts_url->scheme() != "https" && sts_url->scheme() != "http") {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid URI scheme, must be https to http."));
+    error_list.push_back(
+        GRPC_ERROR_CREATE("Invalid URI scheme, must be https to http."));
   }
   if (options->subject_token_path == nullptr ||
       strlen(options->subject_token_path) == 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "subject_token needs to be specified"));
+    error_list.push_back(
+        GRPC_ERROR_CREATE("subject_token needs to be specified"));
   }
   if (options->subject_token_type == nullptr ||
       strlen(options->subject_token_type) == 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "subject_token_type needs to be specified"));
+    error_list.push_back(
+        GRPC_ERROR_CREATE("subject_token_type needs to be specified"));
   }
   if (error_list.empty()) {
     return sts_url;
   }
   auto grpc_error_vec = GRPC_ERROR_CREATE_FROM_VECTOR(
       "Invalid STS Credentials Options", &error_list);
-  auto retval =
-      absl::InvalidArgumentError(grpc_error_std_string(grpc_error_vec));
+  auto retval = absl::InvalidArgumentError(StatusToString(grpc_error_vec));
   return retval;
 }
 

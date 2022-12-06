@@ -20,9 +20,9 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/channel_credentials/google_default.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
@@ -71,11 +71,11 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
 
 void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
-      absl::make_unique<GoogleDefaultChannelCredsFactory>());
+      std::make_unique<GoogleDefaultChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
-      absl::make_unique<InsecureChannelCredsFactory>());
+      std::make_unique<InsecureChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
-      absl::make_unique<FakeChannelCredsFactory>());
+      std::make_unique<FakeChannelCredsFactory>());
 }
 
 }  // namespace grpc_core

@@ -32,7 +32,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -71,7 +70,6 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -231,14 +229,14 @@ class StreamsNotSeenTest : public ::testing::Test {
     test_tcp_server_init(&server_, OnConnect, this);
     test_tcp_server_start(&server_, port_);
     // Start polling on the test tcp server
-    server_poll_thread_ = absl::make_unique<std::thread>([this]() {
+    server_poll_thread_ = std::make_unique<std::thread>([this]() {
       while (!shutdown_) {
         test_tcp_server_poll(&server_, 10);
       }
     });
     // Create the channel
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<CqVerifier>(cq_);
+    cqv_ = std::make_unique<CqVerifier>(cq_);
     grpc_arg client_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
@@ -277,8 +275,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     } while (ev.type != GRPC_QUEUE_SHUTDOWN);
     grpc_completion_queue_destroy(cq_);
     grpc_channel_destroy(channel_);
-    grpc_endpoint_shutdown(
-        tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+    grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Test Shutdown"));
     ExecCtx::Get()->Flush();
     GPR_ASSERT(read_end_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -539,8 +536,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Shutdown the server endpoint
-  grpc_endpoint_shutdown(
-      tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -765,8 +761,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  grpc_endpoint_shutdown(
-      tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();

@@ -28,8 +28,6 @@ import threading
 import time
 import unittest
 
-import six
-
 from tests.unit import _exit_scenarios
 
 SCENARIO_FILE = os.path.abspath(

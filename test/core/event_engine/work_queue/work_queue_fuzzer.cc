@@ -13,9 +13,15 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <deque>
+#include <stdlib.h>
 
-#include "absl/container/flat_hash_map.h"
+#include <deque>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/work_queue.h"

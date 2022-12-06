@@ -37,14 +37,9 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 grpc_core::HPackCompressor* g_compressor;
 
@@ -159,7 +154,11 @@ grpc_slice EncodeHeaderIntoBytes(
   std::unique_ptr<grpc_core::HPackCompressor> compressor =
       std::make_unique<grpc_core::HPackCompressor>();
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
 
   for (const auto& field : header_fields) {
@@ -304,7 +303,11 @@ TEST(HpackEncoderTest, UserAgentMetadataNoIndexing) {
 
 static void verify_continuation_headers(const char* key, const char* value,
                                         bool is_eof) {
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_slice_buffer output;
   grpc_metadata_batch b(arena.get());
   b.Append(key, grpc_core::Slice::FromStaticString(value), CrashOnAppendError);
@@ -344,6 +347,5 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestGrpcScope grpc_scope;
-  grpc_test_only_set_slice_hash_seed(0);
   return RUN_ALL_TESTS();
 }

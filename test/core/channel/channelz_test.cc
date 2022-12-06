@@ -19,16 +19,20 @@
 #include "src/core/lib/channel/channelz.h"
 
 #include <stdlib.h>
-#include <string.h>
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <memory>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -445,8 +449,8 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   Json array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, 2);
   std::vector<intptr_t> uuids = GetUuidListFromArray(array.array_value());
-  EXPECT_EQ(static_cast<intptr_t>(3), uuids[0]);
-  EXPECT_EQ(static_cast<intptr_t>(5), uuids[1]);
+  EXPECT_EQ(3, uuids[0]);
+  EXPECT_EQ(5, uuids[1]);
   json_str = ChannelzRegistry::GetTopChannels(4);
   parsed_json = Json::Parse(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
@@ -454,7 +458,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   array = (*parsed_json->mutable_object())["channel"];
   ValidateJsonArraySize(array, 1);
   uuids = GetUuidListFromArray(array.array_value());
-  EXPECT_EQ(static_cast<intptr_t>(5), uuids[0]);
+  EXPECT_EQ(5, uuids[0]);
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
@@ -465,8 +469,8 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
     // these will delete and unregister themselves after this block.
     std::vector<std::unique_ptr<ChannelFixture>> odd_channels;
     for (int i = 0; i < kLoopIterations; i++) {
-      odd_channels.push_back(absl::make_unique<ChannelFixture>());
-      even_channels.push_back(absl::make_unique<ChannelFixture>());
+      odd_channels.push_back(std::make_unique<ChannelFixture>());
+      even_channels.push_back(std::make_unique<ChannelFixture>());
     }
   }
   std::string json_str = ChannelzRegistry::GetTopChannels(0);

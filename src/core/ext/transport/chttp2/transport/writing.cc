@@ -29,7 +29,10 @@
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
+
+#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
@@ -48,6 +51,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -169,7 +173,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
-  GRPC_STATS_INC_HTTP2_PINGS_SENT();
+  grpc_core::global_stats().IncrementHttp2PingsSent();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
@@ -218,7 +222,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         t->flow_control.remote_window(),
         static_cast<uint32_t>(std::max(
-            int64_t(0),
+            int64_t{0},
             s->flow_control.remote_window_delta() +
                 static_cast<int64_t>(
                     t->settings[GRPC_PEER_SETTINGS]
@@ -263,7 +267,7 @@ namespace {
 class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
-    GRPC_STATS_INC_HTTP2_WRITES_BEGUN();
+    grpc_core::global_stats().IncrementHttp2WritesBegun();
   }
 
   void FlushSettings() {
@@ -276,7 +280,7 @@ class WriteContext {
       t_->force_send_settings = false;
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
-      GRPC_STATS_INC_HTTP2_SETTINGS_WRITES();
+      grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }
 
@@ -376,7 +380,7 @@ class DataSendContext {
 
   uint32_t stream_remote_window() const {
     return static_cast<uint32_t>(std::max(
-        int64_t(0),
+        int64_t{0},
         s_->flow_control.remote_window_delta() +
             static_cast<int64_t>(
                 t_->settings[GRPC_PEER_SETTINGS]
@@ -386,15 +390,17 @@ class DataSendContext {
   uint32_t max_outgoing() const {
     return static_cast<uint32_t>(std::min(
         t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-        static_cast<uint32_t>(std::min(int64_t(stream_remote_window()),
-                                       t_->flow_control.remote_window()))));
+        static_cast<uint32_t>(
+            std::min(static_cast<int64_t>(stream_remote_window()),
+                     t_->flow_control.remote_window()))));
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
 
   void FlushBytes() {
-    uint32_t send_bytes = static_cast<uint32_t>(
-        std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
+    uint32_t send_bytes =
+        static_cast<uint32_t>(std::min(static_cast<size_t>(max_outgoing()),
+                                       s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
@@ -502,11 +508,11 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
-        GRPC_STATS_INC_HTTP2_TRANSPORT_STALLS();
+        grpc_core::global_stats().IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
-        GRPC_STATS_INC_HTTP2_STREAM_STALLS();
+        grpc_core::global_stats().IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }

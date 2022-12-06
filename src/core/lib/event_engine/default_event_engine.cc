@@ -23,6 +23,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -49,8 +51,9 @@ void SetEventEngineFactory(
   g_event_engine->reset();
 }
 
-void RevertToDefaultEventEngineFactory() {
+void EventEngineFactoryReset() {
   delete g_event_engine_factory.exchange(nullptr);
+  g_event_engine->reset();
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {
@@ -73,9 +76,18 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   return engine;
 }
 
-void ResetDefaultEventEngine() {
-  grpc_core::MutexLock lock(&*g_mu);
-  g_event_engine->reset();
+namespace {
+grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
+    grpc_core::ChannelArgs args) {
+  if (args.ContainsObject<EventEngine>()) return args;
+  return args.SetObject<EventEngine>(GetDefaultEventEngine());
+}
+}  // namespace
+
+void RegisterEventEngineChannelArgPreconditioning(
+    grpc_core::CoreConfiguration::Builder* builder) {
+  builder->channel_args_preconditioning()->RegisterStage(
+      grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
 }
 
 }  // namespace experimental

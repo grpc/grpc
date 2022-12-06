@@ -41,10 +41,12 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -460,7 +462,7 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
   if (storage != nullptr && g_cached_cq == cq) {
     *tag = storage->tag;
     grpc_core::ExecCtx exec_ctx;
-    *ok = (storage->next & static_cast<uintptr_t>(1)) == 1;
+    *ok = (storage->next & uintptr_t{1}) == 1;
     storage->done(storage->done_arg, storage);
     ret = 1;
     cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
@@ -512,13 +514,13 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
   switch (completion_type) {
     case GRPC_CQ_NEXT:
-      GRPC_STATS_INC_CQ_NEXT_CREATES();
+      grpc_core::global_stats().IncrementCqNextCreates();
       break;
     case GRPC_CQ_PLUCK:
-      GRPC_STATS_INC_CQ_PLUCK_CREATES();
+      grpc_core::global_stats().IncrementCqPluckCreates();
       break;
     case GRPC_CQ_CALLBACK:
-      GRPC_STATS_INC_CQ_CALLBACK_CREATES();
+      grpc_core::global_stats().IncrementCqCallbackCreates();
       break;
   }
 
@@ -692,7 +694,7 @@ static void cq_end_op_for_next(
     grpc_cq_completion* storage, bool /*internal*/) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
-    std::string errmsg = grpc_error_std_string(error);
+    std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_next(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
@@ -733,7 +735,7 @@ static void cq_end_op_for_next(
 
         if (!kick_error.ok()) {
           gpr_log(GPR_ERROR, "Kick failed: %s",
-                  grpc_error_std_string(kick_error).c_str());
+                  grpc_core::StatusToString(kick_error).c_str());
         }
       }
       if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
@@ -766,7 +768,7 @@ static void cq_end_op_for_pluck(
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
-    std::string errmsg = grpc_error_std_string(error).c_str();
+    std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
@@ -809,7 +811,7 @@ static void cq_end_op_for_pluck(
     gpr_mu_unlock(cq->mu);
     if (!kick_error.ok()) {
       gpr_log(GPR_ERROR, "Kick failed: %s",
-              grpc_error_std_string(kick_error).c_str());
+              grpc_core::StatusToString(kick_error).c_str());
     }
   }
 }
@@ -828,7 +830,7 @@ static void cq_end_op_for_callback(
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
-    std::string errmsg = grpc_error_std_string(error);
+    std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_callback(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
@@ -1035,7 +1037,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 
     if (!err.ok()) {
       gpr_log(GPR_ERROR, "Completion queue next failed: %s",
-              grpc_error_std_string(err).c_str());
+              grpc_core::StatusToString(err).c_str());
       if (err == absl::CancelledError()) {
         ret.type = GRPC_QUEUE_SHUTDOWN;
       } else {
@@ -1132,7 +1134,7 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
       return;
     }
   }
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 class ExecCtxPluck : public grpc_core::ExecCtx {
@@ -1157,11 +1159,9 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
       grpc_cq_completion* c;
       grpc_cq_completion* prev = &cqd->completed_head;
       while ((c = reinterpret_cast<grpc_cq_completion*>(
-                  prev->next & ~static_cast<uintptr_t>(1))) !=
-             &cqd->completed_head) {
+                  prev->next & ~uintptr_t{1})) != &cqd->completed_head) {
         if (c->tag == a->tag) {
-          prev->next = (prev->next & static_cast<uintptr_t>(1)) |
-                       (c->next & ~static_cast<uintptr_t>(1));
+          prev->next = (prev->next & uintptr_t{1}) | (c->next & ~uintptr_t{1});
           if (c == cqd->completed_tail) {
             cqd->completed_tail = prev;
           }
@@ -1228,11 +1228,9 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
     }
     prev = &cqd->completed_head;
     while ((c = reinterpret_cast<grpc_cq_completion*>(
-                prev->next & ~static_cast<uintptr_t>(1))) !=
-           &cqd->completed_head) {
+                prev->next & ~uintptr_t{1})) != &cqd->completed_head) {
       if (c->tag == tag) {
-        prev->next = (prev->next & static_cast<uintptr_t>(1)) |
-                     (c->next & ~static_cast<uintptr_t>(1));
+        prev->next = (prev->next & uintptr_t{1}) | (c->next & ~uintptr_t{1});
         if (c == cqd->completed_tail) {
           cqd->completed_tail = prev;
         }
@@ -1279,7 +1277,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
       gpr_log(GPR_ERROR, "Completion queue pluck failed: %s",
-              grpc_error_std_string(err).c_str());
+              grpc_core::StatusToString(err).c_str());
       ret.type = GRPC_QUEUE_TIMEOUT;
       ret.success = 0;
       dump_pending_tags(cq);

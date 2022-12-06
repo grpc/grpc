@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Generate experiment related code artifacts. 
+Generate experiment related code artifacts.
 
 Invoke as: tools/codegen/core/gen_experiments.py
 Experiment definitions are in src/core/lib/experiments/experiments.yaml
@@ -32,6 +32,11 @@ import re
 import sys
 
 import yaml
+
+# TODO(ctiller): if we ever add another argument switch this to argparse
+check_dates = True
+if sys.argv[1:] == ["--check"]:
+    check_dates = False  # for formatting checks we don't verify expiry dates
 
 with open('src/core/lib/experiments/experiments.yaml') as f:
     attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
@@ -70,21 +75,23 @@ for attr in attrs:
         print("invalid default for experiment %s: %r" %
               (attr['name'], attr['default']))
         error = True
-    if 'expiry' not in attr:
-        print("no expiry for experiment %s" % attr['name'])
-        error = True
     if 'owner' not in attr:
         print("no owner for experiment %s" % attr['name'])
         error = True
+    if 'expiry' not in attr:
+        print("no expiry for experiment %s" % attr['name'])
+        error = True
     expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
-    if expiry < today:
-        print("experiment %s expired on %s" % (attr['name'], attr['expiry']))
-        error = True
-    if expiry > two_quarters_from_now:
-        print("experiment %s expires far in the future on %s" %
-              (attr['name'], attr['expiry']))
-        print("expiry should be no more than two quarters from now")
-        error = True
+    if check_dates:
+        if expiry < today:
+            print("experiment %s expired on %s" %
+                  (attr['name'], attr['expiry']))
+            error = True
+        if expiry > two_quarters_from_now:
+            print("experiment %s expires far in the future on %s" %
+                  (attr['name'], attr['expiry']))
+            print("expiry should be no more than two quarters from now")
+            error = True
 
 if error:
     sys.exit(1)

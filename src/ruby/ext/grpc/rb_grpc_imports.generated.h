@@ -25,22 +25,59 @@
 
 #include <windows.h>
 
+#include <grpc/byte_buffer.h>
+#include <grpc/channel_credentials/google_default.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
+typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_create_type)(grpc_slice* slices, size_t nslices);
+extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
+#define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
+typedef grpc_byte_buffer*(*grpc_raw_compressed_byte_buffer_create_type)(grpc_slice* slices, size_t nslices, grpc_compression_algorithm compression);
+extern grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
+#define grpc_raw_compressed_byte_buffer_create grpc_raw_compressed_byte_buffer_create_import
+typedef grpc_byte_buffer*(*grpc_byte_buffer_copy_type)(grpc_byte_buffer* bb);
+extern grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
+#define grpc_byte_buffer_copy grpc_byte_buffer_copy_import
+typedef size_t(*grpc_byte_buffer_length_type)(grpc_byte_buffer* bb);
+extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
+#define grpc_byte_buffer_length grpc_byte_buffer_length_import
+typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer* bb);
+extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
+#define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
+typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader* reader, grpc_byte_buffer* buffer);
+extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
+#define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
+typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader* reader);
+extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
+#define grpc_byte_buffer_reader_destroy grpc_byte_buffer_reader_destroy_import
+typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader* reader, grpc_slice* slice);
+extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
+#define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
+typedef int(*grpc_byte_buffer_reader_peek_type)(grpc_byte_buffer_reader* reader, grpc_slice** slice);
+extern grpc_byte_buffer_reader_peek_type grpc_byte_buffer_reader_peek_import;
+#define grpc_byte_buffer_reader_peek grpc_byte_buffer_reader_peek_import
+typedef grpc_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader* reader);
+extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
+#define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import
+typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader* reader);
+extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
+#define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
+typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(grpc_call_credentials* call_credentials);
+extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
+#define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
 typedef int(*grpc_compression_algorithm_is_message_type)(grpc_compression_algorithm algorithm);
 extern grpc_compression_algorithm_is_message_type grpc_compression_algorithm_is_message_import;
 #define grpc_compression_algorithm_is_message grpc_compression_algorithm_is_message_import
@@ -356,9 +393,6 @@ extern grpc_ssl_session_cache_create_channel_arg_type grpc_ssl_session_cache_cre
 typedef void(*grpc_call_credentials_release_type)(grpc_call_credentials* creds);
 extern grpc_call_credentials_release_type grpc_call_credentials_release_import;
 #define grpc_call_credentials_release grpc_call_credentials_release_import
-typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(grpc_call_credentials* call_credentials);
-extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
-#define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
 typedef void(*grpc_set_ssl_roots_override_callback_type)(grpc_ssl_roots_override_callback cb);
 extern grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 #define grpc_set_ssl_roots_override_callback grpc_set_ssl_roots_override_callback_import
@@ -533,60 +567,6 @@ extern grpc_authorization_policy_provider_release_type grpc_authorization_policy
 typedef void(*grpc_tls_credentials_options_set_tls_session_key_log_file_path_type)(grpc_tls_credentials_options* options, const char* path);
 extern grpc_tls_credentials_options_set_tls_session_key_log_file_path_type grpc_tls_credentials_options_set_tls_session_key_log_file_path_import;
 #define grpc_tls_credentials_options_set_tls_session_key_log_file_path grpc_tls_credentials_options_set_tls_session_key_log_file_path_import
-typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_create_type)(grpc_slice* slices, size_t nslices);
-extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
-#define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
-typedef grpc_byte_buffer*(*grpc_raw_compressed_byte_buffer_create_type)(grpc_slice* slices, size_t nslices, grpc_compression_algorithm compression);
-extern grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
-#define grpc_raw_compressed_byte_buffer_create grpc_raw_compressed_byte_buffer_create_import
-typedef grpc_byte_buffer*(*grpc_byte_buffer_copy_type)(grpc_byte_buffer* bb);
-extern grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
-#define grpc_byte_buffer_copy grpc_byte_buffer_copy_import
-typedef size_t(*grpc_byte_buffer_length_type)(grpc_byte_buffer* bb);
-extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
-#define grpc_byte_buffer_length grpc_byte_buffer_length_import
-typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer* bb);
-extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
-#define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
-typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader* reader, grpc_byte_buffer* buffer);
-extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
-#define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
-typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader* reader);
-extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
-#define grpc_byte_buffer_reader_destroy grpc_byte_buffer_reader_destroy_import
-typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader* reader, grpc_slice* slice);
-extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
-#define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
-typedef int(*grpc_byte_buffer_reader_peek_type)(grpc_byte_buffer_reader* reader, grpc_slice** slice);
-extern grpc_byte_buffer_reader_peek_type grpc_byte_buffer_reader_peek_import;
-#define grpc_byte_buffer_reader_peek grpc_byte_buffer_reader_peek_import
-typedef grpc_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader* reader);
-extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
-#define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import
-typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader* reader);
-extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
-#define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
-typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
-extern gpr_log_severity_string_type gpr_log_severity_string_import;
-#define gpr_log_severity_string gpr_log_severity_string_import
-typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-extern gpr_log_type gpr_log_import;
-#define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
-typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
-extern gpr_log_message_type gpr_log_message_import;
-#define gpr_log_message gpr_log_message_import
-typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
-extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
-#define gpr_set_log_verbosity gpr_set_log_verbosity_import
-typedef void(*gpr_log_verbosity_init_type)(void);
-extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
-#define gpr_log_verbosity_init gpr_log_verbosity_init_import
-typedef void(*gpr_set_log_function_type)(gpr_log_func func);
-extern gpr_set_log_function_type gpr_set_log_function_import;
-#define gpr_set_log_function gpr_set_log_function_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
@@ -743,6 +723,27 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
+typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
+typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
+extern gpr_log_type gpr_log_import;
+#define gpr_log gpr_log_import
+typedef int(*gpr_should_log_type)(gpr_log_severity severity);
+extern gpr_should_log_type gpr_should_log_import;
+#define gpr_should_log gpr_should_log_import
+typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
+extern gpr_log_message_type gpr_log_message_import;
+#define gpr_log_message gpr_log_message_import
+typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
+extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+#define gpr_set_log_verbosity gpr_set_log_verbosity_import
+typedef void(*gpr_log_verbosity_init_type)(void);
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
+typedef void(*gpr_set_log_function_type)(gpr_log_func func);
+extern gpr_set_log_function_type gpr_set_log_function_import;
+#define gpr_set_log_function gpr_set_log_function_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

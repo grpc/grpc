@@ -35,6 +35,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -309,10 +310,10 @@ class FailFirstCallFilter {
         if (!batch->cancel_stream) {
           grpc_transport_stream_op_batch_finish_with_failure(
               batch,
-              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "FailFirstCallFilter failing batch"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 GRPC_STATUS_UNAVAILABLE),
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE("FailFirstCallFilter failing batch"),
+                  grpc_core::StatusIntProperty::kRpcStatus,
+                  GRPC_STATUS_UNAVAILABLE),
               calld->call_combiner_);
           return;
         }

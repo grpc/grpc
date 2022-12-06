@@ -27,6 +27,7 @@
 
 #include <functional>
 #include <string>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -50,16 +51,14 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
-
-struct grpc_transport_stream_op_batch_payload;
 
 /* Minimum and maximum protocol accepted versions. */
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
@@ -81,63 +80,37 @@ struct grpc_transport_stream_op_batch_payload;
   (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
-// TODO(ctiller): eliminate once MetadataHandle is constructable directly.
-namespace promise_filter_detail {
-class BaseCallData;
-}
-
-// Small unowned "handle" type to ensure one accessor at a time to metadata.
-// The focus here is to get promises to use the syntax we'd like - we'll
-// probably substitute some other smart pointer later.
-template <typename T>
-class MetadataHandle {
- public:
-  MetadataHandle() = default;
-
-  MetadataHandle(const MetadataHandle&) = delete;
-  MetadataHandle& operator=(const MetadataHandle&) = delete;
-
-  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
-    other.handle_ = nullptr;
-  }
-  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
-    handle_ = other.handle_;
-    other.handle_ = nullptr;
-    return *this;
-  }
-
-  explicit MetadataHandle(const absl::Status& status) {
-    handle_ = GetContext<Arena>()->New<T>(GetContext<Arena>());
-    handle_->Set(GrpcStatusMetadata(),
-                 static_cast<grpc_status_code>(status.code()));
-    if (status.ok()) return;
-    handle_->Set(GrpcMessageMetadata(),
-                 Slice::FromCopiedString(status.message()));
-  }
-
-  T* operator->() const { return handle_; }
-  bool has_value() const { return handle_ != nullptr; }
-  T* get() const { return handle_; }
-
-  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
-
- private:
-  friend class promise_filter_detail::BaseCallData;
-
-  explicit MetadataHandle(T* handle) : handle_(handle) {}
-  T* Unwrap() {
-    T* result = handle_;
-    handle_ = nullptr;
-    return result;
-  }
-
-  T* handle_ = nullptr;
-};
 
 // Server metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using ServerMetadata = grpc_metadata_batch;
-using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
+using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
+
+// Client initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ClientMetadata = grpc_metadata_batch;
+using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
+
+class Message {
+ public:
+  Message() = default;
+  ~Message() = default;
+  Message(SliceBuffer payload, uint32_t flags)
+      : payload_(std::move(payload)), flags_(flags) {}
+  Message(const Message&) = delete;
+  Message& operator=(const Message&) = delete;
+
+  uint32_t flags() const { return flags_; }
+  uint32_t& mutable_flags() { return flags_; }
+  SliceBuffer* payload() { return &payload_; }
+  const SliceBuffer* payload() const { return &payload_; }
+
+ private:
+  SliceBuffer payload_;
+  uint32_t flags_ = 0;
+};
+
+using MessageHandle = Arena::PoolPtr<Message>;
 
 // Ok/not-ok check for trailing metadata, so that it can be used as result types
 // for TrySeq.
@@ -146,18 +119,36 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
          GRPC_STATUS_OK;
 }
 
-// Client initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientMetadata = grpc_metadata_batch;
-using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
 
-// Server initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
+template <>
+struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
+  static ServerMetadataHandle Cast(const absl::Status& m) {
+    return ServerMetadataFromStatus(m);
+  }
+};
+
+template <>
+struct StatusCastImpl<ServerMetadataHandle, const absl::Status&> {
+  static ServerMetadataHandle Cast(const absl::Status& m) {
+    return ServerMetadataFromStatus(m);
+  }
+};
 
 struct CallArgs {
+  // Initial metadata from the client to the server.
+  // During promise setup this can be manipulated by filters (and then
+  // passed on to the next filter).
   ClientMetadataHandle client_initial_metadata;
+  // Initial metadata from the server to the client.
+  // Set once when it's available.
+  // During promise setup filters can substitute their own latch for this
+  // and consequently intercept the sent value and mutate/observe it.
   Latch<ServerMetadata*>* server_initial_metadata;
+  // Messages travelling from the application to the transport.
+  PipeReceiver<MessageHandle>* outgoing_messages;
+  // Messages travelling from the transport to the application.
+  PipeSender<MessageHandle>* incoming_messages;
 };
 
 using NextPromiseFactory =
@@ -422,10 +413,11 @@ struct grpc_transport_stream_op_batch_payload {
 
   /** Forcefully close this stream.
       The HTTP2 semantics should be:
-      - server side: if cancel_error has GRPC_ERROR_INT_GRPC_STATUS, and
-        trailing metadata has not been sent, send trailing metadata with status
-        and message from cancel_error (use grpc_error_get_status) followed by
-        a RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
+      - server side: if cancel_error has
+     grpc_core::StatusIntProperty::kRpcStatus, and trailing metadata has not
+     been sent, send trailing metadata with status and message from cancel_error
+     (use grpc_error_get_status) followed by a RST_STREAM with
+     error=GRPC_CHTTP2_NO_ERROR to force a full close
       - at all other times: use grpc_error_get_status to get a status code, and
         convert to a HTTP2 error code using
         grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
@@ -538,6 +530,10 @@ void grpc_transport_stream_op_batch_finish_with_failure(
 void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures);
+// Fail a batch from within the transport (i.e. without the activity lock/call
+// combiner taken).
+void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error);
 
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op);

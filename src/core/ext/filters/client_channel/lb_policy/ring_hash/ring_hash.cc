@@ -32,7 +32,6 @@
 #include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
@@ -64,7 +63,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -83,8 +81,8 @@ UniqueTypeName RequestHashAttributeName() {
 const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<RingHashConfig>()
-          .OptionalField("min_ring_size", &RingHashConfig::min_ring_size)
-          .OptionalField("max_ring_size", &RingHashConfig::max_ring_size)
+          .OptionalField("minRingSize", &RingHashConfig::min_ring_size)
+          .OptionalField("maxRingSize", &RingHashConfig::max_ring_size)
           .Finish();
   return loader;
 }
@@ -92,14 +90,14 @@ const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
 void RingHashConfig::JsonPostLoad(const Json&, const JsonArgs&,
                                   ValidationErrors* errors) {
   {
-    ValidationErrors::ScopedField field(errors, ".min_ring_size");
+    ValidationErrors::ScopedField field(errors, ".minRingSize");
     if (!errors->FieldHasErrors() &&
         (min_ring_size == 0 || min_ring_size > 8388608)) {
       errors->AddError("must be in the range [1, 8388608]");
     }
   }
   {
-    ValidationErrors::ScopedField field(errors, ".max_ring_size");
+    ValidationErrors::ScopedField field(errors, ".maxRingSize");
     if (!errors->FieldHasErrors() &&
         (max_ring_size == 0 || max_ring_size > 8388608)) {
       errors->AddError("must be in the range [1, 8388608]");
@@ -661,7 +659,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
       state, status,
-      absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
+      MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
@@ -848,7 +846,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
               : args.addresses.status();
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-          absl::make_unique<TransientFailurePicker>(status));
+          MakeRefCounted<TransientFailurePicker>(status));
       return status;
     }
     // Otherwise, report IDLE.
@@ -885,7 +883,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
 void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<RingHashFactory>());
+      std::make_unique<RingHashFactory>());
 }
 
 }  // namespace grpc_core

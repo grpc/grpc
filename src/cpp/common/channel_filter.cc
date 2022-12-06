@@ -30,7 +30,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/channel_init.h"
 
 namespace grpc {
 

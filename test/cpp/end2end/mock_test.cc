@@ -42,11 +42,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::testing::DefaultReactorTestPeer;
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::EchoTestService;
-using grpc::testing::MockClientReaderWriter;
 using std::vector;
 using ::testing::_;
 using ::testing::AtLeast;
@@ -109,7 +104,7 @@ class FakeClient {
     std::unique_ptr<ClientReaderInterface<EchoResponse>> cstream =
         stub_->ResponseStream(&context, request);
 
-    std::string exp = "";
+    std::string exp;
     EXPECT_TRUE(cstream->Read(&response));
     exp.append(response.message() + " ");
 
@@ -255,7 +250,7 @@ class TestServiceImpl : public EchoTestService::Service {
                        ServerReader<EchoRequest>* reader,
                        EchoResponse* response) override {
     EchoRequest request;
-    std::string resp("");
+    std::string resp;
     while (reader->Read(&request)) {
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       resp.append(request.message());
@@ -290,7 +285,7 @@ class TestServiceImpl : public EchoTestService::Service {
 
  private:
   vector<std::string> split(const std::string& input) {
-    std::string buff("");
+    std::string buff;
     vector<std::string> result;
 
     for (auto n : input) {

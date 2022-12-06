@@ -22,7 +22,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -42,7 +41,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -61,7 +59,7 @@ class DropPolicy : public LoadBalancingPolicy {
 
   absl::Status UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                          absl::make_unique<DropPicker>());
+                                          MakeRefCounted<DropPicker>());
     return absl::OkStatus();
   }
 
@@ -102,7 +100,7 @@ std::vector<PickArgsSeen>* g_pick_args_vector = nullptr;
 
 void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<DropPolicyFactory>());
+      std::make_unique<DropPolicyFactory>());
 }
 
 }  // namespace

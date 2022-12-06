@@ -240,7 +240,7 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   }
   if (!absl::GetFlag(FLAGS_default_service_config).empty()) {
     args.SetString(GRPC_ARG_SERVICE_CONFIG,
-                   absl::GetFlag(FLAGS_default_service_config).c_str());
+                   absl::GetFlag(FLAGS_default_service_config));
   }
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
@@ -319,7 +319,7 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
     const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
   } else {
-    Usage("Invalid command '" + std::string(command.c_str()) + "'");
+    Usage("Invalid command '" + command + "'");
   }
   return 1;
 }
@@ -537,7 +537,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   if (!absl::GetFlag(FLAGS_binary_input) ||
       !absl::GetFlag(FLAGS_binary_output)) {
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {
@@ -562,7 +562,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     request_text = argv[2];
   }
 
-  if (parser->IsStreaming(method_name, true /* is_request */)) {
+  if (parser != nullptr &&
+      parser->IsStreaming(method_name, true /* is_request */)) {
     std::istream* input_stream;
     std::ifstream input_file;
 
@@ -666,7 +667,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   } else {  // parser->IsStreaming(method_name, true /* is_request */)
     if (absl::GetFlag(FLAGS_batch)) {
-      if (parser->IsStreaming(method_name, false /* is_request */)) {
+      if (parser != nullptr &&
+          parser->IsStreaming(method_name, false /* is_request */)) {
         fprintf(stderr, "Batch mode for streaming RPC is not supported.\n");
         return false;
       }
@@ -923,7 +925,7 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
       !absl::GetFlag(FLAGS_binary_output)) {
     std::shared_ptr<grpc::Channel> channel =
         CreateCliChannel(server_address, cred, grpc::ChannelArguments());
-    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+    parser = std::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
         absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {

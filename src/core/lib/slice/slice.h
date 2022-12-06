@@ -30,7 +30,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
 // They aim to keep you safe by providing strong guarantees around lifetime and
@@ -51,6 +51,19 @@
 // type as well.
 
 namespace grpc_core {
+
+inline const grpc_slice& CSliceRef(const grpc_slice& slice) {
+  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
+    slice.refcount->Ref();
+  }
+  return slice;
+}
+
+inline void CSliceUnref(const grpc_slice& slice) {
+  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
+    slice.refcount->Unref();
+  }
+}
 
 namespace slice_detail {
 
@@ -181,6 +194,10 @@ struct CopyConstructors {
   static Out FromCopiedBuffer(const char* p, size_t len) {
     return Out(grpc_slice_from_copied_buffer(p, len));
   }
+  static Out FromCopiedBuffer(const uint8_t* p, size_t len) {
+    return Out(
+        grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(p), len));
+  }
 
   template <typename Buffer>
   static Out FromCopiedBuffer(const Buffer& buffer) {
@@ -248,11 +265,7 @@ class MutableSlice : public slice_detail::BaseSlice,
       : slice_detail::BaseSlice(slice) {
     GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
   }
-  ~MutableSlice() {
-    if (reinterpret_cast<uintptr_t>(c_slice().refcount) > 1) {
-      c_slice().refcount->Unref();
-    }
-  }
+  ~MutableSlice() { CSliceUnref(c_slice()); }
 
   MutableSlice(const MutableSlice&) = delete;
   MutableSlice& operator=(const MutableSlice&) = delete;
@@ -287,11 +300,8 @@ class Slice : public slice_detail::BaseSlice,
               public slice_detail::StaticConstructors<Slice> {
  public:
   Slice() = default;
-  ~Slice() {
-    if (reinterpret_cast<uintptr_t>(c_slice().refcount) > 1) {
-      c_slice().refcount->Unref();
-    }
-  }
+  ~Slice() { CSliceUnref(c_slice()); }
+
   explicit Slice(const grpc_slice& slice) : slice_detail::BaseSlice(slice) {}
   explicit Slice(slice_detail::BaseSlice&& other)
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
@@ -372,12 +382,7 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(grpc_slice_split_tail(c_slice_ptr(), split));
   }
 
-  Slice Ref() const {
-    if (reinterpret_cast<uintptr_t>(c_slice().refcount) > 1) {
-      c_slice().refcount->Ref();
-    }
-    return Slice(c_slice());
-  }
+  Slice Ref() const { return Slice(CSliceRef(c_slice())); }
 
   Slice Copy() const { return Slice(grpc_slice_copy(c_slice())); }
 

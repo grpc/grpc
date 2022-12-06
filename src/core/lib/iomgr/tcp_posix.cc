@@ -21,6 +21,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -50,10 +51,12 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -515,8 +518,7 @@ struct grpc_tcp {
   grpc_core::MemoryOwner memory_owner;
   grpc_core::MemoryAllocator::Reservation self_reservation;
 
-  grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
-  gpr_mu tb_mu; /* Lock for access to list of traced buffers */
+  grpc_core::TracedBufferList tb_list; /* List of traced buffers */
 
   /* grpc_endpoint_write takes an argument which if non-null means that the
    * transport layer wants the TCP layer to collect timestamps for this write.
@@ -540,7 +542,6 @@ struct grpc_tcp {
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 
-  bool frame_size_tuning_enabled;
   int min_progress_size; /* A hint from upper layers specifying the minimum
                             number of bytes that need to be read to make
                             meaningful progress */
@@ -684,7 +685,7 @@ static void tcp_drop_uncovered_then_handle_write(void* arg,
                                                  grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   drop_uncovered(static_cast<grpc_tcp*>(arg));
   tcp_handle_write(arg, error);
@@ -712,11 +713,12 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(
-          grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
+          grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd,
+                             tcp->fd),
           /* All tcp errors are marked with UNAVAILABLE so that application may
            * choose to retry. */
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
+      grpc_core::StatusStrProperty::kTargetAddress, tcp->peer_string);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -732,14 +734,9 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
-  /* The lock is not really necessary here, since all refs have been released */
-  gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::Shutdown(
-      &tcp->tb_head, tcp->outgoing_buffer_arg,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
-  gpr_mu_unlock(&tcp->tb_mu);
+  tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
+                        GRPC_ERROR_CREATE("endpoint destroyed"));
   tcp->outgoing_buffer_arg = nullptr;
-  gpr_mu_destroy(&tcp->tb_mu);
   delete tcp;
 }
 
@@ -813,12 +810,12 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
     gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
-            tcp->peer_string.c_str(), grpc_error_std_string(error).c_str());
+            tcp->peer_string.c_str(), grpc_core::StatusToString(error).c_str());
     if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", dump);
+        gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
         gpr_free(dump);
       }
     }
@@ -862,7 +859,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
                  sizeof(remaining)) != 0) {
     gpr_log(GPR_ERROR, "%s",
             absl::StrCat("Cannot set SO_RCVLOWAT on fd=", tcp->fd,
-                         " err=", strerror(errno))
+                         " err=", grpc_core::StrError(errno).c_str())
                 .c_str());
     return;
   }
@@ -916,51 +913,49 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     }
     msg.msg_flags = 0;
 
-    GRPC_STATS_INC_TCP_READ_OFFER(tcp->incoming_buffer->length);
-    GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(tcp->incoming_buffer->count);
+    grpc_core::global_stats().IncrementTcpReadOffer(
+        tcp->incoming_buffer->length);
+    grpc_core::global_stats().IncrementTcpReadOfferIovSize(
+        tcp->incoming_buffer->count);
 
     do {
-      GRPC_STATS_INC_SYSCALL_READ();
+      grpc_core::global_stats().IncrementSyscallRead();
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
 
+    if (read_bytes < 0 && errno == EAGAIN) {
+      /* NB: After calling call_read_cb a parallel call of the read handler may
+       * be running. */
+      if (total_read_bytes > 0) {
+        break;
+      }
+      finish_estimate(tcp);
+      tcp->inq = 0;
+      return false;
+    }
+
     /* We have read something in previous reads. We need to deliver those
      * bytes to the upper layer. */
-    if (read_bytes <= 0 &&
-        total_read_bytes >= static_cast<size_t>(tcp->min_progress_size)) {
+    if (read_bytes <= 0 && total_read_bytes >= 1) {
       tcp->inq = 1;
       break;
     }
 
-    if (read_bytes < 0) {
-      /* NB: After calling call_read_cb a parallel call of the read handler may
-       * be running. */
-      if (errno == EAGAIN) {
-        if (total_read_bytes > 0) {
-          break;
-        }
-        finish_estimate(tcp);
-        tcp->inq = 0;
-        return false;
-      } else {
-        grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
-        return true;
-      }
-    }
-    if (read_bytes == 0) {
-      /* 0 read size ==> end of stream
-       *
-       * We may have read something, i.e., total_read_bytes > 0, but
-       * since the connection is closed we will drop the data here, because we
-       * can't call the callback multiple times. */
+    if (read_bytes <= 0) {
+      /* 0 read size ==> end of stream */
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-      *error = tcp_annotate_error(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
+      if (read_bytes == 0) {
+        *error = tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
+      } else {
+        *error =
+            tcp_annotate_error(absl::InternalError(absl::StrCat(
+                                   "recvmsg:", grpc_core::StrError(errno))),
+                               tcp);
+      }
       return true;
     }
 
-    GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
+    grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     GPR_DEBUG_ASSERT((size_t)read_bytes <=
                      tcp->incoming_buffer->length - total_read_bytes);
@@ -1012,7 +1007,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   *error = absl::OkStatus();
-  if (tcp->frame_size_tuning_enabled) {
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
     // this round.
     tcp->min_progress_size -= total_read_bytes;
@@ -1070,14 +1065,14 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
           extra_wanted -= kBigAlloc;
           grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
                                         tcp->memory_owner.MakeSlice(kBigAlloc));
-          GRPC_STATS_INC_TCP_READ_ALLOC_64K();
+          grpc_core::global_stats().IncrementTcpReadAlloc64k();
         }
       } else {
         while (extra_wanted > 0) {
           extra_wanted -= kSmallAlloc;
           grpc_slice_buffer_add_indexed(
               tcp->incoming_buffer, tcp->memory_owner.MakeSlice(kSmallAlloc));
-          GRPC_STATS_INC_TCP_READ_ALLOC_8K();
+          grpc_core::global_stats().IncrementTcpReadAlloc8k();
         }
       }
       maybe_post_reclaimer(tcp);
@@ -1115,7 +1110,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
@@ -1149,8 +1144,9 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   tcp->read_cb = cb;
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
-  tcp->min_progress_size =
-      tcp->frame_size_tuning_enabled ? min_progress_size : 1;
+  tcp->min_progress_size = grpc_core::IsTcpFrameSizeTuningEnabled()
+                               ? std::max(min_progress_size, 1)
+                               : 1;
   grpc_slice_buffer_reset_and_unref(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
@@ -1187,7 +1183,7 @@ ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
   ssize_t sent_length;
   do {
     /* TODO(klempner): Cork if this is a partial write */
-    GRPC_STATS_INC_SYSCALL_WRITE();
+    grpc_core::global_stats().IncrementSyscallWrite();
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
   } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
   return sent_length;
@@ -1278,11 +1274,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
-    gpr_mu_lock(&tcp->tb_mu);
-    grpc_core::TracedBuffer::AddNewEntry(
-        &tcp->tb_head, static_cast<uint32_t>(tcp->bytes_counter + length),
-        tcp->fd, tcp->outgoing_buffer_arg);
-    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->tb_list.AddNewEntry(static_cast<uint32_t>(tcp->bytes_counter + length),
+                             tcp->fd, tcp->outgoing_buffer_arg);
     tcp->outgoing_buffer_arg = nullptr;
   }
   return true;
@@ -1376,13 +1369,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     gpr_log(GPR_ERROR, "Unexpected control message");
     return cmsg;
   }
-  /* The error handling can potentially be done on another thread so we need
-   * to protect the traced buffer list. A lock free list might be better. Using
-   * a simple mutex for now. */
-  gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, opt_stats,
-                                            tss);
-  gpr_mu_unlock(&tcp->tb_mu);
+  tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
   return next_cmsg;
 }
 
@@ -1468,7 +1455,7 @@ static void tcp_handle_error(void* arg /* grpc_tcp */,
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
 
   if (!error.ok() ||
@@ -1520,11 +1507,8 @@ static void tcp_handle_error(void* /*arg*/ /* grpc_tcp */,
  * release operations needed can be performed on the arg */
 void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   if (tcp->outgoing_buffer_arg) {
-    gpr_mu_lock(&tcp->tb_mu);
-    grpc_core::TracedBuffer::Shutdown(
-        &tcp->tb_head, tcp->outgoing_buffer_arg,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TracedBuffer list shutdown"));
-    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
+                          GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
     tcp->outgoing_buffer_arg = nullptr;
   }
 }
@@ -1618,8 +1602,8 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
-      GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
-      GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterSend(
@@ -1731,8 +1715,8 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
 
-      GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
-      GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
+      grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
+      grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
 
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno);
     }
@@ -1817,7 +1801,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     tcp->write_cb = nullptr;
     tcp->current_zerocopy_send = nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
     }
     // No need to take a ref on error since tcp_flush provides a ref.
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
@@ -1841,7 +1825,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", data);
+        gpr_log(GPR_DEBUG, "WRITE DATA: %s", data);
         gpr_free(data);
       }
     }
@@ -1854,8 +1838,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     grpc_core::Closure::Run(
         DEBUG_LOCATION, cb,
         grpc_fd_is_shutdown(tcp->em_fd)
-            ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
-                                 tcp)
+            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
             : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;
@@ -1886,7 +1869,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     notify_on_write(tcp);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
     }
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
   }
@@ -1985,7 +1968,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  tcp->frame_size_tuning_enabled = grpc_core::IsTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
   if (options.tcp_tx_zero_copy_enabled &&
       !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
@@ -2006,8 +1988,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  gpr_mu_init(&tcp->tb_mu);
-  tcp->tb_head = nullptr;
   GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
                     grpc_schedule_on_exec_ctx);
   if (grpc_event_engine_run_in_background()) {

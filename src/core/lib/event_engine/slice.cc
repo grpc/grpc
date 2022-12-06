@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/slice/slice.h"
+
 #include <stdint.h>
 
 #include <string>
@@ -24,7 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -50,7 +52,7 @@ MutableSlice::MutableSlice(const grpc_slice& slice)
   GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
 }
 
-MutableSlice::~MutableSlice() { grpc_slice_unref(c_slice()); }
+MutableSlice::~MutableSlice() { grpc_core::CSliceUnref(c_slice()); }
 
 Slice Slice::TakeOwned() {
   if (c_slice().refcount == nullptr) {
@@ -69,7 +71,7 @@ Slice Slice::AsOwned() const {
   if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
     return Slice(grpc_slice_copy(c_slice()));
   }
-  return Slice(grpc_slice_ref(c_slice()));
+  return Slice(grpc_core::CSliceRef(c_slice()));
 }
 
 MutableSlice Slice::TakeMutable() {
@@ -83,9 +85,9 @@ MutableSlice Slice::TakeMutable() {
   return MutableSlice(grpc_slice_copy(c_slice()));
 }
 
-Slice::~Slice() { grpc_slice_unref(c_slice()); }
+Slice::~Slice() { grpc_core::CSliceUnref(c_slice()); }
 
-Slice Slice::Ref() const { return Slice(grpc_slice_ref(c_slice())); }
+Slice Slice::Ref() const { return Slice(grpc_core::CSliceRef(c_slice())); }
 
 Slice Slice::FromRefcountAndBytes(grpc_slice_refcount* r, const uint8_t* begin,
                                   const uint8_t* end) {

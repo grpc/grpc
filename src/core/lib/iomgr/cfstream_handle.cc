@@ -81,14 +81,14 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
       stream_error = CFReadStreamCopyError(stream);
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "read error"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       CFRelease(stream_error);
       handle->open_event_.SetShutdown(error);
       handle->write_event_.SetShutdown(error);
       handle->read_event_.SetShutdown(error);
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
 }
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
@@ -115,14 +115,14 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
       stream_error = CFWriteStreamCopyError(stream);
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write error"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       CFRelease(stream_error);
       handle->open_event_.SetShutdown(error);
       handle->write_event_.SetShutdown(error);
       handle->read_event_.SetShutdown(error);
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
 }
 

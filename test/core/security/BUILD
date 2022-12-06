@@ -45,8 +45,10 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
+        "//src/core:default_event_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -98,6 +100,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -124,7 +127,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_authorization_base",
+        "//src/core:grpc_authorization_base",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -140,6 +143,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -169,6 +173,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/iomgr:endpoint_tests",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -183,6 +188,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -204,6 +210,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -332,6 +339,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -380,6 +388,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -402,6 +411,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -415,6 +425,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -483,7 +494,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_rbac_engine",
+        "//src/core:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -497,7 +508,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_rbac_engine",
+        "//src/core:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

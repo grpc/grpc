@@ -22,6 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
+#include <stdlib.h>
+
+#include <grpc/support/log.h>
 
 /* Helpers for hpack varint encoding */
 
@@ -36,22 +39,22 @@ constexpr uint32_t MaxInVarintPrefix(uint8_t prefix_bits) {
 /* length of a value that needs varint tail encoding (it's bigger than can be
    bitpacked into the opcode byte) - returned value includes the length of the
    opcode byte */
-uint32_t VarintLength(uint32_t tail_value);
-void VarintWriteTail(uint32_t tail_value, uint8_t* target,
-                     uint32_t tail_length);
+size_t VarintLength(size_t tail_value);
+void VarintWriteTail(size_t tail_value, uint8_t* target, size_t tail_length);
 
 template <uint8_t kPrefixBits>
 class VarintWriter {
  public:
   static constexpr uint32_t kMaxInPrefix = MaxInVarintPrefix(kPrefixBits);
 
-  explicit VarintWriter(uint32_t value)
+  explicit VarintWriter(size_t value)
       : value_(value),
         length_(value < kMaxInPrefix ? 1 : VarintLength(value - kMaxInPrefix)) {
+    GPR_ASSERT(value <= UINT32_MAX);
   }
 
-  uint32_t value() const { return value_; }
-  uint32_t length() const { return length_; }
+  size_t value() const { return value_; }
+  size_t length() const { return length_; }
 
   void Write(uint8_t prefix, uint8_t* target) const {
     if (length_ == 1) {
@@ -63,9 +66,9 @@ class VarintWriter {
   }
 
  private:
-  const uint32_t value_;
+  const size_t value_;
   // length required to bitpack value_
-  const uint32_t length_;
+  const size_t length_;
 };
 
 }  // namespace grpc_core

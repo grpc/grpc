@@ -26,7 +26,6 @@
 
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
@@ -35,9 +34,9 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -54,8 +53,6 @@
 namespace grpc_core {
 
 namespace {
-
-using ::grpc_event_engine::experimental::EventEngine;
 
 // TODO(ctiller): The idle filter was disabled in client channel by default
 // due to b/143502997. Now the bug is fixed enable the filter by default.
@@ -124,19 +121,15 @@ struct MaxAgeFilter::Config {
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  // TODO(hork): pull EventEngine from args
-  ClientIdleFilter filter(
-      filter_args.channel_stack(), GetClientIdleTimeout(args),
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  ClientIdleFilter filter(filter_args.channel_stack(),
+                          GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  // TODO(hork): pull EventEngine from args
   MaxAgeFilter filter(filter_args.channel_stack(),
-                      Config::FromChannelArgs(args),
-                      grpc_event_engine::experimental::GetDefaultEventEngine());
+                      Config::FromChannelArgs(args));
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));
 }
 
@@ -186,8 +179,8 @@ void MaxAgeFilter::PostInit() {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
-                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
+                    GRPC_ERROR_CREATE("max_age"),
+                    StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
                 elem->filter->start_transport_op(elem, op);
@@ -210,7 +203,7 @@ void MaxAgeFilter::PostInit() {
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
         },
-        engine_.get()));
+        channel_stack->EventEngine()));
   }
 }
 
@@ -271,14 +264,14 @@ void ChannelIdleFilter::StartIdleTimer() {
       [channel_stack, this](absl::Status status) {
         if (status.ok()) CloseChannel();
       },
-      engine_.get()));
+      channel_stack->EventEngine()));
 }
 
 void ChannelIdleFilter::CloseChannel() {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-      GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+      GRPC_ERROR_CREATE("enter idle"),
+      StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);
@@ -313,13 +306,10 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       });
 }
 
-MaxAgeFilter::MaxAgeFilter(
-    grpc_channel_stack* channel_stack, const Config& max_age_config,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
-    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle,
-                        engine),
+MaxAgeFilter::MaxAgeFilter(grpc_channel_stack* channel_stack,
+                           const Config& max_age_config)
+    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle),
       max_connection_age_(max_age_config.max_connection_age),
-      max_connection_age_grace_(max_age_config.max_connection_age_grace),
-      engine_(engine) {}
+      max_connection_age_grace_(max_age_config.max_connection_age_grace) {}
 
 }  // namespace grpc_core

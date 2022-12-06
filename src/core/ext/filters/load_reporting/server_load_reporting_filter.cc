@@ -25,10 +25,10 @@
 #include <stdlib.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
@@ -61,7 +61,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"

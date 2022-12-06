@@ -40,10 +40,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
-
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
 //
@@ -199,7 +195,7 @@ class Stream {
   explicit Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
-    arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
+    arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
   }
 
   ~Stream() {
@@ -215,7 +211,7 @@ class Stream {
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
       arena_->Destroy();
-      arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
+      arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
@@ -251,6 +247,10 @@ class Stream {
 
   Fixture* f_;
   grpc_stream_refcount refcount_;
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::Arena* arena_;
   size_t stream_size_;
   void* stream_;
@@ -265,7 +265,6 @@ std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_StreamCreateDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
-  TrackCounters track_counters;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
@@ -286,7 +285,6 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
       });
   grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), absl::OkStatus());
   f.FlushExecCtx();
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_StreamCreateDestroy);
 
@@ -318,7 +316,6 @@ class RepresentativeClientInitialMetadata {
 
 template <class Metadata>
 static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
@@ -332,7 +329,11 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
   Metadata::Prepare(&b);
 
@@ -362,13 +363,11 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), absl::OkStatus());
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
-  track_counters.Finish(state);
 }
 BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
                    RepresentativeClientInitialMetadata);
 
 static void BM_TransportEmptyOp(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
@@ -406,7 +405,6 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   s->DestroyThen(
       MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
   f.FlushExecCtx();
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_TransportEmptyOp);
 

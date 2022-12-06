@@ -249,8 +249,8 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result->peer_identity);
   gpr_free(result->key_data);
   gpr_free(result->unused_bytes);
-  grpc_slice_unref(result->rpc_versions);
-  grpc_slice_unref(result->serialized_context);
+  grpc_core::CSliceUnref(result->rpc_versions);
+  grpc_core::CSliceUnref(result->serialized_context);
   gpr_free(result);
 }
 
@@ -394,7 +394,7 @@ static void on_handshaker_service_resp_recv(void* arg,
   if (!error.ok()) {
     gpr_log(GPR_INFO,
             "ALTS handshaker on_handshaker_service_resp_recv error: %s",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     success = false;
   }
   alts_handshaker_client_handle_response(client, success);
@@ -481,7 +481,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
   } else {
     ok = alts_handshaker_client_next(handshaker->client, &slice);
   }
-  grpc_slice_unref(slice);
+  grpc_core::CSliceUnref(slice);
   return ok;
 }
 
@@ -612,7 +612,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   alts_handshaker_client_destroy(handshaker->client);
-  grpc_slice_unref(handshaker->target_name);
+  grpc_core::CSliceUnref(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
   if (handshaker->channel != nullptr) {
     grpc_channel_destroy_internal(handshaker->channel);

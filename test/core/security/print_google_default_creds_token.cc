@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/channel_credentials/google_default.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -45,7 +46,7 @@ static void on_metadata_response(void* arg, grpc_error_handle error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
   if (!error.ok()) {
     fprintf(stderr, "Fetching token failed: %s\n",
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
     fflush(stderr);
   } else {
     char* token;

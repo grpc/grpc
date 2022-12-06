@@ -178,16 +178,18 @@ def diff(bms, loops, regex, track, old, new):
                 js_old_opt = _read_json(
                     '%s.%s.opt.%s.%d.json' % (bm, stripped_line, old, loop),
                     badjson_files, nonexistant_files)
-                for row in bm_json.expand_json(js_new_opt):
-                    name = row['cpp_name']
-                    if name.endswith('_mean') or name.endswith('_stddev'):
-                        continue
-                    benchmarks[name].add_sample(track, row, True)
-                for row in bm_json.expand_json(js_old_opt):
-                    name = row['cpp_name']
-                    if name.endswith('_mean') or name.endswith('_stddev'):
-                        continue
-                    benchmarks[name].add_sample(track, row, False)
+                if js_new_opt:
+                    for row in bm_json.expand_json(js_new_opt):
+                        name = row['cpp_name']
+                        if name.endswith('_mean') or name.endswith('_stddev'):
+                            continue
+                        benchmarks[name].add_sample(track, row, True)
+                if js_old_opt:
+                    for row in bm_json.expand_json(js_old_opt):
+                        name = row['cpp_name']
+                        if name.endswith('_mean') or name.endswith('_stddev'):
+                            continue
+                        benchmarks[name].add_sample(track, row, False)
 
     really_interesting = set()
     for name, bm in benchmarks.items():
