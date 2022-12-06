@@ -39,10 +39,10 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      XdsExtension extension, upb_Arena* arena,
       ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      XdsExtension extension, upb_Arena* arena,
       ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;

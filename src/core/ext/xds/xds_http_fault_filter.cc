@@ -85,9 +85,9 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
+XdsHttpFaultFilter::GenerateFilterConfig(XdsExtension extension,
+                                         upb_Arena* arena,
+                                         ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
@@ -96,7 +96,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(
   }
   auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
       serialized_filter_config->data(), serialized_filter_config->size(),
-      context.arena);
+      arena);
   if (http_fault == nullptr) {
     errors->AddError("could not parse fault injection filter config");
     return absl::nullopt;
@@ -206,11 +206,10 @@ XdsHttpFaultFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
+    XdsExtension extension, upb_Arena* arena, ValidationErrors* errors) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(context, std::move(extension), errors);
+  return GenerateFilterConfig(std::move(extension), arena, errors);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
