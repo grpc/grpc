@@ -122,8 +122,7 @@ bool ResolvedAddressToV4Mapped(
     memcpy(&addr6_out->sin6_addr.s6_addr[12], &addr4->sin_addr, 4);
     addr6_out->sin6_port = addr4->sin_port;
     *resolved_addr6_out = EventEngine::ResolvedAddress(
-        reinterpret_cast<sockaddr*>(addr6_out),
-        static_cast<socklen_t>(sizeof(sockaddr_in6)));
+        reinterpret_cast<sockaddr*>(addr6_out), sizeof(sockaddr_in6));
     return true;
   }
   return false;

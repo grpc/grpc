@@ -236,18 +236,20 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   }
   // Connect
   auto watched_socket = iocp_.Watch(sock);
-  auto info = watched_socket->write_info();
-  bool success = ConnectEx(sock, address.address(), address.size(), nullptr, 0,
-                           nullptr, info->overlapped());
+  auto* info = watched_socket->write_info();
+  bool success =
+      ConnectEx(watched_socket->socket(), address.address(), address.size(),
+                nullptr, 0, nullptr, info->overlapped());
   // It wouldn't be unusual to get a success immediately. But we'll still get an
   // IOCP notification, so let's ignore it.
   if (!success) {
     int last_error = WSAGetLastError();
     if (last_error != ERROR_IO_PENDING) {
-      Run([on_connect = std::move(on_connect),
-           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
+      auto status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
+      Run([on_connect = std::move(on_connect), status]() mutable {
         on_connect(status);
       });
+      watched_socket->MaybeShutdown(status);
       return invalid_connection_handle;
     }
   }
@@ -282,15 +284,23 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   if (TaskHandleComparator<ConnectionHandle>::Eq()(handle,
                                                    invalid_connection_handle)) {
+    GRPC_EVENT_ENGINE_TRACE("%s",
+                            "Attempted to cancel an invalid connection handle");
     return false;
   }
   grpc_core::MutexLock lock(&connection_mu_);
-  if (!known_connection_handles_.contains(handle)) return false;
+  if (!known_connection_handles_.contains(handle)) {
+    GRPC_EVENT_ENGINE_TRACE("Unknown connection handle: %s",
+                            HandleToString(handle).c_str());
+    return false;
+  }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
   // DO NOT SUBMIT(hork): confirm that this is sufficient
   connection_state->socket->MaybeShutdown(
       absl::CancelledError("CancelConnect"));
   known_connection_handles_.erase(handle);
+  GRPC_EVENT_ENGINE_TRACE("Successfully cancelled connection %s",
+                          HandleToString(handle).c_str());
   return true;
 }
 

@@ -132,6 +132,20 @@ grpc_cc_test(
 )
 
 grpc_cc_library(
+    name = "test_utils",
+    srcs = ["test_utils.cc"],
+    hdrs = ["test_utils.h"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
     name = "test_init",
     srcs = ["test_init.cc"],
     hdrs = ["test_init.h"],

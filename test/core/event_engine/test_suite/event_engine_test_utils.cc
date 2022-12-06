@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "test/core/event_engine/test_utils.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -50,69 +51,10 @@ using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
-
-constexpr int kMinMessageSize = 1024;
-constexpr int kMaxMessageSize = 4096;
-
-}  // namespace
-
-// Returns a random message with bounded length.
-std::string GetNextSendMessage() {
-  static const char alphanum[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-  static std::random_device rd;
-  static std::seed_seq seed{rd()};
-  static std::mt19937 gen(seed);
-  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
-  static grpc_core::Mutex g_mu;
-  std::string tmp_s;
-  int len;
-  {
-    grpc_core::MutexLock lock(&g_mu);
-    len = dis(gen);
-  }
-  tmp_s.reserve(len);
-  for (int i = 0; i < len; ++i) {
-    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-  }
-  return tmp_s;
-}
-
 void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
     absl::SleepFor(absl::Milliseconds(100));
   }
-}
-
-EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
-  grpc_resolved_address addr;
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse. Error: %s",
-            uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  GPR_ASSERT(grpc_parse_uri(*uri, &addr));
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
-}
-
-void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data) {
-  buf->Append(Slice::FromCopiedString(data));
-}
-
-std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
-  if (!buf->Length()) {
-    return std::string();
-  }
-  std::string tmp(buf->Length(), '\0');
-  char* bytes = const_cast<char*>(tmp.c_str());
-  grpc_slice_buffer_move_first_into_buffer(buf->c_slice_buffer(), buf->Length(),
-                                           bytes);
-  return tmp;
 }
 
 absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,

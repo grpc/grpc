@@ -31,6 +31,9 @@ namespace experimental {
 std::string HandleToString(EventEngine::TaskHandle handle) {
   return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
 }
+std::string HandleToString(EventEngine::ConnectionHandle handle) {
+  return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
+}
 
 grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
                                  EventEngine::Duration delta) {

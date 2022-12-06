@@ -103,8 +103,6 @@ class WindowsEventEngine : public EventEngine,
   // Managed by a shared_ptr, owned exclusively by the timeout callback and the
   // ConnectedClosure callback herein.
   struct ConnectionState {
-    ~ConnectionState() { delete on_connected; }
-
     // everything is guarded by mu;
     grpc_core::Mutex mu;
     EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
