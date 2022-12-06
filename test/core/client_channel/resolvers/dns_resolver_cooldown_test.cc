@@ -62,6 +62,8 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 constexpr int kMinResolutionPeriodMs = 1000;
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
@@ -91,7 +93,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   explicit TestDNSResolver(
       std::shared_ptr<grpc_core::DNSResolver> default_resolver)
       : default_resolver_(std::move(default_resolver)),
-        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+        engine_(GetDefaultEventEngine()) {}
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   TaskHandle LookupHostname(
@@ -383,6 +385,7 @@ static void start_test_under_work_serializer(void* arg) {
       kMinResolutionPeriodMs);
   grpc_channel_args cooldown_args = {1, &cooldown_arg};
   args.args = grpc_core::ChannelArgs::FromC(&cooldown_args);
+  args.args = args.args.SetObject(GetDefaultEventEngine());
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   ASSERT_NE(res_cb_arg->resolver, nullptr);
   // First resolution, would incur in system-level resolution.
