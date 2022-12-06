@@ -58,7 +58,6 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 

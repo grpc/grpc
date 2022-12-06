@@ -65,6 +65,12 @@ class ServiceConfigCallData {
 
   const CallAttributes& call_attributes() const { return call_attributes_; }
 
+  // Must be called when holding the call combiner (legacy filter) or from
+  // inside the activity (promise-based filter).
+  void SetCallAttribute(UniqueTypeName name, absl::string_view value) {
+    call_attributes_[name] = value;
+  }
+
  private:
   RefCountedPtr<ServiceConfig> service_config_;
   const ServiceConfigParser::ParsedConfigVector* method_configs_;
@@ -73,4 +79,4 @@ class ServiceConfigCallData {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H */
+#endif  // GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H

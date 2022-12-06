@@ -26,6 +26,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -36,6 +37,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
 

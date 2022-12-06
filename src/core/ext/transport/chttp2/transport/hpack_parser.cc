@@ -26,7 +26,6 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <cinttypes>
 #include <string>
 #include <utility>
 

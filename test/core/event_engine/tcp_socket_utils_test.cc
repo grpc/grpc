@@ -19,6 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
 // IWYU pragma: no_include <arpa/inet.h>
 
 #include <string>
