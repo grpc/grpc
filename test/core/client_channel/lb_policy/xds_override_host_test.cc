@@ -150,6 +150,8 @@ TEST_F(XdsOverrideHostTest, OverrideHostChannelNotFound) {
 
   ASSERT_THAT(picks, UnorderedElementsAre(kAddresses[0], kAddresses[1]));
 }
+
+TEST_F(XdsOverrideHostTest, DISABLED_OverridenHostFailure) {}
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

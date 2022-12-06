@@ -468,6 +468,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
   }
 
+  void ExpectReresolutionRequest(SourceLocation location = SourceLocation()) {
+    ASSERT_TRUE(helper_->GetNextReresolution(location))
+        << location.file() << ":" << location.line();
+  }
+
   // Expects that the LB policy has reported the specified connectivity
   // state to helper_.  Returns the picker from the state update.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectState(
