@@ -472,7 +472,7 @@ static void test_connect(size_t num_connects,
 }
 
 static int pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
-                                   int* fd) {
+                                  int* fd) {
   struct sockaddr_in6 address;
   memset(&address, 0, sizeof(address));
   address.sin6_family = family;
@@ -571,7 +571,7 @@ static void test_pre_allocated_inet_fd() {
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 static int pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
-                                   int* fd) {
+                                  int* fd) {
   struct sockaddr_un address;
   memset(&address, 0, sizeof(struct sockaddr_un));
   address.sun_family = AF_UNIX;
@@ -665,7 +665,8 @@ static void test_pre_allocated_unix_fd() {
   // If the path no longer exists, errno is 2. This can happen when
   // runninig the test multiple times in parallel. Do not fail the test
   if (absl::IsUnknown(res_conn) && res_conn.raw_code() == 2) {
-    gpr_log(GPR_ERROR, "Unable to test pre_allocated unix socket: path does not exist");
+    gpr_log(GPR_ERROR,
+            "Unable to test pre_allocated unix socket: path does not exist");
     grpc_tcp_server_unref(s);
     close(pre_fd);
     return;
