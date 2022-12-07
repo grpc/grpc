@@ -41,12 +41,16 @@ class PosixEventEngine : public EventEngine {
     /// Returns the file descriptor associated with the posix endpoint.
     virtual int GetWrappedFd() = 0;
 
-    /// Shutdown the endpoint. After this function call its illegal to invoke
-    /// any other methods on the endpoint.
+    /// Shutdown the endpoint. This function call should trigger execution of
+    /// any pending endpoint Read/Write callbacks with appropriate error
+    /// absl::Status. After this function call any subsequent endpoint
+    /// Read/Write operations until endpoint deletion should fail with an
+    /// appropriate absl::Status.
+    ///
     /// \a on_release_fd - If specifed, the callback is invoked when the
-    /// endpoint is shutdown and the underlying file descriptor is released
-    /// instead of being closed. The callback will get the released file
-    /// descriptor as its argument if the release operation is successful.
+    /// endpoint is destroyed/deleted. The underlying file descriptor is
+    /// released instead of being closed. The callback will get the released
+    /// file descriptor as its argument if the release operation is successful.
     /// Otherwise it would get an appropriate error status as its argument.
     virtual void Shutdown(
         absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
