@@ -421,11 +421,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return address;
   }
 
-  static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
-      std::map<std::string, std::string> init = {}) {
-    return std::make_unique<FakeMetadata>(init);
-  }
-
   // Constructs an update containing a list of addresses.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,
@@ -559,12 +554,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                 location);
   }
 
+  static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
+      std::map<std::string, std::string> init = {}) {
+    return std::make_unique<FakeMetadata>(init);
+  }
+
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
       LoadBalancingPolicy::SubchannelPicker* picker,
       const std::map<std::string, std::string>& metadata_map = {}) {
     ExecCtx exec_ctx;
-    FakeMetadata metadata{metadata_map};
+    FakeMetadata metadata({metadata_map});
     FakeCallState call_state;
     return picker->Pick({"/service/method", &metadata, &call_state});
   }
