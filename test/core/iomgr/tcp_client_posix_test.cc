@@ -224,32 +224,36 @@ void test_connect_cancellation_succeeds(void) {
   bool tried_ipv4 = false;
   /* create a phony server */
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  while (svr_fd < 0 ||
-         bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
-              resolved_addr.len) != 0) {
-    if (tried_ipv4) {
+  if (svr_fd < 0 ||
+      bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
+           resolved_addr.len) != 0) {
+    // Try ipv4
+    ASSERT_TRUE(grpc_parse_uri(target_ipv4_addr_uri, &resolved_addr));
+    svr_fd = socket(AF_INET, SOCK_STREAM, 0);
+    tried_ipv4 = true;
+    if (svr_fd < 0 ||
+        bind(svr_fd, reinterpret_cast<sockaddr*>(resolved_addr.addr),
+             resolved_addr.len) != 0) {
       gpr_log(GPR_ERROR,
               "Skipping test. Failed to create a phony server bound to ipv6 or "
               "ipv4 address");
       return;
     }
-    // Try ipv4
-    ASSERT_TRUE(grpc_parse_uri(target_ipv4_addr_uri, &resolved_addr));
-    svr_fd = socket(AF_INET, SOCK_STREAM, 0);
-    tried_ipv4 = true;
   }
 
   ASSERT_EQ(listen(svr_fd, 1), 0);
 
   std::vector<int> client_sockets;
+  bool create_more_client_connections = true;
   // Create and connect client sockets until the connection attempt times out.
   // Even if the backlog specified to listen is 1, the kernel continues to
   // accept a certain number of SYN packets before dropping them. This loop
   // attempts to identify the number of new connection attempts that will
   // be allowed by the kernel before any subsequent connection attempts
   // become pending indefinitely.
-  while (true) {
+  while (create_more_client_connections) {
     int client_socket = socket(tried_ipv4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
+    ASSERT_GT(client_socket, 0);
     setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     // Make fd non-blocking.
     int flags = fcntl(client_socket, F_GETFL, 0);
@@ -271,7 +275,8 @@ void test_connect_cancellation_succeeds(void) {
           // kernel will cause any subsequent connection attempts to
           // become pending indefinitely.
           client_sockets.push_back(client_socket);
-          break;
+          create_more_client_connections = false;
+          continue;
         }
       } else {
         gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
