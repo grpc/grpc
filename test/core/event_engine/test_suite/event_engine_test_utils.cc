@@ -46,6 +46,7 @@ namespace experimental {
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
+    GRPC_LOG_EVERY_N_SEC(2, "engine.use_count() = %d", engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));
   }
 }

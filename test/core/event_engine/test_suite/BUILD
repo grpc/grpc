@@ -135,6 +135,7 @@ grpc_cc_test(
         "//src/core:windows_event_engine",
         "//test/core/event_engine:test_utils",
         "timer",
+        "client",
     ],
 )
 

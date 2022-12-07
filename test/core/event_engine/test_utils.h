@@ -24,6 +24,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include "src/core/lib/gprpp/notification.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -36,6 +38,29 @@ EventEngine::ResolvedAddress URIToResolvedAddress(
 
 // Returns a random message with bounded length.
 std::string GetNextSendMessage();
+
+class NotifyOnDelete {
+ public:
+  explicit NotifyOnDelete(grpc_core::Notification* signal) : signal_(signal) {}
+  NotifyOnDelete(const NotifyOnDelete&) = delete;
+  NotifyOnDelete& operator=(const NotifyOnDelete&) = delete;
+  NotifyOnDelete(NotifyOnDelete&& other) noexcept {
+    signal_ = other.signal_;
+    other.signal_ = nullptr;
+  }
+  NotifyOnDelete& operator=(NotifyOnDelete&& other) noexcept {
+    signal_ = other.signal_;
+    other.signal_ = nullptr;
+  }
+  ~NotifyOnDelete() {
+    if (signal_ != nullptr) {
+      signal_->Notify();
+    }
+  }
+
+ private:
+  grpc_core::Notification* signal_;
+};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

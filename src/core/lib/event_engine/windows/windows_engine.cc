@@ -72,6 +72,13 @@ WindowsEventEngine::WindowsEventEngine()
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);
+  executor_->Run([this] {
+    {
+      grpc_core::MutexLock lock(&connection_mu_);
+      iocp_worker_running_ = true;
+    }
+    IOCPWorkLoop();
+  });
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
@@ -85,10 +92,37 @@ WindowsEventEngine::~WindowsEventEngine() {
       }
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
-    GPR_ASSERT(WSACleanup() == 0);
-    timer_manager_.Shutdown();
   }
+  iocp_.Kick();
+  // Wait for the worker loop to exit
+  grpc_core::MutexLock lock(&connection_mu_);
+  while (iocp_worker_running_) {
+    connection_cv_.Wait(&connection_mu_);
+  }
+  iocp_.Shutdown();
+  GPR_ASSERT(WSACleanup() == 0);
+  timer_manager_.Shutdown();
   executor_->Quiesce();
+}
+
+void WindowsEventEngine::IOCPWorkLoop() {
+  auto result = iocp_.Work(std::chrono::seconds(60), [this] {
+    executor_->Run([this]() { IOCPWorkLoop(); });
+  });
+  if (result == Poller::WorkResult::kDeadlineExceeded) {
+    // iocp received no messages. restart the worker
+    executor_->Run([this]() { IOCPWorkLoop(); });
+    return;
+  }
+  if (result == Poller::WorkResult::kKicked) {
+    // DO NOT SUBMIT(hork): there may be more than one worker at some point,
+    // this logic will be wrong
+    grpc_core::MutexLock lock(&connection_mu_);
+    iocp_worker_running_ = false;
+    connection_cv_.SignalAll();
+    return;
+  }
+  GPR_ASSERT(result == Poller::WorkResult::kOk);
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {

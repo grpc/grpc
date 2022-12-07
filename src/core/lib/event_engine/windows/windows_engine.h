@@ -118,13 +118,17 @@ class WindowsEventEngine : public EventEngine,
 
   void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
 
+  void IOCPWorkLoop();
+
   class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
   grpc_core::Mutex connection_mu_;
+  grpc_core::CondVar connection_cv_;
   ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
+  bool iocp_worker_running_ ABSL_GUARDED_BY(connection_mu_){false};
   std::atomic<intptr_t> aba_token_{0};
 
   std::shared_ptr<ThreadPool> executor_;

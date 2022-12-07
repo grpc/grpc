@@ -31,29 +31,6 @@ using namespace std::chrono_literals;
 
 class WindowsEventEngineClientTest : public testing::Test {};
 
-class NotifyOnDelete {
- public:
-  explicit NotifyOnDelete(grpc_core::Notification* signal) : signal_(signal) {}
-  NotifyOnDelete(const NotifyOnDelete&) = delete;
-  NotifyOnDelete& operator=(const NotifyOnDelete&) = delete;
-  NotifyOnDelete(NotifyOnDelete&& other) noexcept {
-    signal_ = other.signal_;
-    other.signal_ = nullptr;
-  }
-  NotifyOnDelete& operator=(NotifyOnDelete&& other) noexcept {
-    signal_ = other.signal_;
-    other.signal_ = nullptr;
-  }
-  ~NotifyOnDelete() {
-    if (signal_ != nullptr) {
-      signal_->Notify();
-    }
-  }
-
- private:
-  grpc_core::Notification* signal_;
-};
-
 TEST_F(WindowsEventEngineClientTest, NoOpCommunication) {
   WindowsEventEngine engine;
   grpc_core::Notification signal;
