@@ -34,6 +34,7 @@ ABSL_CONST_INIT extern const int kFlagExpectSingleMessage;
 ABSL_CONST_INIT extern const int kFlagStatusDescription;
 ABSL_CONST_INIT extern const int kFlagMessageDataIsParcelable;
 ABSL_CONST_INIT extern const int kFlagMessageDataIsPartial;
+ABSL_CONST_INIT extern const int kStatusCodeShift;
 
 using Metadata = std::vector<std::pair<std::string, std::string>>;
 
@@ -67,11 +68,11 @@ class Transaction {
     GPR_ASSERT((flags_ & kFlagStatusDescription) == 0);
     status_desc_ = status_desc;
   }
+  void SetOutOfBandClose() { flags_ |= kFlagOutOfBandClose; }
   void SetStatus(int status) {
-    GPR_ASSERT(!is_client_);
-    GPR_ASSERT((flags_ >> 16) == 0);
-    GPR_ASSERT(status < (1 << 16));
-    flags_ |= (status << 16);
+    GPR_ASSERT((flags_ >> kStatusCodeShift) == 0);
+    GPR_ASSERT(status < (1 << kStatusCodeShift));
+    flags_ |= (status << kStatusCodeShift);
   }
 
   bool IsClient() const { return is_client_; }

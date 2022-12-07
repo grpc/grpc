@@ -44,6 +44,59 @@ using ::testing::Expectation;
 using ::testing::NiceMock;
 using ::testing::Return;
 
+std::string MetadataString(const Metadata& a) {
+  return absl::StrCat(
+      "{",
+      absl::StrJoin(
+          a, ", ",
+          [](std::string* out, const std::pair<std::string, std::string>& kv) {
+            out->append(
+                absl::StrCat("\"", kv.first, "\": \"", kv.second, "\""));
+          }),
+      "}");
+}
+
+bool MetadataEquivalent(Metadata a, Metadata b) {
+  std::sort(a.begin(), a.end());
+  std::sort(b.begin(), b.end());
+  return a == b;
+}
+
+// Matches with transactions having the desired flag, method_ref,
+// initial_metadata, and message_data.
+MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
+           "") {
+  if (arg->GetFlags() != flag) return false;
+  if (flag & kFlagPrefix) {
+    if (arg->GetMethodRef() != method_ref) {
+      printf("METHOD REF NOT EQ: %s %s\n",
+             std::string(arg->GetMethodRef()).c_str(),
+             std::string(method_ref).c_str());
+      return false;
+    }
+    if (!MetadataEquivalent(arg->GetPrefixMetadata(), initial_metadata)) {
+      printf("METADATA NOT EQUIVALENT: %s %s\n",
+             MetadataString(arg->GetPrefixMetadata()).c_str(),
+             MetadataString(initial_metadata).c_str());
+      return false;
+    }
+  }
+  if (flag & kFlagMessageData) {
+    if (arg->GetMessageData() != message_data) {
+      printf("MESSAGE NOT EQUIVALENT: %s %s\n",
+             std::string(arg->GetMessageData()).c_str(),
+             std::string(message_data).c_str());
+      return false;
+    }
+  }
+  return true;
+}
+
+// Matches with grpc_error having error message containing |msg|.
+MATCHER_P(GrpcErrorMessageContains, msg, "") {
+  return absl::StrContains(grpc_core::StatusToString(arg), msg);
+}
+
 class BinderTransportTest : public ::testing::Test {
  public:
   BinderTransportTest()
@@ -91,6 +144,14 @@ class BinderTransportTest : public ::testing::Test {
         GetBinderTransport()->wire_writer.get());
   }
 
+  void ExpectOutOfBandCloseCalled() {
+    EXPECT_CALL(
+        GetWireWriter(),
+        RpcCall(TransactionMatches(
+            kFlagOutOfBandClose | (GRPC_STATUS_CANCELLED << kStatusCodeShift),
+            "", Metadata{}, "")));
+  }
+
   static void SetUpTestSuite() { grpc_init(); }
   static void TearDownTestSuite() { grpc_shutdown(); }
 
@@ -132,55 +193,6 @@ void MockCallback(void* arg, grpc_error_handle error) {
   }
 }
 
-std::string MetadataString(const Metadata& a) {
-  return absl::StrCat(
-      "{",
-      absl::StrJoin(
-          a, ", ",
-          [](std::string* out, const std::pair<std::string, std::string>& kv) {
-            out->append(
-                absl::StrCat("\"", kv.first, "\": \"", kv.second, "\""));
-          }),
-      "}");
-}
-
-bool MetadataEquivalent(Metadata a, Metadata b) {
-  std::sort(a.begin(), a.end());
-  std::sort(b.begin(), b.end());
-  return a == b;
-}
-
-// Matches with transactions having the desired flag, method_ref,
-// initial_metadata, and message_data.
-MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
-           "") {
-  if (arg->GetFlags() != flag) return false;
-  if (flag & kFlagPrefix) {
-    if (arg->GetMethodRef() != method_ref) {
-      printf("METHOD REF NOT EQ: %s %s\n",
-             std::string(arg->GetMethodRef()).c_str(),
-             std::string(method_ref).c_str());
-      return false;
-    }
-    if (!MetadataEquivalent(arg->GetPrefixMetadata(), initial_metadata)) {
-      printf("METADATA NOT EQUIVALENT: %s %s\n",
-             MetadataString(arg->GetPrefixMetadata()).c_str(),
-             MetadataString(initial_metadata).c_str());
-      return false;
-    }
-  }
-  if (flag & kFlagMessageData) {
-    if (arg->GetMessageData() != message_data) return false;
-  }
-  return true;
-}
-
-// Matches with grpc_error having error message containing |msg|.
-MATCHER_P(GrpcErrorMessageContains, msg, "") {
-  return absl::StrContains(grpc_core::StatusToString(arg), msg);
-}
-
-namespace {
 class MetadataEncoder {
  public:
   void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
@@ -201,7 +213,6 @@ class MetadataEncoder {
  private:
   Metadata metadata_;
 };
-}  // namespace
 
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
@@ -407,6 +418,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
   EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
                                    kFlagPrefix, "", kInitialMetadata, "")));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -430,6 +442,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
               RpcCall(TransactionMatches(kFlagPrefix, kMethodRef.substr(1),
                                          kInitialMetadata, "")));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -452,6 +465,7 @@ TEST_F(BinderTransportTest, PerformSendMessage) {
       GetWireWriter(),
       RpcCall(TransactionMatches(kFlagMessageData, "", Metadata{}, kMessage)));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -475,6 +489,7 @@ TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
   EXPECT_CALL(GetWireWriter(), RpcCall(TransactionMatches(
                                    kFlagSuffix, "", kTrailingMetadata, "")));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -510,6 +525,7 @@ TEST_F(BinderTransportTest, PerformSendAll) {
                   kFlagPrefix | kFlagMessageData | kFlagSuffix,
                   kMethodRef.substr(1), kInitialMetadata, kMessage)));
   EXPECT_CALL(mock_on_complete, Callback);
+  ExpectOutOfBandCloseCalled();
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -667,6 +683,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
               RpcCall(TransactionMatches(
                   kFlagPrefix | kFlagMessageData | kFlagSuffix,
                   kMethodRef.substr(1), kSendInitialMetadata, kSendMessage)));
+  ExpectOutOfBandCloseCalled();
   Expectation on_complete = EXPECT_CALL(mock_on_complete, Callback);
 
   // Recv callbacks can happen after the on_complete callback.
@@ -720,6 +737,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   EXPECT_CALL(mock_on_complete1, Callback(absl::OkStatus()));
   EXPECT_CALL(mock_on_complete2,
               Callback(GrpcErrorMessageContains("WireWriter::RpcCall failed")));
+  ExpectOutOfBandCloseCalled();
 
   const Metadata kInitialMetadata = {};
   grpc_transport_stream_op_batch op1{};
