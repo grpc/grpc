@@ -80,7 +80,7 @@
 - name: memory_pressure_controller
   description:
     New memory pressure controller
-  default: false
+  default: debug
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
