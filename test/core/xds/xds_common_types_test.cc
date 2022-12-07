@@ -103,7 +103,8 @@ class XdsCommonTypesTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr);
+                                     /*event_engine=*/nullptr, "foo agent",
+                                     "foo version");
   }
 
   RefCountedPtr<XdsClient> xds_client_;

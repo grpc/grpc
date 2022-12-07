@@ -147,7 +147,8 @@ class XdsApi {
                 "");
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
-         upb::SymbolTable* symtab);
+         upb::SymbolTable* symtab, std::string user_agent_name,
+         std::string user_agent_version);
 
   // Creates an ADS request.
   std::string CreateAdsRequest(absl::string_view type_url,

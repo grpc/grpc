@@ -62,7 +62,8 @@ class Fuzzer {
     transport_factory_ = transport_factory.get();
     xds_client_ = MakeRefCounted<XdsClient>(
         std::move(*bootstrap), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
+        "foo version");
   }
 
   void Act(const xds_client_fuzzer::Action& action) {
