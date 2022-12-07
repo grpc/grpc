@@ -220,7 +220,6 @@ void test_connect_cancellation_succeeds(void) {
   int svr_fd;
   grpc_closure done;
   grpc_core::ExecCtx exec_ctx;
-  int one = 1;
   bool tried_ipv4 = false;
   /* create a phony server */
   svr_fd = socket(AF_INET6, SOCK_STREAM, 0);
@@ -252,9 +251,10 @@ void test_connect_cancellation_succeeds(void) {
   // be allowed by the kernel before any subsequent connection attempts
   // become pending indefinitely.
   while (create_more_client_connections) {
+    const int kOne = 1;
     int client_socket = socket(tried_ipv4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
     ASSERT_GT(client_socket, 0);
-    setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+    setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &kOne, sizeof(kOne));
     // Make fd non-blocking.
     int flags = fcntl(client_socket, F_GETFL, 0);
     EXPECT_EQ(fcntl(client_socket, F_SETFL, flags | O_NONBLOCK), 0);
