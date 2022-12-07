@@ -29,7 +29,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
-#include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -314,7 +313,7 @@ class BasicMemoryQuota final
   void SetSize(size_t new_size);
   // Forcefully take some memory from the quota, potentially entering
   // overcommit.
-  void Take(size_t amount);
+  void Take(size_t amount, size_t shard_idx);
   // Finish reclamation pass.
   void FinishReclamation(uint64_t token, Waker waker);
   // Return some memory to the quota.
@@ -388,7 +387,6 @@ class BasicMemoryQuota final
   memory_quota_detail::PressureTracker pressure_tracker_;
   // The name of this quota - used for debugging/tracing/etc..
   std::string name_;
-  absl::BitGen gen_;
 };
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an
@@ -488,6 +486,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   std::atomic<size_t> free_bytes_{0};
   // Amount of memory taken from the quota by this allocator.
   std::atomic<size_t> taken_bytes_{sizeof(GrpcMemoryAllocatorImpl)};
+  // Index used to randomly choose shard to return bytes from.
+  std::atomic<size_t> chosen_shard_idx_{0};
   std::atomic<bool> registered_reclaimer_{false};
   // We try to donate back some memory periodically to the central quota.
   PeriodicUpdate donate_back_{Duration::Seconds(10)};
