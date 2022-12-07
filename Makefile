@@ -1683,6 +1683,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_buffer.h \
+    include/grpc/event_engine/slice_cast.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -2148,6 +2149,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_buffer.h \
+    include/grpc/event_engine/slice_cast.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
