@@ -24,6 +24,7 @@ FAILED_VERSIONS=""
 for VERSION in $VERSIONS; do
     echo "Running bazel distribtest with bazel version ${VERSION}"
     ./test_single_bazel_version.sh "${VERSION}" || FAILED_VERSIONS="${FAILED_VERSIONS}${VERSION} "
+
 done
 
 if [ "$FAILED_VERSIONS" != "" ]
