@@ -86,29 +86,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "windows_client_test",
-    timeout = "short",
-    srcs = ["windows_client_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    tags = [
-        "no_linux",
-        "no_mac",
-        "no_test_ios",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "create_sockpair",
-        "//:gpr_platform",
-        "//src/core:common_event_engine_closures",
-        "//src/core:windows_event_engine",
-        "//test/core/event_engine:test_utils",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
 grpc_cc_library(
     name = "create_sockpair",
     srcs = ["create_sockpair.cc"],
