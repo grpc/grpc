@@ -149,8 +149,18 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsOverrideHostLb> xds_override_host_policy_;
   };
 
+  class SubchannelConnectivityStateWatcher
+      : public SubchannelInterface::ConnectivityStateWatcherInterface {
+   public:
+    void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                   absl::Status status) override {}
+
+    grpc_pollset_set* interested_parties() override { return nullptr; }
+  };
+
   struct AddressMapEntry {
     RefCountedPtr<SubchannelInterface> subchannel;
+    grpc_connectivity_state state;
   };
 
   ~XdsOverrideHostLb() override;
@@ -404,14 +414,16 @@ RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannelByAddress(
 void XdsOverrideHostLb::RegisterSubchannel(
     const ServerAddress& address,
     RefCountedPtr<SubchannelInterface> subchannel) {
-  absl::MutexLock lock(&subchannel_by_address_map_mu_);
   auto key = MakeKeyForAddress(address);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO,
             "[xds_override_host_lb %p] Added subchannel with address %s", this,
             key.c_str());
   }
-  subchannel_by_address_map_[key] = {subchannel};
+  absl::MutexLock lock(&subchannel_by_address_map_mu_);
+  subchannel_by_address_map_[key] = {subchannel, GRPC_CHANNEL_IDLE};
+  subchannel->WatchConnectivityState(
+      std::make_unique<SubchannelConnectivityStateWatcher>());
 }
 
 //

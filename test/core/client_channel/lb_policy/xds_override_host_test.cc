@@ -151,6 +151,45 @@ TEST_F(XdsOverrideHostTest, OverrideHostChannelNotFound) {
   ASSERT_THAT(picks, UnorderedElementsAre(kAddresses[0], kAddresses[1]));
 }
 
+TEST_F(XdsOverrideHostTest, OverrideHostChannelFailure) {
+  const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
+                                                       "ipv4:127.0.0.1:442"};
+  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
+  // 1. We use pick_first as a child
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
+                                    MakeXdsOverrideHostConfig("round_robin")),
+                        policy_.get()),
+            absl::OkStatus());
+  ExpectConnectingUpdate();
+  EXPECT_NE(ExpectState(GRPC_CHANNEL_CONNECTING), nullptr);
+  EXPECT_NE(ExpectState(GRPC_CHANNEL_CONNECTING), nullptr);
+  // Ready up both subchannels
+  for (auto address : kAddresses) {
+    auto subchannel = FindSubchannel({address});
+    ASSERT_NE(subchannel, nullptr);
+    ASSERT_TRUE(subchannel->ConnectionRequested());
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  }
+  ASSERT_NE(WaitForConnected(), nullptr);
+  ASSERT_NE(ExpectState(GRPC_CHANNEL_READY), nullptr);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure child policy works
+  EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
+  // Check that the host is overridden
+  std::map<std::string, std::string> pick_arg{
+      {std::string(kOverrideHostHeaderName), "127.0.0.1:442"}};
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  auto subchannel = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel, nullptr);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::ResourceExhaustedError("Hmmmm"));
+  ExpectReresolutionRequest();
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
+}
+
 TEST_F(XdsOverrideHostTest, DISABLED_OverridenHostFailure) {}
 }  // namespace
 }  // namespace testing
