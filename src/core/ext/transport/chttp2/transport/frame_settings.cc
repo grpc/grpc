@@ -232,7 +232,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                     sp->name, parser->value);
           }
         } else if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-          gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",
+          gpr_log(GPR_DEBUG, "CHTTP2: Ignoring unknown setting %d (value %d)",
                   parser->id, parser->value);
         }
         break;
