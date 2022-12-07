@@ -159,7 +159,7 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
     std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name)
     : memory_quota_(memory_quota), name_(std::move(name)) {
   memory_quota_->Take(
-      taken_bytes_, chosen_shard_idx_.fetch_add(1, std::memory_order_relaxed));
+      /*allocator=*/this, taken_bytes_);
   memory_quota_->AddNewAllocator(this);
 }
 
@@ -284,7 +284,7 @@ void GrpcMemoryAllocatorImpl::Replenish() {
                       kMinReplenishBytes, kMaxReplenishBytes);
   // Take the requested amount from the quota.
   memory_quota_->Take(
-      amount, chosen_shard_idx_.fetch_add(1, std::memory_order_relaxed));
+      /*allocator=*/this, amount);
   // Record that we've taken it.
   taken_bytes_.fetch_add(amount, std::memory_order_relaxed);
   // Add the taken amount to the free pool.
@@ -421,11 +421,11 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
     Return(new_size - old_size);
   } else {
     // We're shrinking the quota.
-    Take(old_size - new_size, /*chosen_shard=*/-1);
+    Take(/*allocator=*/nullptr, old_size - new_size);
   }
 }
 
-void BasicMemoryQuota::Take(size_t amount, size_t chosen_shard) {
+void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
   GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
@@ -437,10 +437,11 @@ void BasicMemoryQuota::Take(size_t amount, size_t chosen_shard) {
   }
 
   if (IsFreeLargeAllocatorEnabled()) {
-    if (chosen_shard == -1) return;
+    if (allocator == nullptr) return;
     GrpcMemoryAllocatorImpl* chosen_allocator = nullptr;
-    auto& shard =
-        big_allocators_.shards[chosen_shard % big_allocators_.shards.size()];
+    // Use calling allocator's shard index to choose shard.
+    auto& shard = big_allocators_.shards[allocator->IncrementShardIndex() %
+                                         big_allocators_.shards.size()];
 
     if (shard.shard_mu.TryLock()) {
       if (!shard.allocators.empty()) {

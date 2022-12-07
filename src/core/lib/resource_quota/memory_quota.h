@@ -313,7 +313,7 @@ class BasicMemoryQuota final
   void SetSize(size_t new_size);
   // Forcefully take some memory from the quota, potentially entering
   // overcommit.
-  void Take(size_t amount, size_t shard_idx);
+  void Take(GrpcMemoryAllocatorImpl* allocator, size_t amount);
   // Finish reclamation pass.
   void FinishReclamation(uint64_t token, Waker waker);
   // Return some memory to the quota.
@@ -454,6 +454,10 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 
   size_t GetFreeBytes() const {
     return free_bytes_.load(std::memory_order_relaxed);
+  }
+
+  size_t IncrementShardIndex() {
+    return chosen_shard_idx_.fetch_add(1, std::memory_order_relaxed);
   }
 
  private:
