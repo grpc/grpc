@@ -1337,10 +1337,11 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses, ::testing::UnorderedElementsAre(
-      XdsHealthStatus(XdsHealthStatus::kUnknown),
-      XdsHealthStatus(XdsHealthStatus::kHealthy),
-      XdsHealthStatus(XdsHealthStatus::kDraining)));
+  EXPECT_THAT(resource.host_override_statuses,
+              ::testing::UnorderedElementsAre(
+                  XdsHealthStatus(XdsHealthStatus::kUnknown),
+                  XdsHealthStatus(XdsHealthStatus::kHealthy),
+                  XdsHealthStatus(XdsHealthStatus::kDraining)));
 }
 
 }  // namespace

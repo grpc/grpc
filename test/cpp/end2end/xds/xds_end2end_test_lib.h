@@ -542,11 +542,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(
-          int port,
-          ::envoy::config::core::v3::HealthStatus health_status =
-              ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-          int lb_weight = 1)
+      explicit Endpoint(int port,
+                        ::envoy::config::core::v3::HealthStatus health_status =
+                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        int lb_weight = 1)
           : port(port), health_status(health_status), lb_weight(lb_weight) {}
 
       int port;

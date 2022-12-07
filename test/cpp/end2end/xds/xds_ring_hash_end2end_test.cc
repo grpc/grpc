@@ -504,10 +504,8 @@ TEST_P(RingHashTest, EndpointWeights) {
   // Endpoint 2 has weight 2.
   EdsResourceArgs args(
       {{"locality0",
-        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        0),
-         CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        1),
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 0),
+         CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 1),
          CreateEndpoint(2, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                         2)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));

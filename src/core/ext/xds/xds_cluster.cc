@@ -127,8 +127,8 @@ std::string XdsClusterResource::ToString() const {
     for (const auto& status : host_override_statuses) {
       statuses.push_back(status.ToString());
     }
-    contents.push_back(absl::StrCat(
-        "override_host_statuses={", absl::StrJoin(statuses, ", "), "}"));
+    contents.push_back(absl::StrCat("override_host_statuses={",
+                                    absl::StrJoin(statuses, ", "), "}"));
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
@@ -638,9 +638,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       if (override_host_status != nullptr) {
         ValidationErrors::ScopedField field(&errors, ".override_host_status");
         size_t size;
-        const int32_t* statuses =
-            envoy_config_core_v3_HealthStatusSet_statuses(override_host_status,
-                                                          &size);
+        const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
+            override_host_status, &size);
         for (size_t i = 0; i < size; ++i) {
           auto status = XdsHealthStatus::FromUpb(statuses[i]);
           if (status.has_value()) {

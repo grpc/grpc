@@ -30,9 +30,9 @@ absl::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
       return XdsHealthStatus(kHealthy);
     case envoy_config_core_v3_DRAINING:
       return XdsHealthStatus(kDraining);
-    default: 
+    default:
       return absl::nullopt;
-  }   
+  }
 }
 
 const char* XdsHealthStatus::ToString() const {
