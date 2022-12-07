@@ -25,6 +25,8 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_cast.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -402,5 +404,18 @@ class Slice : public slice_detail::BaseSlice,
 };
 
 }  // namespace grpc_core
+
+namespace grpc_event_engine {
+namespace experimental {
+template <>
+struct ConstRefSliceCastable<grpc_core::Slice, grpc_slice> {};
+template <>
+struct ConstRefSliceCastable<grpc_slice, grpc_core::Slice> {};
+template <>
+struct ConstRefSliceCastable<grpc_core::Slice, Slice> {};
+template <>
+struct ConstRefSliceCastable<Slice, grpc_core::Slice> {};
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_SLICE_SLICE_H

@@ -225,6 +225,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
     "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_buffer.h",
+    "include/grpc/event_engine/slice_cast.h",
 ]
 
 GRPCXX_SRCS = [
@@ -1429,6 +1430,7 @@ grpc_cc_library(
         "//src/core:resource_quota_trace",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:slice_cast",
         "//src/core:slice_refcount",
         "//src/core:socket_mutator",
         "//src/core:stats_data",
