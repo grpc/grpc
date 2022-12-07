@@ -590,7 +590,7 @@ static int pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
   }
 
   int l = listen(pre_fd, SOMAXCONN);
-  if (b < 0) {
+  if (l < 0) {
     gpr_log(GPR_ERROR, "Unable to listen on unix socket: %m");
     return -1;
   }
