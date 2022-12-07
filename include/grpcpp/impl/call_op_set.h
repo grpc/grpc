@@ -26,6 +26,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
@@ -68,9 +69,8 @@ inline grpc_metadata* FillMetadataArray(
     metadata_array[i].value = SliceReferencingString(iter->second);
   }
   if (!optional_error_details.empty()) {
-    metadata_array[i].key =
-        g_core_codegen_interface->grpc_slice_from_static_buffer(
-            kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
+    metadata_array[i].key = grpc_slice_from_static_buffer(
+        kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
     metadata_array[i].value = SliceReferencingString(optional_error_details);
   }
   return metadata_array;
@@ -778,7 +778,7 @@ class CallOpClientRecvStatus {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
-    error_message_ = g_core_codegen_interface->grpc_empty_slice();
+    error_message_ = grpc_empty_slice();
   }
 
  protected:
@@ -814,7 +814,7 @@ class CallOpClientRecvStatus {
     }
     // TODO(soheil): Find callers that set debug string even for status OK,
     //               and fix them.
-    g_core_codegen_interface->grpc_slice_unref(error_message_);
+    grpc_slice_unref(error_message_);
   }
 
   void SetInterceptionHookPoint(

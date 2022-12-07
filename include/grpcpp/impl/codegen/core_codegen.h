@@ -33,27 +33,6 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  grpc_slice grpc_empty_slice() override;
-  grpc_slice grpc_slice_malloc(size_t length) override;
-  void grpc_slice_unref(grpc_slice slice) override;
-  grpc_slice grpc_slice_ref(grpc_slice slice) override;
-  grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;
-  grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split) override;
-  grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end) override;
-  void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice) override;
-  void grpc_slice_buffer_pop(grpc_slice_buffer* sb) override;
-  void grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb,
-                                     grpc_slice slice) override;
-  grpc_slice grpc_slice_from_static_buffer(const void* buffer,
-                                           size_t length) override;
-  grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
-                                           size_t length) override;
-  void grpc_metadata_array_init(grpc_metadata_array* array) override;
-  void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
-
-  gpr_timespec gpr_inf_future(gpr_clock_type type) override;
-  gpr_timespec gpr_time_0(gpr_clock_type type) override;
-
   const Status& ok() override;
   const Status& cancelled() override;
 
