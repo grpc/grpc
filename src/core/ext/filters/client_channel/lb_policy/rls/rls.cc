@@ -1431,9 +1431,9 @@ void RlsLb::Cache::Shutdown() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer canceled", lb_policy_);
     }
-    cleanup_timer_handle_.reset();
     lb_policy_->Unref(DEBUG_LOCATION, "Shutdown");
   }
+  cleanup_timer_handle_.reset();
 }
 
 void RlsLb::Cache::OnCleanupTimer() {
@@ -1445,7 +1445,6 @@ void RlsLb::Cache::OnCleanupTimer() {
         }
         MutexLock lock(&lb_policy->mu_);
         if (!cleanup_timer_handle_.has_value()) return;
-        cleanup_timer_handle_.reset();
         if (lb_policy->is_shutdown_) return;
         for (auto it = map_.begin(); it != map_.end();) {
           if (GPR_UNLIKELY(it->second->ShouldRemove() &&
@@ -1456,10 +1455,10 @@ void RlsLb::Cache::OnCleanupTimer() {
             ++it;
           }
         }
+        auto* engine = lb_policy->channel_control_helper()->GetEventEngine();
         lb_policy.release();
-        cleanup_timer_handle_ =
-            lb_policy->channel_control_helper()->GetEventEngine()->RunAfter(
-                kCacheCleanupTimerInterval, [this] { OnCleanupTimer(); });
+        cleanup_timer_handle_ = engine->RunAfter(kCacheCleanupTimerInterval,
+                                                 [this] { OnCleanupTimer(); });
       },
       DEBUG_LOCATION);
 }
