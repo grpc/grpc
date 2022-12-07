@@ -274,9 +274,7 @@ void test_connect_cancellation_succeeds(void) {
           // current connection attempt timed out. It indicates that the
           // kernel will cause any subsequent connection attempts to
           // become pending indefinitely.
-          client_sockets.push_back(client_socket);
           create_more_client_connections = false;
-          continue;
         }
       } else {
         gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
