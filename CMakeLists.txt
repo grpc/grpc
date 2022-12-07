@@ -2449,6 +2449,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_credentials/google_default.h
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -3054,6 +3055,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_credentials/google_default.h
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -4531,6 +4533,7 @@ target_link_libraries(grpc_authorization_provider
 foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
+  include/grpc/channel_credentials/google_default.h
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
