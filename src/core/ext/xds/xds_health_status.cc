@@ -35,6 +35,14 @@ absl::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
   }
 }
 
+absl::optional<XdsHealthStatus> XdsHealthStatus::FromString(
+    absl::string_view status) {
+  if (status == "UNKNOWN") return XdsHealthStatus(kUnknown);
+  if (status == "HEALTHY") return XdsHealthStatus(kHealthy);
+  if (status == "DRAINING") return XdsHealthStatus(kDraining);
+  return absl::nullopt;
+}
+
 const char* XdsHealthStatus::ToString() const {
   switch (status_) {
     case kUnknown:

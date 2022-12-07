@@ -33,6 +33,7 @@ class XdsHealthStatus {
 
   // Returns an XdsHealthStatus for supported enum values, else nullopt.
   static absl::optional<XdsHealthStatus> FromUpb(uint32_t status);
+  static absl::optional<XdsHealthStatus> FromString(absl::string_view status);
 
   explicit XdsHealthStatus(HealthStatus status) : status_(status) {}
 
