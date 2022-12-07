@@ -34,4 +34,4 @@ const Result& SliceCast(const T& value, ConstRefSliceCastable<Result, T> = {}) {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif
+#endif  // GRPC_EVENT_ENGINE_SLICE_CAST_H
