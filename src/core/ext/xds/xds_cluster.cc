@@ -124,6 +124,7 @@ std::string XdsClusterResource::ToString() const {
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
   if (!host_override_statuses.empty()) {
     std::vector<const char*> statuses;
+    statuses.reserve(host_override_statuses.size());
     for (const auto& status : host_override_statuses) {
       statuses.push_back(status.ToString());
     }
