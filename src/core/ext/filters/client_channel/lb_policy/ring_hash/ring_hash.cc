@@ -129,6 +129,8 @@ class RingHashLbConfig : public LoadBalancingPolicy::Config {
 // ring_hash LB policy
 //
 
+constexpr size_t kRingSizeCapDefault = 4096;
+
 class RingHash : public LoadBalancingPolicy {
  public:
   explicit RingHash(Args args);
@@ -518,8 +520,12 @@ RingHash::RingHashSubchannelList::RingHashSubchannelList(
   // weights aren't provided, all hosts should get an equal number of hashes. In
   // the case where this number exceeds the max_ring_size, it's scaled back down
   // to fit.
-  const size_t min_ring_size = policy->config_->min_ring_size();
-  const size_t max_ring_size = policy->config_->max_ring_size();
+  const size_t ring_size_cap = args.GetInt(GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP)
+                                   .value_or(kRingSizeCapDefault);
+  const size_t min_ring_size =
+      std::min(policy->config_->min_ring_size(), ring_size_cap);
+  const size_t max_ring_size =
+      std::min(policy->config_->max_ring_size(), ring_size_cap);
   const double scale = std::min(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
