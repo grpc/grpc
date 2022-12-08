@@ -27,8 +27,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
-
 /* grpc_rb_cServerCredentials is the ruby class that proxies
    grpc_server_credentials. */
 static VALUE grpc_rb_cServerCredentials = Qnil;

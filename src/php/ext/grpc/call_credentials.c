@@ -32,8 +32,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
-
 zend_class_entry* grpc_ce_call_credentials;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(call_credentials_ce_handlers)
 

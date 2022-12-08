@@ -31,8 +31,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
-
 typedef struct grpc_rb_event {
   // callback will be called with argument while holding the GVL
   void (*callback)(void*);

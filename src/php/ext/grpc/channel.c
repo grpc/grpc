@@ -37,8 +37,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
-
 zend_class_entry* grpc_ce_channel;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(channel_ce_handlers)
 static gpr_mu global_persistent_list_mu;

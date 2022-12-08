@@ -44,8 +44,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
-
 static VALUE grpc_rb_cTimeVal = Qnil;
 
 static rb_data_type_t grpc_rb_timespec_data_type = {
