@@ -859,7 +859,7 @@ TEST_P(End2endTest, MultipleRpcs) {
 TEST_P(End2endTest, ManyStubs) {
   ResetStub();
   ChannelTestPeer peer(channel_.get());
-  size_t registered_calls_pre = peer.registered_calls();
+  int registered_calls_pre = peer.registered_calls();
   int registration_attempts_pre = peer.registration_attempts();
   for (int i = 0; i < 1000; ++i) {
     grpc::testing::EchoTestService::NewStub(channel_);
