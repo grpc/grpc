@@ -23,8 +23,8 @@
 
 namespace grpc_core {
 
-void Crash(absl::string_view message,
-           SourceLocation location = SourceLocation()) GPR_ATTRIBUTE_NORETURN;
+[[noreturn]] void Crash(absl::string_view message,
+                        SourceLocation location = SourceLocation());
 
 }
 
