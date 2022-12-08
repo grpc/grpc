@@ -32,8 +32,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
-
 /* grpc_rb_cCallCredentials is the ruby class that proxies
  * grpc_call_credentials */
 static VALUE grpc_rb_cCallCredentials = Qnil;

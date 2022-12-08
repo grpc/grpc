@@ -31,8 +31,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
-
 /* grpc_rb_cChannelCredentials is the ruby class that proxies
    grpc_channel_credentials. */
 static VALUE grpc_rb_cChannelCredentials = Qnil;
