@@ -59,7 +59,7 @@ TimerList::TimerList(TimerListHost* host)
     shard.queue_deadline_cap =
         grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
             min_timer_.load(std::memory_order_relaxed));
-    shard.shard_queue_index = static_cast<uint32_t>(i);
+    shard.shard_queue_index = i;
     shard.list.next = shard.list.prev = &shard.list;
     shard.min_deadline = shard.ComputeMinDeadline();
     shard_queue_[i] = &shard;

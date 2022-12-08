@@ -244,7 +244,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
 finish:
   if (!connect_cancelled) {
-    size_t shard_number = ac->connection_handle % (*g_connection_shards).size();
+    int shard_number = ac->connection_handle % (*g_connection_shards).size();
     struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
     {
       grpc_core::MutexLock lock(&shard->mu);
@@ -379,7 +379,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
             ac->addr_str.c_str(), fdobj);
   }
 
-  size_t shard_number = connection_id % (*g_connection_shards).size();
+  int shard_number = connection_id % (*g_connection_shards).size();
   struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
   {
     grpc_core::MutexLock lock(&shard->mu);
@@ -417,7 +417,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
   if (connection_handle <= 0) {
     return false;
   }
-  size_t shard_number = connection_handle % (*g_connection_shards).size();
+  int shard_number = connection_handle % (*g_connection_shards).size();
   struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
   async_connect* ac = nullptr;
   {

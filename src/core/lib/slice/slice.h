@@ -207,7 +207,7 @@ struct CopyConstructors {
 
   static Out FromInt64(int64_t i) {
     char buffer[GPR_LTOA_MIN_BUFSIZE];
-    int64_ttoa(i, buffer);
+    gpr_ltoa(i, buffer);
     return FromCopiedString(buffer);
   }
 };
