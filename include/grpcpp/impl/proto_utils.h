@@ -26,7 +26,6 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/proto_buffer_reader.h>
@@ -38,8 +37,6 @@
 /// messages serialized using protobuf and the C++ objects they represent.
 
 namespace grpc {
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
 template <class ProtoBufferWriter, class T>

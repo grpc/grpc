@@ -24,7 +24,6 @@
 #include <string>
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/config.h>

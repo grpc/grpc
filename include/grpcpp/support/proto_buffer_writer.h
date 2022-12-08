@@ -27,7 +27,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/status.h>
@@ -36,8 +35,6 @@
 /// grpc::ByteBuffer, via the ZeroCopyOutputStream interface
 
 namespace grpc {
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 // Forward declaration for testing use only
 namespace internal {

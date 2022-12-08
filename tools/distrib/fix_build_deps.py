@@ -329,8 +329,6 @@ def grpc_cc_library(name,
             m = re.search(r'^#include "(.*)"', line)
             if m:
                 inc.add(m.group(1))
-            if 'grpc::g_glip' in line or 'grpc::g_core_codegen_interface' in line:
-                needs_codegen_base_src.add(name)
     consumes[name] = list(inc)
 
 
