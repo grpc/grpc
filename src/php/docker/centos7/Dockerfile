@@ -23,8 +23,8 @@ SHELL [ "/usr/bin/scl", "enable", "devtoolset-7"]
 RUN yum install epel-release -y && \
   rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm && \
   rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm && \
-  yum --enablerepo=remi-php72 install php -y && \
-  yum-config-manager --enable remi-php72 > /dev/null && \
+  yum --enablerepo=remi-php74 install php -y && \
+  yum-config-manager --enable remi-php74 > /dev/null && \
   yum install -y make wget which \
     gmp-devel libmpc-devel mpfr-devel yum-utils \                                                            
     php-devel php-fpm php-pear && \                                                                          
@@ -48,4 +48,6 @@ RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests"]
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
+     "--ignore-valgrind-undef-errors"]
+
