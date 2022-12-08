@@ -82,7 +82,6 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
 TEST_F(XdsOverrideHostTest, OverrideHost) {
   const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
                                                        "ipv4:127.0.0.1:442"};
-  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
                                     MakeXdsOverrideHostConfig("round_robin")),
                         policy_.get()),
@@ -119,7 +118,6 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
 TEST_F(XdsOverrideHostTest, OverrideHostChannelNotFound) {
   const std::array<absl::string_view, 2> kAddresses = {"ipv4:127.0.0.1:441",
                                                        "ipv4:127.0.0.1:442"};
-  EXPECT_EQ(policy_->name(), "xds_override_host_experimental");
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
                                     MakeXdsOverrideHostConfig("round_robin")),
                         policy_.get()),
@@ -150,6 +148,78 @@ TEST_F(XdsOverrideHostTest, OverrideHostChannelNotFound) {
       ExpectPickComplete(picker.get(), pick_arg),
       ExpectPickComplete(picker.get(), pick_arg)};
   ASSERT_THAT(picks, UnorderedElementsAre(kAddresses[0], kAddresses[1]));
+}
+
+TEST_F(XdsOverrideHostTest, RemovedSubchannelNotReturned) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses,
+                                    MakeXdsOverrideHostConfig("round_robin")),
+                        policy_.get()),
+            absl::OkStatus());
+  ExpectConnectingUpdate();
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+  // Ready up both subchannels
+  for (auto address : kAddresses) {
+    auto subchannel = FindSubchannel({address});
+    ASSERT_NE(subchannel, nullptr);
+    ASSERT_TRUE(subchannel->ConnectionRequested());
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    picker = WaitForConnected();
+    ASSERT_NE(picker, nullptr);
+    EXPECT_TRUE(ExpectPickComplete(picker.get()).has_value());
+  }
+  picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  EXPECT_TRUE(ExpectPickComplete(picker.get()).has_value());
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  // Make sure child policy works
+  EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
+  // Check that the host is overridden
+  std::map<UniqueTypeName, std::string> pick_arg{
+      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  // Some other address is gone
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"},
+                              MakeXdsOverrideHostConfig("round_robin")),
+                  policy_.get()),
+      absl::OkStatus());
+  WaitForConnected();
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
+  // "Our" address is gone
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"},
+                              MakeXdsOverrideHostConfig("round_robin")),
+                  policy_.get()),
+      absl::OkStatus());
+  WaitForConnected();
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  std::array<absl::optional<std::string>, 2> picks = {
+      ExpectPickComplete(picker.get(), pick_arg),
+      ExpectPickComplete(picker.get(), pick_arg)};
+  EXPECT_THAT(picks,
+              UnorderedElementsAre("ipv4:127.0.0.1:441", "ipv4:127.0.0.1:443"));
+  // And now it is back
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"},
+                              MakeXdsOverrideHostConfig("round_robin")),
+                  policy_.get()),
+      absl::OkStatus());
+  WaitForConnected();
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  picks = {ExpectPickComplete(picker.get(), pick_arg),
+           ExpectPickComplete(picker.get(), pick_arg)};
+  EXPECT_THAT(picks,
+              UnorderedElementsAre("ipv4:127.0.0.1:442", "ipv4:127.0.0.1:442"));
 }
 }  // namespace
 }  // namespace testing
