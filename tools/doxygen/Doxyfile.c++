@@ -903,7 +903,6 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/fork.h \
-include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/log.h \
@@ -917,6 +916,7 @@ include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
+include/grpc/impl/compression_types.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
@@ -1015,8 +1015,10 @@ include/grpcpp/impl/create_auth_context.h \
 include/grpcpp/impl/delegating_channel.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/intercepted_channel.h \
+include/grpcpp/impl/interceptor_common.h \
 include/grpcpp/impl/metadata_map.h \
 include/grpcpp/impl/method_handler_impl.h \
+include/grpcpp/impl/proto_utils.h \
 include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
 include/grpcpp/impl/serialization_traits.h \
@@ -1026,6 +1028,7 @@ include/grpcpp/impl/server_callback_handlers.h \
 include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
+include/grpcpp/impl/sync.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \

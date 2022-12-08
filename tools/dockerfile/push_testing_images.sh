@@ -62,7 +62,7 @@ ALL_DOCKERFILE_DIRS=(
   tools/dockerfile/grpc_artifact_*
   tools/dockerfile/interoptest/*
   tools/dockerfile/distribtest/*
-  third_party/rake-compiler-dock/*/
+  third_party/rake-compiler-dock/*
 )
 
 CHECK_FAILED=""
@@ -167,7 +167,7 @@ do
   # update info on what we consider to be the current version of the docker image (which will be used to run tests)
   echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_LOCAL}" >${DOCKERFILE_DIR}.current_version
 
-  if [ "${SKIP_UPLOAD}" == "" ] && [ "${LOCAL_ONLY_MODE}" != "" ]
+  if [ "${SKIP_UPLOAD}" == "" ] && [ "${LOCAL_ONLY_MODE}" == "" ]
   then
     docker push ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
   fi

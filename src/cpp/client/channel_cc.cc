@@ -36,10 +36,10 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/slice.h>
 
@@ -74,7 +74,7 @@ Channel::~Channel() {
 namespace {
 
 inline grpc_slice SliceFromArray(const char* arr, size_t len) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
+  return grpc_slice_from_copied_buffer(arr, len);
 }
 
 std::string GetChannelInfoField(grpc_channel* channel,

@@ -35,7 +35,7 @@ using testing::Return;
 using testing::StrictMock;
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 const int64_t kHoursIn25Days = 25 * 24;
@@ -239,7 +239,7 @@ TEST(TimerListTest, LongRunningServiceCleanup) {
   EXPECT_TRUE(timer_list.TimerCancel(&timers[3]));
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

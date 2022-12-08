@@ -79,7 +79,7 @@ class ClientAsyncResponseReaderHelper {
  public:
   /// Start a call and write the request out if \a start is set.
   /// \a tag will be notified on \a cq when the call has been started (i.e.
-  /// intitial metadata sent) and \a request has been written out.
+  /// initial metadata sent) and \a request has been written out.
   /// If \a start is not set, the actual call must be initiated by StartCall
   /// Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
@@ -95,10 +95,9 @@ class ClientAsyncResponseReaderHelper {
       const grpc::internal::RpcMethod& method, grpc::ClientContext* context,
       const W& request) /* __attribute__((noinline)) */ {
     grpc::internal::Call call = channel->CreateCall(method, context, cq);
-    ClientAsyncResponseReader<R>* result =
-        new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-            call.call(), sizeof(ClientAsyncResponseReader<R>)))
-            ClientAsyncResponseReader<R>(call, context);
+    ClientAsyncResponseReader<R>* result = new (grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncResponseReader<R>)))
+        ClientAsyncResponseReader<R>(call, context);
     SetupRequest<BaseR, BaseW>(
         call.call(), &result->single_buf_, &result->read_initial_metadata_,
         &result->finish_, static_cast<const BaseW&>(request));
@@ -128,8 +127,7 @@ class ClientAsyncResponseReaderHelper {
                                   grpc::internal::CallOpRecvMessage<R>,
                                   grpc::internal::CallOpClientRecvStatus>;
     SingleBufType* single_buf =
-        new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-            call, sizeof(SingleBufType))) SingleBufType;
+        new (grpc_call_arena_alloc(call, sizeof(SingleBufType))) SingleBufType;
     *single_buf_ptr = single_buf;
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(single_buf->SendMessage(request).ok());
@@ -154,7 +152,7 @@ class ClientAsyncResponseReaderHelper {
     // will be static-cast'ed back to the class specified here by hiding that
     // class information inside the function definition. Note that this feature
     // expects the class being specified here for R to be a base-class of the
-    // "real" R without any multiple-inheritance (as applies in protbuf wrt
+    // "real" R without any multiple-inheritance (as applies in protobuf wrt
     // MessageLite)
     *finish = [](ClientContext* context, internal::Call* call,
                  bool initial_metadata_read,
@@ -166,8 +164,8 @@ class ClientAsyncResponseReaderHelper {
             grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<R>,
                                       grpc::internal::CallOpClientRecvStatus>;
         FinishBufType* finish_buf =
-            new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-                call->call(), sizeof(FinishBufType))) FinishBufType;
+            new (grpc_call_arena_alloc(call->call(), sizeof(FinishBufType)))
+                FinishBufType;
         *finish_buf_ptr = finish_buf;
         finish_buf->set_output_tag(tag);
         finish_buf->RecvMessage(static_cast<R*>(msg));

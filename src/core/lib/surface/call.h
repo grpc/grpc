@@ -31,6 +31,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 

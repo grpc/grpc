@@ -180,7 +180,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/atm_gcc_sync.h",
     "include/grpc/impl/codegen/atm_windows.h",
     "include/grpc/impl/codegen/fork.h",
-    "include/grpc/impl/codegen/gpr_slice.h",
     "include/grpc/impl/codegen/gpr_types.h",
     "include/grpc/impl/codegen/log.h",
     "include/grpc/impl/codegen/port_platform.h",
@@ -214,6 +213,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/propagation_bits.h",
     "include/grpc/impl/codegen/status.h",
     "include/grpc/impl/codegen/slice.h",
+    "include/grpc/impl/compression_types.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
@@ -346,6 +346,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/delegating_channel.h",
     "include/grpcpp/impl/grpc_library.h",
     "include/grpcpp/impl/intercepted_channel.h",
+    "include/grpcpp/impl/interceptor_common.h",
     "include/grpcpp/impl/metadata_map.h",
     "include/grpcpp/impl/method_handler_impl.h",
     "include/grpcpp/impl/rpc_method.h",
@@ -357,6 +358,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/server_initializer.h",
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/status.h",
+    "include/grpcpp/impl/sync.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
@@ -501,6 +503,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:default_event_engine",
@@ -519,10 +522,12 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_lb_policy_xds_cluster_impl",
     "//src/core:grpc_lb_policy_xds_cluster_manager",
     "//src/core:grpc_lb_policy_xds_cluster_resolver",
+    "//src/core:grpc_lb_policy_xds_override_host",
     "//src/core:grpc_lb_policy_xds_wrr_locality",
     "//src/core:grpc_resolver_xds",
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
+    "//src/core:grpc_stateful_session_filter",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -579,6 +584,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "tsi_base",
         "uri_parser",
+        "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:default_event_engine",
@@ -842,6 +848,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
@@ -991,6 +998,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:iomgr_fwd",
@@ -1256,21 +1264,19 @@ grpc_cc_library(
         "//src/core:lib/transport/transport_op_string.cc",
     ],
     hdrs = [
-        "//src/core:lib/transport/error_utils.h",
         "//src/core:lib/address_utils/parse_address.h",
         "//src/core:lib/channel/call_finalization.h",
         "//src/core:lib/channel/call_tracer.h",
         "//src/core:lib/channel/channel_stack.h",
-        "//src/core:lib/channel/promise_based_filter.h",
         "//src/core:lib/channel/channel_stack_builder_impl.h",
         "//src/core:lib/channel/channel_trace.h",
         "//src/core:lib/channel/channelz.h",
         "//src/core:lib/channel/channelz_registry.h",
         "//src/core:lib/channel/connected_channel.h",
         "//src/core:lib/channel/context.h",
+        "//src/core:lib/channel/promise_based_filter.h",
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/compression_internal.h",
-        "//src/core:lib/resource_quota/api.h",
         "//src/core:lib/compression/message_compress.h",
         "//src/core:lib/event_engine/channel_args_endpoint_config.h",
         "//src/core:lib/iomgr/block_annotate.h",
@@ -1318,6 +1324,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/unix_sockets_posix.h",
         "//src/core:lib/iomgr/wakeup_fd_pipe.h",
         "//src/core:lib/iomgr/wakeup_fd_posix.h",
+        "//src/core:lib/resource_quota/api.h",
         "//src/core:lib/slice/b64.h",
         "//src/core:lib/surface/api_trace.h",
         "//src/core:lib/surface/builtins.h",
@@ -1333,20 +1340,13 @@ grpc_cc_library(
         "//src/core:lib/surface/server.h",
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/transport/connectivity_state.h",
+        "//src/core:lib/transport/error_utils.h",
         "//src/core:lib/transport/metadata_batch.h",
         "//src/core:lib/transport/parsed_metadata.h",
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
         "//src/core:lib/transport/transport_impl.h",
-    ] +
-    # TODO(ctiller): remove these
-    # These headers used to be vended by this target, but they have been split
-    # out into separate targets now. In order to transition downstream code, we
-    # re-export these headers from here for now, and when LSC's have completed
-    # to clean this up, we'll remove these.
-    [
-        "//src/core:lib/channel/channel_args.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1390,7 +1390,6 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
-        "//src/core:avl",
         "//src/core:bitset",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -1769,6 +1768,7 @@ grpc_cc_library(
         "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -1833,6 +1833,7 @@ grpc_cc_library(
         "iomgr_timer",
         "ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:closure",
         "//src/core:error",
@@ -1861,6 +1862,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/proto_buffer_reader.h",
         "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
+        "include/grpcpp/impl/proto_utils.h",
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
@@ -2142,6 +2144,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "//src/core:arena",
+        "//src/core:channel_args",
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:slice",
@@ -2666,6 +2669,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:cord",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
@@ -2698,6 +2702,7 @@ grpc_cc_library(
         "xds_orca_service_upb",
         "xds_orca_upb",
         "//src/core:arena",
+        "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -2783,6 +2788,7 @@ grpc_cc_library(
         "server_address",
         "sockaddr_utils",
         "uri_parser",
+        "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:error",
         "//src/core:event_engine_common",
@@ -2838,6 +2844,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "uri_parser",
+        "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
         "//src/core:error",
@@ -2885,6 +2892,7 @@ grpc_cc_library(
         "tsi_alts_credentials",
         "tsi_base",
         "//src/core:arena_promise",
+        "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:error",
         "//src/core:iomgr_fwd",
@@ -3052,6 +3060,7 @@ grpc_cc_library(
         "grpc_base",
         "tsi_base",
         "//src/core:arena",
+        "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:error",
         "//src/core:pollset_set",
@@ -3093,12 +3102,14 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/ssl_utils_config.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
+        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:lib/security/security_connector/ssl_utils.h",
         "//src/core:lib/security/security_connector/ssl_utils_config.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
+        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3118,6 +3129,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "tsi_base",
         "tsi_ssl_session_cache",
+        "//src/core:channel_args",
         "//src/core:error",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
@@ -3162,15 +3174,17 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:basic_seq",
+        "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:context",
-        "//src/core:for_each",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
         "//src/core:map_pipe",
         "//src/core:percent_encoding",
+        "//src/core:pipe",
+        "//src/core:promise_like",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -3524,6 +3538,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:bdp_estimator",
         "//src/core:bitset",
+        "//src/core:channel_args",
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:error",
@@ -3649,6 +3664,31 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_stateful_session_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_stateful_session_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upb",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_type_http_upb",
+    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(

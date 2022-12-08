@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -46,7 +47,7 @@
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -60,13 +61,13 @@ using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
 
 // Bind to "::" to get a port number not used by any address.
 absl::StatusOr<int> GetUnusedPort() {
-  ResolvedAddress wild = SockaddrMakeWild6(0);
+  ResolvedAddress wild = ResolvedAddressMakeWild6(0);
   PosixSocketWrapper::DSMode dsmode;
   auto sock = PosixSocketWrapper::CreateDualStackSocket(nullptr, wild,
                                                         SOCK_STREAM, 0, dsmode);
   GRPC_RETURN_IF_ERROR(sock.status());
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
-    wild = SockaddrMakeWild4(0);
+    wild = ResolvedAddressMakeWild4(0);
   }
   if (bind(sock->Fd(), wild.address(), wild.size()) != 0) {
     close(sock->Fd());
@@ -81,7 +82,7 @@ absl::StatusOr<int> GetUnusedPort() {
         absl::StrCat("getsockname(GetUnusedPort): ", std::strerror(errno)));
   }
   close(sock->Fd());
-  int port = SockaddrGetPort(wild);
+  int port = ResolvedAddressGetPort(wild);
   if (port <= 0) {
     return absl::FailedPreconditionError("Bad port");
   }
@@ -188,7 +189,8 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
         absl::StrCat("Error in getsockname: ", std::strerror(errno)));
   }
 
-  socket.port = SockaddrGetPort(ResolvedAddress(sockname_temp.address(), len));
+  socket.port =
+      ResolvedAddressGetPort(ResolvedAddress(sockname_temp.address(), len));
   // No errors. Set close_fd to false to ensure the socket is not closed.
   close_fd = false;
   return absl::OkStatus();
@@ -207,7 +209,7 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
   }
   socket.sock = *result;
   if (socket.dsmode == PosixSocketWrapper::DSMODE_IPV4 &&
-      SockaddrIsV4Mapped(&addr, &addr4_copy)) {
+      ResolvedAddressIsV4Mapped(addr, &addr4_copy)) {
     socket.addr = addr4_copy;
   } else {
     socket.addr = addr;
@@ -251,8 +253,8 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
       continue;
     }
     memcpy(const_cast<sockaddr*>(addr.address()), ifa_it->ifa_addr, len);
-    SockaddrSetPort(addr, requested_port);
-    std::string addr_str = *SockaddrToString(&addr, false);
+    ResolvedAddressSetPort(addr, requested_port);
+    std::string addr_str = *ResolvedAddressToString(addr);
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",
             ifa_name, ifa_it->ifa_flags, addr_str.c_str());
@@ -293,8 +295,8 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
     int requested_port) {
-  ResolvedAddress wild4 = SockaddrMakeWild4(requested_port);
-  ResolvedAddress wild6 = SockaddrMakeWild6(requested_port);
+  ResolvedAddress wild4 = ResolvedAddressMakeWild4(requested_port);
+  ResolvedAddress wild6 = ResolvedAddressMakeWild6(requested_port);
   absl::StatusOr<ListenerSocket> v6_sock;
   absl::StatusOr<ListenerSocket> v4_sock;
   int assigned_port = 0;
@@ -316,7 +318,7 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     }
   }
   // If we got a v6-only socket or nothing, try adding 0.0.0.0.
-  SockaddrSetPort(wild4, requested_port);
+  ResolvedAddressSetPort(wild4, requested_port);
   v4_sock = CreateAndPrepareListenerSocket(options, wild4);
   if (v4_sock.ok()) {
     assigned_port = v4_sock->port;
@@ -374,5 +376,5 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
