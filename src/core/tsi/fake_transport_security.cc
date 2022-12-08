@@ -485,7 +485,8 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
   }
   if (min_progress_size != nullptr) {
     if (impl->parsed_frame_size > TSI_FAKE_FRAME_HEADER_SIZE) {
-      *min_progress_size = impl->parsed_frame_size - impl->protected_sb.length;
+      *min_progress_size =
+          static_cast<int>(impl->parsed_frame_size - impl->protected_sb.length);
     } else {
       *min_progress_size = 1;
     }

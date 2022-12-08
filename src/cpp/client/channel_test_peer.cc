@@ -16,6 +16,8 @@
  *
  */
 
+#include <stddef.h>
+
 #include <grpcpp/channel.h>
 #include <grpcpp/test/channel_test_peer.h>
 
@@ -24,7 +26,7 @@
 namespace grpc {
 namespace testing {
 
-int ChannelTestPeer::registered_calls() const {
+size_t ChannelTestPeer::registered_calls() const {
   return grpc_core::Channel::FromC(channel_->c_channel_)
       ->TestOnlyRegisteredCalls();
 }
