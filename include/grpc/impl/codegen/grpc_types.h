@@ -20,6 +20,7 @@
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
 // IWYU pragma: private, include <grpc/grpc.h>
+// IWYU pragma: friend "src/.*"
 
 #include <grpc/support/port_platform.h>
 

@@ -87,6 +87,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/sync_posix.h )
   s.files += %w( include/grpc/impl/codegen/sync_windows.h )
   s.files += %w( include/grpc/impl/compression_types.h )
+  s.files += %w( include/grpc/impl/grpc_types.h )
   s.files += %w( include/grpc/load_reporting.h )
   s.files += %w( include/grpc/slice.h )
   s.files += %w( include/grpc/slice_buffer.h )
