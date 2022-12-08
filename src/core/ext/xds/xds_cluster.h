@@ -45,30 +45,49 @@
 namespace grpc_core {
 
 bool XdsCustomLbPolicyEnabled();
+bool XdsHostOverrideEnabled();
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
-  enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
-  ClusterType cluster_type;
-  // For cluster type EDS.
-  // The name to use in the EDS request.
-  // If empty, the cluster name will be used.
-  std::string eds_service_name;
-  // For cluster type LOGICAL_DNS.
-  // The hostname to lookup in DNS.
-  std::string dns_hostname;
-  // For cluster type AGGREGATE.
-  // The prioritized list of cluster names.
-  std::vector<std::string> prioritized_cluster_names;
+  struct Eds {
+    // If empty, defaults to the cluster name.
+    std::string eds_service_name;
 
-  // Tls Context used by clients
-  CommonTlsContext common_tls_context;
+    bool operator==(const Eds& other) const {
+      return eds_service_name == other.eds_service_name;
+    }
+  };
+
+  struct LogicalDns {
+    // The hostname to lookup in DNS.
+    std::string hostname;
+
+    bool operator==(const LogicalDns& other) const {
+      return hostname == other.hostname;
+    }
+  };
+
+  struct Aggregate {
+    // Prioritized list of cluster names.
+    std::vector<std::string> prioritized_cluster_names;
+
+    bool operator==(const Aggregate& other) const {
+      return prioritized_cluster_names == other.prioritized_cluster_names;
+    }
+  };
+
+  absl::variant<Eds, LogicalDns, Aggregate> type;
+
+  // The LB policy to use for locality and endpoint picking.
+  Json::Array lb_policy_config;
+
+  // Note: Remaining fields are not used for aggregate clusters.
 
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
   absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
 
-  // The LB policy to use for locality and endpoint picking.
-  Json::Array lb_policy_config;
+  // Tls Context used by clients
+  CommonTlsContext common_tls_context;
 
   // Maximum number of outstanding requests can be made to the upstream
   // cluster.
@@ -77,13 +96,9 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   absl::optional<OutlierDetectionConfig> outlier_detection;
 
   bool operator==(const XdsClusterResource& other) const {
-    return cluster_type == other.cluster_type &&
-           eds_service_name == other.eds_service_name &&
-           dns_hostname == other.dns_hostname &&
-           prioritized_cluster_names == other.prioritized_cluster_names &&
-           common_tls_context == other.common_tls_context &&
+    return type == other.type && lb_policy_config == other.lb_policy_config &&
            lrs_load_reporting_server == other.lrs_load_reporting_server &&
-           lb_policy_config == other.lb_policy_config &&
+           common_tls_context == other.common_tls_context &&
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection;
   }

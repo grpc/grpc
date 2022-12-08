@@ -16,12 +16,8 @@
 #include <unistd.h>
 
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -33,10 +29,6 @@
 
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <string.h>
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
 
 #include <grpc/support/alloc.h>
 
@@ -45,7 +37,7 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 
@@ -178,7 +170,7 @@ TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
   close(sock);
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

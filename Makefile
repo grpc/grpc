@@ -889,7 +889,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -1030,6 +1029,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_filter.cc \
+    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -1127,7 +1128,9 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
@@ -1274,7 +1277,9 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
@@ -1360,6 +1365,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_http_rbac_filter.cc \
+    src/core/ext/xds/xds_http_stateful_session_filter.cc \
     src/core/ext/xds/xds_lb_policy_registry.cc \
     src/core/ext/xds/xds_listener.cc \
     src/core/ext/xds/xds_route_config.cc \
@@ -1691,7 +1697,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
@@ -2157,7 +2162,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
@@ -2912,6 +2916,8 @@ src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_filter.cc: $(OPENSSL_DEP)
+src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/alpn/alpn.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c: $(OPENSSL_DEP)
@@ -2981,7 +2987,9 @@ src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c:
 src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c: $(OPENSSL_DEP)
@@ -3109,7 +3117,9 @@ src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.up
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c: $(OPENSSL_DEP)
@@ -3194,6 +3204,7 @@ src/core/ext/xds/xds_endpoint.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_fault_filter.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_rbac_filter.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_http_stateful_session_filter.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_lb_policy_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_listener.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_route_config.cc: $(OPENSSL_DEP)

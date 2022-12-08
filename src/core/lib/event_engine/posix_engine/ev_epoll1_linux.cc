@@ -49,18 +49,10 @@
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
 
-using ::grpc_event_engine::posix_engine::LockfreeEvent;
-using ::grpc_event_engine::posix_engine::WakeupFd;
-
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
 namespace grpc_event_engine {
-namespace posix_engine {
-
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::posix_engine::LockfreeEvent;
-using ::grpc_event_engine::posix_engine::WakeupFd;
+namespace experimental {
 
 class Epoll1EventHandle : public EventHandle {
  public:
@@ -268,7 +260,7 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 bool InitEpoll1PollerLinux() {
-  if (!grpc_event_engine::posix_engine::SupportsWakeupFd()) {
+  if (!grpc_event_engine::experimental::SupportsWakeupFd()) {
     return false;
   }
   int fd = EpollCreateAndCloexec();
@@ -564,14 +556,14 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
   return nullptr;
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #else /* defined(GRPC_LINUX_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
@@ -610,7 +602,7 @@ void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 // nullptr.
 Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */

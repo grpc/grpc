@@ -101,10 +101,10 @@ class Version:
         return '%d.%d.%d' % (self.major, self.minor, self.patch)
 
     def php_current_version(self):
-        return '7.2'
+        return '7.4'
 
     def php_debian_version(self):
-        return 'stretch'
+        return 'buster'
 
 
 def mako_plugin(dictionary):

@@ -33,7 +33,7 @@
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 TEST(TimerManagerTest, StressTest) {
   grpc_core::ExecCtx exec_ctx;
@@ -93,7 +93,7 @@ TEST(TimerManagerTest, ShutDownBeforeAllCallbacksAreExecuted) {
   pool->Quiesce();
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
