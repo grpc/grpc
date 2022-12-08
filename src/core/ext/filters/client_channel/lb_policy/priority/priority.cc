@@ -537,17 +537,19 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    if (!child_priority_->priority_policy_->channel_control_helper()
-             ->GetEventEngine()
-             ->Cancel(*timer_handle_)) {
-      timer_handle_.reset();
-    }
+    auto tmp_handle = *timer_handle_;
+    timer_handle_.reset();
+    child_priority_->priority_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(tmp_handle);
+    // prevents the child from being deleted even if cancellation fails
   }
   Unref();
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked() {
   if (timer_handle_.has_value()) {
+    timer_handle_.reset();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
@@ -556,7 +558,6 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked() {
               child_priority_->name_.c_str(), child_priority_.get());
     }
     child_priority_->priority_policy_->DeleteChild(child_priority_.get());
-    timer_handle_.reset();
   }
 }
 
@@ -599,17 +600,18 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    if (!child_priority_->priority_policy_->channel_control_helper()
-             ->GetEventEngine()
-             ->Cancel(*timer_handle_)) {
-      timer_handle_.reset();
-    }
+    auto tmp_handle = *timer_handle_;
+    timer_handle_.reset();
+    child_priority_->priority_policy_->channel_control_helper()
+        ->GetEventEngine()
+        ->Cancel(tmp_handle);
   }
   Unref();
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked() {
   if (timer_handle_.has_value()) {
+    timer_handle_.reset();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
@@ -617,7 +619,6 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    timer_handle_.reset();
     child_priority_->OnConnectivityStateUpdateLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
         absl::Status(absl::StatusCode::kUnavailable, "failover timer fired"),
