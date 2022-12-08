@@ -35,7 +35,7 @@
 #include "src/core/lib/gprpp/strerror.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
@@ -146,5 +146,5 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
 
 #endif  //  GRPC_POSIX_WAKEUP_FD
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

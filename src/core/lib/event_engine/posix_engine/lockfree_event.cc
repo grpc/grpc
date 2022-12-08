@@ -60,7 +60,7 @@
 //     For 5,6,7: See SetShutdown() function
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 void LockfreeEvent::InitEvent() {
   // Perform an atomic store to start the state machine.
@@ -261,5 +261,5 @@ void LockfreeEvent::SetReady() {
   }
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

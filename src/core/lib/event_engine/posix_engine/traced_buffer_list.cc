@@ -37,7 +37,7 @@
 #include <sys/socket.h>  // IWYU pragma: keep
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 // Fills gpr_timespec gts based on values from timespec ts.
@@ -311,7 +311,7 @@ void TcpSetWriteTimestampsCallback(
   g_timestamps_callback = std::move(fn);
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #else /* GRPC_LINUX_ERRQUEUE */
@@ -319,14 +319,14 @@ void TcpSetWriteTimestampsCallback(
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> /*fn*/) {
   grpc_core::Crash("Timestamps callback is not enabled for this platform");
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_LINUX_ERRQUEUE */

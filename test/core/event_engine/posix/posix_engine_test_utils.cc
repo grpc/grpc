@@ -27,7 +27,7 @@
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 using ResolvedAddress =
     grpc_event_engine::experimental::EventEngine::ResolvedAddress;
@@ -64,5 +64,5 @@ int ConnectToServerOrDie(const ResolvedAddress& server_address) {
   return client_fd;
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

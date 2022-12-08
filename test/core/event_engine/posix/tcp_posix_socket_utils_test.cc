@@ -37,7 +37,7 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 namespace {
 
@@ -170,7 +170,7 @@ TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
   close(sock);
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

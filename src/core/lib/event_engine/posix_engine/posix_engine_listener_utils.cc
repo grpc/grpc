@@ -47,7 +47,7 @@
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -56,12 +56,6 @@ namespace {
 using ResolvedAddress =
     grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 using ListenerSocket = ListenerSocketsContainer::ListenerSocket;
-using ::grpc_event_engine::experimental::ResolvedAddressGetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressIsV4Mapped;
-using ::grpc_event_engine::experimental::ResolvedAddressMakeWild4;
-using ::grpc_event_engine::experimental::ResolvedAddressMakeWild6;
-using ::grpc_event_engine::experimental::ResolvedAddressSetPort;
-using ::grpc_event_engine::experimental::ResolvedAddressToString;
 
 #ifdef GRPC_HAVE_IFADDRS
 
@@ -382,5 +376,5 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
 
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

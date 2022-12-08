@@ -74,11 +74,9 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
-using ::grpc_event_engine::experimental::PosixEventEngine;
-using ::grpc_event_engine::posix_engine::PosixEventPoller;
-
 static gpr_mu g_mu;
-static PosixEventPoller* g_event_poller = nullptr;
+static grpc_event_engine::experimental::PosixEventPoller* g_event_poller =
+    nullptr;
 
 // buffer size used to send and receive data.
 // 1024 is the minimal value to set TCP send and receive buffer.
@@ -91,11 +89,8 @@ static PosixEventPoller* g_event_poller = nullptr;
 #define CLIENT_TOTAL_WRITE_CNT 3
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::SelfDeletingClosure;
-using ::grpc_event_engine::posix_engine::PosixEventPoller;
 using namespace std::chrono_literals;
 
 namespace {
@@ -390,7 +385,7 @@ class EventPollerTest : public ::testing::Test {
         std::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
     EXPECT_NE(engine_, nullptr);
     scheduler_ =
-        std::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
+        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
             engine_.get());
     EXPECT_NE(scheduler_, nullptr);
     g_event_poller = MakeDefaultPoller(scheduler_.get());
@@ -413,7 +408,7 @@ class EventPollerTest : public ::testing::Test {
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
-  std::unique_ptr<grpc_event_engine::posix_engine::TestScheduler> scheduler_;
+  std::unique_ptr<grpc_event_engine::experimental::TestScheduler> scheduler_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
@@ -711,7 +706,7 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
 }
 
 }  // namespace
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

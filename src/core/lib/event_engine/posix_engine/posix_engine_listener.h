@@ -45,7 +45,7 @@
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 class PosixEngineListenerImpl
@@ -223,6 +223,6 @@ class PosixEngineListener
 
 #endif
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_LISTENER_H
