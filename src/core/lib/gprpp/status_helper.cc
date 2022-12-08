@@ -269,7 +269,7 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
     children = *old_children;
   }
   char head_buf[sizeof(uint32_t)];
-  EncodeUInt32ToBytes(buf_len, head_buf);
+  EncodeUInt32ToBytes(static_cast<uint32_t>(buf_len), head_buf);
   children.Append(absl::string_view(head_buf, sizeof(uint32_t)));
   children.Append(absl::string_view(buf, buf_len));
   status->SetPayload(kChildrenPropertyUrl, std::move(children));

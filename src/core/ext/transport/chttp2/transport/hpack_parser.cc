@@ -1104,7 +1104,8 @@ class HPackParser::Parser {
     const auto transport_size = key_string.size() + value_slice.size() +
                                 hpack_constants::kEntryOverhead;
     return grpc_metadata_batch::Parse(
-        key->string_view(), std::move(value_slice), transport_size,
+        key->string_view(), std::move(value_slice),
+        static_cast<uint32_t>(transport_size),
         [key_string](absl::string_view error, const Slice& value) {
           ReportMetadataParseError(key_string, error, value.as_string_view());
         });

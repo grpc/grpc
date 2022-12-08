@@ -636,7 +636,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   grpc_error_handle error;
   grpc_channel_stack* channel_stack = channel->channel_stack();
   size_t initial_size = channel->CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
+  global_stats().IncrementCallInitialSize(static_cast<int>(initial_size));
   size_t call_alloc_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
