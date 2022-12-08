@@ -800,6 +800,7 @@ void OutlierDetectionLb::EjectionTimer::Orphan() {
 
 void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
   if (!timer_handle_.has_value()) return;
+  timer_handle_.reset();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
             parent_.get());
@@ -971,7 +972,6 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               parent_.get(), state.first.c_str(), subchannel_state);
     }
   }
-  timer_handle_.reset();
   parent_->ejection_timer_ =
       MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
 }
