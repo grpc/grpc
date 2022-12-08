@@ -31,11 +31,7 @@
 namespace grpc {
 
 /// Implementation of the core codegen interface.
-class CoreCodegen final : public CoreCodegenInterface {
- private:
-  const Status& ok() override;
-  const Status& cancelled() override;
-};
+class CoreCodegen final : public CoreCodegenInterface {};
 
 }  // namespace grpc
 

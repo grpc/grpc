@@ -32,10 +32,4 @@
 #include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/support/status.h>
 
-namespace grpc {
-
-const Status& CoreCodegen::ok() { return grpc::Status::OK; }
-
-const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
-
-}  // namespace grpc
+namespace grpc {}  // namespace grpc

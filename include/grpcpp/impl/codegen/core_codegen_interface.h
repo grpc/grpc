@@ -40,9 +40,6 @@ namespace grpc {
 class CoreCodegenInterface {
  public:
   virtual ~CoreCodegenInterface() = default;
-
-  virtual const Status& ok() = 0;
-  virtual const Status& cancelled() = 0;
 };
 
 extern CoreCodegenInterface* g_core_codegen_interface;

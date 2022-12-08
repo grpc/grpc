@@ -59,11 +59,11 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
     ByteBuffer tmp(&slice, 1);
     bb->Swap(&tmp);
 
-    return g_core_codegen_interface->ok();
+    return grpc::Status::OK;
   }
   ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
   return msg.SerializeToZeroCopyStream(&writer)
-             ? g_core_codegen_interface->ok()
+             ? grpc::Status::OK
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
 }
 
@@ -78,7 +78,7 @@ Status GenericDeserialize(ByteBuffer* buffer,
   if (buffer == nullptr) {
     return Status(StatusCode::INTERNAL, "No payload");
   }
-  Status result = g_core_codegen_interface->ok();
+  Status result = grpc::Status::OK;
   {
     ProtoBufferReader reader(buffer);
     if (!reader.status().ok()) {
