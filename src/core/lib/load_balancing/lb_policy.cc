@@ -18,12 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/load_balancing/lb_policy.h"
+#include "lb_policy.h"
 
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
 
@@ -72,20 +71,16 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    ExitIdleLocked().
   if (!exit_idle_called_ && parent_ != nullptr) {
     exit_idle_called_ = true;
-    auto* parent = parent_->Ref().release();  // ref held by lambda.
-    ExecCtx::Run(DEBUG_LOCATION,
-                 GRPC_CLOSURE_CREATE(
-                     [](void* arg, grpc_error_handle /*error*/) {
-                       auto* parent = static_cast<LoadBalancingPolicy*>(arg);
-                       parent->work_serializer()->Run(
-                           [parent]() {
-                             parent->ExitIdleLocked();
-                             parent->Unref();
-                           },
-                           DEBUG_LOCATION);
-                     },
-                     parent, nullptr),
-                 absl::OkStatus());
+    parent_->channel_control_helper()->GetEventEngine()->Run(
+        [parent = static_cast<RefCountedPtr<LoadBalancingPolicy>>(
+             parent_->Ref(DEBUG_LOCATION, "QueuePicker"))]() mutable {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          auto* parent_ptr = parent.get();
+          parent_ptr->work_serializer()->Run(
+              [parent = std::move(parent)] { parent->ExitIdleLocked(); },
+              DEBUG_LOCATION);
+        });
   }
   return PickResult::Queue();
 }

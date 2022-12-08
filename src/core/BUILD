@@ -2282,8 +2282,6 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "closure",
-        "error",
         "grpc_backend_metric_data",
         "iomgr_fwd",
         "pollset_set",
