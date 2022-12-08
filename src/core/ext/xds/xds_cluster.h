@@ -28,6 +28,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"

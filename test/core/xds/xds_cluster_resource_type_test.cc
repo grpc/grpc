@@ -26,6 +26,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "upb/def.hpp"

@@ -534,11 +534,11 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
     void check_peer(tsi_peer, grpc_endpoint*, const ChannelArgs&,
                     RefCountedPtr<grpc_auth_context>*, grpc_closure*) override {
-      grpc_core::Crash("unreachable");
+      Crash("unreachable");
     }
 
     void cancel_check_peer(grpc_closure*, grpc_error_handle) override {
-      grpc_core::Crash("unreachable");
+      Crash("unreachable");
     }
 
     int cmp(const grpc_security_connector*) const override {
@@ -553,7 +553,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
     void add_handshakers(const ChannelArgs&, grpc_pollset_set*,
                          HandshakeManager*) override {
-      grpc_core::Crash("unreachable");
+      Crash("unreachable");
     }
   };
 

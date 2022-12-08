@@ -89,7 +89,7 @@ class CustomLbPolicyFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args /*args*/) const override {
-    grpc_core::Crash("unreachable");
+    Crash("unreachable");
     return nullptr;
   }
 

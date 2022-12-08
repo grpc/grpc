@@ -46,6 +46,8 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cookie.pb.h"
+#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault_common.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
