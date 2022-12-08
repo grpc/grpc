@@ -109,7 +109,7 @@ void MaybeUpdateServerInitialMetadata(
         [](absl::string_view error, const Slice&) {
           gpr_log(GPR_ERROR, "ERROR ADDING set-cookie METADATA: %s",
                   std::string(error).c_str());
-          grpc_core::Crash("unreachable");
+          Crash("unreachable");
         });
   }
 }

@@ -384,7 +384,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    grpc_core::Crash("unreachable");
+    Crash("unreachable");
   }
 
   static absl::string_view FieldName() {
@@ -399,7 +399,7 @@ class TypedPerFilterConfigTest
       default:
         break;
     }
-    grpc_core::Crash("unreachable");
+    Crash("unreachable");
   }
 
   RouteConfiguration route_config_;
@@ -733,7 +733,7 @@ class RetryPolicyTest : public XdsRouteConfigTest,
       default:
         break;
     }
-    grpc_core::Crash("unreachable");
+    Crash("unreachable");
   }
 
   RouteConfiguration route_config_;

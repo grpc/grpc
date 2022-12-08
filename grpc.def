@@ -174,14 +174,6 @@ EXPORTS
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
-    gpr_log_severity_string
-    gpr_log
-    gpr_should_log
-    gpr_log_message
-    gpr_set_log_verbosity
-    gpr_log_verbosity_init
-    gpr_set_log_function
-    gpr_assertion_failed
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy
@@ -241,6 +233,7 @@ EXPORTS
     gpr_set_log_verbosity
     gpr_log_verbosity_init
     gpr_set_log_function
+    gpr_assertion_failed
     gpr_format_message
     gpr_strdup
     gpr_asprintf

@@ -241,14 +241,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_file_watcher_create);
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_release);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_tls_session_key_log_file_path);
-  printf("%lx", (unsigned long) gpr_log_severity_string);
-  printf("%lx", (unsigned long) gpr_log);
-  printf("%lx", (unsigned long) gpr_should_log);
-  printf("%lx", (unsigned long) gpr_log_message);
-  printf("%lx", (unsigned long) gpr_set_log_verbosity);
-  printf("%lx", (unsigned long) gpr_log_verbosity_init);
-  printf("%lx", (unsigned long) gpr_set_log_function);
-  printf("%lx", (unsigned long) gpr_assertion_failed);
   printf("%lx", (unsigned long) grpc_slice_ref);
   printf("%lx", (unsigned long) grpc_slice_unref);
   printf("%lx", (unsigned long) grpc_slice_copy);
@@ -308,6 +300,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_set_log_verbosity);
   printf("%lx", (unsigned long) gpr_log_verbosity_init);
   printf("%lx", (unsigned long) gpr_set_log_function);
+  printf("%lx", (unsigned long) gpr_assertion_failed);
   printf("%lx", (unsigned long) gpr_strdup);
   printf("%lx", (unsigned long) gpr_asprintf);
   printf("%lx", (unsigned long) gpr_mu_init);
