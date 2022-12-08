@@ -461,7 +461,7 @@ class RlsLb : public LoadBalancingPolicy {
         void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
        private:
-        void OnBackoffTimer();
+        void OnBackoffTimerLocked();
 
         RefCountedPtr<Entry> entry_;
         absl::optional<EventEngine::TaskHandle> backoff_timer_task_handle_
@@ -530,6 +530,9 @@ class RlsLb : public LoadBalancingPolicy {
     // the specified limit.
     void MaybeShrinkSize(size_t bytes)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+
+    // Shared logic for starting the cleanup timer
+    void StartCleanupTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     RlsLb* lb_policy_;
 
@@ -1119,50 +1122,47 @@ RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
   backoff_timer_task_handle_ =
       entry_->lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
           backoff_time - Timestamp::Now(),
-          [self = Ref(DEBUG_LOCATION, "BackoffTimer")] {
-            self->OnBackoffTimer();
+          [self = Ref(DEBUG_LOCATION, "BackoffTimer")]() mutable {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            auto self_ptr = self.get();
+            self_ptr->entry_->lb_policy_->work_serializer()->Run(
+                [self = std::move(self)]() { self->OnBackoffTimerLocked(); },
+                DEBUG_LOCATION);
           });
 }
 
 void RlsLb::Cache::Entry::BackoffTimer::Orphan() {
-  if (backoff_timer_task_handle_.has_value()) {
-    if (entry_->lb_policy_->channel_control_helper()->GetEventEngine()->Cancel(
-            *backoff_timer_task_handle_)) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(
-            GPR_INFO, "[rlslb %p] cache entry=%p %s, backoff timer canceled",
-            entry_->lb_policy_.get(), entry_.get(),
-            entry_->is_shutdown_ ? "(shut down)"
-                                 : entry_->lru_iterator_->ToString().c_str());
-      }
+  if (backoff_timer_task_handle_.has_value() &&
+      entry_->lb_policy_->channel_control_helper()->GetEventEngine()->Cancel(
+          *backoff_timer_task_handle_)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p %s, backoff timer canceled",
+              entry_->lb_policy_.get(), entry_.get(),
+              entry_->is_shutdown_ ? "(shut down)"
+                                   : entry_->lru_iterator_->ToString().c_str());
     }
-    backoff_timer_task_handle_.reset();
   }
+  backoff_timer_task_handle_.reset();
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer() {
-  entry_->lb_policy_->work_serializer()->Run(
-      [self = Ref(DEBUG_LOCATION, "BackoffTimer-WorkSerializer")]() {
-        {
-          MutexLock lock(&self->entry_->lb_policy_->mu_);
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-            gpr_log(GPR_INFO,
-                    "[rlslb %p] cache entry=%p %s, backoff timer fired",
-                    self->entry_->lb_policy_.get(), self->entry_.get(),
-                    self->entry_->is_shutdown_
-                        ? "(shut down)"
-                        : self->entry_->lru_iterator_->ToString().c_str());
-          }
-          // Skip the update if Orphaned
-          if (!self->backoff_timer_task_handle_.has_value()) return;
-          self->backoff_timer_task_handle_.reset();
-        }
-        // The pick was in backoff state and there could be a pick queued if
-        // wait_for_ready is true. We'll update the picker for that case.
-        self->entry_->lb_policy_->UpdatePickerLocked();
-      },
-      DEBUG_LOCATION);
+void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimerLocked() {
+  {
+    MutexLock lock(&entry_->lb_policy_->mu_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p %s, backoff timer fired",
+              entry_->lb_policy_.get(), entry_.get(),
+              entry_->is_shutdown_ ? "(shut down)"
+                                   : entry_->lru_iterator_->ToString().c_str());
+    }
+    // Skip the update if Orphaned
+    if (!backoff_timer_task_handle_.has_value()) return;
+    backoff_timer_task_handle_.reset();
+  }
+  // The pick was in backoff state and there could be a pick queued if
+  // wait_for_ready is true. We'll update the picker for that case.
+  entry_->lb_policy_->UpdatePickerLocked();
 }
 
 //
@@ -1368,10 +1368,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
-  cleanup_timer_handle_ =
-      lb_policy->channel_control_helper()->GetEventEngine()->RunAfter(
-          kCacheCleanupTimerInterval, [this] { OnCleanupTimer(); });
+  StartCleanupTimerLocked();
 }
 
 RlsLb::Cache::Entry* RlsLb::Cache::Find(const RequestKey& key) {
@@ -1431,36 +1428,43 @@ void RlsLb::Cache::Shutdown() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer canceled", lb_policy_);
     }
-    lb_policy_->Unref(DEBUG_LOCATION, "Shutdown");
   }
   cleanup_timer_handle_.reset();
 }
 
+void RlsLb::Cache::StartCleanupTimerLocked() {
+  cleanup_timer_handle_ =
+      lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
+          kCacheCleanupTimerInterval,
+          [this, lb_policy = lb_policy_->Ref(DEBUG_LOCATION,
+                                             "CacheCleanupTimer")]() mutable {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            lb_policy_->work_serializer()->Run(
+                [this, lb_policy = std::move(lb_policy)]() {
+                  // The lb_policy ref is held until the callback completes
+                  OnCleanupTimer();
+                },
+                DEBUG_LOCATION);
+          });
+}
+
 void RlsLb::Cache::OnCleanupTimer() {
-  lb_policy_->work_serializer()->Run(
-      [this]() {
-        RefCountedPtr<RlsLb> lb_policy(lb_policy_);
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired", lb_policy_);
-        }
-        MutexLock lock(&lb_policy->mu_);
-        if (!cleanup_timer_handle_.has_value()) return;
-        if (lb_policy->is_shutdown_) return;
-        for (auto it = map_.begin(); it != map_.end();) {
-          if (GPR_UNLIKELY(it->second->ShouldRemove() &&
-                           it->second->CanEvict())) {
-            size_ -= it->second->Size();
-            it = map_.erase(it);
-          } else {
-            ++it;
-          }
-        }
-        auto* engine = lb_policy->channel_control_helper()->GetEventEngine();
-        lb_policy.release();
-        cleanup_timer_handle_ = engine->RunAfter(kCacheCleanupTimerInterval,
-                                                 [this] { OnCleanupTimer(); });
-      },
-      DEBUG_LOCATION);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired", lb_policy_);
+  }
+  MutexLock lock(&lb_policy_->mu_);
+  if (!cleanup_timer_handle_.has_value()) return;
+  if (lb_policy_->is_shutdown_) return;
+  for (auto it = map_.begin(); it != map_.end();) {
+    if (GPR_UNLIKELY(it->second->ShouldRemove() && it->second->CanEvict())) {
+      size_ -= it->second->Size();
+      it = map_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  StartCleanupTimerLocked();
 }
 
 size_t RlsLb::Cache::EntrySizeForKey(const RequestKey& key) {
