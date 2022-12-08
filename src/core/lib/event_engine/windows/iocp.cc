@@ -26,6 +26,7 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {
