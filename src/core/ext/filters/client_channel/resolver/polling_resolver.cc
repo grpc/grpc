@@ -88,8 +88,11 @@ void PollingResolver::RequestReresolutionLocked() {
 }
 
 void PollingResolver::ResetBackoffLocked() {
-  MaybeCancelNextResolutionTimer();
   backoff_.Reset();
+  if (next_resolution_timer_handle_.has_value()) {
+    MaybeCancelNextResolutionTimer();
+    StartResolvingLocked();
+  }
 }
 
 void PollingResolver::ShutdownLocked() {
@@ -121,8 +124,9 @@ void PollingResolver::OnNextResolutionLocked() {
             "[polling resolver %p] re-resolution timer fired: shutdown_=%d",
             this, shutdown_);
   }
-  next_resolution_timer_handle_.reset();
-  if (!shutdown_) {
+  // If we haven't been cancelled nor shutdown, then start resolving.
+  if (next_resolution_timer_handle_.has_value() && !shutdown_) {
+    next_resolution_timer_handle_.reset();
     StartResolvingLocked();
   }
 }
