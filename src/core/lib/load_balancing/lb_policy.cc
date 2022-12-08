@@ -18,11 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
 
