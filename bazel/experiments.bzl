@@ -21,11 +21,11 @@ EXPERIMENTS = {
         "core_end2end_tests": [
             "new_hpack_huffman_decoder",
         ],
-        "flow_control_test": [
-            "flow_control_fixes",
-        ],
         "hpack_test": [
             "new_hpack_huffman_decoder",
+        ],
+        "resource_quota_test": [
+            "memory_pressure_controller",
         ],
     },
     "off": {
@@ -49,7 +49,6 @@ EXPERIMENTS = {
         ],
         "resource_quota_test": [
             "free_large_allocator",
-            "memory_pressure_controller",
             "unconstrained_max_quota_buffer_size",
         ],
     },
@@ -61,6 +60,7 @@ EXPERIMENTS = {
             "posix_event_engine_enable_polling",
         ],
         "flow_control_test": [
+            "flow_control_fixes",
             "tcp_read_chunks",
         ],
     },

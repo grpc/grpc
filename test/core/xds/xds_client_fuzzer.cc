@@ -14,8 +14,23 @@
 // limitations under the License.
 //
 
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster.h"
@@ -23,8 +38,10 @@
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/xds/xds_client_fuzzer.pb.h"
 #include "test/core/xds/xds_transport_fake.h"
 
@@ -45,7 +62,8 @@ class Fuzzer {
     transport_factory_ = transport_factory.get();
     xds_client_ = MakeRefCounted<XdsClient>(
         std::move(*bootstrap), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
+        "foo version");
   }
 
   void Act(const xds_client_fuzzer::Action& action) {

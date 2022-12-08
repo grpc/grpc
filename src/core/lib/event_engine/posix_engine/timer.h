@@ -39,7 +39,7 @@
 #include "src/core/lib/gprpp/time_averaged_stats.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 struct Timer {
   int64_t deadline;
@@ -188,7 +188,7 @@ class TimerList {
   const std::unique_ptr<Shard*[]> shard_queue_ ABSL_GUARDED_BY(mu_);
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_H */
