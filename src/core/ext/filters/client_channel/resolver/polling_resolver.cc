@@ -126,9 +126,9 @@ void PollingResolver::OnNextResolutionLocked() {
   }
   // If we haven't been cancelled nor shutdown, then start resolving.
   if (next_resolution_timer_handle_.has_value() && !shutdown_) {
+    next_resolution_timer_handle_.reset();
     StartResolvingLocked();
   }
-  next_resolution_timer_handle_.reset();
 }
 
 void PollingResolver::MaybeCancelNextResolutionTimer() {
