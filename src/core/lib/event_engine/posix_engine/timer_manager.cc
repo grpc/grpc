@@ -35,7 +35,7 @@
 static thread_local bool g_timer_thread;
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
 
@@ -169,5 +169,5 @@ void TimerManager::PrepareFork() { Shutdown(); }
 void TimerManager::PostforkParent() { RestartPostFork(); }
 void TimerManager::PostforkChild() { RestartPostFork(); }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine

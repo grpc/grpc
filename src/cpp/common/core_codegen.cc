@@ -33,76 +33,9 @@
 
 namespace grpc {
 
-grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
-
-grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
-  return ::grpc_slice_malloc(length);
-}
-
-void CoreCodegen::grpc_slice_unref(grpc_slice slice) {
-  ::grpc_slice_unref(slice);
-}
-
-grpc_slice CoreCodegen::grpc_slice_ref(grpc_slice slice) {
-  return ::grpc_slice_ref(slice);
-}
-
-grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
-  return ::grpc_slice_split_tail(s, split);
-}
-
-grpc_slice CoreCodegen::grpc_slice_split_head(grpc_slice* s, size_t split) {
-  return ::grpc_slice_split_head(s, split);
-}
-
-grpc_slice CoreCodegen::grpc_slice_sub(grpc_slice s, size_t begin, size_t end) {
-  return ::grpc_slice_sub(s, begin, end);
-}
-
-grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,
-                                                      size_t length) {
-  return ::grpc_slice_from_static_buffer(buffer, length);
-}
-
-grpc_slice CoreCodegen::grpc_slice_from_copied_buffer(const void* buffer,
-                                                      size_t length) {
-  return ::grpc_slice_from_copied_buffer(static_cast<const char*>(buffer),
-                                         length);
-}
-
-void CoreCodegen::grpc_slice_buffer_add(grpc_slice_buffer* sb,
-                                        grpc_slice slice) {
-  ::grpc_slice_buffer_add(sb, slice);
-}
-
-void CoreCodegen::grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb,
-                                                grpc_slice slice) {
-  ::grpc_slice_buffer_add_indexed(sb, slice);
-}
-
-void CoreCodegen::grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
-  ::grpc_slice_buffer_pop(sb);
-}
-
-void CoreCodegen::grpc_metadata_array_init(grpc_metadata_array* array) {
-  ::grpc_metadata_array_init(array);
-}
-
-void CoreCodegen::grpc_metadata_array_destroy(grpc_metadata_array* array) {
-  ::grpc_metadata_array_destroy(array);
-}
-
 const Status& CoreCodegen::ok() { return grpc::Status::OK; }
 
 const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
-
-gpr_timespec CoreCodegen::gpr_inf_future(gpr_clock_type type) {
-  return ::gpr_inf_future(type);
-}
-
-gpr_timespec CoreCodegen::gpr_time_0(gpr_clock_type type) {
-  return ::gpr_time_0(type);
-}
 
 void CoreCodegen::assert_fail(const char* failed_assertion, const char* file,
                               int line) {

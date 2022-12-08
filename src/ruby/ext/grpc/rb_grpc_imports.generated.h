@@ -26,7 +26,6 @@
 #include <windows.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/channel_credentials/google_default.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
@@ -75,9 +74,6 @@ extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_impo
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader* reader);
 extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 #define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
-typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(grpc_call_credentials* call_credentials);
-extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
-#define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
 typedef int(*grpc_compression_algorithm_is_message_type)(grpc_compression_algorithm algorithm);
 extern grpc_compression_algorithm_is_message_type grpc_compression_algorithm_is_message_import;
 #define grpc_compression_algorithm_is_message grpc_compression_algorithm_is_message_import
@@ -393,6 +389,9 @@ extern grpc_ssl_session_cache_create_channel_arg_type grpc_ssl_session_cache_cre
 typedef void(*grpc_call_credentials_release_type)(grpc_call_credentials* creds);
 extern grpc_call_credentials_release_type grpc_call_credentials_release_import;
 #define grpc_call_credentials_release grpc_call_credentials_release_import
+typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(grpc_call_credentials* call_credentials);
+extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
+#define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
 typedef void(*grpc_set_ssl_roots_override_callback_type)(grpc_ssl_roots_override_callback cb);
 extern grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 #define grpc_set_ssl_roots_override_callback grpc_set_ssl_roots_override_callback_import
