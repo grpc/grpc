@@ -3457,7 +3457,6 @@ grpc_cc_library(
         "//:grpc_resolver_fake",
         "//:grpc_security_base",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
