@@ -22,7 +22,7 @@
 #include <array>
 #include <functional>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/intercepted_channel.h>
