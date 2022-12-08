@@ -72,8 +72,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    ExitIdleLocked().
   if (!exit_idle_called_ && parent_ != nullptr) {
     exit_idle_called_ = true;
-    auto* parent = parent_->Ref(DEBUG_LOCATION, "QueuePicker")
-                       .release();  // ref held by lambda.
+    auto* parent = parent_->Ref().release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
                      [](void* arg, grpc_error_handle /*error*/) {
@@ -81,7 +80,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                        parent->work_serializer()->Run(
                            [parent]() {
                              parent->ExitIdleLocked();
-                             parent->Unref(DEBUG_LOCATION, "QueuePicker");
+                             parent->Unref();
                            },
                            DEBUG_LOCATION);
                      },

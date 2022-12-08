@@ -39,9 +39,6 @@ class BackOff {
   /// Returns the time at which the next attempt should start.
   Timestamp NextAttemptTime();
 
-  /// Returns the amount of time to wait before the next attempt should start.
-  Duration NextAttemptWaitTime();
-
   /// Reset the backoff, so the next value returned by NextAttemptTime()
   /// will be the time of the second attempt (rather than the Nth).
   void Reset();

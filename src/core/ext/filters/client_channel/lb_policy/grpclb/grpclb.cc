@@ -1860,6 +1860,7 @@ void GrpcLb::StartSubchannelCacheTimerLocked() {
 
 void GrpcLb::OnSubchannelCacheTimerLocked() {
   if (subchannel_cache_timer_handle_.has_value()) {
+    subchannel_cache_timer_handle_.reset();
     auto it = cached_subchannels_.begin();
     if (it != cached_subchannels_.end()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
@@ -1873,7 +1874,6 @@ void GrpcLb::OnSubchannelCacheTimerLocked() {
       StartSubchannelCacheTimerLocked();
       return;
     }
-    subchannel_cache_timer_handle_.reset();
   }
 }
 
