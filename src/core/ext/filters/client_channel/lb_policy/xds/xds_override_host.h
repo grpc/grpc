@@ -21,10 +21,6 @@
 
 #include "absl/strings/string_view.h"
 
-namespace grpc_core {
-
-constexpr absl::string_view kOverrideHostHeaderName = "override_host";
-
-}
+namespace grpc_core {}
 
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_OVERRIDE_HOST_H

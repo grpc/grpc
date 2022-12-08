@@ -46,6 +46,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -356,12 +357,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake CallState implementation, for use in PickArgs.
-  class FakeCallState : public LoadBalancingPolicy::CallState {
+  class FakeCallState : public ClientChannel::LoadBalancedCall::LbCallState {
    public:
+    FakeCallState(std::map<UniqueTypeName, std::string> attributes)
+        : LbCallState(nullptr), attributes_(attributes) {}
+
     ~FakeCallState() override {
       for (void* allocation : allocations_) {
         gpr_free(allocation);
       }
+    }
+
+    absl::string_view GetCallAttribute(UniqueTypeName type) override {
+      return attributes_[type];
     }
 
    private:
@@ -372,6 +380,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     std::vector<void*> allocations_;
+    std::map<UniqueTypeName, std::string> attributes_;
   };
 
   LoadBalancingPolicyTest()
@@ -562,10 +571,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Does a pick and returns the result.
   LoadBalancingPolicy::PickResult DoPick(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<std::string, std::string>& metadata_map = {}) {
+      const std::map<UniqueTypeName, std::string>& call_attributes = {}) {
     ExecCtx exec_ctx;
-    FakeMetadata metadata({metadata_map});
-    FakeCallState call_state;
+    FakeMetadata metadata({});
+    FakeCallState call_state(call_attributes);
     return picker->Pick({"/service/method", &metadata, &call_state});
   }
 
@@ -584,9 +593,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // the result was something other than Complete.
   absl::optional<std::string> ExpectPickComplete(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const std::map<std::string, std::string>& metadata = {},
+      const std::map<UniqueTypeName, std::string> call_state = {},
       SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker, metadata);
+    auto pick_result = DoPick(picker, call_state);
     auto* complete = absl::get_if<LoadBalancingPolicy::PickResult::Complete>(
         &pick_result.result);
     EXPECT_NE(complete, nullptr) << PickResultString(pick_result) << " at "

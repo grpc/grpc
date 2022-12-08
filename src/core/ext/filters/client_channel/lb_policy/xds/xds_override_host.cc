@@ -36,8 +36,10 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
+#include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -67,12 +69,6 @@ namespace {
 //
 
 constexpr absl::string_view kXdsOverrideHost = "xds_override_host_experimental";
-
-std::string MakeKeyForAddress(const ServerAddress& address) {
-  // Use only the address, not the attributes.
-  auto addr_str = grpc_sockaddr_to_string(&address.address(), false);
-  return addr_str.ok() ? addr_str.value() : addr_str.status().ToString();
-}
 
 // Config for stateful session LB policy.
 class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
@@ -121,7 +117,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    class SubchannelCallTracker;
     RefCountedPtr<XdsOverrideHostLb> policy_;
     RefCountedPtr<SubchannelPicker> picker_;
   };
@@ -162,11 +157,14 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void MaybeUpdatePickerLocked();
 
+  RefCountedPtr<SubchannelInterface> LookupSubchannelByAddress(
+      absl::string_view address);
+
   void RegisterSubchannel(const ServerAddress& address,
                           RefCountedPtr<SubchannelInterface> subchannel);
 
-  RefCountedPtr<SubchannelInterface> LookupSubchannelByAddress(
-      absl::string_view address);
+  void UpdateSubchannelByAddressMap(
+      const absl::StatusOr<ServerAddressList>& addresses);
 
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
@@ -182,7 +180,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   RefCountedPtr<SubchannelPicker> picker_;
 
   absl::Mutex subchannel_by_address_map_mu_;
-  std::unordered_map<std::string, AddressMapEntry> subchannel_by_address_map_
+  std::map<std::string, AddressMapEntry, std::less<>> subchannel_by_address_map_
       ABSL_GUARDED_BY(subchannel_by_address_map_mu_);
 };
 
@@ -193,23 +191,23 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 XdsOverrideHostLb::Picker::Picker(
     RefCountedPtr<XdsOverrideHostLb> xds_override_host_lb,
     RefCountedPtr<SubchannelPicker> picker)
-    : policy_(xds_override_host_lb), picker_(std::move(picker)) {
+    : policy_(std::move(xds_override_host_lb)), picker_(std::move(picker)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO, "[xds_override_host_lb %p] constructed new picker %p",
-            xds_override_host_lb.get(), this);
+            policy_.get(), this);
   }
 }
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   std::string buffer;
-  auto override_host =
-      args.initial_metadata->Lookup(kOverrideHostHeaderName, &buffer);
-  if (override_host.has_value()) {
-    auto subchannel = policy_->LookupSubchannelByAddress(*override_host);
-    if (subchannel != nullptr) {
-      return PickResult::Complete{subchannel};
-    }
+  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
+      args.call_state);
+
+  auto override_host = call_state->GetCallAttribute(XdsHostOverrideTypeName());
+  auto subchannel = policy_->LookupSubchannelByAddress(override_host);
+  if (subchannel != nullptr) {
+    return PickResult::Complete(subchannel);
   }
   if (picker_ == nullptr) {  // Should never happen.
     return PickResult::Fail(absl::InternalError(
@@ -277,16 +275,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
   }
-  if (args.addresses.ok()) {
-    for (const auto& address : *args.addresses) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-        gpr_log(GPR_INFO, "%s", MakeKeyForAddress(address).c_str());
-      }
-    }
-  } else {
-    absl::MutexLock lock(&subchannel_by_address_map_mu_);
-    subchannel_by_address_map_.clear();
-  }
+  UpdateSubchannelByAddressMap(args.addresses);
   // Update child policy.
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
@@ -298,10 +287,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
             "[xds_override_host_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  auto status = child_policy_->UpdateLocked(std::move(update_args));
-  if (status.ok()) {
-  }
-  return status;
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void XdsOverrideHostLb::MaybeUpdatePickerLocked() {
@@ -345,36 +331,68 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::LookupSubchannelByAddress(
     absl::string_view address) {
   absl::MutexLock lock(&subchannel_by_address_map_mu_);
-  std::string key{address};
-  auto subchannel_record = subchannel_by_address_map_.find(key);
-  if (subchannel_record == subchannel_by_address_map_.end()) {
+  auto it = subchannel_by_address_map_.find(address);
+  if (it == subchannel_by_address_map_.end()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
       gpr_log(
           GPR_INFO,
           "[xds_override_host_lb %p] Subchannel for address %s was not found",
-          this, key.c_str());
+          this, std::string(address).c_str());
     }
     return nullptr;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_override_host_lb %p] Subchannel for address %s was found",
-            this, key.c_str());
-  }
-  return subchannel_record->second.subchannel;
+  return it->second.subchannel;
 }
 
 void XdsOverrideHostLb::RegisterSubchannel(
     const ServerAddress& address,
     RefCountedPtr<SubchannelInterface> subchannel) {
-  absl::MutexLock lock(&subchannel_by_address_map_mu_);
-  auto key = MakeKeyForAddress(address);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_override_host_lb %p] Added subchannel with address %s", this,
-            key.c_str());
+  auto addr_str = grpc_sockaddr_to_string(&address.address(), false);
+  if (!addr_str.ok()) {
+    return;
   }
-  subchannel_by_address_map_[key] = {subchannel};
+  absl::MutexLock lock(&subchannel_by_address_map_mu_);
+  auto it = subchannel_by_address_map_.find(*addr_str);
+  if (it != subchannel_by_address_map_.end()) {
+    it->second.subchannel = subchannel;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_override_host_lb %p] Added subchannel with address %s",
+              this, addr_str->c_str());
+    }
+  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+    gpr_log(GPR_ERROR, "[xds_override_host_lb %p] No map entry for address %s",
+            this, addr_str->c_str());
+  }
+}
+
+void XdsOverrideHostLb::UpdateSubchannelByAddressMap(
+    const absl::StatusOr<ServerAddressList>& addresses) {
+  if (!addresses.ok()) {
+    absl::MutexLock lock(&subchannel_by_address_map_mu_);
+    subchannel_by_address_map_.clear();
+    return;
+  }
+  std::unordered_set<std::string> keys(addresses->size());
+  for (const auto& address : *addresses) {
+    auto key = grpc_sockaddr_to_string(&address.address(), false);
+    if (key.ok()) {
+      keys.insert(std::move(*key));
+    }
+  }
+  absl::MutexLock lock(&subchannel_by_address_map_mu_);
+  for (auto it = subchannel_by_address_map_.begin();
+       it != subchannel_by_address_map_.end(); it++) {
+    if (keys.find(it->first) == keys.end()) {
+      subchannel_by_address_map_.erase(it);
+    }
+  }
+  for (auto it : keys) {
+    if (subchannel_by_address_map_.find(it) ==
+        subchannel_by_address_map_.end()) {
+      subchannel_by_address_map_.emplace(it, AddressMapEntry());
+    }
+  }
 }
 
 //

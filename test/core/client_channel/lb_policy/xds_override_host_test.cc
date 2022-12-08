@@ -14,12 +14,11 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
-
 #include <unordered_set>
 
 #include "gmock/gmock.h"
 
+#include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -108,11 +107,11 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
   // Make sure child policy works
   EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
   // Check that the host is overridden
-  std::map<std::string, std::string> pick_arg{
-      {std::string(kOverrideHostHeaderName), "127.0.0.1:442"}};
+  std::map<UniqueTypeName, std::string> pick_arg{
+      {XdsHostOverrideTypeName(), "127.0.0.1:442"}};
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[1]);
-  pick_arg[std::string(kOverrideHostHeaderName)] = std::string("127.0.0.1:441");
+  pick_arg[XdsHostOverrideTypeName()] = std::string("127.0.0.1:441");
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
   EXPECT_EQ(ExpectPickComplete(picker.get(), pick_arg), kAddresses[0]);
 }
@@ -145,13 +144,11 @@ TEST_F(XdsOverrideHostTest, OverrideHostChannelNotFound) {
   // Make sure child policy works
   EXPECT_NE(ExpectPickComplete(picker.get()), ExpectPickComplete(picker.get()));
   // Check that the host is overridden
-  std::map<std::string, std::string> pick_arg{
-      {std::string(kOverrideHostHeaderName), "no such host"}};
-
+  std::map<UniqueTypeName, std::string> pick_arg{
+      {XdsHostOverrideTypeName(), "no such host"}};
   std::unordered_set<absl::optional<std::string>> picks{
       ExpectPickComplete(picker.get(), pick_arg),
       ExpectPickComplete(picker.get(), pick_arg)};
-
   ASSERT_THAT(picks, UnorderedElementsAre(kAddresses[0], kAddresses[1]));
 }
 }  // namespace
