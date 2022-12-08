@@ -3367,7 +3367,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/service_type.h
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -3397,7 +3396,6 @@ foreach(_hdr
   include/grpc++/support/config.h
   include/grpc++/support/slice.h
   include/grpc++/support/status.h
-  include/grpc++/support/status_code_enum.h
   include/grpc++/support/string_ref.h
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
@@ -3466,7 +3464,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
   include/grpcpp/impl/codegen/status.h
-  include/grpcpp/impl/codegen/status_code_enum.h
   include/grpcpp/impl/codegen/string_ref.h
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync.h
@@ -3524,7 +3521,6 @@ foreach(_hdr
   include/grpcpp/support/server_interceptor.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
-  include/grpcpp/support/status_code_enum.h
   include/grpcpp/support/string_ref.h
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
@@ -4064,7 +4060,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/service_type.h
   include/grpc++/impl/codegen/slice.h
   include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
   include/grpc++/impl/codegen/string_ref.h
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
@@ -4094,7 +4089,6 @@ foreach(_hdr
   include/grpc++/support/config.h
   include/grpc++/support/slice.h
   include/grpc++/support/status.h
-  include/grpc++/support/status_code_enum.h
   include/grpc++/support/string_ref.h
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
@@ -4162,7 +4156,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
   include/grpcpp/impl/codegen/status.h
-  include/grpcpp/impl/codegen/status_code_enum.h
   include/grpcpp/impl/codegen/string_ref.h
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync.h
@@ -4218,7 +4211,6 @@ foreach(_hdr
   include/grpcpp/support/server_interceptor.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
-  include/grpcpp/support/status_code_enum.h
   include/grpcpp/support/string_ref.h
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
