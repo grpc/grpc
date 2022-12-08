@@ -471,9 +471,9 @@ void PriorityLb::ChoosePriorityLocked() {
     }
   }
   // Did not find any child in CONNECTING, delegate to last child.
-  SetCurrentPriorityLocked(
-      static_cast<int32_t>(config_->priorities().size() - 1),
-      /*deactivate_lower_priorities=*/false, "no usable children");
+  SetCurrentPriorityLocked(config_->priorities().size() - 1,
+                           /*deactivate_lower_priorities=*/false,
+                           "no usable children");
 }
 
 void PriorityLb::SetCurrentPriorityLocked(int32_t priority,

@@ -1304,7 +1304,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->send_message) {
     t->num_messages_in_next_write++;
     grpc_core::global_stats().IncrementHttp2SendMessageSize(
-        static_cast<int>(op->payload->send_message.send_message->Length()));
+        op->payload->send_message.send_message->Length());
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_message_finished = add_closure_barrier(op->on_complete);
     const uint32_t flags = op_payload->send_message.flags;
