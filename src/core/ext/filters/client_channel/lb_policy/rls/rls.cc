@@ -532,7 +532,7 @@ class RlsLb : public LoadBalancingPolicy {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Shared logic for starting the cleanup timer
-    void StartCleanupTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+    void StartCleanupTimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     RlsLb* lb_policy_;
 
@@ -1368,7 +1368,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  StartCleanupTimerLocked();
+  StartCleanupTimer();
 }
 
 RlsLb::Cache::Entry* RlsLb::Cache::Find(const RequestKey& key) {
@@ -1432,7 +1432,7 @@ void RlsLb::Cache::Shutdown() {
   cleanup_timer_handle_.reset();
 }
 
-void RlsLb::Cache::StartCleanupTimerLocked() {
+void RlsLb::Cache::StartCleanupTimer() {
   cleanup_timer_handle_ =
       lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
           kCacheCleanupTimerInterval,
@@ -1464,7 +1464,7 @@ void RlsLb::Cache::OnCleanupTimer() {
       ++it;
     }
   }
-  StartCleanupTimerLocked();
+  StartCleanupTimer();
 }
 
 size_t RlsLb::Cache::EntrySizeForKey(const RequestKey& key) {
