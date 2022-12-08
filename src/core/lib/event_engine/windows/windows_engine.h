@@ -116,9 +116,21 @@ class WindowsEventEngine : public EventEngine,
     MemoryAllocator allocator ABSL_GUARDED_BY(mu);
   };
 
-  void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
+  // A poll worker which schedules itself unless kicked
+  class IOCPWorker : public EventEngine::Closure {
+   public:
+    explicit IOCPWorker(Executor* executor, IOCP* iocp);
+    void Run() override;
+    void WaitForShutdown();
 
-  void IOCPWorkLoop();
+   private:
+    std::atomic<int> workers_{1};
+    grpc_core::Notification done_signal_;
+    Executor* executor_;
+    IOCP* iocp_;
+  };
+
+  void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
 
   class TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
@@ -128,12 +140,12 @@ class WindowsEventEngine : public EventEngine,
   grpc_core::Mutex connection_mu_;
   grpc_core::CondVar connection_cv_;
   ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
-  bool iocp_worker_running_ ABSL_GUARDED_BY(connection_mu_){false};
   std::atomic<intptr_t> aba_token_{0};
 
   std::shared_ptr<ThreadPool> executor_;
   IOCP iocp_;
   posix_engine::TimerManager timer_manager_;
+  IOCPWorker iocp_worker_;
 };
 
 }  // namespace experimental

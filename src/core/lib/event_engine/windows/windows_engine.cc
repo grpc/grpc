@@ -28,6 +28,7 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
+#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -42,6 +43,32 @@
 
 namespace grpc_event_engine {
 namespace experimental {
+
+// ---- IOCPWorker ----
+
+WindowsEventEngine::IOCPWorker::IOCPWorker(Executor* executor, IOCP* iocp)
+    : executor_(executor), iocp_(iocp) {
+  executor_->Run(this);
+}
+
+void WindowsEventEngine::IOCPWorker::Run() {
+  auto result = iocp_->Work(std::chrono::seconds(60), [this] {
+    workers_++;
+    executor_->Run(this);
+  });
+  if (result == Poller::WorkResult::kDeadlineExceeded) {
+    // iocp received no messages. restart the worker
+    workers_++;
+    executor_->Run(this);
+  }
+  if (--workers_ == 0) done_signal_.Notify();
+}
+
+void WindowsEventEngine::IOCPWorker::WaitForShutdown() {
+  done_signal_.WaitForNotification();
+}
+
+// ---- WindowsEventEngine ----
 
 // TODO(hork): The iomgr timer and execution engine can be reused. It should
 // be separated out from the posix_engine and instantiated as components. It is
@@ -68,17 +95,11 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 WindowsEventEngine::WindowsEventEngine()
     : executor_(std::make_shared<ThreadPool>()),
       iocp_(executor_.get()),
-      timer_manager_(executor_) {
+      timer_manager_(executor_),
+      iocp_worker_(executor_.get(), &iocp_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);
-  executor_->Run([this] {
-    {
-      grpc_core::MutexLock lock(&connection_mu_);
-      iocp_worker_running_ = true;
-    }
-    IOCPWorkLoop();
-  });
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
@@ -94,35 +115,11 @@ WindowsEventEngine::~WindowsEventEngine() {
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
   iocp_.Kick();
-  // Wait for the worker loop to exit
-  grpc_core::MutexLock lock(&connection_mu_);
-  while (iocp_worker_running_) {
-    connection_cv_.Wait(&connection_mu_);
-  }
+  iocp_worker_.WaitForShutdown();
   iocp_.Shutdown();
   GPR_ASSERT(WSACleanup() == 0);
   timer_manager_.Shutdown();
   executor_->Quiesce();
-}
-
-void WindowsEventEngine::IOCPWorkLoop() {
-  auto result = iocp_.Work(std::chrono::seconds(60), [this] {
-    executor_->Run([this]() { IOCPWorkLoop(); });
-  });
-  if (result == Poller::WorkResult::kDeadlineExceeded) {
-    // iocp received no messages. restart the worker
-    executor_->Run([this]() { IOCPWorkLoop(); });
-    return;
-  }
-  if (result == Poller::WorkResult::kKicked) {
-    // DO NOT SUBMIT(hork): there may be more than one worker at some point,
-    // this logic will be wrong
-    grpc_core::MutexLock lock(&connection_mu_);
-    iocp_worker_running_ = false;
-    connection_cv_.SignalAll();
-    return;
-  }
-  GPR_ASSERT(result == Poller::WorkResult::kOk);
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
