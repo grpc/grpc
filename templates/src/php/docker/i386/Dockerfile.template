@@ -29,4 +29,4 @@
 
   <%include file="../pecl_ext_build_src.include" />
 
-  CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", "--ignore-valgrind-undef-errors"]
+  <%include file="../dockerfile_cmd.include" />

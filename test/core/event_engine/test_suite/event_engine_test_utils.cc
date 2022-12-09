@@ -38,9 +38,6 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
-using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
-using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
-
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -51,8 +48,9 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   }
 }
 
-absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
-                                 Endpoint* receive_endpoint) {
+absl::Status SendValidatePayload(std::string data,
+                                 EventEngine::Endpoint* send_endpoint,
+                                 EventEngine::Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
   int num_bytes_written = data.size();
   grpc_core::Notification read_signal;
@@ -119,8 +117,8 @@ absl::Status ConnectionManager::BindAndStartListener(
           absl::StrCat("Listener already existis for address: ", addr));
     }
   }
-  Listener::AcceptCallback accept_cb =
-      [this](std::unique_ptr<Endpoint> ep,
+  EventEngine::Listener::AcceptCallback accept_cb =
+      [this](std::unique_ptr<EventEngine::Endpoint> ep,
              MemoryAllocator /*memory_allocator*/) {
         last_in_progress_connection_.SetServerEndpoint(std::move(ep));
       };
@@ -137,7 +135,7 @@ absl::Status ConnectionManager::BindAndStartListener(
     return status.status();
   }
 
-  std::shared_ptr<Listener> listener((*status).release());
+  std::shared_ptr<EventEngine::Listener> listener((*status).release());
   for (auto& addr : addrs) {
     auto bind_status = listener->Bind(URIToResolvedAddress(addr));
     if (!bind_status.ok()) {
@@ -155,7 +153,8 @@ absl::Status ConnectionManager::BindAndStartListener(
   return absl::OkStatus();
 }
 
-absl::StatusOr<std::tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>>
+absl::StatusOr<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
+                          std::unique_ptr<EventEngine::Endpoint>>>
 ConnectionManager::CreateConnection(std::string target_addr,
                                     EventEngine::Duration timeout,
                                     bool client_type_oracle) {
@@ -167,7 +166,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
                                                  : test_event_engine_.get();
   ChannelArgsEndpointConfig config;
   event_engine->Connect(
-      [this](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
+      [this](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
         if (!status.ok()) {
           gpr_log(GPR_ERROR, "Connect failed: %s",
                   status.status().ToString().c_str());
