@@ -28,7 +28,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -43,7 +42,8 @@
 
 namespace grpc_core {
 const grpc_channel_filter ClientLoadReportingFilter::kFilter =
-    MakePromiseBasedFilter<ClientLoadReportingFilter, FilterEndpoint::kClient>(
+    MakePromiseBasedFilter<ClientLoadReportingFilter, FilterEndpoint::kClient,
+                           kFilterExaminesServerInitialMetadata>(
         "client_load_reporting");
 
 absl::StatusOr<ClientLoadReportingFilter> ClientLoadReportingFilter::Create(
