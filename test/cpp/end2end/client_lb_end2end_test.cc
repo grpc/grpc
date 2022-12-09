@@ -84,10 +84,16 @@ namespace {
 constexpr char kRequestMessage[] = "Live long and prosper.";
 
 // A noop health check service that just terminates the call and returns OK
-// status in its Watch method. This is used to test the retry mechanism in
+// status in its methods. This is used to test the retry mechanism in
 // SubchannelStreamClient.
 class NoopHealthCheckServiceImpl : public health::v1::Health::Service {
  public:
+  ~NoopHealthCheckServiceImpl() override = default;
+  Status Check(ServerContext* context,
+               const health::v1::HealthCheckRequest* request,
+               health::v1::HealthCheckResponse* response) override {
+    return Status::OK;
+  }
   Status Watch(ServerContext* context,
                const health::v1::HealthCheckRequest* request,
                ServerWriter<health::v1::HealthCheckResponse>* writer) override {
@@ -95,7 +101,6 @@ class NoopHealthCheckServiceImpl : public health::v1::Health::Service {
     request_count_++;
     return Status::OK;
   }
-
   int request_count() {
     grpc_core::MutexLock lock(&mu_);
     return request_count_;
