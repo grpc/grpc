@@ -114,7 +114,9 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
       break;
     case GPR_CLOCK_MONOTONIC:
       now_dbl = ((double)(mach_absolute_time() - g_time_start)) * g_time_scale;
-      now.tv_sec = (int64_t)(now_dbl * 1e-9);
+      // Add 5 seconds arbitrarily: avoids weird conditions in gprpp/time.cc
+      // when there's a small number of seconds returned.
+      now.tv_sec = (int64_t)(now_dbl * 1e-9 + 5.0);
       now.tv_nsec = (int32_t)(now_dbl - ((double)now.tv_sec) * 1e9);
       break;
     case GPR_CLOCK_PRECISE:

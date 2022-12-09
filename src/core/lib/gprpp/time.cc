@@ -50,20 +50,26 @@ GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
   int64_t process_epoch_seconds = 0;
 
   // Check the current time... if we end up with zero, try again after 100ms.
-  // If it doesn't advance after sleeping for 1100ms, crash the process.
-  for (int i = 0; i < 11; i++) {
+  // If it doesn't advance after sleeping for 2100ms, crash the process.
+  for (int i = 0; i < 21; i++) {
     cycles_start = gpr_get_cycle_counter();
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     cycles_end = gpr_get_cycle_counter();
-    process_epoch_seconds = now.tv_sec - 1;
-    if (process_epoch_seconds != 0) {
+    process_epoch_seconds = now.tv_sec;
+    if (process_epoch_seconds > 1) {
       break;
     }
+    gpr_log(GPR_INFO,
+            "gpr_now(GPR_CLOCK_MONOTONIC) returns a very small number: "
+            "sleeping for 100ms");
     gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
   }
 
   // Time does not seem to be increasing from zero...
-  GPR_ASSERT(process_epoch_seconds != 0);
+  GPR_ASSERT(process_epoch_seconds > 1);
+  // Fake the epoch to always return >=1 second from our monotonic clock (to
+  // avoid bugs elsewhere)
+  process_epoch_seconds -= 1;
   int64_t expected = 0;
   gpr_cycle_counter process_epoch_cycles = (cycles_start + cycles_end) / 2;
   GPR_ASSERT(process_epoch_cycles != 0);
