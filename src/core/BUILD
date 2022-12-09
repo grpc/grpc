@@ -476,6 +476,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cancel_callback",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/cancel_callback.h",
+    ],
+    deps = [
+        "poll",
+        "promise_like",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_factory",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
