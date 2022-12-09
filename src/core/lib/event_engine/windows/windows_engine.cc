@@ -216,6 +216,8 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     });
     return invalid_connection_handle;
   }
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::%p connecting to %s", this,
+                          uri->c_str());
   // Use dualstack sockets where available.
   ResolvedAddress address = addr;
   ResolvedAddress addr6_v4mapped;
@@ -284,12 +286,17 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       return invalid_connection_handle;
     }
   }
+  GPR_ASSERT(watched_socket != nullptr);
   auto connection_state = std::make_shared<ConnectionState>();
   grpc_core::MutexLock lock(&connection_state->mu);
-  connection_state->on_connected = SelfDeletingClosure::Create(
-      [this, connection_state]() { OnConnectCompleted(connection_state); });
+  connection_state->address = address;
   connection_state->socket = std::move(watched_socket);
   connection_state->on_connected_user_callback = std::move(on_connect);
+  connection_state->allocator = std::move(memory_allocator);
+  connection_state->on_connected =
+      SelfDeletingClosure::Create([this, connection_state]() mutable {
+        OnConnectCompleted(std::move(connection_state));
+      });
   {
     grpc_core::MutexLock conn_lock(&connection_mu_);
     connection_state->connection_handle =
