@@ -69,7 +69,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"peer_state_based_framing", description_peer_state_based_framing, false},
     {"flow_control_fixes", description_flow_control_fixes, true},
     {"memory_pressure_controller", description_memory_pressure_controller,
-     kDefaultForDebugOnly},
+     false},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
