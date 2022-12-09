@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
-
 #include <inttypes.h>
 #include <string.h>
 
