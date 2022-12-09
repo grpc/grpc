@@ -38,10 +38,20 @@ namespace testing {
 
 namespace {
 
+using grpc::internal::LoggingSink;
+
+using ::testing::AllOf;
+using ::testing::Eq;
+using ::testing::Field;
+using ::testing::Pair;
+using ::testing::UnorderedElementsAre;
+
 class MyTestServiceImpl : public TestServiceImpl {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    context->AddInitialMetadata("server-header-key", "server-header-value");
+    context->AddTrailingMetadata("server-trailer-key", "server-trailer-value");
     EchoRequest new_request;
     new_request.set_message("hello");
     return TestServiceImpl::Echo(context, &new_request, response);
@@ -60,8 +70,16 @@ class TestLoggingSink : public grpc::internal::LoggingSink {
     grpc::internal::EntryToJsonStructProto(entry, &json);
     std::string output;
     ::google::protobuf::TextFormat::PrintToString(json, &output);
-    gpr_log(GPR_ERROR, "entry %s", output.c_str());
+    gpr_log(GPR_ERROR, "%s", output.c_str());
+    entries_.push_back(std::move(entry));
   }
+
+  const std::vector<LoggingSink::Entry>& entries() const { return entries_; }
+
+  void Clear() { entries_.clear(); }
+
+ private:
+  std::vector<LoggingSink::Entry> entries_;
 };
 
 TestLoggingSink* g_test_logging_sink = nullptr;
@@ -74,6 +92,8 @@ class LoggingTest : public ::testing::Test {
   }
 
   void SetUp() override {
+    // Clean up previous entries
+    g_test_logging_sink->Clear();
     // Set up a synchronous server on a different thread to avoid the asynch
     // interface.
     grpc::ServerBuilder builder;
@@ -93,7 +113,7 @@ class LoggingTest : public ::testing::Test {
   }
 
   void ResetStub(std::shared_ptr<Channel> channel) {
-    stub_ = EchoTestService::NewStub(channel);
+    stub_ = EchoTestService::NewStub(std::move(channel));
   }
 
   void TearDown() override {
@@ -116,8 +136,310 @@ TEST_F(LoggingTest, SimpleRpc) {
   request.set_message("foo");
   EchoResponse response;
   grpc::ClientContext context;
+  context.AddMetadata("client-key", "client-value");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
+  EXPECT_THAT(
+      g_test_logging_sink->entries(),
+      ::testing::UnorderedElementsAre(
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(5)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\003foo"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(
+              Field(&LoggingSink::Entry::call_id, Eq(0)),
+              Field(&LoggingSink::Entry::type,
+                    Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+              Field(&LoggingSink::Entry::logger,
+                    Eq(LoggingSink::Entry::Logger::kClient)),
+              Field(&LoggingSink::Entry::authority, Eq("")),
+              Field(&LoggingSink::Entry::service_name,
+                    Eq("grpc.testing.EchoTestService")),
+              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+              Field(&LoggingSink::Entry::payload,
+                    Field(&LoggingSink::Entry::Payload::metadata,
+                          UnorderedElementsAre(Pair("server-trailer-key",
+                                                    "server-trailer-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(5)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\003foo"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("server-trailer-key",
+                                     "server-trailer-value")))))));
+}
+
+TEST_F(LoggingTest, DISABLED_CancelledRpc) {
+  EchoRequest request;
+  request.set_message("foo");
+  const int kCancelDelayUs = 10 * 1000;
+  request.mutable_param()->set_client_cancel_after_us(kCancelDelayUs);
+  EchoResponse response;
+  grpc::ClientContext context;
+  context.AddMetadata("client-key", "client-value");
+  auto cancel_thread = std::thread(
+      [&context, this](int delay) {
+        gpr_sleep_until(
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(kCancelDelayUs, GPR_TIMESPAN)));
+        while (!service_.signal_client()) {
+        }
+        context.TryCancel();
+      },
+      kCancelDelayUs);
+  grpc::Status status = stub_->Echo(&context, request, &response);
+  cancel_thread.join();
+  EXPECT_TRUE(status.ok());
+  EXPECT_THAT(
+      g_test_logging_sink->entries(),
+      ::testing::UnorderedElementsAre(
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(5)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\003foo"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(
+              Field(&LoggingSink::Entry::call_id, Eq(0)),
+              Field(&LoggingSink::Entry::type,
+                    Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+              Field(&LoggingSink::Entry::logger,
+                    Eq(LoggingSink::Entry::Logger::kClient)),
+              Field(&LoggingSink::Entry::authority, Eq("")),
+              Field(&LoggingSink::Entry::service_name,
+                    Eq("grpc.testing.EchoTestService")),
+              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+              Field(&LoggingSink::Entry::payload,
+                    Field(&LoggingSink::Entry::Payload::metadata,
+                          UnorderedElementsAre(Pair("server-trailer-key",
+                                                    "server-trailer-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(5)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\003foo"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
+                Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("server-trailer-key",
+                                     "server-trailer-value")))))));
 }
 
 }  // namespace
