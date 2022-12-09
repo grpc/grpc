@@ -21,7 +21,10 @@
 #include "src/cpp/ext/filters/logging/logging_filter.h"
 
 #include <cstddef>
+#include <limits>
 
+#include "absl/random/distributions.h"
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "logging_sink.h"
@@ -41,6 +44,11 @@ namespace internal {
 namespace {
 
 LoggingSink* g_logging_sink = nullptr;
+
+uint64_t GetCallId() {
+  thread_local absl::InsecureBitGen gen;
+  return absl::Uniform(gen, 0u, std::numeric_limits<uint64_t>::max());
+}
 
 class LoggingFilter : public grpc_core::ChannelFilter {
  protected:
@@ -154,7 +162,8 @@ void EncodeMessageToPayload(const grpc_core::SliceBuffer* message,
 
 class CallData {
  public:
-  CallData(bool is_client, const grpc_core::CallArgs& call_args) {
+  CallData(bool is_client, const grpc_core::CallArgs& call_args)
+      : call_id_(GetCallId()) {
     absl::string_view path;
     if (auto* value = call_args.client_initial_metadata->get_pointer(
             grpc_core::HttpPathMetadata())) {
@@ -271,8 +280,7 @@ class CallData {
     entry->service_name = service_name_;
     entry->method_name = method_name_;
   }
-  // TODO(yashykt) : Figure out call id
-  uint64_t call_id_ = 0;
+  uint64_t call_id_;
   uint32_t sequence_id_ = 0;
   std::string service_name_;
   std::string method_name_;
@@ -317,8 +325,10 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
             server_initial_metadata->Wait(),
             [calld](grpc_core::ServerMetadata** server_initial_metadata) mutable
             -> grpc_core::ArenaPromise<absl::Status> {
-              calld->LogServerHeader(/*is_client=*/true,
-                                     *server_initial_metadata);
+              if (server_initial_metadata != nullptr) {
+                calld->LogServerHeader(/*is_client=*/true,
+                                       *server_initial_metadata);
+              }
               return grpc_core::ImmediateOkStatus();
             }))
         .NecessaryPull(incoming_mapper.TakeAndRun(
@@ -427,7 +437,8 @@ void RegisterLoggingFilter(LoggingSink* sink) {
         builder->channel_init()->RegisterStage(
             GRPC_SERVER_CHANNEL, INT_MAX,
             [](grpc_core::ChannelStackBuilder* builder) {
-              // TODO(yashykt) : fix me
+              // TODO(yashykt) : Figure out a good place to place this channel
+              // arg
               if (builder->channel_args()
                       .GetInt("grpc.experimental.enable_observability")
                       .value_or(true)) {
@@ -438,7 +449,8 @@ void RegisterLoggingFilter(LoggingSink* sink) {
         builder->channel_init()->RegisterStage(
             GRPC_CLIENT_CHANNEL, INT_MAX,
             [](grpc_core::ChannelStackBuilder* builder) {
-              // TODO(yashykt) : fix me
+              // TODO(yashykt) : Figure out a good place to place this channel
+              // arg
               if (builder->channel_args()
                       .GetInt("grpc.experimental.enable_observability")
                       .value_or(true)) {
