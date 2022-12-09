@@ -2216,6 +2216,7 @@ TEST_F(RoundRobinTest, HealthCheckingRetryOnStreamEnd) {
   StartServer(0);
   StartServer(1);
   ChannelArguments args;
+  // Create a channel with health-checking enabled.
   args.SetServiceConfigJSON(
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
@@ -2223,8 +2224,8 @@ TEST_F(RoundRobinTest, HealthCheckingRetryOnStreamEnd) {
   auto channel = BuildChannel("round_robin", response_generator, args);
   response_generator.SetNextResolution(GetServersPorts());
   EXPECT_FALSE(WaitForChannelReady(channel.get()));
-  EXPECT_GT(servers_[0]->noop_health_check_service_impl_.request_count(), 0);
-  EXPECT_GT(servers_[1]->noop_health_check_service_impl_.request_count(), 0);
+  EXPECT_GT(servers_[0]->noop_health_check_service_impl_.request_count(), 1);
+  EXPECT_GT(servers_[1]->noop_health_check_service_impl_.request_count(), 1);
 }
 
 //
