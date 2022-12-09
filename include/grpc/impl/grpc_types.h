@@ -234,7 +234,7 @@ typedef struct {
 /** Should we allow receipt of true-binary data on http2 connections?
     Defaults to on (1) */
 #define GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY "grpc.http2.true_binary"
-/** An experimental channel arg which determines whether the perferred crypto
+/** An experimental channel arg which determines whether the preferred crypto
  * frame size http2 setting sent to the peer at startup. If set to 0 (false
  * - default), the preferred frame size is not sent to the peer. Otherwise it
  * sends a default preferred crypto frame size value of 4GB to the peer at
@@ -426,7 +426,7 @@ typedef struct {
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
 /** Channel arg to set http proxy per channel. If set, the channel arg
- *  value will be prefered over the envrionment variable settings. */
+ *  value will be preferred over the environment variable settings. */
 #define GRPC_ARG_HTTP_PROXY "grpc.http_proxy"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
