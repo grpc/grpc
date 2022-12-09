@@ -56,6 +56,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "cancel_callback_test",
+    srcs = ["cancel_callback_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:cancel_callback"],
+)
+
+grpc_cc_test(
     name = "promise_test",
     srcs = ["promise_test.cc"],
     external_deps = ["gtest"],

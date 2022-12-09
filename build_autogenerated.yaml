@@ -5128,6 +5128,20 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: cancel_callback_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/cancel_callback_test.cc
+  deps:
+  - absl/meta:type_traits
+  - absl/types:variant
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
