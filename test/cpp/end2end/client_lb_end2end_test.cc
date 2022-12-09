@@ -103,7 +103,7 @@ class NoopHealthCheckServiceImpl : public health::v1::Health::Service {
 
  private:
   grpc_core::Mutex mu_;
-  int request_count_ ABSL_GUARDED_BY(&mu_) = -1;
+  int request_count_ ABSL_GUARDED_BY(&mu_) = 0;
 };
 
 // Subclass of TestServiceImpl that increments a request counter for
