@@ -68,26 +68,22 @@ using Vector = grpc_event_engine::experimental::Vector<T>;
 // reclaimers. We do this in multiple passes: if there is a less destructive
 // operation available, we do that, otherwise we do something more destructive.
 enum class ReclamationPass {
-  // Non-empty reclamation ought to take index 0, but to simplify API we don't
-  // expose that publicly (it's an internal detail), and hence index zero is
-  // here unnamed.
-
   // Benign reclamation is intended for reclamation steps that are not
   // observable outside of gRPC (besides maybe causing an increase in CPU
   // usage).
   // Examples of such reclamation would be resizing buffers to fit the current
   // load needs, rather than whatever was the peak usage requirement.
-  kBenign = 1,
+  kBenign = 0,
   // Idle reclamation is intended for reclamation steps that are observable
   // outside of gRPC, but do not cause application work to be lost.
   // Examples of such reclamation would be dropping channels that are not being
   // used.
-  kIdle = 2,
+  kIdle = 1,
   // Destructive reclamation is our last resort, and is these reclamations are
   // allowed to drop work - such as cancelling in flight requests.
-  kDestructive = 3,
+  kDestructive = 2,
 };
-static constexpr size_t kNumReclamationPasses = 4;
+static constexpr size_t kNumReclamationPasses = 3;
 
 // For each reclamation function run we construct a ReclamationSweep.
 // When this object is finally destroyed (it may be moved several times first),
@@ -416,8 +412,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     }
     size_t new_free = free_bytes_.load(std::memory_order_relaxed);
     memory_quota_->MaybeMoveAllocator(this, prev_free, new_free);
-    if (prev_free != 0) return;
-    MaybeRegisterReclaimer();
   }
 
   // Return all free bytes to quota.
@@ -471,9 +465,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Replenish bytes from the quota, without blocking, possibly entering
   // overcommit.
   void Replenish();
-  // If we have not already, register a reclamation function against the quota
-  // to sweep any free memory back to that quota.
-  void MaybeRegisterReclaimer() ABSL_LOCKS_EXCLUDED(reclaimer_mu_);
   template <typename F>
   void InsertReclaimer(size_t pass, F fn)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(reclaimer_mu_) {
@@ -492,7 +483,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   std::atomic<size_t> taken_bytes_{sizeof(GrpcMemoryAllocatorImpl)};
   // Index used to randomly choose shard to return bytes from.
   std::atomic<size_t> chosen_shard_idx_{0};
-  std::atomic<bool> registered_reclaimer_{false};
   // We try to donate back some memory periodically to the central quota.
   PeriodicUpdate donate_back_{Duration::Seconds(10)};
   Mutex reclaimer_mu_;
