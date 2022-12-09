@@ -39,7 +39,6 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -1460,9 +1459,12 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
-XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                     OrphanablePtr<XdsTransportFactory> transport_factory,
-                     Duration resource_request_timeout)
+XdsClient::XdsClient(
+    std::unique_ptr<XdsBootstrap> bootstrap,
+    OrphanablePtr<XdsTransportFactory> transport_factory,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+    std::string user_agent_name, std::string user_agent_version,
+    Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
                                                                   : nullptr),
@@ -1470,12 +1472,17 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_,
+           std::move(user_agent_name), std::move(user_agent_version)),
+      engine_(std::move(engine)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
   GPR_ASSERT(bootstrap_ != nullptr);
+  if (bootstrap_->node() != nullptr) {
+    gpr_log(GPR_INFO, "[xds_client %p] xDS node ID: %s", this,
+            bootstrap_->node()->id().c_str());
+  }
 }
 
 XdsClient::~XdsClient() {

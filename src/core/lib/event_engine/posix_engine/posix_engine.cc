@@ -37,6 +37,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -61,14 +62,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-using ::grpc_event_engine::posix_engine::EventHandle;
-using ::grpc_event_engine::posix_engine::PosixEngineClosure;
-using ::grpc_event_engine::posix_engine::PosixEngineListener;
-using ::grpc_event_engine::posix_engine::PosixEventPoller;
-using ::grpc_event_engine::posix_engine::PosixSocketWrapper;
-using ::grpc_event_engine::posix_engine::PosixTcpOptions;
-using ::grpc_event_engine::posix_engine::SockaddrToString;
-using ::grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig;
 
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(
@@ -226,7 +219,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   } while (err < 0 && errno == EINTR);
   saved_errno = errno;
 
-  auto addr_uri = SockaddrToString(&addr, true);
+  auto addr_uri = ResolvedAddressToNormalizedString(addr);
   if (!addr_uri.ok()) {
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
@@ -292,7 +285,7 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<ThreadPool> executor)
-    : poller_(grpc_event_engine::posix_engine::MakeDefaultPoller(this)),
+    : poller_(grpc_event_engine::experimental::MakeDefaultPoller(this)),
       executor_(std::move(executor)) {}
 
 PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
@@ -390,7 +383,7 @@ void PosixEventEngine::PollerWorkInternal(
 
 struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
-  posix_engine::Timer timer;
+  Timer timer;
   PosixEventEngine* engine;
   EventEngine::TaskHandle handle;
 

@@ -41,7 +41,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -51,13 +51,8 @@
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
-using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::PosixEventEngine;
-using ::grpc_event_engine::experimental::URIToResolvedAddress;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 using namespace std::chrono_literals;
 
 namespace {
@@ -156,7 +151,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   auto resolved_addr = URIToResolvedAddress(target_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
-      SockaddrToString(&resolved_addr, true).value();
+      ResolvedAddressToNormalizedString(resolved_addr).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
   grpc_core::Notification signal;
   grpc_core::ChannelArgs args;
@@ -184,7 +179,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   auto resolved_addr = URIToResolvedAddress(target_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
-      SockaddrToString(&resolved_addr, true).value();
+      ResolvedAddressToNormalizedString(resolved_addr).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();
@@ -207,7 +202,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   WaitForSingleOwner(std::move(posix_ee));
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

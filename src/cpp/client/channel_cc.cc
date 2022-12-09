@@ -74,7 +74,7 @@ Channel::~Channel() {
 namespace {
 
 inline grpc_slice SliceFromArray(const char* arr, size_t len) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
+  return grpc_slice_from_copied_buffer(arr, len);
 }
 
 std::string GetChannelInfoField(grpc_channel* channel,

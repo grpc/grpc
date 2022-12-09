@@ -58,6 +58,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ssl_transport_security_utils_test",
+    srcs = ["ssl_transport_security_utils_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "ssl_transport_security_test",
     srcs = ["ssl_transport_security_test.cc"],
     data = [

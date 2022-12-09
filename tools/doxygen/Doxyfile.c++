@@ -903,7 +903,6 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/fork.h \
-include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/log.h \
@@ -1020,6 +1019,7 @@ include/grpcpp/impl/intercepted_channel.h \
 include/grpcpp/impl/interceptor_common.h \
 include/grpcpp/impl/metadata_map.h \
 include/grpcpp/impl/method_handler_impl.h \
+include/grpcpp/impl/proto_utils.h \
 include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
 include/grpcpp/impl/serialization_traits.h \

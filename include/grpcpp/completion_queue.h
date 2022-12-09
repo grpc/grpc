@@ -34,7 +34,9 @@
 
 #include <list>
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/time.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -115,9 +117,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
-  ~CompletionQueue() override {
-    grpc::g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
-  }
+  ~CompletionQueue() override { grpc_completion_queue_destroy(cq_); }
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
   enum NextStatus {
@@ -181,9 +181,8 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
     // TIMEOUT   - we passed infinity time => queue has been shutdown, return
     //             false.
     // GOT_EVENT - we actually got an event, return true.
-    return (AsyncNextInternal(tag, ok,
-                              grpc::g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) == GOT_EVENT);
+    return (AsyncNextInternal(tag, ok, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
+            GOT_EVENT);
   }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
@@ -244,16 +243,15 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// instance.
   ///
   /// \warning Remember that the returned instance is owned. No transfer of
-  /// owership is performed.
+  /// ownership is performed.
   grpc_completion_queue* cq() { return cq_; }
 
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
   explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
-    cq_ = grpc::g_core_codegen_interface->grpc_completion_queue_create(
-        grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
-            &attributes),
-        &attributes, nullptr);
+    cq_ = grpc_completion_queue_create(
+        grpc_completion_queue_factory_lookup(&attributes), &attributes,
+        nullptr);
     InitialAvalanching();  // reserve this for the future shutdown
   }
 
@@ -321,11 +319,9 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
+    auto deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
-      auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-          cq_, tag, deadline, nullptr);
+      auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
@@ -344,10 +340,8 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
     void* ignored = tag;
@@ -362,8 +356,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// that the tag is internal not something that is returned to the user.
   void TryPluck(grpc::internal::CompletionQueueTag* tag,
                 gpr_timespec deadline) {
-    auto ev = grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       return;
     }
@@ -378,7 +371,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// queue should not really shutdown until all avalanching operations have
   /// been finalized. Note that we maintain the requirement that an avalanche
   /// registration must take place before CQ shutdown (which must be maintained
-  /// elsehwere)
+  /// elsewhere)
   void InitialAvalanching() {
     gpr_atm_rel_store(&avalanches_in_flight_, gpr_atm{1});
   }
@@ -388,7 +381,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   void CompleteAvalanching() {
     if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, gpr_atm{-1}) ==
         1) {
-      grpc::g_core_codegen_interface->grpc_completion_queue_shutdown(cq_);
+      grpc_completion_queue_shutdown(cq_);
     }
   }
 

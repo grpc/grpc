@@ -41,10 +41,11 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #endif
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 class PosixEngineListenerImpl
@@ -81,7 +82,9 @@ class PosixEngineListenerImpl
           listener_(std::move(listener)),
           socket_(socket),
           handle_(listener_->poller_->CreateHandle(
-              socket_.sock.Fd(), *SockaddrToString(&socket_.addr, true),
+              socket_.sock.Fd(),
+              *grpc_event_engine::experimental::
+                  ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
           notify_on_accept_(PosixEngineClosure::ToPermanentClosure(
               [this](absl::Status status) { NotifyOnAccept(status); })){};
@@ -218,6 +221,6 @@ class PosixEngineListener
 
 #endif
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_LISTENER_H

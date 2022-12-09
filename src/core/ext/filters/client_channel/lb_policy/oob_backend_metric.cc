@@ -154,9 +154,9 @@ class OrcaProducer::ConnectivityWatcher
     grpc_pollset_set_destroy(interested_parties_);
   }
 
-  void OnConnectivityStateChange() override {
-    auto change = PopConnectivityStateChange();
-    producer_->OnConnectivityStateChange(change.state);
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status&) override {
+    producer_->OnConnectivityStateChange(state);
   }
 
   grpc_pollset_set* interested_parties() override {

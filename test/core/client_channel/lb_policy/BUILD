@@ -44,6 +44,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":lb_policy_test_lib",
+        "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
         "//test/core/util:grpc_test_util",
     ],
@@ -56,7 +57,20 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":lb_policy_test_lib",
+        "//src/core:channel_args",
         "//src/core:grpc_lb_policy_outlier_detection",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_override_host_test",
+    srcs = ["xds_override_host_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:grpc_lb_policy_xds_override_host",
         "//test/core/util:grpc_test_util",
     ],
 )
