@@ -51,6 +51,7 @@ class NotifyOnDelete {
   NotifyOnDelete& operator=(NotifyOnDelete&& other) noexcept {
     signal_ = other.signal_;
     other.signal_ = nullptr;
+    return *this;
   }
   ~NotifyOnDelete() {
     if (signal_ != nullptr) {
