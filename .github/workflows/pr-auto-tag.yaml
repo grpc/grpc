@@ -17,3 +17,14 @@ jobs:
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
 
+  title-check:
+    permissions:
+      contents: read # to determine modified files (actions/labeler)
+      pull-requests: write # to add labels to PRs (actions/labeler)
+
+    steps:
+    - uses: thehanimo/pr-title-checker@v1.3.5
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        pass_on_octokit_error: false
+        configuration_path: ".github/pr_title_checker_config.json"
