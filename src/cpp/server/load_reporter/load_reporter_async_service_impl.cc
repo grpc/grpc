@@ -25,7 +25,6 @@
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/repeated_ptr_field.h>
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 #include <grpcpp/support/status.h>
 

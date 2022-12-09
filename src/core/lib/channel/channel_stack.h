@@ -52,11 +52,11 @@
 #include <memory>
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

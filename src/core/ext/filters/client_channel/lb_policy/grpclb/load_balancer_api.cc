@@ -28,7 +28,6 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "upb/upb.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

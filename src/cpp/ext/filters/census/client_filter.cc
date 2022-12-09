@@ -41,9 +41,9 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_args.h"

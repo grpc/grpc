@@ -35,11 +35,11 @@
 #include "xds/service/orca/v3/orca.upb.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"

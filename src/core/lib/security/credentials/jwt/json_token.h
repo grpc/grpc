@@ -23,7 +23,7 @@
 
 #include <openssl/crypto.h>
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/json/json.h"
 

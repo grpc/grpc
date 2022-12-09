@@ -45,9 +45,9 @@
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_client.h"

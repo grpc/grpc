@@ -46,7 +46,6 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -55,6 +54,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"

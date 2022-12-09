@@ -28,8 +28,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
