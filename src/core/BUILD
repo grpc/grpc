@@ -1666,7 +1666,6 @@ grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["lib/event_engine/utils.cc"],
     hdrs = ["lib/event_engine/utils.h"],
-    external_deps = ["absl/strings"],
     deps = [
         "time",
         "//:event_engine_base_hdrs",
@@ -1823,6 +1822,7 @@ grpc_cc_library(
         "common_event_engine_closures",
         "error",
         "event_engine_common",
+        "event_engine_executor",
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_trace",

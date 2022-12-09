@@ -2143,6 +2143,7 @@ add_library(grpc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
@@ -2807,6 +2808,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
@@ -4304,6 +4306,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
@@ -9850,6 +9853,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(endpoint_config_test
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -9879,7 +9886,10 @@ target_link_libraries(endpoint_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
+  absl::any_invocable
+  absl::type_traits
+  absl::statusor
+  gpr
 )
 
 
@@ -11196,6 +11206,7 @@ add_executable(frame_test
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
@@ -11396,9 +11407,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/event_engine/test_suite/event_engine_test.cc
-    test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
     test/core/event_engine/test_suite/timer_test.cc
+    test/core/event_engine/test_utils.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -15219,6 +15230,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
     test/core/event_engine/test_suite/server_test.cc
+    test/core/event_engine/test_utils.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -15998,6 +16010,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+    test/core/event_engine/test_utils.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -16079,6 +16092,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test.cc
     test/core/event_engine/test_suite/event_engine_test_utils.cc
     test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+    test/core/event_engine/test_utils.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -16124,6 +16138,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/posix_event_engine_test.cc
     test/core/event_engine/test_suite/server_test.cc
     test/core/event_engine/test_suite/timer_test.cc
+    test/core/event_engine/test_utils.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -21641,7 +21656,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
 
   add_executable(windows_endpoint_test
-    src/core/lib/event_engine/windows/windows_endpoint.cc
     test/core/event_engine/windows/create_sockpair.cc
     test/core/event_engine/windows/windows_endpoint_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
