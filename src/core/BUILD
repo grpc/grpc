@@ -949,6 +949,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/status",
         "absl/strings",
+        "absl/synchronization",
         "absl/types:optional",
     ],
     deps = [
@@ -4578,7 +4579,6 @@ grpc_cc_library(
         "ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
-        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -4929,7 +4929,6 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:grpc_public_hdrs",
         "//:hpack_encoder",
         "//:hpack_parser",
     ],
