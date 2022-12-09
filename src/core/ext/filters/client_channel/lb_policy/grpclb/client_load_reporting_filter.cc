@@ -25,10 +25,10 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "client_load_reporting_filter.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -54,12 +54,12 @@ absl::StatusOr<ClientLoadReportingFilter> ClientLoadReportingFilter::Create(
 ArenaPromise<ServerMetadataHandle> ClientLoadReportingFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   // Stats object to update.
-  grpc_core::RefCountedPtr<grpc_core::GrpcLbClientStats> client_stats;
+  RefCountedPtr<GrpcLbClientStats> client_stats;
 
   // Handle client initial metadata.
   // Grab client stats object from metadata.
-  auto client_stats_md = call_args.client_initial_metadata->Take(
-      grpc_core::GrpcLbClientStatsMetadata());
+  auto client_stats_md =
+      call_args.client_initial_metadata->Take(GrpcLbClientStatsMetadata());
   if (client_stats_md.has_value()) {
     client_stats.reset(*client_stats_md);
   }
