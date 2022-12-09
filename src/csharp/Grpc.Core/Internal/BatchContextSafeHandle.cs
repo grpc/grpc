@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Grpc.Core;
@@ -91,7 +92,7 @@ namespace Grpc.Core.Internal
         {
             UIntPtr detailsLength;
             IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
-            string details = MarshalUtils.PtrToStringUTF8(detailsPtr, (int)detailsLength.ToUInt32());
+            string details = StatusDetailsPtrToStringUTF8(detailsPtr, (int)detailsLength.ToUInt32());
             string debugErrorString = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_error_string(this));
             var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details, debugErrorString != null ? new CoreErrorDetailException(debugErrorString) : null);
 
@@ -134,6 +135,27 @@ namespace Grpc.Core.Internal
         {
             Native.grpcsharp_batch_context_destroy(handle);
             return true;
+        }
+
+        // This method decodes the status details string "safely" and returns and empty
+        // string in case it seems corrupt.
+        // This is to stop UnaryCall from hanging if there is an issue with decoding
+        // the UTF8 status details string (likely due to an unexplained corruption).
+        // See https://github.com/grpc/grpc/issues/29854
+        // TODO(jtattermusch): remove this workaround once #29854 is fully explained
+        // and fixed.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private string StatusDetailsPtrToStringUTF8(IntPtr ptr, int len)
+        {
+            try
+            {
+              return MarshalUtils.PtrToStringUTF8(ptr, len);
+            }
+            catch (Exception e) {
+                Logger.Error(e, "Failed to decode status details string for a call (corrupt UTF8 string?). An empty status details string will be returned by the client.");
+                // return an empty status (the status code will be preserved)
+                return "";
+            }
         }
 
         void IOpCompletionCallback.OnComplete(bool success)
