@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CANCEL_CALLBACK_H
-#define CANCEL_CALLBACK_H
+#ifndef GRPC_CORE_LIB_PROMISE_CANCEL_CALLBACK_H
+#define GRPC_CORE_LIB_PROMISE_CANCEL_CALLBACK_H
+
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
@@ -73,4 +75,4 @@ auto OnCancel(MainFn main_fn, CancelFn cancel_fn) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_CANCEL_CALLBACK_H
