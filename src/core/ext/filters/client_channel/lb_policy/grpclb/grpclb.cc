@@ -78,7 +78,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "client_load_reporting_filter.h"
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer.h>
