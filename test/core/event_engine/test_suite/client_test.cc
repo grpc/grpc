@@ -59,8 +59,8 @@ using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 using ::grpc_event_engine::experimental::NotifyOnDelete;
+using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
@@ -79,7 +79,8 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   // listener.
   ChannelArgsEndpointConfig config;
   test_ee->Connect(
-      [_ = NotifyOnDelete(&signal)](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
+      [_ = NotifyOnDelete(&signal)](
+          absl::StatusOr<std::unique_ptr<Endpoint>> status) {
         // Connect should fail.
         EXPECT_FALSE(status.ok());
       },

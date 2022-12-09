@@ -144,6 +144,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:uri_parser",
+        "//src/core:notification",
         "//src/core:resolved_address",
     ],
 )
