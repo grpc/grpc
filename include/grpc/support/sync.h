@@ -22,7 +22,7 @@
 /* Platform-specific type declarations of gpr_mu and gpr_cv.   */
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/gpr_types.h> /* for gpr_timespec */
+#include <grpc/support/time.h> /* for gpr_timespec */
 
 #ifdef __cplusplus
 extern "C" {
