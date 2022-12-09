@@ -20,10 +20,10 @@
 #include <functional>
 #include <utility>
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
