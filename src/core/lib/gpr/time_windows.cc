@@ -62,7 +62,9 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
     case GPR_CLOCK_PRECISE:
       QueryPerformanceCounter(&timestamp);
       diff = timestamp.QuadPart - g_start_time.QuadPart;
-      now_dbl = (double)diff * g_time_scale;
+      // Add an arbitrary 5 seconds to the monotonic clock so we don't
+      // immediately return close to zero.
+      now_dbl = 5.0 + (double)diff * g_time_scale;
       now_tv.tv_sec = (int64_t)now_dbl;
       now_tv.tv_nsec = (int32_t)((now_dbl - (double)now_tv.tv_sec) * 1e9);
       break;

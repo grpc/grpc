@@ -35,8 +35,8 @@
 #include "google/logging/v2/logging.grpc.pb.h"
 #include "google/logging/v2/logging.pb.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>

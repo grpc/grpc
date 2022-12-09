@@ -29,6 +29,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/transport.h"

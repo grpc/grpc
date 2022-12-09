@@ -36,8 +36,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"

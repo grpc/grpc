@@ -32,7 +32,6 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/load_reporting.h>

@@ -32,7 +32,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gprpp/crash.h"

@@ -27,6 +27,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"

@@ -23,7 +23,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>

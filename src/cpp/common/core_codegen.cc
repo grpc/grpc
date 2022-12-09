@@ -18,11 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdlib.h>
+#include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/support/status.h>
+
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/debug_location.h"
 
 namespace grpc {
 
@@ -32,9 +34,8 @@ const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }
 
 void CoreCodegen::assert_fail(const char* failed_assertion, const char* file,
                               int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "assertion failed: %s",
-          failed_assertion);
-  abort();
+  grpc_core::Crash(absl::StrCat("Assertion failed: ", failed_assertion),
+                   grpc_core::SourceLocation(file, line));
 }
 
 }  // namespace grpc

@@ -27,6 +27,7 @@
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
