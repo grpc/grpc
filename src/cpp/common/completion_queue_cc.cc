@@ -20,7 +20,6 @@
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
