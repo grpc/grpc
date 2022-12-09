@@ -132,7 +132,8 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "client",
+        # TODO(hork): enable when the listener (or an oracle) is available
+        # "client",
         "timer",
         "//src/core:windows_event_engine",
         "//test/core/event_engine:test_utils",
