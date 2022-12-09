@@ -39,7 +39,5 @@ class ClientLoadReportingFilter : public ChannelFilter {
 };
 }  // namespace grpc_core
 
-extern const grpc_channel_filter grpc_client_load_reporting_filter;
-
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H \
         */

@@ -78,6 +78,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "client_load_reporting_filter.h"
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer.h>
@@ -1919,12 +1920,7 @@ void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
       [](ChannelStackBuilder* builder) {
         if (builder->channel_args().GetString(GRPC_ARG_LB_POLICY_NAME) ==
             "grpclb") {
-          // TODO(roth): When we get around to re-attempting
-          // https://github.com/grpc/grpc/pull/16214, we should try to keep
-          // this filter at the very top of the subchannel stack, since that
-          // will minimize the number of metadata elements that the filter
-          // needs to iterate through to find the ClientStats object.
-          builder->PrependFilter(&grpc_client_load_reporting_filter);
+          builder->PrependFilter(&ClientLoadReportingFilter::kFilter);
         }
         return true;
       });
