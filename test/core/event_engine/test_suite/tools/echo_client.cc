@@ -11,21 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/support/port_platform.h>
 
-// This manual test allows you to run a listener externally and communicate back
-// and forth with an EventEngine client. Example:
+// The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
+// implementations, allowing third-party TCP listeners to interact with your
+// EventEngine client. Example usage:
 //
 //    # in one shell
 //    choco install nmap
 //    ncat -klp 32000
-//    # wait for connection, than send data (e.g., keyboard input)
+//    # wait for a connection, than send data (e.g., keyboard input)
 //
 //    # in a separate shell
-//    bazel run //test/core/event_engine/windows:manual_client_test
-
-#include <grpc/support/port_platform.h>
-
-#ifdef GPR_WINDOWS
+//    bazel run
+//    //test/core/event_engine/test_suite/tools:my_event_engine_echo_client
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -37,8 +36,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -53,6 +52,7 @@ using namespace std::chrono_literals;
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
@@ -92,13 +92,13 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
 }
 
 void RunUntilInterrupted() {
-  grpc_event_engine::experimental::WindowsEventEngine engine;
+  auto engine = GetDefaultEventEngine();
   std::unique_ptr<EventEngine::Endpoint> endpoint;
   grpc_core::Notification connected;
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   ChannelArgsEndpointConfig config;
   auto addr = URIToResolvedAddress("ipv6:[::1]:32000");
-  auto handle = engine.Connect(
+  auto handle = engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
           gpr_log(GPR_ERROR, "Error connecting: %s",
@@ -131,9 +131,3 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return 0;
 }
-
-#else  // not GPR_WINDOWS
-
-int main(int /* argc */, char** /* argv */) { return 0; }
-
-#endif  // GPR_WINDOWS

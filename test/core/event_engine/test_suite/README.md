@@ -42,20 +42,20 @@ you could depend on any subset of the following:
 
 # Useful testing tools
 
-A number of [tools](tools/) are also configurable to use your custom EventEngine. 
-For example, the `echo_client` library allows you to prop up a TCP client with your EventEngine::Connect and ::Endpoint implementations, and communicate with a remote TCP listener of your choosing.
+The suite also provides [tools](tools/) that let you exercise your custom EventEngine. 
+For example, the `echo_client` library allows you to prop up a TCP client based on your EventEngine::Connect and ::Endpoint implementations, and communicate with a remote TCP listener of your choosing.
 
 You'll need to provide the following code
 
 ```
-# test_suite/tools/BUILD:
+# tools/BUILD:
 grpc_cc_binary(
     name = "my_event_engine_echo_client",
     srcs = ["my_event_engine_factory.cc"],
     deps = ["echo_client"],
 )
 
-# my_event_engine_factory.cc: an implementation of CustomEventEngineFactory
+# tools/my_event_engine_factory.cc: an implementation of CustomEventEngineFactory
 absl::AnyInvocable<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
@@ -66,6 +66,6 @@ CustomEventEngineFactory() {
 }
 ```
 
-To exercise the echo client, run `bazel run //test/core/event_engine/test_suite:my_event_engine_echo_client`, and in a separate terminal, open something like netcat to run a TCP listener and communicate with the client.
+To exercise the echo client, run `bazel run //test/core/event_engine/test_suite/tools:my_event_engine_echo_client`, and in a separate terminal, open something like netcat to run a TCP listener and communicate with the client.
 
 Each tool is documented more fully in its source file.

@@ -101,7 +101,7 @@ class WindowsEventEngine : public EventEngine,
  private:
   // State of an active connection.
   // Managed by a shared_ptr, owned exclusively by the timeout callback and the
-  // ConnectedClosure callback herein.
+  // OnConnectCompleted callback herein.
   struct ConnectionState {
     // everything is guarded by mu;
     grpc_core::Mutex mu;

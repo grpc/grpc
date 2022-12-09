@@ -81,8 +81,9 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
   EventEngine::TaskHandle handle;
 
   void Run() override {
-    GRPC_EVENT_ENGINE_TRACE("WindowsEventEngine:%p executing callback:%s",
-                            engine, HandleToString(handle).c_str());
+    GRPC_EVENT_ENGINE_TRACE(
+        "WindowsEventEngine:%p executing callback:%s", engine,
+        HandleToString<EventEngine::TaskHandle>(handle).c_str());
     {
       grpc_core::MutexLock lock(&engine->task_mu_);
       engine->known_handles_.erase(handle);
@@ -109,7 +110,7 @@ WindowsEventEngine::~WindowsEventEngine() {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
                 "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
-                this, HandleToString(handle).c_str());
+                this, HandleToString<EventEngine::TaskHandle>(handle).c_str());
       }
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
@@ -161,8 +162,9 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   grpc_core::MutexLock lock(&task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
-  GRPC_EVENT_ENGINE_TRACE("WindowsEventEngine:%p scheduling callback:%s", this,
-                          HandleToString(handle).c_str());
+  GRPC_EVENT_ENGINE_TRACE(
+      "WindowsEventEngine:%p scheduling callback:%s", this,
+      HandleToString<EventEngine::TaskHandle>(handle).c_str());
   timer_manager_.TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
@@ -185,7 +187,7 @@ void WindowsEventEngine::OnConnectCompleted(
     grpc_core::MutexLock handle_lock(&connection_mu_);
     known_connection_handles_.erase(state->connection_handle);
   }
-  // if we cannot cancel the timer, its callback will be called.
+  // return early if we cannot cancel the connection timeout timer.
   if (!Cancel(state->timer_handle)) return;
   auto write_info = state->socket->write_info();
   if (write_info->wsa_error() != 0) {
@@ -194,8 +196,8 @@ void WindowsEventEngine::OnConnectCompleted(
     state->on_connected_user_callback(error);
     return;
   }
-  // This should already be called from an executor thread, so the callback
-  // can be run inline here.
+  // This code should be running in an executor thread already, so the callback
+  // can be run directly.
   ChannelArgsEndpointConfig cfg;
   state->on_connected_user_callback(std::make_unique<WindowsEndpoint>(
       state->address, std::move(state->socket), std::move(state->allocator),
@@ -204,9 +206,9 @@ void WindowsEventEngine::OnConnectCompleted(
 
 EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
-    const EndpointConfig& args, MemoryAllocator memory_allocator,
+    const EndpointConfig& /* args */, MemoryAllocator memory_allocator,
     Duration timeout) {
-  // DO NOT SUBMIT(hork): manage endpoint config
+  // TODO(hork): utilize the endpoint config
   absl::Status status;
   int istatus;
   auto uri = ResolvedAddressToURI(addr);
@@ -328,17 +330,18 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   }
   grpc_core::MutexLock lock(&connection_mu_);
   if (!known_connection_handles_.contains(handle)) {
-    GRPC_EVENT_ENGINE_TRACE("Unknown connection handle: %s",
-                            HandleToString(handle).c_str());
+    GRPC_EVENT_ENGINE_TRACE(
+        "Unknown connection handle: %s",
+        HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
     return false;
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
-  // DO NOT SUBMIT(hork): confirm that this is sufficient
   connection_state->socket->MaybeShutdown(
       absl::CancelledError("CancelConnect"));
   known_connection_handles_.erase(handle);
-  GRPC_EVENT_ENGINE_TRACE("Successfully cancelled connection %s",
-                          HandleToString(handle).c_str());
+  GRPC_EVENT_ENGINE_TRACE(
+      "Successfully cancelled connection %s",
+      HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
   return true;
 }
 

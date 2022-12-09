@@ -25,8 +25,11 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string HandleToString(EventEngine::TaskHandle handle);
-std::string HandleToString(EventEngine::ConnectionHandle handle);
+// Returns a string representation of the EventEngine::*Handle types
+template <typename Handle>
+std::string HandleToString(const Handle& handle) {
+  return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
+}
 
 grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
                                  EventEngine::Duration delta);

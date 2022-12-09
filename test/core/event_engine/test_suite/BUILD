@@ -139,12 +139,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_binary(
-    name = "windows_event_engine_echo_client",
-    srcs = ["windows_event_engine_factory.cc"],
-    deps = ["echo_client"],
-)
-
 grpc_cc_test(
     name = "fuzzing_event_engine_test",
     srcs = ["fuzzing_event_engine_test.cc"],
@@ -156,21 +150,6 @@ grpc_cc_test(
     deps = [
         "timer",
         "//test/core/event_engine/fuzzing_event_engine",
-    ],
-)
-
-# -- Testing tools --
-
-grpc_cc_library(
-    name = "echo_client",
-    srcs = ["tools/echo_client.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr_platform",
-        "//src/core:common_event_engine_closures",
-        "//src/core:windows_event_engine",
-        "//test/core/event_engine:test_utils",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
