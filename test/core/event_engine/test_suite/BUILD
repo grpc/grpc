@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -116,9 +116,9 @@ grpc_cc_test(
         "client",
         "oracle_event_engine_posix",
         "server",
+        "timer",
         "//src/core:posix_event_engine",
         "//test/core/event_engine:test_utils",
-        "timer",
     ],
 )
 
@@ -132,11 +132,17 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        "client",
+        "timer",
         "//src/core:windows_event_engine",
         "//test/core/event_engine:test_utils",
-        "timer",
-        "client",
     ],
+)
+
+grpc_cc_binary(
+    name = "windows_event_engine_echo_client",
+    srcs = ["windows_event_engine_factory.cc"],
+    deps = ["echo_client"],
 )
 
 grpc_cc_test(
@@ -148,8 +154,23 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
-        "//test/core/event_engine/fuzzing_event_engine",
         "timer",
+        "//test/core/event_engine/fuzzing_event_engine",
+    ],
+)
+
+# -- Testing tools --
+
+grpc_cc_library(
+    name = "echo_client",
+    srcs = ["tools/echo_client.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr_platform",
+        "//src/core:common_event_engine_closures",
+        "//src/core:windows_event_engine",
+        "//test/core/event_engine:test_utils",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

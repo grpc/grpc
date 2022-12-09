@@ -11,11 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// This manual test allows you to run a listener externally and communicate back
+// and forth with an EventEngine client. Example:
+//
+//    # in one shell
+//    choco install nmap
+//    ncat -klp 32000
+//    # wait for connection, than send data (e.g., keyboard input)
+//
+//    # in a separate shell
+//    bazel run //test/core/event_engine/windows:manual_client_test
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-
-#include <gtest/gtest.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -34,15 +44,9 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/test_utils.h"
 
-// This manual test requires you to run a listener externally.
-// Example:
-//
-//    # in one shell
-//    choco install nmap
-//    ncat -klp 32000
-//
-//    # in a separate shell
-//    bazel run //test/core/event_engine/windows:manual_client_test
+extern absl::AnyInvocable<
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+CustomEventEngineFactory();
 
 namespace {
 using namespace std::chrono_literals;
@@ -72,9 +76,15 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
   grpc_core::Notification read_done;
   endpoint->Read(
       [&](absl::Status status) {
-        GPR_ASSERT(status.ok());
-        gpr_log(GPR_INFO, "Received message %d: %s", message_id,
-                buf.TakeFirst().as_string_view().data());
+        if (!status.ok()) {
+          gpr_log(GPR_ERROR, "Error reading from endpoint: %s",
+                  status.ToString().c_str());
+          exit(1);
+        }
+        Slice received = buf.TakeFirst();
+        gpr_log(GPR_ERROR, "Received message %d: %.*s", message_id,
+                received.as_string_view().length(),
+                received.as_string_view().data());
         read_done.Notify();
       },
       &buf, nullptr);
@@ -90,16 +100,20 @@ void RunUntilInterrupted() {
   auto addr = URIToResolvedAddress("ipv6:[::1]:32000");
   auto handle = engine.Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
-        GPR_ASSERT(ep.ok());
+        if (!ep.ok()) {
+          gpr_log(GPR_ERROR, "Error connecting: %s",
+                  ep.status().ToString().c_str());
+          exit(1);
+        }
         endpoint = std::move(*ep);
         connected.Notify();
       },
       addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
   GPR_ASSERT(endpoint.get() != nullptr);
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: peer addr: %s",
+  gpr_log(GPR_DEBUG, "peer addr: %s",
           ResolvedAddressToString(endpoint->GetPeerAddress())->c_str());
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: local addr: %s",
+  gpr_log(GPR_DEBUG, "local addr: %s",
           ResolvedAddressToString(endpoint->GetLocalAddress())->c_str());
   int message_id = 0;
   while (true) {
@@ -110,7 +124,8 @@ void RunUntilInterrupted() {
 }  // namespace
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  grpc_event_engine::experimental::SetEventEngineFactory(
+      CustomEventEngineFactory());
   grpc_init();
   RunUntilInterrupted();
   grpc_shutdown();
