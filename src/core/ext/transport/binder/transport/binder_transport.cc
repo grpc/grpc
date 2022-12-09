@@ -564,7 +564,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->on_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
                             absl_status_to_grpc_error(status));
-    gpr_log(GPR_INFO, "on_complete closure schuduled");
+    gpr_log(GPR_INFO, "on_complete closure scheduled");
   }
   GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
 }
