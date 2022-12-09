@@ -31,6 +31,10 @@ grpc_cc_binary(
 grpc_cc_library(
     name = "echo_client",
     srcs = ["echo_client.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+    ],
     language = "C++",
     deps = [
         "//:gpr_platform",

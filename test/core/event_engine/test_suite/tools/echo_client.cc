@@ -26,6 +26,8 @@
 //    bazel run
 //    //test/core/event_engine/test_suite/tools:my_event_engine_echo_client
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
@@ -35,6 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -46,6 +49,8 @@
 extern absl::AnyInvocable<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory();
+
+ABSL_FLAG(std::string, target, "ipv4:127.0.0.1:50051", "Target string");
 
 namespace {
 using namespace std::chrono_literals;
@@ -97,7 +102,11 @@ void RunUntilInterrupted() {
   grpc_core::Notification connected;
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   ChannelArgsEndpointConfig config;
-  auto addr = URIToResolvedAddress("ipv6:[::1]:32000");
+  std::string canonical_target =
+      grpc_core::CoreConfiguration::Get()
+          .resolver_registry()
+          .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
+  auto addr = URIToResolvedAddress(canonical_target);
   auto handle = engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
@@ -124,6 +133,7 @@ void RunUntilInterrupted() {
 }  // namespace
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
   grpc_event_engine::experimental::SetEventEngineFactory(
       CustomEventEngineFactory());
   grpc_init();
