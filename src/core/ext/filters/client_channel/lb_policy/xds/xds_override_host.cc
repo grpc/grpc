@@ -304,16 +304,15 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     return PickResult::Complete(
         static_cast<SubchannelWrapper*>(subchannel.get())
             ->wrapped_subchannel());
-  } else {
-    auto result = picker_->Pick(args);
-    auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);
-    if (complete_pick != nullptr) {
-      complete_pick->subchannel =
-          static_cast<SubchannelWrapper*>(complete_pick->subchannel.get())
-              ->wrapped_subchannel();
-    }
-    return result;
   }
+  auto result = picker_->Pick(args);
+  auto complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  if (complete_pick != nullptr) {
+    complete_pick->subchannel =
+        static_cast<SubchannelWrapper*>(complete_pick->subchannel.get())
+            ->wrapped_subchannel();
+  }
+  return result;
 }
 
 //
