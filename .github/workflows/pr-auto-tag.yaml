@@ -22,6 +22,7 @@ jobs:
       contents: read # to determine modified files (actions/labeler)
       pull-requests: write # to add labels to PRs (actions/labeler)
 
+    runs-on: ubuntu-latest
     steps:
     - uses: thehanimo/pr-title-checker@v1.3.5
       with:
