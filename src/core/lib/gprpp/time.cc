@@ -65,7 +65,7 @@ GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
     gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
   }
 
-  // Time does not seem to be increasing from zero...
+  // Check time has increased past 1 second.
   GPR_ASSERT(process_epoch_seconds > 1);
   // Fake the epoch to always return >=1 second from our monotonic clock (to
   // avoid bugs elsewhere)
