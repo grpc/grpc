@@ -124,7 +124,7 @@ class SubchannelByAddressMap {
         it++;
       }
     }
-    for (auto it : keys) {
+    for (const auto& it : keys) {
       if (subchannel_map_.find(it) == subchannel_map_.end()) {
         subchannel_map_.emplace(it, MakeRefCounted<SubchannelEntry>());
       }
