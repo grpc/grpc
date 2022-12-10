@@ -732,16 +732,14 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->handshake_status_details = grpc_empty_slice();
   client->max_frame_size = max_frame_size;
   client->error = error;
-  grpc_slice slice = grpc_slice_from_copied_string(handshaker_service_url);
   client->call =
       strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==
               0
           ? nullptr
           : grpc_channel_create_pollset_set_call(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
-                grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
+                grpc_slice_from_static_string(ALTS_SERVICE_METHOD), nullptr,
                 grpc_core::Timestamp::InfFuture(), nullptr);
-  grpc_core::CSliceUnref(slice);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,
