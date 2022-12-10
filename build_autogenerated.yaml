@@ -256,7 +256,6 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
-  - include/grpc/channel_credentials/google_default.h
   - include/grpc/compression.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -1848,7 +1847,6 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
-  - include/grpc/channel_credentials/google_default.h
   - include/grpc/compression.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -3383,7 +3381,6 @@ libs:
   public_headers:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
-  - include/grpc/channel_credentials/google_default.h
   - include/grpc/compression.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -5131,6 +5128,20 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: cancel_callback_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/cancel_callback_test.cc
+  deps:
+  - absl/meta:type_traits
+  - absl/types:variant
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -5645,6 +5656,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6918,6 +6930,7 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -7012,6 +7025,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -8952,6 +8966,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -9609,6 +9624,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash
@@ -11954,6 +11970,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/try_concurrently_test.cc
   deps:
+  - absl/container:flat_hash_set
   - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/hash:hash

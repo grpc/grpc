@@ -476,6 +476,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cancel_callback",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/cancel_callback.h",
+    ],
+    deps = [
+        "poll",
+        "promise_like",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_factory",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
@@ -946,6 +959,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -3457,7 +3471,6 @@ grpc_cc_library(
         "//:grpc_resolver_fake",
         "//:grpc_security_base",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
@@ -3858,6 +3871,7 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "match",
         "pollset_set",
         "subchannel_interface",
         "time",
@@ -4244,8 +4258,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "closure",
-        "error",
         "grpc_outlier_detection_header",
         "iomgr_fwd",
         "json",
@@ -4258,11 +4270,11 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4285,8 +4297,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "closure",
-        "error",
         "grpc_lb_address_filtering",
         "json",
         "json_args",
@@ -4300,11 +4310,11 @@ grpc_cc_library(
         "validation_errors",
         "//:config",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_trace",
-        "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",

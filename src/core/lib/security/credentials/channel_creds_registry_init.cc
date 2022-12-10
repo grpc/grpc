@@ -22,7 +22,6 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/channel_credentials/google_default.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 

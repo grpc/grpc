@@ -80,7 +80,7 @@
 - name: memory_pressure_controller
   description:
     New memory pressure controller
-  default: debug
+  default: false
   expiry: 2023/01/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
@@ -127,3 +127,11 @@
   expiry: 2023/01/01
   owner: vigneshbabu@google.com
   test_tags: ["event_engine_client_test"]
+- name: free_large_allocator
+  description:
+    If set, return all free bytes from a "big" allocator
+  default: false
+  expiry: 2023/04/01
+  owner: alishananda@google.com
+  test_tags: [resource_quota_test]
+

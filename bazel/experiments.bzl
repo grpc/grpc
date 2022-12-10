@@ -24,9 +24,6 @@ EXPERIMENTS = {
         "hpack_test": [
             "new_hpack_huffman_decoder",
         ],
-        "resource_quota_test": [
-            "memory_pressure_controller",
-        ],
     },
     "off": {
         "core_end2end_test": [
@@ -48,6 +45,8 @@ EXPERIMENTS = {
             "promise_based_client_call",
         ],
         "resource_quota_test": [
+            "free_large_allocator",
+            "memory_pressure_controller",
             "unconstrained_max_quota_buffer_size",
         ],
     },

@@ -51,6 +51,8 @@ const char* const description_promise_based_client_call =
     "(ie when all filters in a stack are promise based)";
 const char* const description_posix_event_engine_enable_polling =
     "If set, enables polling on the default posix event engine.";
+const char* const description_free_large_allocator =
+    "If set, return all free bytes from a \042big\042 allocator";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -67,7 +69,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"peer_state_based_framing", description_peer_state_based_framing, false},
     {"flow_control_fixes", description_flow_control_fixes, true},
     {"memory_pressure_controller", description_memory_pressure_controller,
-     kDefaultForDebugOnly},
+     false},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
@@ -77,6 +79,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_based_client_call", description_promise_based_client_call, false},
     {"posix_event_engine_enable_polling",
      description_posix_event_engine_enable_polling, true},
+    {"free_large_allocator", description_free_large_allocator, false},
 };
 
 }  // namespace grpc_core

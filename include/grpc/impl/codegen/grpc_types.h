@@ -310,6 +310,10 @@ typedef struct {
   "grpc.service_config_disable_resolution"
 /** LB policy name. */
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
+/** Cap for ring size in the ring_hash LB policy.  The min and max ring size
+    values set in the LB policy config will be capped to this value.
+    Default is 4096. */
+#define GRPC_ARG_RING_HASH_LB_RING_SIZE_CAP "grpc.lb.ring_hash.ring_size_cap"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
