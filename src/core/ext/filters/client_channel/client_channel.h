@@ -398,7 +398,7 @@ class ClientChannel::LoadBalancedCall
 
     // Internal API to allow first-party LB policies to access per-call
     // attributes set by the ConfigSelector.
-    absl::string_view GetCallAttribute(UniqueTypeName type);
+    virtual absl::string_view GetCallAttribute(UniqueTypeName type);
 
    private:
     LoadBalancedCall* lb_call_;

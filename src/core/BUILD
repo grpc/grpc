@@ -4357,9 +4357,6 @@ grpc_cc_library(
     srcs = [
         "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
     ],
-    hdrs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
-    ],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -4370,6 +4367,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "grpc_lb_subchannel_list",
+        "grpc_stateful_session_filter",
         "json",
         "json_args",
         "json_object_loader",
