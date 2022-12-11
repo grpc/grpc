@@ -50,13 +50,10 @@ async def guide_get_feature(stub: route_guide_pb2_grpc.RouteGuideStub) -> None:
     # and scheduled in the event loop so that they can run concurrently
     task_group = asyncio.gather(
         guide_get_one_feature(
-            stub, route_guide_pb2.Point(
-                latitude=409146138, longitude=-746188906)
-        ),
-        guide_get_one_feature(
-            stub, route_guide_pb2.Point(latitude=0, longitude=0)
-        )
-    )
+            stub, route_guide_pb2.Point(latitude=409146138,
+                                        longitude=-746188906)),
+        guide_get_one_feature(stub,
+                              route_guide_pb2.Point(latitude=0, longitude=0)))
     # Wait until the Future is resolved
     await task_group
 
