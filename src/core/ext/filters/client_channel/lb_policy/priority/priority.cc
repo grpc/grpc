@@ -260,7 +260,7 @@ class PriorityLb : public LoadBalancingPolicy {
   // Sets the specified priority as the current priority.
   // Optionally deactivates any children at lower priorities.
   // Returns the child's picker to the channel.
-  void SetCurrentPriorityLocked(int32_t priority,
+  void SetCurrentPriorityLocked(uint32_t priority,
                                 bool deactivate_lower_priorities,
                                 const char* reason);
 
@@ -472,11 +472,11 @@ void PriorityLb::ChoosePriorityLocked() {
   }
   // Did not find any child in CONNECTING, delegate to last child.
   SetCurrentPriorityLocked(
-      static_cast<int32_t>(config_->priorities().size() - 1),
+      static_cast<uint32_t>(config_->priorities().size() - 1),
       /*deactivate_lower_priorities=*/false, "no usable children");
 }
 
-void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
+void PriorityLb::SetCurrentPriorityLocked(uint32_t priority,
                                           bool deactivate_lower_priorities,
                                           const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {

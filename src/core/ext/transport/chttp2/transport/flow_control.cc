@@ -318,7 +318,8 @@ FlowControlAction TransportFlowControl::SetAckedInitialWindow(uint32_t value) {
     if (acked_init_window_ == 0 || target_initial_window_size_ == 0) {
       urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
     }
-    action.set_send_initial_window_update(urgency, target_initial_window_size_);
+    action.set_send_initial_window_update(
+        urgency, static_cast<uint32_t>(target_initial_window_size_));
   }
   return action;
 }

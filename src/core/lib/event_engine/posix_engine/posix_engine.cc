@@ -263,7 +263,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   AsyncConnect* ac = new AsyncConnect(
       std::move(on_connect), shared_from_this(), executor_.get(), handle,
       std::move(allocator), options, addr_uri.value(), connection_id);
-  int shard_number = connection_id % connection_shards_.size();
+  size_t shard_number = connection_id % connection_shards_.size();
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   {
     grpc_core::MutexLock lock(&shard->mu);
@@ -274,8 +274,8 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   return {static_cast<intptr_t>(connection_id), 0};
 }
 
-void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
-  int shard_number = connection_handle % connection_shards_.size();
+void PosixEventEngine::OnConnectFinishInternal(int64_t connection_handle) {
+  size_t shard_number = connection_handle % connection_shards_.size();
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   {
     grpc_core::MutexLock lock(&shard->mu);
@@ -478,11 +478,11 @@ bool PosixEventEngine::IsWorkerThread() {
 
 bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
 #ifdef GRPC_POSIX_SOCKET_TCP
-  int connection_handle = handle.keys[0];
+  int64_t connection_handle = handle.keys[0];
   if (connection_handle <= 0) {
     return false;
   }
-  int shard_number = connection_handle % connection_shards_.size();
+  size_t shard_number = connection_handle % connection_shards_.size();
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   AsyncConnect* ac = nullptr;
   {

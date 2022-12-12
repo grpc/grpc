@@ -493,8 +493,8 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
     static const int kBigAlloc = 64 * 1024;
     static const int kSmallAlloc = 8 * 1024;
     if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_)) {
-      size_t allocate_length = min_progress_size_;
-      const size_t target_length = static_cast<size_t>(target_length_);
+      int allocate_length = min_progress_size_;
+      const int target_length = static_cast<int>(target_length_);
       // If memory pressure is low and we think there will be more than
       // min_progress_size bytes to read, allocate a bit more.
       const bool low_memory_pressure =

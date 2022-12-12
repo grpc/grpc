@@ -178,7 +178,7 @@ class BitSet {
 
   BitSet& SetAll(bool value) {
     for (size_t i = 0; i < kTotalBits; i++) {
-      set(i, value);
+      set(static_cast<int>(i), value);
     }
     return *this;
   }
