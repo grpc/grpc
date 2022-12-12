@@ -169,11 +169,6 @@ class CallData {
             grpc_core::HttpPathMetadata())) {
       path = value->as_string_view();
     }
-    if (auto* value = call_args.client_initial_metadata->get_pointer(
-            grpc_core::HttpAuthorityMetadata())) {
-      authority_ = std::string(value->as_string_view());
-    }
-
     std::vector<absl::string_view> parts =
         absl::StrSplit(path, '/', absl::SkipEmpty());
     if (parts.size() == 2) {
@@ -181,13 +176,18 @@ class CallData {
       method_name_ = std::string(parts[1]);
     }
     config_ = g_logging_sink->FindMatch(is_client, service_name_, method_name_);
+    if (config_.ShouldLog()) {
+      if (auto* value = call_args.client_initial_metadata->get_pointer(
+              grpc_core::HttpAuthorityMetadata())) {
+        authority_ = std::string(value->as_string_view());
+      }
+    }
   }
+
+  bool ShouldLog() { return config_.ShouldLog(); }
 
   void LogClientHeader(bool is_client,
                        const grpc_core::ClientMetadataHandle& metadata) {
-    if (!config_.MetadataLoggingEnabled()) {
-      return;
-    }
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kClientHeader);
@@ -200,9 +200,6 @@ class CallData {
   }
 
   void LogClientHalfClose(bool is_client) {
-    if (!config_.MetadataLoggingEnabled()) {
-      return;
-    }
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kClientHalfClose);
@@ -211,9 +208,6 @@ class CallData {
 
   void LogServerHeader(bool is_client,
                        const grpc_core::ServerMetadata* metadata) {
-    if (!config_.MetadataLoggingEnabled()) {
-      return;
-    }
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kServerHeader);
@@ -231,9 +225,6 @@ class CallData {
 
   void LogServerTrailer(bool is_client,
                         const grpc_core::ServerMetadata* metadata) {
-    if (!config_.MetadataLoggingEnabled()) {
-      return;
-    }
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kServerTrailer);
@@ -247,9 +238,6 @@ class CallData {
   }
 
   void LogClientMessage(bool is_client, const grpc_core::SliceBuffer* message) {
-    if (!config_.MessageLoggingEnabled()) {
-      return;
-    }
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kClientMessage);
@@ -258,9 +246,6 @@ class CallData {
   }
 
   void LogServerMessage(bool is_client, const grpc_core::SliceBuffer* message) {
-    if (!config_.MessageLoggingEnabled()) {
-      return;
-    }
     LoggingSink::Entry entry;
     SetCommonEntryFields(&entry, is_client,
                          LoggingSink::Entry::EventType::kServerMessage);
@@ -303,6 +288,9 @@ class ClientLoggingFilter final : public grpc_core::ChannelFilter {
       grpc_core::NextPromiseFactory next_promise_factory) override {
     CallData* calld = grpc_core::GetContext<grpc_core::Arena>()->New<CallData>(
         true, call_args);
+    if (!calld->ShouldLog()) {
+      return next_promise_factory(std::move(call_args));
+    }
     calld->LogClientHeader(/*is_client=*/true,
                            call_args.client_initial_metadata);
     auto* server_initial_metadata = call_args.server_initial_metadata;
@@ -374,6 +362,9 @@ class ServerLoggingFilter final : public grpc_core::ChannelFilter {
       grpc_core::NextPromiseFactory next_promise_factory) override {
     CallData* calld = grpc_core::GetContext<grpc_core::Arena>()->New<CallData>(
         false, call_args);
+    if (!calld->ShouldLog()) {
+      return next_promise_factory(std::move(call_args));
+    }
     calld->LogClientHeader(/*is_client=*/false,
                            call_args.client_initial_metadata);
     auto* server_initial_metadata = call_args.server_initial_metadata;

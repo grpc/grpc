@@ -74,7 +74,7 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
     bool is_client, absl::string_view service, absl::string_view method) {
   const auto& configs = is_client ? client_configs_ : server_configs_;
   if (service.empty() || method.empty()) {
-    return LoggingSink::Config(0, 0);
+    return LoggingSink::Config();
   }
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
@@ -83,14 +83,14 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
            ((config_method.method == "*") ||
             (method == config_method.method)))) {
         if (config.exclude) {
-          return LoggingSink::Config(0, 0);
+          return LoggingSink::Config();
         }
         return LoggingSink::Config(config.max_metadata_bytes,
                                    config.max_message_bytes);
       }
     }
   }
-  return LoggingSink::Config(0, 0);
+  return LoggingSink::Config();
 }
 
 namespace {

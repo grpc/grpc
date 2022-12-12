@@ -62,7 +62,7 @@ class TestLoggingSink : public grpc::internal::LoggingSink {
  public:
   Config FindMatch(bool /* is_client */, absl::string_view /* service */,
                    absl::string_view /* method */) override {
-    return Config(4096, 4096);
+    return config_;
   }
 
   void LogEntry(Entry entry) override {
@@ -74,12 +74,15 @@ class TestLoggingSink : public grpc::internal::LoggingSink {
     entries_.push_back(std::move(entry));
   }
 
+  void SetConfig(Config config) { config_ = config; }
+
   const std::vector<LoggingSink::Entry>& entries() const { return entries_; }
 
   void Clear() { entries_.clear(); }
 
  private:
   std::vector<LoggingSink::Entry> entries_;
+  Config config_;
 };
 
 TestLoggingSink* g_test_logging_sink = nullptr;
@@ -132,6 +135,8 @@ class LoggingTest : public ::testing::Test {
 };
 
 TEST_F(LoggingTest, SimpleRpc) {
+  g_test_logging_sink->SetConfig(
+      grpc::internal::LoggingSink::Config(4096, 4096));
   EchoRequest request;
   request.set_message("foo");
   EchoResponse response;
@@ -142,8 +147,7 @@ TEST_F(LoggingTest, SimpleRpc) {
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -155,8 +159,7 @@ TEST_F(LoggingTest, SimpleRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(
                                 Pair("client-key", "client-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -169,8 +172,7 @@ TEST_F(LoggingTest, SimpleRpc) {
                                   Eq(5)),
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\003foo"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -182,8 +184,7 @@ TEST_F(LoggingTest, SimpleRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(Pair(
                                 "server-header-key", "server-header-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -197,7 +198,6 @@ TEST_F(LoggingTest, SimpleRpc) {
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\005hello"))))),
           AllOf(
-              Field(&LoggingSink::Entry::call_id, Eq(0)),
               Field(&LoggingSink::Entry::type,
                     Eq(LoggingSink::Entry::EventType::kServerTrailer)),
               Field(&LoggingSink::Entry::logger,
@@ -210,8 +210,7 @@ TEST_F(LoggingTest, SimpleRpc) {
                     Field(&LoggingSink::Entry::Payload::metadata,
                           UnorderedElementsAre(Pair("server-trailer-key",
                                                     "server-trailer-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -223,8 +222,7 @@ TEST_F(LoggingTest, SimpleRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(
                                 Pair("client-key", "client-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -237,8 +235,7 @@ TEST_F(LoggingTest, SimpleRpc) {
                                   Eq(5)),
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\003foo"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -250,8 +247,7 @@ TEST_F(LoggingTest, SimpleRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(Pair(
                                 "server-header-key", "server-header-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -264,8 +260,306 @@ TEST_F(LoggingTest, SimpleRpc) {
                                   Eq(7)),
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\005hello"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("server-trailer-key",
+                                     "server-trailer-value")))))));
+}
+
+TEST_F(LoggingTest, LoggingDisabled) {
+  g_test_logging_sink->SetConfig(grpc::internal::LoggingSink::Config());
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  grpc::ClientContext context;
+  context.AddMetadata("client-key", "client-value");
+  grpc::Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(g_test_logging_sink->entries().empty());
+}
+
+TEST_F(LoggingTest, MetadataTruncated) {
+  g_test_logging_sink->SetConfig(grpc::internal::LoggingSink::Config(
+      40 /* expect truncated metadata*/, 4096));
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  grpc::ClientContext context;
+  context.AddMetadata("client-key", "client-value");
+  context.AddMetadata("client-key-2", "client-value-2");
+  grpc::Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok());
+  EXPECT_THAT(
+      g_test_logging_sink->entries(),
+      ::testing::UnorderedElementsAre(
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(5)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\003foo"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(
+              Field(&LoggingSink::Entry::type,
+                    Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+              Field(&LoggingSink::Entry::logger,
+                    Eq(LoggingSink::Entry::Logger::kClient)),
+              Field(&LoggingSink::Entry::authority, Eq("")),
+              Field(&LoggingSink::Entry::service_name,
+                    Eq("grpc.testing.EchoTestService")),
+              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+              Field(&LoggingSink::Entry::payload,
+                    Field(&LoggingSink::Entry::Payload::metadata,
+                          UnorderedElementsAre(Pair("server-trailer-key",
+                                                    "server-trailer-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(5)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\003foo"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("server-trailer-key",
+                                     "server-trailer-value")))))));
+}
+
+TEST_F(LoggingTest, PayloadTruncated) {
+  g_test_logging_sink->SetConfig(grpc::internal::LoggingSink::Config(4096, 10));
+  EchoRequest request;
+  // The following message should get truncated
+  request.set_message("Hello World");
+  EchoResponse response;
+  grpc::ClientContext context;
+  context.AddMetadata("client-key", "client-value");
+  grpc::Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok());
+  EXPECT_THAT(
+      g_test_logging_sink->entries(),
+      ::testing::UnorderedElementsAre(
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(
+              Field(&LoggingSink::Entry::type,
+                    Eq(LoggingSink::Entry::EventType::kClientMessage)),
+              Field(&LoggingSink::Entry::logger,
+                    Eq(LoggingSink::Entry::Logger::kClient)),
+              Field(&LoggingSink::Entry::authority, Eq("")),
+              Field(&LoggingSink::Entry::service_name,
+                    Eq("grpc.testing.EchoTestService")),
+              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+              Field(&LoggingSink::Entry::payload,
+                    AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                Eq(13)),
+                          Field(&LoggingSink::Entry::Payload::message,
+                                Eq("\n\013Hello Wo") /* truncated message */))),
+              Field(&LoggingSink::Entry::payload_truncated, true)),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq("")),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(
+              Field(&LoggingSink::Entry::type,
+                    Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+              Field(&LoggingSink::Entry::logger,
+                    Eq(LoggingSink::Entry::Logger::kClient)),
+              Field(&LoggingSink::Entry::authority, Eq("")),
+              Field(&LoggingSink::Entry::service_name,
+                    Eq("grpc.testing.EchoTestService")),
+              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+              Field(&LoggingSink::Entry::payload,
+                    Field(&LoggingSink::Entry::Payload::metadata,
+                          UnorderedElementsAre(Pair("server-trailer-key",
+                                                    "server-trailer-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kClientHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(
+                                Pair("client-key", "client-value"))))),
+          AllOf(
+              Field(&LoggingSink::Entry::type,
+                    Eq(LoggingSink::Entry::EventType::kClientMessage)),
+              Field(&LoggingSink::Entry::logger,
+                    Eq(LoggingSink::Entry::Logger::kServer)),
+              Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+              Field(&LoggingSink::Entry::service_name,
+                    Eq("grpc.testing.EchoTestService")),
+              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+              Field(&LoggingSink::Entry::payload,
+                    AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                Eq(13)),
+                          Field(&LoggingSink::Entry::Payload::message,
+                                Eq("\n\013Hello Wo") /* truncated message */))),
+              Field(&LoggingSink::Entry::payload_truncated, true)),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerHeader)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair(
+                                "server-header-key", "server-header-value"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerMessage)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      AllOf(Field(&LoggingSink::Entry::Payload::message_length,
+                                  Eq(7)),
+                            Field(&LoggingSink::Entry::Payload::message,
+                                  Eq("\n\005hello"))))),
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerTrailer)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -304,8 +598,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -317,8 +610,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(
                                 Pair("client-key", "client-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -331,8 +623,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                                   Eq(5)),
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\003foo"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -344,8 +635,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(Pair(
                                 "server-header-key", "server-header-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kClient)),
@@ -359,7 +649,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\005hello"))))),
           AllOf(
-              Field(&LoggingSink::Entry::call_id, Eq(0)),
+
               Field(&LoggingSink::Entry::type,
                     Eq(LoggingSink::Entry::EventType::kServerTrailer)),
               Field(&LoggingSink::Entry::logger,
@@ -372,8 +662,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                     Field(&LoggingSink::Entry::Payload::metadata,
                           UnorderedElementsAre(Pair("server-trailer-key",
                                                     "server-trailer-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -385,8 +674,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(
                                 Pair("client-key", "client-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -399,8 +687,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                                   Eq(5)),
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\003foo"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerHeader)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -412,8 +699,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                       Field(&LoggingSink::Entry::Payload::metadata,
                             UnorderedElementsAre(Pair(
                                 "server-header-key", "server-header-value"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerMessage)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),
@@ -426,8 +712,7 @@ TEST_F(LoggingTest, DISABLED_CancelledRpc) {
                                   Eq(7)),
                             Field(&LoggingSink::Entry::Payload::message,
                                   Eq("\n\005hello"))))),
-          AllOf(Field(&LoggingSink::Entry::call_id, Eq(0)),
-                Field(&LoggingSink::Entry::type,
+          AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kServerTrailer)),
                 Field(&LoggingSink::Entry::logger,
                       Eq(LoggingSink::Entry::Logger::kServer)),

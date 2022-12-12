@@ -14432,6 +14432,7 @@ target_link_libraries(logging_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::random_distributions
   grpc++_test_config
   grpc++_test_util
 )
