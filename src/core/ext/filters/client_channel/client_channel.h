@@ -108,6 +108,7 @@ class ClientChannel {
  public:
   static const grpc_channel_filter kFilterVtable;
 
+  class LbCallStateInternal;
   class LoadBalancedCall;
 
   // Flag that this object gets stored in channel args as a raw pointer.
@@ -382,6 +383,15 @@ class ClientChannel {
 };
 
 //
+// ClientChannel::LbCallStateInternal
+//
+class ClientChannel::LbCallStateInternal
+    : public LoadBalancingPolicy::CallState {
+ public:
+  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
+};
+
+//
 // ClientChannel::LoadBalancedCall
 //
 
@@ -390,7 +400,7 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
-  class LbCallState : public LoadBalancingPolicy::CallState {
+  class LbCallState : public ClientChannel::LbCallStateInternal {
    public:
     explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
 
@@ -398,7 +408,7 @@ class ClientChannel::LoadBalancedCall
 
     // Internal API to allow first-party LB policies to access per-call
     // attributes set by the ConfigSelector.
-    virtual absl::string_view GetCallAttribute(UniqueTypeName type);
+    virtual absl::string_view GetCallAttribute(UniqueTypeName type) override;
 
    private:
     LoadBalancedCall* lb_call_;

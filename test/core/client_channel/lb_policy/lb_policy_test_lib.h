@@ -357,10 +357,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   // A fake CallState implementation, for use in PickArgs.
-  class FakeCallState : public ClientChannel::LoadBalancedCall::LbCallState {
+  class FakeCallState : public ClientChannel::LbCallStateInternal {
    public:
     explicit FakeCallState(std::map<UniqueTypeName, std::string> attributes)
-        : LbCallState(nullptr), attributes_(attributes) {}
+        : attributes_(attributes) {}
 
     ~FakeCallState() override {
       for (void* allocation : allocations_) {
