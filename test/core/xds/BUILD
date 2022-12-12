@@ -308,6 +308,5 @@ grpc_cc_test(
         "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
     ],
 )
