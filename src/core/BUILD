@@ -476,6 +476,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cancel_callback",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/cancel_callback.h",
+    ],
+    deps = [
+        "poll",
+        "promise_like",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_factory",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
@@ -3427,6 +3440,7 @@ grpc_cc_library(
         "error",
         "gpr_atm",
         "grpc_sockaddr",
+        "join",
         "json",
         "json_args",
         "json_object_loader",
@@ -3436,11 +3450,13 @@ grpc_cc_library(
         "pollset_set",
         "ref_counted",
         "resolved_address",
+        "seq",
         "slice",
         "slice_refcount",
         "status_helper",
         "subchannel_interface",
         "time",
+        "try_concurrently",
         "useful",
         "validation_errors",
         "//:backoff",
@@ -3459,6 +3475,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:orphanable",
+        "//:promise",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
         "//:ref_counted_ptr",

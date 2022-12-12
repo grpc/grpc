@@ -1320,6 +1320,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/exec_ctx_wakeup_scheduler.h )
   s.files += %w( src/core/lib/promise/for_each.h )
   s.files += %w( src/core/lib/promise/intra_activity_waiter.h )
+  s.files += %w( src/core/lib/promise/join.h )
   s.files += %w( src/core/lib/promise/latch.h )
   s.files += %w( src/core/lib/promise/loop.h )
   s.files += %w( src/core/lib/promise/map.h )
