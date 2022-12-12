@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CHANNEL_INTERFACE_H
 #define GRPCPP_IMPL_CHANNEL_INTERFACE_H
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/time.h>

@@ -24,7 +24,7 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

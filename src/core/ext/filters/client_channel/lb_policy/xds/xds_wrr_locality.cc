@@ -29,7 +29,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"

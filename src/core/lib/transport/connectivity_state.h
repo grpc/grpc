@@ -28,7 +28,7 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"

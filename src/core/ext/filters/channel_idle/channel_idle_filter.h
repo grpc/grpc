@@ -22,7 +22,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"

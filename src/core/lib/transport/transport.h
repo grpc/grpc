@@ -33,7 +33,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/atm.h>

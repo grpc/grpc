@@ -29,7 +29,7 @@
 
 #include "absl/base/thread_annotations.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"

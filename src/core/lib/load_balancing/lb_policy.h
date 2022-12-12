@@ -34,7 +34,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/channel/channel_args.h"
