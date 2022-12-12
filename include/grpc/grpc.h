@@ -25,8 +25,8 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/grpc_types.h>  // IWYU pragma: export
-#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/connectivity_state.h>  // IWYU pragma: export
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>

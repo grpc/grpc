@@ -38,8 +38,8 @@
 #include <memory>
 #include <string>
 
-#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/create_auth_context.h>
 #include <grpcpp/impl/metadata_map.h>
