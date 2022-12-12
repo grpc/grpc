@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gridman
   protobuf_version: 3.19.5
-  version: 1.47.2
+  version: 1.47.3
 targets:
 - name: gen_hpack_tables
   build: tool
