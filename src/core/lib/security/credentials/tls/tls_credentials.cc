@@ -50,6 +50,9 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   if (options->min_tls_version() == grpc_tls_version::TLS1_3 &&
       options->max_tls_version() == grpc_tls_version::TLS1_2) {
     gpr_log(GPR_ERROR, "TLS min version must not be higher than max version.");
+    // The options will not be used to create credentials any more.
+    // Delete it since the ownership has been transferred here.
+    delete options;
     return false;
   }
   // In the following conditions, there won't be any issues, but it might

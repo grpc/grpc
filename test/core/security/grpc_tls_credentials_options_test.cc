@@ -71,11 +71,12 @@ TEST_F(GrpcTlsCredentialsOptionsTest, BadTlsVersions) {
   options->set_min_tls_version(grpc_tls_version::TLS1_3);
   auto credentials = grpc_tls_credentials_create(options);
   EXPECT_EQ(credentials, nullptr);
-  // The same options can be reused since the ownership is retained with the
-  // credentials failing to be created.
-  auto server_credentials = grpc_tls_server_credentials_create(options);
+
+  auto server_options = grpc_tls_credentials_options_create();
+  server_options->set_max_tls_version(grpc_tls_version::TLS1_2);
+  server_options->set_min_tls_version(grpc_tls_version::TLS1_3);
+  auto server_credentials = grpc_tls_server_credentials_create(server_options);
   EXPECT_EQ(server_credentials, nullptr);
-  delete options;
 }
 
 //

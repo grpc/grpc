@@ -91,7 +91,7 @@ class TlsCredentialsOptionsEnd2EndTest : public ::testing::Test {
   std::shared_ptr<Channel> channel_;
 };
 
-TEST_F(TlsCredentialsOptionsEnd2EndTest, MutualTlsWithTls1_2) {
+TEST_F(TlsCredentialsOptionsEnd2EndTest, MutualTlsWithTls12) {
   std::string identity_cert = ReadFile(kServerCertPath);
   std::string private_key = ReadFile(kServerKeyPath);
   std::vector<experimental::IdentityKeyCertPair>
@@ -124,7 +124,7 @@ TEST_F(TlsCredentialsOptionsEnd2EndTest, MutualTlsWithTls1_2) {
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(TlsCredentialsOptionsEnd2EndTest, ServerSideTlsWithTls1_3) {
+TEST_F(TlsCredentialsOptionsEnd2EndTest, ServerSideTlsWithTls13) {
   std::string identity_cert = ReadFile(kServerCertPath);
   std::string private_key = ReadFile(kServerKeyPath);
   std::vector<experimental::IdentityKeyCertPair>
