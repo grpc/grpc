@@ -131,18 +131,21 @@ def parse_protoc_arguments():
             write_debug("Parsing: "+arg)
 
         # All arguments containing file or directory paths are
-        # normalised by converting to relative paths to the
-        # project directory, and all '\' and changed to '/'
+        # normalised by converting all '\' and changed to '/'
         if arg.startswith("--"):
             (name, value) = arg.split("=",1)
 
             if name == "--dependency_out":
-                value = relative_to_project(value)
+                value = absolute_path(value)
                 dependencyfile = value
             elif name == "--grpc_out":
-                value = relative_to_project(value)
+                value = absolute_path(value)
                 grpcout = value
-            elif name in [ "--grpc_out", "--proto_path", "--csharp_out" ]:
+            elif name == "--csharp_out":
+                value = absolute_path(value)
+            elif name == "--proto_path":
+                # for simpliity keep this one as relative path rather than absolute path
+                # since it is an input file that is always be near the project file
                 value = relative_to_project(value)
 
             add_protoc_arg_to_dict(name, value)
@@ -176,6 +179,10 @@ def relative_to_project(file):
         # On Windows if the paths are on different drives then we get this error
         # Just return the absolute path
         return normalise_slashes(os.path.abspath(file))
+
+def absolute_path(file):
+    """ Normalise absolute path to file """
+    return normalise_slashes(os.path.abspath(file))
 
 def normalise_slashes(path):
     """ Change all backslashes to forward slashes """
