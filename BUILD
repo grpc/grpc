@@ -155,7 +155,7 @@ g_stands_for = "gridman"  # @unused
 
 core_version = "25.0.0"  # @unused
 
-version = "1.47.2"  # @unused
+version = "1.47.3"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
